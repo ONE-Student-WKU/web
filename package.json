@@ -1,0 +1,20 @@
+{
+  "name": "wku-ai-chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wonkwang University Intranet Mock AI Chat Service Monorepo",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "client:dev": "npm run dev --workspace=client",
+    "server:dev": "npm run dev --workspace=server",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

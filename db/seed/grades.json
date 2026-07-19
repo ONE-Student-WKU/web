@@ -1,0 +1,16 @@
+[
+  {
+    "student_id": "20201234",
+    "course_id": "CS101",
+    "grade": "A+",
+    "score": 4.5,
+    "semester": "2026-1"
+  },
+  {
+    "student_id": "20201234",
+    "course_id": "CS102",
+    "grade": "B0",
+    "score": 3.0,
+    "semester": "2026-1"
+  }
+]

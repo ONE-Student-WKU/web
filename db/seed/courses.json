@@ -1,0 +1,14 @@
+[
+  {
+    "id": "CS101",
+    "name": "인공지능 입문",
+    "professor": "김원광",
+    "credits": 3
+  },
+  {
+    "id": "CS102",
+    "name": "데이터베이스 실무",
+    "professor": "이전산",
+    "credits": 3
+  }
+]
