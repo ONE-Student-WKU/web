@@ -21,3 +21,6 @@ This project is a monorepo containing:
    ```bash
    npm run dev
    ```
+
+## Docs
+- [API 설계](./API-설계.md)
