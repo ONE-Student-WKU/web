@@ -24,3 +24,4 @@ This project is a monorepo containing:
 
 ## Docs
 - [API 설계](./API-설계.md)
+- [ERD 설계](./ERD-설계.md)
