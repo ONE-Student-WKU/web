@@ -161,7 +161,6 @@ CREATE TABLE students (
   email                 VARCHAR(255) NOT NULL,
   password              VARCHAR(255) NOT NULL,
   name                  VARCHAR(50) NOT NULL,
-  college_id            INT NOT NULL,
   department_id         INT NOT NULL,
   grade                 INT,
   admission_year        INT,
@@ -175,7 +174,6 @@ CREATE TABLE students (
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_students_email UNIQUE (email),
-  FOREIGN KEY (college_id) REFERENCES colleges(id),
   FOREIGN KEY (department_id) REFERENCES departments(id),
   FOREIGN KEY (advisor_professor_id) REFERENCES professors(id),
   FOREIGN KEY (template_id) REFERENCES templates(id)
@@ -184,6 +182,7 @@ CREATE TABLE students (
 - API 명세: 1-1(회원가입), 1-2(로그인), 2-1(`/api/me`) 반영
 - `email`: UNIQUE → 1-1의 `409 EMAIL_ALREADY_EXISTS` 응답 근거. 로그인은 이 값 기준(확정)
 - `id`(학번)는 로그인 값이 아니라 프로필/학사정보 식별용으로만 사용
+- `college_id`는 별도로 두지 않음 — `departments.college_id`로 조인해서 구함 (같은 정보를 두 군데 저장하는 중복 제거, 정규화 원칙 우선)
 - `completed_semesters`/`admission_type`/`transfer_*`/`previous_department`: 7-3 이수과목확인리스트의 studentInfo 표시용 (과거 이력이 완전 관계형이 아니라 별도 저장 필요)
 - `template_id`: 0.7 템플릿 배정 전략 반영, 가입 시 이 템플릿의 시드 데이터를 아래 테이블들에 학생 소유 행으로 복사
 
