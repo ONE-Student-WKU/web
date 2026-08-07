@@ -34,7 +34,7 @@ jobs:
 
       # 3. Vercel 환경 설정 정보 불러오기
       - name: Pull Vercel Environment Info
-        run: vercel pull --yes --environment=${{ (github.ref_name == 'main' && github.event_name == 'push') && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=${{ (github.ref_name == 'main' && github.event_name == 'push') && 'production' || 'preview' }} --debug
 
       # 4. GitHub Actions 환경에서 프로젝트 pre-build 실행
       - name: Build Project Artifacts
