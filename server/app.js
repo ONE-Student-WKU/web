@@ -8,7 +8,7 @@ const chatRoutes = require('./routes/chat');
 const mockInfoRoutes = require('./routes/mockInfo');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.SERVER_PORT || 3000;
 
 // Middlewares
 app.use(cors());
