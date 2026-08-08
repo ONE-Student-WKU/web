@@ -9,7 +9,8 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const mockInfoRoutes = require('./routes/mockInfo');
+const onboardingRoutes = require('./routes/onboarding');
+const meRoutes = require('./routes/me');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,8 +31,9 @@ app.use(
 
 // Routes mounting
 app.use('/api/auth', authRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api', meRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/mock-info', mockInfoRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
@@ -41,7 +43,7 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: null, data: null });
 });
 
 // Server Initialization

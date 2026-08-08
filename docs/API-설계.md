@@ -44,24 +44,40 @@
 ### 1.1 회원가입
 | Request method | url | body | 설명 |
 |---|---|---|---|
-| POST | `/api/auth/signup` | `email, password, name` | 이메일 UNIQUE. 컴퓨터·소프트웨어공학과 1개 학과만 다루므로 학과 선택 UI 없음 |
+| POST | `/api/auth/signup` | `email, password, name` | 이메일 UNIQUE. 가입은 최소 정보만 받고, 학과/입학년도/편입여부는 가입 후 [1.3 온보딩](#13-온보딩)에서 별도로 받음 |
 
 | Response status | data |
 |---|---|
-| 201 | `{ "status":201, "code":"SIGNUP_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동" } }` |
+| 201 | `{ "status":201, "code":"SIGNUP_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동", "onboardingCompleted":false } }` |
 | 409 | `{ "status":409, "code":"EMAIL_ALREADY_EXISTS", "data":null }` |
 | 400 | `{ "status":400, "code":"REQUIRED_EMAIL", "data":null }` / `REQUIRED_PASSWORD` / `REQUIRED_NAME` |
 
 ### 1.2 로그인 / 로그아웃
 | Request method | url | body | 설명 |
 |---|---|---|---|
-| POST | `/api/auth/login` | `email, password` | 성공 시 세션 발급 |
+| POST | `/api/auth/login` | `email, password` | 성공 시 세션 발급. `onboardingCompleted:false`면 프론트가 온보딩 화면으로 보냄 |
 | POST | `/api/auth/logout` | - | 세션 종료 |
 
 | Response status | data |
 |---|---|
-| 200 | `{ "status":200, "code":"LOGIN_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동" } }` |
+| 200 | `{ "status":200, "code":"LOGIN_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동", "onboardingCompleted":true } }` |
 | 401 | `{ "status":401, "code":"INVALID_CREDENTIALS", "data":null }` |
+| 200 | `{ "status":200, "code":"LOGOUT_SUCCESS", "data":null }` |
+
+### 1.3 온보딩
+> 가입 직후 1회 진행하는 추가 정보 입력. 학과는 현재 1개(컴퓨터·소프트웨어공학과)뿐이지만, 학과가 늘어날 걸 대비해 고정 텍스트 대신 드롭다운 선택형으로 둠. 입학년도/편입 여부는 학번별로 이수규정이 갈리는 경우가 있어 [졸업요건 진단](#4-졸업요건-진단)에서 사용.
+
+| Request method | url | body | 설명 |
+|---|---|---|---|
+| GET | `/api/onboarding/departments` | - | 학과 선택 드롭다운용 목록 (현재 1건) |
+| POST | `/api/onboarding` | `departmentId, admissionYear, enrollmentType` | `enrollmentType`: `GENERAL`(일반재학생) / `TRANSFER_ADMISSION`(편입생) / `MAJOR_CHANGE`(전과생). `requireAuth` 필요 |
+
+| Response status | data |
+|---|---|
+| 200 | `{ "status":200, "code":"DEPARTMENTS_SUCCESS", "data":[ { "id":1, "name":"컴퓨터·소프트웨어공학과" } ] }` |
+| 200 | `{ "status":200, "code":"ONBOARDING_SUCCESS", "data":{ "departmentId":1, "admissionYear":2023, "enrollmentType":"GENERAL" } }` |
+| 400 | `REQUIRED_DEPARTMENT_ID` / `REQUIRED_ADMISSION_YEAR` / `REQUIRED_ENROLLMENT_TYPE` / `INVALID_ENROLLMENT_TYPE` |
+| 409 | `{ "status":409, "code":"ONBOARDING_ALREADY_COMPLETED", "data":null }` — 이미 온보딩 끝낸 계정이 재요청한 경우 (**확정 필요** — 수정 허용할지 논의 필요) |
 
 ---
 
@@ -74,7 +90,7 @@
 
 | Response status | data |
 |---|---|
-| 200 | `{ "status":200, "code":"ME_SUCCESS", "data":{ "id":1, "name":"홍길동", "department":"컴퓨터·소프트웨어공학과" } }` |
+| 200 | `{ "status":200, "code":"ME_SUCCESS", "data":{ "id":1, "name":"홍길동", "department":"컴퓨터·소프트웨어공학과", "onboardingCompleted":true, "admissionYear":2023, "enrollmentType":"GENERAL" } }` |
 
 ### 2.2 챗봇 대화
 | Request method | url | body | 설명 |
