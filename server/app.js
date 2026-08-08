@@ -11,6 +11,8 @@ const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const onboardingRoutes = require('./routes/onboarding');
 const meRoutes = require('./routes/me');
+const coursesRoutes = require('./routes/courses');
+const myCoursesRoutes = require('./routes/myCourses');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +35,8 @@ app.use(
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api', meRoutes);
+app.use('/api/courses', coursesRoutes);
+app.use('/api/my-courses', myCoursesRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Base Route
