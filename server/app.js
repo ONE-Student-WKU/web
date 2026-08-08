@@ -1,7 +1,11 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-require('dotenv').config();
+
+// npm workspace로 실행하면 cwd가 server/로 바뀌어 기본 dotenv 탐색(cwd 기준)이
+// 리포지토리 루트의 .env를 못 찾는다. 항상 루트 .env를 절대경로로 지정해서 로드.
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
