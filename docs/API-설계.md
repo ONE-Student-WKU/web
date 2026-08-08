@@ -116,7 +116,7 @@
 |---|---|
 | 200 | `{ "status":200, "code":"CATALOG_SEARCH_SUCCESS", "data":[ { "courseId":"374124-01", "name":"빅데이터", "professor":"이상원", "credits":3, "schedule":[{"day":"월","period":1},{"day":"월","period":2}] } ] }` |
 
-> `(확인 필요)` 카탈로그의 요일/교시 데이터는 아직 미수집 상태입니다 — 데이터 수집 단계에서 51개 과목 전체에 대해 다시 캡처해야 합니다 (기존 `db/seed/courses.json`에는 없음).
+> ~~카탈로그의 요일/교시 데이터는 아직 미수집 상태~~ → `course_schedules` 테이블에 133건 시딩 완료되어 있어 `schedule` 필드는 이 테이블과 조인해서 채웁니다 (해결됨).
 
 ### 3.2 내 수강·성적 목록 조회 / 추가 / 수정 / 삭제
 | Request method | url | body | 설명 |
@@ -130,6 +130,13 @@
 |---|---|
 | 200 | `{ "status":200, "code":"MY_COURSES_SUCCESS", "data":[ { "id":10, "courseId":"374124-01", "name":"빅데이터", "professor":"이상원", "credits":3, "year":2026, "semester":2, "midterm":38.0, "final":40.0, "letterGrade":"A+" } ] }` |
 | 201 | `{ "status":201, "code":"MY_COURSE_ADD_SUCCESS", "data":{ "id":10 } }` |
+| 400 | `REQUIRED_COURSE_ID` / `REQUIRED_YEAR` / `REQUIRED_SEMESTER` (POST) |
+| 404 | `{ "status":404, "code":"COURSE_NOT_FOUND", "data":null }` — POST 시 카탈로그에 없는 `courseId` |
+| 409 | `{ "status":409, "code":"COURSE_ALREADY_ADDED", "data":null }` — 같은 학기 같은 과목 중복 추가 (POST) |
+| 404 | `{ "status":404, "code":"MY_COURSE_NOT_FOUND", "data":null }` — PATCH/DELETE 대상이 없거나 본인 소유가 아님 |
+| 200 | `{ "status":200, "code":"MY_COURSE_UPDATE_SUCCESS", "data":{ "id":10 } }` (PATCH) |
+| 200 | `{ "status":200, "code":"MY_COURSE_DELETE_SUCCESS", "data":null }` (DELETE) |
+| 400 | `{ "status":400, "code":"INVALID_LETTER_GRADE", "data":null }` — 정의된 학점 값(`A+/A0/B+/B0/C+/C0/D+/D0/F`) 밖의 값 |
 
 ### 3.3 시간표형 조회
 | Request method | url | query | 설명 |
