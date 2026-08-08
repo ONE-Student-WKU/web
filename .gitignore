@@ -64,3 +64,6 @@ out/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Local MySQL data directory
+db/mysql-data/
