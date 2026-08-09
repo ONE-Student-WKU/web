@@ -1,0 +1,20 @@
+[
+  {
+    "email": "hong@wku.ac.kr",
+    "password": "password123",
+    "name": "홍길동",
+    "department_id": 1,
+    "admission_year": 2023,
+    "enrollment_type": "GENERAL",
+    "onboarding_completed_at": "2026-08-08 10:00:00"
+  },
+  {
+    "email": "kim@wku.ac.kr",
+    "password": "password123",
+    "name": "김철수",
+    "department_id": 1,
+    "admission_year": 2024,
+    "enrollment_type": "TRANSFER_ADMISSION",
+    "onboarding_completed_at": null
+  }
+]
