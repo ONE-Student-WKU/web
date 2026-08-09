@@ -44,24 +44,40 @@
 ### 1.1 회원가입
 | Request method | url | body | 설명 |
 |---|---|---|---|
-| POST | `/api/auth/signup` | `email, password, name` | 이메일 UNIQUE. 컴퓨터·소프트웨어공학과 1개 학과만 다루므로 학과 선택 UI 없음 |
+| POST | `/api/auth/signup` | `email, password, name` | 이메일 UNIQUE. 가입은 최소 정보만 받고, 학과/입학년도/편입여부는 가입 후 [1.3 온보딩](#13-온보딩)에서 별도로 받음 |
 
 | Response status | data |
 |---|---|
-| 201 | `{ "status":201, "code":"SIGNUP_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동" } }` |
+| 201 | `{ "status":201, "code":"SIGNUP_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동", "onboardingCompleted":false } }` |
 | 409 | `{ "status":409, "code":"EMAIL_ALREADY_EXISTS", "data":null }` |
 | 400 | `{ "status":400, "code":"REQUIRED_EMAIL", "data":null }` / `REQUIRED_PASSWORD` / `REQUIRED_NAME` |
 
 ### 1.2 로그인 / 로그아웃
 | Request method | url | body | 설명 |
 |---|---|---|---|
-| POST | `/api/auth/login` | `email, password` | 성공 시 세션 발급 |
+| POST | `/api/auth/login` | `email, password` | 성공 시 세션 발급. `onboardingCompleted:false`면 프론트가 온보딩 화면으로 보냄 |
 | POST | `/api/auth/logout` | - | 세션 종료 |
 
 | Response status | data |
 |---|---|
-| 200 | `{ "status":200, "code":"LOGIN_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동" } }` |
+| 200 | `{ "status":200, "code":"LOGIN_SUCCESS", "data":{ "id":1, "email":"hong@example.com", "name":"홍길동", "onboardingCompleted":true } }` |
 | 401 | `{ "status":401, "code":"INVALID_CREDENTIALS", "data":null }` |
+| 200 | `{ "status":200, "code":"LOGOUT_SUCCESS", "data":null }` |
+
+### 1.3 온보딩
+> 가입 직후 1회 진행하는 추가 정보 입력. 학과는 현재 1개(컴퓨터·소프트웨어공학과)뿐이지만, 학과가 늘어날 걸 대비해 고정 텍스트 대신 드롭다운 선택형으로 둠. 입학년도/편입 여부는 학번별로 이수규정이 갈리는 경우가 있어 [졸업요건 진단](#4-졸업요건-진단)에서 사용.
+
+| Request method | url | body | 설명 |
+|---|---|---|---|
+| GET | `/api/onboarding/departments` | - | 학과 선택 드롭다운용 목록 (현재 1건) |
+| POST | `/api/onboarding` | `departmentId, admissionYear, enrollmentType` | `enrollmentType`: `GENERAL`(일반재학생) / `TRANSFER_ADMISSION`(편입생) / `MAJOR_CHANGE`(전과생). `requireAuth` 필요 |
+
+| Response status | data |
+|---|---|
+| 200 | `{ "status":200, "code":"DEPARTMENTS_SUCCESS", "data":[ { "id":1, "name":"컴퓨터·소프트웨어공학과" } ] }` |
+| 200 | `{ "status":200, "code":"ONBOARDING_SUCCESS", "data":{ "departmentId":1, "admissionYear":2023, "enrollmentType":"GENERAL" } }` |
+| 400 | `REQUIRED_DEPARTMENT_ID` / `REQUIRED_ADMISSION_YEAR` / `REQUIRED_ENROLLMENT_TYPE` / `INVALID_ENROLLMENT_TYPE` |
+| 409 | `{ "status":409, "code":"ONBOARDING_ALREADY_COMPLETED", "data":null }` — 이미 온보딩 끝낸 계정이 재요청한 경우 (**확정 필요** — 수정 허용할지 논의 필요) |
 
 ---
 
@@ -74,7 +90,7 @@
 
 | Response status | data |
 |---|---|
-| 200 | `{ "status":200, "code":"ME_SUCCESS", "data":{ "id":1, "name":"홍길동", "department":"컴퓨터·소프트웨어공학과" } }` |
+| 200 | `{ "status":200, "code":"ME_SUCCESS", "data":{ "id":1, "name":"홍길동", "department":"컴퓨터·소프트웨어공학과", "onboardingCompleted":true, "admissionYear":2023, "enrollmentType":"GENERAL" } }` |
 
 ### 2.2 챗봇 대화
 | Request method | url | body | 설명 |
@@ -100,7 +116,7 @@
 |---|---|
 | 200 | `{ "status":200, "code":"CATALOG_SEARCH_SUCCESS", "data":[ { "courseId":"374124-01", "name":"빅데이터", "professor":"이상원", "credits":3, "schedule":[{"day":"월","period":1},{"day":"월","period":2}] } ] }` |
 
-> `(확인 필요)` 카탈로그의 요일/교시 데이터는 아직 미수집 상태입니다 — 데이터 수집 단계에서 51개 과목 전체에 대해 다시 캡처해야 합니다 (기존 `db/seed/courses.json`에는 없음).
+> ~~카탈로그의 요일/교시 데이터는 아직 미수집 상태~~ → `course_schedules` 테이블에 133건 시딩 완료되어 있어 `schedule` 필드는 이 테이블과 조인해서 채웁니다 (해결됨).
 
 ### 3.2 내 수강·성적 목록 조회 / 추가 / 수정 / 삭제
 | Request method | url | body | 설명 |
@@ -114,6 +130,13 @@
 |---|---|
 | 200 | `{ "status":200, "code":"MY_COURSES_SUCCESS", "data":[ { "id":10, "courseId":"374124-01", "name":"빅데이터", "professor":"이상원", "credits":3, "year":2026, "semester":2, "midterm":38.0, "final":40.0, "letterGrade":"A+" } ] }` |
 | 201 | `{ "status":201, "code":"MY_COURSE_ADD_SUCCESS", "data":{ "id":10 } }` |
+| 400 | `REQUIRED_COURSE_ID` / `REQUIRED_YEAR` / `REQUIRED_SEMESTER` (POST) |
+| 404 | `{ "status":404, "code":"COURSE_NOT_FOUND", "data":null }` — POST 시 카탈로그에 없는 `courseId` |
+| 409 | `{ "status":409, "code":"COURSE_ALREADY_ADDED", "data":null }` — 같은 학기 같은 과목 중복 추가 (POST) |
+| 404 | `{ "status":404, "code":"MY_COURSE_NOT_FOUND", "data":null }` — PATCH/DELETE 대상이 없거나 본인 소유가 아님 |
+| 200 | `{ "status":200, "code":"MY_COURSE_UPDATE_SUCCESS", "data":{ "id":10 } }` (PATCH) |
+| 200 | `{ "status":200, "code":"MY_COURSE_DELETE_SUCCESS", "data":null }` (DELETE) |
+| 400 | `{ "status":400, "code":"INVALID_LETTER_GRADE", "data":null }` — 정의된 학점 값(`A+/A0/B+/B0/C+/C0/D+/D0/F`) 밖의 값 |
 
 ### 3.3 시간표형 조회
 | Request method | url | query | 설명 |

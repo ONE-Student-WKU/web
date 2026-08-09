@@ -1,0 +1,41 @@
+[
+  {
+    "student_email": "hong@wku.ac.kr",
+    "course_id": "374124-01",
+    "year": 2026,
+    "semester": 2,
+    "midterm": 38.0,
+    "final": 40.0,
+    "attendance_score": 20.0,
+    "assignment": 5.0,
+    "etc": 0.0,
+    "gpa": 4.5,
+    "letter_grade": "A+"
+  },
+  {
+    "student_email": "hong@wku.ac.kr",
+    "course_id": "374031-01",
+    "year": 2026,
+    "semester": 2,
+    "midterm": 30.0,
+    "final": 32.0,
+    "attendance_score": 20.0,
+    "assignment": 10.0,
+    "etc": 0.0,
+    "gpa": 3.5,
+    "letter_grade": "B+"
+  },
+  {
+    "student_email": "hong@wku.ac.kr",
+    "course_id": "374029-01",
+    "year": 2026,
+    "semester": 2,
+    "midterm": null,
+    "final": null,
+    "attendance_score": null,
+    "assignment": null,
+    "etc": null,
+    "gpa": null,
+    "letter_grade": null
+  }
+]
