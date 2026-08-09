@@ -1,0 +1,173 @@
+[
+  { "course_id": "374058-01", "day": "월", "period": 3 },
+  { "course_id": "374058-01", "day": "월", "period": 4 },
+  { "course_id": "374058-01", "day": "화", "period": 2 },
+
+  { "course_id": "374082-01", "day": "월", "period": 3 },
+  { "course_id": "374082-01", "day": "수", "period": 2 },
+  { "course_id": "374082-01", "day": "수", "period": 3 },
+
+  { "course_id": "374128-01", "day": "화", "period": 5 },
+  { "course_id": "374128-01", "day": "화", "period": 6 },
+  { "course_id": "374128-01", "day": "목", "period": 6 },
+
+  { "course_id": "374129-01", "day": "화", "period": 3 },
+  { "course_id": "374129-01", "day": "화", "period": 4 },
+  { "course_id": "374129-01", "day": "목", "period": 2 },
+
+  { "course_id": "374130-01", "day": "화", "period": 7 },
+  { "course_id": "374130-01", "day": "화", "period": 8 },
+  { "course_id": "374130-01", "day": "목", "period": 3 },
+
+  { "course_id": "374123-08", "day": "금", "period": 3 },
+  { "course_id": "374123-08", "day": "금", "period": 4 },
+  { "course_id": "374123-09", "day": "금", "period": 3 },
+  { "course_id": "374123-09", "day": "금", "period": 4 },
+  { "course_id": "374123-10", "day": "금", "period": 3 },
+  { "course_id": "374123-10", "day": "금", "period": 4 },
+  { "course_id": "374123-11", "day": "금", "period": 3 },
+  { "course_id": "374123-11", "day": "금", "period": 4 },
+  { "course_id": "374123-12", "day": "금", "period": 3 },
+  { "course_id": "374123-12", "day": "금", "period": 4 },
+  { "course_id": "374123-13", "day": "금", "period": 3 },
+  { "course_id": "374123-13", "day": "금", "period": 4 },
+
+  { "course_id": "374124-01", "day": "월", "period": 1 },
+  { "course_id": "374124-01", "day": "월", "period": 2 },
+  { "course_id": "374124-01", "day": "화", "period": 1 },
+
+  { "course_id": "374124-02", "day": "월", "period": 3 },
+  { "course_id": "374124-02", "day": "월", "period": 4 },
+  { "course_id": "374124-02", "day": "화", "period": 2 },
+
+  { "course_id": "374124-03", "day": "월", "period": 7 },
+  { "course_id": "374124-03", "day": "월", "period": 8 },
+  { "course_id": "374124-03", "day": "수", "period": 1 },
+
+  { "course_id": "374033-03", "day": "화", "period": 3 },
+  { "course_id": "374033-03", "day": "목", "period": 3 },
+  { "course_id": "374033-03", "day": "목", "period": 4 },
+
+  { "course_id": "374044-01", "day": "화", "period": 1 },
+  { "course_id": "374044-01", "day": "화", "period": 2 },
+  { "course_id": "374044-01", "day": "수", "period": 7 },
+
+  { "course_id": "374044-02", "day": "수", "period": 8 },
+  { "course_id": "374044-02", "day": "목", "period": 1 },
+  { "course_id": "374044-02", "day": "목", "period": 2 },
+
+  { "course_id": "374070-01", "day": "수", "period": 1 },
+  { "course_id": "374070-01", "day": "수", "period": 2 },
+  { "course_id": "374070-01", "day": "금", "period": 1 },
+
+  { "course_id": "374070-02", "day": "목", "period": 1 },
+  { "course_id": "374070-02", "day": "목", "period": 2 },
+  { "course_id": "374070-02", "day": "금", "period": 2 },
+
+  { "course_id": "374123-01", "day": "금", "period": 3 },
+  { "course_id": "374123-01", "day": "금", "period": 4 },
+  { "course_id": "374123-02", "day": "금", "period": 3 },
+  { "course_id": "374123-02", "day": "금", "period": 4 },
+  { "course_id": "374123-03", "day": "금", "period": 3 },
+  { "course_id": "374123-03", "day": "금", "period": 4 },
+  { "course_id": "374123-04", "day": "금", "period": 3 },
+  { "course_id": "374123-04", "day": "금", "period": 4 },
+  { "course_id": "374123-05", "day": "금", "period": 3 },
+  { "course_id": "374123-05", "day": "금", "period": 4 },
+
+  { "course_id": "006128-01", "day": "목", "period": 7 },
+  { "course_id": "006128-01", "day": "목", "period": 8 },
+  { "course_id": "006128-01", "day": "금", "period": 5 },
+  { "course_id": "006128-01", "day": "금", "period": 6 },
+  { "course_id": "006128-01", "day": "금", "period": 7 },
+  { "course_id": "006128-01", "day": "금", "period": 8 },
+
+  { "course_id": "374029-01", "day": "월", "period": 5 },
+  { "course_id": "374029-01", "day": "월", "period": 6 },
+  { "course_id": "374029-01", "day": "화", "period": 9 },
+
+  { "course_id": "374029-02", "day": "월", "period": 9 },
+  { "course_id": "374029-02", "day": "화", "period": 5 },
+  { "course_id": "374029-02", "day": "화", "period": 6 },
+
+  { "course_id": "374029-03", "day": "월", "period": 4 },
+  { "course_id": "374029-03", "day": "월", "period": 5 },
+  { "course_id": "374029-03", "day": "월", "period": 6 },
+
+  { "course_id": "374031-01", "day": "월", "period": 1 },
+  { "course_id": "374031-01", "day": "화", "period": 3 },
+  { "course_id": "374031-01", "day": "화", "period": 4 },
+
+  { "course_id": "374031-02", "day": "월", "period": 2 },
+  { "course_id": "374031-02", "day": "수", "period": 2 },
+  { "course_id": "374031-02", "day": "수", "period": 3 },
+
+  { "course_id": "374031-03", "day": "화", "period": 5 },
+  { "course_id": "374031-03", "day": "화", "period": 6 },
+  { "course_id": "374031-03", "day": "목", "period": 5 },
+
+  { "course_id": "374033-01", "day": "월", "period": 3 },
+  { "course_id": "374033-01", "day": "화", "period": 7 },
+  { "course_id": "374033-01", "day": "화", "period": 8 },
+
+  { "course_id": "374033-02", "day": "월", "period": 7 },
+  { "course_id": "374033-02", "day": "수", "period": 7 },
+  { "course_id": "374033-02", "day": "수", "period": 8 },
+
+  { "course_id": "374121-01", "day": "목", "period": 6 },
+  { "course_id": "374121-02", "day": "목", "period": 7 },
+  { "course_id": "374121-03", "day": "목", "period": 8 },
+
+  { "course_id": "374131-01", "day": "월", "period": 1 },
+  { "course_id": "374131-01", "day": "월", "period": 2 },
+  { "course_id": "374131-01", "day": "수", "period": 1 },
+
+  { "course_id": "374131-02", "day": "목", "period": 1 },
+  { "course_id": "374131-02", "day": "목", "period": 2 },
+  { "course_id": "374131-02", "day": "금", "period": 3 },
+
+  { "course_id": "374131-03", "day": "목", "period": 5 },
+  { "course_id": "374131-03", "day": "금", "period": 1 },
+  { "course_id": "374131-03", "day": "금", "period": 2 },
+
+  { "course_id": "374144-01", "day": "화", "period": 5 },
+  { "course_id": "374144-01", "day": "화", "period": 6 },
+
+  { "course_id": "374144-02", "day": "화", "period": 7 },
+  { "course_id": "374144-02", "day": "화", "period": 8 },
+
+  { "course_id": "374144-03", "day": "목", "period": 5 },
+  { "course_id": "374144-03", "day": "목", "period": 6 },
+
+  { "course_id": "374014-01", "day": "목", "period": 7 },
+  { "course_id": "374014-01", "day": "목", "period": 8 },
+  { "course_id": "374014-01", "day": "목", "period": 9 },
+
+  { "course_id": "374014-02", "day": "월", "period": 7 },
+  { "course_id": "374014-02", "day": "월", "period": 8 },
+  { "course_id": "374014-02", "day": "월", "period": 9 },
+
+  { "course_id": "374015-01", "day": "월", "period": 3 },
+  { "course_id": "374015-01", "day": "월", "period": 4 },
+  { "course_id": "374015-01", "day": "화", "period": 2 },
+
+  { "course_id": "374015-02", "day": "수", "period": 7 },
+  { "course_id": "374015-02", "day": "수", "period": 8 },
+  { "course_id": "374015-02", "day": "금", "period": 4 },
+
+  { "course_id": "374015-03", "day": "수", "period": 9 },
+  { "course_id": "374015-03", "day": "금", "period": 2 },
+  { "course_id": "374015-03", "day": "금", "period": 3 },
+
+  { "course_id": "374068-01", "day": "월", "period": 5 },
+  { "course_id": "374068-01", "day": "월", "period": 6 },
+  { "course_id": "374068-01", "day": "수", "period": 2 },
+
+  { "course_id": "374068-02", "day": "화", "period": 3 },
+  { "course_id": "374068-02", "day": "화", "period": 4 },
+  { "course_id": "374068-02", "day": "수", "period": 3 },
+
+  { "course_id": "374068-03", "day": "수", "period": 4 },
+  { "course_id": "374068-03", "day": "목", "period": 3 },
+  { "course_id": "374068-03", "day": "목", "period": 4 }
+]
