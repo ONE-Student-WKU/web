@@ -5,7 +5,7 @@ const courseService = require('../services/courseService');
 
 /**
  * Routes for my registered courses (/api/my-courses)
- * 근거: docs/API-설계.md 3.2, 3.3, 3.4
+ * 근거: 위키 API-설계 3.2, 3.3, 3.4 - https://github.com/wku-ai-chat/web/wiki/API-설계
  */
 
 router.use(requireAuth);

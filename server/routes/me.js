@@ -5,7 +5,7 @@ const studentService = require('../services/studentService');
 
 /**
  * Routes for the current logged-in student (/api/me)
- * 근거: docs/API-설계.md 2.1
+ * 근거: 위키 API-설계 2.1 - https://github.com/wku-ai-chat/web/wiki/API-설계
  */
 
 // GET /api/me

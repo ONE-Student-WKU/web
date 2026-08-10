@@ -5,7 +5,7 @@ const studentService = require('../services/studentService');
 
 /**
  * Routes for Onboarding (/api/onboarding)
- * 근거: docs/API-설계.md 1.3
+ * 근거: 위키 API-설계 1.3 - https://github.com/wku-ai-chat/web/wiki/API-설계
  */
 
 const VALID_ENROLLMENT_TYPES = ['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'];
