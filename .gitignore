@@ -67,3 +67,7 @@ Thumbs.db
 
 # Local MySQL data directory
 db/mysql-data/
+db/mysql.log
+
+# Vercel deployment metadata
+.vercel
