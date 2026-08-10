@@ -15,10 +15,17 @@ const coursesRoutes = require('./routes/courses');
 const myCoursesRoutes = require('./routes/myCourses');
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 3000;
+// Render 등 PaaS는 컨테이너에 PORT 환경변수를 주입하고 그 포트로 리슨하길 기대함.
+// 로컬 개발(.env의 SERVER_PORT)과의 하위호환을 위해 PORT를 우선하고 SERVER_PORT로 폴백함.
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
+
+// Render/Vercel 등 리버스 프록시 뒤에서 구동될 때 req.protocol과 secure 쿠키 판정이
+// 정확히 동작하도록 프록시 신뢰 설정을 켠다. 로컬 직접 구동 시에는 영향 없음.
+app.set('trust proxy', 1);
 
 // Middlewares
-app.use(cors());
+// CLIENT_ORIGIN 미설정 시(로컬 개발 등) 기존과 동일하게 모든 origin을 허용함.
+app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -27,7 +34,8 @@ app.use(
     secret: process.env.SESSION_SECRET || 'wku-default-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set to true if using https
+    // 배포 환경(HTTPS)에서만 secure 쿠키를 강제하고, 로컬 http 개발 환경은 기존과 동일하게 유지.
+    cookie: { secure: process.env.NODE_ENV === 'production' },
   })
 );
 
@@ -42,6 +50,11 @@ app.use('/api/chat', chatRoutes);
 // Base Route
 app.get('/', (req, res) => {
   res.send('Wonkwang University AI Chat Server is Running');
+});
+
+// Health Check (배포 플랫폼의 헬스체크/자동 재시작 판단용, DB 등 외부 의존성 없이 최소 응답만 반환)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // Error handling middleware
