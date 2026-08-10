@@ -1,11 +1,18 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-require('dotenv').config();
+
+// npm workspace로 실행하면 cwd가 server/로 바뀌어 기본 dotenv 탐색(cwd 기준)이
+// 리포지토리 루트의 .env를 못 찾는다. 항상 루트 .env를 절대경로로 지정해서 로드.
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const mockInfoRoutes = require('./routes/mockInfo');
+const onboardingRoutes = require('./routes/onboarding');
+const meRoutes = require('./routes/me');
+const coursesRoutes = require('./routes/courses');
+const myCoursesRoutes = require('./routes/myCourses');
 
 const app = express();
 const PORT = process.env.SERVER_PORT || 3000;
@@ -26,8 +33,11 @@ app.use(
 
 // Routes mounting
 app.use('/api/auth', authRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api', meRoutes);
+app.use('/api/courses', coursesRoutes);
+app.use('/api/my-courses', myCoursesRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/mock-info', mockInfoRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
@@ -37,7 +47,7 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: null, data: null });
 });
 
 // Server Initialization

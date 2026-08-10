@@ -1,5 +1,9 @@
+const path = require('path');
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+
+// npm workspace로 실행하면 cwd가 server/로 바뀌어 기본 dotenv 탐색(cwd 기준)이
+// 리포지토리 루트의 .env를 못 찾는다. 항상 루트 .env를 절대경로로 지정해서 로드.
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 /**
  * server/db.js
@@ -15,6 +19,9 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+
+  // [Cloud] 로컬 개발 접속 거부 방지를 위해 Vercel 배포 환경 전용 SSL 설정 및 CA 인증서 적용
+  ssl: process.env.DB_SSL === 'true' ? { ca: process.env.DB_CA, rejectUnauthorized: true } : undefined
 });
 
 module.exports = pool;
