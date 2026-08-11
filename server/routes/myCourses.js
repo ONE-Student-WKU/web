@@ -64,6 +64,9 @@ router.post('/', async (req, res, next) => {
       if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
       if (!credits) return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
       if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
+      if (!courseService.VALID_CATEGORIES.includes(category)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+      }
     }
 
     const id = await courseService.addMyCourse(req.session.userId, { courseId, name, credits, category, year, semester });

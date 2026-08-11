@@ -17,6 +17,10 @@ const GRADE_POINT_MAP = {
   F: 0.0,
 };
 
+// courses.category / student_courses.category ENUM과 동일 — DB ENUM 에러를 그대로
+// 흘려보내지 않고 서버에서 먼저 검증하기 위함 (letterGrade와 동일한 패턴).
+const VALID_CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
+
 function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
@@ -231,6 +235,7 @@ async function getSummary(studentId) {
 
 module.exports = {
   GRADE_POINT_MAP,
+  VALID_CATEGORIES,
   searchCatalog,
   findCourseById,
   listMyCourses,
