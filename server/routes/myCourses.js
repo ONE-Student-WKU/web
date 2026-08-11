@@ -46,20 +46,30 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/my-courses
+// 전공: { courseId, year, semester } - 카탈로그에서 검색·선택
+// 교양/카탈로그에 없는 과목: { name, credits, category, year, semester } - 직접 입력
 router.post('/', async (req, res, next) => {
   try {
-    const { courseId, year, semester } = req.body;
+    const { courseId, name, credits, category, year, semester } = req.body;
 
-    if (!courseId) return res.status(400).json({ status: 400, code: 'REQUIRED_COURSE_ID', message: null, data: null });
     if (!year) return res.status(400).json({ status: 400, code: 'REQUIRED_YEAR', message: null, data: null });
     if (!semester) return res.status(400).json({ status: 400, code: 'REQUIRED_SEMESTER', message: null, data: null });
 
-    const course = await courseService.findCourseById(courseId);
-    if (!course) {
-      return res.status(404).json({ status: 404, code: 'COURSE_NOT_FOUND', message: null, data: null });
+    if (courseId) {
+      const course = await courseService.findCourseById(courseId);
+      if (!course) {
+        return res.status(404).json({ status: 404, code: 'COURSE_NOT_FOUND', message: null, data: null });
+      }
+    } else {
+      if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
+      if (!credits) return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
+      if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
+      if (!courseService.VALID_CATEGORIES.includes(category)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+      }
     }
 
-    const id = await courseService.addMyCourse(req.session.userId, { courseId, year, semester });
+    const id = await courseService.addMyCourse(req.session.userId, { courseId, name, credits, category, year, semester });
     return res.status(201).json({ status: 201, code: 'MY_COURSE_ADD_SUCCESS', message: null, data: { id } });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
