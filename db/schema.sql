@@ -51,20 +51,30 @@ CREATE TABLE IF NOT EXISTS students (
 );
 
 -- ---------------------------------------------------------------------------
--- 3. 과목 카탈로그 (분반 단위, 현재 51건)
+-- 3. 전공 과목 카탈로그 (분반 단위)
+-- 교양은 카탈로그를 두지 않고 student_courses에 자유 입력한다 (아래 4번 참고).
+-- 학수번호는 저장하지 않음 — 단순 구분 코드일 뿐이라 앱 내부에서는 자동증가 id로 충분하고,
+-- 학수번호를 모르는 과목(예: 구학과 "기업연계프로젝트2")도 등록 가능해야 하기 때문.
+-- 분반은 같은 과목이 다른 시간대에 개설되는 경우를 구분하기 위해 유지.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS courses (
-  id         VARCHAR(20) PRIMARY KEY,  -- "374124-01" (학수번호-분반)
+  id         INT AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(100) NOT NULL,
+  section    VARCHAR(10),  -- 분반 (예: "01", "02"), 없으면 NULL
   professor  VARCHAR(50),
   credits    DECIMAL(2,1) NOT NULL,
-  category   VARCHAR(20)  -- 기전/선전/교필/교선 등
+  category   VARCHAR(20),  -- 기전/선전 등 (전공 이수구분만 다룸)
+
+  -- id가 자동증가라 재시딩 시 INSERT IGNORE만으로는 중복을 못 걸러서, (name, section)을
+  -- 자연키로 잡아 idempotent하게 만든다. 학수번호 없이도 과목을 구분할 수 있어야 하므로
+  -- section이 NULL인 경우(분반 정보 없음)도 있을 수 있음 — 이 경우 name만으로 구분됨에 유의.
+  CONSTRAINT uq_courses_name_section UNIQUE (name, section)
 );
 
 -- 과목별 요일/교시. 주 2회 이상 수업이면 행이 여러 개.
 CREATE TABLE IF NOT EXISTS course_schedules (
   id         INT AUTO_INCREMENT PRIMARY KEY,
-  course_id  VARCHAR(20) NOT NULL,
+  course_id  INT NOT NULL,
   day        VARCHAR(10) NOT NULL,  -- 월/화/수/목/금
   period     INT NOT NULL,
 
@@ -74,11 +84,23 @@ CREATE TABLE IF NOT EXISTS course_schedules (
 
 -- ---------------------------------------------------------------------------
 -- 4. 내 수강·성적 (통합) — v3.5의 student_courses(등록 여부) + grades(점수)를 병합
+--
+-- 전공: 카탈로그(courses)에서 검색·선택 → course_id가 채워지고, name/credits/category는
+--       선택 시점에 카탈로그 값을 그대로 복사해 저장(스냅샷). 카탈로그가 나중에 바뀌어도
+--       이미 등록한 학생의 이수 기록은 안 변함.
+-- 교양: 카탈로그 없이 자유 입력 → course_id는 NULL, name/credits/category를 학생이 직접 입력.
+--
+-- 즉 course_id는 "카탈로그에서 골랐다는 참고용 연결고리"일 뿐, 실제 이수 기록에 필요한
+-- 값(name/credits/category)은 항상 이 테이블 자체에 저장되어 course_id 유무와 무관하게
+-- 조회/학점계산이 가능하다.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS student_courses (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   student_id        INT NOT NULL,
-  course_id         VARCHAR(20) NOT NULL,
+  course_id         INT,              -- 전공(카탈로그 선택)만 채워짐, 교양 자유입력이면 NULL
+  name              VARCHAR(100) NOT NULL,
+  credits           DECIMAL(2,1) NOT NULL,
+  category          VARCHAR(20) NOT NULL,  -- 전공필수/전공선택/교양필수/교양선택/일반선택 등
   year              INT NOT NULL,
   semester          TINYINT NOT NULL,
 
@@ -91,8 +113,7 @@ CREATE TABLE IF NOT EXISTS student_courses (
   letter_grade      VARCHAR(5),
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_id) REFERENCES courses(id),
-  CONSTRAINT uq_student_courses UNIQUE (student_id, course_id, year, semester)  -- 같은 학기 같은 과목 중복 등록 방지
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------
