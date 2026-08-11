@@ -1,15 +1,13 @@
 name: Vercel CI/CD Pipeline
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
     branches: [main, develop]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
-# 동일 브랜치/PR에 연속 푸시 발생 시 이전 워크플로우 실행을 자동 취소하여 동시 배포 겹침 방지
+# 동일 브랜치를 대상으로 하는 pull_request 실행 간 중복 발생 시 이전 실행 자동 취소
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 # PR 댓글 작성을 위한 권한 설정
@@ -22,16 +20,26 @@ jobs:
     name: Build & Deploy to Vercel
     runs-on: ubuntu-latest
 
+    # Vercel 배포 행(hang) 발생 시 무한 대기 방지를 위한 job 전체 제한 시간
+    timeout-minutes: 15
+
+    # 병합 없이 닫힌 PR은 배포 대상에서 제외
+    if: github.event.action != 'closed' || github.event.pull_request.merged == true
+
     # Vercel CLI용 전역 환경 변수 설정
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # main으로 병합 완료된 실행만 production 배포 대상으로 판별
+      IS_PRODUCTION_DEPLOY: ${{ github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }}
 
     steps:
-      # 1. 코드 체크아웃
+      # 1. 코드 체크아웃 (PR 병합 완료 시 base 브랜치의 최종 커밋 체크아웃, squash/rebase 병합 시 실제 배포 대상과 달라지는 문제 방지)
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ (github.event.action == 'closed' && github.event.pull_request.merged == true) && github.event.pull_request.base.ref || '' }}
 
       # 2. Vercel CLI 설치
       - name: Install Vercel CLI
@@ -39,26 +47,26 @@ jobs:
 
       # 3. Vercel 환경 설정 정보 불러오기 (디버그 플래그 제거하여 빌드 로그 정리)
       - name: Pull Vercel Environment Info
-        run: vercel pull --yes --environment=${{ (github.ref_name == 'main' && github.event_name == 'push') && 'production' || 'preview' }}
+        run: vercel pull --yes --environment=${{ env.IS_PRODUCTION_DEPLOY == 'true' && 'production' || 'preview' }}
 
       # 4. 프로젝트 pre-build 실행 (전역 env의 VERCEL_TOKEN을 사용하므로 중복 token 옵션 제거)
       - name: Build Project Artifacts
-        run: vercel build ${{ (github.ref_name == 'main' && github.event_name == 'push') && '--prod' || '' }}
+        run: vercel build ${{ env.IS_PRODUCTION_DEPLOY == 'true' && '--prod' || '' }}
 
       # 5. Prebuilt 아티팩트를 Vercel로 배포 (전역 env의 VERCEL_TOKEN을 사용하므로 중복 token 옵션 제거)
       - name: Deploy to Vercel
         id: deploy
         run: |
-          if [ "${{ github.ref_name }}" = "main" ] && [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ env.IS_PRODUCTION_DEPLOY }}" = "true" ]; then
             URL=$(vercel deploy --prebuilt --prod)
           else
             URL=$(vercel deploy --prebuilt)
           fi
           echo "DEPLOY_URL=$URL" >> $GITHUB_ENV
 
-      # 6. PR 요청 시 Preview 배포 URL 작성 (기존 댓글을 찾아 수정 갱신하여 중복 댓글 누적 방지)
+      # 6. PR 진행 중에만 Preview 배포 URL 작성 (기존 댓글을 찾아 수정 갱신하여 중복 댓글 누적 방지)
       - name: Comment Preview URL on PR
-        if: github.event_name == 'pull_request'
+        if: github.event.action != 'closed'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: vercel-preview
