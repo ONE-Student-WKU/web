@@ -29,6 +29,8 @@
 --     식 OR 조건을 표현하기 위함 — required_credits만으로는 표현이 안 됨)
 --   - courses.category / student_courses.category를 ENUM으로 제한 (학과·트랙과 같은 이유:
 --     통제된 값이라 자유입력이면 오타 위험, 과목명은 자유입력 유지)
+--   - regulation_documents.source_type / regulation_chunks.embedding (RAG 하이브리드 소스
+--     전략 및 임베딩 저장 방식 확정 — 자세한 이유는 7번 섹션 주석 참고)
 
 CREATE DATABASE IF NOT EXISTS wku_ai_chat;
 USE wku_ai_chat;
@@ -198,11 +200,28 @@ CREATE TABLE IF NOT EXISTS curriculum_required_courses (
 
 -- ---------------------------------------------------------------------------
 -- 7. 학칙·규정 문서 (AI 챗봇 RAG 근거)
+--
+-- 하이브리드 소스 전략: db/regulations/*.md(주제별 정리 문서, 학생 질문 형태에 가까움)를
+-- 주 소스로, db/regulations/_source/*.txt(학칙·시행규칙 원문)를 보조 소스로 함께
+-- 임베딩한다. 정리 문서만 쓰면 우리가 다루지 않은 주제는 원문에 답이 있어도 챗봇이
+-- 불필요하게 "모른다"고 답하게 되고, 원문만 쓰면 조항 간 상호참조가 많아 청크 하나만
+-- 봐서는 맥락이 끊기는 경우가 많아서 둘을 같이 둔다.
+--
+-- source_type으로 두 소스를 구분한다 (정리 문서가 질문 형태에 더 가까워 검색 시 우선
+-- 매칭될 가능성이 높고, 원문은 커버리지 안전망 역할).
+--
+-- 청크 분할 기준: 정리 문서는 "###" 소제목 단위, 원문은 "제N조(...)" 패턴 기준 조 단위로
+-- 코드에서 결정론적으로 분할한다(LLM이 매번 판단하지 않음).
+--
+-- 임베딩 저장: 지금 규모(수백 개 청크)에서는 외부 벡터 DB가 오버킬이라, 벡터를
+-- regulation_chunks.embedding(JSON)에 그대로 저장하고 검색 시 서버(Node.js)에서
+-- 코사인 유사도를 직접 계산한다. 청크가 수만 개 이상으로 커지면 재검토 필요.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS regulation_documents (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   title           VARCHAR(255) NOT NULL,
   category        VARCHAR(30),  -- 학칙 / 이수규정 등
+  source_type     ENUM('CURATED', 'VERBATIM') NOT NULL,  -- 정리 문서 / 원문
   source_url      VARCHAR(500),
   effective_date  DATE
 );
@@ -212,6 +231,7 @@ CREATE TABLE IF NOT EXISTS regulation_chunks (
   document_id   INT NOT NULL,
   chunk_index   INT NOT NULL,
   content       TEXT NOT NULL,
+  embedding     JSON,  -- 임베딩 벡터. 서버에서 코사인 유사도 계산용
 
   FOREIGN KEY (document_id) REFERENCES regulation_documents(id) ON DELETE CASCADE
 );
