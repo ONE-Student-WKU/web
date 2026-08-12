@@ -10,6 +10,7 @@ const courses = require('../../db/seed/courses.json');
 const courseSchedules = require('../../db/seed/course_schedules.json');
 const students = require('../../db/seed/students.json');
 const studentCourses = require('../../db/seed/student_courses.json');
+const curriculumRequirements = require('../../db/seed/curriculum_requirements.json');
 
 const BCRYPT_ROUNDS = 10;
 
@@ -125,6 +126,55 @@ async function seedStudentCourses(idMap) {
   console.log(`student_courses: ${studentCourses.length}건 처리`);
 }
 
+// curriculum_requirements/curriculum_required_courses는 학생이 API로 건드릴 일이 없는 참조 데이터라서,
+// (name, section)처럼 자연키를 잡아 INSERT IGNORE하는 대신 시딩 대상 학과 것만 지우고 다시 넣는
+// 방식으로 idempotent하게 만든다. min_admission_year/enrollment_type처럼 NULL 허용 컬럼이 섞여 있어
+// UNIQUE 제약을 걸어도 MySQL은 NULL끼리 같은 값으로 안 봐서 INSERT IGNORE로는 중복을 못 거른다.
+async function seedCurriculumRequirements() {
+  const departmentNames = [...new Set(curriculumRequirements.map((r) => r.departmentName))];
+  const deptIdByName = new Map();
+
+  for (const name of departmentNames) {
+    const [rows] = await pool.query('SELECT id FROM departments WHERE name = ?', [name]);
+    if (rows.length === 0) {
+      console.warn(`[SKIP] curriculum_requirements: 학과를 찾을 수 없음 (${name})`);
+      continue;
+    }
+    deptIdByName.set(name, rows[0].id);
+    // curriculum_required_courses는 FK ON DELETE CASCADE라 같이 정리됨
+    await pool.query('DELETE FROM curriculum_requirements WHERE department_id = ?', [rows[0].id]);
+  }
+
+  for (const req of curriculumRequirements) {
+    const departmentId = deptIdByName.get(req.departmentName);
+    if (!departmentId) continue; // 위에서 이미 경고 출력함
+
+    const [result] = await pool.query(
+      `INSERT INTO curriculum_requirements
+        (department_id, category, required_credits, description, min_admission_year, max_admission_year, enrollment_type, min_course_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        departmentId,
+        req.category,
+        req.requiredCredits,
+        req.description ?? null,
+        req.minAdmissionYear ?? null,
+        req.maxAdmissionYear ?? null,
+        req.enrollmentType ?? null,
+        req.minCourseCount ?? null,
+      ]
+    );
+
+    for (const courseName of req.requiredCourses || []) {
+      await pool.query(
+        'INSERT INTO curriculum_required_courses (requirement_id, course_name) VALUES (?, ?)',
+        [result.insertId, courseName]
+      );
+    }
+  }
+  console.log(`curriculum_requirements: ${curriculumRequirements.length}건 처리`);
+}
+
 async function run() {
   try {
     // FK 의존 순서: courses → course_schedules, students → student_courses
@@ -132,6 +182,7 @@ async function run() {
     await seedCourseSchedules(idMap);
     await seedStudents();
     await seedStudentCourses(idMap);
+    await seedCurriculumRequirements();
     console.log('시딩 완료');
   } catch (err) {
     console.error('시딩 실패:', err);
