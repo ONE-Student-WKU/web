@@ -17,6 +17,9 @@
 --   - students.track_id (공학3계열 학생만 해당, 2학년 진급 시 세부전공 선택)
 --   - students.major_change_grade (전과생만 해당 — 1·2학년 전과는 전공 전액 부담, 3·4학년
 --     전과만 최소전공 48학점으로 완화되므로 몇 학년에 전과했는지 알아야 함)
+--   - students.major_change_year / major_change_semester (전과생만 해당 — 교양 이수기준은
+--     학년이 아니라 "전과 시점"(2022학년도 2학기 기준 이전/이후)으로 갈리므로
+--     major_change_grade만으로는 판별 불가. 웹정보서비스 실사례로 확인됨, 2026-08-12)
 --   - students.second_department_id (복수전공 대상 학과. 복수전공+부전공 동시 케이스는
 --     스코프 제외하고 컬럼 하나로 단순화하기로 함)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
@@ -81,6 +84,9 @@ CREATE TABLE IF NOT EXISTS students (
   enrollment_type           ENUM('GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'),  -- 일반재학생 / 편입생 / 전과생
   major_change_grade        TINYINT,  -- 전과생만 해당(몇 학년에 전과했는지, 1~4). 1·2학년 전과는 전공 전액,
                                        -- 3·4학년 전과만 최소전공 48학점으로 완화되므로 필요. 그 외 NULL
+  major_change_year         INT,      -- 전과생만 해당(전과한 연도). 교양 이수기준이 전과 "시점"(2022학년도
+                                       -- 2학기 기준 이전/이후)으로 갈리므로 학년만으론 판별 불가. 그 외 NULL
+  major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   onboarding_completed_at   TIMESTAMP NULL,
@@ -272,7 +278,7 @@ INSERT INTO departments (name) VALUES ('공학3계열')
 
 INSERT INTO tracks (department_id, name)
   SELECT id, '컴퓨터·소프트웨어공학전공' FROM departments WHERE name = '공학3계열'
-  ON DUPLICATE KEY UPDATE name = name;
+  ON DUPLICATE KEY UPDATE name = VALUES(name);
 INSERT INTO tracks (department_id, name)
   SELECT id, '게임콘텐츠학전공' FROM departments WHERE name = '공학3계열'
-  ON DUPLICATE KEY UPDATE name = name;
+  ON DUPLICATE KEY UPDATE name = VALUES(name);
