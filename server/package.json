@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "seed:regulations": "node scripts/seedRegulations.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

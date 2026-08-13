@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Login from './pages/Login.jsx';
 import Chat from './pages/Chat.jsx';
+import { logout } from './api/chatApi.js';
 
 /**
  * Main App Component
@@ -9,10 +10,14 @@ import Chat from './pages/Chat.jsx';
 function App() {
   const [user, setUser] = useState(null);
 
+  const handleLogout = () => {
+    logout().finally(() => setUser(null));
+  };
+
   return (
     <div className="app-container">
       {user ? (
-        <Chat user={user} onLogout={() => setUser(null)} />
+        <Chat user={user} onLogout={handleLogout} />
       ) : (
         <Login onLoginSuccess={(userData) => setUser(userData)} />
       )}
