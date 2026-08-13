@@ -10,24 +10,48 @@ const courses = require('../../db/seed/courses.json');
 const courseSchedules = require('../../db/seed/course_schedules.json');
 const students = require('../../db/seed/students.json');
 const studentCourses = require('../../db/seed/student_courses.json');
+const curriculumRequirements = require('../../db/seed/curriculum_requirements.json');
 
 const BCRYPT_ROUNDS = 10;
 
-async function seedCourses() {
-  for (const c of courses) {
-    await pool.query(
-      'INSERT IGNORE INTO courses (id, name, professor, credits, category) VALUES (?, ?, ?, ?, ?)',
-      [c.id, c.name, c.professor ?? null, c.credits, c.category ?? null]
-    );
-  }
-  console.log(`courses: ${courses.length}건 처리`);
+// courses.json의 "id"는 학수번호-분반 형태의 옛 표기("374058-01")를 시딩 파일들끼리
+// 서로 연결하는 용도로만 쓰고, DB에는 저장하지 않는다(courses.id는 이제 자동증가).
+// 리턴하는 Map은 옛 id 문자열 -> 실제 DB id(int)를 담아 course_schedules/student_courses
+// 시딩에 재사용한다.
+function splitOldId(oldId) {
+  const idx = oldId.lastIndexOf('-');
+  return idx === -1 ? { section: null } : { section: oldId.slice(idx + 1) };
 }
 
-async function seedCourseSchedules() {
+async function seedCourses() {
+  const idMap = new Map();
+
+  for (const c of courses) {
+    const { section } = splitOldId(c.id);
+    await pool.query(
+      'INSERT IGNORE INTO courses (name, section, professor, credits, category) VALUES (?, ?, ?, ?, ?)',
+      [c.name, section, c.professor ?? null, c.credits, c.category ?? null]
+    );
+    const [rows] = await pool.query(
+      'SELECT id FROM courses WHERE name = ? AND section <=> ?',
+      [c.name, section]
+    );
+    idMap.set(c.id, rows[0].id);
+  }
+  console.log(`courses: ${courses.length}건 처리`);
+  return idMap;
+}
+
+async function seedCourseSchedules(idMap) {
   for (const s of courseSchedules) {
+    const courseId = idMap.get(s.course_id);
+    if (!courseId) {
+      console.warn(`[SKIP] course_schedules: 과목을 찾을 수 없음 (${s.course_id})`);
+      continue;
+    }
     await pool.query(
       'INSERT IGNORE INTO course_schedules (course_id, day, period) VALUES (?, ?, ?)',
-      [s.course_id, s.day, s.period]
+      [courseId, s.day, s.period]
     );
   }
   console.log(`course_schedules: ${courseSchedules.length}건 처리`);
@@ -54,7 +78,13 @@ async function seedStudents() {
   console.log(`students: ${students.length}건 처리`);
 }
 
-async function seedStudentCourses() {
+async function seedStudentCourses(idMap) {
+  // 시드 데이터의 student_courses는 전부 카탈로그 과목(course_id)을 참조하는 케이스만
+  // 있음 — name/credits/category는 courses.json에서 그대로 복사해 넣는다(런타임의
+  // addMyCourse와 동일한 스냅샷 방식). 교양 자유입력 시드가 필요해지면 studentCourses
+  // 항목에 course_id 대신 name/credits/category를 직접 넣는 케이스를 추가하면 됨.
+  const courseInfoByOldId = new Map(courses.map((c) => [c.id, c]));
+
   for (const sc of studentCourses) {
     const [rows] = await pool.query('SELECT id FROM students WHERE email = ?', [sc.student_email]);
     if (rows.length === 0) {
@@ -63,13 +93,24 @@ async function seedStudentCourses() {
     }
     const studentId = rows[0].id;
 
+    const courseId = idMap.get(sc.course_id);
+    const courseInfo = courseInfoByOldId.get(sc.course_id);
+    if (!courseId || !courseInfo) {
+      console.warn(`[SKIP] student_courses: 과목을 찾을 수 없음 (${sc.course_id})`);
+      continue;
+    }
+
     await pool.query(
       `INSERT IGNORE INTO student_courses
-        (student_id, course_id, year, semester, midterm, final, attendance_score, assignment, etc, gpa, letter_grade)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (student_id, course_id, name, credits, category, year, semester,
+         midterm, final, attendance_score, assignment, etc, gpa, letter_grade)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         studentId,
-        sc.course_id,
+        courseId,
+        courseInfo.name,
+        courseInfo.credits,
+        courseInfo.category ?? null,
         sc.year,
         sc.semester,
         sc.midterm ?? null,
@@ -85,13 +126,63 @@ async function seedStudentCourses() {
   console.log(`student_courses: ${studentCourses.length}건 처리`);
 }
 
+// curriculum_requirements/curriculum_required_courses는 학생이 API로 건드릴 일이 없는 참조 데이터라서,
+// (name, section)처럼 자연키를 잡아 INSERT IGNORE하는 대신 시딩 대상 학과 것만 지우고 다시 넣는
+// 방식으로 idempotent하게 만든다. min_admission_year/enrollment_type처럼 NULL 허용 컬럼이 섞여 있어
+// UNIQUE 제약을 걸어도 MySQL은 NULL끼리 같은 값으로 안 봐서 INSERT IGNORE로는 중복을 못 거른다.
+async function seedCurriculumRequirements() {
+  const departmentNames = [...new Set(curriculumRequirements.map((r) => r.departmentName))];
+  const deptIdByName = new Map();
+
+  for (const name of departmentNames) {
+    const [rows] = await pool.query('SELECT id FROM departments WHERE name = ?', [name]);
+    if (rows.length === 0) {
+      console.warn(`[SKIP] curriculum_requirements: 학과를 찾을 수 없음 (${name})`);
+      continue;
+    }
+    deptIdByName.set(name, rows[0].id);
+    // curriculum_required_courses는 FK ON DELETE CASCADE라 같이 정리됨
+    await pool.query('DELETE FROM curriculum_requirements WHERE department_id = ?', [rows[0].id]);
+  }
+
+  for (const req of curriculumRequirements) {
+    const departmentId = deptIdByName.get(req.departmentName);
+    if (!departmentId) continue; // 위에서 이미 경고 출력함
+
+    const [result] = await pool.query(
+      `INSERT INTO curriculum_requirements
+        (department_id, category, required_credits, description, min_admission_year, max_admission_year, enrollment_type, min_course_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        departmentId,
+        req.category,
+        req.requiredCredits,
+        req.description ?? null,
+        req.minAdmissionYear ?? null,
+        req.maxAdmissionYear ?? null,
+        req.enrollmentType ?? null,
+        req.minCourseCount ?? null,
+      ]
+    );
+
+    for (const courseName of req.requiredCourses || []) {
+      await pool.query(
+        'INSERT INTO curriculum_required_courses (requirement_id, course_name) VALUES (?, ?)',
+        [result.insertId, courseName]
+      );
+    }
+  }
+  console.log(`curriculum_requirements: ${curriculumRequirements.length}건 처리`);
+}
+
 async function run() {
   try {
     // FK 의존 순서: courses → course_schedules, students → student_courses
-    await seedCourses();
-    await seedCourseSchedules();
+    const idMap = await seedCourses();
+    await seedCourseSchedules(idMap);
     await seedStudents();
-    await seedStudentCourses();
+    await seedStudentCourses(idMap);
+    await seedCurriculumRequirements();
     console.log('시딩 완료');
   } catch (err) {
     console.error('시딩 실패:', err);

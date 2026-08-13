@@ -1,0 +1,222 @@
+[
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (일반 재학생, 2017~2025학번, 기본전공+선택전공 계 75학점)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 — 기본전공(19)과 합쳐 전공계 75학점 충족 (2017~2025학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (자연·공학·예체능계열, 학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일하게 전액 이수해야 하나 현재 스키마에는 major_change_grade 조건을 걸 컬럼이 없음 — graduation-check 구현 시 major_change_grade>=3일 때만 이 행을 적용하도록 별도 처리 필요",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2021,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2. 2017~2018학번과 2019~2021학번 표가 별개지만 수치 동일하여 통합 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2021,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "영역구분없이 18학점, 2017~2021학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2022,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2, 2022~2024학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2022,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "영역구분없이 34학점, 2022~2024학번. 22학번 실제 이수현황(웹정보서비스)으로 교차검증됨",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2, 2025학번 단독 (2022~2024학번과 표가 분리되어 있고 총량도 다름)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16: 생명존중교육4+AI와디지털3+논리와표현3+글로벌의사소통3+과학과기술3)+교양선택(16)=32, 2025학번 단독. 영역별 세분화는 courses.json이 교양필수/교양선택 2단계로만 태깅하는 것과 일관되게 총량으로만 반영(2026-08-12 스코프 결정)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": ["졸업(시험.작품)논문"]
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)/종합설계 중 1과목 필수 이수 (창의공과대학 특칙, 졸업인증제 2020학번부터 적용)",
+    "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)"]
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형(이수유형②) 기준 기초12+심화15+응용9=36, 필수전공 과목 포함. 이수유형 ①복수학위형/③전공융합형은 스코프 제외라 전공심화형만 지원",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 기준 전공계 72학점 중 기초/심화/응용(36) 이외 나머지",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "교양필수",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념/대학생활/전공탐색과진로(9) + 소양교육(7) + 기초교육(9) = 25",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "교양선택",
+    "requiredCredits": 12,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "리버럴아츠교육, 4개 영역 중 3개 영역 이상에서 12학점",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (자연·공학·예체능계열, 학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). major_change_grade>=3 조건은 스키마상 별도 처리 필요 (컴퓨터·소프트웨어공학과 행과 동일한 제약)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기, 신설 커리큘럼 원문 검증됨)",
+    "requiredCourses": ["졸업(시험·작품)논문"]
+  }
+]
