@@ -6,6 +6,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 
+const departments = require('../../db/seed/departments.json');
 const courses = require('../../db/seed/courses.json');
 const courseSchedules = require('../../db/seed/course_schedules.json');
 const students = require('../../db/seed/students.json');
@@ -21,6 +22,21 @@ const BCRYPT_ROUNDS = 10;
 function splitOldId(oldId) {
   const idx = oldId.lastIndexOf('-');
   return idx === -1 ? { section: null } : { section: oldId.slice(idx + 1) };
+}
+
+// departments/tracks는 curriculum_requirements/curriculum_courses의 FK 전제조건이라
+// 그 둘보다 먼저 시딩한다. name이 자연키라 INSERT IGNORE로 충분히 idempotent함.
+async function seedDepartments() {
+  for (const dept of departments) {
+    await pool.query('INSERT IGNORE INTO departments (name) VALUES (?)', [dept.name]);
+    const [rows] = await pool.query('SELECT id FROM departments WHERE name = ?', [dept.name]);
+    const departmentId = rows[0].id;
+
+    for (const trackName of dept.tracks || []) {
+      await pool.query('INSERT IGNORE INTO tracks (department_id, name) VALUES (?, ?)', [departmentId, trackName]);
+    }
+  }
+  console.log(`departments: ${departments.length}건 처리`);
 }
 
 async function seedCourses() {
@@ -177,7 +193,8 @@ async function seedCurriculumRequirements() {
 
 async function run() {
   try {
-    // FK 의존 순서: courses → course_schedules, students → student_courses
+    // FK 의존 순서: departments/tracks → students/curriculum_requirements, courses → course_schedules
+    await seedDepartments();
     const idMap = await seedCourses();
     await seedCourseSchedules(idMap);
     await seedStudents();

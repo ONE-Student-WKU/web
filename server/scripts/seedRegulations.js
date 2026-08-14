@@ -18,7 +18,6 @@ const embeddingClient = require('../services/embeddingClient');
 
 const REGULATIONS_ROOT = path.resolve(__dirname, '..', '..', 'db', 'regulations');
 const SOURCE_DIR = path.join(REGULATIONS_ROOT, '_source');
-const CURRICULUM_ROOT = path.resolve(__dirname, '..', '..', 'db', 'curriculum');
 const FORCE = process.argv.includes('--force');
 
 // 원문(_source/*.txt) 파일명 -> 문서 제목/카테고리 매핑. 새 원문 파일이 추가되면 여기 등록.
@@ -39,16 +38,6 @@ function listCuratedFiles() {
     }
   }
   return files;
-}
-
-// db/curriculum/*.md — 학과별 과목 카탈로그(과목명별 교양/전공 구분, 학점 등). courses 테이블은
-// 카탈로그 검색(GET /api/courses/catalog)에만 쓰이고 챗봇 RAG 검색 대상이 아니라서, "이 과목
-// 교양이야 전공이야?" 같은 질문에 못 답하는 문제가 있었음 — 이 원본 표를 그대로 임베딩해 보완.
-function listCurriculumFiles() {
-  return fs
-    .readdirSync(CURRICULUM_ROOT)
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => ({ category: '교육과정', filePath: path.join(CURRICULUM_ROOT, f) }));
 }
 
 // 정리 문서: "###"(또는 "##") 소제목 단위로 결정론적 분할. H1 제목은 문서 제목으로만 쓰고 청크에서 제외.
@@ -73,81 +62,6 @@ function chunkCuratedMarkdown(content) {
       const end = i + 1 < matches.length ? matches[i + 1].index : body.length;
       const chunk = body.slice(start, end).trim();
       if (chunk) chunks.push(chunk);
-    }
-  }
-
-  return { title, sourceUrl: sourceUrlMatch ? sourceUrlMatch[1] : null, chunks };
-}
-
-function isTableLine(line) {
-  return /^\s*\|.*\|\s*$/.test(line);
-}
-function isTableSeparatorLine(line) {
-  const trimmed = line.trim();
-  return /^[\s|:-]+$/.test(trimmed) && trimmed.includes('-');
-}
-function splitTableCells(line) {
-  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
-  return trimmed.split('|').map((c) => c.trim());
-}
-
-// db/curriculum 표를 학년/구분 섹션 단위로만 청크화하면, 한 청크 안에 서로 다른 과목 여러 개가
-// 뒤섞여 임베딩이 흐려진다 — "데이터구조는 전공필수야?"처럼 과목 하나를 콕 집는 질문과의 코사인
-// 유사도가 낮아져서 상위 K개 밖으로 밀려나는 걸 실측으로 확인함. 표가 있는 섹션은 과목(행)
-// 단위로 쪼개 각 청크가 과목 하나만 담게 한다.
-function chunkCurriculumSection(headingText, sectionBody) {
-  const lines = sectionBody.split('\n');
-  const tableStart = lines.findIndex((l) => isTableLine(l));
-
-  if (tableStart === -1 || !isTableSeparatorLine(lines[tableStart + 1] || '')) {
-    const text = `${headingText}\n${sectionBody}`.trim();
-    return text ? [text] : [];
-  }
-
-  const header = splitTableCells(lines[tableStart]);
-  const before = lines.slice(0, tableStart).join('\n').trim();
-
-  let i = tableStart + 2;
-  const rowChunks = [];
-  while (i < lines.length && isTableLine(lines[i])) {
-    const cells = splitTableCells(lines[i]);
-    const fields = header.map((h, idx) => `${h}: ${cells[idx] ?? ''}`).join(', ');
-    rowChunks.push(`${headingText} — ${fields}`);
-    i++;
-  }
-  const after = lines.slice(i).join('\n').trim();
-
-  const chunks = [];
-  if (before) chunks.push(`${headingText}\n${before}`);
-  chunks.push(...rowChunks);
-  if (after) chunks.push(after);
-  return chunks;
-}
-
-// db/curriculum/*.md 전용 청킹: "## " 섹션(학년/전공과목 이수표 등) 단위로 나눈 뒤, 표가 있으면
-// chunkCurriculumSection으로 한 번 더 과목 단위로 쪼갠다.
-function chunkCurriculumMarkdown(content) {
-  const titleMatch = content.match(/^#\s+(.+)$/m);
-  const title = titleMatch ? titleMatch[1].trim() : null;
-  const sourceUrlMatch = content.match(/^출처:\s*(https?:\/\/\S+)/m);
-
-  const body = content.replace(/^#\s+.+\n/, '');
-  const headingRe = /^##\s+.+$/gm;
-  const matches = [...body.matchAll(headingRe)];
-
-  const chunks = [];
-  if (matches.length === 0) {
-    if (body.trim()) chunks.push(body.trim());
-  } else {
-    const preamble = body.slice(0, matches[0].index).trim();
-    if (preamble) chunks.push(preamble);
-
-    for (let i = 0; i < matches.length; i++) {
-      const headingText = matches[i][0].replace(/^##\s+/, '').trim();
-      const start = matches[i].index;
-      const end = i + 1 < matches.length ? matches[i + 1].index : body.length;
-      const sectionBody = body.slice(start, end).replace(/^##\s+.+\n/, '');
-      chunks.push(...chunkCurriculumSection(headingText, sectionBody));
     }
   }
 
@@ -274,23 +188,6 @@ async function seedCuratedDocs() {
   return total;
 }
 
-async function seedCurriculumDocs() {
-  let total = 0;
-  for (const { category, filePath } of listCurriculumFiles()) {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const { title, sourceUrl, chunks } = chunkCurriculumMarkdown(content);
-    total += await seedDocument({
-      title: title || path.basename(filePath, '.md'),
-      category,
-      sourceType: 'CURATED',
-      sourceUrl,
-      effectiveDate: null,
-      chunks,
-    });
-  }
-  return total;
-}
-
 async function seedVerbatimDocs() {
   let total = 0;
   const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith('.txt'));
@@ -318,11 +215,8 @@ async function seedVerbatimDocs() {
 async function run() {
   try {
     const curatedCount = await seedCuratedDocs();
-    const curriculumCount = await seedCurriculumDocs();
     const verbatimCount = await seedVerbatimDocs();
-    console.log(
-      `규정 임베딩 시딩 완료 (정리 문서 ${curatedCount}청크, 교육과정 ${curriculumCount}청크, 원문 ${verbatimCount}청크)`
-    );
+    console.log(`규정 임베딩 시딩 완료 (정리 문서 ${curatedCount}청크, 원문 ${verbatimCount}청크)`);
   } catch (err) {
     console.error('규정 시딩 실패:', err);
     process.exitCode = 1;
