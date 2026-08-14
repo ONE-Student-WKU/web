@@ -34,6 +34,8 @@ export const getMe = () => apiRequest('/me');
 
 export const getCourseSummary = () => apiRequest('/my-courses/summary');
 
+export const getGraduationStatus = () => apiRequest('/graduation/status');
+
 export const getSemesters = () => apiRequest('/my-courses/semesters');
 
 export const searchCatalog = (keyword) => apiRequest(`/courses/catalog?keyword=${encodeURIComponent(keyword)}`);

@@ -13,6 +13,7 @@
   --color-accent-bg: #1f3050;
   --color-accent-disabled: #2c3c5c;
   --color-danger: #f2685c;
+  --color-success: #4caf50;
   /* select/number 등 브라우저 네이티브 폼 컨트롤(드롭다운 팝업, 스피너 버튼)이
      color-scheme을 못 읽으면 다크 배경색을 줘도 흰색 크롬으로 렌더링된다. */
   color-scheme: dark;
@@ -352,6 +353,83 @@ body {
 .home-progress-fill {
   height: 100%;
   background: var(--color-accent);
+}
+
+.home-progress-fill.satisfied {
+  background: var(--color-success);
+}
+
+.grad-remaining-text {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.grad-category-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.grad-category-row .home-card-label {
+  margin: 0;
+}
+
+.grad-category-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.grad-category-value.satisfied {
+  color: var(--color-success);
+}
+
+.grad-cert-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.grad-cert-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+}
+
+.grad-cert-check.satisfied {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.grad-cert-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.grad-shortfall-box {
+  background: color-mix(in srgb, var(--color-danger) 15%, var(--color-bg-card));
+  border: 1px solid var(--color-danger);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.grad-shortfall-box p:last-child {
+  margin: 0;
+}
+
+.grad-shortfall-box.ok {
+  background: color-mix(in srgb, var(--color-success) 15%, var(--color-bg-card));
+  border-color: var(--color-success);
 }
 
 .home-quick-label {
