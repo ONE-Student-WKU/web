@@ -9,7 +9,8 @@ import {
   updateMyCourse,
   deleteMyCourse,
 } from '../api/chatApi.js';
-import { IconUser, IconPlus, IconTrash, IconSearch, IconX } from '../components/icons.jsx';
+import { IconPlus, IconTrash, IconSearch, IconX } from '../components/icons.jsx';
+import AccountMenu from '../components/AccountMenu.jsx';
 
 const DAYS = ['월', '화', '수', '목', '금'];
 const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F'];
@@ -56,8 +57,9 @@ function formatSchedule(schedule) {
  * - user: object
  * - onGoHome: function
  * - onLogout: function
+ * - onOpenSettings: function
  */
-function CourseManagement({ user, onGoHome, onLogout }) {
+function CourseManagement({ user, onGoHome, onLogout, onOpenSettings }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [summary, setSummary] = useState(null);
   const [semesters, setSemesters] = useState([]);
@@ -225,9 +227,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
           </button>
           <span className="screen-title">과목 관리</span>
         </div>
-        <button className="avatar-btn" onClick={onLogout} title="로그아웃">
-          <IconUser />
-        </button>
+        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
       </header>
 
       <div className="courses-body">
