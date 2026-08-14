@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
+import { IconChevronLeft } from '../components/icons.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
@@ -171,7 +172,7 @@ function Onboarding({ user, onDone, onSkip }) {
         <div className="screen-header-left">
           {stepIndex > 0 && current !== 'done' && (
             <button className="back-btn" onClick={goBack} aria-label="이전 질문">
-              ‹
+              <IconChevronLeft />
             </button>
           )}
         </div>

@@ -119,12 +119,13 @@ body {
 }
 
 .back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   background: none;
   border: none;
-  font-size: 1.3125rem;
-  line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
 }
@@ -818,14 +819,17 @@ body {
   padding: 16px;
 }
 
-.courses-tabs {
+/* 연도 탭 — 입학년도~현재까지 늘어나는 학기(8개+)를 가로 스크롤 한 줄에 다 놓으면 피로도가
+   높아서, 연도(적은 개수, 안 늘어나거나 아주 천천히 늘어남) + 학기 토글(최대 2개) 2단으로
+   나눔(2026-08-15). 연도 개수는 보통 화면 폭 안에 다 들어와 스크롤이 필요 없다. */
+.courses-year-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 14px;
-  overflow-x: auto;
+  margin-bottom: 10px;
 }
 
-.courses-tab {
+.courses-year-tab {
   font-size: 0.8125rem;
   padding: 6px 10px;
   border-radius: 14px;
@@ -834,17 +838,57 @@ body {
   color: var(--color-text-muted);
   white-space: nowrap;
   cursor: pointer;
-  flex-shrink: 0;
 }
 
-.courses-tab.active {
+.courses-year-tab.active {
   background: var(--color-accent-bg);
   color: var(--color-accent);
   border-color: var(--color-accent-bg);
 }
 
-.courses-tab-add {
-  border-style: dashed;
+.courses-semester-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.courses-semester-nav {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.courses-semester-nav:disabled {
+  color: var(--color-border);
+  cursor: default;
+}
+
+.courses-semester-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.courses-semester-btn {
+  font-size: 0.8125rem;
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.courses-semester-btn.active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-color: var(--color-accent-bg);
 }
 
 .courses-tab-count {
@@ -855,50 +899,6 @@ body {
   background: rgba(255, 255, 255, 0.12);
   font-size: 0.6875rem;
   line-height: 15px;
-}
-
-.courses-semester-picker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  border-radius: 10px;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.courses-picker-year {
-  width: 78px;
-  padding: 6px 8px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-bg-frame);
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-}
-
-.courses-picker-semester {
-  padding: 6px 8px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-bg-frame);
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-}
-
-.courses-picker-go {
-  margin-left: auto;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
 }
 
 .courses-summary-row {

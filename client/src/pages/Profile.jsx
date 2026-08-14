@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { updateProfile, changePassword, deleteAccount } from '../api/chatApi.js';
+import { IconChevronLeft } from '../components/icons.jsx';
 
 /**
  * Profile Page
@@ -94,7 +95,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
       <header className="screen-header">
         <div className="screen-header-left">
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
-            ‹
+            <IconChevronLeft />
           </button>
           <span className="screen-title">개인정보 수정</span>
         </div>

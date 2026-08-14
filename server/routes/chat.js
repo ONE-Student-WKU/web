@@ -95,10 +95,18 @@ router.post('/messages', async (req, res, next) => {
     // 여러 턴에 걸친 검색어 재작성 과정에서 학년/학기가 뒤섞이는 문제를 피할 수 있다.
     const curriculumChunks = await curriculumService.lookupFromMessage(message, student);
 
+    // 졸업인증제(기업연계프로젝트1/2 중 1과목 등)처럼 "N개 중 M개만 이수하면 충족"인 요건도
+    // curriculum_courses와 같은 이유로 구조화 조회한다 — 정규화된 검색어(normalizedSearchQuery)를
+    // 같이 넘겨서 "기연프" 같은 줄임말도 매칭되게 한다.
+    const requirementChunks = await curriculumService.lookupRequirementsFromMessage(
+      `${message} ${normalizedSearchQuery}`,
+      student
+    );
+
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = [...curriculumChunks, ...previousCitedChunks];
+    const relevantChunks = [...curriculumChunks, ...requirementChunks, ...previousCitedChunks];
     for (const c of freshChunks) {
       if (!relevantChunks.some((m) => m.chunkId === c.chunkId)) relevantChunks.push(c);
     }

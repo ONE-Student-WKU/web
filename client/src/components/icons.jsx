@@ -24,6 +24,17 @@ export function IconMenu({ size = 18 }) {
   );
 }
 
+// 텍스트 "‹" 글리프는 폰트마다 em box 안에서 잉크 위치가 달라(보통 위쪽으로 치우침) 부모를
+// flex 중앙정렬해도 시각적으로 제목과 높이가 안 맞는 문제가 있었다 — SVG는 geometry가
+// 고정이라 IconMenu처럼 항상 정확히 중앙에 온다.
+export function IconChevronLeft({ size = 20 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <polyline points="15 6 9 12 15 18" />
+    </svg>
+  );
+}
+
 export function IconUser({ size = 14 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

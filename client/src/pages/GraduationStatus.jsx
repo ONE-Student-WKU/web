@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
+import { IconChevronLeft } from '../components/icons.jsx';
 import { summarizeShortfalls } from '../utils/graduation.js';
 
 /**
@@ -43,7 +44,7 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <header className="screen-header">
         <div className="screen-header-left">
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
-            ‹
+            <IconChevronLeft />
           </button>
           <span className="screen-title">졸업요건 진단</span>
         </div>
