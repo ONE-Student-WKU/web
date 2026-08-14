@@ -14,8 +14,9 @@ import useChat from '../hooks/useChat.js';
  * - onGoHome: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding }) {
+function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const { messages, sendMessage, loading } = useChat();
   const bottomRef = useRef(null);
 
@@ -31,6 +32,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding }) {
         onGoHome={onGoHome}
         onOpenSettings={onOpenSettings}
         onOpenOnboarding={onOpenOnboarding}
+        onOpenProfile={onOpenProfile}
       />
       <div className="chat-messages-container">
         {messages.map((msg, index) => (

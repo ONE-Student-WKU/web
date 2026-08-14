@@ -13,8 +13,9 @@ import { summarizeShortfalls } from '../utils/graduation.js';
  * - onLogout: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding }) {
+function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
@@ -51,6 +52,7 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           onLogout={onLogout}
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
+          onOpenProfile={onOpenProfile}
         />
       </header>
 
