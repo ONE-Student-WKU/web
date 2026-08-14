@@ -7,8 +7,10 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "seed": "node scripts/seed.js",
+    "seed:course-offerings": "node scripts/seedCourseOfferings.js",
     "seed:curriculum": "node scripts/seedCurriculum.js",
-    "seed:regulations": "node scripts/seedRegulations.js"
+    "seed:regulations": "node scripts/seedRegulations.js",
+    "scrape:timetable": "node scripts/scrapeTimetable.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -16,6 +18,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
+    "iconv-lite": "^0.4.24",
     "mysql2": "^3.10.1"
   },
   "devDependencies": {

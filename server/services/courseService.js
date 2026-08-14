@@ -25,19 +25,25 @@ function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
 
-async function searchCatalog(keyword) {
+// year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
+// 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
+// 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
+async function searchCatalog(keyword, year, semester) {
   const like = `%${keyword || ''}%`;
   const [courses] = await pool.query(
-    'SELECT id, name, section, professor, credits, category FROM courses WHERE name LIKE ? ORDER BY name, section',
-    [like]
+    `SELECT id, course_name AS name, section, professor, credits, category
+     FROM course_offerings
+     WHERE course_name LIKE ? AND year = ? AND semester = ?
+     ORDER BY course_name, section`,
+    [like, year, semester]
   );
   if (courses.length === 0) return [];
 
   const courseIds = courses.map((c) => c.id);
   const [schedules] = await pool.query(
-    `SELECT course_id, day, period FROM course_schedules
-     WHERE course_id IN (?)
-     ORDER BY course_id, FIELD(day, '월', '화', '수', '목', '금'), period`,
+    `SELECT offering_id AS course_id, day, period FROM course_offering_schedules
+     WHERE offering_id IN (?)
+     ORDER BY offering_id, FIELD(day, '월', '화', '수', '목', '금'), period`,
     [courseIds]
   );
 
@@ -59,7 +65,10 @@ async function searchCatalog(keyword) {
 }
 
 async function findCourseById(courseId) {
-  const [rows] = await pool.query('SELECT id, name, credits, category FROM courses WHERE id = ?', [courseId]);
+  const [rows] = await pool.query(
+    'SELECT id, course_name AS name, credits, category FROM course_offerings WHERE id = ?',
+    [courseId]
+  );
   return rows[0] || null;
 }
 
@@ -90,7 +99,7 @@ async function listMyCourses(studentId, { year, semester }) {
     SELECT sc.id, sc.course_id, sc.name, sc.credits, sc.category, c.professor, sc.year, sc.semester,
            sc.midterm, sc.final, sc.attendance_score, sc.assignment, sc.etc, sc.letter_grade
     FROM student_courses sc
-    LEFT JOIN courses c ON c.id = sc.course_id
+    LEFT JOIN course_offerings c ON c.id = sc.course_id
     WHERE sc.student_id = ?`;
   const params = [studentId];
 
@@ -125,7 +134,9 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
     if (!course) throw new Error('COURSE_NOT_FOUND');
     row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category };
 
-    const [scheduleRows] = await pool.query('SELECT 1 FROM course_schedules WHERE course_id = ? LIMIT 1', [courseId]);
+    const [scheduleRows] = await pool.query('SELECT 1 FROM course_offering_schedules WHERE offering_id = ? LIMIT 1', [
+      courseId,
+    ]);
     hasOfficialSchedule = scheduleRows.length > 0;
   }
 
@@ -206,13 +217,13 @@ async function deleteMyCourse(id) {
 }
 
 async function getTimetable(studentId, { year, semester }) {
-  // 두 소스를 합친다: ① 카탈로그 과목의 course_schedules(분반 시간),
+  // 두 소스를 합친다: ① 카탈로그 과목의 course_offering_schedules(분반 시간),
   // ② 직접입력 과목에 선택적으로 넣은 student_course_schedules.
   // 둘 다 없으면(시간을 모르는 과거 기록 등) 그 과목은 시간표에 안 뜨는 게 정상.
   const [rows] = await pool.query(
     `SELECT cs.day, cs.period, sc.course_id, sc.name
      FROM student_courses sc
-     JOIN course_schedules cs ON cs.course_id = sc.course_id
+     JOIN course_offering_schedules cs ON cs.offering_id = sc.course_id
      WHERE sc.student_id = ? AND sc.year = ? AND sc.semester = ?
      UNION ALL
      SELECT scs.day, scs.period, sc.course_id, sc.name
