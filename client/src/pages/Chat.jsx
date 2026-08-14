@@ -6,27 +6,38 @@ import useChat from '../hooks/useChat.js';
 
 /**
  * Chat Page Component
- * Connects Sidebar, message history list, and ChatInput.
- * 
+ * Connects top bar, message history list, and ChatInput.
+ *
  * Props:
  * - user: object
  * - onLogout: function
+ * - onGoHome: function
  */
-function Chat({ user, onLogout }) {
-  const { messages, sendMessage } = useChat();
+function Chat({ user, onLogout, onGoHome }) {
+  const { messages, sendMessage, loading } = useChat();
 
   return (
-    <div className="chat-page-container">
-      <Sidebar user={user} onLogout={onLogout} />
-      <main className="chat-main-area">
-        <div className="chat-messages-container">
-          {messages.map((msg, index) => (
-            <ChatBubble key={index} message={msg} />
-          ))}
-        </div>
-        <ChatInput onSendMessage={sendMessage} />
-        <div className="chat-disclaimer">본 답변은 비공식 참고용입니다. 정확한 사항은 학사지원과(063-850-6788)에 확인하세요.</div>
-      </main>
+    <div className="chat-page">
+      <Sidebar user={user} onLogout={onLogout} onGoHome={onGoHome} />
+      <div className="chat-messages-container">
+        {messages.map((msg, index) => (
+          <ChatBubble key={index} message={msg} />
+        ))}
+        {loading && (
+          <div className="chat-bubble assistant">
+            <div className="message-sender">ONE Student</div>
+            <div className="typing-dots" aria-label="답변을 준비하고 있어요">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
+      </div>
+      <ChatInput onSendMessage={sendMessage} disabled={loading} />
+      <div className="chat-disclaimer">
+        본 답변은 비공식 참고용입니다. 정확한 사항은 웹정보서비스 또는 학사지원과(063-850-6788)에서 확인하세요.
+      </div>
     </div>
   );
 }
