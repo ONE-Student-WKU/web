@@ -183,12 +183,18 @@ async function getTimetable(studentId, { year, semester }) {
 // getSummary의 학기 집계는 letter_grade IS NOT NULL로 걸러지는데(GPA 계산 목적상 맞음),
 // 화면의 학기 탭은 성적 입력 여부와 무관하게 "수강 기록이 있는 학기"를 전부 보여줘야
 // 한다 — 안 그러면 성적을 아직 안 넣은 학기가 새로고침할 때마다 탭에서 사라져 보인다.
+// courseCount도 같이 내려줘야 학기 탭만 보고도 "여기 뭐가 들어있는지" 감이 온다 —
+// 안 그러면 매번 탭을 눌러봐야 비어있는지 아닌지 알 수 있어서 여러 학기를 훑어볼 때 불편하다.
 async function listSemesters(studentId) {
   const [rows] = await pool.query(
-    'SELECT DISTINCT year, semester FROM student_courses WHERE student_id = ? ORDER BY year, semester',
+    `SELECT year, semester, COUNT(*) AS course_count
+     FROM student_courses
+     WHERE student_id = ?
+     GROUP BY year, semester
+     ORDER BY year, semester`,
     [studentId]
   );
-  return rows.map((r) => ({ year: r.year, semester: r.semester }));
+  return rows.map((r) => ({ year: r.year, semester: r.semester, courseCount: r.course_count }));
 }
 
 async function getSummary(studentId) {

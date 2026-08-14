@@ -13,6 +13,9 @@
   --color-accent-bg: #1f3050;
   --color-accent-disabled: #2c3c5c;
   --color-danger: #f2685c;
+  /* select/number 등 브라우저 네이티브 폼 컨트롤(드롭다운 팝업, 스피너 버튼)이
+     color-scheme을 못 읽으면 다크 배경색을 줘도 흰색 크롬으로 렌더링된다. */
+  color-scheme: dark;
 }
 
 * {
@@ -545,6 +548,16 @@ body {
 
 .courses-tab-add {
   border-style: dashed;
+}
+
+.courses-tab-count {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  line-height: 15px;
 }
 
 .courses-semester-picker {

@@ -197,6 +197,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
               onClick={() => setCurrent(t)}
             >
               {t.year}-{t.semester}
+              {t.courseCount > 0 && <span className="courses-tab-count">{t.courseCount}</span>}
             </button>
           ))}
           <button
@@ -207,7 +208,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
               setShowSemesterPicker((v) => !v);
             }}
           >
-            + 학기 이동
+            + 학기 추가
           </button>
         </div>
 
