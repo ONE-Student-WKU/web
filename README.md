@@ -52,6 +52,6 @@
 
 ## Docs
 
-설계 문서는 [GitHub Wiki](https://github.com/wku-ai-chat/web/wiki)에서 관리합니다.
-- [API 설계](https://github.com/wku-ai-chat/web/wiki/API-설계)
-- [ERD 설계](https://github.com/wku-ai-chat/web/wiki/ERD-설계)
+설계 문서는 [GitHub Wiki](https://github.com/ONE-Student-wku/web/wiki)에서 관리합니다.
+- [API 설계](https://github.com/ONE-Student-wku/web/wiki/API-설계)
+- [ERD 설계](https://github.com/ONE-Student-wku/web/wiki/ERD-설계)

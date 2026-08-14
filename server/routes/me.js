@@ -5,7 +5,7 @@ const studentService = require('../services/studentService');
 
 /**
  * Routes for the current logged-in student (/api/me)
- * 근거: 위키 API-설계 2.1, 2.2 - https://github.com/wku-ai-chat/web/wiki/API-설계
+ * 근거: 위키 API-설계 2.1, 2.2 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
 const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS } = studentService;

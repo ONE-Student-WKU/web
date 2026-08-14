@@ -5,7 +5,7 @@ const courseService = require('../services/courseService');
 
 /**
  * Routes for course catalog (/api/courses)
- * 근거: 위키 API-설계 3.1 - https://github.com/wku-ai-chat/web/wiki/API-설계
+ * 근거: 위키 API-설계 3.1 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
 // GET /api/courses/catalog?keyword=
