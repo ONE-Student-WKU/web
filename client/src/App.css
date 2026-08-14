@@ -19,6 +19,26 @@
   color-scheme: dark;
 }
 
+/* 라이트 테마 — 설정 화면에서 명시적으로 선택했을 때만 적용(App.jsx가 <html data-theme="light">로 설정).
+   변수 이름은 :root와 동일하게 유지해서 나머지 CSS는 전혀 손댈 필요 없음. */
+:root[data-theme='light'] {
+  --color-bg-page: #f0f1f4;
+  --color-bg-frame: #ffffff;
+  --color-bg-card: #f5f6f8;
+  --color-border: #e1e3e8;
+  --color-border-strong: #c9ccd3;
+  --color-text-primary: #16181c;
+  --color-text-secondary: #565b64;
+  --color-text-muted: #82868f;
+  --color-accent: #3b6fd6;
+  --color-accent-contrast: #ffffff;
+  --color-accent-bg: #e8f0fe;
+  --color-accent-disabled: #c7d7f5;
+  --color-danger: #d9483c;
+  --color-success: #3d8b40;
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -105,6 +125,78 @@ body {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.account-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+
+.account-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.account-menu-item:hover:not(:disabled) {
+  background: var(--color-accent-bg);
+}
+
+.account-menu-item:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.account-menu-item.danger {
+  color: var(--color-danger);
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--color-border);
+}
+
+.settings-theme-options {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-theme-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-theme-btn.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
 }
 
 /* Shared prompt bar — Home's entry button and the real Chat input share this look.

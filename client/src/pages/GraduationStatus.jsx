@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
-import { IconUser } from '../components/icons.jsx';
+import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls } from '../utils/graduation.js';
 
 /**
@@ -8,10 +8,12 @@ import { summarizeShortfalls } from '../utils/graduation.js';
  * 졸업요건 진단 — 전체 이수학점 진행률, 카테고리별 이수 현황, 졸업논문/졸업인증제 충족 여부.
  *
  * Props:
+ * - user: object
  * - onGoHome: function
  * - onLogout: function
+ * - onOpenSettings: function
  */
-function GraduationStatus({ onGoHome, onLogout }) {
+function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings }) {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
@@ -43,9 +45,7 @@ function GraduationStatus({ onGoHome, onLogout }) {
           </button>
           <span className="screen-title">졸업요건 진단</span>
         </div>
-        <button className="avatar-btn" onClick={onLogout} title="로그아웃">
-          <IconUser />
-        </button>
+        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
       </header>
 
       <div className="courses-body">

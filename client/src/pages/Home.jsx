@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getCourseSummary, getGraduationStatus } from '../api/chatApi.js';
-import { IconMenu, IconUser, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
+import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
+import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls } from '../utils/graduation.js';
 
 // 2026학번부터 공학3계열 개편으로 졸업학점 체계가 136→130으로 바뀜 (db/regulations/졸업/이수학점_총괄표.md 근거)
@@ -25,9 +26,10 @@ function getGradeLevel(admissionYear) {
  * - onOpenChat: function
  * - onOpenCourses: function
  * - onOpenGraduation: function
+ * - onOpenSettings: function
  * - onLogout: function
  */
-function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onLogout }) {
+function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onOpenSettings, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -60,9 +62,7 @@ function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onLogout }) {
           <IconMenu />
           <span className="screen-title">ONE Student</span>
         </div>
-        <button className="avatar-btn" onClick={onLogout} title="로그아웃">
-          <IconUser />
-        </button>
+        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
       </header>
 
       <div className="home-body">
