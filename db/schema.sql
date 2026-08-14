@@ -35,7 +35,7 @@
 --   - regulation_documents.source_type / regulation_chunks.embedding (RAG 하이브리드 소스
 --     전략 및 임베딩 저장 방식 확정 — 자세한 이유는 7번 섹션 주석 참고)
 
-CREATE DATABASE IF NOT EXISTS wku_ai_chat;
+CREATE DATABASE IF NOT EXISTS wku_ai_chat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE wku_ai_chat;
 
 -- ---------------------------------------------------------------------------
