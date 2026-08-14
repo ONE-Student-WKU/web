@@ -22,9 +22,10 @@ function getGradeLevel(admissionYear) {
  * Props:
  * - user: object
  * - onOpenChat: function
+ * - onOpenCourses: function
  * - onLogout: function
  */
-function Home({ user, onOpenChat, onLogout }) {
+function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -83,9 +84,9 @@ function Home({ user, onOpenChat, onLogout }) {
           </div>
         </section>
 
-        <p className="home-quick-label">빠른 실행</p>
+        <p className="home-quick-label">메뉴</p>
         <div className="home-quick-actions">
-          <button className="home-quick-btn" disabled title="준비 중인 기능이에요">
+          <button className="home-quick-btn" onClick={onOpenCourses}>
             <IconBook />
             <span>과목 관리</span>
           </button>
