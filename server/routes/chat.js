@@ -4,6 +4,8 @@ const { requireAuth } = require('../middleware/auth');
 const embeddingClient = require('../services/embeddingClient');
 const aiClient = require('../services/aiClient');
 const regulationService = require('../services/regulationService');
+const curriculumService = require('../services/curriculumService');
+const studentService = require('../services/studentService');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -81,15 +83,22 @@ router.post('/messages', async (req, res, next) => {
     const normalizedSearchQuery = await aiClient.rewriteSearchQuery(searchQuery);
 
     const queryEmbedding = await embeddingClient.getEmbedding(normalizedSearchQuery, 'query');
-    const [freshChunks, previousCitedChunks] = await Promise.all([
-      regulationService.findRelevantChunks(queryEmbedding, normalizedSearchQuery),
+    const [freshChunks, previousCitedChunks, student] = await Promise.all([
+      regulationService.findRelevantChunks(queryEmbedding),
       regulationService.findChunksByIds(lastAssistantMessage?.citedChunkIds),
+      studentService.findById(req.session.userId),
     ]);
+
+    // 교육과정(학년/학기별 과목 편성)은 RAG 유사도 검색이 아니라 curriculum_courses 조건
+    // 조회로 처리한다 — "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부
+    // 과목이 누락되는 문제가 반복 확인되어서다. 원문 메시지(재작성 전)로 감지해야
+    // 여러 턴에 걸친 검색어 재작성 과정에서 학년/학기가 뒤섞이는 문제를 피할 수 있다.
+    const curriculumChunks = await curriculumService.lookupFromMessage(message, student);
 
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = [...previousCitedChunks];
+    const relevantChunks = [...curriculumChunks, ...previousCitedChunks];
     for (const c of freshChunks) {
       if (!relevantChunks.some((m) => m.chunkId === c.chunkId)) relevantChunks.push(c);
     }

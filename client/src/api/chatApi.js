@@ -30,6 +30,10 @@ export const login = (email, password) =>
 
 export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
 
+export const getMe = () => apiRequest('/me');
+
+export const getCourseSummary = () => apiRequest('/my-courses/summary');
+
 export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
 
 export const sendChatMessage = (conversationId, message) =>
