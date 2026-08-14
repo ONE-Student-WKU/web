@@ -137,6 +137,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   }
 
   const handleGradeChange = async (courseId, letterGrade) => {
+    setError(null);
     try {
       await updateMyCourse(courseId, { letterGrade: letterGrade || null });
       await refreshAfterChange();
@@ -147,6 +148,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
 
   const handleDelete = async (courseId) => {
     if (!window.confirm('이 과목을 삭제할까요?')) return;
+    setError(null);
     try {
       await deleteMyCourse(courseId);
       await refreshAfterChange();
@@ -178,6 +180,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   };
 
   const handleAddFromCatalog = async (courseId) => {
+    setError(null);
     try {
       await addMyCourse({ courseId, year: current.year, semester: current.semester });
       closeAddForm();
@@ -190,6 +193,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   const handleAddManual = async (e) => {
     e.preventDefault();
     if (!manualFields.name.trim() || !manualFields.credits) return;
+    setError(null);
     try {
       const validSchedule = manualSchedule.filter((s) => s.day && s.period);
       await addMyCourse({
