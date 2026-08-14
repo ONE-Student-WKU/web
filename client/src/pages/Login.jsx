@@ -63,9 +63,23 @@ function Login({ onLoginSuccess }) {
           </button>
         </form>
 
-        <button type="button" className="auth-toggle-btn" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
-          {mode === 'login' ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
-        </button>
+        <p className="auth-toggle-text">
+          {mode === 'login' ? (
+            <>
+              계정이 없으신가요?{' '}
+              <button type="button" className="auth-toggle-link" onClick={() => setMode('signup')}>
+                회원가입
+              </button>
+            </>
+          ) : (
+            <>
+              이미 계정이 있으신가요?{' '}
+              <button type="button" className="auth-toggle-link" onClick={() => setMode('login')}>
+                로그인
+              </button>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );
