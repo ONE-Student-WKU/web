@@ -1,18 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, updateProfile } from '../api/chatApi.js';
 
+const FONT_SIZE_OPTIONS = [
+  { value: 'small', label: '작게' },
+  { value: 'medium', label: '보통' },
+  { value: 'large', label: '크게' },
+];
+
 /**
  * Settings Page
- * 다크/라이트 테마 선택, 휴학 학기 수 조정(학년 계산 보정용).
+ * 다크/라이트 테마, 기본 글자 크기 선택, 휴학 학기 수 조정(학년 계산 보정용).
  *
  * Props:
  * - theme: 'dark' | 'light'
  * - onSetTheme: function
+ * - fontSize: 'small' | 'medium' | 'large'
+ * - onSetFontSize: function
  * - onGoHome: function
  * - highlightLeaveSemesters: boolean — 홈의 "학년이 다르신가요?" 링크로 들어왔을 때만 true,
  *   휴학 학기 수 카드에 강조 애니메이션을 준다.
  */
-function Settings({ theme, onSetTheme, onGoHome, highlightLeaveSemesters }) {
+function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, highlightLeaveSemesters }) {
   const [leaveSemesters, setLeaveSemesters] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
@@ -68,6 +76,21 @@ function Settings({ theme, onSetTheme, onGoHome, highlightLeaveSemesters }) {
             >
               라이트
             </button>
+          </div>
+        </section>
+
+        <section className="home-card">
+          <p className="home-card-label">글자 크기</p>
+          <div className="settings-theme-options">
+            {FONT_SIZE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={fontSize === option.value ? 'settings-theme-btn active' : 'settings-theme-btn'}
+                onClick={() => onSetFontSize(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </section>
 

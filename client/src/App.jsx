@@ -21,11 +21,17 @@ function App() {
   // 홈의 "학년이 다르신가요?" 링크로 설정에 왔을 때만 휴학 학기 수 입력란을 강조 — 계정
   // 메뉴로 평범하게 들어온 경우엔 안 켜지게 별도 플래그로 관리.
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.fontSize = fontSize;
+    localStorage.setItem('fontSize', fontSize);
+  }, [fontSize]);
 
   const handleLogout = () => {
     logout().finally(() => {
@@ -72,6 +78,8 @@ function App() {
           <Settings
             theme={theme}
             onSetTheme={setTheme}
+            fontSize={fontSize}
+            onSetFontSize={setFontSize}
             highlightLeaveSemesters={highlightLeaveSemesters}
             onGoHome={() => {
               setHighlightLeaveSemesters(false);
