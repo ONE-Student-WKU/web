@@ -7,7 +7,7 @@ const regulationService = require('../services/regulationService');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
- * 근거: 위키 API-설계 3장 - https://github.com/wku-ai-chat/web/wiki/API-설계
+ * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
 const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 학사지원과에 직접 확인해주세요.';

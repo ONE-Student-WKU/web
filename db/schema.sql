@@ -1,5 +1,5 @@
 -- Database schema for wku-ai-chat (v4.0 피벗판)
--- 근거: 위키 API-설계, ERD-설계 (v4.0) - https://github.com/wku-ai-chat/web/wiki
+-- 근거: 위키 API-설계, ERD-설계 (v4.0) - https://github.com/ONE-Student-wku/web/wiki
 -- v3.5에서 폐기된 테이블: colleges / professors / templates / course_offerings /
 --   leave_requests / withdrawal_requests / refund_requests / tuition_* /
 --   attendance_records / official_leave_requests / course_evaluations /

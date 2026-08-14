@@ -5,7 +5,7 @@ const studentService = require('../services/studentService');
 
 /**
  * Routes for Authentication (/api/auth)
- * 근거: 위키 API-설계 1장 - https://github.com/wku-ai-chat/web/wiki/API-설계
+ * 근거: 위키 API-설계 1장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
 const BCRYPT_ROUNDS = 10;

@@ -1,7 +1,7 @@
 /**
  * server/services/aiClient.js
  * Claude Haiku 4.5 (Anthropic Messages API) 클라이언트.
- * 근거: 위키 API-설계 3장 - https://github.com/wku-ai-chat/web/wiki/API-설계
+ * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
