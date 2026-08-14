@@ -97,6 +97,7 @@ async function updateProfile(studentId, updates) {
     majorChangeSemester: 'major_change_semester',
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
+    leaveSemesters: 'leave_semesters',
   };
 
   const fields = [];

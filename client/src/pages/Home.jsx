@@ -2,19 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { getMe, getCourseSummary, getGraduationStatus } from '../api/chatApi.js';
 import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence } from '../utils/graduation.js';
+import { getGradeLevel } from '../utils/academic.js';
 
 // 2026학번부터 공학3계열 개편으로 졸업학점 체계가 136→130으로 바뀜 (db/regulations/졸업/이수학점_총괄표.md 근거)
 const RESTRUCTURE_ADMISSION_YEAR = 2026;
 function getRequiredTotalCredits(admissionYear) {
   if (!admissionYear) return null;
   return admissionYear >= RESTRUCTURE_ADMISSION_YEAR ? 130 : 136;
-}
-
-function getGradeLevel(admissionYear) {
-  if (!admissionYear) return null;
-  const currentYear = new Date().getFullYear();
-  return Math.min(4, Math.max(1, currentYear - admissionYear + 1));
 }
 
 /**
@@ -27,9 +22,20 @@ function getGradeLevel(admissionYear) {
  * - onOpenCourses: function
  * - onOpenGraduation: function
  * - onOpenSettings: function
+ * - onOpenOnboarding: function
+ * - onOpenLeaveSettings: function
  * - onLogout: function
  */
-function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onOpenSettings, onLogout }) {
+function Home({
+  user,
+  onOpenChat,
+  onOpenCourses,
+  onOpenGraduation,
+  onOpenSettings,
+  onOpenOnboarding,
+  onOpenLeaveSettings,
+  onLogout,
+}) {
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -51,7 +57,7 @@ function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onOpenSetting
   }, []);
 
   const requiredTotal = getRequiredTotalCredits(profile?.admissionYear);
-  const gradeLevel = getGradeLevel(profile?.admissionYear);
+  const gradeLevel = getGradeLevel(profile?.admissionYear, profile?.leaveSemesters);
   const earnedCredits = summary?.total?.earnedCredits ?? 0;
   const progressPercent = requiredTotal ? Math.min(100, Math.round((earnedCredits / requiredTotal) * 100)) : 0;
 
@@ -62,17 +68,29 @@ function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onOpenSetting
           <IconMenu />
           <span className="screen-title">ONE Student</span>
         </div>
-        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
+        <AccountMenu
+          user={user}
+          onLogout={onLogout}
+          onOpenSettings={onOpenSettings}
+          onOpenOnboarding={onOpenOnboarding}
+        />
       </header>
 
       <div className="home-body">
         {error && <p className="home-error">{error}</p>}
 
         <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
-        <p className="home-subgreeting">
-          {profile?.department || '학과 정보 없음'}
-          {gradeLevel ? ` ${gradeLevel}학년` : ''}
-        </p>
+        <div className="home-subgreeting-row">
+          <p className="home-subgreeting">
+            {profile?.department || '학과 정보 없음'}
+            {gradeLevel ? ` ${gradeLevel}학년` : ''}
+          </p>
+          {gradeLevel && (
+            <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>
+              학년이 다르신가요?
+            </button>
+          )}
+        </div>
 
         <section className="home-card">
           <p className="home-card-label">이수학점 진행률</p>
@@ -92,9 +110,7 @@ function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onOpenSetting
             <span>
               {shortfalls === null
                 ? '졸업요건 진단에서 확인해보세요.'
-                : shortfalls.length > 0
-                  ? `${shortfalls.join(', ')}이 부족해요.`
-                  : '모든 요건을 충족했어요!'}
+                : formatShortfallSentence(shortfalls) || '모든 요건을 충족했어요!'}
             </span>
           </div>
         </section>

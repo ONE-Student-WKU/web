@@ -199,6 +199,38 @@ body {
   background: var(--color-accent-bg);
 }
 
+.settings-field-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.settings-inline-field {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-inline-field .onb-select {
+  flex: 1;
+}
+
+@keyframes settings-highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); border-color: var(--color-border); }
+  50% { box-shadow: 0 0 0 5px var(--color-accent-bg); transform: scale(1.015); border-color: var(--color-accent); }
+}
+
+.settings-highlight {
+  animation: settings-highlight-pulse 0.7s ease-in-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-highlight {
+    animation: none;
+    border-color: var(--color-accent);
+  }
+}
+
 /* Shared prompt bar — Home's entry button and the real Chat input share this look.
    Outer bar has no pill of its own; it holds a separate pill (text) and a separate
    circular send button side by side, matching the wireframe structure exactly. */
@@ -387,8 +419,27 @@ body {
 .home-subgreeting {
   font-size: 15px;
   font-weight: bold;
-  margin: 0 0 16px;
+  margin: 0;
   color: var(--color-text-primary);
+}
+
+.home-subgreeting-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.home-grade-fix-link {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .home-card {

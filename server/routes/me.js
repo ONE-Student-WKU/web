@@ -27,6 +27,7 @@ function serializeStudent(student) {
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
+    leaveSemesters: student.leave_semesters,
   };
 }
 
@@ -58,11 +59,15 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester,
-      secondDepartmentId, careerCounselingCount,
+      secondDepartmentId, careerCounselingCount, leaveSemesters,
     } = req.body;
 
     if (enrollmentType !== undefined && !VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
+    }
+
+    if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
 
     // majorChangeGrade/Year/Semester는 전과생(MAJOR_CHANGE)일 때만 의미가 있음 — 이번 요청에서
@@ -129,6 +134,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeSemester,
       secondDepartmentId,
       careerCounselingCount,
+      leaveSemesters,
     });
 
     const updated = await studentService.findById(req.session.userId);

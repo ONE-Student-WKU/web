@@ -219,10 +219,12 @@ async function listSemesters(studentId) {
 
 async function getSummary(studentId) {
   // credits가 이제 student_courses 자체에 저장돼 있으므로 courses JOIN이 필요 없음.
+  // 성적 필터를 걸지 않고 전부 가져온다 — 이수학점(진행률)에는 이번 학기처럼 등록만
+  // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인, F만 제외).
   const [rows] = await pool.query(
     `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
      FROM student_courses sc
-     WHERE sc.student_id = ? AND sc.letter_grade IS NOT NULL`,
+     WHERE sc.student_id = ?`,
     [studentId]
   );
 
@@ -238,14 +240,18 @@ async function getSummary(studentId) {
     }
     const bucket = bySemesterMap.get(key);
     const credits = Number(row.credits);
-    const gpaPoint = Number(row.gpa);
 
-    // F는 GPA 계산에는 포함되지만 취득학점(earnedCredits)에는 포함하지 않음 (표준 학점 계산 관행)
-    bucket.gpaCredits += credits;
-    bucket.points += credits * gpaPoint;
-    totalGpaCredits += credits;
-    totalPoints += credits * gpaPoint;
+    // GPA는 실제 성적이 입력된 과목만 반영(F도 평점 계산엔 포함 — 표준 관행). 성적 미입력
+    // 과목은 gpa 컬럼이 NULL이라 계산에서 자연히 빠짐.
+    if (row.letter_grade !== null) {
+      const gpaPoint = Number(row.gpa);
+      bucket.gpaCredits += credits;
+      bucket.points += credits * gpaPoint;
+      totalGpaCredits += credits;
+      totalPoints += credits * gpaPoint;
+    }
 
+    // 이수학점(진행률)은 F로 확정된 것만 제외 — 성적 미입력(진행 중) 과목은 포함.
     if (row.letter_grade !== 'F') {
       bucket.earnedCredits += credits;
       totalCredits += credits;
