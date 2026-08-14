@@ -114,6 +114,7 @@ async function getGraduationStatus(studentId) {
       category: row.category,
       requiredCredits: Number(row.required_credits),
       earnedCredits: earnedByCategory[row.category] || 0,
+      requiredCourses: await fetchRequiredCourseNames(row.id),
     });
   }
 
@@ -129,7 +130,12 @@ async function getGraduationStatus(studentId) {
     totalRequiredCredits += required;
     totalEarnedCredits += Math.min(earnedRaw, required);
     generalElectiveOverflow += Math.max(0, earnedRaw - required);
-    categories.push({ category: row.category, requiredCredits: required, earnedCredits: earnedRaw });
+    categories.push({
+      category: row.category,
+      requiredCredits: required,
+      earnedCredits: earnedRaw,
+      requiredCourses: await fetchRequiredCourseNames(row.id),
+    });
   }
 
   const generalElectiveRow = creditRows.find((r) => r.category === '일반선택');
@@ -138,7 +144,12 @@ async function getGraduationStatus(studentId) {
     const credited = Math.min(required, generalElectiveOverflow);
     totalRequiredCredits += required;
     totalEarnedCredits += credited;
-    categories.push({ category: '일반선택', requiredCredits: required, earnedCredits: credited });
+    categories.push({
+      category: '일반선택',
+      requiredCredits: required,
+      earnedCredits: credited,
+      requiredCourses: await fetchRequiredCourseNames(generalElectiveRow.id),
+    });
   }
 
   const certifications = [];

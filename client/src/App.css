@@ -478,6 +478,18 @@ body {
   color: var(--color-success);
 }
 
+.grad-category-courses {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.grad-overflow-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
 .grad-cert-row {
   display: flex;
   align-items: flex-start;
@@ -517,6 +529,19 @@ body {
 
 .grad-shortfall-box p:last-child {
   margin: 0;
+}
+
+.grad-shortfall-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.grad-shortfall-list li {
+  margin-bottom: 4px;
+}
+
+.grad-shortfall-list li:last-child {
+  margin-bottom: 0;
 }
 
 .grad-shortfall-box.ok {

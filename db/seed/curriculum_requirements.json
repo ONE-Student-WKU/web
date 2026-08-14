@@ -52,7 +52,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2. 2017~2018학번과 2019~2021학번 표가 별개지만 수치 동일하여 통합 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -74,7 +74,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2022~2024학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -96,7 +96,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2025학번 단독 (2022~2024학번과 표가 분리되어 있고 총량도 다름)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",

@@ -77,21 +77,31 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             <p className="home-quick-label">카테고리별 이수 현황</p>
             {status.categories.map((c) => {
               const satisfied = c.earnedCredits >= c.requiredCredits;
-              const percent = c.requiredCredits > 0 ? Math.min(100, Math.round((c.earnedCredits / c.requiredCredits) * 100)) : 100;
+              const rawPercent = c.requiredCredits > 0 ? Math.round((c.earnedCredits / c.requiredCredits) * 100) : 100;
+              const barPercent = Math.min(100, rawPercent);
+              const hasOverflow = c.earnedCredits > c.requiredCredits;
               return (
                 <section className="home-card" key={c.category}>
                   <div className="grad-category-row">
-                    <p className="home-card-label">{c.category}</p>
+                    <p className="home-card-label">
+                      {c.category}
+                      {c.requiredCourses?.length > 0 && (
+                        <span className="grad-category-courses"> ({c.requiredCourses.join(', ')})</span>
+                      )}
+                    </p>
                     <span className={satisfied ? 'grad-category-value satisfied' : 'grad-category-value'}>
-                      {c.earnedCredits} / {c.requiredCredits}
+                      {c.earnedCredits} / {c.requiredCredits}학점 · {rawPercent}%
                     </span>
                   </div>
                   <div className="home-progress-track">
                     <div
                       className={satisfied ? 'home-progress-fill satisfied' : 'home-progress-fill'}
-                      style={{ width: `${percent}%` }}
+                      style={{ width: `${barPercent}%` }}
                     />
                   </div>
+                  {hasOverflow && (
+                    <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
+                  )}
                 </section>
               );
             })}
@@ -115,7 +125,15 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
             <section className={shortfalls.length > 0 ? 'grad-shortfall-box' : 'grad-shortfall-box ok'}>
               <p className="home-card-label">부족 요건 요약</p>
-              <p>{shortfalls.length > 0 ? `${shortfalls.join(', ')}이 부족해요.` : '모든 요건을 충족했어요!'}</p>
+              {shortfalls.length > 0 ? (
+                <ul className="grad-shortfall-list">
+                  {shortfalls.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>모든 요건을 충족했어요!</p>
+              )}
             </section>
           </>
         )}
