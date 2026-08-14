@@ -29,7 +29,7 @@ function semesterKey(year, semester) {
 
 /**
  * CourseManagement Page
- * 학기별 시간표/수강목록 조회, 과목 추가(카탈로그 검색 또는 교양 직접입력), 성적 입력, 삭제.
+ * 학기별 시간표/수강목록 조회, 과목 추가(카탈로그 검색 또는 직접입력 — 전공도 포함), 성적 입력, 삭제.
  *
  * Props:
  * - user: object
@@ -46,7 +46,10 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   const [addMode, setAddMode] = useState('catalog'); // 'catalog' | 'manual'
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '교양선택' });
+  const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '전공선택' });
+  const [showSemesterPicker, setShowSemesterPicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(current.year);
+  const [pickerSemester, setPickerSemester] = useState(current.semester);
 
   useEffect(() => {
     getCourseSummary()
@@ -133,7 +136,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
     setShowAddForm(false);
     setKeyword('');
     setSearchResults([]);
-    setManualFields({ name: '', credits: '', category: '교양선택' });
+    setManualFields({ name: '', credits: '', category: '전공선택' });
   };
 
   const handleAddFromCatalog = async (courseId) => {
@@ -191,7 +194,46 @@ function CourseManagement({ user, onGoHome, onLogout }) {
               {t.year}-{t.semester}
             </button>
           ))}
+          <button
+            className="courses-tab courses-tab-add"
+            onClick={() => {
+              setPickerYear(current.year);
+              setPickerSemester(current.semester);
+              setShowSemesterPicker((v) => !v);
+            }}
+          >
+            + 학기 이동
+          </button>
         </div>
+
+        {showSemesterPicker && (
+          <div className="courses-semester-picker">
+            <input
+              type="number"
+              className="courses-picker-year"
+              value={pickerYear}
+              onChange={(e) => setPickerYear(Number(e.target.value))}
+            />
+            <span>년</span>
+            <select
+              className="courses-picker-semester"
+              value={pickerSemester}
+              onChange={(e) => setPickerSemester(Number(e.target.value))}
+            >
+              <option value={1}>1학기</option>
+              <option value={2}>2학기</option>
+            </select>
+            <button
+              className="courses-picker-go"
+              onClick={() => {
+                setCurrent({ year: pickerYear, semester: pickerSemester });
+                setShowSemesterPicker(false);
+              }}
+            >
+              이동
+            </button>
+          </div>
+        )}
 
         <div className="courses-summary-row">
           <div className="courses-summary-stat">
@@ -275,14 +317,14 @@ function CourseManagement({ user, onGoHome, onLogout }) {
                   onClick={() => setAddMode('catalog')}
                   type="button"
                 >
-                  전공 검색
+                  카탈로그 검색
                 </button>
                 <button
                   className={addMode === 'manual' ? 'active' : ''}
                   onClick={() => setAddMode('manual')}
                   type="button"
                 >
-                  교양 직접입력
+                  직접입력
                 </button>
               </div>
               <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
@@ -314,6 +356,10 @@ function CourseManagement({ user, onGoHome, onLogout }) {
               </>
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
+                <p className="courses-manual-hint">
+                  전공·교양 상관없이 과목명/학점/이수구분만 입력하면 등록돼요. 시간표 정보는 없어도 괜찮습니다 —
+                  시간표에는 안 뜨고 수강 목록에만 표시돼요.
+                </p>
                 <div className="auth-field">
                   <label>과목명</label>
                   <input
