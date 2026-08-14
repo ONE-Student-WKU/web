@@ -1,0 +1,62 @@
+name: Server Deploy Pipeline
+
+# client용 Vercel 워크플로우와 완전히 분리된 백엔드(GCP VM) 전용 배포
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'db/**'
+      - 'ecosystem.config.js'
+  workflow_dispatch:
+
+# 동일 브랜치 연속 배포 시 이전 실행 취소
+concurrency:
+  group: server-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to GCP VM
+    runs-on: ubuntu-latest
+
+    steps:
+      # 코드 체크아웃
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      # SSH 키 및 known_hosts 준비
+      - name: SSH 접속 준비
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts
+
+      # node_modules 제외하고 서버 코드만 VM으로 전송 (.env는 동기화 대상에 없어 항상 보존)
+      - name: 코드 동기화
+        run: |
+          rsync -az \
+            --exclude 'node_modules' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            server db ecosystem.config.js \
+            ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:~/app/
+
+      # 의존성 설치 후 PM2 무중단 재시작(최초 실행 시엔 신규 시작)
+      - name: 의존성 설치 및 재시작
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} '
+            set -e
+            cd ~/app/server && npm install --omit=dev
+            cd ~/app
+            pm2 describe wku-ai-chat-server > /dev/null 2>&1 \
+              && pm2 reload ecosystem.config.js --only wku-ai-chat-server --env production \
+              || pm2 start ecosystem.config.js --only wku-ai-chat-server --env production
+            pm2 save
+          '
+
+      # 배포 직후 헬스체크로 최종 확인
+      - name: 헬스체크
+        run: |
+          sleep 5
+          curl -fsS https://136-112-243-37.sslip.io/health
