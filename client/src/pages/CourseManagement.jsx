@@ -15,6 +15,10 @@ const DAYS = ['월', '화', '수', '목', '금'];
 const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F'];
 const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
 
+// 휴학/전과/편입 등으로 재학 기간이 늘어질 수 있어 넉넉히 8년 전까지 선택지로 제공.
+const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 9 }, (_, i) => CURRENT_CALENDAR_YEAR - i);
+
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
 function getCurrentYearSemester() {
   const now = new Date();
@@ -218,12 +222,17 @@ function CourseManagement({ user, onGoHome, onLogout }) {
 
         {showSemesterPicker && (
           <div className="courses-semester-picker">
-            <input
-              type="number"
+            <select
               className="courses-picker-year"
               value={pickerYear}
               onChange={(e) => setPickerYear(Number(e.target.value))}
-            />
+            >
+              {YEAR_OPTIONS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
             <span>년</span>
             <select
               className="courses-picker-semester"
