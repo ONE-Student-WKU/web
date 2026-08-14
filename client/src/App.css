@@ -1,11 +1,29 @@
+/* Color tokens — dark by default (matches the wireframe's dark rendering). */
+:root {
+  --color-bg-page: #131417;
+  --color-bg-frame: #1a1c21;
+  --color-bg-card: #22252b;
+  --color-border: #2f333b;
+  --color-border-strong: #3d424c;
+  --color-text-primary: #f0f1f3;
+  --color-text-secondary: #b0b4bc;
+  --color-text-muted: #797e88;
+  --color-accent: #5b8def;
+  --color-accent-contrast: #ffffff;
+  --color-accent-bg: #1f3050;
+  --color-accent-disabled: #2c3c5c;
+  --color-danger: #f2685c;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, 'Malgun Gothic', sans-serif;
-  background: #e8e9ed;
+  font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
 }
 
 .app-container {
@@ -20,16 +38,18 @@ body {
   max-width: 420px;
   height: 100vh;
   max-height: 900px;
-  background: #fff;
+  background: var(--color-bg-frame);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.14);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 480px) {
   .app-frame {
     max-height: none;
+    border: none;
     box-shadow: none;
   }
 }
@@ -40,7 +60,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -48,12 +68,14 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--color-text-muted);
 }
 
 .screen-title {
   font-size: 15px;
-  font-weight: bold;
-  color: #1a3c8f;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--color-accent);
 }
 
 .back-btn {
@@ -63,34 +85,46 @@ body {
   border: none;
   font-size: 20px;
   line-height: 1;
-  color: #555;
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 
 .avatar-btn {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #dceafe;
-  color: #1a3c8f;
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
   border: none;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
 }
 
-/* Shared prompt bar — Home's entry button and the real Chat input share this look */
+/* Shared prompt bar — Home's entry button and the real Chat input share this look.
+   Outer bar has no pill of its own; it holds a separate pill (text) and a separate
+   circular send button side by side, matching the wireframe structure exactly. */
 .prompt-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: calc(100% - 32px);
-  margin: 0 16px 16px;
-  padding: 8px 8px 8px 16px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 24px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
   flex-shrink: 0;
+}
+
+.prompt-bar-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 18px;
+  padding: 8px 12px;
+  background: var(--color-bg-card);
   text-align: left;
   cursor: pointer;
 }
@@ -102,30 +136,29 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14px;
-  color: #999;
+  font-size: 13px;
+  color: var(--color-text-muted);
   font-family: inherit;
 }
 
 .prompt-bar-input {
-  color: #222;
+  color: var(--color-text-primary);
   resize: none;
   overflow-y: auto;
   line-height: 1.4;
-  padding: 6px 0;
   max-height: 120px;
 }
 
 .prompt-bar-input:disabled {
-  color: #aaa;
+  color: var(--color-text-muted);
 }
 
 .prompt-send-btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #1a3c8f;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   border: none;
   display: flex;
   align-items: center;
@@ -136,7 +169,7 @@ body {
 }
 
 .prompt-send-btn:disabled {
-  background: #b7c2dc;
+  background: var(--color-accent-disabled);
   cursor: not-allowed;
 }
 
@@ -157,60 +190,74 @@ body {
 }
 
 .auth-heading {
-  font-size: 20px;
-  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 8px;
+  color: var(--color-text-primary);
 }
 
 .auth-subheading {
   font-size: 13px;
-  color: #888;
-  margin: 0 0 24px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0 0 32px;
 }
 
 .auth-field {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .auth-field label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .auth-field input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
   font-size: 14px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
 }
 
 .auth-submit-btn {
   width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  background: #1a3c8f;
-  color: #fff;
+  padding: 14px;
+  margin-top: 10px;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.auth-toggle-btn {
-  display: block;
-  margin-top: 16px;
-  width: 100%;
+.auth-toggle-text {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.auth-toggle-link {
   background: none;
   border: none;
-  color: #1a3c8f;
-  font-size: 13px;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  color: var(--color-accent);
   cursor: pointer;
 }
 
 .auth-error {
-  color: #c0392b;
+  color: var(--color-danger);
   font-size: 13px;
   margin: 4px 0 0;
 }
@@ -230,40 +277,50 @@ body {
 }
 
 .home-error {
-  color: #c0392b;
+  color: var(--color-danger);
   font-size: 13px;
   margin: 0 0 12px;
 }
 
 .home-greeting {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 2px;
 }
 
 .home-subgreeting {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
-  margin: 0 0 16px;
+  margin: 0 0 14px;
+  color: var(--color-text-primary);
 }
 
 .home-card {
-  background: #f4f5f7;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 14px;
   margin-bottom: 12px;
 }
 
 .home-card-label {
   font-size: 12px;
-  color: #888;
-  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
 }
 
-.home-card-empty {
+.home-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 13px;
-  color: #999;
-  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.home-card-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-text-muted);
 }
 
 .home-credit-value {
@@ -271,30 +328,31 @@ body {
 }
 
 .home-credit-number {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
+  color: var(--color-text-primary);
 }
 
 .home-credit-total {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .home-progress-track {
   height: 8px;
-  background: #e2e4ea;
+  background: var(--color-border);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .home-progress-fill {
   height: 100%;
-  background: #1a3c8f;
+  background: var(--color-accent);
 }
 
 .home-quick-label {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-muted);
   margin: 0 0 8px;
 }
 
@@ -306,17 +364,30 @@ body {
 }
 
 .home-quick-btn {
-  padding: 14px 8px;
-  font-size: 13px;
-  background: #f4f5f7;
-  border: 1px solid #eee;
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   cursor: pointer;
 }
 
+.home-quick-btn svg {
+  color: var(--color-text-secondary);
+}
+
 .home-quick-btn:disabled {
-  color: #aaa;
+  color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+.home-quick-btn:disabled svg {
+  color: var(--color-text-muted);
 }
 
 /* Chat */
@@ -340,18 +411,18 @@ body {
   max-width: 80%;
   padding: 10px 14px;
   border-radius: 10px;
-  background: #f4f5f7;
+  background: var(--color-bg-card);
 }
 
 .chat-bubble.user {
   align-self: flex-end;
-  background: #dceafe;
+  background: var(--color-accent-bg);
 }
 
 .chat-bubble .message-sender {
   font-size: 12px;
   font-weight: bold;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 
@@ -359,27 +430,28 @@ body {
   white-space: pre-wrap;
   line-height: 1.5;
   font-size: 14px;
+  color: var(--color-text-primary);
 }
 
 .chat-bubble .message-time {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
   margin-top: 4px;
 }
 
 .message-citations {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--color-border);
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .citations-toggle {
   background: none;
   border: none;
   padding: 0;
-  color: #1a3c8f;
+  color: var(--color-accent);
   font-size: 12px;
   cursor: pointer;
 }
@@ -392,7 +464,7 @@ body {
 .chat-disclaimer {
   padding: 0 16px 12px;
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
   text-align: center;
   flex-shrink: 0;
 }
@@ -407,7 +479,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #aaa;
+  background: var(--color-text-muted);
   animation: typing-bounce 1.2s infinite ease-in-out;
 }
 

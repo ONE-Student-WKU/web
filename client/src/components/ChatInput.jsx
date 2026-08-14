@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { IconArrowUp } from './icons.jsx';
 
 const MAX_TEXTAREA_HEIGHT = 120;
 
@@ -38,18 +39,20 @@ function ChatInput({ onSendMessage, disabled }) {
 
   return (
     <form className="prompt-bar" onSubmit={handleSubmit}>
-      <textarea
-        ref={textareaRef}
-        className="prompt-bar-input"
-        placeholder="무엇이든 물어보세요"
-        rows={1}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-      />
+      <div className="prompt-bar-pill">
+        <textarea
+          ref={textareaRef}
+          className="prompt-bar-input"
+          placeholder="무엇이든 물어보세요"
+          rows={1}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+        />
+      </div>
       <button type="submit" className="prompt-send-btn" aria-label="전송" disabled={disabled}>
-        ↑
+        <IconArrowUp />
       </button>
     </form>
   );
