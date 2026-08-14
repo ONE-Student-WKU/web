@@ -514,6 +514,7 @@ body {
 .grad-cert-desc {
   margin: 0;
   font-size: 12px;
+  line-height: 1.6;
   color: var(--color-text-secondary);
 }
 
