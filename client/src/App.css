@@ -48,6 +48,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #999;
 }
 
 .screen-title {
@@ -71,10 +72,12 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #dceafe;
-  color: #1a3c8f;
+  background: #eef0f3;
+  color: #666;
   border: none;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -248,22 +251,31 @@ body {
 }
 
 .home-card {
-  background: #f4f5f7;
+  background: #f9fafb;
+  border: 1px solid #eee;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 16px;
   margin-bottom: 12px;
 }
 
 .home-card-label {
   font-size: 12px;
   color: #888;
-  margin: 0 0 8px;
+  margin: 0 0 10px;
 }
 
-.home-card-empty {
+.home-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 13px;
-  color: #999;
-  margin: 0;
+  color: #666;
+}
+
+.home-card-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #aaa;
 }
 
 .home-credit-value {
@@ -306,17 +318,30 @@ body {
 }
 
 .home-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   padding: 14px 8px;
-  font-size: 13px;
-  background: #f4f5f7;
+  font-size: 12px;
+  color: #444;
+  background: #f9fafb;
   border: 1px solid #eee;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
+}
+
+.home-quick-btn svg {
+  color: #666;
 }
 
 .home-quick-btn:disabled {
   color: #aaa;
   cursor: not-allowed;
+}
+
+.home-quick-btn:disabled svg {
+  color: #bbb;
 }
 
 /* Chat */

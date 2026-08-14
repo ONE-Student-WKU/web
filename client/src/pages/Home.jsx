@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getCourseSummary } from '../api/chatApi.js';
+import { IconMenu, IconUser, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
 
 // 2026학번부터 공학3계열 개편으로 졸업학점 체계가 136→130으로 바뀜 (db/regulations/졸업/이수학점_총괄표.md 근거)
 const RESTRUCTURE_ADMISSION_YEAR = 2026;
@@ -45,9 +46,12 @@ function Home({ user, onOpenChat, onLogout }) {
   return (
     <div className="home-page">
       <header className="screen-header">
-        <span className="screen-title">ONE Student</span>
+        <div className="screen-header-left">
+          <IconMenu />
+          <span className="screen-title">ONE Student</span>
+        </div>
         <button className="avatar-btn" onClick={onLogout} title="로그아웃">
-          {(user?.name || '?').charAt(0)}
+          <IconUser />
         </button>
       </header>
 
@@ -73,23 +77,30 @@ function Home({ user, onOpenChat, onLogout }) {
 
         <section className="home-card">
           <p className="home-card-label">부족 요건</p>
-          <p className="home-card-empty">졸업요건 진단 기능은 아직 준비 중이에요. 곧 만나보실 수 있어요.</p>
+          <div className="home-card-row">
+            <IconAlertTriangle />
+            <span>졸업요건 진단 기능은 아직 준비 중이에요. 곧 만나보실 수 있어요.</span>
+          </div>
         </section>
 
         <p className="home-quick-label">빠른 실행</p>
         <div className="home-quick-actions">
           <button className="home-quick-btn" disabled title="준비 중인 기능이에요">
-            과목 관리
+            <IconBook />
+            <span>과목 관리</span>
           </button>
           <button className="home-quick-btn" disabled title="준비 중인 기능이에요">
-            졸업요건 진단
+            <IconChecklist />
+            <span>졸업요건 진단</span>
           </button>
         </div>
       </div>
 
       <button className="prompt-bar" onClick={() => onOpenChat()}>
         <span className="prompt-bar-placeholder">무엇이든 물어보세요</span>
-        <span className="prompt-send-btn" aria-hidden="true">↑</span>
+        <span className="prompt-send-btn" aria-hidden="true">
+          <IconArrowUp />
+        </span>
       </button>
     </div>
   );

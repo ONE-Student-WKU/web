@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { IconArrowUp } from './icons.jsx';
 
 const MAX_TEXTAREA_HEIGHT = 120;
 
@@ -49,7 +50,7 @@ function ChatInput({ onSendMessage, disabled }) {
         disabled={disabled}
       />
       <button type="submit" className="prompt-send-btn" aria-label="전송" disabled={disabled}>
-        ↑
+        <IconArrowUp />
       </button>
     </form>
   );
