@@ -355,5 +355,82 @@
     "professor": "이종민",
     "credits": 3,
     "category": "전공필수"
+  },
+  {
+    "id": "L00002",
+    "name": "대학생활과자기혁신",
+    "professor": null,
+    "credits": 2,
+    "category": "교양필수"
+  },
+  {
+    "id": "374140",
+    "name": "컴퓨터개론",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374142",
+    "name": "C언어프로그래밍",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374004",
+    "name": "창의공학설계",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374141",
+    "name": "파이썬프로그래밍",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374143",
+    "name": "고급프로그래밍언어",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374006",
+    "name": "이산수학",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374008",
+    "name": "데이터구조",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374065",
+    "name": "Java와객체지향프로그래밍",
+    "professor": null,
+    "credits": 3,
+    "category": "전공필수"
+  },
+  {
+    "id": "374066",
+    "name": "웹(HTML5)프로그래밍",
+    "professor": null,
+    "credits": 3,
+    "category": "전공선택"
+  },
+  {
+    "id": "374067",
+    "name": "IT융합기술이해",
+    "professor": null,
+    "credits": 3,
+    "category": "전공선택"
   }
 ]

@@ -108,7 +108,15 @@ function Home({
 
         <section className="home-card">
           <p className="home-card-label">부족 요건</p>
-          <div className="home-card-row">
+          <div
+            className={
+              shortfalls === null
+                ? 'home-card-row'
+                : shortfalls.length > 0
+                  ? 'home-card-row shortfall-danger'
+                  : 'home-card-row shortfall-ok'
+            }
+          >
             <IconAlertTriangle />
             <span>
               {shortfalls === null

@@ -59,7 +59,10 @@ router.get('/', async (req, res, next) => {
 const VALID_DAYS = ['월', '화', '수', '목', '금'];
 
 // POST /api/my-courses
-// 전공: { courseId, year, semester } - 카탈로그에서 검색·선택
+// 전공: { courseId, year, semester, schedule? } - 카탈로그에서 검색·선택
+//   (카탈로그 과목에 이미 확정된 시간표가 있으면 schedule은 무시되고 그 시간표를 그대로
+//    쓴다. 저학년 필수과목처럼 시간표 없이 이름만 등록된 카탈로그 과목은 직접입력과
+//    동일하게 schedule을 받아준다 — courseService.addMyCourse 참고.)
 // 교양/카탈로그에 없는 과목: { name, credits, category, year, semester, schedule? } - 직접 입력
 // schedule([{day,period}])은 선택 입력 — 과거 학기처럼 시간을 몰라도 등록 가능해야 하므로 필수 아님.
 router.post('/', async (req, res, next) => {
@@ -81,13 +84,22 @@ router.post('/', async (req, res, next) => {
       if (!courseService.VALID_CATEGORIES.includes(category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
       }
-      if (schedule !== undefined) {
-        const isValid =
-          Array.isArray(schedule) &&
-          schedule.every((s) => VALID_DAYS.includes(s.day) && Number.isInteger(s.period) && s.period > 0);
-        if (!isValid) {
-          return res.status(400).json({ status: 400, code: 'INVALID_SCHEDULE', message: null, data: null });
+    }
+
+    if (schedule !== undefined) {
+      const isValid =
+        Array.isArray(schedule) &&
+        schedule.every((s) => VALID_DAYS.includes(s.day) && Number.isInteger(s.period) && s.period > 0);
+      if (!isValid) {
+        return res.status(400).json({ status: 400, code: 'INVALID_SCHEDULE', message: null, data: null });
+      }
+      const seenSlots = new Set();
+      for (const s of schedule) {
+        const key = `${s.day}-${s.period}`;
+        if (seenSlots.has(key)) {
+          return res.status(400).json({ status: 400, code: 'DUPLICATE_SCHEDULE_SLOT', message: null, data: null });
         }
+        seenSlots.add(key);
       }
     }
 
@@ -104,6 +116,14 @@ router.post('/', async (req, res, next) => {
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ status: 409, code: 'COURSE_ALREADY_ADDED', message: null, data: null });
+    }
+    if (err.code === 'SCHEDULE_CONFLICT') {
+      return res.status(409).json({
+        status: 409,
+        code: 'SCHEDULE_CONFLICT',
+        message: null,
+        data: { day: err.conflictDay, period: err.conflictPeriod, conflictCourseName: err.conflictCourseName },
+      });
     }
     next(err);
   }

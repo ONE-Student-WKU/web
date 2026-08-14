@@ -17,6 +17,7 @@ async function apiRequest(path, options = {}) {
     const err = new Error(body.code || 'REQUEST_FAILED');
     err.code = body.code;
     err.status = res.status;
+    err.data = body.data;
     throw err;
   }
   return body.data;
