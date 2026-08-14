@@ -3,6 +3,7 @@ import {
   getMyCourses,
   getTimetable,
   getCourseSummary,
+  getSemesters,
   searchCatalog,
   addMyCourse,
   updateMyCourse,
@@ -39,6 +40,7 @@ function semesterKey(year, semester) {
 function CourseManagement({ user, onGoHome, onLogout }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [summary, setSummary] = useState(null);
+  const [semesters, setSemesters] = useState([]);
   const [myCourses, setMyCourses] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [error, setError] = useState(null);
@@ -54,6 +56,9 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   useEffect(() => {
     getCourseSummary()
       .then(setSummary)
+      .catch(() => setError('정보를 불러오지 못했어요.'));
+    getSemesters()
+      .then(setSemesters)
       .catch(() => setError('정보를 불러오지 못했어요.'));
   }, []);
 
@@ -72,8 +77,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   }, [current]);
 
   const tabs = useMemo(() => {
-    const known = (summary?.bySemester || []).map((s) => ({ year: s.year, semester: s.semester }));
-    const all = [...known, current];
+    const all = [...semesters, current];
     const seen = new Set();
     const deduped = [];
     for (const t of all) {
@@ -83,7 +87,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
       deduped.push(t);
     }
     return deduped.sort((a, b) => a.year - b.year || a.semester - b.semester);
-  }, [summary, current]);
+  }, [semesters, current]);
 
   const currentSemesterSummary = summary?.bySemester?.find(
     (s) => s.year === current.year && s.semester === current.semester
@@ -95,8 +99,9 @@ function CourseManagement({ user, onGoHome, onLogout }) {
 
   async function refreshAfterChange() {
     loadSemesterData(current.year, current.semester);
-    const s = await getCourseSummary();
+    const [s, sems] = await Promise.all([getCourseSummary(), getSemesters()]);
     setSummary(s);
+    setSemesters(sems);
   }
 
   const handleGradeChange = async (courseId, letterGrade) => {

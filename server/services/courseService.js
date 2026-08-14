@@ -180,6 +180,17 @@ async function getTimetable(studentId, { year, semester }) {
   return rows.map((r) => ({ day: r.day, period: r.period, courseId: r.course_id, name: r.name }));
 }
 
+// getSummary의 학기 집계는 letter_grade IS NOT NULL로 걸러지는데(GPA 계산 목적상 맞음),
+// 화면의 학기 탭은 성적 입력 여부와 무관하게 "수강 기록이 있는 학기"를 전부 보여줘야
+// 한다 — 안 그러면 성적을 아직 안 넣은 학기가 새로고침할 때마다 탭에서 사라져 보인다.
+async function listSemesters(studentId) {
+  const [rows] = await pool.query(
+    'SELECT DISTINCT year, semester FROM student_courses WHERE student_id = ? ORDER BY year, semester',
+    [studentId]
+  );
+  return rows.map((r) => ({ year: r.year, semester: r.semester }));
+}
+
 async function getSummary(studentId) {
   // credits가 이제 student_courses 자체에 저장돼 있으므로 courses JOIN이 필요 없음.
   const [rows] = await pool.query(
@@ -245,4 +256,5 @@ module.exports = {
   deleteMyCourse,
   getTimetable,
   getSummary,
+  listSemesters,
 };

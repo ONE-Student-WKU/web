@@ -10,6 +10,17 @@ const courseService = require('../services/courseService');
 
 router.use(requireAuth);
 
+// GET /api/my-courses/semesters
+// 성적 입력 여부와 무관하게 수강 기록이 있는 학기 전부 반환 (화면의 학기 탭 목록용).
+router.get('/semesters', async (req, res, next) => {
+  try {
+    const data = await courseService.listSemesters(req.session.userId);
+    res.status(200).json({ status: 200, code: 'SEMESTERS_SUCCESS', message: null, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/my-courses/timetable?year=&semester=
 router.get('/timetable', async (req, res, next) => {
   try {
