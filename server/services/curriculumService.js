@@ -67,7 +67,10 @@ async function findCourses({ courseName, grade, semester, departmentId, trackId,
   }));
 }
 
-const GRADE_RE = /(\d)\s*학년|학년[:\s]*(\d)/;
+// (?<!\d): "2022학년도"의 마지막 '2'가 "2학년"으로 오매칭되는 걸 막는다 — 4자리 연도 표기
+// ("YYYY학년도")와 "N학년"이 글자만 보면 구분이 안 돼서, 앞에 다른 숫자가 붙어있으면(=연도의
+// 일부) 학년으로 보지 않는다.
+const GRADE_RE = /(?<!\d)(\d)\s*학년|학년[:\s]*(\d)/;
 const SEMESTER_RE = /(\d)\s*학기|학기[:\s]*(\d)/;
 const ADMISSION_YEAR_RE = /(\d{2,4})\s*학번/;
 
@@ -187,7 +190,7 @@ function formatChunk(row) {
   const trackLabel = row.trackName ? ` · ${row.trackName}` : '';
   const codeLabel = row.courseCode ? ` (${row.courseCode})` : '';
   const enLabel = row.courseNameEn ? ` / ${row.courseNameEn}` : '';
-  const creditsLabel = row.credits != null ? `${row.credits}학점` : '학점 정보 없음';
+  const creditsLabel = row.credits != null ? `${Number(row.credits)}학점` : '학점 정보 없음';
   const remarksLabel = row.remarks ? `, 비고: ${row.remarks}` : '';
   const cohortLabel = row.minAdmissionYear || row.maxAdmissionYear
     ? ` [${row.minAdmissionYear ?? ''}~${row.maxAdmissionYear ?? ''}학번]`
@@ -234,9 +237,111 @@ async function lookupFromMessage(message, student) {
   return deduped.map(formatChunk);
 }
 
+// course_offerings(실제 개설 이력)를 연도 조건으로 조회한다. curriculum_courses(편성 계획)와
+// 달리 학기당 50~90행이 나올 수 있어, 학기까지 특정 안 된 "연도만" 질문은 두 학기 합쳐 100행을
+// 넘기기 쉽다 — 근거 청크가 그대로 비대해지지 않도록 (연도, 학기, 학년) 단위로 묶어 카테고리별
+// 과목명만 나열한 요약 청크로 만든다(개별 분반/교수/시간은 생략).
+// "2022학년도"(학사 관용 표현)와 "2022년"/"2022년도"를 모두 잡는다. "학년도"를 먼저 시도해야
+// GRADE_RE와 별개로 이 정규식 자체도 "학" 유무에 안 걸리고 바로 연도를 뽑아낸다.
+const YEAR_RE = /(\d{4})\s*(?:학년도|년도|년)/;
+
+// ADMISSION_YEAR_RE("NN학번")와 겹치지 않도록 "년"/"년도"/"학년도" 접미사가 있을 때만 매칭한다.
+function extractYear(text) {
+  const m = text.match(YEAR_RE);
+  return m ? Number(m[1]) : null;
+}
+
+function extractSemester(text) {
+  const m = text.match(SEMESTER_RE);
+  return m ? Number(m[1] || m[2]) : null;
+}
+
+async function findOfferings({ departmentId, trackId, year, semester } = {}) {
+  const conditions = ['co.year = ?'];
+  const params = [year];
+
+  if (semester) {
+    conditions.push('co.semester = ?');
+    params.push(semester);
+  }
+  if (departmentId) {
+    conditions.push('co.department_id = ?');
+    params.push(departmentId);
+  }
+  if (trackId) {
+    conditions.push('co.track_id = ?');
+    params.push(trackId);
+  }
+
+  const [rows] = await pool.query(
+    `SELECT co.year, co.semester, co.grade, co.category, co.course_name, co.credits,
+            d.name AS department_name, t.name AS track_name
+     FROM course_offerings co
+     JOIN departments d ON d.id = co.department_id
+     LEFT JOIN tracks t ON t.id = co.track_id
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY co.semester, co.grade, co.category, co.course_name`,
+    params
+  );
+
+  return rows;
+}
+
+function formatOfferingChunk(group) {
+  const trackLabel = group.trackName ? ` · ${group.trackName}` : '';
+  const gradeLabel = group.grade != null ? `${group.grade}학년` : '학년 미지정';
+  const categoryLines = [...group.categories.entries()]
+    .map(([category, names]) => `${category}: ${[...names].join(', ')}`)
+    .join('\n');
+
+  return {
+    chunkId: `offering-${group.departmentName}-${group.trackName || ''}-${group.year}-${group.semester}-${group.grade ?? 'x'}`,
+    documentTitle: `${group.departmentName}${trackLabel} ${group.year}학년도 ${group.semester}학기 ${gradeLabel} 개설과목`,
+    content: `${group.year}년 ${group.semester}학기에 실제 개설된 과목 목록(${gradeLabel}):\n${categoryLines}`,
+  };
+}
+
+// 메시지에서 연도(및 있으면 학기)를 감지하면 그 학기에 실제 개설된 과목을 조회해 근거 청크로
+// 변환한다. student의 학과/트랙을 알면 그 학생 소속으로 좁히고, 모르면(온보딩 전 등) 전체를
+// 반환한다 — lookupFromMessage와 동일한 방침.
+async function lookupOfferingsFromMessage(text, student) {
+  const year = extractYear(text);
+  if (!year) return [];
+
+  const semester = extractSemester(text);
+  const baseFilter = {
+    departmentId: student?.department_id || undefined,
+    trackId: student?.track_id || undefined,
+  };
+
+  const rows = await findOfferings({ year, semester, ...baseFilter });
+  if (rows.length === 0) return [];
+
+  const groups = new Map();
+  for (const row of rows) {
+    const key = `${row.department_name}-${row.track_name || ''}-${row.year}-${row.semester}-${row.grade ?? 'x'}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        departmentName: row.department_name,
+        trackName: row.track_name,
+        year: row.year,
+        semester: row.semester,
+        grade: row.grade,
+        categories: new Map(),
+      });
+    }
+    const group = groups.get(key);
+    if (!group.categories.has(row.category)) group.categories.set(row.category, new Set());
+    group.categories.get(row.category).add(`${row.course_name}(${Number(row.credits)}학점)`);
+  }
+
+  return [...groups.values()].map(formatOfferingChunk);
+}
+
 module.exports = {
   findCourses,
   extractGradeSemester,
   lookupFromMessage,
   lookupRequirementsFromMessage,
+  lookupOfferingsFromMessage,
 };
