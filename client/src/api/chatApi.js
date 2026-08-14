@@ -34,6 +34,12 @@ export const getMe = () => apiRequest('/me');
 
 export const updateProfile = (payload) => apiRequest('/me', { method: 'PATCH', body: JSON.stringify(payload) });
 
+export const changePassword = (currentPassword, newPassword) =>
+  apiRequest('/me/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
+
+export const deleteAccount = (password) =>
+  apiRequest('/me', { method: 'DELETE', body: JSON.stringify({ password }) });
+
 export const getDepartments = () => apiRequest('/onboarding/departments');
 
 export const getTracks = (departmentId) => apiRequest(`/onboarding/tracks?departmentId=${departmentId}`);

@@ -88,6 +88,7 @@ async function completeOnboarding(studentId, { departmentId, admissionYear, enro
 // 프로필 수정(PATCH /api/me) 전용 — 넘어온 필드만 부분 갱신 (courseService.updateMyCourse와 동일한 패턴)
 async function updateProfile(studentId, updates) {
   const columnMap = {
+    name: 'name',
     departmentId: 'department_id',
     trackId: 'track_id',
     admissionYear: 'admission_year',
@@ -116,6 +117,16 @@ async function updateProfile(studentId, updates) {
   await pool.query(`UPDATE students SET ${fields.join(', ')} WHERE id = ?`, params);
 }
 
+async function updatePassword(studentId, passwordHash) {
+  await pool.query('UPDATE students SET password = ? WHERE id = ?', [passwordHash, studentId]);
+}
+
+// 계정 삭제 — students.id를 참조하는 student_courses/chat_conversations는 스키마에
+// ON DELETE CASCADE로 걸려있어(db/schema.sql) 별도 정리 없이 이 한 줄로 연쇄 삭제된다.
+async function deleteStudent(studentId) {
+  await pool.query('DELETE FROM students WHERE id = ?', [studentId]);
+}
+
 module.exports = {
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
@@ -129,4 +140,6 @@ module.exports = {
   findTrackById,
   completeOnboarding,
   updateProfile,
+  updatePassword,
+  deleteStudent,
 };

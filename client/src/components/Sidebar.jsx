@@ -11,8 +11,9 @@ import AccountMenu from './AccountMenu.jsx';
  * - onGoHome: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding }) {
+function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   return (
     <header className="screen-header">
       <div className="screen-header-left">
@@ -28,6 +29,7 @@ function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding })
         onLogout={onLogout}
         onOpenSettings={onOpenSettings}
         onOpenOnboarding={onOpenOnboarding}
+        onOpenProfile={onOpenProfile}
       />
     </header>
   );

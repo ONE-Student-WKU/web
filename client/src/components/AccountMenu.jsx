@@ -11,8 +11,9 @@ import { IconUser } from './icons.jsx';
  * - onLogout: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding }) {
+function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -50,6 +51,15 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding }) {
             }}
           >
             학적정보 수정
+          </button>
+          <button
+            className="account-menu-item"
+            onClick={() => {
+              setOpen(false);
+              onOpenProfile();
+            }}
+          >
+            개인정보 수정
           </button>
           <div className="account-menu-divider" />
           <button

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  getMe,
   getMyCourses,
   getTimetable,
   getCourseSummary,
@@ -16,9 +17,7 @@ const DAYS = ['월', '화', '수', '목', '금'];
 const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F'];
 const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
 
-// 휴학/전과/편입 등으로 재학 기간이 늘어질 수 있어 넉넉히 8년 전까지 선택지로 제공.
 const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 9 }, (_, i) => CURRENT_CALENDAR_YEAR - i);
 
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
 // 8월은 수업 자체는 방학이지만 2학기 수강신청이 이미 시작되는 시기라 2학기로 친다
@@ -59,9 +58,11 @@ function formatSchedule(schedule) {
  * - onLogout: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding }) {
+function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
+  const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [semesters, setSemesters] = useState([]);
   const [myCourses, setMyCourses] = useState([]);
@@ -82,6 +83,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [addedSemesters, setAddedSemesters] = useState([]);
 
   useEffect(() => {
+    getMe()
+      .then(setProfile)
+      .catch(() => {});
     getCourseSummary()
       .then(setSummary)
       .catch(() => setError('정보를 불러오지 못했어요.'));
@@ -89,6 +93,15 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       .then(setSemesters)
       .catch(() => setError('정보를 불러오지 못했어요.'));
   }, []);
+
+  // 학번(입학년도) 이전 학기는 재학 중이었을 수 없으니 선택지에서 제외.
+  // 입학년도를 아직 모르면(프로필 로딩 전/온보딩 전) 기존처럼 넉넉히 8년 전까지 보여준다.
+  const yearOptions = useMemo(() => {
+    const minYear = profile?.admissionYear ?? CURRENT_CALENDAR_YEAR - 8;
+    const years = [];
+    for (let y = CURRENT_CALENDAR_YEAR; y >= minYear; y--) years.push(y);
+    return years;
+  }, [profile]);
 
   const loadSemesterData = (year, semester) => {
     Promise.all([getMyCourses(year, semester), getTimetable(year, semester)])
@@ -233,6 +246,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           onLogout={onLogout}
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
+          onOpenProfile={onOpenProfile}
         />
       </header>
 
@@ -269,7 +283,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               value={pickerYear}
               onChange={(e) => setPickerYear(Number(e.target.value))}
             >
-              {YEAR_OPTIONS.map((y) => (
+              {yearOptions.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
@@ -306,7 +320,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             <p className="courses-summary-value">{registeredCredits}학점</p>
           </div>
           <div className="courses-summary-stat">
-            <p className="home-card-label">평점(GPA)</p>
+            <p className="home-card-label">평균 학점</p>
             <p className="courses-summary-value">{currentSemesterSummary ? currentSemesterSummary.gpa : '-'}</p>
           </div>
         </div>
@@ -317,7 +331,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             <p className="courses-summary-value">{summary ? summary.total.earnedCredits : 0}학점</p>
           </div>
           <div className="courses-summary-stat">
-            <p className="home-card-label">전체 평점(GPA)</p>
+            <p className="home-card-label">전체 평균 학점</p>
             <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
           </div>
         </div>

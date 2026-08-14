@@ -6,15 +6,16 @@ import CourseManagement from './pages/CourseManagement.jsx';
 import GraduationStatus from './pages/GraduationStatus.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
+import Profile from './pages/Profile.jsx';
 import { logout } from './api/chatApi.js';
 
 /**
  * Main App Component
- * Handles simple routing state (Login/Home/Chat/CourseManagement/GraduationStatus/Settings/Onboarding pages)
+ * Handles simple routing state (Login/Home/Chat/CourseManagement/GraduationStatus/Settings/Onboarding/Profile pages)
  */
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'settings' | 'onboarding'
+  const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'settings' | 'onboarding' | 'profile'
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
   );
@@ -40,6 +41,12 @@ function App() {
     });
   };
 
+  // 계정 삭제는 서버(DELETE /api/me)에서 이미 세션을 파기하므로 /auth/logout을 다시 부를 필요는 없음.
+  const handleAccountDeleted = () => {
+    setUser(null);
+    setView('home');
+  };
+
   return (
     <div className="app-container">
       <div className="app-frame">
@@ -57,6 +64,7 @@ function App() {
             onGoHome={() => setView('home')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
           />
         ) : view === 'courses' ? (
           <CourseManagement
@@ -65,6 +73,7 @@ function App() {
             onGoHome={() => setView('home')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
           />
         ) : view === 'graduation' ? (
           <GraduationStatus
@@ -73,6 +82,7 @@ function App() {
             onGoHome={() => setView('home')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
           />
         ) : view === 'settings' ? (
           <Settings
@@ -95,6 +105,13 @@ function App() {
             }}
             onSkip={() => setView('home')}
           />
+        ) : view === 'profile' ? (
+          <Profile
+            user={user}
+            onGoHome={() => setView('home')}
+            onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
+            onAccountDeleted={handleAccountDeleted}
+          />
         ) : (
           <Home
             user={user}
@@ -104,6 +121,7 @@ function App() {
             onOpenGraduation={() => setView('graduation')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
               setView('settings');

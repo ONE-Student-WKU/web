@@ -1,7 +1,10 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+
+const BCRYPT_ROUNDS = 10;
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -57,10 +60,14 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     }
 
     const {
-      departmentId, admissionYear, enrollmentType, trackId,
+      name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester,
       secondDepartmentId, careerCounselingCount, leaveSemesters,
     } = req.body;
+
+    if (name !== undefined && !name.trim()) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
+    }
 
     if (enrollmentType !== undefined && !VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
@@ -125,6 +132,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     }
 
     await studentService.updateProfile(req.session.userId, {
+      name: name !== undefined ? name.trim() : undefined,
       departmentId,
       admissionYear,
       enrollmentType,
@@ -139,6 +147,68 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/me/password
+router.patch('/me/password', requireAuth, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_CURRENT_PASSWORD', message: null, data: null });
+    }
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ status: 400, code: 'INVALID_NEW_PASSWORD', message: null, data: null });
+    }
+
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+
+    const matches = await bcrypt.compare(currentPassword, student.password);
+    if (!matches) {
+      return res.status(401).json({ status: 401, code: 'INVALID_CURRENT_PASSWORD', message: null, data: null });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await studentService.updatePassword(req.session.userId, passwordHash);
+
+    return res.status(200).json({ status: 200, code: 'PASSWORD_UPDATE_SUCCESS', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/me — 비밀번호 재확인 후 계정 완전 삭제(하드 삭제). 수강 이력/대화 기록은
+// students FK의 ON DELETE CASCADE로 함께 지워진다(db/schema.sql).
+router.delete('/me', requireAuth, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_PASSWORD', message: null, data: null });
+    }
+
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+
+    const matches = await bcrypt.compare(password, student.password);
+    if (!matches) {
+      return res.status(401).json({ status: 401, code: 'INVALID_PASSWORD', message: null, data: null });
+    }
+
+    await studentService.deleteStudent(req.session.userId);
+
+    req.session.destroy((err) => {
+      if (err) return next(err);
+      res.status(200).json({ status: 200, code: 'ACCOUNT_DELETE_SUCCESS', message: null, data: null });
+    });
   } catch (err) {
     next(err);
   }

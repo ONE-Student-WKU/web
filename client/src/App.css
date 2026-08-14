@@ -247,6 +247,30 @@ body {
   }
 }
 
+/* Profile — 개인정보 수정 화면의 계정 삭제 영역 */
+.profile-danger-zone {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
+}
+
+.profile-delete-btn {
+  width: 100%;
+  padding: 0.875rem;
+  margin-top: 0.625rem;
+  background: var(--color-danger);
+  color: var(--color-accent-contrast);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Shared prompt bar — Home's entry button and the real Chat input share this look.
    Outer bar has no pill of its own; it holds a separate pill (text) and a separate
    circular send button side by side, matching the wireframe structure exactly. */

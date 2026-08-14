@@ -24,6 +24,7 @@ function getRequiredTotalCredits(admissionYear) {
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenLeaveSettings: function
+ * - onOpenProfile: function
  * - onLogout: function
  */
 function Home({
@@ -34,6 +35,7 @@ function Home({
   onOpenSettings,
   onOpenOnboarding,
   onOpenLeaveSettings,
+  onOpenProfile,
   onLogout,
 }) {
   const [profile, setProfile] = useState(null);
@@ -73,6 +75,7 @@ function Home({
           onLogout={onLogout}
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
+          onOpenProfile={onOpenProfile}
         />
       </header>
 
