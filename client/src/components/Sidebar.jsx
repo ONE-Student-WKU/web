@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconUser } from './icons.jsx';
 
 /**
  * Sidebar Component
@@ -21,7 +22,7 @@ function Sidebar({ user, onLogout, onGoHome }) {
         <span className="screen-title">ONE Student</span>
       </div>
       <button className="avatar-btn" onClick={onLogout} title={user?.name ? `${user.name} · 로그아웃` : '로그아웃'}>
-        {(user?.name || '?').charAt(0)}
+        <IconUser />
       </button>
     </header>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
@@ -15,6 +15,11 @@ import useChat from '../hooks/useChat.js';
  */
 function Chat({ user, onLogout, onGoHome }) {
   const { messages, sendMessage, loading } = useChat();
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages, loading]);
 
   return (
     <div className="chat-page">
@@ -33,6 +38,7 @@ function Chat({ user, onLogout, onGoHome }) {
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
       <ChatInput onSendMessage={sendMessage} disabled={loading} />
       <div className="chat-disclaimer">
