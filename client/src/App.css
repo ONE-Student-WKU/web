@@ -867,3 +867,42 @@ body {
   background: var(--color-bg-card);
   color: var(--color-text-primary);
 }
+
+.courses-schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.courses-schedule-row select {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.courses-schedule-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.courses-schedule-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 6px 10px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}

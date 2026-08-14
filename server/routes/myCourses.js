@@ -56,12 +56,15 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+const VALID_DAYS = ['월', '화', '수', '목', '금'];
+
 // POST /api/my-courses
 // 전공: { courseId, year, semester } - 카탈로그에서 검색·선택
-// 교양/카탈로그에 없는 과목: { name, credits, category, year, semester } - 직접 입력
+// 교양/카탈로그에 없는 과목: { name, credits, category, year, semester, schedule? } - 직접 입력
+// schedule([{day,period}])은 선택 입력 — 과거 학기처럼 시간을 몰라도 등록 가능해야 하므로 필수 아님.
 router.post('/', async (req, res, next) => {
   try {
-    const { courseId, name, credits, category, year, semester } = req.body;
+    const { courseId, name, credits, category, year, semester, schedule } = req.body;
 
     if (!year) return res.status(400).json({ status: 400, code: 'REQUIRED_YEAR', message: null, data: null });
     if (!semester) return res.status(400).json({ status: 400, code: 'REQUIRED_SEMESTER', message: null, data: null });
@@ -78,9 +81,25 @@ router.post('/', async (req, res, next) => {
       if (!courseService.VALID_CATEGORIES.includes(category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
       }
+      if (schedule !== undefined) {
+        const isValid =
+          Array.isArray(schedule) &&
+          schedule.every((s) => VALID_DAYS.includes(s.day) && Number.isInteger(s.period) && s.period > 0);
+        if (!isValid) {
+          return res.status(400).json({ status: 400, code: 'INVALID_SCHEDULE', message: null, data: null });
+        }
+      }
     }
 
-    const id = await courseService.addMyCourse(req.session.userId, { courseId, name, credits, category, year, semester });
+    const id = await courseService.addMyCourse(req.session.userId, {
+      courseId,
+      name,
+      credits,
+      category,
+      year,
+      semester,
+      schedule,
+    });
     return res.status(201).json({ status: 201, code: 'MY_COURSE_ADD_SUCCESS', message: null, data: { id } });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {

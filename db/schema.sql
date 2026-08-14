@@ -165,7 +165,25 @@ CREATE TABLE IF NOT EXISTS student_courses (
   letter_grade      VARCHAR(5),
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL,
+  -- 같은 카탈로그 과목(course_id)을 같은 학기에 두 번 등록하는 걸 막는다. course_id가
+  -- NULL인 교양 자유입력은 MySQL이 NULL끼리는 서로 다른 값으로 취급해 이 제약에 안 걸림
+  -- (자유입력은 과목명이 자유 텍스트라 동명이과목 재등록을 막을 근거가 마땅치 않음).
+  CONSTRAINT uq_student_courses_course UNIQUE (student_id, course_id, year, semester)
+);
+
+-- 교양/직접입력 과목(course_id가 NULL)은 course_schedules에 연결할 방법이 없어서 시간표에
+-- 절대 안 뜬다. 과거 학기 기록처럼 시간을 몰라도 괜찮아야 하니 필수는 아니지만, 이번
+-- 학기처럼 실제 시간을 아는 경우엔 직접 넣어서 시간표에도 보이게 하고 싶을 수 있다 —
+-- 그래서 student_courses 행에 딸린 선택적 시간표를 별도 테이블로 둔다.
+CREATE TABLE IF NOT EXISTS student_course_schedules (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  student_course_id  INT NOT NULL,
+  day                VARCHAR(10) NOT NULL,  -- 월/화/수/목/금
+  period             INT NOT NULL,
+
+  FOREIGN KEY (student_course_id) REFERENCES student_courses(id) ON DELETE CASCADE,
+  CONSTRAINT uq_student_course_schedules UNIQUE (student_course_id, day, period)
 );
 
 -- ---------------------------------------------------------------------------

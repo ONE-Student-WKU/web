@@ -32,6 +32,20 @@ function semesterKey(year, semester) {
   return `${year}-${semester}`;
 }
 
+// 카탈로그 검색 결과에 과목명·교수만 있으면 같은 과목의 여러 분반을 구분할 수가 없어서,
+// "수1 목78" 같은 압축 표기로 시간을 같이 보여준다 (요일별로 교시를 묶어 붙임).
+function formatSchedule(schedule) {
+  if (!schedule || schedule.length === 0) return '';
+  const byDay = new Map();
+  for (const s of schedule) {
+    if (!byDay.has(s.day)) byDay.set(s.day, []);
+    byDay.get(s.day).push(s.period);
+  }
+  return DAYS.filter((d) => byDay.has(d))
+    .map((d) => `${d}${byDay.get(d).sort((a, b) => a - b).join('')}`)
+    .join(' ');
+}
+
 /**
  * CourseManagement Page
  * 학기별 시간표/수강목록 조회, 과목 추가(카탈로그 검색 또는 직접입력 — 전공도 포함), 성적 입력, 삭제.
@@ -53,6 +67,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '전공선택' });
+  const [manualSchedule, setManualSchedule] = useState([]); // [{day, period}] — 선택 입력
   const [showSemesterPicker, setShowSemesterPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(current.year);
   const [pickerSemester, setPickerSemester] = useState(current.semester);
@@ -150,6 +165,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
     setKeyword('');
     setSearchResults([]);
     setManualFields({ name: '', credits: '', category: '전공선택' });
+    setManualSchedule([]);
   };
 
   const handleAddFromCatalog = async (courseId) => {
@@ -166,12 +182,14 @@ function CourseManagement({ user, onGoHome, onLogout }) {
     e.preventDefault();
     if (!manualFields.name.trim() || !manualFields.credits) return;
     try {
+      const validSchedule = manualSchedule.filter((s) => s.day && s.period);
       await addMyCourse({
         name: manualFields.name,
         credits: Number(manualFields.credits),
         category: manualFields.category,
         year: current.year,
         semester: current.semester,
+        schedule: validSchedule.length > 0 ? validSchedule : undefined,
       });
       closeAddForm();
       await refreshAfterChange();
@@ -179,6 +197,11 @@ function CourseManagement({ user, onGoHome, onLogout }) {
       setError('과목 추가에 실패했어요.');
     }
   };
+
+  const addScheduleRow = () => setManualSchedule((prev) => [...prev, { day: '월', period: 1 }]);
+  const updateScheduleRow = (index, field, value) =>
+    setManualSchedule((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  const removeScheduleRow = (index) => setManualSchedule((prev) => prev.filter((_, i) => i !== index));
 
   return (
     <div className="courses-page">
@@ -372,6 +395,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
                       <span className="courses-list-item-name">{r.name}</span>
                       <span className="courses-list-item-meta">
                         {r.category} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
+                        {formatSchedule(r.schedule) ? ` · ${formatSchedule(r.schedule)}` : ''}
                       </span>
                     </button>
                   ))}
@@ -380,8 +404,8 @@ function CourseManagement({ user, onGoHome, onLogout }) {
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
                 <p className="courses-manual-hint">
-                  전공·교양 상관없이 과목명/학점/이수구분만 입력하면 등록돼요. 시간표 정보는 없어도 괜찮습니다 —
-                  시간표에는 안 뜨고 수강 목록에만 표시돼요.
+                  전공·교양 상관없이 과목명/학점/이수구분만 입력하면 등록돼요. 시간표는 선택사항이라 몰라도
+                  괜찮습니다 — 아는 경우에만 아래에서 추가하면 시간표에도 표시돼요.
                 </p>
                 <div className="auth-field">
                   <label>과목명</label>
@@ -416,6 +440,39 @@ function CourseManagement({ user, onGoHome, onLogout }) {
                     ))}
                   </select>
                 </div>
+
+                <div className="auth-field">
+                  <label>시간표 (선택)</label>
+                  {manualSchedule.map((s, i) => (
+                    <div className="courses-schedule-row" key={i}>
+                      <select value={s.day} onChange={(e) => updateScheduleRow(i, 'day', e.target.value)}>
+                        {DAYS.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={s.period}
+                        onChange={(e) => updateScheduleRow(i, 'period', Number(e.target.value))}
+                      >
+                        {Array.from({ length: 9 }, (_, p) => p + 1).map((p) => (
+                          <option key={p} value={p}>
+                            {p}교시
+                          </option>
+                        ))}
+                      </select>
+                      <button type="button" className="courses-schedule-remove" onClick={() => removeScheduleRow(i)} aria-label="시간 삭제">
+                        <IconX />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" className="courses-schedule-add" onClick={addScheduleRow}>
+                    <IconPlus />
+                    교시 추가
+                  </button>
+                </div>
+
                 <button type="submit" className="auth-submit-btn">
                   추가하기
                 </button>

@@ -110,7 +110,11 @@ async function listMyCourses(studentId, { year, semester }) {
 
 // 전공: courseId만 넘어오면 카탈로그 값(name/credits/category)을 그대로 복사해 저장(스냅샷).
 // 교양/직접입력: courseId 없이 name/credits/category를 그대로 사용.
-async function addMyCourse(studentId, { courseId, name, credits, category, year, semester }) {
+//
+// schedule(선택, [{day,period}])은 course_id가 없는(직접입력) 경우에만 의미가 있다 —
+// 카탈로그 과목은 이미 course_schedules에 시간이 있으므로 무시한다. 과거 학기 기록처럼
+// 시간을 몰라도 등록 자체는 돼야 하므로 필수 입력이 아니다.
+async function addMyCourse(studentId, { courseId, name, credits, category, year, semester, schedule }) {
   let row = { course_id: null, name, credits, category };
 
   if (courseId) {
@@ -123,6 +127,16 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
     'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [studentId, row.course_id, row.name, row.credits, row.category, year, semester]
   );
+
+  if (!courseId && Array.isArray(schedule) && schedule.length > 0) {
+    for (const s of schedule) {
+      await pool.query(
+        'INSERT INTO student_course_schedules (student_course_id, day, period) VALUES (?, ?, ?)',
+        [result.insertId, s.day, s.period]
+      );
+    }
+  }
+
   return result.insertId;
 }
 
@@ -166,15 +180,21 @@ async function deleteMyCourse(id) {
 }
 
 async function getTimetable(studentId, { year, semester }) {
-  // 시간표는 course_schedules(카탈로그 분반 시간)가 있어야 나오므로, course_id가 없는
-  // 교양 자유입력 과목은 시간표에 표시되지 않음(시간 정보 자체가 없으므로 정상 동작).
+  // 두 소스를 합친다: ① 카탈로그 과목의 course_schedules(분반 시간),
+  // ② 직접입력 과목에 선택적으로 넣은 student_course_schedules.
+  // 둘 다 없으면(시간을 모르는 과거 기록 등) 그 과목은 시간표에 안 뜨는 게 정상.
   const [rows] = await pool.query(
     `SELECT cs.day, cs.period, sc.course_id, sc.name
      FROM student_courses sc
      JOIN course_schedules cs ON cs.course_id = sc.course_id
      WHERE sc.student_id = ? AND sc.year = ? AND sc.semester = ?
-     ORDER BY FIELD(cs.day, '월', '화', '수', '목', '금'), cs.period`,
-    [studentId, year, semester]
+     UNION ALL
+     SELECT scs.day, scs.period, sc.course_id, sc.name
+     FROM student_courses sc
+     JOIN student_course_schedules scs ON scs.student_course_id = sc.id
+     WHERE sc.student_id = ? AND sc.year = ? AND sc.semester = ?
+     ORDER BY FIELD(day, '월', '화', '수', '목', '금'), period`,
+    [studentId, year, semester, studentId, year, semester]
   );
 
   return rows.map((r) => ({ day: r.day, period: r.period, courseId: r.course_id, name: r.name }));
