@@ -32,6 +32,15 @@ export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
 
 export const getMe = () => apiRequest('/me');
 
+export const updateProfile = (payload) => apiRequest('/me', { method: 'PATCH', body: JSON.stringify(payload) });
+
+export const getDepartments = () => apiRequest('/onboarding/departments');
+
+export const getTracks = (departmentId) => apiRequest(`/onboarding/tracks?departmentId=${departmentId}`);
+
+export const submitOnboarding = (payload) =>
+  apiRequest('/onboarding', { method: 'POST', body: JSON.stringify(payload) });
+
 export const getCourseSummary = () => apiRequest('/my-courses/summary');
 
 export const getGraduationStatus = () => apiRequest('/graduation/status');

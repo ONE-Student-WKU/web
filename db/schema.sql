@@ -24,6 +24,9 @@
 --     스코프 제외하고 컬럼 하나로 단순화하기로 함)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
 --     원문엔 없고 교육과정 책자 각주에만 있는 요건 — 세션별 로그는 안 남기고 총 횟수만 카운트)
+--   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
+--     휴학한 학생의 학년이 실제보다 높게 나오는 문제가 실사용으로 확인되어, 학생이 직접
+--     보정할 수 있도록 설정 화면에서 입력받음)
 --   - curriculum_requirements.department_id / min_admission_year / max_admission_year
 --     (학과·입학년도별로 이수규정이 갈리는 경우 대응)
 --   - curriculum_requirements.enrollment_type (전과/편입/복수전공생의 완화된 최소전공
@@ -89,6 +92,10 @@ CREATE TABLE IF NOT EXISTS students (
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
+  leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
+                                                       -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
+                                                       -- 군복무 등)가 있어 학생이 직접 보정할 수 있게 둠 — 2학기당
+                                                       -- 1년으로 환산해 client/src/utils/academic.js에서 학년 계산에 반영.
   onboarding_completed_at   TIMESTAMP NULL,
 
   created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -52,7 +52,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2. 2017~2018학번과 2019~2021학번 표가 별개지만 수치 동일하여 통합 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -74,7 +74,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2022~2024학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -96,7 +96,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2025학번 단독 (2022~2024학번과 표가 분리되어 있고 총량도 다름)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -139,7 +139,8 @@
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": 1,
-    "description": "캡스톤디자인(기업연계프로젝트)/종합설계 중 1과목 필수 이수 (창의공과대학 특칙, 졸업인증제 2020학번부터 적용)",
+    "description": "기업연계프로젝트1(종합설계1)·기업연계프로젝트2(종합설계2) 중 1과목 필수 이수 (창의공과대학 특칙, 2020학번부터 적용)",
+    "note": "화면 표시용 description은 짧게 줄임 — 상세 근거: 각각 3학년 2학기, 4학년 1학기에 순차 개설되는 연속 과목이라 통상 두 과목 모두 수강하지만 요건 자체는 1과목 이수로 충족됨(학사학위수여 Ⅲ장). 학칙 원문은 '캡스톤디자인(기업연계프로젝트)/종합설계'로 표기하나 '캡스톤디자인'은 같은 창의공과대학 소속 타 학과(게임콘텐츠학전공 등)의 과목명이라 이 학과엔 해당 없어 표시에서 뺌. seed.js가 description/requiredCourses 외 필드는 안 읽으므로 이 note는 DB에 안 들어감",
     "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)"]
   },
   {

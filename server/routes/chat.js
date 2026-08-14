@@ -115,7 +115,7 @@ router.post('/messages', async (req, res, next) => {
       });
     }
 
-    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history);
+    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student);
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,

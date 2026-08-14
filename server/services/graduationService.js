@@ -52,11 +52,13 @@ async function fetchRequiredCourseNames(requirementId) {
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
-  // getSummary(courseService.js)와 동일한 "성적 입력됨 + F 아님만 취득학점" 규칙.
+  // getSummary(courseService.js)와 동일한 "F만 아니면 이수학점" 규칙 — 성적 미입력(진행 중)
+  // 과목도 포함한다. letter_grade <> 'F'는 NULL에 대해 NULL(=false)로 평가되므로
+  // IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
   const [rows] = await pool.query(
     `SELECT category, SUM(credits) AS credits
      FROM student_courses
-     WHERE student_id = ? AND letter_grade IS NOT NULL AND letter_grade <> 'F'
+     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade <> 'F')
      GROUP BY category`,
     [studentId]
   );
@@ -114,6 +116,7 @@ async function getGraduationStatus(studentId) {
       category: row.category,
       requiredCredits: Number(row.required_credits),
       earnedCredits: earnedByCategory[row.category] || 0,
+      requiredCourses: await fetchRequiredCourseNames(row.id),
     });
   }
 
@@ -129,7 +132,12 @@ async function getGraduationStatus(studentId) {
     totalRequiredCredits += required;
     totalEarnedCredits += Math.min(earnedRaw, required);
     generalElectiveOverflow += Math.max(0, earnedRaw - required);
-    categories.push({ category: row.category, requiredCredits: required, earnedCredits: earnedRaw });
+    categories.push({
+      category: row.category,
+      requiredCredits: required,
+      earnedCredits: earnedRaw,
+      requiredCourses: await fetchRequiredCourseNames(row.id),
+    });
   }
 
   const generalElectiveRow = creditRows.find((r) => r.category === '일반선택');
@@ -138,7 +146,12 @@ async function getGraduationStatus(studentId) {
     const credited = Math.min(required, generalElectiveOverflow);
     totalRequiredCredits += required;
     totalEarnedCredits += credited;
-    categories.push({ category: '일반선택', requiredCredits: required, earnedCredits: credited });
+    categories.push({
+      category: '일반선택',
+      requiredCredits: required,
+      earnedCredits: credited,
+      requiredCourses: await fetchRequiredCourseNames(generalElectiveRow.id),
+    });
   }
 
   const certifications = [];
