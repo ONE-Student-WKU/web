@@ -10,14 +10,12 @@ import {
   updateMyCourse,
   deleteMyCourse,
 } from '../api/chatApi.js';
-import { IconPlus, IconTrash, IconSearch, IconX } from '../components/icons.jsx';
+import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 
 const DAYS = ['월', '화', '수', '목', '금'];
 const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F'];
 const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
-
-const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
 
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
 // 8월은 수업 자체는 방학이지만 2학기 수강신청이 이미 시작되는 시기라 2학기로 친다
@@ -32,6 +30,21 @@ function getCurrentYearSemester() {
 
 function semesterKey(year, semester) {
   return `${year}-${semester}`;
+}
+
+// 입학년도 1학기부터 현재 학기까지 전체 범위를 생성 — 휴학 학기도 그냥 빈 탭으로 포함된다
+// (정확히 어느 학기가 휴학이었는지는 students.leave_semesters가 누적 "개수"만 저장해서
+// 알 수 없음 — 정교하게 제외하는 대신 전부 깔아두고 비어있는 채로 두기로 함, 2026-08-15 결정).
+// 이러면 학생이 매번 "+학기 추가"를 누를 필요 없이 자기 재학 기간의 모든 학기 탭이 미리 보인다.
+function generateSemesterRange(startYear, endYear, endSemester) {
+  const range = [];
+  for (let y = startYear; y <= endYear; y++) {
+    for (const s of [1, 2]) {
+      if (y === endYear && s > endSemester) break;
+      range.push({ year: y, semester: s });
+    }
+  }
+  return range;
 }
 
 // 카탈로그 검색 결과에 과목명·교수만 있으면 같은 과목의 여러 분반을 구분할 수가 없어서,
@@ -77,13 +90,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 시간표가 없는 카탈로그 과목(교수/시간 미확보)을 선택했을 때만 세팅 — 확정된 시간표가
   // 있는 과목은 바로 추가되고 이 상태를 거치지 않는다.
   const [catalogSelection, setCatalogSelection] = useState(null);
-  const [showSemesterPicker, setShowSemesterPicker] = useState(false);
-  const [pickerYear, setPickerYear] = useState(current.year);
-  const [pickerSemester, setPickerSemester] = useState(current.semester);
-  // 과목이 하나도 없는 학기는 서버 목록(listSemesters)에 안 잡혀서, 다른 학기로 넘어가면
-  // 탭에서 통째로 사라진다 — "추가"라고 눌러놓고 화면에서 없어지면 "덮어씌워진" 것처럼
-  // 느껴지므로, 이번 세션에서 사용자가 직접 추가한 학기는 로컬에 기억해 탭에 계속 남긴다.
-  const [addedSemesters, setAddedSemesters] = useState([]);
 
   useEffect(() => {
     getMe()
@@ -96,15 +102,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       .then(setSemesters)
       .catch(() => setError('정보를 불러오지 못했어요.'));
   }, []);
-
-  // 학번(입학년도) 이전 학기는 재학 중이었을 수 없으니 선택지에서 제외.
-  // 입학년도를 아직 모르면(프로필 로딩 전/온보딩 전) 기존처럼 넉넉히 8년 전까지 보여준다.
-  const yearOptions = useMemo(() => {
-    const minYear = profile?.admissionYear ?? CURRENT_CALENDAR_YEAR - 8;
-    const years = [];
-    for (let y = CURRENT_CALENDAR_YEAR; y >= minYear; y--) years.push(y);
-    return years;
-  }, [profile]);
 
   const loadSemesterData = (year, semester) => {
     Promise.all([getMyCourses(year, semester), getTimetable(year, semester)])
@@ -121,7 +118,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }, [current]);
 
   const tabs = useMemo(() => {
-    const all = [...semesters, ...addedSemesters, current];
+    const actualCurrentTerm = getCurrentYearSemester();
+    const generated = profile?.admissionYear
+      ? generateSemesterRange(profile.admissionYear, actualCurrentTerm.year, actualCurrentTerm.semester)
+      : [];
+    // semesters(서버, 실제 수강 기록 있는 학기라 courseCount 포함)를 먼저 두어 겹치는 키에서
+    // 우선하게 하고, generated(입학년도~현재 전체 범위, 휴학 학기 포함 빈 탭)로 나머지를 채운다.
+    const all = [...semesters, ...generated, current];
     const seen = new Set();
     const deduped = [];
     for (const t of all) {
@@ -131,22 +134,41 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       deduped.push(t);
     }
     return deduped.sort((a, b) => a.year - b.year || a.semester - b.semester);
-  }, [semesters, addedSemesters, current]);
+  }, [semesters, current, profile]);
+
+  // 학기 탭을 전부 가로 스크롤 한 줄로 늘어놓으면(입학년도~현재라 8개+) 피로도가 높아서,
+  // 연도 탭(적은 개수, 스크롤 없이 다 보임) + 그 안에서 1/2학기 토글 + 인접 학기 이동
+  // 화살표로 재구성함 (2026-08-15 결정).
+  const years = useMemo(() => [...new Set(tabs.map((t) => t.year))].sort((a, b) => a - b), [tabs]);
+  const semestersInCurrentYear = useMemo(
+    () => tabs.filter((t) => t.year === current.year).sort((a, b) => a.semester - b.semester),
+    [tabs, current.year]
+  );
+  const currentTabIndex = tabs.findIndex((t) => t.year === current.year && t.semester === current.semester);
+
+  const handleSelectYear = (year) => {
+    const semestersOfYear = tabs.filter((t) => t.year === year).sort((a, b) => a.semester - b.semester);
+    const keepSameSemester = semestersOfYear.find((t) => t.semester === current.semester);
+    setCurrent(keepSameSemester || semestersOfYear[0]);
+  };
+
+  const goToPrevSemester = () => {
+    if (currentTabIndex > 0) setCurrent(tabs[currentTabIndex - 1]);
+  };
+  const goToNextSemester = () => {
+    if (currentTabIndex >= 0 && currentTabIndex < tabs.length - 1) setCurrent(tabs[currentTabIndex + 1]);
+  };
 
   const currentSemesterSummary = summary?.bySemester?.find(
     (s) => s.year === current.year && s.semester === current.semester
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
-  // 카탈로그(courses.json)는 대부분 "지금 실제로 개설 중인" 과목/시간표지만, 저학년
-  // 필수과목처럼 교수/시간표를 확보 못 해 이름·학점·구분만 등록된 항목도 일부 있다
-  // (그런 항목은 검색 결과에 교수/시간이 안 보이고, 추가 시 사용자가 직접 시간표를
-  // 입력할 수 있다 — courseService.addMyCourse 참고). 과거·미래 학기 기록에 시간표가
-  // 확정된 카탈로그 항목을 갖다 쓰면 사실과 다른 교수/시간이 붙을 수 있어, 지금 보고
-  // 있는 학기가 실제 현재 학기일 때만 카탈로그 검색을 허용하고 그 외엔 직접입력만 가능하게 한다.
-  const actualCurrentTerm = getCurrentYearSemester();
-  const isCurrentTerm = current.year === actualCurrentTerm.year && current.semester === actualCurrentTerm.semester;
-  const effectiveAddMode = isCurrentTerm ? addMode : 'manual';
+  // 카탈로그(course_offerings)는 학기별 실제 개설 정보라 지금 보고 있는 탭(current.year/semester)
+  // 그대로 카탈로그 검색에 넘긴다 — 2017-1~2026-2 범위의 실제 분반/교수/시간이 그대로 나온다.
+  // 그 범위 밖(수집 전/이후 학기)은 검색해도 결과가 없을 뿐이라 별도 게이트가 필요 없다
+  // (저학년 필수과목처럼 아직 실제 개설 전이라 시간표를 확보 못 한 항목은 검색 결과에
+  // 교수/시간이 비어있고, 추가 시 사용자가 직접 시간표를 입력할 수 있다 — courseService.addMyCourse 참고).
 
   const maxPeriod = Math.max(6, ...timetable.map((t) => t.period));
   const cellAt = (day, period) => timetable.find((t) => t.day === day && t.period === period);
@@ -186,7 +208,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       return;
     }
     try {
-      const results = await searchCatalog(value);
+      const results = await searchCatalog(value, current.year, current.semester);
       setSearchResults(results);
     } catch {
       setSearchResults([]);
@@ -270,7 +292,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <header className="screen-header">
         <div className="screen-header-left">
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
-            ‹
+            <IconChevronLeft />
           </button>
           <span className="screen-title">과목 관리</span>
         </div>
@@ -286,66 +308,48 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <div className="courses-body">
         {error && !showAddForm && <p className="home-error">{error}</p>}
 
-        <div className="courses-tabs">
-          {tabs.map((t) => (
+        <div className="courses-year-tabs">
+          {years.map((y) => (
             <button
-              key={semesterKey(t.year, t.semester)}
-              className={`courses-tab ${t.year === current.year && t.semester === current.semester ? 'active' : ''}`}
-              onClick={() => setCurrent(t)}
+              key={y}
+              className={`courses-year-tab ${y === current.year ? 'active' : ''}`}
+              onClick={() => handleSelectYear(y)}
             >
-              {t.year}-{t.semester}
-              {t.courseCount > 0 && <span className="courses-tab-count">{t.courseCount}</span>}
+              {y}
             </button>
           ))}
-          <button
-            className="courses-tab courses-tab-add"
-            onClick={() => {
-              setPickerYear(current.year);
-              setPickerSemester(current.semester);
-              setShowSemesterPicker((v) => !v);
-            }}
-          >
-            + 학기 추가
-          </button>
         </div>
 
-        {showSemesterPicker && (
-          <div className="courses-semester-picker">
-            <select
-              className="courses-picker-year"
-              value={pickerYear}
-              onChange={(e) => setPickerYear(Number(e.target.value))}
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            <span>년</span>
-            <select
-              className="courses-picker-semester"
-              value={pickerSemester}
-              onChange={(e) => setPickerSemester(Number(e.target.value))}
-            >
-              <option value={1}>1학기</option>
-              <option value={2}>2학기</option>
-            </select>
-            <button
-              className="courses-picker-go"
-              onClick={() => {
-                const target = { year: pickerYear, semester: pickerSemester };
-                setAddedSemesters((prev) =>
-                  prev.some((s) => s.year === target.year && s.semester === target.semester) ? prev : [...prev, target]
-                );
-                setCurrent(target);
-                setShowSemesterPicker(false);
-              }}
-            >
-              추가
-            </button>
+        <div className="courses-semester-row">
+          <button
+            className="courses-semester-nav"
+            onClick={goToPrevSemester}
+            disabled={currentTabIndex <= 0}
+            aria-label="이전 학기"
+          >
+            ‹
+          </button>
+          <div className="courses-semester-toggle">
+            {semestersInCurrentYear.map((t) => (
+              <button
+                key={semesterKey(t.year, t.semester)}
+                className={`courses-semester-btn ${t.semester === current.semester ? 'active' : ''}`}
+                onClick={() => setCurrent(t)}
+              >
+                {t.semester}학기
+                {t.courseCount > 0 && <span className="courses-tab-count">{t.courseCount}</span>}
+              </button>
+            ))}
           </div>
-        )}
+          <button
+            className="courses-semester-nav"
+            onClick={goToNextSemester}
+            disabled={currentTabIndex < 0 || currentTabIndex >= tabs.length - 1}
+            aria-label="다음 학기"
+          >
+            ›
+          </button>
+        </div>
 
         <div className="courses-summary-row">
           <div className="courses-summary-stat">
@@ -441,34 +445,28 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           <div className="courses-add-form">
             {error && <p className="home-error courses-form-error">{error}</p>}
             <div className="courses-add-form-header">
-              {isCurrentTerm ? (
-                <div className="courses-add-mode-toggle">
-                  <button
-                    className={addMode === 'catalog' ? 'active' : ''}
-                    onClick={() => setAddMode('catalog')}
-                    type="button"
-                  >
-                    카탈로그 검색
-                  </button>
-                  <button
-                    className={addMode === 'manual' ? 'active' : ''}
-                    onClick={() => setAddMode('manual')}
-                    type="button"
-                  >
-                    직접입력
-                  </button>
-                </div>
-              ) : (
-                <p className="courses-manual-only-note">
-                  카탈로그는 현재 학기 기준이라 다른 학기에는 직접입력만 가능해요.
-                </p>
-              )}
+              <div className="courses-add-mode-toggle">
+                <button
+                  className={addMode === 'catalog' ? 'active' : ''}
+                  onClick={() => setAddMode('catalog')}
+                  type="button"
+                >
+                  카탈로그 검색
+                </button>
+                <button
+                  className={addMode === 'manual' ? 'active' : ''}
+                  onClick={() => setAddMode('manual')}
+                  type="button"
+                >
+                  직접입력
+                </button>
+              </div>
               <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
                 <IconX />
               </button>
             </div>
 
-            {effectiveAddMode === 'catalog' ? (
+            {addMode === 'catalog' ? (
               catalogSelection ? (
                 <div className="courses-manual-fields">
                   <p className="courses-manual-hint">
