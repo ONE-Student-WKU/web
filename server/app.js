@@ -15,7 +15,9 @@ const coursesRoutes = require('./routes/courses');
 const myCoursesRoutes = require('./routes/myCourses');
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 3000;
+// Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
+// 붙는다 — SERVER_PORT는 로컬 개발용 수동 지정 값으로 남겨두고 PORT를 우선한다.
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
 // Middlewares
 app.use(cors());
