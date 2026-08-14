@@ -25,6 +25,7 @@ function Chat({ user, onLogout }) {
           ))}
         </div>
         <ChatInput onSendMessage={sendMessage} />
+        <div className="chat-disclaimer">본 답변은 비공식 참고용입니다. 정확한 사항은 학사지원과(063-850-6788)에 확인하세요.</div>
       </main>
     </div>
   );

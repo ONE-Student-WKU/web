@@ -17,7 +17,7 @@ function Sidebar({ user, onLogout }) {
       </div>
       <div className="user-profile">
         <p>{user?.name || '사용자'} 님</p>
-        <p>학번: {user?.studentId || 'N/A'}</p>
+        <p>{user?.email || 'N/A'}</p>
       </div>
       <div className="sidebar-menu">
         {/* Navigation / Chat history items will go here */}
