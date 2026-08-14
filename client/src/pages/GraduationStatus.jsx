@@ -12,8 +12,9 @@ import { summarizeShortfalls } from '../utils/graduation.js';
  * - onGoHome: function
  * - onLogout: function
  * - onOpenSettings: function
+ * - onOpenOnboarding: function
  */
-function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings }) {
+function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding }) {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
@@ -45,7 +46,12 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings }) {
           </button>
           <span className="screen-title">졸업요건 진단</span>
         </div>
-        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
+        <AccountMenu
+          user={user}
+          onLogout={onLogout}
+          onOpenSettings={onOpenSettings}
+          onOpenOnboarding={onOpenOnboarding}
+        />
       </header>
 
       <div className="courses-body">

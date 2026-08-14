@@ -10,8 +10,9 @@ import AccountMenu from './AccountMenu.jsx';
  * - onLogout: function
  * - onGoHome: function
  * - onOpenSettings: function
+ * - onOpenOnboarding: function
  */
-function Sidebar({ user, onLogout, onGoHome, onOpenSettings }) {
+function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding }) {
   return (
     <header className="screen-header">
       <div className="screen-header-left">
@@ -22,7 +23,12 @@ function Sidebar({ user, onLogout, onGoHome, onOpenSettings }) {
         )}
         <span className="screen-title">ONE Student</span>
       </div>
-      <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
+      <AccountMenu
+        user={user}
+        onLogout={onLogout}
+        onOpenSettings={onOpenSettings}
+        onOpenOnboarding={onOpenOnboarding}
+      />
     </header>
   );
 }

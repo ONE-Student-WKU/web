@@ -36,9 +36,26 @@ async function createStudent({ email, passwordHash, name }) {
   return result.insertId;
 }
 
+// 온보딩 화면이 학과별로 실제 입력 가능한 학번 범위를 알아야 해서(예: 컴퓨터·소프트웨어공학과는
+// 2017~2025학번만, 공학3계열은 2026학번부터), curriculum_requirements의 공통 요건
+// (enrollment_type IS NULL — 전과/편입 특례 행은 학과의 "기본 학번 범위"가 아니므로 제외) 행에서
+// 학번 범위를 집계해 함께 내려준다. 프론트에 학번 범위를 하드코딩하지 않기 위함.
 async function listDepartments() {
-  const [rows] = await pool.query('SELECT id, name FROM departments ORDER BY id');
-  return rows;
+  const [rows] = await pool.query(
+    `SELECT d.id, d.name,
+            MIN(cr.min_admission_year) AS min_admission_year,
+            MAX(cr.max_admission_year) AS max_admission_year
+     FROM departments d
+     LEFT JOIN curriculum_requirements cr ON cr.department_id = d.id AND cr.enrollment_type IS NULL
+     GROUP BY d.id, d.name
+     ORDER BY d.id`
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    minAdmissionYear: r.min_admission_year,
+    maxAdmissionYear: r.max_admission_year,
+  }));
 }
 
 async function findDepartmentById(id) {

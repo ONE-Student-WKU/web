@@ -58,8 +58,9 @@ function formatSchedule(schedule) {
  * - onGoHome: function
  * - onLogout: function
  * - onOpenSettings: function
+ * - onOpenOnboarding: function
  */
-function CourseManagement({ user, onGoHome, onLogout, onOpenSettings }) {
+function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [summary, setSummary] = useState(null);
   const [semesters, setSemesters] = useState([]);
@@ -227,7 +228,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings }) {
           </button>
           <span className="screen-title">과목 관리</span>
         </div>
-        <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} />
+        <AccountMenu
+          user={user}
+          onLogout={onLogout}
+          onOpenSettings={onOpenSettings}
+          onOpenOnboarding={onOpenOnboarding}
+        />
       </header>
 
       <div className="courses-body">

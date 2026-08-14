@@ -3,15 +3,16 @@ import { IconUser } from './icons.jsx';
 
 /**
  * AccountMenu Component
- * 아바타 버튼 — 클릭하면 설정/온보딩 재설정/로그아웃 드롭다운을 연다.
+ * 아바타 버튼 — 클릭하면 설정/학적정보 수정/로그아웃 드롭다운을 연다.
  * 모든 화면 헤더(Home/Sidebar/CourseManagement/GraduationStatus)에서 공유.
  *
  * Props:
  * - user: object
  * - onLogout: function
  * - onOpenSettings: function
+ * - onOpenOnboarding: function
  */
-function AccountMenu({ user, onLogout, onOpenSettings }) {
+function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -41,8 +42,14 @@ function AccountMenu({ user, onLogout, onOpenSettings }) {
           >
             설정
           </button>
-          <button className="account-menu-item" disabled title="준비 중인 기능이에요">
-            온보딩 재설정
+          <button
+            className="account-menu-item"
+            onClick={() => {
+              setOpen(false);
+              onOpenOnboarding();
+            }}
+          >
+            학적정보 수정
           </button>
           <div className="account-menu-divider" />
           <button
