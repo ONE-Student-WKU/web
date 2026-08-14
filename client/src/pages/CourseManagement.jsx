@@ -20,11 +20,13 @@ const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 9 }, (_, i) => CURRENT_CALENDAR_YEAR - i);
 
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
+// 8월은 수업 자체는 방학이지만 2학기 수강신청이 이미 시작되는 시기라 2학기로 친다
+// (실제 사용자 확인: 8월 중순에 1학기로 뜨는 건 오답이었음).
 function getCurrentYearSemester() {
   const now = new Date();
   const month = now.getMonth() + 1;
   if (month <= 2) return { year: now.getFullYear() - 1, semester: 2 };
-  if (month <= 8) return { year: now.getFullYear(), semester: 1 };
+  if (month <= 7) return { year: now.getFullYear(), semester: 1 };
   return { year: now.getFullYear(), semester: 2 };
 }
 
@@ -225,7 +227,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
       </header>
 
       <div className="courses-body">
-        {error && <p className="home-error">{error}</p>}
+        {error && !showAddForm && <p className="home-error">{error}</p>}
 
         <div className="courses-tabs">
           {tabs.map((t) => (
@@ -355,7 +357,13 @@ function CourseManagement({ user, onGoHome, onLogout }) {
         </div>
 
         {!showAddForm && (
-          <button className="courses-add-btn" onClick={() => setShowAddForm(true)}>
+          <button
+            className="courses-add-btn"
+            onClick={() => {
+              setError(null);
+              setShowAddForm(true);
+            }}
+          >
             <IconPlus />
             과목 추가
           </button>
@@ -363,6 +371,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
 
         {showAddForm && (
           <div className="courses-add-form">
+            {error && <p className="home-error courses-form-error">{error}</p>}
             <div className="courses-add-form-header">
               {isCurrentTerm ? (
                 <div className="courses-add-mode-toggle">
