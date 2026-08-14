@@ -2,30 +2,28 @@ import React from 'react';
 
 /**
  * Sidebar Component
- * Displays chat history list, user profile summary, and navigation.
- * 
+ * Compact top bar for the Chat screen (mobile-frame layout — no room for a side column).
+ *
  * Props:
  * - user: object
  * - onLogout: function
+ * - onGoHome: function
  */
-function Sidebar({ user, onLogout }) {
-  // TODO: Add sidebar content such as session list or mock portal quicklinks
+function Sidebar({ user, onLogout, onGoHome }) {
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <h3>원광대학교 AI 챗</h3>
+    <header className="screen-header">
+      <div className="screen-header-left">
+        {onGoHome && (
+          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+            ‹
+          </button>
+        )}
+        <span className="screen-title">ONE Student</span>
       </div>
-      <div className="user-profile">
-        <p>{user?.name || '사용자'} 님</p>
-        <p>{user?.email || 'N/A'}</p>
-      </div>
-      <div className="sidebar-menu">
-        {/* Navigation / Chat history items will go here */}
-      </div>
-      <button className="logout-btn" onClick={onLogout}>
-        로그아웃
+      <button className="avatar-btn" onClick={onLogout} title={user?.name ? `${user.name} · 로그아웃` : '로그아웃'}>
+        {(user?.name || '?').charAt(0)}
       </button>
-    </aside>
+    </header>
   );
 }
 
