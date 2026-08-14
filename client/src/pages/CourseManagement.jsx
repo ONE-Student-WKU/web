@@ -52,6 +52,10 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   const [showSemesterPicker, setShowSemesterPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(current.year);
   const [pickerSemester, setPickerSemester] = useState(current.semester);
+  // 과목이 하나도 없는 학기는 서버 목록(listSemesters)에 안 잡혀서, 다른 학기로 넘어가면
+  // 탭에서 통째로 사라진다 — "추가"라고 눌러놓고 화면에서 없어지면 "덮어씌워진" 것처럼
+  // 느껴지므로, 이번 세션에서 사용자가 직접 추가한 학기는 로컬에 기억해 탭에 계속 남긴다.
+  const [addedSemesters, setAddedSemesters] = useState([]);
 
   useEffect(() => {
     getCourseSummary()
@@ -77,7 +81,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   }, [current]);
 
   const tabs = useMemo(() => {
-    const all = [...semesters, current];
+    const all = [...semesters, ...addedSemesters, current];
     const seen = new Set();
     const deduped = [];
     for (const t of all) {
@@ -87,7 +91,7 @@ function CourseManagement({ user, onGoHome, onLogout }) {
       deduped.push(t);
     }
     return deduped.sort((a, b) => a.year - b.year || a.semester - b.semester);
-  }, [semesters, current]);
+  }, [semesters, addedSemesters, current]);
 
   const currentSemesterSummary = summary?.bySemester?.find(
     (s) => s.year === current.year && s.semester === current.semester
@@ -232,11 +236,15 @@ function CourseManagement({ user, onGoHome, onLogout }) {
             <button
               className="courses-picker-go"
               onClick={() => {
-                setCurrent({ year: pickerYear, semester: pickerSemester });
+                const target = { year: pickerYear, semester: pickerSemester };
+                setAddedSemesters((prev) =>
+                  prev.some((s) => s.year === target.year && s.semester === target.semester) ? prev : [...prev, target]
+                );
+                setCurrent(target);
                 setShowSemesterPicker(false);
               }}
             >
-              이동
+              추가
             </button>
           </div>
         )}
