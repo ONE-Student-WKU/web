@@ -1172,6 +1172,18 @@ body {
   margin: 0;
 }
 
+.courses-catalog-back {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
 .courses-category-select {
   width: 100%;
   padding: 13px 14px;

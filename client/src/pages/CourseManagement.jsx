@@ -73,7 +73,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '전공선택' });
-  const [manualSchedule, setManualSchedule] = useState([]); // [{day, period}] — 선택 입력
+  const [manualSchedule, setManualSchedule] = useState([]); // [{day, period}] — 선택 입력, 직접입력/시간표 없는 카탈로그 과목 공용
+  // 시간표가 없는 카탈로그 과목(교수/시간 미확보)을 선택했을 때만 세팅 — 확정된 시간표가
+  // 있는 과목은 바로 추가되고 이 상태를 거치지 않는다.
+  const [catalogSelection, setCatalogSelection] = useState(null);
   const [showSemesterPicker, setShowSemesterPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(current.year);
   const [pickerSemester, setPickerSemester] = useState(current.semester);
@@ -135,9 +138,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
-  // 카탈로그(courses.json)는 "지금 실제로 개설 중인" 과목/시간표라, 과거·미래 학기
-  // 기록에 갖다 쓰면 사실과 다른 교수/시간이 붙을 수 있다 — 지금 보고 있는 학기가
-  // 실제 현재 학기일 때만 카탈로그 검색을 허용하고, 그 외엔 직접입력만 가능하게 한다.
+  // 카탈로그(courses.json)는 대부분 "지금 실제로 개설 중인" 과목/시간표지만, 저학년
+  // 필수과목처럼 교수/시간표를 확보 못 해 이름·학점·구분만 등록된 항목도 일부 있다
+  // (그런 항목은 검색 결과에 교수/시간이 안 보이고, 추가 시 사용자가 직접 시간표를
+  // 입력할 수 있다 — courseService.addMyCourse 참고). 과거·미래 학기 기록에 시간표가
+  // 확정된 카탈로그 항목을 갖다 쓰면 사실과 다른 교수/시간이 붙을 수 있어, 지금 보고
+  // 있는 학기가 실제 현재 학기일 때만 카탈로그 검색을 허용하고 그 외엔 직접입력만 가능하게 한다.
   const actualCurrentTerm = getCurrentYearSemester();
   const isCurrentTerm = current.year === actualCurrentTerm.year && current.semester === actualCurrentTerm.semester;
   const effectiveAddMode = isCurrentTerm ? addMode : 'manual';
@@ -193,16 +199,43 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setSearchResults([]);
     setManualFields({ name: '', credits: '', category: '전공선택' });
     setManualSchedule([]);
+    setCatalogSelection(null);
   };
 
-  const handleAddFromCatalog = async (courseId) => {
+  // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
+  const describeAddCourseError = (err) => {
+    if (err.code === 'COURSE_ALREADY_ADDED') return '이미 추가된 과목이에요.';
+    if (err.code === 'DUPLICATE_SCHEDULE_SLOT') return '같은 시간을 두 번 입력했어요.';
+    if (err.code === 'SCHEDULE_CONFLICT') {
+      const { day, period, conflictCourseName } = err.data || {};
+      return `${day}요일 ${period}교시는 이미 "${conflictCourseName}"와 겹쳐요.`;
+    }
+    return '과목 추가에 실패했어요.';
+  };
+
+  const handleSelectCatalogResult = (r) => {
+    if (formatSchedule(r.schedule)) {
+      handleAddFromCatalog(r.courseId);
+    } else {
+      setManualSchedule([]);
+      setCatalogSelection(r);
+    }
+  };
+
+  const handleAddFromCatalog = async (courseId, schedule) => {
     setError(null);
     try {
-      await addMyCourse({ courseId, year: current.year, semester: current.semester });
+      const validSchedule = (schedule || []).filter((s) => s.day && s.period);
+      await addMyCourse({
+        courseId,
+        year: current.year,
+        semester: current.semester,
+        schedule: validSchedule.length > 0 ? validSchedule : undefined,
+      });
       closeAddForm();
       await refreshAfterChange();
     } catch (err) {
-      setError(err.code === 'COURSE_ALREADY_ADDED' ? '이미 추가된 과목이에요.' : '과목 추가에 실패했어요.');
+      setError(describeAddCourseError(err));
     }
   };
 
@@ -222,8 +255,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       });
       closeAddForm();
       await refreshAfterChange();
-    } catch {
-      setError('과목 추가에 실패했어요.');
+    } catch (err) {
+      setError(describeAddCourseError(err));
     }
   };
 
@@ -436,28 +469,87 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             </div>
 
             {effectiveAddMode === 'catalog' ? (
-              <>
-                <div className="courses-search-box">
-                  <IconSearch />
-                  <input
-                    type="text"
-                    placeholder="과목명 검색"
-                    value={keyword}
-                    onChange={(e) => handleSearch(e.target.value)}
-                  />
-                </div>
-                <div className="courses-search-results">
-                  {searchResults.map((r) => (
-                    <button key={r.courseId} className="courses-search-result" onClick={() => handleAddFromCatalog(r.courseId)}>
-                      <span className="courses-list-item-name">{r.name}</span>
-                      <span className="courses-list-item-meta">
-                        {r.category} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
-                        {formatSchedule(r.schedule) ? ` · ${formatSchedule(r.schedule)}` : ''}
-                      </span>
+              catalogSelection ? (
+                <div className="courses-manual-fields">
+                  <p className="courses-manual-hint">
+                    "{catalogSelection.name}"은 아직 시간표가 등록되어 있지 않아요. 알고 있다면 아래에서
+                    입력해주세요 — 몰라도 등록은 되고, 나중에 다시 채울 수 있습니다.
+                  </p>
+                  <div className="auth-field">
+                    <label>시간표 (선택)</label>
+                    {manualSchedule.map((s, i) => (
+                      <div className="courses-schedule-row" key={i}>
+                        <select value={s.day} onChange={(e) => updateScheduleRow(i, 'day', e.target.value)}>
+                          {DAYS.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={s.period}
+                          onChange={(e) => updateScheduleRow(i, 'period', Number(e.target.value))}
+                        >
+                          {Array.from({ length: 9 }, (_, p) => p + 1).map((p) => (
+                            <option key={p} value={p}>
+                              {p}교시
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="courses-schedule-remove"
+                          onClick={() => removeScheduleRow(i)}
+                          aria-label="시간 삭제"
+                        >
+                          <IconX />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="courses-schedule-add" onClick={addScheduleRow}>
+                      <IconPlus />
+                      교시 추가
                     </button>
-                  ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="auth-submit-btn"
+                    onClick={() => handleAddFromCatalog(catalogSelection.courseId, manualSchedule)}
+                  >
+                    추가하기
+                  </button>
+                  <button type="button" className="courses-manual-only-note courses-catalog-back" onClick={() => setCatalogSelection(null)}>
+                    ‹ 검색으로 돌아가기
+                  </button>
                 </div>
-              </>
+              ) : (
+                <>
+                  <div className="courses-search-box">
+                    <IconSearch />
+                    <input
+                      type="text"
+                      placeholder="과목명 검색"
+                      value={keyword}
+                      onChange={(e) => handleSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="courses-search-results">
+                    {searchResults.map((r) => (
+                      <button
+                        key={r.courseId}
+                        className="courses-search-result"
+                        onClick={() => handleSelectCatalogResult(r)}
+                      >
+                        <span className="courses-list-item-name">{r.name}</span>
+                        <span className="courses-list-item-meta">
+                          {r.category} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
+                          {formatSchedule(r.schedule) ? ` · ${formatSchedule(r.schedule)}` : ' · 시간표 미등록'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
                 <p className="courses-manual-hint">

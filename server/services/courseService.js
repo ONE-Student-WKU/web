@@ -112,15 +112,41 @@ async function listMyCourses(studentId, { year, semester }) {
 // 교양/직접입력: courseId 없이 name/credits/category를 그대로 사용.
 //
 // schedule(선택, [{day,period}])은 course_id가 없는(직접입력) 경우에만 의미가 있다 —
-// 카탈로그 과목은 이미 course_schedules에 시간이 있으므로 무시한다. 과거 학기 기록처럼
-// 시간을 몰라도 등록 자체는 돼야 하므로 필수 입력이 아니다.
+// 카탈로그 과목이 course_schedules에 이미 확정된 시간이 있으면 그걸 그대로 쓰고 사용자
+// 입력은 무시한다(시간표에 중복/충돌 표시가 생기지 않도록). 다만 저학년 필수과목처럼
+// 교수/시간을 확보 못 해 이름만 카탈로그에 올라간 과목은 course_schedules가 비어있으므로,
+// 그 경우엔 직접입력 과목과 동일하게 사용자가 입력한 시간표를 받아준다.
 async function addMyCourse(studentId, { courseId, name, credits, category, year, semester, schedule }) {
   let row = { course_id: null, name, credits, category };
+  let hasOfficialSchedule = false;
 
   if (courseId) {
     const course = await findCourseById(courseId);
     if (!course) throw new Error('COURSE_NOT_FOUND');
     row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category };
+
+    const [scheduleRows] = await pool.query('SELECT 1 FROM course_schedules WHERE course_id = ? LIMIT 1', [courseId]);
+    hasOfficialSchedule = scheduleRows.length > 0;
+  }
+
+  const scheduleToInsert = !hasOfficialSchedule && Array.isArray(schedule) ? schedule : [];
+
+  // 이미 그 학기에 등록된 다른 과목과 요일/교시가 겹치면 시간표 칸이 한쪽만 보이게 되어
+  // "추가했는데 사라진 것처럼" 보이는 문제가 있었다 — 등록 자체를 막고 어느 과목과
+  // 겹치는지 알려준다.
+  if (scheduleToInsert.length > 0) {
+    const existing = await getTimetable(studentId, { year, semester });
+    for (const s of scheduleToInsert) {
+      const conflict = existing.find((e) => e.day === s.day && e.period === s.period);
+      if (conflict) {
+        const err = new Error('SCHEDULE_CONFLICT');
+        err.code = 'SCHEDULE_CONFLICT';
+        err.conflictDay = s.day;
+        err.conflictPeriod = s.period;
+        err.conflictCourseName = conflict.name;
+        throw err;
+      }
+    }
   }
 
   const [result] = await pool.query(
@@ -128,8 +154,8 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
     [studentId, row.course_id, row.name, row.credits, row.category, year, semester]
   );
 
-  if (!courseId && Array.isArray(schedule) && schedule.length > 0) {
-    for (const s of schedule) {
+  if (scheduleToInsert.length > 0) {
+    for (const s of scheduleToInsert) {
       await pool.query(
         'INSERT INTO student_course_schedules (student_course_id, day, period) VALUES (?, ?, ?)',
         [result.insertId, s.day, s.period]
