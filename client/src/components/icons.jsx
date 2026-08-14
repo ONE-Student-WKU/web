@@ -14,7 +14,7 @@ const base = {
   strokeLinejoin: 'round',
 };
 
-export function IconMenu({ size = 20 }) {
+export function IconMenu({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
       <line x1="4" y1="6" x2="20" y2="6" />
@@ -24,7 +24,7 @@ export function IconMenu({ size = 20 }) {
   );
 }
 
-export function IconUser({ size = 16 }) {
+export function IconUser({ size = 14 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
       <circle cx="12" cy="7" r="4" />
@@ -33,7 +33,7 @@ export function IconUser({ size = 16 }) {
   );
 }
 
-export function IconBook({ size = 20 }) {
+export function IconBook({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
       <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5" />
@@ -43,7 +43,7 @@ export function IconBook({ size = 20 }) {
   );
 }
 
-export function IconChecklist({ size = 20 }) {
+export function IconChecklist({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
       <rect x="4" y="4" width="16" height="16" rx="3" />

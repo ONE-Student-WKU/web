@@ -96,12 +96,14 @@ function Home({ user, onOpenChat, onLogout }) {
         </div>
       </div>
 
-      <button className="prompt-bar" onClick={() => onOpenChat()}>
-        <span className="prompt-bar-placeholder">무엇이든 물어보세요</span>
-        <span className="prompt-send-btn" aria-hidden="true">
+      <div className="prompt-bar">
+        <button type="button" className="prompt-bar-pill" onClick={() => onOpenChat()}>
+          <span className="prompt-bar-placeholder">무엇이든 물어보세요</span>
+        </button>
+        <button type="button" className="prompt-send-btn" onClick={() => onOpenChat()} aria-label="채팅 열기">
           <IconArrowUp />
-        </span>
-      </button>
+        </button>
+      </div>
     </div>
   );
 }

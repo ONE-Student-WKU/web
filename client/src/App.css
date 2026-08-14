@@ -52,7 +52,7 @@ body {
 }
 
 .screen-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: bold;
   color: #1a3c8f;
 }
@@ -69,8 +69,8 @@ body {
 }
 
 .avatar-btn {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #eef0f3;
   color: #666;
@@ -82,18 +82,28 @@ body {
   flex-shrink: 0;
 }
 
-/* Shared prompt bar — Home's entry button and the real Chat input share this look */
+/* Shared prompt bar — Home's entry button and the real Chat input share this look.
+   Outer bar has no pill of its own; it holds a separate pill (text) and a separate
+   circular send button side by side, matching the wireframe structure exactly. */
 .prompt-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: calc(100% - 32px);
-  margin: 0 16px 16px;
-  padding: 8px 8px 8px 16px;
+  padding: 10px 12px;
+  border-top: 1px solid #eee;
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 24px;
   flex-shrink: 0;
+}
+
+.prompt-bar-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 18px;
+  padding: 8px 12px;
+  background: none;
   text-align: left;
   cursor: pointer;
 }
@@ -105,7 +115,7 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   color: #999;
   font-family: inherit;
 }
@@ -115,7 +125,6 @@ body {
   resize: none;
   overflow-y: auto;
   line-height: 1.4;
-  padding: 6px 0;
   max-height: 120px;
 }
 
@@ -245,16 +254,16 @@ body {
 }
 
 .home-subgreeting {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 
 .home-card {
   background: #f9fafb;
   border: 1px solid #eee;
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px;
   margin-bottom: 12px;
 }
 
@@ -283,7 +292,7 @@ body {
 }
 
 .home-credit-number {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
 }
 
@@ -322,7 +331,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 14px 8px;
+  padding: 12px 8px;
   font-size: 12px;
   color: #444;
   background: #f9fafb;
