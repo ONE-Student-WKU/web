@@ -227,10 +227,11 @@ async function seedLegacyOnlyEntries(latestSemester, deptIdCache) {
   if (!fs.existsSync(LEGACY_CATALOG) || !latestSemester) return 0;
 
   const legacy = JSON.parse(fs.readFileSync(LEGACY_CATALOG, 'utf-8'));
-  const [existingRows] = await pool.query(
-    'SELECT DISTINCT course_name FROM course_offerings WHERE year = ? AND semester = ?',
-    [latestSemester.year, latestSemester.semester]
-  );
+  // "최신 학기에 없으면" 이 아니라 "스크래핑 데이터 어디에도 없으면"이어야 한다 — 1학기에만
+  // 개설되는 저학년 필수과목(대학생활과자기혁신 등)은 최신 학기가 2학기일 때 그 안에서만
+  // 찾으면 항상 "없다"고 오판해 이미 정상 데이터가 있는 과목을 시간표 없는 상태로 중복
+  // 삽입하는 버그가 있었다(실측으로 확인, 2026-08-15).
+  const [existingRows] = await pool.query('SELECT DISTINCT course_name FROM course_offerings');
   const existingNames = new Set(existingRows.map((r) => r.course_name));
 
   // 공학3계열이 신설 학과라 이 저학년 보정 항목들의 실제 출처(구학과 카탈로그였음)와 무관하게
