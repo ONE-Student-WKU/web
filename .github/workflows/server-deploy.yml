@@ -9,6 +9,9 @@ on:
       - 'db/**'
       - 'ecosystem.config.js'
   workflow_dispatch:
+  # [임시] main 미반영 상태에서 검증하기 위한 트리거, 검증 후 제거 예정
+  pull_request:
+    branches: [develop]
 
 # 동일 브랜치 연속 배포 시 이전 실행 취소
 concurrency:
@@ -19,6 +22,8 @@ jobs:
   deploy:
     name: Deploy to GCP VM
     runs-on: ubuntu-latest
+    # [임시] pull_request 이벤트는 이 브랜치의 PR에서만 실행, 다른 팀원 PR엔 영향 차단
+    if: github.event_name != 'pull_request' || github.head_ref == 'feature/cloud-be-deploy'
 
     steps:
       # 코드 체크아웃
