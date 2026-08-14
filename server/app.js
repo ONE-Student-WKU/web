@@ -13,6 +13,7 @@ const onboardingRoutes = require('./routes/onboarding');
 const meRoutes = require('./routes/me');
 const coursesRoutes = require('./routes/courses');
 const myCoursesRoutes = require('./routes/myCourses');
+const graduationRoutes = require('./routes/graduation');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -39,6 +40,7 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api', meRoutes);
 app.use('/api/courses', coursesRoutes);
 app.use('/api/my-courses', myCoursesRoutes);
+app.use('/api/graduation', graduationRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Base Route

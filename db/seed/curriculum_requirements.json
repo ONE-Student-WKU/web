@@ -118,7 +118,18 @@
     "enrollmentType": null,
     "minCourseCount": 1,
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": ["졸업(시험.작품)논문"]
+    "requiredCourses": ["졸업(시험·작품)논문"]
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (전공/교양 구분 없이 아무 과목이나 이수 가능, 총 136학점 충족용 — 전공필수19+전공선택56+교양필수5+교양선택34=114에 더해 총량을 맞춤)",
+    "requiredCourses": []
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
