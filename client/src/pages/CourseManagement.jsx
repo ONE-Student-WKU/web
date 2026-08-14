@@ -311,6 +311,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </div>
         </div>
 
+        <div className="courses-summary-row courses-summary-row-total">
+          <div className="courses-summary-stat">
+            <p className="home-card-label">전체 이수학점</p>
+            <p className="courses-summary-value">{summary ? summary.total.earnedCredits : 0}학점</p>
+          </div>
+          <div className="courses-summary-stat">
+            <p className="home-card-label">전체 평점(GPA)</p>
+            <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
+          </div>
+        </div>
+
         <p className="courses-section-label">시간표</p>
         <div className="courses-timetable">
           <div className="courses-timetable-grid" style={{ gridTemplateRows: `repeat(${maxPeriod + 1}, auto)` }}>

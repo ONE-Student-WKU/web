@@ -867,6 +867,16 @@ body {
   padding: 10px 12px;
 }
 
+.courses-summary-row-total .courses-summary-stat {
+  background: none;
+  border-style: dashed;
+}
+
+.courses-summary-row-total .courses-summary-value {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
 .courses-summary-value {
   font-size: 16px;
   font-weight: 500;
