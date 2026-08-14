@@ -511,6 +511,14 @@ body {
   color: var(--color-text-muted);
 }
 
+.home-card-row.shortfall-danger svg {
+  color: var(--color-danger);
+}
+
+.home-card-row.shortfall-ok svg {
+  color: var(--color-success);
+}
+
 .home-credit-value {
   margin-bottom: 8px;
 }
