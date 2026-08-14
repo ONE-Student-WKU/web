@@ -1,22 +1,38 @@
-/* Color tokens — dark by default (matches the wireframe's dark rendering). */
+/* Color tokens — dark by default (matches the wireframe's dark rendering).
+   text-secondary/muted, border는 가독성 확보를 위해 표준 팔레트보다 밝게 잡음
+   (원래 값은 배경 대비 4.3:1 안팎이라 흐릿하게 보인다는 피드백이 있었음). */
 :root {
   --color-bg-page: #131417;
   --color-bg-frame: #1a1c21;
-  --color-bg-card: #22252b;
-  --color-border: #2f333b;
-  --color-border-strong: #3d424c;
-  --color-text-primary: #f0f1f3;
-  --color-text-secondary: #b0b4bc;
-  --color-text-muted: #797e88;
-  --color-accent: #5b8def;
+  --color-bg-card: #262a32;
+  --color-border: #383d47;
+  --color-border-strong: #4d535f;
+  --color-text-primary: #f6f7f8;
+  --color-text-secondary: #c8ccd4;
+  --color-text-muted: #9ba0aa;
+  --color-accent: #6f9bf5;
   --color-accent-contrast: #ffffff;
-  --color-accent-bg: #1f3050;
-  --color-accent-disabled: #2c3c5c;
-  --color-danger: #f2685c;
-  --color-success: #4caf50;
+  --color-accent-bg: #24365c;
+  --color-accent-disabled: #33456c;
+  --color-danger: #f37c71;
+  --color-success: #5fc164;
   /* select/number 등 브라우저 네이티브 폼 컨트롤(드롭다운 팝업, 스피너 버튼)이
      color-scheme을 못 읽으면 다크 배경색을 줘도 흰색 크롬으로 렌더링된다. */
   color-scheme: dark;
+}
+
+/* 기본 글자 크기 — 설정 화면에서 선택(App.jsx가 <html data-font-size>로 설정).
+   rem 기반 font-size는 모두 이 값을 기준으로 스케일된다. */
+:root {
+  font-size: 16px;
+}
+
+:root[data-font-size='small'] {
+  font-size: 15px;
+}
+
+:root[data-font-size='large'] {
+  font-size: 18px;
 }
 
 /* 라이트 테마 — 설정 화면에서 명시적으로 선택했을 때만 적용(App.jsx가 <html data-theme="light">로 설정).
@@ -96,7 +112,7 @@ body {
 }
 
 .screen-title {
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.3px;
   color: var(--color-accent);
@@ -107,7 +123,7 @@ body {
   height: 28px;
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 1.3125rem;
   line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -153,7 +169,7 @@ body {
   border-radius: 6px;
   background: none;
   border: none;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-primary);
   cursor: pointer;
 }
@@ -189,7 +205,7 @@ body {
   border: 1px solid var(--color-border);
   background: none;
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -200,7 +216,7 @@ body {
 }
 
 .settings-field-hint {
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
   line-height: 1.5;
   margin: 0 0 10px;
@@ -264,7 +280,7 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   font-family: inherit;
 }
@@ -293,7 +309,7 @@ body {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: 1.0625rem;
 }
 
 .prompt-send-btn:disabled {
@@ -318,7 +334,7 @@ body {
 }
 
 .auth-heading {
-  font-size: 26px;
+  font-size: 1.6875rem;
   font-weight: 800;
   text-align: center;
   margin: 0 0 8px;
@@ -326,7 +342,7 @@ body {
 }
 
 .auth-subheading {
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   text-align: center;
   margin: 0 0 32px;
@@ -339,7 +355,7 @@ body {
 .auth-field label {
   display: block;
   margin-bottom: 6px;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -348,7 +364,7 @@ body {
   padding: 13px 14px;
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.9375rem;
   background: var(--color-bg-card);
   color: var(--color-text-primary);
 }
@@ -361,7 +377,7 @@ body {
   color: var(--color-accent-contrast);
   border: none;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -369,7 +385,7 @@ body {
 .auth-toggle-text {
   margin-top: 20px;
   text-align: center;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
 }
 
@@ -386,7 +402,7 @@ body {
 
 .auth-error {
   color: var(--color-danger);
-  font-size: 13px;
+  font-size: 0.875rem;
   margin: 4px 0 0;
 }
 
@@ -406,18 +422,18 @@ body {
 
 .home-error {
   color: var(--color-danger);
-  font-size: 13px;
+  font-size: 0.875rem;
   margin: 0 0 12px;
 }
 
 .home-greeting {
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
   margin: 0 0 10px;
 }
 
 .home-subgreeting {
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: bold;
   margin: 0;
   color: var(--color-text-primary);
@@ -436,7 +452,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   text-decoration: underline;
   cursor: pointer;
@@ -451,7 +467,7 @@ body {
 }
 
 .home-card-label {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-text-muted);
   margin: 0 0 10px;
@@ -461,7 +477,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -476,13 +492,13 @@ body {
 }
 
 .home-credit-number {
-  font-size: 22px;
+  font-size: 1.4375rem;
   font-weight: bold;
   color: var(--color-text-primary);
 }
 
 .home-credit-total {
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -504,7 +520,7 @@ body {
 
 .grad-remaining-text {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
 }
 
@@ -520,7 +536,7 @@ body {
 }
 
 .grad-category-value {
-  font-size: 13px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--color-text-secondary);
 }
@@ -530,14 +546,14 @@ body {
 }
 
 .grad-category-courses {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: var(--color-text-muted);
 }
 
 .grad-overflow-note {
   margin: 6px 0 0;
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -564,7 +580,7 @@ body {
 
 .grad-cert-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: 0.8125rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
 }
@@ -575,7 +591,7 @@ body {
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 12px;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-primary);
 }
 
@@ -602,7 +618,7 @@ body {
 }
 
 .home-quick-label {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-text-muted);
   margin: 0 0 8px;
@@ -621,7 +637,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -672,7 +688,7 @@ body {
 }
 
 .chat-bubble .message-sender {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: bold;
   color: var(--color-text-secondary);
   margin-bottom: 4px;
@@ -681,12 +697,12 @@ body {
 .chat-bubble .message-text {
   white-space: pre-wrap;
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 0.9375rem;
   color: var(--color-text-primary);
 }
 
 .chat-bubble .message-time {
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   margin-top: 4px;
 }
@@ -695,7 +711,7 @@ body {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--color-border);
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
 }
 
@@ -704,7 +720,7 @@ body {
   border: none;
   padding: 0;
   color: var(--color-accent);
-  font-size: 12px;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -715,7 +731,7 @@ body {
 
 .chat-disclaimer {
   padding: 0 16px 12px;
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   text-align: center;
   flex-shrink: 0;
@@ -778,7 +794,7 @@ body {
 }
 
 .courses-tab {
-  font-size: 12px;
+  font-size: 0.8125rem;
   padding: 6px 10px;
   border-radius: 14px;
   border: 1px solid var(--color-border);
@@ -805,7 +821,7 @@ body {
   padding: 0 5px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.12);
-  font-size: 10px;
+  font-size: 0.6875rem;
   line-height: 15px;
 }
 
@@ -818,7 +834,7 @@ body {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -829,7 +845,7 @@ body {
   border-radius: 6px;
   background: var(--color-bg-frame);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 0.875rem;
 }
 
 .courses-picker-semester {
@@ -838,7 +854,7 @@ body {
   border-radius: 6px;
   background: var(--color-bg-frame);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 0.875rem;
 }
 
 .courses-picker-go {
@@ -848,7 +864,7 @@ body {
   border-radius: 6px;
   background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
 }
@@ -873,19 +889,19 @@ body {
 }
 
 .courses-summary-row-total .courses-summary-value {
-  font-size: 14px;
+  font-size: 0.9375rem;
   color: var(--color-text-secondary);
 }
 
 .courses-summary-value {
-  font-size: 16px;
+  font-size: 1.0625rem;
   font-weight: 500;
   margin: 0;
   color: var(--color-text-primary);
 }
 
 .courses-section-label {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-text-muted);
   margin: 0 0 8px;
@@ -904,7 +920,7 @@ body {
   display: grid;
   grid-template-columns: 20px repeat(5, 1fr);
   gap: 3px;
-  font-size: 10px;
+  font-size: 0.6875rem;
   min-width: 260px;
 }
 
@@ -944,7 +960,7 @@ body {
 }
 
 .courses-empty {
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   margin: 0 0 12px;
 }
@@ -972,20 +988,20 @@ body {
 }
 
 .courses-list-item-name {
-  font-size: 13px;
+  font-size: 0.875rem;
   font-weight: 500;
   margin: 0;
   color: var(--color-text-primary);
 }
 
 .courses-list-item-meta {
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   margin: 2px 0 0;
 }
 
 .courses-grade-select {
-  font-size: 12px;
+  font-size: 0.8125rem;
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid var(--color-border-strong);
@@ -1011,7 +1027,7 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 12px;
-  font-size: 13px;
+  font-size: 0.875rem;
   font-weight: 500;
   background: var(--color-accent);
   color: var(--color-accent-contrast);
@@ -1040,7 +1056,7 @@ body {
 }
 
 .courses-add-mode-toggle button {
-  font-size: 12px;
+  font-size: 0.8125rem;
   padding: 6px 10px;
   border-radius: 14px;
   border: 1px solid var(--color-border);
@@ -1081,7 +1097,7 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-primary);
   font-family: inherit;
 }
@@ -1112,14 +1128,14 @@ body {
 }
 
 .courses-manual-hint {
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
   line-height: 1.5;
   margin: 0 0 12px;
 }
 
 .courses-manual-only-note {
-  font-size: 12px;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
   margin: 0;
 }
@@ -1129,7 +1145,7 @@ body {
   padding: 13px 14px;
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.9375rem;
   background: var(--color-bg-card);
   color: var(--color-text-primary);
 }
@@ -1147,7 +1163,7 @@ body {
   border-radius: 6px;
   background: var(--color-bg-frame);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 0.875rem;
 }
 
 .courses-schedule-remove {
@@ -1169,7 +1185,7 @@ body {
   border-radius: 8px;
   background: none;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 0.8125rem;
   cursor: pointer;
 }
 
@@ -1192,14 +1208,14 @@ body {
 .onb-dot.done { background: var(--color-accent); opacity: 0.5; }
 
 .onb-q-title {
-  font-size: 19px;
+  font-size: 1.25rem;
   font-weight: 800;
   margin: 0 0 6px;
   letter-spacing: -0.2px;
 }
 
 .onb-q-sub {
-  font-size: 13px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   margin: 0 0 24px;
   line-height: 1.5;
@@ -1229,8 +1245,8 @@ body {
 .onb-option-card:hover:not(:disabled) { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
-.onb-option-title { font-size: 14px; font-weight: 700; }
-.onb-option-caption { font-size: 12px; color: var(--color-text-muted); }
+.onb-option-title { font-size: 0.9375rem; font-weight: 700; }
+.onb-option-caption { font-size: 0.8125rem; color: var(--color-text-muted); }
 .onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
 
@@ -1238,7 +1254,7 @@ body {
 
 .onb-field-label {
   display: block;
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-text-muted);
   margin-bottom: 8px;
@@ -1249,7 +1265,7 @@ body {
   padding: 12px 14px;
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 0.9375rem;
   background: var(--color-bg-card);
   color: var(--color-text-primary);
   font-family: inherit;
@@ -1265,7 +1281,7 @@ body {
   border-radius: 10px;
   background: var(--color-bg-card);
   color: var(--color-text-primary);
-  font-size: 13px;
+  font-size: 0.875rem;
   cursor: pointer;
   font-family: inherit;
 }
@@ -1273,7 +1289,7 @@ body {
 .onb-chip.selected { border-color: var(--color-accent); background: var(--color-accent-bg); color: var(--color-accent); font-weight: 700; }
 .onb-chip:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.onb-hint { margin: 8px 0 0; font-size: 12px; color: var(--color-text-muted); line-height: 1.5; }
+.onb-hint { margin: 8px 0 0; font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.5; }
 
 .onb-summary-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -1287,8 +1303,8 @@ body {
   border: 1px solid var(--color-border);
 }
 
-.onb-summary-key { font-size: 12px; color: var(--color-text-muted); }
-.onb-summary-val { font-size: 13px; font-weight: 700; }
+.onb-summary-key { font-size: 0.8125rem; color: var(--color-text-muted); }
+.onb-summary-val { font-size: 0.875rem; font-weight: 700; }
 
 .onb-done-wrap {
   flex: 1;
@@ -1310,11 +1326,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 1.6875rem;
 }
 
-.onb-done-title { font-size: 17px; font-weight: 800; margin: 4px 0 0; }
-.onb-done-sub { font-size: 13px; color: var(--color-text-muted); }
+.onb-done-title { font-size: 1.125rem; font-weight: 800; margin: 4px 0 0; }
+.onb-done-sub { font-size: 0.875rem; color: var(--color-text-muted); }
 
 .onb-skip-link {
   display: block;
@@ -1322,7 +1338,7 @@ body {
   padding: 4px;
   background: none;
   border: none;
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
   text-decoration: underline;
   cursor: pointer;
