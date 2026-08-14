@@ -36,23 +36,19 @@ function Login({ onLoginSuccess }) {
 
       <div className="auth-body">
         <h2 className="auth-heading">{mode === 'signup' ? '회원가입' : '로그인'}</h2>
-        <p className="auth-subheading">
-          {mode === 'signup'
-            ? '내 학사정보를 바탕으로 답하는 챗봇을 쓰려면 계정이 필요해요.'
-            : '내 학사정보를 바탕으로 답하는 챗봇에 로그인하세요.'}
-        </p>
+        <p className="auth-subheading">나에게 필요한 학사정보를 한눈에 확인하세요.</p>
 
         <form onSubmit={handleSubmit}>
-          <div className="auth-field">
-            <label>이메일</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
           {mode === 'signup' && (
             <div className="auth-field">
               <label>이름</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
           )}
+          <div className="auth-field">
+            <label>이메일</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
           <div className="auth-field">
             <label>비밀번호</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
