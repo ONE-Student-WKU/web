@@ -285,28 +285,16 @@ body {
   margin: 0 0 12px;
 }
 
-.home-greeting-block {
-  padding: 8px 0 20px;
-}
-
-.home-date {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: var(--color-accent);
-  margin: 0 0 8px;
-}
-
 .home-greeting {
   font-size: 13px;
   color: var(--color-text-secondary);
-  margin: 0 0 2px;
+  margin: 0 0 10px;
 }
 
 .home-subgreeting {
   font-size: 15px;
   font-weight: bold;
-  margin: 0;
+  margin: 0 0 16px;
   color: var(--color-text-primary);
 }
 

@@ -15,12 +15,6 @@ function getGradeLevel(admissionYear) {
   return Math.min(4, Math.max(1, currentYear - admissionYear + 1));
 }
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-function formatToday() {
-  const now = new Date();
-  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAYS[now.getDay()]}요일`;
-}
-
 /**
  * Home Page Component
  * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여주고, 챗봇은 하단 상시 진입바로 배치.
@@ -65,14 +59,11 @@ function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
       <div className="home-body">
         {error && <p className="home-error">{error}</p>}
 
-        <div className="home-greeting-block">
-          <p className="home-date">{formatToday()}</p>
-          <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
-          <p className="home-subgreeting">
-            {profile?.department || '학과 정보 없음'}
-            {gradeLevel ? ` ${gradeLevel}학년` : ''}
-          </p>
-        </div>
+        <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
+        <p className="home-subgreeting">
+          {profile?.department || '학과 정보 없음'}
+          {gradeLevel ? ` ${gradeLevel}학년` : ''}
+        </p>
 
         <section className="home-card">
           <p className="home-card-label">이수학점 진행률</p>
@@ -93,7 +84,7 @@ function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
           </div>
         </section>
 
-        <p className="home-quick-label">빠른 실행</p>
+        <p className="home-quick-label">메뉴</p>
         <div className="home-quick-actions">
           <button className="home-quick-btn" onClick={onOpenCourses}>
             <IconBook />
