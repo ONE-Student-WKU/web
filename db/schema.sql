@@ -205,6 +205,37 @@ CREATE TABLE IF NOT EXISTS curriculum_required_courses (
 );
 
 -- ---------------------------------------------------------------------------
+-- 6.5. 학과별 학년/학기 교육과정 편성표 ("1학년 2학기에 무슨 과목 있어?" 같은 나열형 질문용)
+--
+-- db/curriculum/*.md 원문 표를 그대로 구조화한 테이블. 예전에는 이 표를 텍스트로 쪼개 RAG
+-- 임베딩 검색으로 답했는데, "특정 학기 과목 전부 나열" 같은 질문은 유사도 top-K 특성상 일부가
+-- 누락되는 문제가 실측으로 반복 확인되어(regulationService.js 개편 이력 참고) 조건 조회가
+-- 보장되는 이 테이블로 옮겼다. RAG는 학칙처럼 진짜 비정형 프로즈 문서에만 남긴다.
+--
+-- semester: "1", "2", 또는 "1,2"(두 학기 모두 개설, 예: 컴퓨터개론) — FIND_IN_SET으로 조회.
+-- min/max_admission_year: 파일(구학과 vs 공학3계열) 단위로 적용 범위가 갈려서 행 단위로 채움.
+-- track_id: 공학3계열처럼 트랙별로 편성이 갈리는 경우만, 구학과처럼 트랙이 없으면 NULL.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS curriculum_courses (
+  id                  INT AUTO_INCREMENT PRIMARY KEY,
+  department_id       INT NOT NULL,
+  track_id            INT,
+  min_admission_year  INT,
+  max_admission_year  INT,
+  grade               TINYINT NOT NULL,
+  semester            VARCHAR(5) NOT NULL,
+  category            VARCHAR(20) NOT NULL,
+  course_code         VARCHAR(20),
+  course_name         VARCHAR(100) NOT NULL,
+  course_name_en      VARCHAR(150),
+  credits             DECIMAL(3,1),
+  remarks             VARCHAR(100),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id),
+  FOREIGN KEY (track_id) REFERENCES tracks(id)
+);
+
+-- ---------------------------------------------------------------------------
 -- 7. 학칙·규정 문서 (AI 챗봇 RAG 근거)
 --
 -- 하이브리드 소스 전략: db/regulations/*.md(주제별 정리 문서, 학생 질문 형태에 가까움)를

@@ -26,16 +26,16 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// "데이터구조"처럼 다른 과목명과 단어가 겹치면("빅데이터") 임베딩 유사도만으론 그 과목이
-// 상위 K개 밖으로 밀려나는 게 실측으로 확인됨 — 과목 하나 콕 집는 질문은 시맨틱이 아니라
-// 정확 일치가 더 잘 맞는 문제라, db/curriculum 청크는 "교과목: OOO" 패턴에서 과목명을
-// 뽑아 질문 문자열에 그대로 포함되는지 직접 검사해 유사도 순위와 무관하게 강제 포함시킨다.
-const COURSE_NAME_RE = /교과목(?:\(국문\))?:\s*([^,]+)/;
-
 // 청크가 수백 개 규모라 전부 메모리로 읽어 서버(Node.js)에서 유사도 계산 (schema.sql 7번 섹션 설계 결정)
-async function findRelevantChunks(queryEmbedding, message) {
+//
+// 예전엔 여기서 교육과정(db/curriculum) 청크도 함께 검색했는데, "특정 학기 과목 전부
+// 나열해줘" 같은 질문은 top-K 유사도 특성상 일부 과목이 누락되는 문제가 반복 확인되어
+// curriculum_courses 정형 테이블(curriculumService.lookupFromMessage)로 옮겼다. 그 근거로
+// 과목명/학년·학기를 정규식으로 강제 포함시키던 로직도 같이 필요 없어져 제거함 — RAG는
+// 이제 학칙처럼 진짜 비정형 프로즈 문서만 대상으로 하므로 순수 유사도 검색으로 충분하다.
+async function findRelevantChunks(queryEmbedding) {
   const [rows] = await pool.query(
-    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title, rd.category
+    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title
      FROM regulation_chunks rc
      JOIN regulation_documents rd ON rd.id = rc.document_id`
   );
@@ -44,25 +44,13 @@ async function findRelevantChunks(queryEmbedding, message) {
     chunkId: row.id,
     documentTitle: row.document_title,
     content: row.content,
-    category: row.category,
     score: cosineSimilarity(queryEmbedding, row.embedding),
   }));
 
-  const exactMatches = scored.filter((c) => {
-    if (c.category !== '교육과정') return false;
-    const m = c.content.match(COURSE_NAME_RE);
-    const courseName = m ? m[1].trim() : null;
-    return courseName && message.includes(courseName);
-  });
-
-  const bySimilarity = scored.filter((c) => c.score >= MIN_SIMILARITY).sort((a, b) => b.score - a.score);
-
-  const merged = [...exactMatches];
-  for (const c of bySimilarity) {
-    if (merged.length >= TOP_K) break;
-    if (!merged.some((m) => m.chunkId === c.chunkId)) merged.push(c);
-  }
-  return merged.slice(0, TOP_K);
+  return scored
+    .filter((c) => c.score >= MIN_SIMILARITY)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, TOP_K);
 }
 
 // 직전 turn이 인용했던 청크를 이번 turn 근거에도 유지하기 위한 조회. "방금 답변 출처 알려줘"
