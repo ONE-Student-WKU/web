@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getMe, getCourseSummary } from '../api/chatApi.js';
+import { getMe, getCourseSummary, getGraduationStatus } from '../api/chatApi.js';
 import { IconMenu, IconUser, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
+import { summarizeShortfalls } from '../utils/graduation.js';
 
 // 2026학번부터 공학3계열 개편으로 졸업학점 체계가 136→130으로 바뀜 (db/regulations/졸업/이수학점_총괄표.md 근거)
 const RESTRUCTURE_ADMISSION_YEAR = 2026;
@@ -23,12 +24,14 @@ function getGradeLevel(admissionYear) {
  * - user: object
  * - onOpenChat: function
  * - onOpenCourses: function
+ * - onOpenGraduation: function
  * - onLogout: function
  */
-function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
+function Home({ user, onOpenChat, onOpenCourses, onOpenGraduation, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
+  const [shortfalls, setShortfalls] = useState(null);
 
   useEffect(() => {
     Promise.all([getMe(), getCourseSummary()])
@@ -37,6 +40,12 @@ function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
         setSummary(summaryData);
       })
       .catch(() => setError('정보를 불러오지 못했어요.'));
+
+    // 졸업요건 진단은 온보딩 전이면 실패할 수 있는 부가 정보라, 홈 화면 전체를
+    // 깨뜨리지 않도록 별도로 조용히 처리(실패 시 카드에 기존 안내 문구를 그대로 둠).
+    getGraduationStatus()
+      .then((data) => setShortfalls(summarizeShortfalls(data.categories, data.certifications)))
+      .catch(() => setShortfalls(null));
   }, []);
 
   const requiredTotal = getRequiredTotalCredits(profile?.admissionYear);
@@ -80,7 +89,13 @@ function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
           <p className="home-card-label">부족 요건</p>
           <div className="home-card-row">
             <IconAlertTriangle />
-            <span>졸업요건 진단 기능은 아직 준비 중이에요. 곧 만나보실 수 있어요.</span>
+            <span>
+              {shortfalls === null
+                ? '졸업요건 진단에서 확인해보세요.'
+                : shortfalls.length > 0
+                  ? `${shortfalls.join(', ')}이 부족해요.`
+                  : '모든 요건을 충족했어요!'}
+            </span>
           </div>
         </section>
 
@@ -90,7 +105,7 @@ function Home({ user, onOpenChat, onOpenCourses, onLogout }) {
             <IconBook />
             <span>과목 관리</span>
           </button>
-          <button className="home-quick-btn" disabled title="준비 중인 기능이에요">
+          <button className="home-quick-btn" onClick={onOpenGraduation}>
             <IconChecklist />
             <span>졸업요건 진단</span>
           </button>
