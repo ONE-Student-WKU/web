@@ -3,24 +3,34 @@
  * API service layer helper to communicate with backend routes.
  */
 
-export const login = async (studentId, password) => {
-  // TODO: Call POST /api/auth/login
-  return { success: true, user: { studentId, name: '홍길동' } };
-};
+const BASE = '/api';
 
-export const logout = async () => {
-  // TODO: Call POST /api/auth/logout
-  return { success: true };
-};
+async function apiRequest(path, options = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  const body = await res.json();
 
-export const sendChatMessage = async (messageText) => {
-  // TODO: Call POST /api/chat
-  return {
-    reply: `이것은 AI 답변의 뼈대입니다. 입력하신 메시지: "${messageText}"`,
-  };
-};
+  if (!res.ok) {
+    const err = new Error(body.code || 'REQUEST_FAILED');
+    err.code = body.code;
+    err.status = res.status;
+    throw err;
+  }
+  return body.data;
+}
 
-export const fetchAcademicInfo = async () => {
-  // TODO: Call GET /api/mockInfo
-  return [];
-};
+export const signup = (email, password, name) =>
+  apiRequest('/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+
+export const login = (email, password) =>
+  apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+
+export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
+
+export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
+
+export const sendChatMessage = (conversationId, message) =>
+  apiRequest('/chat/messages', { method: 'POST', body: JSON.stringify({ conversationId, message }) });

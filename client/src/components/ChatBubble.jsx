@@ -8,11 +8,22 @@ import React from 'react';
  * - message: { sender: 'user'|'assistant', text: string, timestamp: string }
  */
 function ChatBubble({ message }) {
-  // TODO: Add visual layout and styling depending on message.sender
   return (
     <div className={`chat-bubble ${message.sender}`}>
       <div className="message-sender">{message.sender === 'user' ? '나' : 'WKU AI'}</div>
       <div className="message-text">{message.text}</div>
+      {message.citedChunks?.length > 0 && (
+        <div className="message-citations">
+          <div className="message-citations-label">출처</div>
+          <ul>
+            {message.citedChunks.map((c) => (
+              <li key={c.chunkId}>
+                <strong>{c.documentTitle}</strong> — {c.excerpt}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="message-time">{message.timestamp}</div>
     </div>
   );
