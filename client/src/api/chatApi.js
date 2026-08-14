@@ -34,6 +34,19 @@ export const getMe = () => apiRequest('/me');
 
 export const getCourseSummary = () => apiRequest('/my-courses/summary');
 
+export const searchCatalog = (keyword) => apiRequest(`/courses/catalog?keyword=${encodeURIComponent(keyword)}`);
+
+export const getMyCourses = (year, semester) => apiRequest(`/my-courses?year=${year}&semester=${semester}`);
+
+export const getTimetable = (year, semester) => apiRequest(`/my-courses/timetable?year=${year}&semester=${semester}`);
+
+export const addMyCourse = (payload) => apiRequest('/my-courses', { method: 'POST', body: JSON.stringify(payload) });
+
+export const updateMyCourse = (id, payload) =>
+  apiRequest(`/my-courses/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+
+export const deleteMyCourse = (id) => apiRequest(`/my-courses/${id}`, { method: 'DELETE' });
+
 export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
 
 export const sendChatMessage = (conversationId, message) =>
