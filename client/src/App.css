@@ -858,6 +858,12 @@ body {
   margin: 0 0 12px;
 }
 
+.courses-manual-only-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
 .courses-category-select {
   width: 100%;
   padding: 13px 14px;

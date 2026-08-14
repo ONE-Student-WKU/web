@@ -117,6 +117,13 @@ function CourseManagement({ user, onGoHome, onLogout }) {
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
+  // 카탈로그(courses.json)는 "지금 실제로 개설 중인" 과목/시간표라, 과거·미래 학기
+  // 기록에 갖다 쓰면 사실과 다른 교수/시간이 붙을 수 있다 — 지금 보고 있는 학기가
+  // 실제 현재 학기일 때만 카탈로그 검색을 허용하고, 그 외엔 직접입력만 가능하게 한다.
+  const actualCurrentTerm = getCurrentYearSemester();
+  const isCurrentTerm = current.year === actualCurrentTerm.year && current.semester === actualCurrentTerm.semester;
+  const effectiveAddMode = isCurrentTerm ? addMode : 'manual';
+
   const maxPeriod = Math.max(6, ...timetable.map((t) => t.period));
   const cellAt = (day, period) => timetable.find((t) => t.day === day && t.period === period);
 
@@ -357,28 +364,34 @@ function CourseManagement({ user, onGoHome, onLogout }) {
         {showAddForm && (
           <div className="courses-add-form">
             <div className="courses-add-form-header">
-              <div className="courses-add-mode-toggle">
-                <button
-                  className={addMode === 'catalog' ? 'active' : ''}
-                  onClick={() => setAddMode('catalog')}
-                  type="button"
-                >
-                  카탈로그 검색
-                </button>
-                <button
-                  className={addMode === 'manual' ? 'active' : ''}
-                  onClick={() => setAddMode('manual')}
-                  type="button"
-                >
-                  직접입력
-                </button>
-              </div>
+              {isCurrentTerm ? (
+                <div className="courses-add-mode-toggle">
+                  <button
+                    className={addMode === 'catalog' ? 'active' : ''}
+                    onClick={() => setAddMode('catalog')}
+                    type="button"
+                  >
+                    카탈로그 검색
+                  </button>
+                  <button
+                    className={addMode === 'manual' ? 'active' : ''}
+                    onClick={() => setAddMode('manual')}
+                    type="button"
+                  >
+                    직접입력
+                  </button>
+                </div>
+              ) : (
+                <p className="courses-manual-only-note">
+                  카탈로그는 현재 학기 기준이라 다른 학기에는 직접입력만 가능해요.
+                </p>
+              )}
               <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
                 <IconX />
               </button>
             </div>
 
-            {addMode === 'catalog' ? (
+            {effectiveAddMode === 'catalog' ? (
               <>
                 <div className="courses-search-box">
                   <IconSearch />

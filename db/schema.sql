@@ -166,10 +166,13 @@ CREATE TABLE IF NOT EXISTS student_courses (
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL,
-  -- 같은 카탈로그 과목(course_id)을 같은 학기에 두 번 등록하는 걸 막는다. course_id가
-  -- NULL인 교양 자유입력은 MySQL이 NULL끼리는 서로 다른 값으로 취급해 이 제약에 안 걸림
-  -- (자유입력은 과목명이 자유 텍스트라 동명이과목 재등록을 막을 근거가 마땅치 않음).
-  CONSTRAINT uq_student_courses_course UNIQUE (student_id, course_id, year, semester)
+  INDEX idx_student_courses_course_id (course_id),  -- course_id 단독 인덱스. name UNIQUE만 있으면
+                                                      -- course_id FK를 지원할 인덱스가 없어 MySQL이 거부함
+  -- 과목명 기준으로 같은 학기에 중복 등록을 막는다. course_id 기준(분반 단위)이었다가,
+  -- 같은 과목의 "다른 분반"을 추가하면 안 걸리는 문제(course_id가 분반마다 다름)가
+  -- 실측으로 확인되어 name 기준으로 바꿈 — 카탈로그로 추가하든 직접입력하든 동일 과목명은
+  -- 한 학기에 하나만 허용.
+  CONSTRAINT uq_student_courses_name UNIQUE (student_id, name, year, semester)
 );
 
 -- 교양/직접입력 과목(course_id가 NULL)은 course_schedules에 연결할 방법이 없어서 시간표에
