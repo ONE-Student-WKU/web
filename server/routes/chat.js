@@ -103,10 +103,15 @@ router.post('/messages', async (req, res, next) => {
       student
     );
 
+    // "2022년에 들을 수 있었던 과목" 같은 특정 연도 개설과목 질문도 curriculum_courses(편성
+    // 계획)와 별개로 course_offerings(실제 개설 이력)를 구조화 조회해야 한다 — RAG 임베딩에는
+    // 애초에 이 테이블이 들어가 있지 않아 그런 질문에 챗봇이 회피 답변하는 문제가 있었다.
+    const offeringChunks = await curriculumService.lookupOfferingsFromMessage(message, student);
+
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = [...curriculumChunks, ...requirementChunks, ...previousCitedChunks];
+    const relevantChunks = [...curriculumChunks, ...requirementChunks, ...offeringChunks, ...previousCitedChunks];
     for (const c of freshChunks) {
       if (!relevantChunks.some((m) => m.chunkId === c.chunkId)) relevantChunks.push(c);
     }
