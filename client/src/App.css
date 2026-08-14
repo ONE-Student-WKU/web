@@ -119,12 +119,13 @@ body {
 }
 
 .back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   background: none;
   border: none;
-  font-size: 1.3125rem;
-  line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, updateProfile } from '../api/chatApi.js';
+import { IconChevronLeft } from '../components/icons.jsx';
 
 const FONT_SIZE_OPTIONS = [
   { value: 'small', label: '작게' },
@@ -52,7 +53,7 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, highli
       <header className="screen-header">
         <div className="screen-header-left">
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
-            ‹
+            <IconChevronLeft />
           </button>
           <span className="screen-title">설정</span>
         </div>
