@@ -17,6 +17,7 @@ async function apiRequest(path, options = {}) {
     const err = new Error(body.code || 'REQUEST_FAILED');
     err.code = body.code;
     err.status = res.status;
+    err.data = body.data;
     throw err;
   }
   return body.data;
@@ -32,7 +33,40 @@ export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
 
 export const getMe = () => apiRequest('/me');
 
+export const updateProfile = (payload) => apiRequest('/me', { method: 'PATCH', body: JSON.stringify(payload) });
+
+export const changePassword = (currentPassword, newPassword) =>
+  apiRequest('/me/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
+
+export const deleteAccount = (password) =>
+  apiRequest('/me', { method: 'DELETE', body: JSON.stringify({ password }) });
+
+export const getDepartments = () => apiRequest('/onboarding/departments');
+
+export const getTracks = (departmentId) => apiRequest(`/onboarding/tracks?departmentId=${departmentId}`);
+
+export const submitOnboarding = (payload) =>
+  apiRequest('/onboarding', { method: 'POST', body: JSON.stringify(payload) });
+
 export const getCourseSummary = () => apiRequest('/my-courses/summary');
+
+export const getGraduationStatus = () => apiRequest('/graduation/status');
+
+export const getSemesters = () => apiRequest('/my-courses/semesters');
+
+export const searchCatalog = (keyword, year, semester) =>
+  apiRequest(`/courses/catalog?keyword=${encodeURIComponent(keyword)}&year=${year}&semester=${semester}`);
+
+export const getMyCourses = (year, semester) => apiRequest(`/my-courses?year=${year}&semester=${semester}`);
+
+export const getTimetable = (year, semester) => apiRequest(`/my-courses/timetable?year=${year}&semester=${semester}`);
+
+export const addMyCourse = (payload) => apiRequest('/my-courses', { method: 'POST', body: JSON.stringify(payload) });
+
+export const updateMyCourse = (id, payload) =>
+  apiRequest(`/my-courses/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+
+export const deleteMyCourse = (id) => apiRequest(`/my-courses/${id}`, { method: 'DELETE' });
 
 export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
 

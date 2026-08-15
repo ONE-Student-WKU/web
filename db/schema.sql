@@ -24,6 +24,9 @@
 --     스코프 제외하고 컬럼 하나로 단순화하기로 함)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
 --     원문엔 없고 교육과정 책자 각주에만 있는 요건 — 세션별 로그는 안 남기고 총 횟수만 카운트)
+--   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
+--     휴학한 학생의 학년이 실제보다 높게 나오는 문제가 실사용으로 확인되어, 학생이 직접
+--     보정할 수 있도록 설정 화면에서 입력받음)
 --   - curriculum_requirements.department_id / min_admission_year / max_admission_year
 --     (학과·입학년도별로 이수규정이 갈리는 경우 대응)
 --   - curriculum_requirements.enrollment_type (전과/편입/복수전공생의 완화된 최소전공
@@ -89,6 +92,10 @@ CREATE TABLE IF NOT EXISTS students (
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
+  leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
+                                                       -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
+                                                       -- 군복무 등)가 있어 학생이 직접 보정할 수 있게 둠 — 2학기당
+                                                       -- 1년으로 환산해 client/src/utils/academic.js에서 학년 계산에 반영.
   onboarding_completed_at   TIMESTAMP NULL,
 
   created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -100,47 +107,71 @@ CREATE TABLE IF NOT EXISTS students (
 );
 
 -- ---------------------------------------------------------------------------
--- 4. 전공 과목 카탈로그 (분반 단위)
+-- 4. 전공 과목 카탈로그 (학기별 실제 개설 분반 단위)
 -- 교양은 카탈로그를 두지 않고 student_courses에 자유 입력한다 (아래 5번 참고).
--- 학수번호는 저장하지 않음 — 단순 구분 코드일 뿐이라 앱 내부에서는 자동증가 id로 충분하고,
--- 학수번호를 모르는 과목(예: 구학과 "기업연계프로젝트2")도 등록 가능해야 하기 때문.
--- 분반은 같은 과목이 다른 시간대에 개설되는 경우를 구분하기 위해 유지.
--- category는 학과/트랙과 같은 이유로 ENUM 고정(통제된 값, 오타 방지). 과목명(name)은
--- 다양해서 자유입력이지만 이수구분은 다섯 가지 뿐이라 자유입력으로 둘 이유가 없음.
+--
+-- 2026-08-15 전면 교체: 기존 courses/course_schedules(학기 구분 없는 단일 스냅샷 —
+-- "지금 학기"만 대표해서 과거·미래 학기 카탈로그 검색이 아예 막혀 있었음, CourseManagement.jsx의
+-- isCurrentTerm 게이트 참고)를 폐기하고, 원광대 공개 전공시간표 조회(intra.wku.ac.kr,
+-- 로그인 불요 — db/curriculum/_source/전공시간표_2017-2026.json)에서 학기별로 실제 수집한
+-- 데이터로 대체. 이제 course_id가 "특정 학기에 실제 개설된 분반"을 가리키게 되어 의미가
+-- 더 정확해지고, 카탈로그 검색을 과거 학기(2017-1~)까지 확장할 수 있다.
+--
+-- raw_category: 원문 "구분" 코드(교필/기전/선전/계필/기초 등)를 그대로 보존 — AI 챗봇 답변
+-- 등에서 원문 그대로 유용할 수 있어 트리밍하지 않고 다 저장하기로 함. category는 그걸
+-- student_courses.category(졸업요건 계산에 쓰는 5종 ENUM)로 정규화한 값
+-- (server/scripts/seedCourseOfferings.js의 CATEGORY_MAP 참고 — 계필/계기/기초/응용/심화/교직처럼
+-- 5종에 깔끔히 안 맞는 코드는 보수적으로 매핑한 추정치이니 주의).
+--
+-- (year, semester, course_code, course_name, section, professor, time_raw)를 자연키로 잡아
+-- 재시딩 시 idempotent하게 만든다. professor/time_raw까지 넣은 이유: 실제 원문에 같은
+-- 분반 번호를 공유하는 서로 다른 실제 개설 건(교수/시간이 다름 — 예: 2018-1 "종교와원불교"
+-- 25분반이 담당교수가 다른 두 행으로 존재)이 확인되어, 이를 진짜 중복으로 오인해 하나를
+-- 잃지 않도록 함.
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS courses (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(100) NOT NULL,
-  section    VARCHAR(10),  -- 분반 (예: "01", "02"), 없으면 NULL
-  professor  VARCHAR(50),
-  credits    DECIMAL(2,1) NOT NULL,
-  category   ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택'),
+CREATE TABLE IF NOT EXISTS course_offerings (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  department_id     INT NOT NULL,
+  track_id          INT,      -- 공학3계열처럼 트랙별로 갈리는 3·4학년 과목만, 계열공통/구학과는 NULL
+  year              INT NOT NULL,
+  semester          TINYINT NOT NULL,
+  grade             TINYINT,  -- 조회 화면 기준 권장 학년, 없을 수 있어 NULL 허용
+  raw_category      VARCHAR(10),   -- 원문 "구분" 코드 그대로 (교필/기전/선전/계필/기초 등)
+  category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택'),  -- raw_category 정규화값
+  course_code       VARCHAR(20),
+  course_name       VARCHAR(100) NOT NULL,
+  section           VARCHAR(10),
+  credits           DECIMAL(3,1),
+  professor         VARCHAR(50),
+  room              VARCHAR(150),
+  competency        VARCHAR(50),   -- 역량 태그(SW실무역량 등), 원문 그대로 보존
+  time_raw          VARCHAR(50),   -- 원문 "시간" 압축 표기(예: "월34화56") 그대로 보존
 
-  -- id가 자동증가라 재시딩 시 INSERT IGNORE만으로는 중복을 못 걸러서, (name, section)을
-  -- 자연키로 잡아 idempotent하게 만든다. 학수번호 없이도 과목을 구분할 수 있어야 하므로
-  -- section이 NULL인 경우(분반 정보 없음)도 있을 수 있음 — 이 경우 name만으로 구분됨에 유의.
-  CONSTRAINT uq_courses_name_section UNIQUE (name, section)
+  FOREIGN KEY (department_id) REFERENCES departments(id),
+  FOREIGN KEY (track_id) REFERENCES tracks(id),
+  CONSTRAINT uq_course_offerings UNIQUE (year, semester, course_code, course_name, section, professor, time_raw)
 );
 
--- 과목별 요일/교시. 주 2회 이상 수업이면 행이 여러 개.
-CREATE TABLE IF NOT EXISTS course_schedules (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  course_id  INT NOT NULL,
-  day        VARCHAR(10) NOT NULL,  -- 월/화/수/목/금
-  period     INT NOT NULL,
+-- 과목별 요일/교시(course_offerings.time_raw를 파싱한 구조화 값). 주 2회 이상 수업이면 행이 여러 개.
+-- 시간이 확정 안 된 항목(time_raw가 비어있는 저학년 필수과목 등)은 행이 없을 수 있음.
+CREATE TABLE IF NOT EXISTS course_offering_schedules (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  offering_id  INT NOT NULL,
+  day          VARCHAR(10) NOT NULL,  -- 월/화/수/목/금
+  period       INT NOT NULL,
 
-  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-  CONSTRAINT uq_course_schedules UNIQUE (course_id, day, period)  -- 재시딩 시 중복 삽입 방지
+  FOREIGN KEY (offering_id) REFERENCES course_offerings(id) ON DELETE CASCADE,
+  CONSTRAINT uq_course_offering_schedules UNIQUE (offering_id, day, period)
 );
 
 -- ---------------------------------------------------------------------------
 -- 5. 내 수강·성적 (통합) — v3.5의 student_courses(등록 여부) + grades(점수)를 병합
 --
--- 전공: 카탈로그(courses)에서 검색·선택 → course_id가 채워지고, name/credits/category는
---       선택 시점에 카탈로그 값을 그대로 복사해 저장(스냅샷). 카탈로그가 나중에 바뀌어도
---       이미 등록한 학생의 이수 기록은 안 변함.
+-- 전공: 카탈로그(course_offerings)에서 학기별로 검색·선택 → course_id가 채워지고,
+--       name/credits/category는 선택 시점에 카탈로그 값을 그대로 복사해 저장(스냅샷).
+--       카탈로그가 나중에 바뀌어도 이미 등록한 학생의 이수 기록은 안 변함.
 -- 교양: 카탈로그 없이 자유 입력 → course_id는 NULL, name/credits/category를 학생이 직접 입력.
---       과목명은 자유 텍스트, category는 courses와 동일한 ENUM으로 드롭다운 선택.
+--       과목명은 자유 텍스트, category는 course_offerings와 동일한 ENUM으로 드롭다운 선택.
 --
 -- 즉 course_id는 "카탈로그에서 골랐다는 참고용 연결고리"일 뿐, 실제 이수 기록에 필요한
 -- 값(name/credits/category)은 항상 이 테이블 자체에 저장되어 course_id 유무와 무관하게
@@ -165,7 +196,28 @@ CREATE TABLE IF NOT EXISTS student_courses (
   letter_grade      VARCHAR(5),
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
+  FOREIGN KEY (course_id) REFERENCES course_offerings(id) ON DELETE SET NULL,
+  INDEX idx_student_courses_course_id (course_id),  -- course_id 단독 인덱스. name UNIQUE만 있으면
+                                                      -- course_id FK를 지원할 인덱스가 없어 MySQL이 거부함
+  -- 과목명 기준으로 같은 학기에 중복 등록을 막는다. course_id 기준(분반 단위)이었다가,
+  -- 같은 과목의 "다른 분반"을 추가하면 안 걸리는 문제(course_id가 분반마다 다름)가
+  -- 실측으로 확인되어 name 기준으로 바꿈 — 카탈로그로 추가하든 직접입력하든 동일 과목명은
+  -- 한 학기에 하나만 허용.
+  CONSTRAINT uq_student_courses_name UNIQUE (student_id, name, year, semester)
+);
+
+-- 교양/직접입력 과목(course_id가 NULL)은 course_schedules에 연결할 방법이 없어서 시간표에
+-- 절대 안 뜬다. 과거 학기 기록처럼 시간을 몰라도 괜찮아야 하니 필수는 아니지만, 이번
+-- 학기처럼 실제 시간을 아는 경우엔 직접 넣어서 시간표에도 보이게 하고 싶을 수 있다 —
+-- 그래서 student_courses 행에 딸린 선택적 시간표를 별도 테이블로 둔다.
+CREATE TABLE IF NOT EXISTS student_course_schedules (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  student_course_id  INT NOT NULL,
+  day                VARCHAR(10) NOT NULL,  -- 월/화/수/목/금
+  period             INT NOT NULL,
+
+  FOREIGN KEY (student_course_id) REFERENCES student_courses(id) ON DELETE CASCADE,
+  CONSTRAINT uq_student_course_schedules UNIQUE (student_course_id, day, period)
 );
 
 -- ---------------------------------------------------------------------------

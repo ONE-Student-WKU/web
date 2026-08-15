@@ -25,19 +25,25 @@ function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
 
-async function searchCatalog(keyword) {
+// year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
+// 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
+// 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
+async function searchCatalog(keyword, year, semester) {
   const like = `%${keyword || ''}%`;
   const [courses] = await pool.query(
-    'SELECT id, name, section, professor, credits, category FROM courses WHERE name LIKE ? ORDER BY name, section',
-    [like]
+    `SELECT id, course_name AS name, section, professor, credits, category
+     FROM course_offerings
+     WHERE course_name LIKE ? AND year = ? AND semester = ?
+     ORDER BY course_name, section`,
+    [like, year, semester]
   );
   if (courses.length === 0) return [];
 
   const courseIds = courses.map((c) => c.id);
   const [schedules] = await pool.query(
-    `SELECT course_id, day, period FROM course_schedules
-     WHERE course_id IN (?)
-     ORDER BY course_id, FIELD(day, '월', '화', '수', '목', '금'), period`,
+    `SELECT offering_id AS course_id, day, period FROM course_offering_schedules
+     WHERE offering_id IN (?)
+     ORDER BY offering_id, FIELD(day, '월', '화', '수', '목', '금'), period`,
     [courseIds]
   );
 
@@ -59,7 +65,10 @@ async function searchCatalog(keyword) {
 }
 
 async function findCourseById(courseId) {
-  const [rows] = await pool.query('SELECT id, name, credits, category FROM courses WHERE id = ?', [courseId]);
+  const [rows] = await pool.query(
+    'SELECT id, course_name AS name, credits, category FROM course_offerings WHERE id = ?',
+    [courseId]
+  );
   return rows[0] || null;
 }
 
@@ -90,7 +99,7 @@ async function listMyCourses(studentId, { year, semester }) {
     SELECT sc.id, sc.course_id, sc.name, sc.credits, sc.category, c.professor, sc.year, sc.semester,
            sc.midterm, sc.final, sc.attendance_score, sc.assignment, sc.etc, sc.letter_grade
     FROM student_courses sc
-    LEFT JOIN courses c ON c.id = sc.course_id
+    LEFT JOIN course_offerings c ON c.id = sc.course_id
     WHERE sc.student_id = ?`;
   const params = [studentId];
 
@@ -110,19 +119,61 @@ async function listMyCourses(studentId, { year, semester }) {
 
 // 전공: courseId만 넘어오면 카탈로그 값(name/credits/category)을 그대로 복사해 저장(스냅샷).
 // 교양/직접입력: courseId 없이 name/credits/category를 그대로 사용.
-async function addMyCourse(studentId, { courseId, name, credits, category, year, semester }) {
+//
+// schedule(선택, [{day,period}])은 course_id가 없는(직접입력) 경우에만 의미가 있다 —
+// 카탈로그 과목이 course_schedules에 이미 확정된 시간이 있으면 그걸 그대로 쓰고 사용자
+// 입력은 무시한다(시간표에 중복/충돌 표시가 생기지 않도록). 다만 저학년 필수과목처럼
+// 교수/시간을 확보 못 해 이름만 카탈로그에 올라간 과목은 course_schedules가 비어있으므로,
+// 그 경우엔 직접입력 과목과 동일하게 사용자가 입력한 시간표를 받아준다.
+async function addMyCourse(studentId, { courseId, name, credits, category, year, semester, schedule }) {
   let row = { course_id: null, name, credits, category };
+  let hasOfficialSchedule = false;
 
   if (courseId) {
     const course = await findCourseById(courseId);
     if (!course) throw new Error('COURSE_NOT_FOUND');
     row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category };
+
+    const [scheduleRows] = await pool.query('SELECT 1 FROM course_offering_schedules WHERE offering_id = ? LIMIT 1', [
+      courseId,
+    ]);
+    hasOfficialSchedule = scheduleRows.length > 0;
+  }
+
+  const scheduleToInsert = !hasOfficialSchedule && Array.isArray(schedule) ? schedule : [];
+
+  // 이미 그 학기에 등록된 다른 과목과 요일/교시가 겹치면 시간표 칸이 한쪽만 보이게 되어
+  // "추가했는데 사라진 것처럼" 보이는 문제가 있었다 — 등록 자체를 막고 어느 과목과
+  // 겹치는지 알려준다.
+  if (scheduleToInsert.length > 0) {
+    const existing = await getTimetable(studentId, { year, semester });
+    for (const s of scheduleToInsert) {
+      const conflict = existing.find((e) => e.day === s.day && e.period === s.period);
+      if (conflict) {
+        const err = new Error('SCHEDULE_CONFLICT');
+        err.code = 'SCHEDULE_CONFLICT';
+        err.conflictDay = s.day;
+        err.conflictPeriod = s.period;
+        err.conflictCourseName = conflict.name;
+        throw err;
+      }
+    }
   }
 
   const [result] = await pool.query(
     'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [studentId, row.course_id, row.name, row.credits, row.category, year, semester]
   );
+
+  if (scheduleToInsert.length > 0) {
+    for (const s of scheduleToInsert) {
+      await pool.query(
+        'INSERT INTO student_course_schedules (student_course_id, day, period) VALUES (?, ?, ?)',
+        [result.insertId, s.day, s.period]
+      );
+    }
+  }
+
   return result.insertId;
 }
 
@@ -166,26 +217,51 @@ async function deleteMyCourse(id) {
 }
 
 async function getTimetable(studentId, { year, semester }) {
-  // 시간표는 course_schedules(카탈로그 분반 시간)가 있어야 나오므로, course_id가 없는
-  // 교양 자유입력 과목은 시간표에 표시되지 않음(시간 정보 자체가 없으므로 정상 동작).
+  // 두 소스를 합친다: ① 카탈로그 과목의 course_offering_schedules(분반 시간),
+  // ② 직접입력 과목에 선택적으로 넣은 student_course_schedules.
+  // 둘 다 없으면(시간을 모르는 과거 기록 등) 그 과목은 시간표에 안 뜨는 게 정상.
   const [rows] = await pool.query(
     `SELECT cs.day, cs.period, sc.course_id, sc.name
      FROM student_courses sc
-     JOIN course_schedules cs ON cs.course_id = sc.course_id
+     JOIN course_offering_schedules cs ON cs.offering_id = sc.course_id
      WHERE sc.student_id = ? AND sc.year = ? AND sc.semester = ?
-     ORDER BY FIELD(cs.day, '월', '화', '수', '목', '금'), cs.period`,
-    [studentId, year, semester]
+     UNION ALL
+     SELECT scs.day, scs.period, sc.course_id, sc.name
+     FROM student_courses sc
+     JOIN student_course_schedules scs ON scs.student_course_id = sc.id
+     WHERE sc.student_id = ? AND sc.year = ? AND sc.semester = ?
+     ORDER BY FIELD(day, '월', '화', '수', '목', '금'), period`,
+    [studentId, year, semester, studentId, year, semester]
   );
 
   return rows.map((r) => ({ day: r.day, period: r.period, courseId: r.course_id, name: r.name }));
 }
 
+// getSummary의 학기 집계는 letter_grade IS NOT NULL로 걸러지는데(GPA 계산 목적상 맞음),
+// 화면의 학기 탭은 성적 입력 여부와 무관하게 "수강 기록이 있는 학기"를 전부 보여줘야
+// 한다 — 안 그러면 성적을 아직 안 넣은 학기가 새로고침할 때마다 탭에서 사라져 보인다.
+// courseCount도 같이 내려줘야 학기 탭만 보고도 "여기 뭐가 들어있는지" 감이 온다 —
+// 안 그러면 매번 탭을 눌러봐야 비어있는지 아닌지 알 수 있어서 여러 학기를 훑어볼 때 불편하다.
+async function listSemesters(studentId) {
+  const [rows] = await pool.query(
+    `SELECT year, semester, COUNT(*) AS course_count
+     FROM student_courses
+     WHERE student_id = ?
+     GROUP BY year, semester
+     ORDER BY year, semester`,
+    [studentId]
+  );
+  return rows.map((r) => ({ year: r.year, semester: r.semester, courseCount: r.course_count }));
+}
+
 async function getSummary(studentId) {
   // credits가 이제 student_courses 자체에 저장돼 있으므로 courses JOIN이 필요 없음.
+  // 성적 필터를 걸지 않고 전부 가져온다 — 이수학점(진행률)에는 이번 학기처럼 등록만
+  // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인, F만 제외).
   const [rows] = await pool.query(
     `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
      FROM student_courses sc
-     WHERE sc.student_id = ? AND sc.letter_grade IS NOT NULL`,
+     WHERE sc.student_id = ?`,
     [studentId]
   );
 
@@ -201,14 +277,18 @@ async function getSummary(studentId) {
     }
     const bucket = bySemesterMap.get(key);
     const credits = Number(row.credits);
-    const gpaPoint = Number(row.gpa);
 
-    // F는 GPA 계산에는 포함되지만 취득학점(earnedCredits)에는 포함하지 않음 (표준 학점 계산 관행)
-    bucket.gpaCredits += credits;
-    bucket.points += credits * gpaPoint;
-    totalGpaCredits += credits;
-    totalPoints += credits * gpaPoint;
+    // GPA는 실제 성적이 입력된 과목만 반영(F도 평점 계산엔 포함 — 표준 관행). 성적 미입력
+    // 과목은 gpa 컬럼이 NULL이라 계산에서 자연히 빠짐.
+    if (row.letter_grade !== null) {
+      const gpaPoint = Number(row.gpa);
+      bucket.gpaCredits += credits;
+      bucket.points += credits * gpaPoint;
+      totalGpaCredits += credits;
+      totalPoints += credits * gpaPoint;
+    }
 
+    // 이수학점(진행률)은 F로 확정된 것만 제외 — 성적 미입력(진행 중) 과목은 포함.
     if (row.letter_grade !== 'F') {
       bucket.earnedCredits += credits;
       totalCredits += credits;
@@ -245,4 +325,5 @@ module.exports = {
   deleteMyCourse,
   getTimetable,
   getSummary,
+  listSemesters,
 };

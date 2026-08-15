@@ -52,7 +52,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2. 2017~2018학번과 2019~2021학번 표가 별개지만 수치 동일하여 통합 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -74,7 +74,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2022~2024학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -96,7 +96,7 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2025학번 단독 (2022~2024학번과 표가 분리되어 있고 총량도 다름)",
-    "requiredCourses": []
+    "requiredCourses": ["건학이념", "대학생활"]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -118,7 +118,18 @@
     "enrollmentType": null,
     "minCourseCount": 1,
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": ["졸업(시험.작품)논문"]
+    "requiredCourses": ["졸업(시험·작품)논문"]
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (전공/교양 구분 없이 아무 과목이나 이수 가능, 총 136학점 충족용 — 전공필수19+전공선택56+교양필수5+교양선택34=114에 더해 총량을 맞춤)",
+    "requiredCourses": []
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -128,7 +139,8 @@
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": 1,
-    "description": "캡스톤디자인(기업연계프로젝트)/종합설계 중 1과목 필수 이수 (창의공과대학 특칙, 졸업인증제 2020학번부터 적용)",
+    "description": "기업연계프로젝트1(종합설계1)·기업연계프로젝트2(종합설계2) 중 1과목 필수 이수 (창의공과대학 특칙, 2020학번부터 적용)",
+    "note": "화면 표시용 description은 짧게 줄임 — 상세 근거: 각각 3학년 2학기, 4학년 1학기에 순차 개설되는 연속 과목이라 통상 두 과목 모두 수강하지만 요건 자체는 1과목 이수로 충족됨(학사학위수여 Ⅲ장). 학칙 원문은 '캡스톤디자인(기업연계프로젝트)/종합설계'로 표기하나 '캡스톤디자인'은 같은 창의공과대학 소속 타 학과(게임콘텐츠학전공 등)의 과목명이라 이 학과엔 해당 없어 표시에서 뺌. seed.js가 description/requiredCourses 외 필드는 안 읽으므로 이 note는 DB에 안 들어감",
     "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)"]
   },
   {
@@ -218,5 +230,17 @@
     "minCourseCount": 1,
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기, 신설 커리큘럼 원문 검증됨)",
     "requiredCourses": ["졸업(시험·작품)논문"]
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹 — \"나\"·\"다\"에 속하지 않는 모든 학과 기본값, 2020학번부터 적용)",
+    "note": "2026학년도 교육과정 책자 '졸업인증제(2020학번부터)' 표를 사용자가 스크린샷으로 확인(2026-08-15). '나' 그룹(창의공과대학, 농식품융합대학, 반도체·디스플레이학부, 가족아동복지학과, 패션디자인산업학과, 뷰티디자인학부)에 '공과대학'이나 '공학3계열'이 없고, '가' 그룹이 정의상 '나'·'다' 제외 전체 학과(부)이므로 공학3계열은 '가' 그룹(전공현장실습/캡스톤디자인/사회봉사 3과목 중 1개)에 해당하는 것으로 판단. 구 컴퓨터·소프트웨어공학과(~2025학번, '나' 그룹, 기업연계프로젝트 2과목 중 1개)와는 다른 규칙이라 그대로 복사하면 안 됨. '캡스톤디자인' 항목은 트랙마다 실제 과목명이 다름 — 컴퓨터·소프트웨어공학전공은 기업연계프로젝트1(종합설계1)/기업연계프로젝트2(종합설계2), 게임콘텐츠학전공은 캡스톤디자인1/캡스톤디자인2(공학3계열_게임콘텐츠학전공_2026.md 확인). requiredCourses는 두 트랙 과목명을 합쳐 OR 매칭되게 함(트랙 컬럼이 curriculum_requirements 스키마에 없어 department 단위로만 구분 가능, 이렇게 합쳐도 학생이 실제 이수한 과목만 매칭되므로 안전). 전공현장실습·사회봉사는 courses.json에 아직 과목 자체가 시딩되어 있지 않아 매칭 대상에서 제외됨 — 이 경로로 요건을 충족한 학생은 현재 이 앱에서 오탐(미충족)으로 뜰 수 있음, 별도 확인/시딩 필요. seed.js가 description/requiredCourses 외 필드는 안 읽으므로 이 note는 DB에 안 들어감",
+    "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)", "캡스톤디자인1", "캡스톤디자인2"]
   }
 ]

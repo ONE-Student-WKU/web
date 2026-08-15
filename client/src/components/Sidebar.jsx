@@ -1,5 +1,6 @@
 import React from 'react';
-import { IconUser } from './icons.jsx';
+import AccountMenu from './AccountMenu.jsx';
+import { IconChevronLeft } from './icons.jsx';
 
 /**
  * Sidebar Component
@@ -9,21 +10,28 @@ import { IconUser } from './icons.jsx';
  * - user: object
  * - onLogout: function
  * - onGoHome: function
+ * - onOpenSettings: function
+ * - onOpenOnboarding: function
+ * - onOpenProfile: function
  */
-function Sidebar({ user, onLogout, onGoHome }) {
+function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   return (
     <header className="screen-header">
       <div className="screen-header-left">
         {onGoHome && (
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
-            ‹
+            <IconChevronLeft />
           </button>
         )}
         <span className="screen-title">ONE Student</span>
       </div>
-      <button className="avatar-btn" onClick={onLogout} title={user?.name ? `${user.name} · 로그아웃` : '로그아웃'}>
-        <IconUser />
-      </button>
+      <AccountMenu
+        user={user}
+        onLogout={onLogout}
+        onOpenSettings={onOpenSettings}
+        onOpenOnboarding={onOpenOnboarding}
+        onOpenProfile={onOpenProfile}
+      />
     </header>
   );
 }
