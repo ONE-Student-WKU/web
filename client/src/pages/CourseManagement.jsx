@@ -4,11 +4,14 @@ import {
   getMyCourses,
   getTimetable,
   getCourseSummary,
+  getGraduationStatus,
   getSemesters,
   searchCatalog,
   addMyCourse,
   updateMyCourse,
   deleteMyCourse,
+  importCoursesFromPdf,
+  confirmImportedCourses,
 } from '../api/chatApi.js';
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
@@ -77,12 +80,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [status, setStatus] = useState(null);
   const [semesters, setSemesters] = useState([]);
   const [myCourses, setMyCourses] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addMode, setAddMode] = useState('catalog'); // 'catalog' | 'manual'
+  const [addMode, setAddMode] = useState('catalog'); // 'catalog' | 'manual' | 'pdf'
   const [keyword, setKeyword] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '전공선택' });
@@ -90,6 +94,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 시간표가 없는 카탈로그 과목(교수/시간 미확보)을 선택했을 때만 세팅 — 확정된 시간표가
   // 있는 과목은 바로 추가되고 이 상태를 거치지 않는다.
   const [catalogSelection, setCatalogSelection] = useState(null);
+  // PDF 가져오기: 업로드 즉시 저장하지 않고 파싱 결과를 검토·수정할 수 있게 보여준 뒤
+  // 사용자가 확정해야 등록된다 — 성적(등급)은 이 문서에 없어 절대 자동 채우지 않는다.
+  const [pdfRows, setPdfRows] = useState(null); // null = 아직 업로드 전
+  const [pdfWarnings, setPdfWarnings] = useState([]);
+  const [pdfCreditsCheck, setPdfCreditsCheck] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfSubmitting, setPdfSubmitting] = useState(false);
   const addFormRef = useRef(null);
   const searchResultsRef = useRef(null);
 
@@ -116,6 +127,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     getSemesters()
       .then(setSemesters)
       .catch(() => setError('정보를 불러오지 못했어요.'));
+    // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
+    // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
+    // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
+    getGraduationStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
   }, []);
 
   const loadSemesterData = (year, semester) => {
@@ -188,11 +205,24 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const maxPeriod = Math.max(6, ...timetable.map((t) => t.period));
   const cellAt = (day, period) => timetable.find((t) => t.day === day && t.period === period);
 
+  // 시간표 칸이 전부 같은 파란 톤이면 붙어있는 서로 다른 과목이 구분이 안 됐다는 피드백 —
+  // 과목(이름 기준)마다 8색 팔레트를 순서대로 배정해 칸 색으로 구분한다.
+  const courseColorIndex = useMemo(() => {
+    const map = new Map();
+    for (const t of timetable) {
+      if (!map.has(t.name)) map.set(t.name, map.size % 8);
+    }
+    return map;
+  }, [timetable]);
+
   async function refreshAfterChange() {
     loadSemesterData(current.year, current.semester);
     const [s, sems] = await Promise.all([getCourseSummary(), getSemesters()]);
     setSummary(s);
     setSemesters(sems);
+    getGraduationStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
   }
 
   const handleGradeChange = async (courseId, letterGrade) => {
@@ -237,6 +267,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualFields({ name: '', credits: '', category: '전공선택' });
     setManualSchedule([]);
     setCatalogSelection(null);
+    setPdfRows(null);
+    setPdfWarnings([]);
+    setPdfCreditsCheck(null);
   };
 
   // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
@@ -301,6 +334,69 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const updateScheduleRow = (index, field, value) =>
     setManualSchedule((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   const removeScheduleRow = (index) => setManualSchedule((prev) => prev.filter((_, i) => i !== index));
+
+  const handlePdfFileSelect = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // 같은 파일을 다시 선택해도 onChange가 또 뜨도록.
+    if (!file) return;
+
+    setError(null);
+    setPdfLoading(true);
+    try {
+      const result = await importCoursesFromPdf(file);
+      setPdfRows(
+        result.rows.map((r, i) => ({
+          tempId: i,
+          include: true,
+          name: r.name,
+          credits: r.credits,
+          category: r.category || '',
+          year: r.year,
+          semester: r.semester,
+          isFail: r.isFail,
+        }))
+      );
+      setPdfWarnings(result.warnings);
+      setPdfCreditsCheck({ declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits });
+    } catch {
+      setError('PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const updatePdfRow = (tempId, field, value) =>
+    setPdfRows((prev) => prev.map((r) => (r.tempId === tempId ? { ...r, [field]: value } : r)));
+  const removePdfRow = (tempId) => setPdfRows((prev) => prev.filter((r) => r.tempId !== tempId));
+
+  const handlePdfConfirm = async () => {
+    const included = pdfRows.filter((r) => r.include);
+    if (included.length === 0) return;
+    if (included.some((r) => !r.category)) {
+      setError('이수구분을 선택하지 않은 과목이 있어요.');
+      return;
+    }
+
+    setError(null);
+    setPdfSubmitting(true);
+    try {
+      await confirmImportedCourses(
+        included.map((r) => ({
+          name: r.name,
+          credits: Number(r.credits),
+          category: r.category,
+          year: Number(r.year),
+          semester: Number(r.semester),
+        }))
+      );
+      closeAddForm();
+      await refreshAfterChange();
+    } catch {
+      setError('등록에 실패했어요.');
+    } finally {
+      setPdfSubmitting(false);
+    }
+  };
 
   return (
     <div className="courses-page">
@@ -380,7 +476,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         <div className="courses-summary-row courses-summary-row-total">
           <div className="courses-summary-stat">
             <p className="home-card-label">전체 이수학점</p>
-            <p className="courses-summary-value">{summary ? summary.total.earnedCredits : 0}학점</p>
+            <p className="courses-summary-value">
+              {status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0}학점
+            </p>
           </div>
           <div className="courses-summary-stat">
             <p className="home-card-label">전체 평균 학점</p>
@@ -402,8 +500,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <div className="courses-timetable-periodlabel">{period}</div>
                 {DAYS.map((d) => {
                   const cell = cellAt(d, period);
+                  const colorClass = cell ? `tt-c${courseColorIndex.get(cell.name)}` : '';
                   return (
-                    <div key={d} className={`courses-timetable-cell ${cell ? 'filled' : ''}`}>
+                    <div key={d} className={`courses-timetable-cell ${cell ? `filled ${colorClass}` : ''}`}>
                       {cell?.name}
                     </div>
                   );
@@ -475,13 +574,169 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 >
                   직접입력
                 </button>
+                <button
+                  className={addMode === 'pdf' ? 'active' : ''}
+                  onClick={() => setAddMode('pdf')}
+                  type="button"
+                >
+                  PDF 가져오기
+                </button>
               </div>
               <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
                 <IconX />
               </button>
             </div>
 
-            {addMode === 'catalog' ? (
+            {addMode === 'pdf' && (
+              <div className="courses-pdf-import">
+                <p className="courses-manual-hint">
+                  원광대 인트라넷의 "이수과목확인리스트"를 PDF로 저장해 올리면 과목명·학점·이수구분·이수학기를
+                  자동으로 채워드려요. 성적(등급)은 이 문서에 없어 채워지지 않으니, 등록 후 과목 목록에서 직접
+                  입력해주세요.
+                </p>
+
+                {!pdfRows && (
+                  <>
+                    <details className="courses-pdf-help">
+                      <summary>어떤 PDF를 올려야 하나요?</summary>
+                      <ol className="courses-pdf-help-steps">
+                        <li>원광대 인트라넷 로그인 → <strong>이수과목확인리스트</strong> 메뉴로 이동하세요.</li>
+                        <li>
+                          브라우저 인쇄(Ctrl+P) 화면에서 프린터 대상을 <strong>"PDF로 저장"</strong>으로 바꿔 저장하세요.
+                          화면을 캡처한 사진이 아니라 이 방식으로 저장한 PDF여야 정확히 인식돼요.
+                        </li>
+                        <li>저장한 PDF 파일을 아래 "PDF 파일 선택"으로 올려주세요.</li>
+                      </ol>
+                      <p className="courses-pdf-help-note">
+                        성적증명서·수강신청내역·시간표 화면은 표 형식이 달라 인식되지 않아요. 반드시
+                        "이수과목확인리스트" 화면으로 저장한 PDF를 사용해주세요.
+                      </p>
+                    </details>
+
+                    <label className="courses-pdf-upload-btn">
+                      {pdfLoading ? '분석 중...' : 'PDF 파일 선택'}
+                      <input type="file" accept="application/pdf" onChange={handlePdfFileSelect} disabled={pdfLoading} hidden />
+                    </label>
+                  </>
+                )}
+
+                {pdfRows && (
+                  <>
+                    {pdfWarnings.length > 0 && (
+                      <div className="courses-pdf-warnings">
+                        {pdfWarnings.map((w, i) => (
+                          <p key={i} className="home-error courses-form-error">
+                            {w}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {pdfCreditsCheck && (
+                      <p className="courses-manual-hint">
+                        문서상 총 취득학점 {pdfCreditsCheck.declared} · 인식된 학점 합계 {pdfCreditsCheck.extracted}
+                      </p>
+                    )}
+
+                    <div className="courses-pdf-table">
+                      {pdfRows.map((r) => (
+                        <div key={r.tempId} className={`courses-pdf-row ${r.include ? '' : 'excluded'}`}>
+                          <div className="courses-pdf-row-main">
+                            <input
+                              type="checkbox"
+                              checked={r.include}
+                              onChange={(e) => updatePdfRow(r.tempId, 'include', e.target.checked)}
+                              aria-label="가져오기 포함"
+                            />
+                            <input
+                              type="text"
+                              className="courses-pdf-name"
+                              value={r.name}
+                              onChange={(e) => updatePdfRow(r.tempId, 'name', e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="courses-schedule-remove"
+                              onClick={() => removePdfRow(r.tempId)}
+                              aria-label="목록에서 제외"
+                            >
+                              <IconX />
+                            </button>
+                          </div>
+                          <div className="courses-pdf-row-meta">
+                            <label className="courses-pdf-meta-field courses-pdf-meta-category">
+                              <span className="courses-pdf-meta-label">이수구분</span>
+                              <select
+                                className={!r.category ? 'courses-pdf-category-missing' : ''}
+                                value={r.category}
+                                onChange={(e) => updatePdfRow(r.tempId, 'category', e.target.value)}
+                              >
+                                <option value="">선택 안 됨</option>
+                                {CATEGORIES.map((c) => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="courses-pdf-meta-field courses-pdf-meta-credits">
+                              <span className="courses-pdf-meta-label">학점</span>
+                              <input
+                                type="number"
+                                step="0.5"
+                                value={r.credits}
+                                onChange={(e) => updatePdfRow(r.tempId, 'credits', e.target.value)}
+                              />
+                            </label>
+                            <label className="courses-pdf-meta-field courses-pdf-meta-year">
+                              <span className="courses-pdf-meta-label">이수년도</span>
+                              <input
+                                type="number"
+                                value={r.year}
+                                onChange={(e) => updatePdfRow(r.tempId, 'year', e.target.value)}
+                              />
+                            </label>
+                            <label className="courses-pdf-meta-field courses-pdf-meta-semester">
+                              <span className="courses-pdf-meta-label">학기</span>
+                              <select
+                                value={r.semester}
+                                onChange={(e) => updatePdfRow(r.tempId, 'semester', Number(e.target.value))}
+                              >
+                                <option value={1}>1학기</option>
+                                <option value={2}>2학기</option>
+                              </select>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="auth-submit-btn"
+                      onClick={handlePdfConfirm}
+                      disabled={pdfSubmitting || pdfRows.every((r) => !r.include)}
+                    >
+                      {pdfSubmitting
+                        ? '등록 중...'
+                        : `선택한 ${pdfRows.filter((r) => r.include).length}개 과목 등록`}
+                    </button>
+                    <button
+                      type="button"
+                      className="courses-manual-only-note courses-catalog-back"
+                      onClick={() => {
+                        setPdfRows(null);
+                        setPdfWarnings([]);
+                        setPdfCreditsCheck(null);
+                      }}
+                    >
+                      ‹ 다시 업로드
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {addMode !== 'pdf' && (addMode === 'catalog' ? (
               catalogSelection ? (
                 <div className="courses-manual-fields">
                   <p className="courses-manual-hint">
@@ -503,7 +758,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           value={s.period}
                           onChange={(e) => updateScheduleRow(i, 'period', Number(e.target.value))}
                         >
-                          {Array.from({ length: 9 }, (_, p) => p + 1).map((p) => (
+                          {Array.from({ length: 10 }, (_, p) => p + 1).map((p) => (
                             <option key={p} value={p}>
                               {p}교시
                             </option>
@@ -537,6 +792,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </div>
               ) : (
                 <>
+                  <p className="courses-manual-hint">
+                    전공 과목 위주로 검색돼요 — 교양 과목은 학기에 따라 카탈로그에 없을 수 있어요.
+                    검색 결과가 없으면 "직접입력" 탭을 이용해주세요.
+                  </p>
                   <div className="courses-search-box">
                     <IconSearch />
                     <input
@@ -618,7 +877,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         value={s.period}
                         onChange={(e) => updateScheduleRow(i, 'period', Number(e.target.value))}
                       >
-                        {Array.from({ length: 9 }, (_, p) => p + 1).map((p) => (
+                        {Array.from({ length: 10 }, (_, p) => p + 1).map((p) => (
                           <option key={p} value={p}>
                             {p}교시
                           </option>
@@ -639,7 +898,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   추가하기
                 </button>
               </form>
-            )}
+            ))}
           </div>
         )}
       </div>

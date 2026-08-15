@@ -16,6 +16,17 @@
   --color-accent-disabled: #33456c;
   --color-danger: #f37c71;
   --color-success: #5fc164;
+  /* 시간표 과목별 구분색 — 테마별로 다시 정의하지 않아도 됨: 실제 사용되는 색은
+     color-mix()로 --color-bg-card와 섞어서 만들기 때문에 다크/라이트 각각에 맞는
+     톤이 자동으로 나온다(courses-timetable-cell.tt-c0~7 참고). */
+  --tt-hue-0: #6f9bf5;
+  --tt-hue-1: #4caf7d;
+  --tt-hue-2: #a78bfa;
+  --tt-hue-3: #e0a458;
+  --tt-hue-4: #4fb8b0;
+  --tt-hue-5: #e08fc0;
+  --tt-hue-6: #c9b23c;
+  --tt-hue-7: #8b93f0;
   /* select/number 등 브라우저 네이티브 폼 컨트롤(드롭다운 팝업, 스피너 버튼)이
      color-scheme을 못 읽으면 다크 배경색을 줘도 흰색 크롬으로 렌더링된다. */
   color-scheme: dark;
@@ -578,16 +589,30 @@ body {
   color: var(--color-success);
 }
 
-.grad-category-courses {
-  font-size: 0.8125rem;
-  font-weight: 400;
-  color: var(--color-text-muted);
-}
-
 .grad-overflow-note {
   margin: 6px 0 0;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+.grad-flex-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.grad-subcheck-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.grad-subcheck-label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 .grad-cert-row {
@@ -604,11 +629,13 @@ body {
   border-radius: 4px;
   border: 1px solid var(--color-border-strong);
   background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .grad-cert-check.satisfied {
-  background: var(--color-success);
-  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .grad-cert-desc {
@@ -991,6 +1018,19 @@ body {
   color: var(--color-accent);
 }
 
+/* 같은 과목이 여러 칸에 걸치므로 과목별로 색을 다르게 줘서 한눈에 구분되게 한다 —
+   전부 같은 파란 톤이면 붙어있는 칸들이 서로 다른 과목인지 구분이 안 됐다는 피드백.
+   색 자체는 --color-bg-card와 섞어서 만들어(color-mix) 다크/라이트 양쪽에서 톤이
+   자동으로 맞다 — 채도를 너무 세게 주면 오히려 튀어서 22%로 낮게 섞음. */
+.courses-timetable-cell.tt-c0 { background: color-mix(in srgb, var(--tt-hue-0) 22%, var(--color-bg-card)); color: var(--tt-hue-0); }
+.courses-timetable-cell.tt-c1 { background: color-mix(in srgb, var(--tt-hue-1) 22%, var(--color-bg-card)); color: var(--tt-hue-1); }
+.courses-timetable-cell.tt-c2 { background: color-mix(in srgb, var(--tt-hue-2) 22%, var(--color-bg-card)); color: var(--tt-hue-2); }
+.courses-timetable-cell.tt-c3 { background: color-mix(in srgb, var(--tt-hue-3) 22%, var(--color-bg-card)); color: var(--tt-hue-3); }
+.courses-timetable-cell.tt-c4 { background: color-mix(in srgb, var(--tt-hue-4) 22%, var(--color-bg-card)); color: var(--tt-hue-4); }
+.courses-timetable-cell.tt-c5 { background: color-mix(in srgb, var(--tt-hue-5) 22%, var(--color-bg-card)); color: var(--tt-hue-5); }
+.courses-timetable-cell.tt-c6 { background: color-mix(in srgb, var(--tt-hue-6) 22%, var(--color-bg-card)); color: var(--tt-hue-6); }
+.courses-timetable-cell.tt-c7 { background: color-mix(in srgb, var(--tt-hue-7) 22%, var(--color-bg-card)); color: var(--tt-hue-7); }
+
 .courses-empty {
   font-size: 0.875rem;
   color: var(--color-text-muted);
@@ -1231,6 +1271,148 @@ body {
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
   cursor: pointer;
+}
+
+.courses-pdf-help {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.courses-pdf-help summary {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.courses-pdf-help-steps {
+  margin: 10px 0 8px;
+  padding-left: 18px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.courses-pdf-help-steps li + li {
+  margin-top: 6px;
+}
+
+.courses-pdf-help-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.courses-pdf-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.courses-pdf-warnings {
+  margin-bottom: 8px;
+}
+
+.courses-pdf-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+/* PDF 검토 행 — 처음엔 체크박스/이름/학점/학기/삭제를 한 줄 그리드에 다 욱여넣었는데, 이
+   앱이 420px 이하 모바일 프레임이라 컬럼이 너무 좁아져서 이수구분이 "교"로 잘리고 학점·학기
+   입력칸은 라벨 없이 빈 칸처럼 보였다(실사용 피드백: 뭐가 뭔지 모르겠다) — 과목명 줄과
+   메타정보(이수구분/학점/년도/학기) 줄을 분리하고, 메타정보는 각 칸 위에 작은 라벨을 달았다. */
+.courses-pdf-row {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-frame);
+}
+
+.courses-pdf-row.excluded {
+  opacity: 0.45;
+}
+
+.courses-pdf-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.courses-pdf-row-main .courses-pdf-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.courses-pdf-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.courses-pdf-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.courses-pdf-meta-label {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.courses-pdf-meta-category {
+  flex: 1 1 100px;
+}
+
+.courses-pdf-meta-credits {
+  flex: 0 1 60px;
+}
+
+.courses-pdf-meta-year {
+  flex: 0 1 70px;
+}
+
+.courses-pdf-meta-semester {
+  flex: 0 1 70px;
+}
+
+.courses-pdf-row input[type='text'],
+.courses-pdf-row input[type='number'],
+.courses-pdf-row select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+}
+
+.courses-pdf-category-missing {
+  border-color: var(--color-danger);
 }
 
 /* Onboarding — 와이어프레임(질문형 마법사)을 그대로 옮긴 화면 */
