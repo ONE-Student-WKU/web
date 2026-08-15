@@ -187,7 +187,10 @@ router.post('/import/confirm', async (req, res, next) => {
 router.patch('/:id', async (req, res, next) => {
   try {
     const { letterGrade } = req.body;
-    if (letterGrade !== undefined && !(letterGrade in courseService.GRADE_POINT_MAP)) {
+    // null은 "성적 미입력으로 되돌리기"라는 유효한 값이다 — undefined(필드 자체를 안 보냄)와
+    // 구분해야 하는데, `null in GRADE_POINT_MAP`이 항상 false라 이걸 걸러내지 못하고
+    // "성적 저장 실패"로 잘못 막고 있었다(실사용 확인).
+    if (letterGrade !== undefined && letterGrade !== null && !(letterGrade in courseService.GRADE_POINT_MAP)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LETTER_GRADE', message: null, data: null });
     }
 

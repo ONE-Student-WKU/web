@@ -232,8 +232,11 @@ async function updateMyCourse(id, updates) {
   }
 
   if (updates.letterGrade !== undefined) {
+    // letterGrade가 null이면(성적 미입력으로 되돌리기) GRADE_POINT_MAP[null]이 undefined인데,
+    // mysql2는 undefined 바인드 파라미터를 거부한다("must not contain undefined") — SQL NULL은
+    // 명시적으로 null을 넘겨야 해서 ?? null로 변환.
     fields.push('letter_grade = ?', 'gpa = ?');
-    params.push(updates.letterGrade, GRADE_POINT_MAP[updates.letterGrade]);
+    params.push(updates.letterGrade, GRADE_POINT_MAP[updates.letterGrade] ?? null);
   }
 
   if (fields.length === 0) return;
