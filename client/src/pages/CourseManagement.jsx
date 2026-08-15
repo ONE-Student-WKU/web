@@ -615,7 +615,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
                     <label className="courses-pdf-upload-btn">
                       {pdfLoading ? '분석 중...' : 'PDF 파일 선택'}
-                      <input type="file" accept="application/pdf" onChange={handlePdfFileSelect} disabled={pdfLoading} hidden />
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={handlePdfFileSelect}
+                        disabled={pdfLoading}
+                        hidden
+                      />
                     </label>
                   </>
                 )}

@@ -6,11 +6,16 @@ const courseService = require('../services/courseService');
 const { parseCourseListPdf } = require('../services/pdfImportService');
 
 // 메모리 저장만(디스크에 남기지 않음) — 이수과목확인리스트 PDF는 학사정보라 파싱 즉시 버린다.
+// mimetype만 보면 모바일에서 자주 실패한다 — 카카오톡으로 받은 파일이나 일부 앱 공유
+// 경로를 거치면 브라우저가 "application/octet-stream" 등으로 잘못 보고하는 경우가 흔해서,
+// 확장자(.pdf)도 같이 인정한다. 실제 PDF가 아니면 뒤에서 pdf-parse가 파싱 에러로 걸러낸다.
 const pdfUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    cb(null, file.mimetype === 'application/pdf');
+    const isPdfMimeType = file.mimetype === 'application/pdf';
+    const isPdfExtension = /\.pdf$/i.test(file.originalname || '');
+    cb(null, isPdfMimeType || isPdfExtension);
   },
 });
 
