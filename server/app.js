@@ -20,8 +20,13 @@ const app = express();
 // 붙는다 — SERVER_PORT는 로컬 개발용 수동 지정 값으로 남겨두고 PORT를 우선한다.
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
+// Railway 같은 리버스 프록시 뒤에서 구동되므로, 프록시가 전달하는 프로토콜(X-Forwarded-Proto)을
+// 신뢰해야 세션 쿠키의 secure 판정 등이 정확히 동작한다.
+app.set('trust proxy', 1);
+
 // Middlewares
-app.use(cors());
+// CLIENT_ORIGIN 미설정 시(로컬 개발 등) 기존과 동일하게 모든 origin을 허용함.
+app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,7 +35,8 @@ app.use(
     secret: process.env.SESSION_SECRET || 'wku-default-secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set to true if using https
+    // 배포 환경(HTTPS)에서만 secure 쿠키를 강제하고, 로컬 http 개발 환경은 기존과 동일하게 유지.
+    cookie: { secure: process.env.NODE_ENV === 'production' },
   })
 );
 
