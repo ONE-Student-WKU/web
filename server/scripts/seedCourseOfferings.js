@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const fs = require('fs');
 const pool = require('../db');
+const { CATEGORY_MAP } = require('../services/categoryMap');
 
 /**
  * server/scripts/seedCourseOfferings.js
@@ -19,28 +20,8 @@ const pool = require('../db');
 const RAW_SOURCE = path.resolve(__dirname, '..', '..', 'db', 'curriculum', '_source', '전공시간표_2017-2026.json');
 const LEGACY_CATALOG = path.resolve(__dirname, '..', '..', 'db', 'seed', 'courses.json');
 
-// 원문 "구분" 코드 → student_courses.category(졸업요건 계산용 5종 ENUM) 정규화.
-// 계필/계기(수학1·일반물리학1 등 계열 기초 과학/수학)는 db/curriculum/*.md의 학과 커리큘럼
-// 표에도 원래 빠져있던 항목이라(전공 카탈로그로 취급 안 함) 교양선택으로 분류 — 전공필수로
-// 잘못 잡으면 졸업요건 진단의 "기본전공 19학점"이 부풀려짐.
-// 기초/심화/응용(2026 공학3계열)은 curriculum_requirements.json상 전공필수36+전공선택36으로
-// 나뉘지만 원문 어디에도 세부 과목별 필수/선택 구분이 없어(공학3계열_컴퓨터소프트웨어공학전공_2026.md
-// "남은 미확보 항목" 참고) 전공선택으로 보수적으로 매핑 — 전공필수로 잘못 잡으면 "전공필수
-// 미충족"으로 오판정될 위험이 더 크다고 판단.
-// 교직(교직과정 이수자 전용 특수 과목)은 표준 5종 어디에도 안 맞아 일반선택으로 매핑.
-const CATEGORY_MAP = {
-  교필: '교양필수',
-  교선: '교양선택',
-  기전: '전공필수',
-  선전: '전공선택',
-  일선: '일반선택',
-  계필: '교양선택',
-  계기: '교양선택',
-  기초: '전공선택',
-  심화: '전공선택',
-  응용: '전공선택',
-  교직: '일반선택',
-};
+// 원문 "구분" 코드 → student_courses.category 매핑은 services/categoryMap.js로 공유
+// (server/services/pdfImportService.js도 동일 테이블을 씀).
 
 const DEPARTMENT_NAME_BY_KEY_PREFIX = {
   '컴퓨터·소프트웨어공학과': '컴퓨터·소프트웨어공학과',

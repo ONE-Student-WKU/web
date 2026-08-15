@@ -52,9 +52,45 @@ function buildStudentProfileNote(student) {
 "정확히 이 학번 기준 자료는 못 찾았다"고 분명히 밝혀라 — 다른 학번 기준을 이 학생에게 그대로 적용해 단정적으로 답하지 마라.`;
 }
 
-function buildSystemPrompt(student) {
-  const profileNote = buildStudentProfileNote(student);
-  return profileNote ? `${SYSTEM_PROMPT}\n\n${profileNote}` : SYSTEM_PROMPT;
+// getGraduationStatus() 결과를 시스템 프롬프트에 심어서, "몇 학점 남았어?" 같은 개인화 질문에
+// AI가 학칙 텍스트 일반론이 아니라 이 학생의 실제 이수 현황으로 답하게 한다. 이게 없으면 AI는
+// 온보딩 프로필(학과/학번)만 알고 실제 이수과목/졸업요건 계산 결과는 전혀 몰라서 "구체적인 건
+// 학사지원과에 문의하라"고 얼버무리는 문제가 있었다(실사용 확인, 2026-08-16) — 과목
+// 관리/졸업요건 진단 쪽 로직(graduationService.js)이 챗봇과 완전히 분리된 경로였기 때문.
+function buildGraduationStatusNote(graduationStatus) {
+  if (!graduationStatus) return null;
+
+  const { totalEarnedCredits, totalRequiredCredits, categories, certifications } = graduationStatus;
+  const categoryLines = categories.map((c) => `  - ${c.category}: ${c.earnedCredits}/${c.requiredCredits}학점`).join('\n');
+  const certLines = certifications
+    .map((c) => `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`)
+    .join('\n');
+  const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
+
+  return `이 학생의 실제 이수 현황(학생이 과목 관리 화면에 직접 등록한 데이터 기준) — 근거
+문서보다 이 데이터를 우선해서 "몇 학점 남았는지", "뭐가 부족한지" 같은 질문에 구체적인 숫자로
+답하라. 이 데이터에 없는 내용(등록금, 수강신청 절차 등)에만 근거 문서를 사용하라.
+
+총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (졸업까지 ${remaining}학점 남음)
+카테고리별:
+${categoryLines}
+${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
+
+주의:
+- 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다
+  많이 들었으면 그 초과분이 전공선택 부족분을 상쇄한다고 설명하라 — 각각 독립된 요건인 것처럼
+  말하지 마라.
+- 일반선택은 학생이 따로 챙겨 들어야 하는 항목이 아니다 — 전공 초과 이수분이나 다른 이수
+  과목으로 자동으로 채워진다. "일반선택 OO학점을 더 들어야 한다"고 안내하지 마라.
+- 위 학점 수치는 상한이 적용된 값이라(예: 교양은 52학점까지만 인정) 학생이 실제로 들은 학점
+  합계보다 작게 나올 수 있다 — 이는 정상이니 오류로 언급하지 마라.`;
+}
+
+function buildSystemPrompt(student, graduationStatus) {
+  const parts = [SYSTEM_PROMPT, buildStudentProfileNote(student), buildGraduationStatusNote(graduationStatus)].filter(
+    Boolean
+  );
+  return parts.join('\n\n');
 }
 
 const QUERY_REWRITE_SYSTEM_PROMPT = `너는 원광대학교 학생의 캐주얼한 질문을 학사 규정 검색에 적합한
@@ -97,7 +133,7 @@ async function rewriteSearchQuery(rawQuery) {
 
 // history: 이번 메시지 이전까지의 대화 이력 [{role, content}, ...] — "왜 그래?" 같은 후속
 // 질문이 직전 turn을 참고할 수 있도록 Anthropic Messages API의 멀티턴 형식으로 그대로 넘긴다.
-async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null) {
+async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null) {
   const context = relevantChunks
     .map((c, i) => `[문서 ${i + 1}] ${c.documentTitle}\n${c.content}`)
     .join('\n\n');
@@ -115,7 +151,7 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
-      system: buildSystemPrompt(student),
+      system: buildSystemPrompt(student, graduationStatus),
       messages,
     }),
   });

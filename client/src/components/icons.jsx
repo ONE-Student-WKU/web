@@ -63,6 +63,14 @@ export function IconChecklist({ size = 18 }) {
   );
 }
 
+export function IconCheck({ size = 12 }) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={3} aria-hidden="true">
+      <polyline points="4 12.5 9.5 18 20 6" />
+    </svg>
+  );
+}
+
 export function IconAlertTriangle({ size = 15 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

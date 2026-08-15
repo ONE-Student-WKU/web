@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getMe, getCourseSummary, getGraduationStatus } from '../api/chatApi.js';
+import { getMe, getGraduationStatus } from '../api/chatApi.js';
 import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
-
-// 2026학번부터 공학3계열 개편으로 졸업학점 체계가 136→130으로 바뀜 (db/regulations/졸업/이수학점_총괄표.md 근거)
-const RESTRUCTURE_ADMISSION_YEAR = 2026;
-function getRequiredTotalCredits(admissionYear) {
-  if (!admissionYear) return null;
-  return admissionYear >= RESTRUCTURE_ADMISSION_YEAR ? 130 : 136;
-}
 
 /**
  * Home Page Component
@@ -39,28 +32,32 @@ function Home({
   onLogout,
 }) {
   const [profile, setProfile] = useState(null);
-  const [summary, setSummary] = useState(null);
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [shortfalls, setShortfalls] = useState(null);
 
   useEffect(() => {
-    Promise.all([getMe(), getCourseSummary()])
-      .then(([profileData, summaryData]) => {
-        setProfile(profileData);
-        setSummary(summaryData);
-      })
+    getMe()
+      .then(setProfile)
       .catch(() => setError('정보를 불러오지 못했어요.'));
 
-    // 졸업요건 진단은 온보딩 전이면 실패할 수 있는 부가 정보라, 홈 화면 전체를
-    // 깨뜨리지 않도록 별도로 조용히 처리(실패 시 카드에 기존 안내 문구를 그대로 둠).
+    // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
+    // 항상 맞는다 — 예전엔 진행률 카드가 courseService.getSummary()의 카테고리 상한 없는
+    // 단순 합계를 썼는데, 부족 요건 쪽은 상한이 적용된 총계를 써서 같은 화면에서 "15학점
+    // 남음"과 "전공 20학점 부족"처럼 서로 안 맞는 숫자가 나오는 문제가 있었다(실사용 확인).
+    // 졸업요건 진단은 온보딩 전이면 실패할 수 있는 정보라, 홈 화면 전체를 깨뜨리지 않도록
+    // 별도로 조용히 처리(실패 시 카드에 기존 안내 문구를 그대로 둠).
     getGraduationStatus()
-      .then((data) => setShortfalls(summarizeShortfalls(data.categories, data.certifications)))
+      .then((data) => {
+        setStatus(data);
+        setShortfalls(summarizeShortfalls(mergeMajorCategories(data.categories), data.certifications));
+      })
       .catch(() => setShortfalls(null));
   }, []);
 
-  const requiredTotal = getRequiredTotalCredits(profile?.admissionYear);
   const gradeLevel = getGradeLevel(profile?.admissionYear, profile?.leaveSemesters);
-  const earnedCredits = summary?.total?.earnedCredits ?? 0;
+  const earnedCredits = status?.totalEarnedCredits ?? 0;
+  const requiredTotal = status?.totalRequiredCredits ?? null;
   const progressPercent = requiredTotal ? Math.min(100, Math.round((earnedCredits / requiredTotal) * 100)) : 0;
 
   return (
@@ -104,6 +101,7 @@ function Home({
           <div className="home-progress-track">
             <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
           </div>
+          <p className="grad-remaining-text">{progressPercent}%</p>
         </section>
 
         <section className="home-card">
