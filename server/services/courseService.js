@@ -177,6 +177,36 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
   return result.insertId;
 }
 
+// PDF 이수과목확인리스트 가져오기 전용 — course_id/schedule 없이 name/credits/category만
+// 받는 직접입력과 동일한 경로. 성적(등급)은 원본 문서에 없으므로 절대 건드리지 않고
+// letter_grade는 NULL로 남긴다(사용자가 과목 관리 화면에서 직접 입력).
+// 이미 등록된(name+year+semester 동일) 과목은 건너뛰고 skipped로 센다 — 중복 삽입 방지.
+async function bulkAddMyCourses(studentId, rows) {
+  const [existingRows] = await pool.query('SELECT name, year, semester FROM student_courses WHERE student_id = ?', [
+    studentId,
+  ]);
+  const existingKeys = new Set(existingRows.map((r) => `${r.name}__${r.year}__${r.semester}`));
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    const key = `${row.name}__${row.year}__${row.semester}`;
+    if (existingKeys.has(key)) {
+      skipped += 1;
+      continue;
+    }
+    await pool.query(
+      'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester) VALUES (?, NULL, ?, ?, ?, ?, ?)',
+      [studentId, row.name, row.credits, row.category, row.year, row.semester]
+    );
+    existingKeys.add(key);
+    inserted += 1;
+  }
+
+  return { inserted, skipped };
+}
+
 async function findMyCourseById(studentId, id) {
   const [rows] = await pool.query('SELECT * FROM student_courses WHERE id = ? AND student_id = ?', [id, studentId]);
   return rows[0] || null;
@@ -320,6 +350,7 @@ module.exports = {
   findCourseById,
   listMyCourses,
   addMyCourse,
+  bulkAddMyCourses,
   findMyCourseById,
   updateMyCourse,
   deleteMyCourse,

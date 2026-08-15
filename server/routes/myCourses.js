@@ -1,7 +1,18 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const courseService = require('../services/courseService');
+const { parseCourseListPdf } = require('../services/pdfImportService');
+
+// 메모리 저장만(디스크에 남기지 않음) — 이수과목확인리스트 PDF는 학사정보라 파싱 즉시 버린다.
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    cb(null, file.mimetype === 'application/pdf');
+  },
+});
 
 /**
  * Routes for my registered courses (/api/my-courses)
@@ -125,6 +136,49 @@ router.post('/', async (req, res, next) => {
         data: { day: err.conflictDay, period: err.conflictPeriod, conflictCourseName: err.conflictCourseName },
       });
     }
+    next(err);
+  }
+});
+
+// POST /api/my-courses/import/pdf
+// 이수과목확인리스트 PDF를 업로드 → 과목명/학점/이수구분/이수학기만 파싱해 미리보기로 반환.
+// 저장은 하지 않음 — 사용자가 검토·수정 후 /import/confirm으로 확정해야 DB에 반영된다.
+router.post('/import/pdf', pdfUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_PDF_FILE', message: null, data: null });
+    }
+
+    const result = await parseCourseListPdf(req.file.buffer);
+    return res.status(200).json({ status: 200, code: 'PDF_IMPORT_PARSE_SUCCESS', message: null, data: result });
+  } catch (err) {
+    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
+  }
+});
+
+// POST /api/my-courses/import/confirm
+// body: { rows: [{ name, credits, category, year, semester }] } — /import/pdf 결과를
+// 사용자가 검토·수정한 뒤 그대로(또는 일부만) 보내면 일괄 등록. 등급 필드는 받지 않음
+// (성적은 항상 과목 관리 화면에서 직접 입력).
+router.post('/import/confirm', async (req, res, next) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_ROWS', message: null, data: null });
+    }
+
+    for (const row of rows) {
+      if (!row.name || !row.credits || !row.category || !row.year || !row.semester) {
+        return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
+      }
+      if (!courseService.VALID_CATEGORIES.includes(row.category)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+      }
+    }
+
+    const result = await courseService.bulkAddMyCourses(req.session.userId, rows);
+    return res.status(201).json({ status: 201, code: 'PDF_IMPORT_CONFIRM_SUCCESS', message: null, data: result });
+  } catch (err) {
     next(err);
   }
 });
