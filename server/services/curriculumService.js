@@ -157,11 +157,18 @@ function formatRequirementChunk(row) {
     ? ` (${row.minAdmissionYear ?? ''}~${row.maxAdmissionYear ?? ''}학번)`
     : '';
   const courseList = row.requiredCourses.join(', ') || '해당 없음';
+  // "N개 중 M개만 충족"이던 예전 가정을 그대로 고정 문구로 박아뒀었는데, 컴퓨터·소프트웨어공학과
+  // 졸업인증제처럼 minCourseCount가 대상 과목 전체 개수와 같아지는 경우(2개 중 2개 필수)엔
+  // "전부 이수할 필요는 없음"이 자기모순이 된다 — 실제 개수를 비교해서 문구를 분기한다.
+  const satisfactionNote =
+    row.minCourseCount >= row.requiredCourses.length
+      ? '대상 과목을 전부 이수해야 이 요건이 충족된다.'
+      : `이 중 최소 ${row.minCourseCount}과목만 이수하면 이 요건이 충족된다(대상 과목을 전부 이수할 필요는 없음).`;
 
   return {
     chunkId: `requirement-${row.departmentName}-${row.category}-${row.id}`,
     documentTitle: `${row.departmentName} 졸업요건 — ${row.category}${cohortLabel}`,
-    content: `${row.description} 대상 과목: ${courseList}. 이 중 최소 ${row.minCourseCount}과목만 이수하면 이 요건이 충족된다(대상 과목을 전부 이수할 필요는 없음).`,
+    content: `${row.description} 대상 과목: ${courseList}. ${satisfactionNote}`,
   };
 }
 
