@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getMe,
   getMyCourses,
@@ -90,6 +90,21 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 시간표가 없는 카탈로그 과목(교수/시간 미확보)을 선택했을 때만 세팅 — 확정된 시간표가
   // 있는 과목은 바로 추가되고 이 상태를 거치지 않는다.
   const [catalogSelection, setCatalogSelection] = useState(null);
+  const addFormRef = useRef(null);
+  const searchResultsRef = useRef(null);
+
+  // "과목 추가"를 누르면 폼이 화면 아래쪽에 새로 생기는데 스크롤 위치는 그대로라 매번 직접
+  // 내려야 했다 — 폼이 열리는 순간 자동으로 보이는 위치까지 스크롤한다.
+  useEffect(() => {
+    if (showAddForm) addFormRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  }, [showAddForm]);
+
+  // 검색어를 입력해 결과 목록이 새로 생겨도 스크롤 위치는 그대로라 목록을 보려면 또 내려야
+  // 했다 — 결과가 생기면 목록이 보이는 위치까지 자동으로 맞춘다. 이미 보이고 있으면
+  // block: 'nearest'라 매 타이핑마다 점프하지 않는다.
+  useEffect(() => {
+    if (searchResults.length > 0) searchResultsRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  }, [searchResults]);
 
   useEffect(() => {
     getMe()
@@ -442,7 +457,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         )}
 
         {showAddForm && (
-          <div className="courses-add-form">
+          <div className="courses-add-form" ref={addFormRef}>
             {error && <p className="home-error courses-form-error">{error}</p>}
             <div className="courses-add-form-header">
               <div className="courses-add-mode-toggle">
@@ -531,7 +546,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       onChange={(e) => handleSearch(e.target.value)}
                     />
                   </div>
-                  <div className="courses-search-results">
+                  <div className="courses-search-results" ref={searchResultsRef}>
                     {searchResults.map((r) => (
                       <button
                         key={r.courseId}
