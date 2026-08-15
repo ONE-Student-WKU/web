@@ -68,6 +68,29 @@ export const updateMyCourse = (id, payload) =>
 
 export const deleteMyCourse = (id) => apiRequest(`/my-courses/${id}`, { method: 'DELETE' });
 
+// multipart라 apiRequest의 JSON Content-Type을 못 쓴다 — fetch가 FormData를 보낼 때
+// boundary가 포함된 Content-Type을 알아서 설정하므로 직접 지정하면 안 됨.
+export const importCoursesFromPdf = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${BASE}/my-courses/import/pdf`, {
+    credentials: 'include',
+    method: 'POST',
+    body: formData,
+  });
+  const body = await res.json();
+  if (!res.ok) {
+    const err = new Error(body.code || 'REQUEST_FAILED');
+    err.code = body.code;
+    err.status = res.status;
+    throw err;
+  }
+  return body.data;
+};
+
+export const confirmImportedCourses = (rows) =>
+  apiRequest('/my-courses/import/confirm', { method: 'POST', body: JSON.stringify({ rows }) });
+
 export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
 
 export const sendChatMessage = (conversationId, message) =>

@@ -6,6 +6,7 @@ const aiClient = require('../services/aiClient');
 const regulationService = require('../services/regulationService');
 const curriculumService = require('../services/curriculumService');
 const studentService = require('../services/studentService');
+const graduationService = require('../services/graduationService');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -83,10 +84,13 @@ router.post('/messages', async (req, res, next) => {
     const normalizedSearchQuery = await aiClient.rewriteSearchQuery(searchQuery);
 
     const queryEmbedding = await embeddingClient.getEmbedding(normalizedSearchQuery, 'query');
-    const [freshChunks, previousCitedChunks, student] = await Promise.all([
+    // 온보딩 전이거나 학과 정보가 없으면 getGraduationStatus가 ONBOARDING_REQUIRED로 던지는데,
+    // 이건 챗봇 전체를 막을 이유가 아니라 "이수 현황을 아직 모른다"는 정보일 뿐이라 null로 흡수한다.
+    const [freshChunks, previousCitedChunks, student, graduationStatus] = await Promise.all([
       regulationService.findRelevantChunks(queryEmbedding),
       regulationService.findChunksByIds(lastAssistantMessage?.citedChunkIds),
       studentService.findById(req.session.userId),
+      graduationService.getGraduationStatus(req.session.userId).catch(() => null),
     ]);
 
     // 교육과정(학년/학기별 과목 편성)은 RAG 유사도 검색이 아니라 curriculum_courses 조건
@@ -128,7 +132,7 @@ router.post('/messages', async (req, res, next) => {
       });
     }
 
-    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student);
+    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus);
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,

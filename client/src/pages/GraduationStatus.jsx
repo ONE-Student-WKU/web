@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft } from '../components/icons.jsx';
-import { summarizeShortfalls } from '../utils/graduation.js';
+import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups } from '../utils/graduation.js';
 
 /**
  * GraduationStatus Page
@@ -37,7 +37,11 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const progressPercent = status
     ? Math.min(100, Math.round((status.totalEarnedCredits / status.totalRequiredCredits) * 100))
     : 0;
-  const shortfalls = status ? summarizeShortfalls(status.categories, status.certifications) : [];
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications) : [];
+  const groups = status ? buildRequirementGroups(status.categories) : null;
+  // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
+  // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
+  const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
 
   return (
     <div className="courses-page">
@@ -73,41 +77,94 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
               </div>
               <p className="grad-remaining-text">
+                {progressPercent}% ·{' '}
                 {remaining > 0 ? `졸업까지 ${remaining}학점 남음` : '졸업 학점을 모두 채웠어요'}
               </p>
+              {generalElectiveCredits > 0 && (
+                <p className="grad-flex-note">그 중 일반선택으로 {generalElectiveCredits}학점 포함</p>
+              )}
             </section>
 
-            <p className="home-quick-label">카테고리별 이수 현황</p>
-            {status.categories.map((c) => {
-              const satisfied = c.earnedCredits >= c.requiredCredits;
-              const rawPercent = c.requiredCredits > 0 ? Math.round((c.earnedCredits / c.requiredCredits) * 100) : 100;
-              const barPercent = Math.min(100, rawPercent);
-              const hasOverflow = c.earnedCredits > c.requiredCredits;
-              return (
-                <section className="home-card" key={c.category}>
-                  <div className="grad-category-row">
-                    <p className="home-card-label">
-                      {c.category}
-                      {c.requiredCourses?.length > 0 && (
-                        <span className="grad-category-courses"> ({c.requiredCourses.join(', ')})</span>
-                      )}
-                    </p>
-                    <span className={satisfied ? 'grad-category-value satisfied' : 'grad-category-value'}>
-                      {c.earnedCredits} / {c.requiredCredits}학점 · {rawPercent}%
-                    </span>
-                  </div>
-                  <div className="home-progress-track">
-                    <div
-                      className={satisfied ? 'home-progress-fill satisfied' : 'home-progress-fill'}
-                      style={{ width: `${barPercent}%` }}
-                    />
-                  </div>
-                  {hasOverflow && (
-                    <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
-                  )}
-                </section>
-              );
-            })}
+            <p className="home-quick-label">전공·교양 이수 현황</p>
+
+            {groups?.major && (
+              <section className="home-card">
+                <div className="grad-category-row">
+                  <p className="home-card-label">전공</p>
+                  <span
+                    className={
+                      groups.major.earnedCredits >= groups.major.requiredCredits
+                        ? 'grad-category-value satisfied'
+                        : 'grad-category-value'
+                    }
+                  >
+                    {groups.major.earnedCredits} / {groups.major.requiredCredits}학점 ·{' '}
+                    {Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100)}%
+                  </span>
+                </div>
+                <div className="home-progress-track">
+                  <div
+                    className={
+                      groups.major.earnedCredits >= groups.major.requiredCredits
+                        ? 'home-progress-fill satisfied'
+                        : 'home-progress-fill'
+                    }
+                    style={{ width: `${Math.min(100, Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100))}%` }}
+                  />
+                </div>
+                {groups.major.earnedCredits > groups.major.requiredCredits && (
+                  <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
+                )}
+                <div className="grad-subcheck-row">
+                  <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                    {groups.major.baseSatisfied && <IconCheck size={11} />}
+                  </span>
+                  <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
+                </div>
+              </section>
+            )}
+
+            {groups?.liberalArts && (
+              <section className="home-card">
+                <div className="grad-category-row">
+                  <p className="home-card-label">교양</p>
+                  <span
+                    className={
+                      groups.liberalArts.earnedCredits >= groups.liberalArts.requiredCredits
+                        ? 'grad-category-value satisfied'
+                        : 'grad-category-value'
+                    }
+                  >
+                    {groups.liberalArts.earnedCredits} / {groups.liberalArts.requiredCredits}학점 ·{' '}
+                    {Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100)}%
+                  </span>
+                </div>
+                <div className="home-progress-track">
+                  <div
+                    className={
+                      groups.liberalArts.earnedCredits >= groups.liberalArts.requiredCredits
+                        ? 'home-progress-fill satisfied'
+                        : 'home-progress-fill'
+                    }
+                    style={{
+                      width: `${Math.min(100, Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100))}%`,
+                    }}
+                  />
+                </div>
+                {groups.liberalArts.earnedCredits > groups.liberalArts.requiredCredits && (
+                  <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
+                )}
+                <div className="grad-subcheck-row">
+                  <span className={groups.liberalArts.requiredSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                    {groups.liberalArts.requiredSatisfied && <IconCheck size={11} />}
+                  </span>
+                  <p className="grad-subcheck-label">
+                    교양필수 {groups.liberalArts.requiredSatisfied ? '충족' : '미충족'}
+                  </p>
+                </div>
+                <p className="grad-flex-note">교양선택 {groups.liberalArts.electiveEarnedCredits}학점 이수</p>
+              </section>
+            )}
 
             {status.certifications.length > 0 && (
               <>
@@ -115,7 +172,9 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 {status.certifications.map((cert) => (
                   <section className="home-card" key={cert.category}>
                     <div className="grad-cert-row">
-                      <span className={cert.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'} />
+                      <span className={cert.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                        {cert.satisfied && <IconCheck size={11} />}
+                      </span>
                       <div>
                         <p className="home-card-label">{cert.category}</p>
                         <p className="grad-cert-desc">{cert.description}</p>

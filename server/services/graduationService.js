@@ -120,14 +120,46 @@ async function getGraduationStatus(studentId) {
     });
   }
 
-  // 전공필수/전공선택(또는 전과·편입 완화 통합 "전공") — 상한 없이, 초과분은 그대로 일반선택으로 흘러감.
-  for (const row of creditRows) {
-    if (row.category === '교양필수' || row.category === '교양선택' || row.category === '일반선택') continue;
-
-    const required = Number(row.required_credits);
-    const earnedRaw =
+  // 전공필수(기본전공)+전공선택은 학칙상 별개 요건이 아니라 "기본전공 19학점 이상 + 선택전공
+  // 이수, 계 75학점"이라는 하나의 풀이다 (db/regulations/졸업/이수학점_총괄표.md 2절 원문 —
+  // 기본전공은 "이상"이라는 하한선일 뿐, 전공선택 쪽에 별도로 56학점 하한이 있는 게 아님).
+  // 그래서 기본전공을 초과 이수하면 그 초과분이 전공선택 쪽 부족분을 그대로 상쇄해야 하고,
+  // 풀 전체(75)를 넘긴 진짜 초과분만 일반선택으로 흘러간다 — 예전엔 두 카테고리를 각자
+  // 독립적으로 상한 적용해서, 기본전공 초과분이 전공선택 부족분을 하나도 못 줄이고 엉뚱하게
+  // 일반선택으로만 새서 "총 이수학점"과 "카테고리별 부족 학점 합"이 서로 안 맞는 문제가 있었다
+  // (실사용 확인: 총계는 27학점 남았다는데 전공 부족은 20학점으로 따로 표시됨).
+  // 전과(3·4학년)/편입 완화 시엔 이미 통합 "전공"(48학점) 행 하나뿐이라 자연히 풀 하나로 처리됨.
+  const majorRows = creditRows.filter(
+    (r) => r.category === '전공필수' || r.category === '전공선택' || r.category === '전공'
+  );
+  if (majorRows.length > 0) {
+    const getMajorRowEarnedRaw = (row) =>
       earnedByCategory[row.category] ??
       (row.category === '전공' ? (earnedByCategory['전공필수'] || 0) + (earnedByCategory['전공선택'] || 0) : 0);
+
+    const majorRequired = majorRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
+    const majorEarnedRaw = majorRows.reduce((sum, r) => sum + getMajorRowEarnedRaw(r), 0);
+
+    totalRequiredCredits += majorRequired;
+    totalEarnedCredits += Math.min(majorEarnedRaw, majorRequired);
+    generalElectiveOverflow += Math.max(0, majorEarnedRaw - majorRequired);
+
+    for (const row of majorRows) {
+      categories.push({
+        category: row.category,
+        requiredCredits: Number(row.required_credits),
+        earnedCredits: getMajorRowEarnedRaw(row),
+        requiredCourses: await fetchRequiredCourseNames(row.id),
+      });
+    }
+  }
+
+  // 전공/교양/일반선택 외 다른 학점 카테고리가 생기면(현재는 없음) 기존처럼 카테고리별 독립 상한.
+  for (const row of creditRows) {
+    if (['교양필수', '교양선택', '일반선택', '전공필수', '전공선택', '전공'].includes(row.category)) continue;
+
+    const required = Number(row.required_credits);
+    const earnedRaw = earnedByCategory[row.category] || 0;
 
     totalRequiredCredits += required;
     totalEarnedCredits += Math.min(earnedRaw, required);
