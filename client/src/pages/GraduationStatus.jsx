@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor } from '../utils/graduation.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다.
@@ -97,7 +97,10 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <span className="home-credit-total"> / {status.totalRequiredCredits}학점</span>
               </div>
               <div className="home-progress-track">
-                <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
+                <div
+                  className="home-progress-fill"
+                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                />
               </div>
               <p className="grad-remaining-text">
                 {progressPercent}% ·{' '}
@@ -127,12 +130,13 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </div>
                 <div className="home-progress-track">
                   <div
-                    className={
-                      groups.major.earnedCredits >= groups.major.requiredCredits
-                        ? 'home-progress-fill satisfied'
-                        : 'home-progress-fill'
-                    }
-                    style={{ width: `${Math.min(100, Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100))}%` }}
+                    className="home-progress-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100))}%`,
+                      backgroundColor: getProgressColor(
+                        Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100)
+                      ),
+                    }}
                   />
                 </div>
                 {groups.major.earnedCredits > groups.major.requiredCredits && (
@@ -164,13 +168,12 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </div>
                 <div className="home-progress-track">
                   <div
-                    className={
-                      groups.liberalArts.earnedCredits >= groups.liberalArts.requiredCredits
-                        ? 'home-progress-fill satisfied'
-                        : 'home-progress-fill'
-                    }
+                    className="home-progress-fill"
                     style={{
                       width: `${Math.min(100, Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100))}%`,
+                      backgroundColor: getProgressColor(
+                        Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100)
+                      ),
                     }}
                   />
                 </div>

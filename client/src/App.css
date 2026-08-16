@@ -682,10 +682,6 @@ body {
   background: var(--color-accent);
 }
 
-.home-progress-fill.satisfied {
-  background: var(--color-success);
-}
-
 .grad-remaining-text {
   margin: 8px 0 0;
   font-size: 0.8125rem;
