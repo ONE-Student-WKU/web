@@ -375,7 +375,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     if (err.code === 'INVALID_CATEGORY') return '이수구분 값이 올바르지 않아요. 다시 선택해주세요.';
     if (err.code === 'ROW_NAME_TOO_LONG') {
       const name = err.data?.name || '';
-      return `과목명이 너무 길어요(100자 제한). "${name.slice(0, 30)}${name.length > 30 ? '...' : ''}" 행을 표에서 직접 줄여주세요. PDF 표 레이아웃이 깨져 여러 과목명이 합쳐진 경우일 수 있어요.`;
+      return `과목명이 너무 길어요(100자 제한, 현재 ${name.length}자). 아래 행을 표에서 직접 줄여주세요. PDF 표 레이아웃이 깨져 여러 과목명이 합쳐진 경우일 수 있어요.\n\n"${name}"`;
     }
     if (err.code === 'INVALID_CREDITS') return '학점 값이 올바르지 않아요. 표에서 해당 과목의 학점을 확인해주세요.';
     if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
