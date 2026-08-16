@@ -461,7 +461,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 onClick={() => setCurrent(t)}
               >
                 {t.semester}학기
-                {t.courseCount > 0 && <span className="courses-tab-count">{t.courseCount}</span>}
               </button>
             ))}
           </div>

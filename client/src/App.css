@@ -921,16 +921,6 @@ body {
   border-color: var(--color-accent-bg);
 }
 
-.courses-tab-count {
-  display: inline-block;
-  margin-left: 5px;
-  padding: 0 5px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 0.6875rem;
-  line-height: 15px;
-}
-
 .courses-summary-row {
   display: flex;
   gap: 8px;
