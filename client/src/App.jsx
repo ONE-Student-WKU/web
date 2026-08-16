@@ -129,17 +129,7 @@ function App() {
             onOpenProfile={() => setView('profile')}
           />
         ) : view === 'settings' ? (
-          <Settings
-            theme={theme}
-            onSetTheme={setTheme}
-            fontSize={fontSize}
-            onSetFontSize={setFontSize}
-            highlightLeaveSemesters={highlightLeaveSemesters}
-            onGoHome={() => {
-              setHighlightLeaveSemesters(false);
-              setView('home');
-            }}
-          />
+          <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
         ) : view === 'onboarding' ? (
           <Onboarding
             user={user}
@@ -152,9 +142,13 @@ function App() {
         ) : view === 'profile' ? (
           <Profile
             user={user}
-            onGoHome={() => setView('home')}
+            onGoHome={() => {
+              setHighlightLeaveSemesters(false);
+              setView('home');
+            }}
             onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
             onAccountDeleted={handleAccountDeleted}
+            highlightLeaveSemesters={highlightLeaveSemesters}
           />
         ) : (
           <Home
@@ -168,7 +162,7 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
-              setView('settings');
+              setView('profile');
             }}
           />
         )}
