@@ -179,14 +179,23 @@ router.post('/import/confirm', async (req, res, next) => {
       if (!courseService.VALID_CATEGORIES.includes(row.category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
       }
+      // student_courses.name은 VARCHAR(100) — 모바일에서 저장한 PDF는 표 레이아웃이 좁게
+      // 잡혀 컬럼 구분이 깨지는 경우가 있어(실사용 확인), 과목명 파싱이 여러 행을 한 줄로
+      // 합쳐버려 100자를 넘기면서 DB INSERT가 원인 불명 500으로 터지는 문제가 있었다.
+      // 여기서 미리 걸러서 사용자가 표에서 직접 고칠 수 있게 알려준다.
+      if (row.name.length > 100) {
+        return res.status(400).json({ status: 400, code: 'ROW_NAME_TOO_LONG', message: null, data: { name: row.name } });
+      }
+      // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9).
+      if (!(row.credits > 0 && row.credits <= 9.9)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: { name: row.name, credits: row.credits } });
+      }
     }
 
     const result = await courseService.bulkAddMyCourses(req.session.userId, rows);
     return res.status(201).json({ status: 201, code: 'PDF_IMPORT_CONFIRM_SUCCESS', message: null, data: result });
   } catch (err) {
-    // TODO(debug): 모바일에서만 재현되는 원인 불명 500 추적 중 — 원인 특정 후 next(err)로 되돌릴 것.
-    console.error('[PDF_IMPORT_CONFIRM_ERROR]', err);
-    return res.status(500).json({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: err.message, data: null });
+    next(err);
   }
 });
 

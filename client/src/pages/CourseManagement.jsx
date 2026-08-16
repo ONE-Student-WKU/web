@@ -373,9 +373,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     if (err.code === 'REQUIRED_ROWS') return '등록할 과목을 선택해주세요.';
     if (err.code === 'INVALID_ROW') return '과목 이름·학점·이수구분·연도·학기 중 비어있는 값이 있어요. 각 행을 확인해주세요.';
     if (err.code === 'INVALID_CATEGORY') return '이수구분 값이 올바르지 않아요. 다시 선택해주세요.';
+    if (err.code === 'ROW_NAME_TOO_LONG') {
+      const name = err.data?.name || '';
+      return `과목명이 너무 길어요(100자 제한). "${name.slice(0, 30)}${name.length > 30 ? '...' : ''}" 행을 표에서 직접 줄여주세요. PDF 표 레이아웃이 깨져 여러 과목명이 합쳐진 경우일 수 있어요.`;
+    }
+    if (err.code === 'INVALID_CREDITS') return '학점 값이 올바르지 않아요. 표에서 해당 과목의 학점을 확인해주세요.';
     if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
-    // TODO(debug): 모바일에서 원인 불명 500 재현 중 — 실제 서버 에러 메시지 확인 후 제거.
-    return `등록에 실패했어요. (${err.serverMessage || err.code || err.message || 'UNKNOWN'})`;
+    return '등록에 실패했어요.';
   };
 
   const handlePdfConfirm = async () => {
