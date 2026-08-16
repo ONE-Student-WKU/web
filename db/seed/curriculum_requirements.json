@@ -40,7 +40,7 @@
     "maxAdmissionYear": null,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일하게 전액 이수해야 하나 현재 스키마에는 major_change_grade 조건을 걸 컬럼이 없음 — graduation-check 구현 시 major_change_grade>=3일 때만 이 행을 적용하도록 별도 처리 필요",
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일하게 전액 이수해야 하며, graduationService.js의 resolveEffectiveEnrollmentType()가 major_change_grade>=3일 때만 이 행을 적용하도록 이미 분기 처리함(2026-08-17 코드 확인, 구현 완료)",
     "requiredCourses": []
   },
   {
