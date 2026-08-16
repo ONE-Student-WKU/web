@@ -97,16 +97,16 @@ function parseCourseListText(rawText) {
 
   const warnings = [];
   if (rows.length === 0) {
-    warnings.push('과목 행을 하나도 인식하지 못했습니다. 문서 형식이 예상과 다를 수 있습니다.');
+    warnings.push('과목을 하나도 못 찾았어요. 원광대 인트라넷 "이수과목확인리스트"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
   }
   if (droppedSummaryRows > 0) {
     warnings.push(
-      `문서 상단 요약 표가 과목으로 잘못 인식되어 ${droppedSummaryRows}건 제외했습니다. 바로 다음 과목이 함께 인식되지 못했을 수 있으니 목록을 확인하고, 빠진 과목이 있으면 "직접 입력"으로 추가해주세요.`
+      `문서 상단 요약 표가 과목으로 잘못 인식돼서 ${droppedSummaryRows}건 뺐어요. 바로 다음 과목이 함께 인식되지 못했을 수 있으니 목록을 확인하고, 빠진 과목이 있으면 "직접 입력"으로 추가해주세요.`
     );
   }
   if (declaredTotalCredits !== null && Math.abs(declaredTotalCredits - extractedTotalCredits) > 0.01) {
     warnings.push(
-      `문서상 총 취득학점(${declaredTotalCredits})과 인식된 학점 합계(${extractedTotalCredits})가 일치하지 않습니다. 아래 목록을 원본과 대조해 확인해주세요.`
+      `문서상 총 취득학점(${declaredTotalCredits})과 인식된 학점 합계(${extractedTotalCredits})가 달라요. 아래 목록을 원본과 대조해서 확인해주세요.`
     );
   }
   const unmapped = rows.filter((r) => !r.category);
