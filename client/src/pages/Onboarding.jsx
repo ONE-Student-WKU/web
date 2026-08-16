@@ -31,6 +31,10 @@ function range(min, max) {
   return Array.from({ length: max - min + 1 }, (_, i) => max - i);
 }
 
+// Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
+// 학과 목록은 자주 안 바뀌는 참조 데이터라 세션 내내 캐시해도 안전하다.
+let cachedDepartments = null;
+
 /**
  * Onboarding Page
  * 회원가입 직후 자동 진입하거나, 계정 메뉴의 "학적정보 수정"에서 재진입.
@@ -42,7 +46,8 @@ function range(min, max) {
  * - onSkip: function
  */
 function Onboarding({ user, onDone, onSkip }) {
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState(cachedDepartments || []);
+  const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
@@ -61,8 +66,12 @@ function Onboarding({ user, onDone, onSkip }) {
 
   useEffect(() => {
     getDepartments()
-      .then(setDepartments)
-      .catch(() => setLoadError('학과 목록을 불러오지 못했어요.'));
+      .then((data) => {
+        setDepartments(data);
+        cachedDepartments = data;
+      })
+      .catch(() => setLoadError('학과 목록을 불러오지 못했어요.'))
+      .finally(() => setDepartmentsLoading(false));
   }, []);
 
   const selectedDepartment = departments.find((d) => d.id === answers.departmentId) || null;
@@ -196,6 +205,12 @@ function Onboarding({ user, onDone, onSkip }) {
           <>
             <h2 className="onb-q-title">어느 학과 소속이에요?</h2>
             <p className="onb-q-sub">선택한 학과와 학번을 기준으로 졸업요건을 계산해요.</p>
+            {departmentsLoading && departments.length === 0 && (
+              <div className="onb-option-list">
+                <div className="skeleton skeleton-text skeleton-row" style={{ height: 52 }} />
+                <div className="skeleton skeleton-text skeleton-row" style={{ height: 52 }} />
+              </div>
+            )}
             <div className="onb-option-list">
               {departments.map((d) => (
                 <button
