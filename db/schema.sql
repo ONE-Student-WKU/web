@@ -350,6 +350,61 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 );
 
 -- ---------------------------------------------------------------------------
+-- 9. 진로 탐색 (상담형 진로 추천)
+-- 고정 질문 답변을 대화 이력의 앞부분으로 흡수하고, 그 뒤로 자유 대화를 이어 붙이는 단일
+-- 트랜스크립트 구조(chat_conversations/chat_messages와 동일 패턴)로 설계 — 고정 질문 자체는
+-- 프론트에 하드코딩된 정적 문항이라 별도 테이블이 필요 없다.
+--
+-- status: IN_PROGRESS(대화 중) → CANDIDATES_READY(후보 제시됨) → CONFIRMED(진로 확정 + 로드맵 생성됨)
+-- confirmed_career: 확정 시 career_candidates 중 선택된 진로명을 그대로 복사(간단 참조용)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS career_sessions (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  student_id        INT NOT NULL,
+  status            ENUM('IN_PROGRESS', 'CANDIDATES_READY', 'CONFIRMED') NOT NULL DEFAULT 'IN_PROGRESS',
+  confirmed_career  VARCHAR(100),
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS career_messages (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  session_id  INT NOT NULL,
+  role        VARCHAR(20) NOT NULL,  -- user / assistant
+  content     TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (session_id) REFERENCES career_sessions(id) ON DELETE CASCADE
+);
+
+-- AI가 대화를 종합해 제시하는 진로 후보. sort_order로 제시 순서(가장 적합한 순) 유지.
+CREATE TABLE IF NOT EXISTS career_candidates (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  session_id  INT NOT NULL,
+  career_name VARCHAR(100) NOT NULL,
+  reasoning   TEXT NOT NULL,
+  sort_order  INT NOT NULL DEFAULT 0,
+
+  FOREIGN KEY (session_id) REFERENCES career_sessions(id) ON DELETE CASCADE
+);
+
+-- 확정된 진로에 맞춰 추천하는, 아직 안 들은 과목 로드맵. course_name은 curriculum_courses에
+-- 실제로 존재하는 값만 저장(서버에서 그라운딩 검증 후 필터링) — AI가 지어낸 과목명이 섞이지 않게 함.
+CREATE TABLE IF NOT EXISTS career_roadmap_items (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  session_id   INT NOT NULL,
+  grade        TINYINT NOT NULL,
+  semester     TINYINT NOT NULL,
+  course_name  VARCHAR(100) NOT NULL,
+  reason       TEXT,
+  sort_order   INT NOT NULL DEFAULT 0,
+
+  FOREIGN KEY (session_id) REFERENCES career_sessions(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
 -- 학과·트랙 마스터 초기 시드
 -- "컴퓨터·소프트웨어공학과"는 ~2025학번(136점 체계, 트랙 없음), "공학3계열"은
 -- 2026학번~(130점 체계, 아래 두 트랙 중 하나를 2학년 진급 시 선택)에 대응.

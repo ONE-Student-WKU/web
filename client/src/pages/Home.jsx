@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getGraduationStatus } from '../api/chatApi.js';
-import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
+import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 
 // 페이지를 새로고침하지 않는 한(모듈이 다시 로드되지 않는 한) 유지되는 메모리 캐시.
@@ -31,6 +31,7 @@ function Home({
   onOpenChat,
   onOpenCourses,
   onOpenGraduation,
+  onOpenCareer,
   onOpenSettings,
   onOpenOnboarding,
   onOpenLeaveSettings,
@@ -102,6 +103,7 @@ function Home({
         onClose={() => setMenuOpen(false)}
         onOpenCourses={onOpenCourses}
         onOpenGraduation={onOpenGraduation}
+        onOpenCareer={onOpenCareer}
         onOpenChat={onOpenChat}
       />
 
@@ -144,7 +146,10 @@ function Home({
                 <span className="home-credit-total">{requiredTotal ? ` / ${requiredTotal}학점` : '학점'}</span>
               </div>
               <div className="home-progress-track">
-                <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
+                <div
+                  className="home-progress-fill"
+                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                />
               </div>
               <p className="grad-remaining-text">{progressPercent}%</p>
             </section>
@@ -180,6 +185,14 @@ function Home({
           <button className="home-quick-btn" onClick={onOpenGraduation}>
             <IconChecklist />
             <span>졸업요건 진단</span>
+          </button>
+          <button className="home-quick-btn" onClick={onOpenCareer}>
+            <IconCompass />
+            <span>진로 탐색</span>
+          </button>
+          <button className="home-quick-btn" disabled>
+            <IconUsers />
+            <span>커뮤니티</span>
           </button>
         </div>
       </div>
