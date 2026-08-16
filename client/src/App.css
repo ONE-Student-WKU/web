@@ -79,6 +79,7 @@ body {
 
 .app-container {
   min-height: 100vh;
+  min-height: 100dvh; /* 모바일 주소창만큼 100vh가 실제 보이는 영역보다 커지는 문제 보정 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,6 +89,7 @@ body {
   width: 100%;
   max-width: 420px;
   height: 100vh;
+  height: 100dvh; /* 모바일에서 하단 prompt-bar가 주소창 뒤로 잘리는 문제 보정 (dvh 미지원 브라우저는 100vh로 폴백) */
   max-height: 900px;
   background: var(--color-bg-frame);
   display: flex;
@@ -290,7 +292,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-frame);
   flex-shrink: 0;

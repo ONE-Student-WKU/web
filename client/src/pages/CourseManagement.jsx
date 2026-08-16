@@ -369,6 +369,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setPdfRows((prev) => prev.map((r) => (r.tempId === tempId ? { ...r, [field]: value } : r)));
   const removePdfRow = (tempId) => setPdfRows((prev) => prev.filter((r) => r.tempId !== tempId));
 
+  const describePdfConfirmError = (err) => {
+    if (err.code === 'REQUIRED_ROWS') return '등록할 과목을 선택해주세요.';
+    if (err.code === 'INVALID_ROW') return '과목 이름·학점·이수구분·연도·학기 중 비어있는 값이 있어요. 각 행을 확인해주세요.';
+    if (err.code === 'INVALID_CATEGORY') return '이수구분 값이 올바르지 않아요. 다시 선택해주세요.';
+    if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
+    return '등록에 실패했어요.';
+  };
+
   const handlePdfConfirm = async () => {
     const included = pdfRows.filter((r) => r.include);
     if (included.length === 0) return;
@@ -391,8 +399,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       );
       closeAddForm();
       await refreshAfterChange();
-    } catch {
-      setError('등록에 실패했어요.');
+    } catch (err) {
+      setError(describePdfConfirmError(err));
     } finally {
       setPdfSubmitting(false);
     }
