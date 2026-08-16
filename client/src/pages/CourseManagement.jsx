@@ -374,7 +374,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     if (err.code === 'INVALID_ROW') return '과목 이름·학점·이수구분·연도·학기 중 비어있는 값이 있어요. 각 행을 확인해주세요.';
     if (err.code === 'INVALID_CATEGORY') return '이수구분 값이 올바르지 않아요. 다시 선택해주세요.';
     if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
-    return '등록에 실패했어요.';
+    // TODO(debug): 모바일에서 원인 불명 등록 실패 재현 중 — 실제 실패 코드 확인 후 제거.
+    return `등록에 실패했어요. (${err.code || err.message || 'UNKNOWN'})`;
   };
 
   const handlePdfConfirm = async () => {
