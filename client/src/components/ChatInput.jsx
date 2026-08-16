@@ -23,6 +23,14 @@ function ChatInput({ onSendMessage, disabled }) {
     el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
   }, [text]);
 
+  // disabled인 동안 브라우저가 강제로 포커스를 뺏어가서(disabled 엘리먼트는 포커스를 가질 수
+  // 없음), 응답이 오고 다시 입력 가능해져도 커서가 안 돌아와 매번 다시 클릭해야 하는 문제가
+  // 있었다(진로 탐색/학칙 챗봇 공통 — 둘 다 이 컴포넌트를 씀). 다시 활성화되는 시점에 명시적으로
+  // 포커스를 돌려준다.
+  useEffect(() => {
+    if (!disabled) textareaRef.current?.focus();
+  }, [disabled]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (disabled || !text.trim()) return;
