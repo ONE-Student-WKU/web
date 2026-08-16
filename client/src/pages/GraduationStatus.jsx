@@ -4,6 +4,10 @@ import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups } from '../utils/graduation.js';
 
+// Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
+// 불러온 졸업요건 데이터를 캐시해둔다.
+let cachedStatus = null;
+
 /**
  * GraduationStatus Page
  * 졸업요건 진단 — 전체 이수학점 진행률, 카테고리별 이수 현황, 졸업논문/졸업인증제 충족 여부.
@@ -17,20 +21,25 @@ import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups } fro
  * - onOpenProfile: function
  */
 function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState(cachedStatus);
+  const [loading, setLoading] = useState(cachedStatus === null);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
 
   useEffect(() => {
     getGraduationStatus()
-      .then(setStatus)
+      .then((data) => {
+        setStatus(data);
+        cachedStatus = data;
+      })
       .catch((err) => {
         if (err.code === 'ONBOARDING_REQUIRED') {
           setOnboardingRequired(true);
         } else {
           setError('졸업요건 정보를 불러오지 못했어요.');
         }
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const remaining = status ? Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits) : 0;
@@ -64,6 +73,20 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <div className="courses-body">
         {error && <p className="home-error">{error}</p>}
         {onboardingRequired && <p className="home-error">학과·학번 정보를 먼저 등록해야 진단할 수 있어요.</p>}
+
+        {loading && !status && (
+          <>
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-text skeleton-credit" />
+              <div className="skeleton skeleton-bar" />
+            </div>
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-bar" />
+            </div>
+          </>
+        )}
 
         {status && (
           <>
