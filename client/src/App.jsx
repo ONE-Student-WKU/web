@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Chat from './pages/Chat.jsx';
@@ -24,6 +24,33 @@ function App() {
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
 
+  // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
+  // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
+  // 누르면 브라우저를 떠나기 전에 앱 내부 화면을 먼저 오가도록 함.
+  // 로그인 성공 시점의 화면이 "루트"가 되도록 replaceState로 시작하고,
+  // 이후 화면 전환은 pushState로 쌓는다. popstate(뒤로/앞으로가기)로 들어온
+  // 변경은 다시 push하지 않도록 skipHistoryPush로 구분한다.
+  const skipHistoryPush = useRef(true);
+
+  useEffect(() => {
+    function handlePopState(event) {
+      skipHistoryPush.current = true;
+      setView(event.state?.view || 'home');
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (skipHistoryPush.current) {
+      window.history.replaceState({ view }, '');
+      skipHistoryPush.current = false;
+      return;
+    }
+    window.history.pushState({ view }, '');
+  }, [view, user]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
@@ -36,6 +63,7 @@ function App() {
 
   const handleLogout = () => {
     logout().finally(() => {
+      skipHistoryPush.current = true;
       setUser(null);
       setView('home');
     });
@@ -43,6 +71,7 @@ function App() {
 
   // 계정 삭제는 서버(DELETE /api/me)에서 이미 세션을 파기하므로 /auth/logout을 다시 부를 필요는 없음.
   const handleAccountDeleted = () => {
+    skipHistoryPush.current = true;
     setUser(null);
     setView('home');
   };
