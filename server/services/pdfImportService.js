@@ -44,6 +44,7 @@ function parseCourseListText(rawText) {
   const blob = withoutNewlines.replace(SUBTOTAL_LABEL_RE, ' ');
 
   const rows = [];
+  let droppedSummaryRows = 0;
   let match;
   ROW_RE.lastIndex = 0;
   while ((match = ROW_RE.exec(blob)) !== null) {
@@ -54,6 +55,16 @@ function parseCourseListText(rawText) {
     const name = rawName.replace(/\s+/g, ' ').trim();
 
     if (!name || Number.isNaN(credits)) continue;
+
+    // 문서 상단 "구분별 이수현황" 요약 표(구분 코드들이 붙어서 나온 뒤 학점 숫자들이 붙어서
+    // 나오는 그리드)와 실제 표 헤더("교과목명" 등)가 통째로 과목명으로 잘못 인식되는 경우가
+    // 있다(모바일에서 저장한 PDF에서 실사용 확인 — student_courses.name VARCHAR(100)을
+    // 넘겨 등록 자체가 실패했었음). 정상 과목명에는 나올 수 없는 표 헤더/합계 문구가
+    // 섞여 있으면 통째로 버린다 — 그 자리에 있던 진짜 과목은 사용자가 직접 추가해야 한다.
+    if (name.length > 50 || name.includes('교과목명') || name.includes('합계')) {
+      droppedSummaryRows += 1;
+      continue;
+    }
 
     rows.push({
       rawCategory,
@@ -72,6 +83,11 @@ function parseCourseListText(rawText) {
   const warnings = [];
   if (rows.length === 0) {
     warnings.push('과목 행을 하나도 인식하지 못했습니다. 문서 형식이 예상과 다를 수 있습니다.');
+  }
+  if (droppedSummaryRows > 0) {
+    warnings.push(
+      `문서 상단 요약 표가 과목으로 잘못 인식되어 ${droppedSummaryRows}건 제외했습니다. 바로 다음 과목이 함께 인식되지 못했을 수 있으니 목록을 확인하고, 빠진 과목이 있으면 "직접 입력"으로 추가해주세요.`
+    );
   }
   if (declaredTotalCredits !== null && Math.abs(declaredTotalCredits - extractedTotalCredits) > 0.01) {
     warnings.push(
