@@ -35,6 +35,16 @@ function semesterKey(year, semester) {
   return `${year}-${semester}`;
 }
 
+// Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
+// 학기별 데이터(myCourses/timetable)는 학기 탭마다 값이 다르므로 학기 키별로 따로 캐시한다.
+const courseMgmtCache = {
+  profile: null,
+  summary: null,
+  semesters: null,
+  status: null,
+  semesterData: new Map(), // key: semesterKey(year, semester) -> { myCourses, timetable }
+};
+
 // 입학년도 1학기부터 현재 학기까지 전체 범위를 생성 — 휴학 학기도 그냥 빈 탭으로 포함된다
 // (정확히 어느 학기가 휴학이었는지는 students.leave_semesters가 누적 "개수"만 저장해서
 // 알 수 없음 — 정교하게 제외하는 대신 전부 깔아두고 비어있는 채로 두기로 함, 2026-08-15 결정).
@@ -78,12 +88,15 @@ function formatSchedule(schedule) {
  */
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
-  const [profile, setProfile] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [status, setStatus] = useState(null);
-  const [semesters, setSemesters] = useState([]);
-  const [myCourses, setMyCourses] = useState([]);
-  const [timetable, setTimetable] = useState([]);
+  const [profile, setProfile] = useState(courseMgmtCache.profile);
+  const [summary, setSummary] = useState(courseMgmtCache.summary);
+  const [status, setStatus] = useState(courseMgmtCache.status);
+  const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
+  const initialSemesterCache = courseMgmtCache.semesterData.get(semesterKey(current.year, current.semester));
+  const [myCourses, setMyCourses] = useState(initialSemesterCache?.myCourses || []);
+  const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
+  const [pageLoading, setPageLoading] = useState(courseMgmtCache.profile === null && courseMgmtCache.summary === null);
+  const [semesterLoading, setSemesterLoading] = useState(!initialSemesterCache);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState('catalog'); // 'catalog' | 'manual' | 'pdf'
@@ -119,29 +132,56 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   useEffect(() => {
     getMe()
-      .then(setProfile)
+      .then((data) => {
+        setProfile(data);
+        courseMgmtCache.profile = data;
+      })
       .catch(() => {});
     getCourseSummary()
-      .then(setSummary)
+      .then((data) => {
+        setSummary(data);
+        courseMgmtCache.summary = data;
+      })
       .catch(() => setError('정보를 불러오지 못했어요.'));
     getSemesters()
-      .then(setSemesters)
+      .then((data) => {
+        setSemesters(data);
+        courseMgmtCache.semesters = data;
+      })
       .catch(() => setError('정보를 불러오지 못했어요.'));
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
     getGraduationStatus()
-      .then(setStatus)
-      .catch(() => setStatus(null));
+      .then((data) => {
+        setStatus(data);
+        courseMgmtCache.status = data;
+      })
+      .catch(() => setStatus(null))
+      .finally(() => setPageLoading(false));
   }, []);
 
+  // 학기 탭을 이미 본 적 있으면 캐시된 값을 즉시 보여준 뒤 뒤에서 조용히 최신화하고,
+  // 처음 보는 탭이면 semesterLoading을 켜서 빈 시간표/수강목록이 아니라 로딩 상태로 보여준다.
   const loadSemesterData = (year, semester) => {
+    const key = semesterKey(year, semester);
+    const cached = courseMgmtCache.semesterData.get(key);
+    if (cached) {
+      setMyCourses(cached.myCourses);
+      setTimetable(cached.timetable);
+      setSemesterLoading(false);
+    } else {
+      setSemesterLoading(true);
+    }
+
     Promise.all([getMyCourses(year, semester), getTimetable(year, semester)])
       .then(([courses, table]) => {
         setMyCourses(courses);
         setTimetable(table);
+        courseMgmtCache.semesterData.set(key, { myCourses: courses, timetable: table });
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요.'))
+      .finally(() => setSemesterLoading(false));
   };
 
   useEffect(() => {
@@ -172,6 +212,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 연도 탭(적은 개수, 스크롤 없이 다 보임) + 그 안에서 1/2학기 토글 + 인접 학기 이동
   // 화살표로 재구성함 (2026-08-15 결정).
   const years = useMemo(() => [...new Set(tabs.map((t) => t.year))].sort((a, b) => a - b), [tabs]);
+
+  // 학번/학과 정보를 나중에 바꿔도 예전에 입력해둔 수강 기록(student_courses)은 지우지 않고
+  // 그대로 남긴다 — 학생이 직접 입력한 사실 기록을 앱이 임의로 삭제하면 안 되기 때문. 대신
+  // 현재 학번보다 이전 학기에 등록된 과목이 있으면(온보딩에서 학번을 바꾼 경우 등) 배너로
+  // 알려서, 필요 없는 과목은 학생이 직접 판단해 지울 수 있게 한다(2026-08-17 결정).
+  const outOfRangeYears = useMemo(() => {
+    if (!profile?.admissionYear) return [];
+    const yearSet = new Set(semesters.filter((s) => s.year < profile.admissionYear).map((s) => s.year));
+    return [...yearSet].sort((a, b) => a - b);
+  }, [semesters, profile]);
+
   const semestersInCurrentYear = useMemo(
     () => tabs.filter((t) => t.year === current.year).sort((a, b) => a.semester - b.semester),
     [tabs, current.year]
@@ -220,8 +271,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     const [s, sems] = await Promise.all([getCourseSummary(), getSemesters()]);
     setSummary(s);
     setSemesters(sems);
+    courseMgmtCache.summary = s;
+    courseMgmtCache.semesters = sems;
     getGraduationStatus()
-      .then(setStatus)
+      .then((data) => {
+        setStatus(data);
+        courseMgmtCache.status = data;
+      })
       .catch(() => setStatus(null));
   }
 
@@ -432,6 +488,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <div className="courses-body">
         {error && !showAddForm && <p className="home-error">{error}</p>}
 
+        {outOfRangeYears.length > 0 && (
+          <p className="home-error">
+            현재 학번({profile.admissionYear}학번)보다 이전 학기({outOfRangeYears.join(', ')}년)에 등록된 과목이
+            남아있어요. 학번·학과 정보를 변경하셨다면 필요 없는 과목은 아래 목록에서 직접 삭제해주세요.
+          </p>
+        )}
+
         <div className="courses-year-tabs">
           {years.map((y) => (
             <button
@@ -474,59 +537,95 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </button>
         </div>
 
-        <div className="courses-summary-row">
-          <div className="courses-summary-stat">
-            <p className="home-card-label">신청학점</p>
-            <p className="courses-summary-value">{registeredCredits}학점</p>
-          </div>
-          <div className="courses-summary-stat">
-            <p className="home-card-label">평균 학점</p>
-            <p className="courses-summary-value">{currentSemesterSummary ? currentSemesterSummary.gpa : '-'}</p>
-          </div>
-        </div>
+        {pageLoading ? (
+          <>
+            <div className="courses-summary-row">
+              <div className="courses-summary-stat skeleton-card">
+                <div className="skeleton skeleton-text skeleton-label" />
+                <div className="skeleton skeleton-text skeleton-row" />
+              </div>
+              <div className="courses-summary-stat skeleton-card">
+                <div className="skeleton skeleton-text skeleton-label" />
+                <div className="skeleton skeleton-text skeleton-row" />
+              </div>
+            </div>
+            <div className="courses-summary-row courses-summary-row-total">
+              <div className="courses-summary-stat skeleton-card">
+                <div className="skeleton skeleton-text skeleton-label" />
+                <div className="skeleton skeleton-text skeleton-row" />
+              </div>
+              <div className="courses-summary-stat skeleton-card">
+                <div className="skeleton skeleton-text skeleton-label" />
+                <div className="skeleton skeleton-text skeleton-row" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="courses-summary-row">
+              <div className="courses-summary-stat">
+                <p className="home-card-label">신청학점</p>
+                <p className="courses-summary-value">{registeredCredits}학점</p>
+              </div>
+              <div className="courses-summary-stat">
+                <p className="home-card-label">평균 학점</p>
+                <p className="courses-summary-value">{currentSemesterSummary ? currentSemesterSummary.gpa : '-'}</p>
+              </div>
+            </div>
 
-        <div className="courses-summary-row courses-summary-row-total">
-          <div className="courses-summary-stat">
-            <p className="home-card-label">전체 이수학점</p>
-            <p className="courses-summary-value">
-              {status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0}학점
-            </p>
-          </div>
-          <div className="courses-summary-stat">
-            <p className="home-card-label">전체 평균 학점</p>
-            <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
-          </div>
-        </div>
+            <div className="courses-summary-row courses-summary-row-total">
+              <div className="courses-summary-stat">
+                <p className="home-card-label">전체 이수학점</p>
+                <p className="courses-summary-value">
+                  {status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0}학점
+                </p>
+              </div>
+              <div className="courses-summary-stat">
+                <p className="home-card-label">전체 평균 학점</p>
+                <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
+              </div>
+            </div>
+          </>
+        )}
 
         <p className="courses-section-label">시간표</p>
-        <div className="courses-timetable">
-          <div className="courses-timetable-grid" style={{ gridTemplateRows: `repeat(${maxPeriod + 1}, auto)` }}>
-            <div className="courses-timetable-corner" />
-            {DAYS.map((d) => (
-              <div key={d} className="courses-timetable-daylabel">
-                {d}
-              </div>
-            ))}
-            {Array.from({ length: maxPeriod }, (_, i) => i + 1).map((period) => (
-              <React.Fragment key={period}>
-                <div className="courses-timetable-periodlabel">{period}</div>
-                {DAYS.map((d) => {
-                  const cell = cellAt(d, period);
-                  const colorClass = cell ? `tt-c${courseColorIndex.get(cell.name)}` : '';
-                  return (
-                    <div key={d} className={`courses-timetable-cell ${cell ? `filled ${colorClass}` : ''}`}>
-                      {cell?.name}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+        {semesterLoading ? (
+          <div className="home-card skeleton-card">
+            <div className="skeleton skeleton-bar" />
+            <div className="skeleton skeleton-bar" />
+            <div className="skeleton skeleton-bar" />
           </div>
-        </div>
+        ) : (
+          <div className="courses-timetable">
+            <div className="courses-timetable-grid" style={{ gridTemplateRows: `repeat(${maxPeriod + 1}, auto)` }}>
+              <div className="courses-timetable-corner" />
+              {DAYS.map((d) => (
+                <div key={d} className="courses-timetable-daylabel">
+                  {d}
+                </div>
+              ))}
+              {Array.from({ length: maxPeriod }, (_, i) => i + 1).map((period) => (
+                <React.Fragment key={period}>
+                  <div className="courses-timetable-periodlabel">{period}</div>
+                  {DAYS.map((d) => {
+                    const cell = cellAt(d, period);
+                    const colorClass = cell ? `tt-c${courseColorIndex.get(cell.name)}` : '';
+                    return (
+                      <div key={d} className={`courses-timetable-cell ${cell ? `filled ${colorClass}` : ''}`}>
+                        {cell?.name}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
 
         <p className="courses-section-label">수강 목록</p>
         <div className="courses-list">
-          {myCourses.length === 0 && <p className="courses-empty">아직 등록된 과목이 없어요.</p>}
+          {semesterLoading && <div className="skeleton skeleton-text skeleton-row" />}
+          {!semesterLoading && myCourses.length === 0 && <p className="courses-empty">아직 등록된 과목이 없어요.</p>}
           {myCourses.map((c) => (
             <div key={c.id} className="courses-list-item">
               <div className="courses-list-item-info">

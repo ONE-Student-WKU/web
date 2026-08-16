@@ -216,8 +216,8 @@ function Onboarding({ user, onDone, onSkip }) {
 
         {current === 'track' && (
           <>
-            <h2 className="onb-q-title">세부전공을 선택하세요</h2>
-            <p className="onb-q-sub">2학년 진급 시 선택하는 세부전공이에요.</p>
+            <h2 className="onb-q-title">희망하는 세부전공을 선택하세요</h2>
+            <p className="onb-q-sub">2학년 진급 시 확정되는 세부전공이에요. 아직 정식으로 선택하기 전이라도, 지금 희망하는 쪽을 골라주세요.</p>
             <div className="onb-option-list">
               {tracks.map((t) => (
                 <button

@@ -17,7 +17,7 @@ import useChat from '../hooks/useChat.js';
  * - onOpenProfile: function
  */
 function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
-  const { messages, sendMessage, loading } = useChat();
+  const { messages, sendMessage, loading, initialLoading } = useChat();
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +35,12 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
         onOpenProfile={onOpenProfile}
       />
       <div className="chat-messages-container">
+        {initialLoading && messages.length === 0 && (
+          <div className="chat-bubble assistant">
+            <div className="message-sender">ONE Student</div>
+            <div className="skeleton skeleton-text skeleton-row" />
+          </div>
+        )}
         {messages.map((msg, index) => (
           <ChatBubble key={index} message={msg} />
         ))}
