@@ -4,6 +4,7 @@ import Home from './pages/Home.jsx';
 import Chat from './pages/Chat.jsx';
 import CourseManagement from './pages/CourseManagement.jsx';
 import GraduationStatus from './pages/GraduationStatus.jsx';
+import CareerExploration from './pages/CareerExploration.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile from './pages/Profile.jsx';
@@ -16,7 +17,7 @@ import { getMe, logout } from './api/chatApi.js';
 function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'settings' | 'onboarding' | 'profile'
+  const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
 
   // 새로고침/재방문 시 세션 쿠키가 유효하면 로그인 화면을 건너뛰고 복원.
   // 이 조회가 끝나기 전까진(authChecked === false) 로그인 화면을 잠깐이라도
@@ -128,6 +129,15 @@ function App() {
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
           />
+        ) : view === 'career' ? (
+          <CareerExploration
+            user={user}
+            onLogout={handleLogout}
+            onGoHome={() => setView('home')}
+            onOpenSettings={() => setView('settings')}
+            onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
+          />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
         ) : view === 'onboarding' ? (
@@ -157,6 +167,7 @@ function App() {
             onOpenChat={() => setView('chat')}
             onOpenCourses={() => setView('courses')}
             onOpenGraduation={() => setView('graduation')}
+            onOpenCareer={() => setView('career')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}

@@ -68,6 +68,16 @@ export function buildRequirementGroups(categories) {
   return { major, liberalArts };
 }
 
+// 진행률 바를 파랑 한 가지로만 두지 말고 퍼센트가 오를수록 색이 자연스럽게 바뀌게 해서
+// 재미를 주자는 요청 — 낮은 진행률(보라)이 "위험/부족"으로 읽히지 않도록 빨강 계열은
+// 피하고, 보라 → 파랑 → 청록 → 초록으로 스펙트럼을 따라가게 했다. 100%에서 기존 "충족"
+// 초록(--color-success, hsl(122, 39%, 59%))과 거의 같은 색에 자연스럽게 도달한다.
+export function getProgressColor(percent) {
+  const clamped = Math.max(0, Math.min(100, percent));
+  const hue = 265 - (145 * clamped) / 100;
+  return `hsl(${hue}, 70%, 58%)`;
+}
+
 export function summarizeShortfalls(categories, certifications) {
   const items = [];
 

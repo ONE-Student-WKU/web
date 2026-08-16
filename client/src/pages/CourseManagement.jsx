@@ -13,7 +13,7 @@ import {
   importCoursesFromPdf,
   confirmImportedCourses,
 } from '../api/chatApi.js';
-import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft } from '../components/icons.jsx';
+import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 
 const DAYS = ['월', '화', '수', '목', '금'];
@@ -114,8 +114,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [pdfCreditsCheck, setPdfCreditsCheck] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfSubmitting, setPdfSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
   const addFormRef = useRef(null);
   const searchResultsRef = useRef(null);
+  const toastTimerRef = useRef(null);
+
+  // PDF로 한꺼번에 여러 과목(대부분 지난 학기들)을 등록하면, 화면은 계속 "현재 학기" 탭에
+  // 머물러 있어서 정작 방금 추가된 과목은 안 보이고 아무 변화도 없는 것처럼 느껴지는 문제가
+  // 있었다(실사용 피드백) — 몇 개 학기에 걸쳐 등록됐는지와 무관하게 결과를 명확히 알려주는
+  // 짧은 토스트를 띄운다.
+  function showToast(message) {
+    setToast(message);
+    clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  }
+
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   // "과목 추가"를 누르면 폼이 화면 아래쪽에 새로 생기는데 스크롤 위치는 그대로라 매번 직접
   // 내려야 했다 — 폼이 열리는 순간 자동으로 보이는 위치까지 스크롤한다.
@@ -460,6 +474,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       );
       closeAddForm();
       await refreshAfterChange();
+
+      showToast(`과목 ${included.length}개 추가 완료`);
     } catch (err) {
       setError(describePdfConfirmError(err));
     } finally {
@@ -484,6 +500,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           onOpenProfile={onOpenProfile}
         />
       </header>
+
+      {toast && (
+        <div className="import-toast">
+          <IconCheck size={13} />
+          <span>{toast}</span>
+        </div>
+      )}
 
       <div className="courses-body">
         {error && !showAddForm && <p className="home-error">{error}</p>}
