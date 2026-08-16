@@ -86,6 +86,7 @@ body {
 }
 
 .app-frame {
+  position: relative;
   width: 100%;
   max-width: 420px;
   height: 100vh;
@@ -131,7 +132,8 @@ body {
   color: var(--color-accent);
 }
 
-.back-btn {
+.back-btn,
+.menu-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,6 +143,71 @@ body {
   border: none;
   color: var(--color-text-secondary);
   cursor: pointer;
+}
+
+/* 좌측 슬라이드인 내비게이션 패널 — .app-frame이 폰 화면 크기의 카드로 고정되어 있어서
+   (데스크톱에서도 일부러 폰처럼 보이게 하는 디자인), 오버레이/패널을 뷰포트가 아니라
+   .app-frame 기준으로 위치시켜야 카드 밖으로 안 튀어나온다. */
+.nav-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 30;
+}
+
+.nav-drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 78%;
+  max-width: 280px;
+  background: var(--color-bg-frame);
+  border-right: 1px solid var(--color-border);
+  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  z-index: 31;
+}
+
+.nav-drawer.open {
+  transform: translateX(0);
+}
+
+.nav-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.nav-drawer-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.nav-drawer-item:hover {
+  background: var(--color-accent-bg);
 }
 
 .avatar-btn {
@@ -503,6 +570,60 @@ body {
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 12px;
+}
+
+/* 홈 화면 최초 진입 시(캐시된 데이터 없음) 서버 응답을 기다리는 동안 보여주는 스켈레톤.
+   "학과 정보 없음"/"0학점" 같은 빈 기본값 대신 로딩 중임을 형태로 드러낸다. */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.skeleton {
+  background: var(--color-border);
+  border-radius: 6px;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 14px;
+}
+
+.skeleton-greeting {
+  width: 55%;
+  height: 12px;
+  margin-bottom: 10px;
+}
+
+.skeleton-subgreeting {
+  width: 70%;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-label {
+  width: 35%;
+}
+
+.skeleton-credit {
+  width: 50%;
+  height: 28px;
+}
+
+.skeleton-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.skeleton-row {
+  width: 90%;
 }
 
 .home-card-label {

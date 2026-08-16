@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
-import { updateProfile, changePassword, deleteAccount } from '../api/chatApi.js';
+import React, { useEffect, useState } from 'react';
+import { getMe, updateProfile, changePassword, deleteAccount } from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
 
 /**
  * Profile Page
- * 개인정보 수정 — 이름 변경, 비밀번호 변경, 계정 삭제(하드 삭제, 되돌릴 수 없음).
+ * 개인정보 수정 — 이름 변경, 휴학 학기 수(학년 계산 보정용), 비밀번호 변경,
+ * 계정 삭제(하드 삭제, 되돌릴 수 없음).
  *
  * Props:
  * - user: object
  * - onGoHome: function
  * - onNameChanged: function(name) — App.jsx의 user 상태 동기화용
  * - onAccountDeleted: function — 삭제 성공 시(서버에서 세션도 함께 파기됨) 로그인 화면으로 되돌림
+ * - highlightLeaveSemesters: boolean — 홈의 "학년이 다르신가요?" 링크로 들어왔을 때만 true,
+ *   휴학 학기 수 카드에 강조 애니메이션을 준다.
  */
-function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
+function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, highlightLeaveSemesters }) {
   const [name, setName] = useState(user?.name || '');
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState(null);
+
+  const [leaveSemesters, setLeaveSemesters] = useState('');
+  const [leaveSemestersSaved, setLeaveSemestersSaved] = useState(false);
+  const [leaveSemestersError, setLeaveSemestersError] = useState(null);
+
+  useEffect(() => {
+    getMe()
+      .then((data) => setLeaveSemesters(String(data.leaveSemesters ?? 0)))
+      .catch(() => setLeaveSemestersError('정보를 불러오지 못했어요.'));
+  }, []);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -42,6 +55,22 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
       setNameSaved(true);
     } catch {
       setNameError('저장에 실패했어요.');
+    }
+  }
+
+  async function handleSaveLeaveSemesters() {
+    setLeaveSemestersError(null);
+    setLeaveSemestersSaved(false);
+    const value = Number(leaveSemesters);
+    if (!Number.isInteger(value) || value < 0) {
+      setLeaveSemestersError('0 이상의 정수를 입력해주세요.');
+      return;
+    }
+    try {
+      await updateProfile({ leaveSemesters: value });
+      setLeaveSemestersSaved(true);
+    } catch {
+      setLeaveSemestersError('저장에 실패했어요.');
     }
   }
 
@@ -120,6 +149,32 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
           </form>
           {nameError && <p className="home-error">{nameError}</p>}
           {nameSaved && <p className="settings-field-hint">저장했어요.</p>}
+        </section>
+
+        <section className={highlightLeaveSemesters ? 'home-card settings-highlight' : 'home-card'}>
+          <p className="home-card-label">휴학 학기 수</p>
+          <p className="settings-field-hint">
+            입학년도만으로는 휴학 여부를 알 수 없어 홈 화면의 학년 표시가 실제보다 높게 나올 수 있어요.
+            누적 휴학 학기 수를 입력하면 보정해요.
+          </p>
+          <div className="settings-inline-field">
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="onb-select"
+              value={leaveSemesters}
+              onChange={(e) => {
+                setLeaveSemesters(e.target.value);
+                setLeaveSemestersSaved(false);
+              }}
+            />
+            <button className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
+              저장
+            </button>
+          </div>
+          {leaveSemestersError && <p className="home-error">{leaveSemestersError}</p>}
+          {leaveSemestersSaved && <p className="settings-field-hint">저장했어요.</p>}
         </section>
 
         <section className="home-card">
