@@ -36,12 +36,27 @@ const SUBTOTAL_LABEL_RE = new RegExp(
   'g'
 );
 
+// 문서 맨 위 "이수과목확인내역" 요약 그리드(교양/전공/총계별로 이 앱이 모르는 코드까지
+// 포함한 모든 구분 코드를 다단 헤더로 나열하고 그 아래 취득학점 숫자들을 나열하는 표)는
+// 표를 텍스트로 뽑으면 코드들이 전부 붙어서 나온 뒤 숫자들이 붙어서 나오는 형태가 되어
+// ROW_RE의 행 시작 앵커로 오인식된다(실사용 PDF로 확인 — 진짜 첫 과목까지 통째로
+// 삼켜버려 100자 넘는 이름으로 등록 실패). 실제 표는 이 요약 그리드 바로 뒤에 오는 첫
+// "구분 교과목명 년도/학기 학점 ... 비고" 헤더부터 시작하므로, 그 헤더가 처음 나오는
+// 지점까지(요약 그리드 전체 + 문서 상단 학생정보)를 통째로 잘라낸다. 이후 섹션(전공/일선/
+// 상담 및 미분류)마다 같은 헤더가 반복되지만 그건 실제 행들 사이에 끼는 것뿐이라 문제없다.
+const SUMMARY_HEADER_RE = /구분[\t ]*교과목명[\t ]*년도\s*\/\s*학기[\t ]*학점[\t ]*(?:영역|개설학과\(전공\))[\t ]*비[\t ]*고/;
+
 function parseCourseListText(rawText) {
   // 줄바꿈만 제거하고(이름 중간 개행 붕괴 목적) 그 외 탭/공백은 그대로 둔다 — ROW_RE가
   // 탭이든 공백이든 구분자로 받아들이므로 정보 손실 없이 매칭 가능.
   const withoutNewlines = rawText.replace(/\r/g, '').replace(/\n/g, '');
   const totalMatch = withoutNewlines.match(TOTAL_CREDITS_RE);
-  const blob = withoutNewlines.replace(SUBTOTAL_LABEL_RE, ' ');
+  let blob = withoutNewlines.replace(SUBTOTAL_LABEL_RE, ' ');
+
+  const firstHeader = blob.match(SUMMARY_HEADER_RE);
+  if (firstHeader) {
+    blob = blob.slice(firstHeader.index + firstHeader[0].length);
+  }
 
   const rows = [];
   let droppedSummaryRows = 0;
