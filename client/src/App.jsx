@@ -7,7 +7,7 @@ import GraduationStatus from './pages/GraduationStatus.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile from './pages/Profile.jsx';
-import { logout } from './api/chatApi.js';
+import { getMe, logout } from './api/chatApi.js';
 
 /**
  * Main App Component
@@ -15,7 +15,22 @@ import { logout } from './api/chatApi.js';
  */
 function App() {
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'settings' | 'onboarding' | 'profile'
+
+  // 새로고침/재방문 시 세션 쿠키가 유효하면 로그인 화면을 건너뛰고 복원.
+  // 이 조회가 끝나기 전까진(authChecked === false) 로그인 화면을 잠깐이라도
+  // 보여주지 않기 위해 렌더링을 보류한다.
+  useEffect(() => {
+    getMe()
+      .then((data) => {
+        setUser(data);
+        setView(data.onboardingCompleted ? 'home' : 'onboarding');
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
   );
@@ -79,7 +94,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="app-frame">
-        {!user ? (
+        {!authChecked ? null : !user ? (
           <Login
             onLoginSuccess={(userData) => {
               setUser(userData);
