@@ -18,6 +18,7 @@ async function apiRequest(path, options = {}) {
     err.code = body.code;
     err.status = res.status;
     err.data = body.data;
+    err.serverMessage = body.message;
     throw err;
   }
   return body.data;

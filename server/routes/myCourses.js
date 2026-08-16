@@ -184,7 +184,9 @@ router.post('/import/confirm', async (req, res, next) => {
     const result = await courseService.bulkAddMyCourses(req.session.userId, rows);
     return res.status(201).json({ status: 201, code: 'PDF_IMPORT_CONFIRM_SUCCESS', message: null, data: result });
   } catch (err) {
-    next(err);
+    // TODO(debug): 모바일에서만 재현되는 원인 불명 500 추적 중 — 원인 특정 후 next(err)로 되돌릴 것.
+    console.error('[PDF_IMPORT_CONFIRM_ERROR]', err);
+    return res.status(500).json({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: err.message, data: null });
   }
 });
 
