@@ -11,9 +11,10 @@ import { IconX } from './icons.jsx';
  * - onClose: function
  * - onOpenCourses: function
  * - onOpenGraduation: function
+ * - onOpenCareer: function
  * - onOpenChat: function
  */
-function NavDrawer({ open, onClose, onOpenCourses, onOpenGraduation, onOpenChat }) {
+function NavDrawer({ open, onClose, onOpenCourses, onOpenGraduation, onOpenCareer, onOpenChat }) {
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e) => {
@@ -43,6 +44,9 @@ function NavDrawer({ open, onClose, onOpenCourses, onOpenGraduation, onOpenChat 
         </button>
         <button className="nav-drawer-item" onClick={() => go(onOpenGraduation)}>
           졸업요건 진단
+        </button>
+        <button className="nav-drawer-item" onClick={() => go(onOpenCareer)}>
+          진로 탐색
         </button>
         <button className="nav-drawer-item" onClick={() => go(onOpenChat)}>
           ONE AI

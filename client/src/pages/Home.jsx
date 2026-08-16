@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getGraduationStatus } from '../api/chatApi.js';
-import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
+import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import NavDrawer from '../components/NavDrawer.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories } from '../utils/graduation.js';
@@ -31,6 +31,7 @@ function Home({
   onOpenChat,
   onOpenCourses,
   onOpenGraduation,
+  onOpenCareer,
   onOpenSettings,
   onOpenOnboarding,
   onOpenLeaveSettings,
@@ -102,6 +103,7 @@ function Home({
         onClose={() => setMenuOpen(false)}
         onOpenCourses={onOpenCourses}
         onOpenGraduation={onOpenGraduation}
+        onOpenCareer={onOpenCareer}
         onOpenChat={onOpenChat}
       />
 
@@ -180,6 +182,14 @@ function Home({
           <button className="home-quick-btn" onClick={onOpenGraduation}>
             <IconChecklist />
             <span>졸업요건 진단</span>
+          </button>
+          <button className="home-quick-btn" onClick={onOpenCareer}>
+            <IconCompass />
+            <span>진로 탐색</span>
+          </button>
+          <button className="home-quick-btn" disabled>
+            <IconUsers />
+            <span>커뮤니티</span>
           </button>
         </div>
       </div>

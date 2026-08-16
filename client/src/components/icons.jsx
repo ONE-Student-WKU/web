@@ -99,6 +99,15 @@ export function IconPlus({ size = 16 }) {
   );
 }
 
+export function IconEdit({ size = 16 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <path d="M14.5 4.5l5 5L8 21H3v-5Z" />
+      <path d="M13 6l5 5" />
+    </svg>
+  );
+}
+
 export function IconTrash({ size = 16 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
@@ -123,6 +132,26 @@ export function IconX({ size = 16 }) {
     <svg width={size} height={size} {...base} aria-hidden="true">
       <line x1="5" y1="5" x2="19" y2="19" />
       <line x1="19" y1="5" x2="5" y2="19" />
+    </svg>
+  );
+}
+
+export function IconCompass({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z" />
+    </svg>
+  );
+}
+
+export function IconUsers({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M15.5 5.5a3.5 3.5 0 0 1 0 6.8" />
+      <path d="M17.5 13.8a6.5 6.5 0 0 1 4 6.2" />
     </svg>
   );
 }

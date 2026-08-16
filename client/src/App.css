@@ -1585,7 +1585,7 @@ body {
 .onb-option-card:hover:not(:disabled) { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
-.onb-option-title { font-size: 0.9375rem; font-weight: 700; }
+.onb-option-title { font-size: 0.9375rem; font-weight: 500; }
 .onb-option-caption { font-size: 0.8125rem; color: var(--color-text-muted); }
 .onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
@@ -1681,5 +1681,214 @@ body {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 진로 탐색 */
+.screen-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.career-recommend-btn {
+  padding: 6px 12px;
+  border-radius: 14px;
+  border: none;
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.career-recommend-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.career-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.career-result-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.career-edit-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.career-edit-icon-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.career-edit-intro-body {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+.career-edit-question {
+  margin-bottom: 22px;
+}
+
+.career-edit-question-title {
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.career-candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.career-candidate-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.career-candidate-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-candidate-reasoning {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.career-roadmap-group {
+  margin-bottom: 16px;
+}
+
+.career-roadmap-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.career-roadmap-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.career-roadmap-course {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-roadmap-reason {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.career-confirm-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.career-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: career-spin 0.8s linear infinite;
+}
+
+@keyframes career-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.career-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 40;
+}
+
+.career-confirm-modal {
+  width: 100%;
+  background: var(--color-bg-frame);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.career-confirm-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-confirm-body {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.career-confirm-cancel {
+  width: 100%;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
   cursor: pointer;
 }

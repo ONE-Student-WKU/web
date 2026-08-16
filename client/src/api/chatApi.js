@@ -95,3 +95,22 @@ export const getCurrentConversation = () => apiRequest('/chat/conversations/curr
 
 export const sendChatMessage = (conversationId, message) =>
   apiRequest('/chat/messages', { method: 'POST', body: JSON.stringify({ conversationId, message }) });
+
+export const getLatestCareerSession = () => apiRequest('/career/sessions/latest');
+
+export const createCareerSession = () => apiRequest('/career/sessions', { method: 'POST' });
+
+export const submitCareerFixedAnswers = (sessionId, fixedAnswers) =>
+  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'POST', body: JSON.stringify({ fixedAnswers }) });
+
+export const updateCareerFixedAnswers = (sessionId, fixedAnswers) =>
+  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'PATCH', body: JSON.stringify({ fixedAnswers }) });
+
+export const sendCareerMessage = (sessionId, content) =>
+  apiRequest(`/career/sessions/${sessionId}/messages`, { method: 'POST', body: JSON.stringify({ content }) });
+
+export const generateCareerCandidates = (sessionId) =>
+  apiRequest(`/career/sessions/${sessionId}/candidates`, { method: 'POST' });
+
+export const confirmCareer = (sessionId, careerName) =>
+  apiRequest(`/career/sessions/${sessionId}/confirm`, { method: 'POST', body: JSON.stringify({ careerName }) });
