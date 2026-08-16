@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { getMe, updateProfile, changePassword, deleteAccount } from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
 
+// Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
+let cachedLeaveSemesters = null;
+
 /**
  * Profile Page
  * 개인정보 수정 — 이름 변경, 휴학 학기 수(학년 계산 보정용), 비밀번호 변경,
@@ -20,14 +23,20 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, highlightLea
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState(null);
 
-  const [leaveSemesters, setLeaveSemesters] = useState('');
+  const [leaveSemesters, setLeaveSemesters] = useState(cachedLeaveSemesters ?? '');
+  const [leaveSemestersLoading, setLeaveSemestersLoading] = useState(cachedLeaveSemesters === null);
   const [leaveSemestersSaved, setLeaveSemestersSaved] = useState(false);
   const [leaveSemestersError, setLeaveSemestersError] = useState(null);
 
   useEffect(() => {
     getMe()
-      .then((data) => setLeaveSemesters(String(data.leaveSemesters ?? 0)))
-      .catch(() => setLeaveSemestersError('정보를 불러오지 못했어요.'));
+      .then((data) => {
+        const value = String(data.leaveSemesters ?? 0);
+        setLeaveSemesters(value);
+        cachedLeaveSemesters = value;
+      })
+      .catch(() => setLeaveSemestersError('정보를 불러오지 못했어요.'))
+      .finally(() => setLeaveSemestersLoading(false));
   }, []);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -157,22 +166,26 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, highlightLea
             입학년도만으로는 휴학 여부를 알 수 없어 홈 화면의 학년 표시가 실제보다 높게 나올 수 있어요.
             누적 휴학 학기 수를 입력하면 보정해요.
           </p>
-          <div className="settings-inline-field">
-            <input
-              type="number"
-              min="0"
-              step="1"
-              className="onb-select"
-              value={leaveSemesters}
-              onChange={(e) => {
-                setLeaveSemesters(e.target.value);
-                setLeaveSemestersSaved(false);
-              }}
-            />
-            <button className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
-              저장
-            </button>
-          </div>
+          {leaveSemestersLoading ? (
+            <div className="skeleton skeleton-text skeleton-row" style={{ height: 38 }} />
+          ) : (
+            <div className="settings-inline-field">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className="onb-select"
+                value={leaveSemesters}
+                onChange={(e) => {
+                  setLeaveSemesters(e.target.value);
+                  setLeaveSemestersSaved(false);
+                }}
+              />
+              <button className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
+                저장
+              </button>
+            </div>
+          )}
           {leaveSemestersError && <p className="home-error">{leaveSemestersError}</p>}
           {leaveSemestersSaved && <p className="settings-field-hint">저장했어요.</p>}
         </section>
