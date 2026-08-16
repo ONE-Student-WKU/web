@@ -728,27 +728,46 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       ))}
                     </div>
 
-                    <button
-                      type="button"
-                      className="auth-submit-btn"
-                      onClick={handlePdfConfirm}
-                      disabled={pdfSubmitting || pdfRows.every((r) => !r.include)}
-                    >
-                      {pdfSubmitting
-                        ? '등록 중...'
-                        : `선택한 ${pdfRows.filter((r) => r.include).length}개 과목 등록`}
-                    </button>
-                    <button
-                      type="button"
-                      className="courses-manual-only-note courses-catalog-back"
-                      onClick={() => {
-                        setPdfRows(null);
-                        setPdfWarnings([]);
-                        setPdfCreditsCheck(null);
-                      }}
-                    >
-                      ‹ 다시 업로드
-                    </button>
+                    {pdfRows.length > 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          className="auth-submit-btn"
+                          onClick={handlePdfConfirm}
+                          disabled={pdfSubmitting || pdfRows.every((r) => !r.include)}
+                        >
+                          {pdfSubmitting
+                            ? '등록 중...'
+                            : `선택한 ${pdfRows.filter((r) => r.include).length}개 과목 등록`}
+                        </button>
+                        <button
+                          type="button"
+                          className="courses-manual-only-note courses-catalog-back"
+                          onClick={() => {
+                            setPdfRows(null);
+                            setPdfWarnings([]);
+                            setPdfCreditsCheck(null);
+                          }}
+                        >
+                          ‹ 다시 업로드
+                        </button>
+                      </>
+                    ) : (
+                      // 인식된 과목이 하나도 없으면 등록할 게 없으니, 큰 파란 버튼 자리를
+                      // 그대로 "다시 업로드"로 써서 다음 행동을 하나로 명확히 한다 — 비활성화된
+                      // 등록 버튼과 작은 재업로드 링크가 나란히 있으면 뭘 눌러야 할지 헷갈린다.
+                      <button
+                        type="button"
+                        className="auth-submit-btn"
+                        onClick={() => {
+                          setPdfRows(null);
+                          setPdfWarnings([]);
+                          setPdfCreditsCheck(null);
+                        }}
+                      >
+                        다시 업로드
+                      </button>
+                    )}
                   </>
                 )}
               </div>
