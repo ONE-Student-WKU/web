@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getMe, getGraduationStatus } from '../api/chatApi.js';
 import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
+import NavDrawer from '../components/NavDrawer.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 
@@ -35,6 +36,7 @@ function Home({
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [shortfalls, setShortfalls] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     getMe()
@@ -64,7 +66,9 @@ function Home({
     <div className="home-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <IconMenu />
+          <button className="menu-btn" onClick={() => setMenuOpen(true)} aria-label="메뉴 열기">
+            <IconMenu />
+          </button>
           <span className="screen-title">ONE Student</span>
         </div>
         <AccountMenu
@@ -75,6 +79,14 @@ function Home({
           onOpenProfile={onOpenProfile}
         />
       </header>
+
+      <NavDrawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onOpenCourses={onOpenCourses}
+        onOpenGraduation={onOpenGraduation}
+        onOpenChat={onOpenChat}
+      />
 
       <div className="home-body">
         {error && <p className="home-error">{error}</p>}
