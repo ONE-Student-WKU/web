@@ -6,6 +6,11 @@ import NavDrawer from '../components/NavDrawer.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 
+// 페이지를 새로고침하지 않는 한(모듈이 다시 로드되지 않는 한) 유지되는 메모리 캐시.
+// 홈 화면을 나갔다가 돌아올 때마다 서버 응답을 기다리며 빈 화면을 보여주는 대신,
+// 직전에 불러온 값을 바로 보여줄 수 있게 컴포넌트 바깥(마운트/언마운트와 무관)에 둔다.
+const homeDataCache = { profile: null, status: null, shortfalls: null };
+
 /**
  * Home Page Component
  * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여주고, 챗봇은 하단 상시 진입바로 배치.
@@ -32,15 +37,18 @@ function Home({
   onOpenProfile,
   onLogout,
 }) {
-  const [profile, setProfile] = useState(null);
-  const [status, setStatus] = useState(null);
+  const [profile, setProfile] = useState(homeDataCache.profile);
+  const [status, setStatus] = useState(homeDataCache.status);
   const [error, setError] = useState(null);
-  const [shortfalls, setShortfalls] = useState(null);
+  const [shortfalls, setShortfalls] = useState(homeDataCache.shortfalls);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     getMe()
-      .then(setProfile)
+      .then((data) => {
+        setProfile(data);
+        homeDataCache.profile = data;
+      })
       .catch(() => setError('정보를 불러오지 못했어요.'));
 
     // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
@@ -52,10 +60,19 @@ function Home({
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
-        setShortfalls(summarizeShortfalls(mergeMajorCategories(data.categories), data.certifications));
+        homeDataCache.status = data;
+        const nextShortfalls = summarizeShortfalls(mergeMajorCategories(data.categories), data.certifications);
+        setShortfalls(nextShortfalls);
+        homeDataCache.shortfalls = nextShortfalls;
       })
       .catch(() => setShortfalls(null));
   }, []);
+
+  // 뒤로가기 등으로 홈에 재진입할 때마다 서버 응답을 기다리는 동안 "학과 정보 없음"/"0학점"
+  // 같은 빈 기본값이 잠깐 보이는 문제(배포 환경처럼 왕복 지연이 있으면 눈에 띔) 방지 —
+  // 첫 진입이라 캐시가 없을 때만 로딩 스켈레톤을 보여주고, 두 번째 방문부터는 직전에 불러온
+  // 데이터를 즉시 보여준 뒤 뒤에서 조용히 최신 데이터로 갱신한다.
+  const isFirstLoad = profile === null && status === null;
 
   const gradeLevel = getGradeLevel(profile?.admissionYear, profile?.leaveSemesters);
   const earnedCredits = status?.totalEarnedCredits ?? 0;
@@ -91,50 +108,68 @@ function Home({
       <div className="home-body">
         {error && <p className="home-error">{error}</p>}
 
-        <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
-        <div className="home-subgreeting-row">
-          <p className="home-subgreeting">
-            {profile?.department || '학과 정보 없음'}
-            {gradeLevel ? ` ${gradeLevel}학년` : ''}
-          </p>
-          {gradeLevel && (
-            <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>
-              학년이 다르신가요?
-            </button>
-          )}
-        </div>
+        {isFirstLoad ? (
+          <>
+            <div className="skeleton skeleton-text skeleton-greeting" />
+            <div className="skeleton skeleton-text skeleton-subgreeting" />
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-text skeleton-credit" />
+              <div className="skeleton skeleton-bar" />
+            </div>
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-text skeleton-row" />
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
+            <div className="home-subgreeting-row">
+              <p className="home-subgreeting">
+                {profile?.department || '학과 정보 없음'}
+                {gradeLevel ? ` ${gradeLevel}학년` : ''}
+              </p>
+              {gradeLevel && (
+                <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>
+                  학년이 다르신가요?
+                </button>
+              )}
+            </div>
 
-        <section className="home-card">
-          <p className="home-card-label">이수학점 진행률</p>
-          <div className="home-credit-value">
-            <span className="home-credit-number">{earnedCredits}</span>
-            <span className="home-credit-total">{requiredTotal ? ` / ${requiredTotal}학점` : '학점'}</span>
-          </div>
-          <div className="home-progress-track">
-            <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-          <p className="grad-remaining-text">{progressPercent}%</p>
-        </section>
+            <section className="home-card">
+              <p className="home-card-label">이수학점 진행률</p>
+              <div className="home-credit-value">
+                <span className="home-credit-number">{earnedCredits}</span>
+                <span className="home-credit-total">{requiredTotal ? ` / ${requiredTotal}학점` : '학점'}</span>
+              </div>
+              <div className="home-progress-track">
+                <div className="home-progress-fill" style={{ width: `${progressPercent}%` }} />
+              </div>
+              <p className="grad-remaining-text">{progressPercent}%</p>
+            </section>
 
-        <section className="home-card">
-          <p className="home-card-label">부족 요건</p>
-          <div
-            className={
-              shortfalls === null
-                ? 'home-card-row'
-                : shortfalls.length > 0
-                  ? 'home-card-row shortfall-danger'
-                  : 'home-card-row shortfall-ok'
-            }
-          >
-            <IconAlertTriangle />
-            <span>
-              {shortfalls === null
-                ? '졸업요건 진단에서 확인해보세요.'
-                : formatShortfallSentence(shortfalls) || '모든 요건을 충족했어요!'}
-            </span>
-          </div>
-        </section>
+            <section className="home-card">
+              <p className="home-card-label">부족 요건</p>
+              <div
+                className={
+                  shortfalls === null
+                    ? 'home-card-row'
+                    : shortfalls.length > 0
+                      ? 'home-card-row shortfall-danger'
+                      : 'home-card-row shortfall-ok'
+                }
+              >
+                <IconAlertTriangle />
+                <span>
+                  {shortfalls === null
+                    ? '졸업요건 진단에서 확인해보세요.'
+                    : formatShortfallSentence(shortfalls) || '모든 요건을 충족했어요!'}
+                </span>
+              </div>
+            </section>
+          </>
+        )}
 
         <p className="home-quick-label">메뉴</p>
         <div className="home-quick-actions">
