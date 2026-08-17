@@ -42,8 +42,12 @@ export function buildRequirementGroups(categories) {
   if (!categories) return null;
   const find = (name) => categories.find((c) => c.category === name);
 
+  // 전과(3·4학년)/편입생은 전공필수+전공선택 대신 완화된 통합 "전공"(48학점) 행 하나로
+  // 내려온다(graduationService.js의 selectRequirementRows) — 이 경우 전공필수/전공선택을
+  // 찾으면 둘 다 없어서 major가 null이 되어 카드 자체가 안 보이는 문제가 있었다(실사용 확인).
   const majorRequired = find(MAJOR_REQUIRED_KEY);
   const majorElective = find(MAJOR_ELECTIVE_KEY);
+  const majorMerged = find(MAJOR_MERGED_KEY);
   const major =
     majorRequired && majorElective
       ? {
@@ -51,7 +55,14 @@ export function buildRequirementGroups(categories) {
           requiredCredits: majorRequired.requiredCredits + majorElective.requiredCredits,
           baseSatisfied: majorRequired.earnedCredits >= majorRequired.requiredCredits,
         }
-      : null;
+      : majorMerged
+        ? {
+            earnedCredits: majorMerged.earnedCredits,
+            requiredCredits: majorMerged.requiredCredits,
+            // 완화 요건은 기본전공/전공선택 구분이 없는 통합 학점이라 별도 충족 배지를 안 둔다.
+            baseSatisfied: null,
+          }
+        : null;
 
   const liberalRequired = find('교양필수');
   const liberalElective = find('교양선택');

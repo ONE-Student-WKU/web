@@ -158,12 +158,14 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {groups.major.earnedCredits > groups.major.requiredCredits && (
                   <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
                 )}
-                <div className="grad-subcheck-row">
-                  <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
-                    {groups.major.baseSatisfied && <IconCheck size={11} />}
-                  </span>
-                  <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
-                </div>
+                {groups.major.baseSatisfied !== null && (
+                  <div className="grad-subcheck-row">
+                    <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                      {groups.major.baseSatisfied && <IconCheck size={11} />}
+                    </span>
+                    <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
+                  </div>
+                )}
               </section>
             )}
 
