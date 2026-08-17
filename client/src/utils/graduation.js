@@ -82,6 +82,11 @@ export function summarizeShortfalls(categories, certifications) {
   const items = [];
 
   for (const c of categories || []) {
+    // 일반선택은 전공/교양 초과 이수분이 자동으로 채워지는 항목이라(graduationService.js의
+    // generalElectiveOverflow) 학생이 따로 챙겨 들어야 하는 목표가 아니다 — buildRequirementGroups
+    // 카드에서 이미 제외하고 있는데 이 요약 문구에서는 빠져서 "일반선택 22학점 부족해요"처럼
+    // 오해를 주는 문제가 있었다(실사용 확인).
+    if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
     if (missing > 0) items.push(`${c.category} ${missing}학점`);
   }
