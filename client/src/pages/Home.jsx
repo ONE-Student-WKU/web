@@ -11,6 +11,15 @@ import { getGradeLevel } from '../utils/academic.js';
 // 직전에 불러온 값을 바로 보여줄 수 있게 컴포넌트 바깥(마운트/언마운트와 무관)에 둔다.
 const homeDataCache = { profile: null, status: null, shortfalls: null };
 
+// 로그아웃/계정 삭제 후 새 계정으로 들어오면, SPA라 페이지가 새로고침되지 않아 이 모듈
+// 스코프 캐시가 그대로 남아있어서 잠깐 이전 계정 데이터가 보이는 문제가 있었다(실사용
+// 확인). App.jsx가 로그아웃/계정 삭제 시점에 호출해 캐시를 비운다.
+export function resetHomeCache() {
+  homeDataCache.profile = null;
+  homeDataCache.status = null;
+  homeDataCache.shortfalls = null;
+}
+
 /**
  * Home Page Component
  * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여주고, 챗봇은 하단 상시 진입바로 배치.

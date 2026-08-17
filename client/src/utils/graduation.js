@@ -42,8 +42,12 @@ export function buildRequirementGroups(categories) {
   if (!categories) return null;
   const find = (name) => categories.find((c) => c.category === name);
 
+  // 전과(3·4학년)/편입생은 전공필수+전공선택 대신 완화된 통합 "전공"(48학점) 행 하나로
+  // 내려온다(graduationService.js의 selectRequirementRows) — 이 경우 전공필수/전공선택을
+  // 찾으면 둘 다 없어서 major가 null이 되어 카드 자체가 안 보이는 문제가 있었다(실사용 확인).
   const majorRequired = find(MAJOR_REQUIRED_KEY);
   const majorElective = find(MAJOR_ELECTIVE_KEY);
+  const majorMerged = find(MAJOR_MERGED_KEY);
   const major =
     majorRequired && majorElective
       ? {
@@ -51,7 +55,14 @@ export function buildRequirementGroups(categories) {
           requiredCredits: majorRequired.requiredCredits + majorElective.requiredCredits,
           baseSatisfied: majorRequired.earnedCredits >= majorRequired.requiredCredits,
         }
-      : null;
+      : majorMerged
+        ? {
+            earnedCredits: majorMerged.earnedCredits,
+            requiredCredits: majorMerged.requiredCredits,
+            // 완화 요건은 기본전공/전공선택 구분이 없는 통합 학점이라 별도 충족 배지를 안 둔다.
+            baseSatisfied: null,
+          }
+        : null;
 
   const liberalRequired = find('교양필수');
   const liberalElective = find('교양선택');
@@ -69,19 +80,24 @@ export function buildRequirementGroups(categories) {
 }
 
 // 진행률 바를 파랑 한 가지로만 두지 말고 퍼센트가 오를수록 색이 자연스럽게 바뀌게 해서
-// 재미를 주자는 요청 — 낮은 진행률(보라)이 "위험/부족"으로 읽히지 않도록 빨강 계열은
-// 피하고, 보라 → 파랑 → 청록 → 초록으로 스펙트럼을 따라가게 했다. 100%에서 기존 "충족"
-// 초록(--color-success, hsl(122, 39%, 59%))과 거의 같은 색에 자연스럽게 도달한다.
+// 재미를 주자는 요청 — 노랑(0%)에서 초록(100%)으로 이어지게 했다(보라 시작은 어색하다는
+// 피드백으로 노랑으로 교체). 100%에서 기존 "충족" 초록(--color-success, hsl(122, 39%, 59%))과
+// 거의 같은 색에 자연스럽게 도달한다.
 export function getProgressColor(percent) {
   const clamped = Math.max(0, Math.min(100, percent));
-  const hue = 265 - (145 * clamped) / 100;
-  return `hsl(${hue}, 70%, 58%)`;
+  const hue = 50 + (70 * clamped) / 100;
+  return `hsl(${hue}, 70%, 50%)`;
 }
 
 export function summarizeShortfalls(categories, certifications) {
   const items = [];
 
   for (const c of categories || []) {
+    // 일반선택은 전공/교양 초과 이수분이 자동으로 채워지는 항목이라(graduationService.js의
+    // generalElectiveOverflow) 학생이 따로 챙겨 들어야 하는 목표가 아니다 — buildRequirementGroups
+    // 카드에서 이미 제외하고 있는데 이 요약 문구에서는 빠져서 "일반선택 22학점 부족해요"처럼
+    // 오해를 주는 문제가 있었다(실사용 확인).
+    if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
     if (missing > 0) items.push(`${c.category} ${missing}학점`);
   }

@@ -32,6 +32,17 @@ router.get('/sessions/latest', async (req, res, next) => {
   }
 });
 
+// GET /api/career/roadmap/latest — "다시 진단하기"로 새 세션을 시작해도, 가장 최근에
+// 확정했던 진로/로드맵을 세션 상태와 무관하게 다시 볼 수 있게 한다(Profile.jsx에서 사용).
+router.get('/roadmap/latest', async (req, res, next) => {
+  try {
+    const result = await careerService.getLatestConfirmedRoadmap(req.session.userId);
+    res.status(200).json({ status: 200, code: 'CAREER_ROADMAP_SUCCESS', message: null, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/career/sessions/:id
 router.get('/sessions/:id', async (req, res, next) => {
   try {
