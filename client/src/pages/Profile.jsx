@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getMe, updateProfile, changePassword, deleteAccount } from '../api/chatApi.js';
+import { getMe, updateProfile, changePassword, deleteAccount, getLatestConfirmedRoadmap } from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
+import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 let cachedLeaveSemesters = null;
@@ -42,6 +43,17 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, highlightLea
       })
       .catch(() => setLeaveSemestersError('정보를 불러오지 못했어요.'))
       .finally(() => setLeaveSemestersLoading(false));
+  }, []);
+
+  // "다시 진단하기"로 새 진로 탐색 세션을 시작하면 이전에 확정한 로드맵을 다시 볼 방법이
+  // 없어지는 문제(실사용 피드백) — 세션 상태와 무관하게 가장 최근 확정 결과를 여기서 보여준다.
+  const [confirmedRoadmap, setConfirmedRoadmap] = useState(null);
+  const [roadmapExpanded, setRoadmapExpanded] = useState(false);
+
+  useEffect(() => {
+    getLatestConfirmedRoadmap()
+      .then((data) => setConfirmedRoadmap(data))
+      .catch(() => setConfirmedRoadmap(null));
   }, []);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -164,6 +176,23 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, highlightLea
           {nameError && <p className="home-error">{nameError}</p>}
           {nameSaved && <p className="settings-field-hint">저장했어요.</p>}
         </section>
+
+        {confirmedRoadmap && (
+          <section className="home-card">
+            <p className="home-card-label">확정한 진로</p>
+            <div className="settings-inline-field">
+              <span className="profile-career-name">{confirmedRoadmap.confirmedCareer}</span>
+              <button className="settings-theme-btn" onClick={() => setRoadmapExpanded((v) => !v)}>
+                {roadmapExpanded ? '로드맵 접기' : '로드맵 보기'}
+              </button>
+            </div>
+            {roadmapExpanded && (
+              <div className="profile-roadmap-list">
+                <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
+              </div>
+            )}
+          </section>
+        )}
 
         <section className={highlightLeaveSemesters ? 'home-card settings-highlight' : 'home-card'}>
           <p className="home-card-label">휴학 학기 수</p>

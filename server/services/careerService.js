@@ -30,6 +30,25 @@ async function findLatestSessionRow(studentId) {
   return rows[0] || null;
 }
 
+// "다시 진단하기"로 새 세션을 시작하면 예전에 확정한 진로/로드맵은 더 이상 "최근 세션"이
+// 아니게 되어 화면에서 아예 접근할 방법이 없어졌다(실사용 피드백) — 세션 상태와 무관하게
+// "가장 최근에 확정한 세션"만 따로 찾아 프로필 등에서 다시 볼 수 있게 한다.
+async function findLatestConfirmedSessionRow(studentId) {
+  const [rows] = await pool.query(
+    'SELECT id, confirmed_career FROM career_sessions WHERE student_id = ? AND status = "CONFIRMED" ORDER BY id DESC LIMIT 1',
+    [studentId]
+  );
+  return rows[0] || null;
+}
+
+async function getLatestConfirmedRoadmap(studentId) {
+  const latest = await findLatestConfirmedSessionRow(studentId);
+  if (!latest) return null;
+
+  const roadmap = await listRoadmap(latest.id);
+  return { confirmedCareer: latest.confirmed_career, roadmap };
+}
+
 async function listMessages(sessionId) {
   const [rows] = await pool.query(
     'SELECT role, content FROM career_messages WHERE session_id = ? ORDER BY id',
@@ -251,6 +270,7 @@ module.exports = {
   createSession,
   getSessionDetail,
   getLatestSessionDetail,
+  getLatestConfirmedRoadmap,
   submitFixedAnswers,
   updateFixedAnswers,
   postMessage,

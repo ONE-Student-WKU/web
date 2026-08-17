@@ -98,6 +98,8 @@ export const sendChatMessage = (conversationId, message) =>
 
 export const getLatestCareerSession = () => apiRequest('/career/sessions/latest');
 
+export const getLatestConfirmedRoadmap = () => apiRequest('/career/roadmap/latest');
+
 export const createCareerSession = () => apiRequest('/career/sessions', { method: 'POST' });
 
 export const submitCareerFixedAnswers = (sessionId, fixedAnswers) =>
