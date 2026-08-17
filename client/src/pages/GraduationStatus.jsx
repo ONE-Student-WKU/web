@@ -20,7 +20,7 @@ let cachedStatus = null;
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
   const [error, setError] = useState(null);
@@ -86,6 +86,17 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               <div className="skeleton skeleton-bar" />
             </div>
           </>
+        )}
+
+        {status && status.totalEarnedCredits === 0 && (
+          <section className="home-card grad-empty-notice">
+            <p className="grad-empty-notice-text">
+              아직 등록된 과목이 없어서 정확한 진단이 어려워요. 과목 관리에서 수강 이력을 먼저 채워주세요.
+            </p>
+            <button className="auth-submit-btn" onClick={onOpenCourses}>
+              과목 관리로 이동
+            </button>
+          </section>
         )}
 
         {status && (

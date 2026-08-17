@@ -125,6 +125,7 @@ function App() {
             user={user}
             onLogout={handleLogout}
             onGoHome={() => setView('home')}
+            onOpenCourses={() => setView('courses')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
