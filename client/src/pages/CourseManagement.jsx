@@ -45,6 +45,15 @@ const courseMgmtCache = {
   semesterData: new Map(), // key: semesterKey(year, semester) -> { myCourses, timetable }
 };
 
+// Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+export function resetCourseMgmtCache() {
+  courseMgmtCache.profile = null;
+  courseMgmtCache.summary = null;
+  courseMgmtCache.semesters = null;
+  courseMgmtCache.status = null;
+  courseMgmtCache.semesterData.clear();
+}
+
 // 입학년도 1학기부터 현재 학기까지 전체 범위를 생성 — 휴학 학기도 그냥 빈 탭으로 포함된다
 // (정확히 어느 학기가 휴학이었는지는 students.leave_semesters가 누적 "개수"만 저장해서
 // 알 수 없음 — 정교하게 제외하는 대신 전부 깔아두고 비어있는 채로 두기로 함, 2026-08-15 결정).
@@ -118,6 +127,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const addFormRef = useRef(null);
   const searchResultsRef = useRef(null);
   const toastTimerRef = useRef(null);
+  const searchDebounceRef = useRef(null);
+  const searchRequestIdRef = useRef(0);
 
   // PDF로 한꺼번에 여러 과목(대부분 지난 학기들)을 등록하면, 화면은 계속 "현재 학기" 탭에
   // 머물러 있어서 정작 방금 추가된 과목은 안 보이고 아무 변화도 없는 것처럼 느껴지는 문제가
@@ -130,6 +141,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }
 
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+  useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
 
   // "과목 추가"를 누르면 폼이 화면 아래쪽에 새로 생기는데 스크롤 위치는 그대로라 매번 직접
   // 내려야 했다 — 폼이 열리는 순간 자동으로 보이는 위치까지 스크롤한다.
@@ -316,18 +328,29 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     }
   };
 
-  const handleSearch = async (value) => {
+  // 타이핑마다 바로 요청을 보내면 (1) 서버 왕복 중에 다음 글자가 이미 입력돼 있어 결과 영역이
+  // 지웠다 채웠다 깜빡이고, (2) 네트워크 지연으로 응답이 늦게 도착하는 순서가 뒤바뀌면 오래된
+  // 검색어의 결과가 최신 검색어 결과를 덮어써버리는 문제가 있었다(실사용 확인: "빅데" 입력
+  // 중 "빅" 응답이 늦게 와서 잠깐 사라짐). 타이핑이 멈춘 뒤에만 요청을 보내고, 응답이 와도
+  // 그사이 검색어가 더 바뀌었으면(requestId 불일치) 버린다.
+  const handleSearch = (value) => {
     setKeyword(value);
+    clearTimeout(searchDebounceRef.current);
+
     if (!value.trim()) {
       setSearchResults([]);
       return;
     }
-    try {
-      const results = await searchCatalog(value, current.year, current.semester);
-      setSearchResults(results);
-    } catch {
-      setSearchResults([]);
-    }
+
+    const requestId = ++searchRequestIdRef.current;
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const results = await searchCatalog(value, current.year, current.semester);
+        if (requestId === searchRequestIdRef.current) setSearchResults(results);
+      } catch {
+        if (requestId === searchRequestIdRef.current) setSearchResults([]);
+      }
+    }, 300);
   };
 
   const closeAddForm = () => {
