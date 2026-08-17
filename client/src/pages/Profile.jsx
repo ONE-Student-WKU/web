@@ -5,6 +5,11 @@ import { IconChevronLeft } from '../components/icons.jsx';
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 let cachedLeaveSemesters = null;
 
+// Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+export function resetProfileCache() {
+  cachedLeaveSemesters = null;
+}
+
 /**
  * Profile Page
  * 개인정보 수정 — 이름 변경, 휴학 학기 수(학년 계산 보정용), 비밀번호 변경,

@@ -8,6 +8,11 @@ import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getP
 // 불러온 졸업요건 데이터를 캐시해둔다.
 let cachedStatus = null;
 
+// Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+export function resetGraduationCache() {
+  cachedStatus = null;
+}
+
 /**
  * GraduationStatus Page
  * 졸업요건 진단 — 전체 이수학점 진행률, 카테고리별 이수 현황, 졸업논문/졸업인증제 충족 여부.
