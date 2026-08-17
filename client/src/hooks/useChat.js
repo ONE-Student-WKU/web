@@ -4,6 +4,12 @@ import { getCurrentConversation, sendChatMessage } from '../api/chatApi';
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막 대화를 캐시해둔다.
 const chatCache = { conversationId: null, messages: null };
 
+// pages/Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+export function resetChatCache() {
+  chatCache.conversationId = null;
+  chatCache.messages = null;
+}
+
 /**
  * Custom hook for chat operations and state management.
  */

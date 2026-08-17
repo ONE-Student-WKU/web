@@ -1,14 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Login from './pages/Login.jsx';
-import Home from './pages/Home.jsx';
+import Home, { resetHomeCache } from './pages/Home.jsx';
 import Chat from './pages/Chat.jsx';
-import CourseManagement from './pages/CourseManagement.jsx';
-import GraduationStatus from './pages/GraduationStatus.jsx';
+import CourseManagement, { resetCourseMgmtCache } from './pages/CourseManagement.jsx';
+import GraduationStatus, { resetGraduationCache } from './pages/GraduationStatus.jsx';
 import CareerExploration from './pages/CareerExploration.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
-import Profile from './pages/Profile.jsx';
+import Profile, { resetProfileCache } from './pages/Profile.jsx';
+import { resetChatCache } from './hooks/useChat.js';
 import { getMe, logout } from './api/chatApi.js';
+
+// 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
+// SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
+// 계정의 데이터(이수학점, 수강 목록 등)가 그대로 보이는 문제가 있었다(실사용 확인).
+function resetAllUserCaches() {
+  resetHomeCache();
+  resetCourseMgmtCache();
+  resetGraduationCache();
+  resetProfileCache();
+  resetChatCache();
+}
 
 /**
  * Main App Component
@@ -79,6 +91,7 @@ function App() {
 
   const handleLogout = () => {
     logout().finally(() => {
+      resetAllUserCaches();
       skipHistoryPush.current = true;
       setUser(null);
       setView('home');
@@ -87,6 +100,7 @@ function App() {
 
   // 계정 삭제는 서버(DELETE /api/me)에서 이미 세션을 파기하므로 /auth/logout을 다시 부를 필요는 없음.
   const handleAccountDeleted = () => {
+    resetAllUserCaches();
     skipHistoryPush.current = true;
     setUser(null);
     setView('home');
@@ -125,6 +139,7 @@ function App() {
             user={user}
             onLogout={handleLogout}
             onGoHome={() => setView('home')}
+            onOpenCourses={() => setView('courses')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}

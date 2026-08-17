@@ -36,7 +36,7 @@ function Login({ onLoginSuccess }) {
 
       <div className="auth-body">
         <h2 className="auth-heading">{mode === 'signup' ? '회원가입' : '로그인'}</h2>
-        <p className="auth-subheading">나에게 필요한 학사정보를 한눈에 확인하세요.</p>
+        <p className="auth-subheading">원광대 학생의 입학부터 졸업까지, 학업과 진로를 연결하는 학생 생활 통합 서비스</p>
 
         <form onSubmit={handleSubmit}>
           {mode === 'signup' && (

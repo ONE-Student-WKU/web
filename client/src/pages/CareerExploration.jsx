@@ -11,6 +11,7 @@ import {
 import AccountMenu from '../components/AccountMenu.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
+import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 
 // 전공/개발 경험 무관하게 답할 수 있는 일반적인 성향·관심사 질문 — 자유 대화를 뭘로
@@ -90,21 +91,6 @@ function parseFixedAnswersFromMessages(messages) {
     if (!answerText || answerText === '(잘 모르겠어요, 건너뜀)') return [];
     return answerText.split(', ').filter((opt) => q.options.includes(opt));
   });
-}
-
-function groupRoadmapBySemester(roadmap) {
-  const sorted = [...roadmap].sort((a, b) => a.grade - b.grade || a.semester - b.semester);
-  const groups = [];
-  for (const item of sorted) {
-    const label = `${item.grade}학년 ${item.semester}학기`;
-    let group = groups.find((g) => g.label === label);
-    if (!group) {
-      group = { label, items: [] };
-      groups.push(group);
-    }
-    group.items.push(item);
-  }
-  return groups;
 }
 
 /**
@@ -329,7 +315,6 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   const headerTitle =
     stage === 'roadmap' && confirmedCareer ? `${confirmedCareer} 로드맵` : stage === 'editAnswers' ? '답변 수정' : '진로 탐색';
   const currentQuestion = FIXED_QUESTIONS[stepIndex];
-  const roadmapGroups = groupRoadmapBySemester(roadmap);
 
   return (
     <div className="courses-page">
@@ -503,18 +488,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
         {!loading && stage === 'roadmap' && (
           <>
-            {roadmapGroups.length === 0 && <p className="onb-q-sub">추천할 만한 남은 과목을 찾지 못했어요.</p>}
-            {roadmapGroups.map((group) => (
-              <div key={group.label} className="career-roadmap-group">
-                <span className="career-roadmap-label">{group.label}</span>
-                {group.items.map((item) => (
-                  <div key={item.courseName} className="home-card career-roadmap-item">
-                    <span className="career-roadmap-course">{item.courseName}</span>
-                    {item.reason && <span className="career-roadmap-reason">{item.reason}</span>}
-                  </div>
-                ))}
-              </div>
-            ))}
+            <CareerRoadmapList roadmap={roadmap} />
             <button className="onb-skip-link" onClick={handleRestart}>
               다시 진단하기
             </button>

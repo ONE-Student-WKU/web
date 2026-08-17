@@ -328,6 +328,21 @@ body {
   }
 }
 
+/* Profile — 확정한 진로 다시 보기 */
+.profile-career-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.profile-roadmap-list {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
 /* Profile — 개인정보 수정 화면의 계정 삭제 영역 */
 .profile-danger-zone {
   border-color: var(--color-danger);
@@ -707,6 +722,18 @@ body {
 
 .grad-category-value.satisfied {
   color: var(--color-success);
+}
+
+.grad-empty-notice {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+.grad-empty-notice-text {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .grad-overflow-note {

@@ -8,6 +8,11 @@ import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getP
 // 불러온 졸업요건 데이터를 캐시해둔다.
 let cachedStatus = null;
 
+// Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+export function resetGraduationCache() {
+  cachedStatus = null;
+}
+
 /**
  * GraduationStatus Page
  * 졸업요건 진단 — 전체 이수학점 진행률, 카테고리별 이수 현황, 졸업논문/졸업인증제 충족 여부.
@@ -20,7 +25,7 @@ let cachedStatus = null;
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
   const [error, setError] = useState(null);
@@ -88,6 +93,17 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </>
         )}
 
+        {status && status.totalEarnedCredits === 0 && (
+          <section className="home-card grad-empty-notice">
+            <p className="grad-empty-notice-text">
+              아직 등록된 과목이 없어서 정확한 진단이 어려워요. 과목 관리에서 수강 이력을 먼저 채워주세요.
+            </p>
+            <button className="auth-submit-btn" onClick={onOpenCourses}>
+              과목 관리로 이동
+            </button>
+          </section>
+        )}
+
         {status && (
           <>
             <section className="home-card">
@@ -142,12 +158,14 @@ function GraduationStatus({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 {groups.major.earnedCredits > groups.major.requiredCredits && (
                   <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
                 )}
-                <div className="grad-subcheck-row">
-                  <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
-                    {groups.major.baseSatisfied && <IconCheck size={11} />}
-                  </span>
-                  <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
-                </div>
+                {groups.major.baseSatisfied !== null && (
+                  <div className="grad-subcheck-row">
+                    <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                      {groups.major.baseSatisfied && <IconCheck size={11} />}
+                    </span>
+                    <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
+                  </div>
+                )}
               </section>
             )}
 
