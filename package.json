@@ -13,9 +13,13 @@
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "build": "npm run build --workspaces --if-present",
     "start": "npm run start --workspace=server",
-    "seed": "npm run seed --workspace=server"
+    "seed": "npm run seed --workspace=server",
+    "db:migrate": "node db/migrate.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "mysql2": "^3.10.1"
   }
 }
