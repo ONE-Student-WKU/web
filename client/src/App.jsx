@@ -8,8 +8,14 @@ import CareerExploration from './pages/CareerExploration.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
+import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
 import { getMe, logout } from './api/chatApi.js';
+
+// 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
+// null — 탭바는 보이되 아무 탭도 강조되지 않는다.
+const TAB_BAR_VIEWS = new Set(['home', 'chat', 'courses', 'graduation', 'career']);
+const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', career: 'career' };
 
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
 // SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
@@ -179,7 +185,6 @@ function App() {
           <Home
             user={user}
             onLogout={handleLogout}
-            onOpenChat={() => setView('chat')}
             onOpenCourses={() => setView('courses')}
             onOpenGraduation={() => setView('graduation')}
             onOpenCareer={() => setView('career')}
@@ -190,6 +195,15 @@ function App() {
               setHighlightLeaveSemesters(true);
               setView('profile');
             }}
+          />
+        )}
+        {authChecked && user && TAB_BAR_VIEWS.has(view) && (
+          <BottomTabBar
+            active={VIEW_TO_TAB[view] || null}
+            onOpenHome={() => setView('home')}
+            onOpenGraduation={() => setView('graduation')}
+            onOpenChat={() => setView('chat')}
+            onOpenCareer={() => setView('career')}
           />
         )}
       </div>

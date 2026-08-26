@@ -136,6 +136,24 @@ export function IconX({ size = 16 }) {
   );
 }
 
+export function IconHome({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <path d="M4 11.5 12 4l8 7.5" />
+      <path d="M6 9.5V20h12V9.5" />
+      <path d="M10 20v-6h4v6" />
+    </svg>
+  );
+}
+
+export function IconMessageCircle({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <path d="M12 20c4.97 0 9-3.58 9-8s-4.03-8-9-8-9 3.58-9 8c0 1.8.62 3.47 1.68 4.83L3.5 20.5l4.3-1.4A9.9 9.9 0 0 0 12 20Z" />
+    </svg>
+  );
+}
+
 export function IconCompass({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

@@ -132,8 +132,7 @@ body {
   color: var(--color-accent);
 }
 
-.back-btn,
-.menu-btn {
+.back-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -143,71 +142,6 @@ body {
   border: none;
   color: var(--color-text-secondary);
   cursor: pointer;
-}
-
-/* 좌측 슬라이드인 내비게이션 패널 — .app-frame이 폰 화면 크기의 카드로 고정되어 있어서
-   (데스크톱에서도 일부러 폰처럼 보이게 하는 디자인), 오버레이/패널을 뷰포트가 아니라
-   .app-frame 기준으로 위치시켜야 카드 밖으로 안 튀어나온다. */
-.nav-drawer-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 30;
-}
-
-.nav-drawer-overlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.nav-drawer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 78%;
-  max-width: 280px;
-  background: var(--color-bg-frame);
-  border-right: 1px solid var(--color-border);
-  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.35);
-  display: flex;
-  flex-direction: column;
-  transform: translateX(-100%);
-  transition: transform 0.2s ease;
-  z-index: 31;
-}
-
-.nav-drawer.open {
-  transform: translateX(0);
-}
-
-.nav-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.nav-drawer-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 14px 16px;
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 0.9rem;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.nav-drawer-item:hover {
-  background: var(--color-accent-bg);
 }
 
 .avatar-btn {
@@ -367,9 +301,9 @@ body {
   cursor: not-allowed;
 }
 
-/* Shared prompt bar — Home's entry button and the real Chat input share this look.
+/* Prompt bar — ChatInput의 텍스트 입력 줄(Chat/CareerExploration 채팅 단계 공용).
    Outer bar has no pill of its own; it holds a separate pill (text) and a separate
-   circular send button side by side, matching the wireframe structure exactly. */
+   circular send button side by side. */
 .prompt-bar {
   display: flex;
   align-items: center;
@@ -393,7 +327,6 @@ body {
   cursor: pointer;
 }
 
-.prompt-bar-placeholder,
 .prompt-bar-input {
   flex: 1;
   min-width: 0;
@@ -401,11 +334,7 @@ body {
   outline: none;
   background: transparent;
   font-size: 0.875rem;
-  color: var(--color-text-muted);
   font-family: inherit;
-}
-
-.prompt-bar-input {
   color: var(--color-text-primary);
   resize: none;
   overflow-y: auto;
@@ -863,6 +792,59 @@ body {
 
 .home-quick-btn:disabled svg {
   color: var(--color-text-muted);
+}
+
+/* Bottom tab bar — App.jsx가 화면 전환과 무관하게 항상 같은 위치에 렌더링하는 앱 전체
+   내비게이션. 과목 관리는 탭에 없음(Home 퀵액션 + 졸업요건 진단 화면의 바로가기로 충분).
+   채팅만 대체 진입로가 없어서 원형으로 띄운 중앙 강조 아이콘으로 구분한다. */
+.bottom-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 6px 10px 10px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  flex-shrink: 0;
+}
+
+.bottom-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.bottom-tab.active {
+  color: var(--color-accent);
+}
+
+.bottom-tab-chat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  cursor: pointer;
+}
+
+.bottom-tab-chat.active {
+  box-shadow: 0 0 0 3px var(--color-accent-bg);
+}
+
+.bottom-tab-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Chat */
