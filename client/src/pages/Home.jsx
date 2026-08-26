@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getGraduationStatus } from '../api/chatApi.js';
-import { IconMenu, IconBook, IconChecklist, IconAlertTriangle, IconArrowUp, IconCompass, IconUsers } from '../components/icons.jsx';
+import { IconBook, IconChecklist, IconAlertTriangle, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
-import NavDrawer from '../components/NavDrawer.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 
@@ -22,13 +21,16 @@ export function resetHomeCache() {
 
 /**
  * Home Page Component
- * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여주고, 챗봇은 하단 상시 진입바로 배치.
+ * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여준다. App.jsx가 렌더링하는 공용
+ * BottomTabBar는 아이콘 전용이라 텍스트 라벨이 없어서, 각 기능이 뭘 하는 화면인지는
+ * 여기 메뉴 카드(텍스트 라벨 포함)를 통해 처음 알게 된다 — 탭바와 기능이 겹치더라도
+ * 없애지 않는다.
  *
  * Props:
  * - user: object
- * - onOpenChat: function
  * - onOpenCourses: function
  * - onOpenGraduation: function
+ * - onOpenCareer: function
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenLeaveSettings: function
@@ -37,7 +39,6 @@ export function resetHomeCache() {
  */
 function Home({
   user,
-  onOpenChat,
   onOpenCourses,
   onOpenGraduation,
   onOpenCareer,
@@ -51,7 +52,6 @@ function Home({
   const [status, setStatus] = useState(homeDataCache.status);
   const [error, setError] = useState(null);
   const [shortfalls, setShortfalls] = useState(homeDataCache.shortfalls);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     getMe()
@@ -93,9 +93,6 @@ function Home({
     <div className="home-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="menu-btn" onClick={() => setMenuOpen(true)} aria-label="메뉴 열기">
-            <IconMenu />
-          </button>
           <span className="screen-title">ONE Student</span>
         </div>
         <AccountMenu
@@ -106,15 +103,6 @@ function Home({
           onOpenProfile={onOpenProfile}
         />
       </header>
-
-      <NavDrawer
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onOpenCourses={onOpenCourses}
-        onOpenGraduation={onOpenGraduation}
-        onOpenCareer={onOpenCareer}
-        onOpenChat={onOpenChat}
-      />
 
       <div className="home-body">
         {error && <p className="home-error">{error}</p>}
@@ -204,15 +192,6 @@ function Home({
             <span>커뮤니티</span>
           </button>
         </div>
-      </div>
-
-      <div className="prompt-bar">
-        <button type="button" className="prompt-bar-pill" onClick={() => onOpenChat()}>
-          <span className="prompt-bar-placeholder">무엇이든 물어보세요</span>
-        </button>
-        <button type="button" className="prompt-send-btn" onClick={() => onOpenChat()} aria-label="채팅 열기">
-          <IconArrowUp />
-        </button>
       </div>
     </div>
   );
