@@ -1,5 +1,6 @@
 const pool = require('../db');
 const studentService = require('./studentService');
+const { FAILING_GRADES } = require('./courseService');
 
 /**
  * server/services/graduationService.js
@@ -43,6 +44,33 @@ function selectRequirementRows(rows, effectiveEnrollmentType) {
   return [...generalRows.filter((r) => r.category !== '전공필수' && r.category !== '전공선택'), ...overrideRows];
 }
 
+// 교양 이수기준은 학년(major_change_grade)이 아니라 전과 "시점"으로 갈린다 — 이 시점 이전
+// 전과자는 본인 학번(admission_year)과 무관하게 고정 학점을 적용해야 한다(db/schema.sql
+// students.major_change_year/semester 컬럼 주석 참고, 웹정보서비스 실사례로 확인됨).
+// "이전"의 정확한 경계(해당 학기 당일 전과자 포함 여부)는 학사지원과 공식 확인 전이라,
+// 일단 문언 그대로 엄격하게 "그 학기 자체는 미포함"으로 해석해뒀다 — 확인되면 조정 필요.
+const MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF = { year: 2022, semester: 2 };
+const MAJOR_CHANGE_FIXED_LIBERAL_ARTS_CREDITS = { 교양필수: 5, 교양선택: 24 };
+
+function isBeforeMajorChangeLiberalArtsCutoff(student) {
+  if (student.enrollment_type !== 'MAJOR_CHANGE') return false;
+  if (student.major_change_year == null || student.major_change_semester == null) return false;
+
+  const { year, semester } = MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF;
+  if (student.major_change_year !== year) return student.major_change_year < year;
+  return student.major_change_semester < semester;
+}
+
+// 컷오프 이전 전과생만 교양필수/교양선택 필요학점을 고정값으로 덮어쓴다. 그 외 학생(일반
+// 재학생, 편입생, 컷오프 이후 전과생)은 그대로 통과해 기존 학번 기준 로직이 유지된다.
+function applyMajorChangeLiberalArtsOverride(rows, student) {
+  if (!isBeforeMajorChangeLiberalArtsCutoff(student)) return rows;
+  return rows.map((row) => {
+    const fixedCredits = MAJOR_CHANGE_FIXED_LIBERAL_ARTS_CREDITS[row.category];
+    return fixedCredits === undefined ? row : { ...row, required_credits: fixedCredits };
+  });
+}
+
 async function fetchRequiredCourseNames(requirementId) {
   const [rows] = await pool.query(
     'SELECT course_name FROM curriculum_required_courses WHERE requirement_id = ?',
@@ -52,15 +80,15 @@ async function fetchRequiredCourseNames(requirementId) {
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
-  // getSummary(courseService.js)와 동일한 "F만 아니면 이수학점" 규칙 — 성적 미입력(진행 중)
-  // 과목도 포함한다. letter_grade <> 'F'는 NULL에 대해 NULL(=false)로 평가되므로
-  // IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
+  // getSummary(courseService.js)와 동일한 "FAILING_GRADES(F/NP)만 아니면 이수학점" 규칙 —
+  // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
+  // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
   const [rows] = await pool.query(
     `SELECT category, SUM(credits) AS credits
      FROM student_courses
-     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade <> 'F')
+     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))
      GROUP BY category`,
-    [studentId]
+    [studentId, FAILING_GRADES]
   );
   const map = {};
   for (const row of rows) map[row.category] = Number(row.credits);
@@ -86,7 +114,10 @@ async function getGraduationStatus(studentId) {
 
   const allRows = await fetchApplicableRequirements(student.department_id, student.admission_year);
   const effectiveEnrollmentType = resolveEffectiveEnrollmentType(student);
-  const requirementRows = selectRequirementRows(allRows, effectiveEnrollmentType);
+  const requirementRows = applyMajorChangeLiberalArtsOverride(
+    selectRequirementRows(allRows, effectiveEnrollmentType),
+    student
+  );
 
   // min_course_count가 있는 행은 졸업논문/졸업인증제처럼 "학점"이 아닌 "과목 이름 매칭"으로
   // 충족 여부를 판정하는 P/F 요건이라 학점 합산 로직에서 분리한다.

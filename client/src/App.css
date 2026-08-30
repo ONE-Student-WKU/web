@@ -277,7 +277,7 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
-/* Profile — 개인정보 수정 화면의 계정 삭제 영역 */
+/* Profile — 계정 정보 수정 화면의 계정 삭제 영역 */
 .profile-danger-zone {
   border-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
@@ -1445,6 +1445,156 @@ body {
   margin-bottom: 8px;
 }
 
+/* "불합격 과목 확인" 카드 — 전체성적조회에서 F로 파싱된 과목만 모아 P/F 과목인지 한 번에
+   확인받는다. 과목이 많을 때(고학년 전체성적조회는 40개 넘음) 목록 곳곳에 흩어놓으면
+   놓치기 쉬워서, 목록과 분리된 고정 위치에 모아둔다. */
+.courses-pdf-pf-section {
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-frame));
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.courses-pdf-pf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.courses-pdf-pf-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.courses-pdf-pf-badge {
+  background: var(--color-danger);
+  color: var(--color-accent-contrast);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.courses-pdf-pf-progress {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.courses-pdf-pf-desc {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.courses-pdf-pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.courses-pdf-pf-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+}
+
+.courses-pdf-pf-item.resolved {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+}
+
+.courses-pdf-pf-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.courses-pdf-pf-item-name {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.courses-pdf-pf-item-meta {
+  margin: 1px 0 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.courses-pdf-pf-toggle-group {
+  flex: none;
+  display: flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.courses-pdf-pf-toggle-group button {
+  border: none;
+  padding: 5px 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.courses-pdf-pf-toggle-group button.active-f {
+  background: var(--color-danger);
+  color: var(--color-accent-contrast);
+}
+
+.courses-pdf-pf-toggle-group button.active-np {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.courses-pdf-pf-note {
+  margin: 8px 0 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.courses-pdf-grade-tag {
+  display: inline-block;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.courses-pdf-grade-tag.is-f {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.courses-pdf-grade-tag.is-np {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .courses-pdf-table {
   display: flex;
   flex-direction: column;
@@ -1513,6 +1663,10 @@ body {
 }
 
 .courses-pdf-meta-semester {
+  flex: 0 1 70px;
+}
+
+.courses-pdf-meta-grade {
   flex: 0 1 70px;
 }
 
@@ -1616,6 +1770,25 @@ body {
   font-family: inherit;
 }
 
+/* select만 대상 — 브라우저 기본 화살표는 padding으로 위치 조정이 안 돼서(자체 영역을
+   따로 확보함) appearance:none으로 끄고 직접 그린 화살표로 교체한다. 팝업 목록(열렸을 때
+   보이는 옵션들) 자체는 여전히 브라우저 네이티브 렌더링이라 color-scheme(위 :root 참고)에
+   그대로 의존한다 — appearance:none은 닫혀있는 박스 모양에만 영향을 준다. */
+select.onb-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ba0aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+:root[data-theme='light'] select.onb-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a3d42' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
 .onb-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .onb-chip {
@@ -1650,6 +1823,17 @@ body {
 
 .onb-summary-key { font-size: 0.8125rem; color: var(--color-text-muted); }
 .onb-summary-val { font-size: 0.875rem; font-weight: 700; }
+.onb-summary-val-warning { color: var(--color-danger); }
+
+.onb-summary-row-editable {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.onb-summary-row-editable:hover { border-color: var(--color-text-muted); }
+.onb-summary-row-right { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); }
 
 .onb-done-wrap {
   flex: 1;
