@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
-import { IconChevronLeft } from '../components/icons.jsx';
+import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
@@ -35,6 +35,32 @@ function range(min, max) {
 // 학과 목록은 자주 안 바뀌는 참조 데이터라 세션 내내 캐시해도 안전하다.
 let cachedDepartments = null;
 
+// 요약 화면의 한 줄 — editable이면 탭해서 해당 질문으로 이동할 수 있다. value가 비어있으면
+// (앞선 항목을 고치면서 연쇄적으로 지워진 경우 등) 값 대신 "선택 필요"를 강조색으로 보여줘서,
+// 무효해진 조합이 조용히 남아있지 않고 반드시 눈에 띄게 한다.
+function SummaryRow({ label, value, editable, onClick }) {
+  const valueEl = (
+    <span className={value ? 'onb-summary-val' : 'onb-summary-val onb-summary-val-warning'}>{value || '선택 필요'}</span>
+  );
+  if (!editable) {
+    return (
+      <div className="onb-summary-row">
+        <span className="onb-summary-key">{label}</span>
+        {valueEl}
+      </div>
+    );
+  }
+  return (
+    <button type="button" className="onb-summary-row onb-summary-row-editable" onClick={onClick}>
+      <span className="onb-summary-key">{label}</span>
+      <span className="onb-summary-row-right">
+        {valueEl}
+        <IconEdit size={15} />
+      </span>
+    </button>
+  );
+}
+
 /**
  * Onboarding Page
  * 회원가입 직후 자동 진입하거나, 계정 메뉴의 "학적정보 수정"에서 재진입.
@@ -44,8 +70,15 @@ let cachedDepartments = null;
  * - user: object (onboardingCompleted 여부로 최초 등록(POST)/재설정(PATCH) 분기)
  * - onDone: function
  * - onSkip: function
+ * - highlightLeaveSemesters: boolean — 홈의 "학년이 다르신가요?" 링크로 들어왔을 때만 true,
+ *   요약 화면의 휴학 학기 수 항목에 강조 애니메이션을 준다.
  */
-function Onboarding({ user, onDone, onSkip }) {
+function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
+  // 최초 온보딩(회원가입 직후)은 처음부터 순서대로 걷지만, 이미 완료한 사용자가 "학적정보
+  // 수정"으로 재진입하면 기존 값이 채워진 요약 화면으로 바로 들어가 필요한 항목만 고쳐서
+  // 저장한다 — 매번 학과부터 다시 고르게 하던 문제(실사용 피드백) 해결.
+  const editMode = !!user?.onboardingCompleted;
+
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
@@ -53,15 +86,19 @@ function Onboarding({ user, onDone, onSkip }) {
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  // null이면 평소처럼 stepIndex로 진행되는 선형 흐름. 요약 화면에서 항목을 탭하면 그 질문의
+  // 이름으로 설정되어 해당 화면을 보여주고, "확인"을 누르면 선형 흐름을 이어가지 않고 다시
+  // 요약 화면으로 돌아간다 — 필드 하나만 고치려고 나머지 질문을 전부 다시 걷지 않게 하기 위함.
+  const [manualStep, setManualStep] = useState(editMode ? 'summary' : null);
 
   const [answers, setAnswers] = useState({
-    departmentId: null,
-    trackId: null,
-    enrollmentType: null,
-    admissionYear: null,
-    majorChangeYear: null,
-    majorChangeSemester: null,
-    majorChangeGrade: null,
+    departmentId: editMode ? user.departmentId : null,
+    trackId: editMode ? user.trackId : null,
+    enrollmentType: editMode ? user.enrollmentType : null,
+    admissionYear: editMode ? user.admissionYear : null,
+    majorChangeYear: editMode ? user.majorChangeYear : null,
+    majorChangeSemester: editMode ? user.majorChangeSemester : null,
+    majorChangeGrade: editMode ? user.majorChangeGrade : null,
   });
 
   useEffect(() => {
@@ -74,6 +111,17 @@ function Onboarding({ user, onDone, onSkip }) {
       .finally(() => setDepartmentsLoading(false));
   }, []);
 
+  // 재진입 시 기존에 선택돼 있던 학과의 세부전공 목록을 불러온다(있어야 hasTracks가 맞게
+  // 계산되고, 요약 화면에 세부전공 이름을 보여줄 수 있다). selectDepartment와 달리 기존
+  // 선택값(trackId 등)은 이미 유효한 값이라 건드리지 않는다.
+  useEffect(() => {
+    if (!editMode || !user?.departmentId) return;
+    getTracks(user.departmentId)
+      .then(setTracks)
+      .catch(() => setTracks([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const selectedDepartment = departments.find((d) => d.id === answers.departmentId) || null;
   const hasTracks = tracks.length > 0;
 
@@ -83,7 +131,11 @@ function Onboarding({ user, onDone, onSkip }) {
   if (answers.enrollmentType === 'MAJOR_CHANGE') path.push('majorChange');
   path.push('summary', 'done');
 
-  const current = path[Math.min(stepIndex, path.length - 1)];
+  // manualStep이 있으면(요약 화면에서 특정 질문으로 점프한 상태) 선형 stepIndex보다 우선한다.
+  const current = manualStep || path[Math.min(stepIndex, path.length - 1)];
+  // 요약 화면 자체로의 점프('summary')는 "선형 흐름 재시작"이 아니라 "필드 하나만 고치고
+  // 돌아가는 중"인 다른 상태와 구분해야 다음/뒤로 버튼 동작을 다르게 줄 수 있다.
+  const editingFromSummary = manualStep !== null && manualStep !== 'summary';
 
   // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
@@ -124,8 +176,30 @@ function Onboarding({ user, onDone, onSkip }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers.majorChangeYear, answers.admissionYear]);
 
+  // 학번이 바뀌면 전과연도 선택지(mcYearOptions = admissionYear~현재) 범위도 같이 바뀐다 —
+  // 이전에 고른 전과연도가 새 학번보다 이르면 더 이상 유효하지 않은 조합이라 통째로 지운다
+  // (연도가 지워지면 그 아래 종속인 학기·학년도 자연히 다시 골라야 함).
+  useEffect(() => {
+    if (answers.majorChangeYear != null && answers.admissionYear != null && answers.majorChangeYear < answers.admissionYear) {
+      setAnswers((a) => ({ ...a, majorChangeYear: null, majorChangeSemester: null, majorChangeGrade: null }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers.admissionYear]);
+
   function selectDepartment(dept) {
-    setAnswers((a) => ({ ...a, departmentId: dept.id, trackId: null, admissionYear: null }));
+    // 학과가 바뀌면 세부전공·학번뿐 아니라 그 아래 종속인 전과 시점(연도/학기/학년)도 전부
+    // 무효해진다 — 학번이 지워지는데 전과연도만 남아있으면 "2024학번인데 전과는 2021년에
+    // 했다"처럼 앞뒤가 안 맞는 조합이 그대로 남는 문제(실사용 우려사항)가 생기기 때문에
+    // 한 번에 같이 지운다.
+    setAnswers((a) => ({
+      ...a,
+      departmentId: dept.id,
+      trackId: null,
+      admissionYear: null,
+      majorChangeYear: null,
+      majorChangeSemester: null,
+      majorChangeGrade: null,
+    }));
     setTracks([]);
     getTracks(dept.id)
       .then(setTracks)
@@ -133,11 +207,53 @@ function Onboarding({ user, onDone, onSkip }) {
   }
 
   function goNext() {
+    // 요약 화면에서 항목을 탭해 들어온 질문이면, 선형 흐름을 계속 이어가지 않고 요약
+    // 화면으로 돌아간다 — 이 필드 하나만 고치러 온 것이지 전체 흐름을 다시 걷는 게 아니다.
+    if (editingFromSummary) {
+      setManualStep('summary');
+      return;
+    }
     setStepIndex((i) => Math.min(i + 1, path.length - 1));
   }
   function goBack() {
+    if (editingFromSummary) {
+      setManualStep('summary');
+      return;
+    }
     setStepIndex((i) => Math.max(i - 1, 0));
   }
+
+  // 휴학 학기 수는 학과/학번 등과 서로 의존하는 값이 아니라 완전히 독립적이라, 마법사
+  // 흐름에 끼워 넣지 않고 요약 화면에서 바로 입력받아 그 자리에서 저장한다(개인정보
+  // 수정 페이지의 기존 UI/저장 방식을 그대로 재사용 — 신규 온보딩 POST는 이 필드를
+  // 받지 않아 요약 화면 재진입(editMode) 때만 노출한다).
+  const [leaveSemesters, setLeaveSemesters] = useState(String(user?.leaveSemesters ?? 0));
+  const [leaveSemestersSaved, setLeaveSemestersSaved] = useState(false);
+  const [leaveSemestersError, setLeaveSemestersError] = useState(null);
+
+  async function handleSaveLeaveSemesters() {
+    setLeaveSemestersError(null);
+    setLeaveSemestersSaved(false);
+    const value = Number(leaveSemesters);
+    if (!Number.isInteger(value) || value < 0) {
+      setLeaveSemestersError('0 이상의 정수를 입력해주세요.');
+      return;
+    }
+    try {
+      await updateProfile({ leaveSemesters: value });
+      setLeaveSemestersSaved(true);
+    } catch {
+      setLeaveSemestersError('저장에 실패했어요.');
+    }
+  }
+
+  const summaryIncomplete =
+    !answers.departmentId ||
+    !answers.admissionYear ||
+    !answers.enrollmentType ||
+    (hasTracks && !answers.trackId) ||
+    (answers.enrollmentType === 'MAJOR_CHANGE' &&
+      !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade));
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -158,6 +274,7 @@ function Onboarding({ user, onDone, onSkip }) {
       } else {
         await submitOnboarding(payload);
       }
+      setManualStep(null);
       setStepIndex(path.indexOf('done'));
     } catch {
       setSubmitError('저장에 실패했어요. 다시 시도해주세요.');
@@ -179,13 +296,13 @@ function Onboarding({ user, onDone, onSkip }) {
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          {stepIndex > 0 && current !== 'done' && (
-            <button className="back-btn" onClick={goBack} aria-label="이전 질문">
+          {(stepIndex > 0 || editingFromSummary) && current !== 'done' && (
+            <button className="back-btn" onClick={goBack} aria-label={editingFromSummary ? '요약으로 돌아가기' : '이전 질문'}>
               <IconChevronLeft />
             </button>
           )}
         </div>
-        {current !== 'done' && (
+        {current !== 'done' && current !== 'summary' && !editingFromSummary && (
           <div className="onb-dots">
             {path
               .filter((s) => s !== 'done')
@@ -377,32 +494,74 @@ function Onboarding({ user, onDone, onSkip }) {
         {current === 'summary' && (
           <>
             <h2 className="onb-q-title">입력한 정보를 확인해주세요</h2>
-            <p className="onb-q-sub">틀린 항목은 뒤로 가서 다시 고를 수 있어요.</p>
+            <p className="onb-q-sub">
+              {editMode ? '고칠 항목을 눌러서 바로 수정할 수 있어요.' : '틀린 항목은 뒤로 가서 다시 고를 수 있어요.'}
+            </p>
             <div className="onb-summary-list">
-              <div className="onb-summary-row">
-                <span className="onb-summary-key">학과</span>
-                <span className="onb-summary-val">{selectedDepartment?.name}</span>
-              </div>
-              <div className="onb-summary-row">
-                <span className="onb-summary-key">학번</span>
-                <span className="onb-summary-val">{answers.admissionYear}학번</span>
-              </div>
-              <div className="onb-summary-row">
-                <span className="onb-summary-key">입학 유형</span>
-                <span className="onb-summary-val">{ENROLLMENT_TYPE_LABEL[answers.enrollmentType]}</span>
-              </div>
+              <SummaryRow
+                label="학과"
+                value={selectedDepartment?.name}
+                editable={editMode}
+                onClick={() => setManualStep('department')}
+              />
+              <SummaryRow
+                label="학번"
+                value={answers.admissionYear ? `${answers.admissionYear}학번` : null}
+                editable={editMode}
+                onClick={() => setManualStep('year')}
+              />
+              <SummaryRow
+                label="입학 유형"
+                value={ENROLLMENT_TYPE_LABEL[answers.enrollmentType]}
+                editable={editMode}
+                onClick={() => setManualStep('enrollmentType')}
+              />
               {hasTracks && (
-                <div className="onb-summary-row">
-                  <span className="onb-summary-key">세부전공</span>
-                  <span className="onb-summary-val">{tracks.find((t) => t.id === answers.trackId)?.name}</span>
-                </div>
+                <SummaryRow
+                  label="세부전공"
+                  value={tracks.find((t) => t.id === answers.trackId)?.name}
+                  editable={editMode}
+                  onClick={() => setManualStep('track')}
+                />
               )}
               {answers.enrollmentType === 'MAJOR_CHANGE' && (
-                <div className="onb-summary-row">
-                  <span className="onb-summary-key">전과 시점</span>
-                  <span className="onb-summary-val">
-                    {answers.majorChangeGrade}학년 · {answers.majorChangeYear}년 {answers.majorChangeSemester}학기
-                  </span>
+                <SummaryRow
+                  label="전과 시점"
+                  value={
+                    answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade
+                      ? `${answers.majorChangeGrade}학년 · ${answers.majorChangeYear}년 ${answers.majorChangeSemester}학기`
+                      : null
+                  }
+                  editable={editMode}
+                  onClick={() => setManualStep('majorChange')}
+                />
+              )}
+              {editMode && (
+                <div
+                  className={
+                    'onb-summary-row' + (highlightLeaveSemesters ? ' settings-highlight' : '')
+                  }
+                  style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
+                >
+                  <span className="onb-summary-key">휴학 학기 수</span>
+                  <div className="settings-inline-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      className="onb-select"
+                      value={leaveSemesters}
+                      onChange={(e) => {
+                        setLeaveSemesters(e.target.value);
+                        setLeaveSemestersSaved(false);
+                      }}
+                    />
+                    <button type="button" className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
+                      저장
+                    </button>
+                  </div>
+                  {leaveSemestersError && <p className="home-error">{leaveSemestersError}</p>}
+                  {leaveSemestersSaved && <p className="settings-field-hint">저장했어요.</p>}
                 </div>
               )}
             </div>
@@ -418,8 +577,8 @@ function Onboarding({ user, onDone, onSkip }) {
         )}
 
         {current === 'summary' ? (
-          <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? '저장 중…' : '시작하기'}
+          <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
+            {submitting ? '저장 중…' : editMode ? '저장' : '시작하기'}
           </button>
         ) : current === 'done' ? (
           <button className="auth-submit-btn" onClick={onDone}>
@@ -427,13 +586,13 @@ function Onboarding({ user, onDone, onSkip }) {
           </button>
         ) : (
           <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
-            다음
+            {editingFromSummary ? '확인' : '다음'}
           </button>
         )}
 
-        {current !== 'done' && (
+        {current !== 'done' && !editingFromSummary && (
           <button className="onb-skip-link" onClick={onSkip}>
-            나중에 선택하기
+            {editMode ? '취소' : '나중에 선택하기'}
           </button>
         )}
       </div>

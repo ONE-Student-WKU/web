@@ -1650,6 +1650,17 @@ body {
 
 .onb-summary-key { font-size: 0.8125rem; color: var(--color-text-muted); }
 .onb-summary-val { font-size: 0.875rem; font-weight: 700; }
+.onb-summary-val-warning { color: var(--color-danger); }
+
+.onb-summary-row-editable {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.onb-summary-row-editable:hover { border-color: var(--color-text-muted); }
+.onb-summary-row-right { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); }
 
 .onb-done-wrap {
   flex: 1;
