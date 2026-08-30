@@ -1445,6 +1445,156 @@ body {
   margin-bottom: 8px;
 }
 
+/* "불합격 과목 확인" 카드 — 전체성적조회에서 F로 파싱된 과목만 모아 P/F 과목인지 한 번에
+   확인받는다. 과목이 많을 때(고학년 전체성적조회는 40개 넘음) 목록 곳곳에 흩어놓으면
+   놓치기 쉬워서, 목록과 분리된 고정 위치에 모아둔다. */
+.courses-pdf-pf-section {
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-frame));
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.courses-pdf-pf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.courses-pdf-pf-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.courses-pdf-pf-badge {
+  background: var(--color-danger);
+  color: var(--color-accent-contrast);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.courses-pdf-pf-progress {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.courses-pdf-pf-desc {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.courses-pdf-pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.courses-pdf-pf-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+}
+
+.courses-pdf-pf-item.resolved {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+}
+
+.courses-pdf-pf-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.courses-pdf-pf-item-name {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.courses-pdf-pf-item-meta {
+  margin: 1px 0 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.courses-pdf-pf-toggle-group {
+  flex: none;
+  display: flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.courses-pdf-pf-toggle-group button {
+  border: none;
+  padding: 5px 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.courses-pdf-pf-toggle-group button.active-f {
+  background: var(--color-danger);
+  color: var(--color-accent-contrast);
+}
+
+.courses-pdf-pf-toggle-group button.active-np {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.courses-pdf-pf-note {
+  margin: 8px 0 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.courses-pdf-grade-tag {
+  display: inline-block;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.courses-pdf-grade-tag.is-f {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.courses-pdf-grade-tag.is-np {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .courses-pdf-table {
   display: flex;
   flex-direction: column;
@@ -1513,6 +1663,10 @@ body {
 }
 
 .courses-pdf-meta-semester {
+  flex: 0 1 70px;
+}
+
+.courses-pdf-meta-grade {
   flex: 0 1 70px;
 }
 

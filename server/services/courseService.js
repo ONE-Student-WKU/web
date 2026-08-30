@@ -21,6 +21,16 @@ const GRADE_POINT_MAP = {
 // 흘려보내지 않고 서버에서 먼저 검증하기 위함 (letterGrade와 동일한 패턴).
 const VALID_CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
 
+// GRADE_POINT_MAP의 9종 + P(Pass)/NP(Not Pass) — 둘 다 "전체성적조회" PDF의 P/F 채점
+// 과목(원어민영어인증, 오리엔테이션성 교양 등)에서만 나오는 값이라 GRADE_POINT_MAP엔 없다
+// (평점 자체가 없는 채점 방식이므로 GRADE_POINT_MAP[grade]가 항상 undefined → gpa는 NULL로
+// 남는다). PATCH(과목 관리 화면 수동 수정)와 import 양쪽에서 공통으로 이 목록으로 검증한다.
+const LETTER_GRADES = [...Object.keys(GRADE_POINT_MAP), 'P', 'NP'];
+
+// 이수학점(졸업요건 포함)에서 제외되는 등급 — "불합격"을 의미하는 두 가지: 일반 등급의 F,
+// P/F 채점 과목의 NP. graduationService.js의 이수학점 집계도 이 목록과 동일한 규칙을 쓴다.
+const FAILING_GRADES = ['F', 'NP'];
+
 function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
@@ -177,34 +187,55 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
   return result.insertId;
 }
 
-// PDF 이수과목확인리스트 가져오기 전용 — course_id/schedule 없이 name/credits/category만
-// 받는 직접입력과 동일한 경로. 성적(등급)은 원본 문서에 없으므로 절대 건드리지 않고
-// letter_grade는 NULL로 남긴다(사용자가 과목 관리 화면에서 직접 입력).
-// 이미 등록된(name+year+semester 동일) 과목은 건너뛰고 skipped로 센다 — 중복 삽입 방지.
+// PDF 가져오기 전용 — course_id/schedule 없이 name/credits/category만 받는 직접입력과
+// 동일한 경로. row.letterGrade는 선택 입력: "이수과목확인리스트"는 등급이 없는 문서라
+// 항상 undefined/null로 들어오고(letter_grade는 NULL로 남아 과목 관리 화면에서 직접
+// 입력), "전체성적조회"는 파싱된 등급을 그대로 넘겨준다.
+// 이미 등록된(name+year+semester 동일) 과목은 새로 삽입하지 않는다 — 다만 기존 행에
+// 등급이 아직 없고 이번에 등급이 들어왔다면(전체성적조회로 뒤늦게 등급만 채우는 흔한
+// 케이스) 그 등급만 채워준다. 이미 등급이 있는 행은 사용자가 직접 입력했을 수 있어
+// 덮어쓰지 않고 건너뛴다.
 async function bulkAddMyCourses(studentId, rows) {
-  const [existingRows] = await pool.query('SELECT name, year, semester FROM student_courses WHERE student_id = ?', [
-    studentId,
-  ]);
-  const existingKeys = new Set(existingRows.map((r) => `${r.name}__${r.year}__${r.semester}`));
+  const [existingRows] = await pool.query(
+    'SELECT id, name, year, semester, letter_grade FROM student_courses WHERE student_id = ?',
+    [studentId]
+  );
+  const existingMap = new Map(existingRows.map((r) => [`${r.name}__${r.year}__${r.semester}`, r]));
 
   let inserted = 0;
   let skipped = 0;
+  let gradesFilled = 0;
 
   for (const row of rows) {
     const key = `${row.name}__${row.year}__${row.semester}`;
-    if (existingKeys.has(key)) {
-      skipped += 1;
+    const letterGrade = row.letterGrade ?? null;
+    const gpa = GRADE_POINT_MAP[letterGrade] ?? null;
+    const existing = existingMap.get(key);
+
+    if (existing) {
+      if (letterGrade && existing.letter_grade === null) {
+        await pool.query('UPDATE student_courses SET letter_grade = ?, gpa = ? WHERE id = ?', [
+          letterGrade,
+          gpa,
+          existing.id,
+        ]);
+        existing.letter_grade = letterGrade;
+        gradesFilled += 1;
+      } else {
+        skipped += 1;
+      }
       continue;
     }
-    await pool.query(
-      'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester) VALUES (?, NULL, ?, ?, ?, ?, ?)',
-      [studentId, row.name, row.credits, row.category, row.year, row.semester]
+
+    const [result] = await pool.query(
+      'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester, letter_grade, gpa) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?)',
+      [studentId, row.name, row.credits, row.category, row.year, row.semester, letterGrade, gpa]
     );
-    existingKeys.add(key);
+    existingMap.set(key, { id: result.insertId, name: row.name, year: row.year, semester: row.semester, letter_grade: letterGrade });
     inserted += 1;
   }
 
-  return { inserted, skipped };
+  return { inserted, skipped, gradesFilled };
 }
 
 async function findMyCourseById(studentId, id) {
@@ -290,7 +321,8 @@ async function listSemesters(studentId) {
 async function getSummary(studentId) {
   // credits가 이제 student_courses 자체에 저장돼 있으므로 courses JOIN이 필요 없음.
   // 성적 필터를 걸지 않고 전부 가져온다 — 이수학점(진행률)에는 이번 학기처럼 등록만
-  // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인, F만 제외).
+  // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인,
+  // FAILING_GRADES만 제외).
   const [rows] = await pool.query(
     `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
      FROM student_courses sc
@@ -311,9 +343,13 @@ async function getSummary(studentId) {
     const bucket = bySemesterMap.get(key);
     const credits = Number(row.credits);
 
-    // GPA는 실제 성적이 입력된 과목만 반영(F도 평점 계산엔 포함 — 표준 관행). 성적 미입력
-    // 과목은 gpa 컬럼이 NULL이라 계산에서 자연히 빠짐.
-    if (row.letter_grade !== null) {
+    // GPA는 실제 평점이 있는 과목만 반영(F도 평점 계산엔 포함 — 표준 관행). 성적 미입력
+    // 과목은 gpa 컬럼이 NULL이라 계산에서 자연히 빠짐. letter_grade가 아니라 gpa로 판단하는
+    // 이유: "전체성적조회" 가져오기로 들어온 P(Pass) 등급은 letter_grade는 채워지지만
+    // GRADE_POINT_MAP에 없어 gpa가 NULL로 남는데, 여기서 letter_grade만 보면 P를 평점
+    // 0.0으로 잘못 반영해 평균을 깎아먹는다(P/NP는 원래 평균평점 계산에서 제외돼야 함 —
+    // 실제 전체성적조회 PDF의 "평균평점" 값과 대조해 확인).
+    if (row.gpa !== null) {
       const gpaPoint = Number(row.gpa);
       bucket.gpaCredits += credits;
       bucket.points += credits * gpaPoint;
@@ -321,8 +357,8 @@ async function getSummary(studentId) {
       totalPoints += credits * gpaPoint;
     }
 
-    // 이수학점(진행률)은 F로 확정된 것만 제외 — 성적 미입력(진행 중) 과목은 포함.
-    if (row.letter_grade !== 'F') {
+    // 이수학점(진행률)은 불합격(FAILING_GRADES: F/NP)만 제외 — 성적 미입력(진행 중) 과목은 포함.
+    if (!FAILING_GRADES.includes(row.letter_grade)) {
       bucket.earnedCredits += credits;
       totalCredits += credits;
     }
@@ -349,6 +385,8 @@ async function getSummary(studentId) {
 module.exports = {
   GRADE_POINT_MAP,
   VALID_CATEGORIES,
+  LETTER_GRADES,
+  FAILING_GRADES,
   searchCatalog,
   findCourseById,
   listMyCourses,

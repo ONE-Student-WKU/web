@@ -17,7 +17,11 @@ import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck } fr
 import AccountMenu from '../components/AccountMenu.jsx';
 
 const DAYS = ['월', '화', '수', '목', '금'];
-const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F'];
+// P(Pass)/NP(Not Pass)는 "전체성적조회" PDF 가져오기로만 들어오는 값(P/F 채점 과목) —
+// 평점(GPA) 계산에는 둘 다 반영되지 않지만(GRADE_POINT_MAP에 없음), select에 옵션이
+// 없으면 실제로는 저장돼 있어도 "미입력"으로 잘못 보인다(브라우저가 매칭 안 되는 값을
+// 조용히 첫 옵션으로 되돌림) — 그래서 select에도 항상 표시할 수 있게 포함해둔다.
+const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F', 'P', 'NP'];
 const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
 
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
@@ -119,6 +123,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // PDF 가져오기: 업로드 즉시 저장하지 않고 파싱 결과를 검토·수정할 수 있게 보여준 뒤
   // 사용자가 확정해야 등록된다 — 성적(등급)은 이 문서에 없어 절대 자동 채우지 않는다.
   const [pdfRows, setPdfRows] = useState(null); // null = 아직 업로드 전
+  const [pdfDocType, setPdfDocType] = useState(null); // 'course_list' | 'full_transcript'
   const [pdfWarnings, setPdfWarnings] = useState([]);
   const [pdfCreditsCheck, setPdfCreditsCheck] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -361,6 +366,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualSchedule([]);
     setCatalogSelection(null);
     setPdfRows(null);
+    setPdfDocType(null);
     setPdfWarnings([]);
     setPdfCreditsCheck(null);
   };
@@ -437,6 +443,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setPdfLoading(true);
     try {
       const result = await importCoursesFromPdf(file);
+      setPdfDocType(result.docType);
       setPdfRows(
         result.rows.map((r, i) => ({
           tempId: i,
@@ -447,12 +454,21 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
+          letterGrade: r.letterGrade || '',
+          // 파싱 직후의 등급이 F였는지 별도로 기억해둔다 — "불합격 과목 확인" 카드는 사용자가
+          // NP로 바꾼 뒤에도 그 과목을 계속 목록에 보여줘야(그래야 다시 F로 되돌릴 수 있음)
+          // 하므로, 실시간 letterGrade(=== 'F')로 필터링하면 안 된다.
+          wasOriginallyF: r.letterGrade === 'F',
         }))
       );
       setPdfWarnings(result.warnings);
-      setPdfCreditsCheck({ declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits });
+      setPdfCreditsCheck(
+        result.docType === 'full_transcript'
+          ? null
+          : { declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits }
+      );
     } catch {
-      setError('PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
+      setError('PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
     } finally {
       setPdfLoading(false);
     }
@@ -471,6 +487,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       return `과목명이 너무 길어요(100자 제한, 현재 ${name.length}자). 아래 행을 표에서 직접 줄여주세요. PDF 표 레이아웃이 깨져 여러 과목명이 합쳐진 경우일 수 있어요.\n\n"${name}"`;
     }
     if (err.code === 'INVALID_CREDITS') return '학점 값이 올바르지 않아요. 표에서 해당 과목의 학점을 확인해주세요.';
+    if (err.code === 'INVALID_LETTER_GRADE') return '등급 값이 올바르지 않아요. 표에서 해당 과목의 등급을 확인해주세요.';
     if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
     return '등록에 실패했어요.';
   };
@@ -486,19 +503,23 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setError(null);
     setPdfSubmitting(true);
     try {
-      await confirmImportedCourses(
+      const result = await confirmImportedCourses(
         included.map((r) => ({
           name: r.name,
           credits: Number(r.credits),
           category: r.category,
           year: Number(r.year),
           semester: Number(r.semester),
+          letterGrade: r.letterGrade || null,
         }))
       );
       closeAddForm();
       await refreshAfterChange();
 
-      showToast(`과목 ${included.length}개 추가 완료`);
+      const gradesFilled = result?.gradesFilled || 0;
+      showToast(
+        gradesFilled > 0 ? `과목 ${included.length}개 처리 완료 (등급 ${gradesFilled}개 채움)` : `과목 ${included.length}개 추가 완료`
+      );
     } catch (err) {
       setError(describePdfConfirmError(err));
     } finally {
@@ -747,9 +768,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             {addMode === 'pdf' && (
               <div className="courses-pdf-import">
                 <p className="courses-manual-hint">
-                  원광대 인트라넷의 "이수과목확인리스트"를 PDF로 저장해 올리면 과목명·학점·이수구분·이수학기를
-                  자동으로 채워드려요. 성적(등급)은 이 문서에 없어 채워지지 않으니, 등록 후 과목 목록에서 직접
-                  입력해주세요.
+                  등급까지 한 번에 채우려면 <strong>전체성적조회</strong>를 추천해요(과목·등급만 가져오고,
+                  이름·학번은 저장하지 않아요). 성적 입력 없이 과목만 먼저 등록하고 싶다면{' '}
+                  <strong>이수과목확인리스트</strong>도 쓸 수 있어요(등급은 나중에 직접 입력).
                 </p>
 
                 {!pdfRows && (
@@ -757,7 +778,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     <details className="courses-pdf-help">
                       <summary>어떤 PDF를 올려야 하나요?</summary>
                       <ol className="courses-pdf-help-steps">
-                        <li>원광대 인트라넷 로그인 → <strong>이수과목확인리스트</strong> 메뉴로 이동하세요.</li>
+                        <li>
+                          원광대 인트라넷 로그인 → <strong>전체성적조회</strong>(등급까지 포함) 또는{' '}
+                          <strong>이수과목확인리스트</strong>(과목만) 메뉴로 이동하세요.
+                        </li>
                         <li>
                           브라우저 인쇄(Ctrl+P) 화면에서 프린터 대상을 <strong>"PDF로 저장"</strong>으로 바꿔 저장하세요.
                           화면을 캡처한 사진이 아니라 이 방식으로 저장한 PDF여야 정확히 인식돼요.
@@ -766,7 +790,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       </ol>
                       <p className="courses-pdf-help-note">
                         성적증명서·수강신청내역·시간표 화면은 표 형식이 달라 인식되지 않아요. 반드시
-                        "이수과목확인리스트" 화면으로 저장한 PDF를 사용해주세요.
+                        "전체성적조회" 또는 "이수과목확인리스트" 화면으로 저장한 PDF를 사용해주세요.
                       </p>
                     </details>
 
@@ -785,6 +809,69 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
                 {pdfRows && (
                   <>
+                    <p className="courses-manual-hint">
+                      {pdfDocType === 'full_transcript'
+                        ? '전체성적조회 문서예요 — 등급까지 인식했어요. 아래 목록에서 확인하고 등록해주세요.'
+                        : '이수과목확인리스트 문서예요 — 이 문서엔 등급이 없어서 등록 후 과목 목록에서 직접 입력해주세요.'}
+                    </p>
+
+                    {pdfDocType === 'full_transcript' && pdfRows.some((r) => r.wasOriginallyF) && (
+                      <div className="courses-pdf-pf-section">
+                        <div className="courses-pdf-pf-head">
+                          <span className="courses-pdf-pf-title">
+                            <span className="courses-pdf-pf-badge">
+                              {pdfRows.filter((r) => r.wasOriginallyF).length}
+                            </span>
+                            불합격 과목 확인
+                          </span>
+                          <span className="courses-pdf-pf-progress">
+                            {pdfRows.filter((r) => r.wasOriginallyF && r.letterGrade === 'NP').length} /{' '}
+                            {pdfRows.filter((r) => r.wasOriginallyF).length} 확인함
+                          </span>
+                        </div>
+                        <p className="courses-pdf-pf-desc">
+                          일반 과목의 F는 학점·평점에 그대로 반영돼요. 아래 과목이 P/F(합격·불합격)로 평가되는
+                          과목이었다면 "P/F"를 눌러주세요 — 학점만 빠지고 평점엔 영향 없게 처리돼요.
+                        </p>
+                        <div className="courses-pdf-pf-list">
+                          {pdfRows
+                            .filter((r) => r.wasOriginallyF)
+                            .map((r) => (
+                              <div
+                                key={r.tempId}
+                                className={`courses-pdf-pf-item ${r.letterGrade === 'NP' ? 'resolved' : ''}`}
+                              >
+                                <div className="courses-pdf-pf-item-info">
+                                  <p className="courses-pdf-pf-item-name">{r.name}</p>
+                                  <p className="courses-pdf-pf-item-meta">
+                                    {r.year}-{r.semester}학기 · {r.credits}학점
+                                  </p>
+                                </div>
+                                <div className="courses-pdf-pf-toggle-group">
+                                  <button
+                                    type="button"
+                                    className={r.letterGrade !== 'NP' ? 'active-f' : ''}
+                                    onClick={() => updatePdfRow(r.tempId, 'letterGrade', 'F')}
+                                  >
+                                    일반 F
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={r.letterGrade === 'NP' ? 'active-np' : ''}
+                                    onClick={() => updatePdfRow(r.tempId, 'letterGrade', 'NP')}
+                                  >
+                                    P/F
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                        <p className="courses-pdf-pf-note">
+                          헷갈리면 "일반 F"로 두세요 — 나중에 과목 관리 화면에서 등급을 언제든 NP로 바꿀 수 있어요.
+                        </p>
+                      </div>
+                    )}
+
                     {pdfWarnings.length > 0 && (
                       <div className="courses-pdf-warnings">
                         {pdfWarnings.map((w, i) => (
@@ -868,6 +955,20 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 <option value={2}>2학기</option>
                               </select>
                             </label>
+                            {pdfDocType === 'full_transcript' && (
+                              // F↔NP 여부는 위쪽 "불합격 과목 확인" 카드에서만 바꾸도록 하고, 여기선
+                              // 결과만 배지로 보여준다 — 같은 조작을 두 군데서 할 수 있게 하면 헷갈린다.
+                              <div className="courses-pdf-meta-field courses-pdf-meta-grade">
+                                <span className="courses-pdf-meta-label">등급</span>
+                                <span
+                                  className={`courses-pdf-grade-tag ${r.letterGrade === 'F' ? 'is-f' : ''} ${
+                                    r.letterGrade === 'NP' ? 'is-np' : ''
+                                  }`}
+                                >
+                                  {r.letterGrade || '-'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -890,6 +991,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           className="courses-manual-only-note courses-catalog-back"
                           onClick={() => {
                             setPdfRows(null);
+                            setPdfDocType(null);
                             setPdfWarnings([]);
                             setPdfCreditsCheck(null);
                           }}
@@ -906,6 +1008,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         className="auth-submit-btn"
                         onClick={() => {
                           setPdfRows(null);
+                          setPdfDocType(null);
                           setPdfWarnings([]);
                           setPdfCreditsCheck(null);
                         }}

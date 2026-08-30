@@ -122,14 +122,134 @@ function parseCourseListText(rawText) {
   };
 }
 
+/**
+ * "전체성적조회" 문서(#102) 파싱.
+ * "이수과목확인리스트"와 달리 학기별 섹션("YYYY 년 N 학기")으로 나뉘고, 각 행이
+ * 이수구분/학수번호/교과목명/학점/평점/등급(A+/B0/P 등)을 탭으로 구분해 한 줄에 담는다
+ * (실제 PDF로 확인 — 과목명이 길어도 줄바꿈 없이 한 줄에 들어가 이수과목확인리스트 같은
+ * 개행 처리 이슈가 없다). 페이지 전환 시 브라우저 인쇄 푸터("2026. 1. 1. 오전 0:00 ::
+ * Wonkwang University :: / https://intra.wku.ac.kr/... / 1/3")가 학기 섹션 중간에
+ * 끼어드는데, 행 인식이 구분코드(CODE_ALT) 앵커로 시작하므로 이 텍스트는 애초에
+ * 매칭 대상이 아니라 별도 제거 없이 자연히 걸러진다.
+ *
+ * 문서 상단 학생 개인정보(성명/학번/학과)와 학기별 소계("취득학점"/"평균평점") 행도
+ * 같은 이유로 CODE_ALT로 시작하지 않아 매칭되지 않는다 — 절대 추출 대상에 포함하지 않는다.
+ */
+// P(Pass)/NP(Not Pass)는 P/F 채점 과목(원어민영어인증, 오리엔테이션성 교양 등)에서만
+// 나오는 값 — 일반 9등급(A+~F)과 달리 평점 자체가 없는 채점 방식이다.
+const GRADE_ALT = 'A\\+|A0|B\\+|B0|C\\+|C0|D\\+|D0|F|P|NP';
+
+// 구분코드 + 학수번호 + 교과목명 + 학점 + 평점 + 등급. 학수번호는 숫자 또는 "L00375"처럼
+// 영문+숫자 조합이 온다.
+const FULL_TRANSCRIPT_ROW_RE = new RegExp(
+  `(${CODE_ALT})[\\t ]+([A-Za-z0-9]+)[\\t ]+([\\s\\S]+?)[\\t ]+(\\d+(?:\\.\\d+)?)[\\t ]+(\\d+(?:\\.\\d+)?)[\\t ]+(${GRADE_ALT})(?=[\\t \\n]|$)`,
+  'g'
+);
+
+const SEMESTER_HEADER_RE = /(\d{4})\s*년\s*([12])\s*학기/g;
+
+// 문서 맨 앞의 실제 제목 텍스트("전체성적조회\t전체성적조회\n" — 실사용 PDF로 확인)로
+// 판별한다. 이 패턴에 안 걸리면 기존 이수과목확인리스트 경로로 그대로 처리해 회귀를 막는다.
+const FULL_TRANSCRIPT_TITLE_RE = /^전체성적조회/;
+
+function detectDocumentType(rawText) {
+  return FULL_TRANSCRIPT_TITLE_RE.test(rawText.trim()) ? 'full_transcript' : 'course_list';
+}
+
+function parseFullTranscriptText(rawText) {
+  const text = rawText.replace(/\r/g, '');
+
+  const semesterBoundaries = [];
+  const semRe = new RegExp(SEMESTER_HEADER_RE.source, 'g');
+  let semMatch;
+  while ((semMatch = semRe.exec(text)) !== null) {
+    semesterBoundaries.push({ index: semMatch.index, year: Number(semMatch[1]), semester: Number(semMatch[2]) });
+  }
+
+  // 학기 헤더 뒤에 나오는 행은 다음 헤더가 나오기 전까지 그 학기 소속이다.
+  function semesterAt(idx) {
+    let current = null;
+    for (const b of semesterBoundaries) {
+      if (b.index > idx) break;
+      current = b;
+    }
+    return current;
+  }
+
+  const rows = [];
+  let droppedRows = 0;
+  const rowRe = new RegExp(FULL_TRANSCRIPT_ROW_RE.source, 'g');
+  let match;
+  while ((match = rowRe.exec(text)) !== null) {
+    const [, rawCategory, , rawName, rawCredits, , letterGrade] = match;
+    const sem = semesterAt(match.index);
+    if (!sem) continue;
+
+    const name = rawName.replace(/\s+/g, ' ').trim();
+    const credits = Number(rawCredits);
+    if (!name || Number.isNaN(credits)) continue;
+
+    if (name.length > 50 || name.includes('교과목명')) {
+      droppedRows += 1;
+      continue;
+    }
+
+    rows.push({
+      rawCategory,
+      category: CATEGORY_MAP[rawCategory] || null,
+      name,
+      year: sem.year,
+      semester: sem.semester,
+      credits,
+      isFail: letterGrade === 'F' || letterGrade === 'NP',
+      letterGrade,
+    });
+  }
+
+  const warnings = [];
+  if (rows.length === 0) {
+    warnings.push('과목을 하나도 못 찾았어요. 원광대 인트라넷 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
+  }
+  if (droppedRows > 0) {
+    warnings.push(
+      `일부 행을 과목으로 잘못 인식해서 ${droppedRows}건 뺐어요. 목록을 확인하고 빠진 과목이 있으면 "직접 입력"으로 추가해주세요.`
+    );
+  }
+  const unmapped = rows.filter((r) => !r.category);
+  if (unmapped.length > 0) {
+    warnings.push(`이수구분을 자동으로 판별하지 못한 과목 ${unmapped.length}건이 있습니다. 직접 선택해주세요.`);
+  }
+
+  return { rows, warnings };
+}
+
 async function parseCourseListPdf(buffer) {
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
-    return parseCourseListText(result.text);
+    const rawText = result.text;
+    const docType = detectDocumentType(rawText);
+
+    if (docType === 'full_transcript') {
+      const { rows, warnings } = parseFullTranscriptText(rawText);
+      return {
+        docType,
+        rows,
+        declaredTotalCredits: null,
+        extractedTotalCredits: null,
+        warnings,
+      };
+    }
+
+    const courseListResult = parseCourseListText(rawText);
+    return {
+      docType,
+      ...courseListResult,
+      rows: courseListResult.rows.map((r) => ({ ...r, letterGrade: null })),
+    };
   } finally {
     await parser.destroy();
   }
 }
 
-module.exports = { parseCourseListPdf, parseCourseListText };
+module.exports = { parseCourseListPdf, parseCourseListText, parseFullTranscriptText, detectDocumentType };

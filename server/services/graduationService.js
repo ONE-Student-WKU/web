@@ -1,5 +1,6 @@
 const pool = require('../db');
 const studentService = require('./studentService');
+const { FAILING_GRADES } = require('./courseService');
 
 /**
  * server/services/graduationService.js
@@ -79,15 +80,15 @@ async function fetchRequiredCourseNames(requirementId) {
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
-  // getSummary(courseService.js)와 동일한 "F만 아니면 이수학점" 규칙 — 성적 미입력(진행 중)
-  // 과목도 포함한다. letter_grade <> 'F'는 NULL에 대해 NULL(=false)로 평가되므로
-  // IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
+  // getSummary(courseService.js)와 동일한 "FAILING_GRADES(F/NP)만 아니면 이수학점" 규칙 —
+  // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
+  // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
   const [rows] = await pool.query(
     `SELECT category, SUM(credits) AS credits
      FROM student_courses
-     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade <> 'F')
+     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))
      GROUP BY category`,
-    [studentId]
+    [studentId, FAILING_GRADES]
   );
   const map = {};
   for (const row of rows) map[row.category] = Number(row.credits);
