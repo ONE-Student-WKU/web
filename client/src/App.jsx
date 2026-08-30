@@ -17,6 +17,10 @@ import { getMe, logout } from './api/chatApi.js';
 const TAB_BAR_VIEWS = new Set(['home', 'chat', 'courses', 'graduation', 'career']);
 const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', career: 'career' };
 
+// 하단 탭바가 가리키는 화면들(서로 형제 관계) — 이 화면들끼리 오갈 때는 히스토리를
+// 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
+const TAB_PEER_VIEWS = new Set(Object.keys(VIEW_TO_TAB));
+
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
 // SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
 // 계정의 데이터(이수학점, 수강 목록 등)가 그대로 보이는 문제가 있었다(실사용 확인).
@@ -65,6 +69,7 @@ function App() {
   // 이후 화면 전환은 pushState로 쌓는다. popstate(뒤로/앞으로가기)로 들어온
   // 변경은 다시 push하지 않도록 skipHistoryPush로 구분한다.
   const skipHistoryPush = useRef(true);
+  const previousView = useRef(view);
 
   useEffect(() => {
     function handlePopState(event) {
@@ -77,9 +82,19 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
+    const previous = previousView.current;
+    previousView.current = view;
+
     if (skipHistoryPush.current) {
       window.history.replaceState({ view }, '');
       skipHistoryPush.current = false;
+      return;
+    }
+    // 홈이 아닌 탭에서 다른 탭으로 이동하는 경우(형제 탭끼리 이동)에는 새로 쌓지 않고
+    // 같은 자리를 갱신한다. 홈 → 탭(첫 진입)만 예외적으로 쌓아서, 뒤로가기를 누르면
+    // 몇 번을 오갔든 항상 홈으로 한 번에 돌아가게 한다.
+    if (previous !== 'home' && TAB_PEER_VIEWS.has(previous) && TAB_PEER_VIEWS.has(view)) {
+      window.history.replaceState({ view }, '');
       return;
     }
     window.history.pushState({ view }, '');
