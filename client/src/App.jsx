@@ -180,21 +180,22 @@ function App() {
           <Onboarding
             user={user}
             onDone={() => {
+              setHighlightLeaveSemesters(false);
               setUser((u) => ({ ...u, onboardingCompleted: true }));
               setView('home');
             }}
-            onSkip={() => setView('home')}
+            onSkip={() => {
+              setHighlightLeaveSemesters(false);
+              setView('home');
+            }}
+            highlightLeaveSemesters={highlightLeaveSemesters}
           />
         ) : view === 'profile' ? (
           <Profile
             user={user}
-            onGoHome={() => {
-              setHighlightLeaveSemesters(false);
-              setView('home');
-            }}
+            onGoHome={() => setView('home')}
             onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
             onAccountDeleted={handleAccountDeleted}
-            highlightLeaveSemesters={highlightLeaveSemesters}
           />
         ) : (
           <Home
@@ -208,7 +209,7 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
-              setView('profile');
+              setView('onboarding');
             }}
           />
         )}
