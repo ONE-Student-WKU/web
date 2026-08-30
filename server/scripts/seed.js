@@ -176,4 +176,10 @@ async function run() {
   }
 }
 
-run();
+// seedStudents/seedStudentCourses(가짜 계정 생성)는 제외하고 두 함수만 노출 —
+// 운영 자동화 파이프라인이 이 모듈을 require해도 가짜 계정이 생성될 경로가 없다.
+module.exports = { seedDepartments, seedCurriculumRequirements };
+
+if (require.main === module) {
+  run();
+}
