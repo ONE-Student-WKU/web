@@ -15,6 +15,7 @@ import {
 } from '../api/chatApi.js';
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
+import { displayCategory } from '../utils/graduation.js';
 
 const DAYS = ['월', '화', '수', '목', '금'];
 // P(Pass)/NP(Not Pass)는 "전체성적조회" PDF 가져오기로만 들어오는 값(P/F 채점 과목) —
@@ -374,6 +375,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
   const describeAddCourseError = (err) => {
     if (err.code === 'COURSE_ALREADY_ADDED') return '이미 추가된 과목이에요.';
+    if (err.code === 'INVALID_CREDITS') return '학점은 0보다 크고 9.9 이하로 입력해주세요.';
     if (err.code === 'DUPLICATE_SCHEDULE_SLOT') return '같은 시간을 두 번 입력했어요.';
     if (err.code === 'SCHEDULE_CONFLICT') {
       const { day, period, conflictCourseName } = err.data || {};
@@ -698,7 +700,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               <div className="courses-list-item-info">
                 <p className="courses-list-item-name">{c.name}</p>
                 <p className="courses-list-item-meta">
-                  {c.category} · {c.credits}학점
+                  {displayCategory(c.category)} · {c.credits}학점
                 </p>
               </div>
               <select
@@ -923,7 +925,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 <option value="">선택 안 됨</option>
                                 {CATEGORIES.map((c) => (
                                   <option key={c} value={c}>
-                                    {c}
+                                    {displayCategory(c)}
                                   </option>
                                 ))}
                               </select>
@@ -1099,7 +1101,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       >
                         <span className="courses-list-item-name">{r.name}</span>
                         <span className="courses-list-item-meta">
-                          {r.category} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
+                          {displayCategory(r.category)} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
                           {formatSchedule(r.schedule) ? ` · ${formatSchedule(r.schedule)}` : ' · 시간표 미등록'}
                         </span>
                       </button>
@@ -1127,6 +1129,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   <input
                     type="number"
                     step="0.5"
+                    min="0.5"
+                    max="9.9"
                     value={manualFields.credits}
                     onChange={(e) => setManualFields({ ...manualFields, credits: e.target.value })}
                     required
@@ -1141,7 +1145,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
-                        {c}
+                        {displayCategory(c)}
                       </option>
                     ))}
                   </select>

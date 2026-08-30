@@ -199,6 +199,15 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers.majorChangeYear, answers.admissionYear]);
 
+  // 학번 자동선택과 동일한 이유 — 전과 당시 학년 선택지가 하나뿐이면(예: 입학 그 해에 바로
+  // 전과) 직접 누르게 하지 않고 자동으로 채운다.
+  useEffect(() => {
+    if (gradeOptions.length === 1 && answers.majorChangeGrade !== gradeOptions[0]) {
+      setAnswers((a) => ({ ...a, majorChangeGrade: gradeOptions[0] }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers.majorChangeYear, answers.admissionYear]);
+
   // 학번이 바뀌면 전과연도 선택지(mcYearOptions = admissionYear~현재) 범위도 같이 바뀐다 —
   // 이전에 고른 전과연도가 새 학번보다 이르면 더 이상 유효하지 않은 조합이라 통째로 지운다
   // (연도가 지워지면 그 아래 종속인 학기·학년도 자연히 다시 골라야 함).

@@ -96,6 +96,12 @@ router.post('/', async (req, res, next) => {
     } else {
       if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
       if (!credits) return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
+      // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9). 이 범위를
+      // 벗어나면 DB INSERT 단계에서 원인 불명 500으로 터져서 사용자가 이유를 알 수 없었다
+      // (실사용 확인) — /import/confirm과 동일한 검증을 여기도 추가.
+      if (!(credits > 0 && credits <= 9.9)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: null });
+      }
       if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
       if (!courseService.VALID_CATEGORIES.includes(category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
