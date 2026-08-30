@@ -25,6 +25,15 @@ const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 // 신뢰해야 세션 쿠키의 secure 판정 등이 정확히 동작한다.
 app.set('trust proxy', 1);
 
+// 어떤 프레임워크를 쓰는지 응답 헤더로 알려줄 필요 없음(불필요한 정찰 정보 노출 방지).
+app.disable('x-powered-by');
+
+// 프로덕션에서 SESSION_SECRET을 설정하지 않으면 코드에 박힌 기본값으로 세션이 서명되어
+// 누구나 유효한 세션 쿠키를 위조할 수 있게 된다 — 조용히 넘어가지 않고 기동을 막는다.
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET 환경변수가 설정되지 않았습니다. 프로덕션에서는 필수입니다.');
+}
+
 // Middlewares
 // CLIENT_ORIGIN 미설정 시(로컬 개발 등) 기존과 동일하게 모든 origin을 허용함.
 app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
