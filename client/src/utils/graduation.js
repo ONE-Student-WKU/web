@@ -9,6 +9,13 @@ const MAJOR_REQUIRED_KEY = '전공필수';
 const MAJOR_ELECTIVE_KEY = '전공선택';
 const MAJOR_MERGED_KEY = '전공';
 
+// DB category ENUM 값('전공필수' 등)은 졸업요건 계산 로직이 그대로 참조하므로 못 바꾼다.
+// 다만 화면 표시는 이 진단 화면이 원래 쓰던 "기본전공"으로 앱 전체에서 통일한다 — 같은
+// 값을 화면마다 "전공필수"/"기본전공"으로 다르게 불러서 헷갈린다는 실사용 피드백 반영.
+// Home/GraduationStatus의 부족 요건 문구, CourseManagement의 과목 목록·입력 폼이 공유.
+const CATEGORY_DISPLAY_LABEL = { [MAJOR_REQUIRED_KEY]: '기본전공' };
+export const displayCategory = (category) => CATEGORY_DISPLAY_LABEL[category] || category;
+
 // summarizeShortfalls용 — 전공필수/전공선택을 "전공" 하나로 합쳐서, 기본전공(전공필수)을
 // 초과 이수했을 때 그 초과분이 전공선택 부족분을 상쇄하도록 한다(실사용 피드백: 기본전공
 // 137%인데 전공선택 부족 문구는 그대로 남아있었음 — 두 카테고리를 따로 계산해서 생긴 문제).
@@ -99,7 +106,7 @@ export function summarizeShortfalls(categories, certifications) {
     // 오해를 주는 문제가 있었다(실사용 확인).
     if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
-    if (missing > 0) items.push(`${c.category} ${missing}학점`);
+    if (missing > 0) items.push(`${displayCategory(c.category)} ${missing}학점`);
   }
 
   for (const cert of certifications || []) {
