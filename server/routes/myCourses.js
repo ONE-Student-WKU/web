@@ -146,7 +146,8 @@ router.post('/', async (req, res, next) => {
 });
 
 // POST /api/my-courses/import/pdf
-// 이수과목확인리스트 PDF를 업로드 → 과목명/학점/이수구분/이수학기만 파싱해 미리보기로 반환.
+// "이수과목확인리스트" 또는 "전체성적조회" PDF를 업로드 → 문서 제목 텍스트로 자동 판별해
+// 과목명/학점/이수구분/이수학기(+전체성적조회면 등급까지)를 파싱해 미리보기로 반환.
 // 저장은 하지 않음 — 사용자가 검토·수정 후 /import/confirm으로 확정해야 DB에 반영된다.
 router.post('/import/pdf', pdfUpload.single('file'), async (req, res, next) => {
   try {
@@ -162,9 +163,10 @@ router.post('/import/pdf', pdfUpload.single('file'), async (req, res, next) => {
 });
 
 // POST /api/my-courses/import/confirm
-// body: { rows: [{ name, credits, category, year, semester }] } — /import/pdf 결과를
-// 사용자가 검토·수정한 뒤 그대로(또는 일부만) 보내면 일괄 등록. 등급 필드는 받지 않음
-// (성적은 항상 과목 관리 화면에서 직접 입력).
+// body: { rows: [{ name, credits, category, year, semester, letterGrade? }] } — /import/pdf
+// 결과를 사용자가 검토·수정한 뒤 그대로(또는 일부만) 보내면 일괄 등록. letterGrade는 선택
+// 입력 — "이수과목확인리스트"는 이 필드를 아예 안 보내거나 null로 보내고(성적은 과목
+// 관리 화면에서 직접 입력), "전체성적조회"는 파싱된 등급을 그대로 보낸다.
 router.post('/import/confirm', async (req, res, next) => {
   try {
     const { rows } = req.body;
@@ -178,6 +180,9 @@ router.post('/import/confirm', async (req, res, next) => {
       }
       if (!courseService.VALID_CATEGORIES.includes(row.category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+      }
+      if (row.letterGrade !== undefined && row.letterGrade !== null && !courseService.LETTER_GRADES.includes(row.letterGrade)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_LETTER_GRADE', message: null, data: null });
       }
       // student_courses.name은 VARCHAR(100) — 모바일에서 저장한 PDF는 표 레이아웃이 좁게
       // 잡혀 컬럼 구분이 깨지는 경우가 있어(실사용 확인), 과목명 파싱이 여러 행을 한 줄로
@@ -206,7 +211,11 @@ router.patch('/:id', async (req, res, next) => {
     // null은 "성적 미입력으로 되돌리기"라는 유효한 값이다 — undefined(필드 자체를 안 보냄)와
     // 구분해야 하는데, `null in GRADE_POINT_MAP`이 항상 false라 이걸 걸러내지 못하고
     // "성적 저장 실패"로 잘못 막고 있었다(실사용 확인).
-    if (letterGrade !== undefined && letterGrade !== null && !(letterGrade in courseService.GRADE_POINT_MAP)) {
+    // GRADE_POINT_MAP이 아니라 LETTER_GRADES로 검증 — 전체성적조회로 들어온 P(Pass) 등급도
+    // 과목 관리 화면의 등급 select에 그대로 표시·수정 가능해야 하는데, GRADE_POINT_MAP만
+    // 허용하면 여기서 막혀 P 등급 과목을 조회 화면에서 "미입력"으로 되돌릴 수만 있고 그
+    // 외엔 아무 값도 저장할 수 없게 된다.
+    if (letterGrade !== undefined && letterGrade !== null && !courseService.LETTER_GRADES.includes(letterGrade)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LETTER_GRADE', message: null, data: null });
     }
 
