@@ -15,8 +15,8 @@ export function resetProfileCache() {
 
 /**
  * Profile Page
- * 개인정보 수정 — 이름 변경, 비밀번호 변경, 계정 삭제(하드 삭제, 되돌릴 수 없음).
- * 휴학 학기 수는 학적정보 수정(Onboarding.jsx) 쪽으로 옮겨졌다 — 학과/학번과 서로 얽힌
+ * 계정 정보 수정 — 이름 변경, 비밀번호 변경, 계정 삭제(하드 삭제, 되돌릴 수 없음).
+ * 휴학 학기 수는 학과·학번 수정(Onboarding.jsx) 쪽으로 옮겨졌다 — 학과/학번과 서로 얽힌
  * 학적 데이터라 그쪽 요약 화면에서 같이 다루는 게 맞다는 판단(팀 논의, 2026-08-30).
  *
  * Props:
@@ -129,7 +129,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
           <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
             <IconChevronLeft />
           </button>
-          <span className="screen-title">개인정보 수정</span>
+          <span className="screen-title">계정 정보 수정</span>
         </div>
       </header>
 

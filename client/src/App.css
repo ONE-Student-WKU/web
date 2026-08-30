@@ -277,7 +277,7 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
-/* Profile — 개인정보 수정 화면의 계정 삭제 영역 */
+/* Profile — 계정 정보 수정 화면의 계정 삭제 영역 */
 .profile-danger-zone {
   border-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
@@ -1614,6 +1614,25 @@ body {
   background: var(--color-bg-card);
   color: var(--color-text-primary);
   font-family: inherit;
+}
+
+/* select만 대상 — 브라우저 기본 화살표는 padding으로 위치 조정이 안 돼서(자체 영역을
+   따로 확보함) appearance:none으로 끄고 직접 그린 화살표로 교체한다. 팝업 목록(열렸을 때
+   보이는 옵션들) 자체는 여전히 브라우저 네이티브 렌더링이라 color-scheme(위 :root 참고)에
+   그대로 의존한다 — appearance:none은 닫혀있는 박스 모양에만 영향을 준다. */
+select.onb-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ba0aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+:root[data-theme='light'] select.onb-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a3d42' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
 
 .onb-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }

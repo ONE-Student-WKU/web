@@ -63,7 +63,7 @@ function SummaryRow({ label, value, editable, onClick }) {
 
 /**
  * Onboarding Page
- * 회원가입 직후 자동 진입하거나, 계정 메뉴의 "학적정보 수정"에서 재진입.
+ * 회원가입 직후 자동 진입하거나, 계정 메뉴의 "학과, 학번 수정"에서 재진입.
  * 학과 → (세부전공) → 입학유형 → 학번 → (전과 시점) → 확인 → 완료.
  *
  * Props:
@@ -137,6 +137,19 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 돌아가는 중"인 다른 상태와 구분해야 다음/뒤로 버튼 동작을 다르게 줄 수 있다.
   const editingFromSummary = manualStep !== null && manualStep !== 'summary';
 
+  // highlightLeaveSemesters는 Onboarding 화면에 머무는 동안 계속 true로 유지되는데, 요약
+  // 화면은 다른 질문으로 점프했다 돌아올 때마다 새로 마운트된다 — CSS 애니메이션은 새로
+  // 마운트된 엘리먼트에 클래스가 처음 붙는 것으로 취급해 재방문할 때마다 강조가 다시
+  // 재생되는 문제가 있었다(실사용 확인). 이번 화면 진입에서 딱 한 번만 재생되도록, 처음
+  // 요약 화면에 도달한 시점에 "다 썼다"고 표시해서 이후 재마운트에는 더 이상 안 켜지게 한다.
+  const [leaveHighlightArmed, setLeaveHighlightArmed] = useState(highlightLeaveSemesters);
+  useEffect(() => {
+    if (current !== 'summary' || !leaveHighlightArmed) return;
+    const timer = setTimeout(() => setLeaveHighlightArmed(false), 2100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
   // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
     if (answers.enrollmentType === 'TRANSFER_ADMISSION' && selectedDepartment && !isTransferAvailable(selectedDepartment)) {
@@ -147,6 +160,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const yearRange = selectedDepartment ? getYearRange(selectedDepartment, answers.enrollmentType) : null;
   const yearOptions = yearRange ? range(yearRange.min, yearRange.max) : [];
+
+  // 학번 선택지가 하나뿐이면(예: 공학3계열은 2026학번만 존재) 사용자가 그 하나를 굳이 직접
+  // 눌러 고르게 하지 않고 자동으로 채운다 — 유일한 선택지를 누르게 하는 것 자체가 불필요한
+  // 클릭이라는 실사용 피드백 반영.
+  useEffect(() => {
+    if (yearOptions.length === 1 && answers.admissionYear !== yearOptions[0]) {
+      setAnswers((a) => ({ ...a, admissionYear: yearOptions[0] }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDepartment, answers.enrollmentType]);
 
   const mcYearOptions = answers.admissionYear ? range(answers.admissionYear, NOW_YEAR) : [];
 
@@ -204,6 +227,28 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     getTracks(dept.id)
       .then(setTracks)
       .catch(() => setTracks([]));
+  }
+
+  // 입학유형을 바꿔도 학번 범위가 실제로는 안 바뀌는 경우가 많다(편입생만 올해 학번이 빠지는
+  // 정도) — 그런데도 무조건 학번을 지워버리면, 이미 유효한 학번을 고른 뒤 유형만 다시
+  // 고쳐도 학번을 처음부터 다시 골라야 하는 불필요한 되돌림이 생긴다(실사용 확인). 새
+  // 유형 기준으로 지금 학번이 여전히 유효한 범위인지 직접 계산해서, 무효할 때만 지운다.
+  function selectEnrollmentType(type) {
+    setAnswers((a) => {
+      const newRange = selectedDepartment ? getYearRange(selectedDepartment, type) : null;
+      const admissionYearStillValid =
+        newRange && a.admissionYear != null && a.admissionYear >= newRange.min && a.admissionYear <= newRange.max;
+      const isMajorChange = type === 'MAJOR_CHANGE';
+      return {
+        ...a,
+        enrollmentType: type,
+        admissionYear: admissionYearStillValid ? a.admissionYear : null,
+        // 전과생이 아닌 유형으로 바뀌면 전과 시점 답변은 더 이상 의미가 없으니 같이 지운다.
+        majorChangeYear: isMajorChange ? a.majorChangeYear : null,
+        majorChangeSemester: isMajorChange ? a.majorChangeSemester : null,
+        majorChangeGrade: isMajorChange ? a.majorChangeGrade : null,
+      };
+    });
   }
 
   function goNext() {
@@ -337,8 +382,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 >
                   <span className="onb-option-title">{d.name}</span>
                   <span className="onb-option-caption">
-                    {d.minAdmissionYear ?? ''}
-                    {d.maxAdmissionYear ? `~${d.maxAdmissionYear}` : '~'}학번
+                    {d.maxAdmissionYear
+                      ? `${d.minAdmissionYear ?? ''}~${d.maxAdmissionYear}학번`
+                      : `${d.minAdmissionYear ?? ''}학번`}
                   </span>
                 </button>
               ))}
@@ -371,7 +417,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             <div className="onb-option-list">
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'GENERAL' ? ' selected' : '')}
-                onClick={() => setAnswers((a) => ({ ...a, enrollmentType: 'GENERAL', admissionYear: null }))}
+                onClick={() => selectEnrollmentType('GENERAL')}
               >
                 <span className="onb-option-title">일반 재학생</span>
                 <span className="onb-option-caption">신입학으로 입학해 재학 중</span>
@@ -379,7 +425,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'TRANSFER_ADMISSION' ? ' selected' : '')}
                 disabled={!transferAvailable}
-                onClick={() => setAnswers((a) => ({ ...a, enrollmentType: 'TRANSFER_ADMISSION', admissionYear: null }))}
+                onClick={() => selectEnrollmentType('TRANSFER_ADMISSION')}
               >
                 <span className="onb-option-title">편입생</span>
                 <span className="onb-option-caption">
@@ -390,7 +436,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </button>
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'MAJOR_CHANGE' ? ' selected' : '')}
-                onClick={() => setAnswers((a) => ({ ...a, enrollmentType: 'MAJOR_CHANGE', admissionYear: null }))}
+                onClick={() => selectEnrollmentType('MAJOR_CHANGE')}
               >
                 <span className="onb-option-title">전과생</span>
                 <span className="onb-option-caption">다른 학과에서 전과해 옴</span>
@@ -483,8 +529,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </div>
               {gradeRange && (
                 <p className="onb-hint">
-                  {answers.admissionYear}학번 · {answers.majorChangeYear}년 전과 기준 정상 진급 학년은 {gradeRange.naive}
-                  학년이에요. 휴학 등으로 늦어졌을 경우까지만 골라둘 수 있어요.
+                  선택하신 학번·전과 시점 기준으로 정상 진급 학년은 {gradeRange.naive}학년이에요. 휴학 등으로 늦어졌을
+                  경우까지만 골라둘 수 있어요.
                 </p>
               )}
             </div>
@@ -539,7 +585,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {editMode && (
                 <div
                   className={
-                    'onb-summary-row' + (highlightLeaveSemesters ? ' settings-highlight' : '')
+                    'onb-summary-row' + (leaveHighlightArmed ? ' settings-highlight' : '')
                   }
                   style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
                 >
