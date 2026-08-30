@@ -26,8 +26,14 @@ function ChatInput({ onSendMessage, disabled }) {
   // disabled인 동안 브라우저가 강제로 포커스를 뺏어가서(disabled 엘리먼트는 포커스를 가질 수
   // 없음), 응답이 오고 다시 입력 가능해져도 커서가 안 돌아와 매번 다시 클릭해야 하는 문제가
   // 있었다(진로 탐색/학칙 챗봇 공통 — 둘 다 이 컴포넌트를 씀). 다시 활성화되는 시점에 명시적으로
-  // 포커스를 돌려준다.
+  // 포커스를 돌려준다. 단, 이 effect는 마운트 시점에도 한 번 실행되는데 그때 focus를 주면
+  // 채팅 페이지에 들어가자마자 모바일 키보드가 떠버리므로, 최초 마운트는 건너뛴다.
+  const didMount = useRef(false);
   useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
     if (!disabled) textareaRef.current?.focus();
   }, [disabled]);
 
