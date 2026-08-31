@@ -21,6 +21,9 @@ const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', care
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
 const TAB_PEER_VIEWS = new Set(Object.keys(VIEW_TO_TAB));
 
+// ChatInput을 쓰는 화면(채팅/진로 탐색) — 입력창 포커스 시 하단 탭바를 잠깐 숨기는 대상.
+const PROMPT_INPUT_VIEWS = new Set(['chat', 'career']);
+
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
 // SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
 // 계정의 데이터(이수학점, 수강 목록 등)가 그대로 보이는 문제가 있었다(실사용 확인).
@@ -61,11 +64,12 @@ function App() {
   // 메뉴로 평범하게 들어온 경우엔 안 켜지게 별도 플래그로 관리.
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
-  // 채팅 화면의 입력창이 포커스를 받으면(모바일 키보드가 뜨면) 하단 탭바를 잠깐 숨겨
-  // 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는 값이니 view가 바뀔 때마다 초기화.
-  const [chatInputFocused, setChatInputFocused] = useState(false);
+  // 채팅/진로 탐색처럼 ChatInput을 쓰는 화면에서 입력창이 포커스를 받으면(모바일 키보드가
+  // 뜨면) 하단 탭바를 잠깐 숨겨 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는
+  // 값이니 view가 바뀔 때마다 초기화.
+  const [promptInputFocused, setPromptInputFocused] = useState(false);
   useEffect(() => {
-    if (view !== 'chat') setChatInputFocused(false);
+    if (!PROMPT_INPUT_VIEWS.has(view)) setPromptInputFocused(false);
   }, [view]);
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
@@ -151,7 +155,7 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
-            onInputFocusChange={setChatInputFocused}
+            onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'courses' ? (
           <CourseManagement
@@ -180,6 +184,7 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
@@ -220,7 +225,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && TAB_BAR_VIEWS.has(view) && !(view === 'chat' && chatInputFocused) && (
+        {authChecked && user && TAB_BAR_VIEWS.has(view) && !(PROMPT_INPUT_VIEWS.has(view) && promptInputFocused) && (
           <BottomTabBar
             active={VIEW_TO_TAB[view] || null}
             onOpenHome={() => setView('home')}
