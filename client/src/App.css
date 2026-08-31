@@ -1262,6 +1262,33 @@ body {
   border-color: var(--color-accent-bg);
 }
 
+.courses-pdf-hint-wrap {
+  position: relative;
+}
+
+.courses-pdf-hint-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.courses-pdf-hint-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 14px;
+  border: 5px solid transparent;
+  border-top-color: var(--color-accent);
+}
+
 .courses-close-btn {
   background: none;
   border: none;
@@ -1407,8 +1434,33 @@ body {
   cursor: pointer;
 }
 
+.courses-pdf-help-intro {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.courses-pdf-help-doctype {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.courses-pdf-help-doctype:first-of-type {
+  margin-top: 10px;
+}
+
+.courses-pdf-help-divider {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .courses-pdf-help-steps {
-  margin: 10px 0 8px;
+  margin: 8px 0 8px;
   padding-left: 18px;
   font-size: 0.8125rem;
   color: var(--color-text-secondary);
