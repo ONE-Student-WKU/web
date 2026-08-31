@@ -33,6 +33,15 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [messages, loading]);
 
+  // 입력창 포커스(모바일 키보드가 뜨는 시점)에도 다시 스크롤 — 메시지 영역이 좁아지면서
+  // 스크롤 위치가 그대로라 마지막 메시지가 화면 밖으로 밀려나 안 보이는 문제가 있었다
+  // (실사용 피드백). 키보드가 다 올라온 뒤에 맞춰야 위치가 어긋나지 않아 약간 지연한다.
+  useEffect(() => {
+    if (!inputFocused) return;
+    const timer = setTimeout(() => bottomRef.current?.scrollIntoView({ block: 'end' }), 300);
+    return () => clearTimeout(timer);
+  }, [inputFocused]);
+
   return (
     <div className="chat-page">
       <Sidebar
