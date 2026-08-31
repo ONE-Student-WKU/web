@@ -69,7 +69,18 @@ function ChatInput({ onSendMessage, disabled, onFocusChange }) {
           disabled={disabled}
         />
       </div>
-      <button type="submit" className="prompt-send-btn" aria-label="전송" disabled={disabled}>
+      <button
+        type="submit"
+        className="prompt-send-btn"
+        aria-label="전송"
+        disabled={disabled}
+        // 탭 시 버튼이 입력창의 포커스를 가로채면(=입력창 blur) 탭바/안내문이 다시 나타나며
+        // 레이아웃이 바뀌어 버튼이 손가락 아래에서 살짝 움직인다 — 그 결과 첫 탭은 키보드만
+        // 닫히고 전송은 안 돼서 두 번 눌러야 했다(모바일 실사용 확인). mousedown 시점에
+        // 기본 동작(포커스 이동)을 막아 입력창이 blur되지 않게 하면 레이아웃이 안 바뀌어
+        // 첫 탭에 바로 전송된다 — 부가적으로 전송 후에도 키보드가 유지돼 연속 입력에도 좋다.
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <IconArrowUp />
       </button>
     </form>
