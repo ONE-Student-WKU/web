@@ -129,6 +129,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [pdfCreditsCheck, setPdfCreditsCheck] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfSubmitting, setPdfSubmitting] = useState(false);
+  // PDF 가져오기 탭에 들어올 때마다 안내 박스를 강조 — 이 탭 자체를 자주 누를 일이 없어서
+  // (보통 학기 초에 한 번 몰아서 쓰고 끝) 한 번 보여준 뒤 숨기기보다는 매번 보여주는 쪽이 낫다.
+  const [pdfHelpHighlightArmed, setPdfHelpHighlightArmed] = useState(false);
+  useEffect(() => {
+    if (addMode !== 'pdf') return;
+    setPdfHelpHighlightArmed(true);
+    const timer = setTimeout(() => setPdfHelpHighlightArmed(false), 2100);
+    return () => clearTimeout(timer);
+  }, [addMode]);
+  // "PDF 가져오기" 탭으로 유도하는 말풍선 — 같은 이유로 매번 보여준다: 기본 탭(카탈로그
+  // 검색)에 남아있고 아직 등록한 과목이 없을 때 항상 표시.
+  const showAddModeHint = addMode === 'catalog' && myCourses.length === 0;
   const [toast, setToast] = useState(null);
   const addFormRef = useRef(null);
   const searchResultsRef = useRef(null);
@@ -518,10 +530,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       closeAddForm();
       await refreshAfterChange();
 
-      const gradesFilled = result?.gradesFilled || 0;
-      showToast(
-        gradesFilled > 0 ? `과목 ${included.length}개 처리 완료 (등급 ${gradesFilled}개 채움)` : `과목 ${included.length}개 추가 완료`
-      );
+      const { inserted = 0, gradesFilled = 0, skipped = 0 } = result || {};
+      const segments = [];
+      if (inserted > 0) segments.push(`${inserted}개 추가`);
+      if (gradesFilled > 0) segments.push(`등급 ${gradesFilled}개 채움`);
+      if (skipped > 0) segments.push(`중복 ${skipped}개 제외`);
+      showToast(`과목 ${segments.join(' · ')}`);
     } catch (err) {
       setError(describePdfConfirmError(err));
     } finally {
@@ -657,38 +671,42 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </>
         )}
 
-        <p className="courses-section-label">시간표</p>
-        {semesterLoading ? (
-          <div className="home-card skeleton-card">
-            <div className="skeleton skeleton-bar" />
-            <div className="skeleton skeleton-bar" />
-            <div className="skeleton skeleton-bar" />
-          </div>
-        ) : (
-          <div className="courses-timetable">
-            <div className="courses-timetable-grid" style={{ gridTemplateRows: `repeat(${maxPeriod + 1}, auto)` }}>
-              <div className="courses-timetable-corner" />
-              {DAYS.map((d) => (
-                <div key={d} className="courses-timetable-daylabel">
-                  {d}
+        {(semesterLoading || myCourses.length > 0) && (
+          <>
+            <p className="courses-section-label">시간표</p>
+            {semesterLoading ? (
+              <div className="home-card skeleton-card">
+                <div className="skeleton skeleton-bar" />
+                <div className="skeleton skeleton-bar" />
+                <div className="skeleton skeleton-bar" />
+              </div>
+            ) : (
+              <div className="courses-timetable">
+                <div className="courses-timetable-grid" style={{ gridTemplateRows: `repeat(${maxPeriod + 1}, auto)` }}>
+                  <div className="courses-timetable-corner" />
+                  {DAYS.map((d) => (
+                    <div key={d} className="courses-timetable-daylabel">
+                      {d}
+                    </div>
+                  ))}
+                  {Array.from({ length: maxPeriod }, (_, i) => i + 1).map((period) => (
+                    <React.Fragment key={period}>
+                      <div className="courses-timetable-periodlabel">{period}</div>
+                      {DAYS.map((d) => {
+                        const cell = cellAt(d, period);
+                        const colorClass = cell ? `tt-c${courseColorIndex.get(cell.name)}` : '';
+                        return (
+                          <div key={d} className={`courses-timetable-cell ${cell ? `filled ${colorClass}` : ''}`}>
+                            {cell?.name}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
                 </div>
-              ))}
-              {Array.from({ length: maxPeriod }, (_, i) => i + 1).map((period) => (
-                <React.Fragment key={period}>
-                  <div className="courses-timetable-periodlabel">{period}</div>
-                  {DAYS.map((d) => {
-                    const cell = cellAt(d, period);
-                    const colorClass = cell ? `tt-c${courseColorIndex.get(cell.name)}` : '';
-                    return (
-                      <div key={d} className={`courses-timetable-cell ${cell ? `filled ${colorClass}` : ''}`}>
-                        {cell?.name}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         )}
 
         <p className="courses-section-label">수강 목록</p>
@@ -754,13 +772,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 >
                   직접입력
                 </button>
-                <button
-                  className={addMode === 'pdf' ? 'active' : ''}
-                  onClick={() => setAddMode('pdf')}
-                  type="button"
-                >
-                  PDF 가져오기
-                </button>
+                <div className="courses-pdf-hint-wrap">
+                  {showAddModeHint && (
+                    <span className="courses-pdf-hint-bubble">과목을 한 번에 채우려면?</span>
+                  )}
+                  <button
+                    className={addMode === 'pdf' ? 'active' : ''}
+                    onClick={() => setAddMode('pdf')}
+                    type="button"
+                  >
+                    PDF 가져오기
+                  </button>
+                </div>
               </div>
               <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
                 <IconX />
@@ -777,22 +800,51 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
                 {!pdfRows && (
                   <>
-                    <details className="courses-pdf-help">
-                      <summary>어떤 PDF를 올려야 하나요?</summary>
+                    <details
+                      className={`courses-pdf-help${pdfHelpHighlightArmed ? ' settings-highlight' : ''}`}
+                    >
+                      <summary>어떤 PDF를 올려야 하나요? (클릭해서 확인)</summary>
+
+                      <p className="courses-pdf-help-note courses-pdf-help-intro">
+                        아래 두 방법 중 <strong>하나만</strong> 준비하면 돼요. 둘 다 올릴 필요는 없어요.
+                      </p>
+
+                      <p className="courses-pdf-help-doctype">전체성적조회 (등급까지 포함, 추천)</p>
                       <ol className="courses-pdf-help-steps">
+                        <li>원광대 인트라넷 웹정보서비스 로그인 → 상단 <strong>정보서비스</strong> 탭 클릭</li>
                         <li>
-                          원광대 인트라넷 로그인 → <strong>전체성적조회</strong>(등급까지 포함) 또는{' '}
-                          <strong>이수과목확인리스트</strong>(과목만) 메뉴로 이동하세요.
+                          좌측 사이드 메뉴에서 <strong>성적관리 → 전체성적조회</strong> 클릭
                         </li>
                         <li>
-                          브라우저 인쇄(Ctrl+P) 화면에서 프린터 대상을 <strong>"PDF로 저장"</strong>으로 바꿔 저장하세요.
-                          화면을 캡처한 사진이 아니라 이 방식으로 저장한 PDF여야 정확히 인식돼요.
+                          화면 우측 상단 <strong>파란색 "성적조회"</strong> 버튼 클릭
                         </li>
-                        <li>저장한 PDF 파일을 아래 "PDF 파일 선택"으로 올려주세요.</li>
+                        <li>
+                          화면 좌측의 <strong>"화면출력"</strong> 버튼 클릭
+                        </li>
+                        <li>
+                          인쇄 대화상자에서 대상을 <strong>"PDF로 저장"</strong>으로 바꾼 뒤 저장
+                        </li>
                       </ol>
+
+                      <p className="courses-pdf-help-divider">또는</p>
+
+                      <p className="courses-pdf-help-doctype">이수과목확인리스트 (등급 없이 과목만)</p>
+                      <ol className="courses-pdf-help-steps">
+                        <li>원광대 인트라넷 웹정보서비스 로그인 → 상단 <strong>정보서비스</strong> 탭 클릭</li>
+                        <li>
+                          좌측 사이드 메뉴에서 <strong>성적관리 → 이수과목확인리스트</strong> 클릭
+                        </li>
+                        <li>
+                          화면 우측 상단 <strong>주황색 "출력"</strong> 버튼 클릭
+                        </li>
+                        <li>
+                          인쇄 대화상자에서 대상을 <strong>"PDF로 저장"</strong>으로 바꾼 뒤 저장
+                        </li>
+                      </ol>
+
                       <p className="courses-pdf-help-note">
-                        성적증명서·수강신청내역·시간표 화면은 표 형식이 달라 인식되지 않아요. 반드시
-                        "전체성적조회" 또는 "이수과목확인리스트" 화면으로 저장한 PDF를 사용해주세요.
+                        화면을 캡처한 사진이 아니라 위 방식으로 저장한 PDF여야 정확히 인식돼요. 성적증명서·수강신청내역·시간표
+                        화면은 표 형식이 달라 인식되지 않으니, 반드시 위 두 화면 중 하나로 저장한 PDF를 사용해주세요.
                       </p>
                     </details>
 

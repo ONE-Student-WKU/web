@@ -61,6 +61,12 @@ function App() {
   // 메뉴로 평범하게 들어온 경우엔 안 켜지게 별도 플래그로 관리.
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
+  // 채팅 화면의 입력창이 포커스를 받으면(모바일 키보드가 뜨면) 하단 탭바를 잠깐 숨겨
+  // 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는 값이니 view가 바뀔 때마다 초기화.
+  const [chatInputFocused, setChatInputFocused] = useState(false);
+  useEffect(() => {
+    if (view !== 'chat') setChatInputFocused(false);
+  }, [view]);
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
@@ -145,6 +151,7 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onInputFocusChange={setChatInputFocused}
           />
         ) : view === 'courses' ? (
           <CourseManagement
@@ -213,7 +220,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && TAB_BAR_VIEWS.has(view) && (
+        {authChecked && user && TAB_BAR_VIEWS.has(view) && !(view === 'chat' && chatInputFocused) && (
           <BottomTabBar
             active={VIEW_TO_TAB[view] || null}
             onOpenHome={() => setView('home')}
