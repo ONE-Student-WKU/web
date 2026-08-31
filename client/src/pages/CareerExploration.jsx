@@ -127,6 +127,13 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   const [editDrafts, setEditDrafts] = useState([]); // FIXED_QUESTIONS와 같은 순서의 string[] 배열
   const [savingEdit, setSavingEdit] = useState(false);
+  // 모바일에서 입력창에 포커스가 가면(키보드가 뜨면) 화면이 좁아지므로, 입력창 자체를
+  // 제외한 주변 UI(하단 탭바)를 잠깐 접어 입력 공간을 확보한다 — Chat.jsx와 동일한 패턴.
+  const [inputFocused, setInputFocused] = useState(false);
+  const handleInputFocusChange = (focused) => {
+    setInputFocused(focused);
+    onInputFocusChange?.(focused);
+  };
 
   const bottomRef = useRef(null);
   const bodyRef = useRef(null);
@@ -156,6 +163,13 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [messages, stage]);
+
+  // 입력창 포커스(모바일 키보드가 뜨는 시점)에도 다시 스크롤 — Chat.jsx와 동일한 이유.
+  useEffect(() => {
+    if (!inputFocused) return;
+    const timer = setTimeout(() => bottomRef.current?.scrollIntoView({ block: 'end' }), 300);
+    return () => clearTimeout(timer);
+  }, [inputFocused]);
 
   // 채팅에서 답변 수정 화면으로 넘어오면 채팅창의 "맨 아래로 스크롤" 상태가 그대로
   // 이어져서, 맨 위 제목 없이 질문·선택된 답만 불쑥 보이는 문제가 있었다(실사용 피드백).
@@ -499,7 +513,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       </div>
 
       {stage === 'chat' && (
-        <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={onInputFocusChange} />
+        <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={handleInputFocusChange} />
       )}
 
       {(showConfirmModal || loadingCandidates) && (
