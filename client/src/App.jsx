@@ -57,6 +57,29 @@ function App() {
       .finally(() => setAuthChecked(true));
   }, []);
 
+  // 모바일 키보드가 뜨면 .app-frame의 높이를 실제 보이는 영역(visualViewport)에 맞춰
+  // 갱신한다 — CSS의 100dvh만으로는 브라우저에 따라 키보드가 떠도 줄어들지 않는 경우가
+  // 있어(특히 iOS Safari 구버전), 레이아웃 뷰포트가 키보드에 가려진 만큼 문서가 화면보다
+  // 커진 것으로 처리돼 브라우저가 포커스된 입력창을 보이게 하려고 페이지 전체를 스크롤해
+  // 버린다. 그 결과 상단 헤더까지 화면 밖으로 밀려났다(실사용 피드백). visualViewport
+  // 높이를 CSS 변수로 직접 반영하면 .app-frame이 실제 보이는 만큼만 차지해 그런 스크롤이
+  // 애초에 필요 없어진다.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const syncViewportHeight = () => {
+      document.documentElement.style.setProperty('--app-vh', `${vv.height}px`);
+      window.scrollTo(0, 0);
+    };
+    syncViewportHeight();
+    vv.addEventListener('resize', syncViewportHeight);
+    vv.addEventListener('scroll', syncViewportHeight);
+    return () => {
+      vv.removeEventListener('resize', syncViewportHeight);
+      vv.removeEventListener('scroll', syncViewportHeight);
+    };
+  }, []);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
   );
