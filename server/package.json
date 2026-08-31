@@ -7,6 +7,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "seed": "node scripts/seed.js",
+    "seed:reference-data": "node scripts/seedReferenceData.js",
     "seed:course-offerings": "node scripts/seedCourseOfferings.js",
     "seed:curriculum": "node scripts/seedCurriculum.js",
     "seed:regulations": "node scripts/seedRegulations.js",

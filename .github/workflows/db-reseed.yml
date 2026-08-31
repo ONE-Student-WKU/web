@@ -1,9 +1,10 @@
-# ⚠️ Phase 4(server/scripts/seed.js 분리) 완료 전까지, 아래에서 트리거하는 Railway
-# Cron Job 서비스(reseed-SAFE-ONLY-no-seed-js)의 Start Command에
-# `npm run seed --workspace=server` (= seed.js 전체)를 절대 추가하지 말 것 —
+# ⚠️ 아래에서 트리거하는 Railway Cron Job 서비스(reseed-SAFE-ONLY-no-seed-js)의 Start
+# Command에 `npm run seed --workspace=server` (= seed.js 전체)를 절대 추가하지 말 것 —
 # 가짜 학생 계정(seedStudents / seedStudentCourses)까지 승인자도 모르는 채로 운영 DB에
-# 자동으로 들어가게 된다. 이 파이프라인이 자동화하는 대상은 아래 3개뿐이다:
-#   seed:course-offerings / seed:curriculum / seed:regulations -- --force
+# 자동으로 들어가게 된다. 이 파이프라인이 자동화하는 대상은 아래 4개뿐이다:
+#   seed:course-offerings / seed:curriculum / seed:regulations -- --force / seed:reference-data
+# (seed:reference-data는 seed.js가 export하는 seedDepartments/seedCurriculumRequirements만
+# 호출하는 wrapper — server/scripts/seedReferenceData.js 참고, 가짜 계정 함수는 export 안 됨)
 name: DB Reseed (curriculum / regulations)
 
 on:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'db/regulations/**'
       - 'db/curriculum/**'
+      - 'db/seed/curriculum_requirements.json'
   # 검증 단계 임시 트리거 — 이 파일이 존재하는 어떤 브랜치에서든 Actions 탭에서 수동 실행 가능.
   # 검증이 끝난 뒤에도 지우지 않고 남겨둬도 안전하다(아래와 동일한 db-reseed 승인 게이트를 그대로 거침).
   workflow_dispatch:
