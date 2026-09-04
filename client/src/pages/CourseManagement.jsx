@@ -716,7 +716,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           {myCourses.map((c) => (
             <div key={c.id} className="courses-list-item">
               <div className="courses-list-item-info">
-                <p className="courses-list-item-name">{c.name}</p>
+                <p className="courses-list-item-name">
+                  {c.name}
+                  {c.supersededByRetake && <span className="courses-superseded-badge">재수강으로 대체됨</span>}
+                </p>
                 <p className="courses-list-item-meta">
                   {displayCategory(c.category)} · {c.credits}학점
                 </p>
