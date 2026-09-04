@@ -105,10 +105,13 @@ async function fetchEarnedCreditsByCategory(studentId) {
 
 async function fetchMatchedCourseNames(studentId, courseNames) {
   if (courseNames.length === 0) return [];
-  const [rows] = await pool.query('SELECT DISTINCT name FROM student_courses WHERE student_id = ? AND name IN (?)', [
-    studentId,
-    courseNames,
-  ]);
+  // fetchEarnedCreditsByCategory와 동일하게 F/NP는 이수로 치지 않는다 — 수강만 하고
+  // 불합격한 과목이 졸업논문/졸업인증제 요건을 충족시키면 안 됨.
+  const [rows] = await pool.query(
+    `SELECT DISTINCT name FROM student_courses
+     WHERE student_id = ? AND name IN (?) AND (letter_grade IS NULL OR letter_grade NOT IN (?))`,
+    [studentId, courseNames, FAILING_GRADES]
+  );
   return rows.map((r) => r.name);
 }
 
