@@ -17,6 +17,7 @@ router.post('/signup', async (req, res, next) => {
 
     if (!email) return res.status(400).json({ status: 400, code: 'REQUIRED_EMAIL', message: null, data: null });
     if (!password) return res.status(400).json({ status: 400, code: 'REQUIRED_PASSWORD', message: null, data: null });
+    if (password.length < 8) return res.status(400).json({ status: 400, code: 'PASSWORD_TOO_SHORT', message: null, data: null });
     if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
 
     const existing = await studentService.findByEmail(email);

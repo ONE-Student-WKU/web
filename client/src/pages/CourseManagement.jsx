@@ -229,6 +229,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   };
 
   useEffect(() => {
+    // 학기를 바꿨는데 이전 학기 기준 검색 결과/선택이 그대로 남아있으면, 실제로는
+    // 개설되지 않은 학기에도 그 과목을 추가할 수 있게 된다 — 학기 전환 시 함께 초기화.
+    setKeyword('');
+    setSearchResults([]);
+    setCatalogSelection(null);
+    setManualSchedule([]);
+    searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);

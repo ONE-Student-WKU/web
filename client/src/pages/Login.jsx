@@ -14,6 +14,16 @@ function Login({ onLoginSuccess }) {
   const [name, setName] = useState('');
   const [error, setError] = useState(null);
 
+  const describeAuthError = (err) => {
+    if (err.code === 'REQUIRED_EMAIL') return '이메일을 입력해주세요.';
+    if (err.code === 'REQUIRED_PASSWORD') return '비밀번호를 입력해주세요.';
+    if (err.code === 'REQUIRED_NAME') return '이름을 입력해주세요.';
+    if (err.code === 'PASSWORD_TOO_SHORT') return '비밀번호는 8자 이상이어야 해요.';
+    if (err.code === 'EMAIL_ALREADY_EXISTS') return '이미 가입된 이메일이에요.';
+    if (err.code === 'INVALID_CREDENTIALS') return '이메일 또는 비밀번호가 올바르지 않아요.';
+    return '요청에 실패했어요. 잠시 후 다시 시도해주세요.';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -24,7 +34,7 @@ function Login({ onLoginSuccess }) {
       const user = await login(email, password);
       onLoginSuccess(user);
     } catch (err) {
-      setError(err.code || 'REQUEST_FAILED');
+      setError(describeAuthError(err));
     }
   };
 
