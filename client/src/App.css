@@ -1187,6 +1187,18 @@ body {
   color: var(--color-text-primary);
 }
 
+.courses-superseded-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  vertical-align: middle;
+}
+
 .courses-list-item-meta {
   font-size: 0.75rem;
   color: var(--color-text-muted);
