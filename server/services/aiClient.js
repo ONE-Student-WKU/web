@@ -289,10 +289,60 @@ async function generateCareerRoadmap(careerName, careerReasoning, remainingCours
   return parseJsonArray(text);
 }
 
+// "이수과목확인리스트" 표 파싱용. 기기/브라우저마다 인쇄 시 표 레이아웃 간격이 미묘하게
+// 달라져(모바일에서 특히 심함, 실사용 확인) 위치·간격 기반 정규식이 계속 깨졌던 문제를
+// 근본적으로 줄이기 위해 AI에게 맡긴다 — 레이아웃이 달라도 "구분코드 + 이름 + 연도/학기 +
+// 학점" 의미 단위는 그대로 알아볼 수 있어서 정규식보다 기기 편차에 훨씬 덜 민감하다.
+const COURSE_LIST_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "이수과목확인리스트" 문서에서 이수한 과목 정보를 추출하는 도우미다.
+아래 텍스트는 표 형식 문서를 그대로 뽑아낸 것으로, 각 과목 행은 "이수구분 코드, 교과목명,
+연도/학기(YYYY/N 형식), 학점" 순서로 나열되어 있다. 학점 앞이나 뒤에 '*'가 붙어 있으면
+그 과목이 F(불합격)라는 뜻이다.
+
+다음은 과목이 아니니 절대 결과에 포함하지 마라: 문서 상단의 학생 개인정보, 표 헤더 문구
+("구분", "교과목명" 등), 소계·합계 문구("OO취득학점", "총 취득학점" 등 숫자만 있는 줄).
+
+이수구분 코드는 아래 목록에 있는 값 그대로(변형 없이) 옮겨 적어라:
+교필, 교선, 교기, 기전, 선전, 일선, 계필, 계기, 기초, 심화, 응용, 교직
+
+그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
+[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "isFail": false}]`;
+
+// "전체성적조회" 표 파싱용 — 학기별 섹션 구조와 등급까지 함께 추출한다.
+const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성적조회" 문서에서 이수한 과목 정보를 추출하는 도우미다.
+문서는 학기별 섹션("YYYY 년 N 학기" 형식의 제목)으로 나뉘고, 각 섹션 아래 과목 행은
+"이수구분, 학수번호, 교과목명, 학점, 평점, 등급" 순서로 나열되어 있다.
+
+다음은 과목이 아니니 절대 결과에 포함하지 마라: 문서 상단의 학생 개인정보(학과/학번/성명),
+표 헤더 문구, 학기별 소계("취득학점"/"평균평점" 행), 페이지 인쇄 정보("Wonkwang University",
+페이지 번호, 인쇄 시각 등).
+
+각 과목이 어느 학기 섹션에 속하는지 정확히 판단해서 그 섹션의 연도/학기를 그대로 써라.
+등급은 A+, A0, B+, B0, C+, C0, D+, D0, F, P, NP 중 하나를 그대로 옮겨 적어라.
+
+이수구분 코드는 아래 목록에 있는 값 그대로(변형 없이) 옮겨 적어라:
+교필, 교선, 교기, 기전, 선전, 일선, 계필, 계기, 기초, 심화, 응용, 교직
+
+그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
+[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "letterGrade": "A+"}]`;
+
+// 소계/카테고리 대조(pdfImportService.js)는 여기서 뽑은 rawCategory/credits를 그대로 쓰므로,
+// 이 프롬프트가 코드값을 변형 없이 옮기게 강제하는 게 대조 정확도에 중요하다.
+async function extractCourseListRows(rawText) {
+  const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000);
+  return parseJsonArray(text);
+}
+
+async function extractFullTranscriptRows(rawText) {
+  const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000);
+  return parseJsonArray(text);
+}
+
 module.exports = {
   getAIChatResponse,
   rewriteSearchQuery,
   getCareerFollowUp,
   generateCareerCandidates,
   generateCareerRoadmap,
+  extractCourseListRows,
+  extractFullTranscriptRows,
 };
