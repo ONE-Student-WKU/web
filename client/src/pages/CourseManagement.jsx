@@ -11,10 +11,11 @@ import {
   addMyCourse,
   updateMyCourse,
   deleteMyCourse,
+  deleteAllMyCourses,
   importCoursesFromPdf,
   confirmImportedCourses,
 } from '../api/chatApi.js';
-import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck } from '../components/icons.jsx';
+import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck, IconAlertTriangle } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { displayCategory } from '../utils/graduation.js';
 
@@ -110,6 +111,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [status, setStatus] = useState(courseMgmtCache.status);
   const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
   const [retakeEligible, setRetakeEligible] = useState(courseMgmtCache.retakeEligible || []);
+  // 현재 보고 있는 학기 탭엔 변화가 없는데(PDF로 지난 학기들을 한꺼번에 채우는 경우 등)
+  // "전체 이수학점"만 바뀌면 뭐가 달라졌는지 눈치채기 어렵다(실사용 피드백) — 값이 실제로
+  // 바뀔 때만 휴학 학기 수 강조와 같은 펄스 애니메이션을 준다.
+  const [totalCreditsHighlight, setTotalCreditsHighlight] = useState(false);
   const initialSemesterCache = courseMgmtCache.semesterData.get(semesterKey(current.year, current.semester));
   const [myCourses, setMyCourses] = useState(initialSemesterCache?.myCourses || []);
   const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
@@ -190,13 +195,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setSummary(data);
         courseMgmtCache.summary = data;
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     getSemesters()
       .then((data) => {
         setSemesters(data);
         courseMgmtCache.semesters = data;
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     getRetakeEligibleCourses()
       .then((data) => {
         setRetakeEligible(data);
@@ -234,11 +239,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setTimetable(table);
         courseMgmtCache.semesterData.set(key, { myCourses: courses, timetable: table });
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'))
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setSemesterLoading(false));
   };
 
   useEffect(() => {
+    // 학기를 바꿨는데 이전 학기 기준 검색 결과/선택이 그대로 남아있으면, 실제로는
+    // 개설되지 않은 학기에도 그 과목을 추가할 수 있게 된다 — 학기 전환 시 함께 초기화.
+    setKeyword('');
+    setSearchResults([]);
+    setCatalogSelection(null);
+    setManualSchedule([]);
+    searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
@@ -301,6 +313,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
+  // 실제 "지금" 학기 탭에서만 시간표를 보여준다 — 지난 학기는 수강신청 당시 시간표 정보가
+  // 없어 대부분 비어있고, 미래 학기는 아직 개설 전이라 시간표 자체가 없다(실사용 확인).
+  const realCurrentSemester = getCurrentYearSemester();
+  const isViewingRealCurrentSemester =
+    current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
+
   // 카탈로그(course_offerings)는 학기별 실제 개설 정보라 지금 보고 있는 탭(current.year/semester)
   // 그대로 카탈로그 검색에 넘긴다 — 2017-1~2026-2 범위의 실제 분반/교수/시간이 그대로 나온다.
   // 그 범위 밖(수집 전/이후 학기)은 검색해도 결과가 없을 뿐이라 별도 게이트가 필요 없다
@@ -320,8 +338,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     return map;
   }, [timetable]);
 
-  async function refreshAfterChange() {
+  // highlightTotalChange: PDF 가져오기처럼 현재 보고 있는 학기 탭엔 변화가 없는데(지난
+  // 학기들이 한꺼번에 채워지는 경우) "전체 이수학점"만 바뀌어서 뭐가 달라졌는지 눈치채기
+  // 어려운 경로에서만 켠다. 과목 하나 추가/삭제/성적 입력처럼 지금 보고 있는 화면에 바로
+  // 변화가 보이는 일반적인 경로는 강조가 필요 없어 기본값 false.
+  async function refreshAfterChange({ highlightTotalChange = false } = {}) {
     loadSemesterData(current.year, current.semester);
+    const previousTotal = summary?.total?.earnedCredits;
     const [s, sems, retake] = await Promise.all([getCourseSummary(), getSemesters(), getRetakeEligibleCourses()]);
     setSummary(s);
     setSemesters(sems);
@@ -329,6 +352,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     courseMgmtCache.summary = s;
     courseMgmtCache.semesters = sems;
     courseMgmtCache.retakeEligible = retake;
+    if (highlightTotalChange && previousTotal !== undefined && s.total.earnedCredits !== previousTotal) {
+      setTotalCreditsHighlight(true);
+      setTimeout(() => setTotalCreditsHighlight(false), 2100); // settings-highlight-pulse 지속 시간(0.7s x 3)
+    }
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
@@ -355,6 +382,19 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       await refreshAfterChange();
     } catch {
       setError('삭제에 실패했어요.');
+    }
+  };
+
+  // 등록된 과목을 전부 지우고 처음부터 다시 등록하고 싶을 때(PDF 재업로드 테스트 등) 쓰는
+  // 되돌릴 수 없는 동작 — 실수로 누르는 걸 막기 위해 두 번 확인한다.
+  const handleDeleteAll = async () => {
+    if (!window.confirm('등록된 과목을 전부 삭제할까요? 되돌릴 수 없어요.')) return;
+    setError(null);
+    try {
+      await deleteAllMyCourses();
+      await refreshAfterChange();
+    } catch {
+      setError('전체 삭제에 실패했어요.');
     }
   };
 
@@ -540,7 +580,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         }))
       );
       closeAddForm();
-      await refreshAfterChange();
+      await refreshAfterChange({ highlightTotalChange: true });
 
       const { inserted = 0, gradesFilled = 0, skipped = 0 } = result || {};
       const segments = [];
@@ -585,8 +625,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
         {outOfRangeYears.length > 0 && (
           <p className="home-error">
-            현재 학번({profile.admissionYear}학번)보다 이전 학기({outOfRangeYears.join(', ')}년)에 등록된 과목이
-            남아있어요. 학번·학과 정보를 변경하셨다면 필요 없는 과목은 아래 목록에서 직접 삭제해주세요.
+            학번을 바꾸셨네요 — {outOfRangeYears.join(', ')}년 과목은 그대로 남아있어요. 필요 없으면 아래에서 삭제해주세요.
           </p>
         )}
 
@@ -685,7 +724,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             </div>
 
             <div className="courses-summary-row courses-summary-row-total">
-              <div className="courses-summary-stat">
+              <div className={'courses-summary-stat' + (totalCreditsHighlight ? ' settings-highlight' : '')}>
                 <p className="home-card-label">전체 이수학점</p>
                 <p className="courses-summary-value">
                   {status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0}학점
@@ -699,7 +738,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </>
         )}
 
-        {(semesterLoading || myCourses.length > 0) && (
+        {isViewingRealCurrentSemester && (semesterLoading || myCourses.length > 0) && (
           <>
             <p className="courses-section-label">시간표</p>
             {semesterLoading ? (
@@ -744,7 +783,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           {myCourses.map((c) => (
             <div key={c.id} className="courses-list-item">
               <div className="courses-list-item-info">
-                <p className="courses-list-item-name">{c.name}</p>
+                <p className="courses-list-item-name">
+                  {c.name}
+                  {c.supersededByRetake && <span className="courses-superseded-badge">재수강으로 대체됨</span>}
+                </p>
                 <p className="courses-list-item-meta">
                   {displayCategory(c.category)} · {c.credits}학점
                 </p>
@@ -769,16 +811,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         </div>
 
         {!showAddForm && (
-          <button
-            className="courses-add-btn"
-            onClick={() => {
-              setError(null);
-              setShowAddForm(true);
-            }}
-          >
-            <IconPlus />
-            과목 추가
-          </button>
+          <>
+            <button
+              className="courses-add-btn"
+              onClick={() => {
+                setError(null);
+                setShowAddForm(true);
+              }}
+            >
+              <IconPlus />
+              과목 추가
+            </button>
+            <button className="courses-delete-all-btn" onClick={handleDeleteAll}>
+              <IconTrash />
+              전체 삭제
+            </button>
+          </>
         )}
 
         {showAddForm && (
@@ -877,7 +925,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     </details>
 
                     <label className="courses-pdf-upload-btn">
-                      {pdfLoading ? '분석 중...' : 'PDF 파일 선택'}
+                      {pdfLoading ? (
+                        <span className="courses-pdf-upload-loading">
+                          <span className="courses-pdf-spinner" aria-hidden="true" />
+                          분석 중...
+                        </span>
+                      ) : (
+                        'PDF 파일 선택'
+                      )}
                       <input
                         type="file"
                         accept="application/pdf,.pdf"
@@ -957,8 +1012,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     {pdfWarnings.length > 0 && (
                       <div className="courses-pdf-warnings">
                         {pdfWarnings.map((w, i) => (
-                          <p key={i} className="home-error courses-form-error">
-                            {w}
+                          <p key={i} className="courses-pdf-warning-item">
+                            <IconAlertTriangle size={14} />
+                            <span>{w}</span>
                           </p>
                         ))}
                       </div>

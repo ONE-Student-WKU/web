@@ -1,6 +1,6 @@
 const pool = require('../db');
 const studentService = require('./studentService');
-const { FAILING_GRADES, pickLatestAttemptPerCourse } = require('./courseService');
+const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 
 /**
  * server/services/graduationService.js
@@ -80,31 +80,37 @@ async function fetchRequiredCourseNames(requirementId) {
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
-  // getSummary(courseService.js)와 동일한 "FAILING_GRADES(F/NP)만 아니면 이수학점" 규칙 —
-  // 성적 미입력(진행 중) 과목도 포함한다. 재수강 이전 시도는 집계에서 완전히 제외
-  // (pickLatestAttemptPerCourse, courseService.js 참고) — SUM을 SQL에서 바로 못 하므로
-  // 행을 가져와 이름별 최신 시도만 남긴 뒤 JS에서 합산한다.
-  const [rows] = await pool.query(
-    `SELECT name, year, semester, category, credits, letter_grade
+  // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
+  // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
+  //
+  // 재수강으로 대체된 이전 학기 기록(courseService.getSupersededCourseIds — 같은 과목명 중
+  // 최신 학기 것만 남김)도 여기서 같이 제외해야 카테고리별 이수학점이 중복 집계되지 않는다.
+  const supersededIds = await getSupersededCourseIds(studentId);
+  let sql = `SELECT category, SUM(credits) AS credits
      FROM student_courses
-     WHERE student_id = ?`,
-    [studentId]
-  );
-
-  const map = {};
-  for (const row of pickLatestAttemptPerCourse(rows)) {
-    if (row.letter_grade !== null && FAILING_GRADES.includes(row.letter_grade)) continue;
-    map[row.category] = (map[row.category] || 0) + Number(row.credits);
+     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))`;
+  const params = [studentId, FAILING_GRADES];
+  if (supersededIds.size > 0) {
+    sql += ' AND id NOT IN (?)';
+    params.push([...supersededIds]);
   }
+  sql += ' GROUP BY category';
+
+  const [rows] = await pool.query(sql, params);
+  const map = {};
+  for (const row of rows) map[row.category] = Number(row.credits);
   return map;
 }
 
 async function fetchMatchedCourseNames(studentId, courseNames) {
   if (courseNames.length === 0) return [];
-  const [rows] = await pool.query('SELECT DISTINCT name FROM student_courses WHERE student_id = ? AND name IN (?)', [
-    studentId,
-    courseNames,
-  ]);
+  // fetchEarnedCreditsByCategory와 동일하게 F/NP는 이수로 치지 않는다 — 수강만 하고
+  // 불합격한 과목이 졸업논문/졸업인증제 요건을 충족시키면 안 됨.
+  const [rows] = await pool.query(
+    `SELECT DISTINCT name FROM student_courses
+     WHERE student_id = ? AND name IN (?) AND (letter_grade IS NULL OR letter_grade NOT IN (?))`,
+    [studentId, courseNames, FAILING_GRADES]
+  );
   return rows.map((r) => r.name);
 }
 

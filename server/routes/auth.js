@@ -17,6 +17,7 @@ router.post('/signup', async (req, res, next) => {
 
     if (!email) return res.status(400).json({ status: 400, code: 'REQUIRED_EMAIL', message: null, data: null });
     if (!password) return res.status(400).json({ status: 400, code: 'REQUIRED_PASSWORD', message: null, data: null });
+    if (password.length < 8) return res.status(400).json({ status: 400, code: 'PASSWORD_TOO_SHORT', message: null, data: null });
     if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
 
     const existing = await studentService.findByEmail(email);
@@ -52,16 +53,18 @@ router.post('/login', async (req, res, next) => {
 
     req.session.userId = student.id;
 
+    // findByEmail은 department/track 이름 조인이 없는 단순 조회라 로그인 인증에만 쓰고,
+    // 실제 응답은 /api/me와 동일하게 findById(조인 포함) + serializeStudent로 만든다 —
+    // 로그인 응답에 departmentId/admissionYear 등이 빠지면, 그 값을 그대로 믿는 화면
+    // (Onboarding.jsx 재진입 등)이 이미 등록된 정보를 "선택 필요"로 잘못 표시하는 문제가
+    // 실사용으로 확인됨.
+    const fullStudent = await studentService.findById(student.id);
+
     return res.status(200).json({
       status: 200,
       code: 'LOGIN_SUCCESS',
       message: null,
-      data: {
-        id: student.id,
-        email: student.email,
-        name: student.name,
-        onboardingCompleted: !!student.onboarding_completed_at,
-      },
+      data: studentService.serializeStudent(fullStudent),
     });
   } catch (err) {
     next(err);

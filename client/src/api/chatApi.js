@@ -70,6 +70,8 @@ export const updateMyCourse = (id, payload) =>
 
 export const deleteMyCourse = (id) => apiRequest(`/my-courses/${id}`, { method: 'DELETE' });
 
+export const deleteAllMyCourses = () => apiRequest('/my-courses', { method: 'DELETE' });
+
 // multipart라 apiRequest의 JSON Content-Type을 못 쓴다 — fetch가 FormData를 보낼 때
 // boundary가 포함된 Content-Type을 알아서 설정하므로 직접 지정하면 안 됨.
 export const importCoursesFromPdf = async (file) => {

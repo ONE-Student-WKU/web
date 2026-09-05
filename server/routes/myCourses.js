@@ -254,6 +254,17 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
+// DELETE /api/my-courses — 등록된 과목 전체 삭제(테스트/재입력 편의용). 되돌릴 수 없어
+// 프론트에서 반드시 확인 절차를 거친 뒤 호출해야 한다.
+router.delete('/', async (req, res, next) => {
+  try {
+    await courseService.deleteAllMyCourses(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'MY_COURSES_DELETE_ALL_SUCCESS', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /api/my-courses/:id
 router.delete('/:id', async (req, res, next) => {
   try {

@@ -35,21 +35,6 @@ function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
 
-// 재수강: 같은 과목명으로 여러 학기에 걸쳐 등록된 경우, 학칙상 이전 시도의 성적은 삭제되어
-// 취득학점·평점 계산에서 완전히 제외되고 최신 시도(연도/학기 기준)만 인정된다
-// (db/regulations/수강신청/재수강.md 4번). getSummary와 graduationService의 이수학점 집계
-// 양쪽에서 같은 규칙이 필요해 공용 헬퍼로 뺐다 — {name, year, semester} 필드만 있으면 된다.
-function pickLatestAttemptPerCourse(rows) {
-  const latestByName = new Map();
-  for (const row of rows) {
-    const existing = latestByName.get(row.name);
-    if (!existing || row.year > existing.year || (row.year === existing.year && row.semester > existing.semester)) {
-      latestByName.set(row.name, row);
-    }
-  }
-  return [...latestByName.values()];
-}
-
 // year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
 // 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
 // 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
@@ -97,7 +82,7 @@ async function findCourseById(courseId) {
   return rows[0] || null;
 }
 
-function mapMyCourseRow(row) {
+function mapMyCourseRow(row, supersededIds) {
   return {
     id: row.id,
     courseId: row.course_id,
@@ -113,7 +98,35 @@ function mapMyCourseRow(row) {
     assignment: numOrNull(row.assignment),
     etc: numOrNull(row.etc),
     letterGrade: row.letter_grade,
+    supersededByRetake: supersededIds.has(row.id),
   };
+}
+
+// 재수강 규정("재수강한 경우 최종적으로 재수강한 학점으로 기재됨, 기존 교과목 성적은
+// 취득학점·평점계산에서 제외") — 같은 과목명이 여러 학기에 걸쳐 등록돼 있으면(수동 추가,
+// 카탈로그 추가, PDF 일괄 가져오기 경로 모두 동일하게 student_courses에 쌓이므로 출처와
+// 무관하게 적용됨) 연도/학기 기준 최신 한 건만 남기고 나머지는 학점·GPA 집계에서 제외한다.
+// 등급값과 무관하게 순수 시점 비교만 하므로 성적 미입력(진행 중) 상태에서도 안정적으로 동작.
+function computeSupersededIds(rows) {
+  const byName = new Map();
+  for (const row of rows) {
+    if (!byName.has(row.name)) byName.set(row.name, []);
+    byName.get(row.name).push(row);
+  }
+  const superseded = new Set();
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => a.year - b.year || a.semester - b.semester);
+    for (let i = 0; i < group.length - 1; i++) superseded.add(group[i].id);
+  }
+  return superseded;
+}
+
+async function getSupersededCourseIds(studentId) {
+  const [rows] = await pool.query('SELECT id, name, year, semester FROM student_courses WHERE student_id = ?', [
+    studentId,
+  ]);
+  return computeSupersededIds(rows);
 }
 
 async function listMyCourses(studentId, { year, semester }) {
@@ -138,8 +151,8 @@ async function listMyCourses(studentId, { year, semester }) {
   }
   sql += ' ORDER BY sc.year DESC, sc.semester DESC, sc.id';
 
-  const [rows] = await pool.query(sql, params);
-  return rows.map(mapMyCourseRow);
+  const [rows, supersededIds] = await Promise.all([pool.query(sql, params).then(([r]) => r), getSupersededCourseIds(studentId)]);
+  return rows.map((row) => mapMyCourseRow(row, supersededIds));
 }
 
 // 전공: courseId만 넘어오면 카탈로그 값(name/credits/category)을 그대로 복사해 저장(스냅샷).
@@ -295,6 +308,12 @@ async function deleteMyCourse(id) {
   await pool.query('DELETE FROM student_courses WHERE id = ?', [id]);
 }
 
+// 등록된 과목 전체 삭제(테스트/재입력 편의용) — student_id로 직접 범위를 좁히므로
+// deleteMyCourse와 달리 호출 전 소유권 확인이 따로 필요 없다.
+async function deleteAllMyCourses(studentId) {
+  await pool.query('DELETE FROM student_courses WHERE student_id = ?', [studentId]);
+}
+
 async function getTimetable(studentId, { year, semester }) {
   // 두 소스를 합친다: ① 카탈로그 과목의 course_offering_schedules(분반 시간),
   // ② 직접입력 과목에 선택적으로 넣은 student_course_schedules.
@@ -339,21 +358,22 @@ async function getSummary(studentId) {
   // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인,
   // FAILING_GRADES만 제외).
   const [rows] = await pool.query(
-    `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade, sc.name
+    `SELECT sc.id, sc.name, sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
      FROM student_courses sc
      WHERE sc.student_id = ?`,
     [studentId]
   );
-
-  // 재수강 이전 시도는 집계에서 완전히 제외 — pickLatestAttemptPerCourse 참고.
-  const countedRows = pickLatestAttemptPerCourse(rows);
+  const supersededIds = computeSupersededIds(rows);
 
   const bySemesterMap = new Map();
   let totalCredits = 0;
   let totalPoints = 0;
   let totalGpaCredits = 0;
 
-  for (const row of countedRows) {
+  for (const row of rows) {
+    // 재수강으로 대체된 이전 학기 기록은 취득학점·평점 집계에서 완전히 제외 (재수강.md 참고).
+    if (supersededIds.has(row.id)) continue;
+
     const key = `${row.year}-${row.semester}`;
     if (!bySemesterMap.has(key)) {
       bySemesterMap.set(key, { year: row.year, semester: row.semester, earnedCredits: 0, gpaCredits: 0, points: 0 });
@@ -446,6 +466,7 @@ module.exports = {
   VALID_CATEGORIES,
   LETTER_GRADES,
   FAILING_GRADES,
+  getSupersededCourseIds,
   searchCatalog,
   findCourseById,
   listMyCourses,
@@ -454,9 +475,9 @@ module.exports = {
   findMyCourseById,
   updateMyCourse,
   deleteMyCourse,
+  deleteAllMyCourses,
   getTimetable,
   getSummary,
   listSemesters,
   listRetakeEligibleCourses,
-  pickLatestAttemptPerCourse,
 };
