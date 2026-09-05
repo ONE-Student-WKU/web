@@ -186,13 +186,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setSummary(data);
         courseMgmtCache.summary = data;
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     getSemesters()
       .then((data) => {
         setSemesters(data);
         courseMgmtCache.semesters = data;
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
@@ -224,7 +224,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setTimetable(table);
         courseMgmtCache.semesterData.set(key, { myCourses: courses, timetable: table });
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'))
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setSemesterLoading(false));
   };
 

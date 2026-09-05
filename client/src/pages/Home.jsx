@@ -59,7 +59,7 @@ function Home({
         setProfile(data);
         homeDataCache.profile = data;
       })
-      .catch(() => setError('정보를 불러오지 못했어요.'));
+      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
 
     // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
     // 항상 맞는다 — 예전엔 진행률 카드가 courseService.getSummary()의 카테고리 상한 없는

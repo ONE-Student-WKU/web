@@ -41,7 +41,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
         if (err.code === 'ONBOARDING_REQUIRED') {
           setOnboardingRequired(true);
         } else {
-          setError('졸업요건 정보를 불러오지 못했어요.');
+          setError('졸업요건 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.');
         }
       })
       .finally(() => setLoading(false));

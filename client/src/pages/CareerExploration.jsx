@@ -155,7 +155,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       })
       .catch((err) => {
         if (err.code === 'ONBOARDING_REQUIRED') setOnboardingRequired(true);
-        else setError('진로 탐색 정보를 불러오지 못했어요.');
+        else setError('진로 탐색 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.');
       })
       .finally(() => setLoading(false));
   }, []);

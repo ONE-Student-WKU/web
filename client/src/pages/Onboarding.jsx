@@ -107,7 +107,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
         setDepartments(data);
         cachedDepartments = data;
       })
-      .catch(() => setLoadError('학과 목록을 불러오지 못했어요.'))
+      .catch(() => setLoadError('학과 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setDepartmentsLoading(false));
   }, []);
 
