@@ -82,7 +82,7 @@ async function findCourseById(courseId) {
   return rows[0] || null;
 }
 
-function mapMyCourseRow(row) {
+function mapMyCourseRow(row, supersededIds) {
   return {
     id: row.id,
     courseId: row.course_id,
@@ -98,7 +98,35 @@ function mapMyCourseRow(row) {
     assignment: numOrNull(row.assignment),
     etc: numOrNull(row.etc),
     letterGrade: row.letter_grade,
+    supersededByRetake: supersededIds.has(row.id),
   };
+}
+
+// 재수강 규정("재수강한 경우 최종적으로 재수강한 학점으로 기재됨, 기존 교과목 성적은
+// 취득학점·평점계산에서 제외") — 같은 과목명이 여러 학기에 걸쳐 등록돼 있으면(수동 추가,
+// 카탈로그 추가, PDF 일괄 가져오기 경로 모두 동일하게 student_courses에 쌓이므로 출처와
+// 무관하게 적용됨) 연도/학기 기준 최신 한 건만 남기고 나머지는 학점·GPA 집계에서 제외한다.
+// 등급값과 무관하게 순수 시점 비교만 하므로 성적 미입력(진행 중) 상태에서도 안정적으로 동작.
+function computeSupersededIds(rows) {
+  const byName = new Map();
+  for (const row of rows) {
+    if (!byName.has(row.name)) byName.set(row.name, []);
+    byName.get(row.name).push(row);
+  }
+  const superseded = new Set();
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => a.year - b.year || a.semester - b.semester);
+    for (let i = 0; i < group.length - 1; i++) superseded.add(group[i].id);
+  }
+  return superseded;
+}
+
+async function getSupersededCourseIds(studentId) {
+  const [rows] = await pool.query('SELECT id, name, year, semester FROM student_courses WHERE student_id = ?', [
+    studentId,
+  ]);
+  return computeSupersededIds(rows);
 }
 
 async function listMyCourses(studentId, { year, semester }) {
@@ -123,8 +151,8 @@ async function listMyCourses(studentId, { year, semester }) {
   }
   sql += ' ORDER BY sc.year DESC, sc.semester DESC, sc.id';
 
-  const [rows] = await pool.query(sql, params);
-  return rows.map(mapMyCourseRow);
+  const [rows, supersededIds] = await Promise.all([pool.query(sql, params).then(([r]) => r), getSupersededCourseIds(studentId)]);
+  return rows.map((row) => mapMyCourseRow(row, supersededIds));
 }
 
 // 전공: courseId만 넘어오면 카탈로그 값(name/credits/category)을 그대로 복사해 저장(스냅샷).
@@ -324,11 +352,12 @@ async function getSummary(studentId) {
   // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인,
   // FAILING_GRADES만 제외).
   const [rows] = await pool.query(
-    `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
+    `SELECT sc.id, sc.name, sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
      FROM student_courses sc
      WHERE sc.student_id = ?`,
     [studentId]
   );
+  const supersededIds = computeSupersededIds(rows);
 
   const bySemesterMap = new Map();
   let totalCredits = 0;
@@ -336,6 +365,9 @@ async function getSummary(studentId) {
   let totalGpaCredits = 0;
 
   for (const row of rows) {
+    // 재수강으로 대체된 이전 학기 기록은 취득학점·평점 집계에서 완전히 제외 (재수강.md 참고).
+    if (supersededIds.has(row.id)) continue;
+
     const key = `${row.year}-${row.semester}`;
     if (!bySemesterMap.has(key)) {
       bySemesterMap.set(key, { year: row.year, semester: row.semester, earnedCredits: 0, gpaCredits: 0, points: 0 });
@@ -387,6 +419,7 @@ module.exports = {
   VALID_CATEGORIES,
   LETTER_GRADES,
   FAILING_GRADES,
+  getSupersededCourseIds,
   searchCatalog,
   findCourseById,
   listMyCourses,
