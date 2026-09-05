@@ -11,28 +11,7 @@ const BCRYPT_ROUNDS = 10;
  * 근거: 위키 API-설계 2.1, 2.2 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS } = studentService;
-
-function serializeStudent(student) {
-  return {
-    id: student.id,
-    name: student.name,
-    department: student.department_name,
-    departmentId: student.department_id,
-    track: student.track_name,
-    trackId: student.track_id,
-    onboardingCompleted: !!student.onboarding_completed_at,
-    admissionYear: student.admission_year,
-    enrollmentType: student.enrollment_type,
-    majorChangeGrade: student.major_change_grade,
-    majorChangeYear: student.major_change_year,
-    majorChangeSemester: student.major_change_semester,
-    secondDepartment: student.second_department_name,
-    secondDepartmentId: student.second_department_id,
-    careerCounselingCount: student.career_counseling_count,
-    leaveSemesters: student.leave_semesters,
-  };
-}
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, serializeStudent } = studentService;
 
 // GET /api/me
 router.get('/me', requireAuth, async (req, res, next) => {
