@@ -308,6 +308,12 @@ async function deleteMyCourse(id) {
   await pool.query('DELETE FROM student_courses WHERE id = ?', [id]);
 }
 
+// 등록된 과목 전체 삭제(테스트/재입력 편의용) — student_id로 직접 범위를 좁히므로
+// deleteMyCourse와 달리 호출 전 소유권 확인이 따로 필요 없다.
+async function deleteAllMyCourses(studentId) {
+  await pool.query('DELETE FROM student_courses WHERE student_id = ?', [studentId]);
+}
+
 async function getTimetable(studentId, { year, semester }) {
   // 두 소스를 합친다: ① 카탈로그 과목의 course_offering_schedules(분반 시간),
   // ② 직접입력 과목에 선택적으로 넣은 student_course_schedules.
@@ -428,6 +434,7 @@ module.exports = {
   findMyCourseById,
   updateMyCourse,
   deleteMyCourse,
+  deleteAllMyCourses,
   getTimetable,
   getSummary,
   listSemesters,

@@ -331,6 +331,10 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   const headerTitle =
     stage === 'roadmap' && confirmedCareer ? `${confirmedCareer} 로드맵` : stage === 'editAnswers' ? '답변 수정' : '진로 탐색';
   const currentQuestion = FIXED_QUESTIONS[stepIndex];
+  // 자유 대화를 몇 번 나눴는데도 "추천받기"가 있는 걸 못 알아채는 경우를 위한 안내 —
+  // 과목 추가의 "한 번에 채우려면?" 말풍선과 같은 패턴. 자유 대화 메시지 4개(사용자+AI
+  // 2턴) 이상 쌓이면 보여주고, 후보를 이미 받았으면(chat 단계를 벗어나면) 자연히 사라진다.
+  const showRecommendHint = stage === 'chat' && messages.length - FIXED_MESSAGE_COUNT >= 4;
 
   return (
     <div className="courses-page">
@@ -354,14 +358,19 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
               <button type="button" className="career-edit-icon-btn" onClick={openEditAnswers} aria-label="처음 답변 수정">
                 <IconEdit />
               </button>
-              <button
-                type="button"
-                className="career-recommend-btn"
-                onClick={() => setShowConfirmModal(true)}
-                disabled={sending || loadingCandidates}
-              >
-                추천받기
-              </button>
+              <div className="career-recommend-hint-wrap">
+                {showRecommendHint && (
+                  <span className="career-recommend-hint-bubble">3~5분만 대화하고 눌러보세요</span>
+                )}
+                <button
+                  type="button"
+                  className="career-recommend-btn"
+                  onClick={() => setShowConfirmModal(true)}
+                  disabled={sending || loadingCandidates}
+                >
+                  추천받기
+                </button>
+              </div>
             </>
           )}
           <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} onOpenOnboarding={onOpenOnboarding} onOpenProfile={onOpenProfile} />
