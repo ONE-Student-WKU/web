@@ -6,6 +6,7 @@ import {
   getCourseSummary,
   getGraduationStatus,
   getSemesters,
+  getRetakeEligibleCourses,
   searchCatalog,
   addMyCourse,
   updateMyCourse,
@@ -48,6 +49,7 @@ const courseMgmtCache = {
   summary: null,
   semesters: null,
   status: null,
+  retakeEligible: null,
   semesterData: new Map(), // key: semesterKey(year, semester) -> { myCourses, timetable }
 };
 
@@ -57,6 +59,7 @@ export function resetCourseMgmtCache() {
   courseMgmtCache.summary = null;
   courseMgmtCache.semesters = null;
   courseMgmtCache.status = null;
+  courseMgmtCache.retakeEligible = null;
   courseMgmtCache.semesterData.clear();
 }
 
@@ -107,6 +110,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [summary, setSummary] = useState(courseMgmtCache.summary);
   const [status, setStatus] = useState(courseMgmtCache.status);
   const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
+  const [retakeEligible, setRetakeEligible] = useState(courseMgmtCache.retakeEligible || []);
   // 현재 보고 있는 학기 탭엔 변화가 없는데(PDF로 지난 학기들을 한꺼번에 채우는 경우 등)
   // "전체 이수학점"만 바뀌면 뭐가 달라졌는지 눈치채기 어렵다(실사용 피드백) — 값이 실제로
   // 바뀔 때만 휴학 학기 수 강조와 같은 펄스 애니메이션을 준다.
@@ -198,6 +202,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         courseMgmtCache.semesters = data;
       })
       .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+    getRetakeEligibleCourses()
+      .then((data) => {
+        setRetakeEligible(data);
+        courseMgmtCache.retakeEligible = data;
+      })
+      .catch(() => {});
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
@@ -335,11 +345,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   async function refreshAfterChange({ highlightTotalChange = false } = {}) {
     loadSemesterData(current.year, current.semester);
     const previousTotal = summary?.total?.earnedCredits;
-    const [s, sems] = await Promise.all([getCourseSummary(), getSemesters()]);
+    const [s, sems, retake] = await Promise.all([getCourseSummary(), getSemesters(), getRetakeEligibleCourses()]);
     setSummary(s);
     setSemesters(sems);
+    setRetakeEligible(retake);
     courseMgmtCache.summary = s;
     courseMgmtCache.semesters = sems;
+    courseMgmtCache.retakeEligible = retake;
     if (highlightTotalChange && previousTotal !== undefined && s.total.earnedCredits !== previousTotal) {
       setTotalCreditsHighlight(true);
       setTimeout(() => setTotalCreditsHighlight(false), 2100); // settings-highlight-pulse 지속 시간(0.7s x 3)
@@ -615,6 +627,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           <p className="home-error">
             학번을 바꾸셨네요 — {outOfRangeYears.join(', ')}년 과목은 그대로 남아있어요. 필요 없으면 아래에서 삭제해주세요.
           </p>
+        )}
+
+        {retakeEligible.length > 0 && (
+          <div className="courses-retake-notice">
+            <p className="courses-section-label">재수강 가능 안내</p>
+            <div className="courses-retake-list">
+              {retakeEligible.map((c) => (
+                <div key={c.id} className="courses-retake-item">
+                  <p className="courses-list-item-name">{c.name}</p>
+                  <p className="courses-list-item-meta">
+                    {c.year}-{c.semester}학기 · {displayCategory(c.category)} · {c.letterGrade}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="courses-year-tabs">
@@ -1219,10 +1247,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               )
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
-                <p className="courses-manual-hint">
-                  전공·교양 상관없이 과목명/학점/이수구분만 입력하면 등록돼요. 시간표는 선택사항이라 몰라도
-                  괜찮습니다 — 아는 경우에만 아래에서 추가하면 시간표에도 표시돼요.
-                </p>
+                <p className="courses-manual-hint">과목이 없거나 학점인정(어학·자격증)이면 여기서 등록하세요.</p>
                 <div className="auth-field">
                   <label>과목명</label>
                   <input
