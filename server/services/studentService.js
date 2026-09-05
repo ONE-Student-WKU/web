@@ -15,6 +15,31 @@ async function findByEmail(email) {
   return rows[0] || null;
 }
 
+// 클라이언트에 내려주는 학생 프로필 형태로 변환 — /api/auth/login과 /api/me가 같은
+// 모양의 데이터를 줘야 한다(로그인 응답에 departmentId/admissionYear 등이 빠져있으면,
+// 그 값을 그대로 믿는 화면(Onboarding.jsx 등)이 이미 등록된 정보를 "선택 필요"로 잘못
+// 표시하는 문제가 실사용으로 확인됨 — 로그인 직후 재진입 시 재현).
+function serializeStudent(student) {
+  return {
+    id: student.id,
+    name: student.name,
+    department: student.department_name,
+    departmentId: student.department_id,
+    track: student.track_name,
+    trackId: student.track_id,
+    onboardingCompleted: !!student.onboarding_completed_at,
+    admissionYear: student.admission_year,
+    enrollmentType: student.enrollment_type,
+    majorChangeGrade: student.major_change_grade,
+    majorChangeYear: student.major_change_year,
+    majorChangeSemester: student.major_change_semester,
+    secondDepartment: student.second_department_name,
+    secondDepartmentId: student.second_department_id,
+    careerCounselingCount: student.career_counseling_count,
+    leaveSemesters: student.leave_semesters,
+  };
+}
+
 async function findById(id) {
   const [rows] = await pool.query(
     `SELECT s.*, d.name AS department_name, t.name AS track_name, sd.name AS second_department_name
@@ -131,6 +156,7 @@ module.exports = {
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
   VALID_MAJOR_CHANGE_SEMESTERS,
+  serializeStudent,
   findByEmail,
   findById,
   createStudent,
