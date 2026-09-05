@@ -1248,11 +1248,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
                 <p className="courses-manual-hint">
-                  전공·교양 상관없이 과목명/학점/이수구분만 입력하면 등록돼요. 시간표는 선택사항이라 몰라도
-                  괜찮습니다 — 아는 경우에만 아래에서 추가하면 시간표에도 표시돼요.
-                  <br />
-                  어학성적·자격증으로 학점을 인정받은 경우도 여기서 과목명(예: "TOEIC 학점인정")과 인정받은
-                  학점을 입력하면 돼요 — 이수구분은 보통 교양선택이에요.
+                  과목명/학점/이수구분만 입력하면 등록돼요(시간표는 선택). 어학성적·자격증 학점인정도
+                  여기로 등록하세요(이수구분: 교양선택).
                 </p>
                 <div className="auth-field">
                   <label>과목명</label>
