@@ -142,7 +142,7 @@ async function parseCourseListText(rawText) {
   }
   if (declaredTotalCredits !== null && Math.abs(declaredTotalCredits - extractedTotalCredits) > 0.01) {
     warnings.push(
-      `문서상 총 취득학점(${declaredTotalCredits})과 인식된 학점 합계(${extractedTotalCredits})가 달라요. 아래 목록을 원본과 대조해서 확인해주세요.`
+      `문서상 총 취득학점은 ${declaredTotalCredits}학점인데 리스트에는 ${extractedTotalCredits}학점이 있어요. 아래 목록을 원본과 대조해서 확인해주세요.`
     );
   }
 
@@ -155,7 +155,7 @@ async function parseCourseListText(rawText) {
       .reduce((sum, r) => sum + r.credits, 0);
     if (Math.abs(declaredValue - extractedValue) > 0.01) {
       warnings.push(
-        `"${code}" 이수구분의 학점이 문서(${declaredValue})와 인식 결과(${extractedValue})가 달라요. 해당 구분 과목을 원본과 대조해서 확인해주세요.`
+        `"${code}" 이수구분은 ${declaredValue}학점인데 리스트에는 ${extractedValue}학점이 있어요. 해당 구분 과목을 원본과 대조해서 확인해주세요.`
       );
     }
   }
@@ -275,7 +275,7 @@ async function parseFullTranscriptText(rawText) {
     if (Math.abs(declaredValue - extractedValue) > 0.01) {
       const [year, semester] = key.split('-');
       warnings.push(
-        `${year}년 ${semester}학기 취득학점이 문서(${declaredValue})와 인식 결과(${extractedValue})가 달라요. 해당 학기 과목을 원본과 대조해서 확인해주세요.`
+        `${year}년 ${semester}학기에서 취득학점은 ${declaredValue}학점인데 리스트에는 ${extractedValue}학점이 있어요. 해당 학기 과목을 원본과 대조해서 확인해주세요.`
       );
     }
   }
