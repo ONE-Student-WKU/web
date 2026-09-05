@@ -1,6 +1,6 @@
 const pool = require('../db');
 const studentService = require('./studentService');
-const { FAILING_GRADES } = require('./courseService');
+const { FAILING_GRADES, pickLatestAttemptPerCourse } = require('./courseService');
 
 /**
  * server/services/graduationService.js
@@ -81,17 +81,21 @@ async function fetchRequiredCourseNames(requirementId) {
 
 async function fetchEarnedCreditsByCategory(studentId) {
   // getSummary(courseService.js)와 동일한 "FAILING_GRADES(F/NP)만 아니면 이수학점" 규칙 —
-  // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
-  // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
+  // 성적 미입력(진행 중) 과목도 포함한다. 재수강 이전 시도는 집계에서 완전히 제외
+  // (pickLatestAttemptPerCourse, courseService.js 참고) — SUM을 SQL에서 바로 못 하므로
+  // 행을 가져와 이름별 최신 시도만 남긴 뒤 JS에서 합산한다.
   const [rows] = await pool.query(
-    `SELECT category, SUM(credits) AS credits
+    `SELECT name, year, semester, category, credits, letter_grade
      FROM student_courses
-     WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))
-     GROUP BY category`,
-    [studentId, FAILING_GRADES]
+     WHERE student_id = ?`,
+    [studentId]
   );
+
   const map = {};
-  for (const row of rows) map[row.category] = Number(row.credits);
+  for (const row of pickLatestAttemptPerCourse(rows)) {
+    if (row.letter_grade !== null && FAILING_GRADES.includes(row.letter_grade)) continue;
+    map[row.category] = (map[row.category] || 0) + Number(row.credits);
+  }
   return map;
 }
 

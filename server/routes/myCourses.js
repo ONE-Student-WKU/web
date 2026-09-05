@@ -61,6 +61,17 @@ router.get('/summary', async (req, res, next) => {
   }
 });
 
+// GET /api/my-courses/retake-eligible
+// 학기 무관 전체 수강 기록 기준 재수강 가능 과목 안내(화면 상단 배너용).
+router.get('/retake-eligible', async (req, res, next) => {
+  try {
+    const data = await courseService.listRetakeEligibleCourses(req.session.userId);
+    res.status(200).json({ status: 200, code: 'RETAKE_ELIGIBLE_SUCCESS', message: null, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/my-courses?year=&semester=
 router.get('/', async (req, res, next) => {
   try {

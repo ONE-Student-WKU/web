@@ -6,6 +6,7 @@ import {
   getCourseSummary,
   getGraduationStatus,
   getSemesters,
+  getRetakeEligibleCourses,
   searchCatalog,
   addMyCourse,
   updateMyCourse,
@@ -47,6 +48,7 @@ const courseMgmtCache = {
   summary: null,
   semesters: null,
   status: null,
+  retakeEligible: null,
   semesterData: new Map(), // key: semesterKey(year, semester) -> { myCourses, timetable }
 };
 
@@ -56,6 +58,7 @@ export function resetCourseMgmtCache() {
   courseMgmtCache.summary = null;
   courseMgmtCache.semesters = null;
   courseMgmtCache.status = null;
+  courseMgmtCache.retakeEligible = null;
   courseMgmtCache.semesterData.clear();
 }
 
@@ -106,6 +109,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [summary, setSummary] = useState(courseMgmtCache.summary);
   const [status, setStatus] = useState(courseMgmtCache.status);
   const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
+  const [retakeEligible, setRetakeEligible] = useState(courseMgmtCache.retakeEligible || []);
   const initialSemesterCache = courseMgmtCache.semesterData.get(semesterKey(current.year, current.semester));
   const [myCourses, setMyCourses] = useState(initialSemesterCache?.myCourses || []);
   const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
@@ -193,6 +197,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         courseMgmtCache.semesters = data;
       })
       .catch(() => setError('정보를 불러오지 못했어요.'));
+    getRetakeEligibleCourses()
+      .then((data) => {
+        setRetakeEligible(data);
+        courseMgmtCache.retakeEligible = data;
+      })
+      .catch(() => {});
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
@@ -312,11 +322,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   async function refreshAfterChange() {
     loadSemesterData(current.year, current.semester);
-    const [s, sems] = await Promise.all([getCourseSummary(), getSemesters()]);
+    const [s, sems, retake] = await Promise.all([getCourseSummary(), getSemesters(), getRetakeEligibleCourses()]);
     setSummary(s);
     setSemesters(sems);
+    setRetakeEligible(retake);
     courseMgmtCache.summary = s;
     courseMgmtCache.semesters = sems;
+    courseMgmtCache.retakeEligible = retake;
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
@@ -576,6 +588,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             현재 학번({profile.admissionYear}학번)보다 이전 학기({outOfRangeYears.join(', ')}년)에 등록된 과목이
             남아있어요. 학번·학과 정보를 변경하셨다면 필요 없는 과목은 아래 목록에서 직접 삭제해주세요.
           </p>
+        )}
+
+        {retakeEligible.length > 0 && (
+          <div className="courses-retake-notice">
+            <p className="courses-section-label">재수강 가능 안내</p>
+            <div className="courses-retake-list">
+              {retakeEligible.map((c) => (
+                <div key={c.id} className="courses-retake-item">
+                  <p className="courses-list-item-name">{c.name}</p>
+                  <p className="courses-list-item-meta">
+                    {c.year}-{c.semester}학기 · {displayCategory(c.category)} · {c.letterGrade}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="courses-year-tabs">

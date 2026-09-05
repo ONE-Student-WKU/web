@@ -35,6 +35,21 @@ function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
 
+// 재수강: 같은 과목명으로 여러 학기에 걸쳐 등록된 경우, 학칙상 이전 시도의 성적은 삭제되어
+// 취득학점·평점 계산에서 완전히 제외되고 최신 시도(연도/학기 기준)만 인정된다
+// (db/regulations/수강신청/재수강.md 4번). getSummary와 graduationService의 이수학점 집계
+// 양쪽에서 같은 규칙이 필요해 공용 헬퍼로 뺐다 — {name, year, semester} 필드만 있으면 된다.
+function pickLatestAttemptPerCourse(rows) {
+  const latestByName = new Map();
+  for (const row of rows) {
+    const existing = latestByName.get(row.name);
+    if (!existing || row.year > existing.year || (row.year === existing.year && row.semester > existing.semester)) {
+      latestByName.set(row.name, row);
+    }
+  }
+  return [...latestByName.values()];
+}
+
 // year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
 // 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
 // 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
@@ -324,18 +339,21 @@ async function getSummary(studentId) {
   // 해두고 성적이 아직 없는 과목도 "진행 중"으로 포함해야 하기 때문 (실사용 확인,
   // FAILING_GRADES만 제외).
   const [rows] = await pool.query(
-    `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade
+    `SELECT sc.year, sc.semester, sc.credits, sc.gpa, sc.letter_grade, sc.name
      FROM student_courses sc
      WHERE sc.student_id = ?`,
     [studentId]
   );
+
+  // 재수강 이전 시도는 집계에서 완전히 제외 — pickLatestAttemptPerCourse 참고.
+  const countedRows = pickLatestAttemptPerCourse(rows);
 
   const bySemesterMap = new Map();
   let totalCredits = 0;
   let totalPoints = 0;
   let totalGpaCredits = 0;
 
-  for (const row of rows) {
+  for (const row of countedRows) {
     const key = `${row.year}-${row.semester}`;
     if (!bySemesterMap.has(key)) {
       bySemesterMap.set(key, { year: row.year, semester: row.semester, earnedCredits: 0, gpaCredits: 0, points: 0 });
@@ -382,6 +400,47 @@ async function getSummary(studentId) {
   };
 }
 
+// 재수강 대상: C+(평점 2.5) 이하 성적을 받은 과목(db/regulations/수강신청/재수강.md).
+// 재수강은 과목별 1회까지만 가능하지만 F 성적은 횟수 제한이 없다. "이미 재수강을 한 번
+// 썼는지"를 나타내는 별도 플래그가 없으므로, 같은 과목명의 등록 이력(연도·학기 순)에서
+// 추론한다 — 가장 최근 성적이 F가 아니면서 같은 이름으로 2번 이상 등록된 적 있으면 이미
+// 1회를 썼다고 보고 더 이상 안내하지 않는다.
+async function listRetakeEligibleCourses(studentId) {
+  const [rows] = await pool.query(
+    `SELECT id, name, credits, category, year, semester, gpa, letter_grade
+     FROM student_courses
+     WHERE student_id = ?
+     ORDER BY year, semester`,
+    [studentId]
+  );
+
+  const byName = new Map();
+  for (const row of rows) {
+    if (!byName.has(row.name)) byName.set(row.name, []);
+    byName.get(row.name).push(row);
+  }
+
+  const eligible = [];
+  for (const attempts of byName.values()) {
+    const latest = attempts[attempts.length - 1];
+    if (latest.gpa === null) continue; // 성적 미입력, 또는 P/F 채점 과목(평점 개념 없음)
+    if (Number(latest.gpa) > 2.5) continue; // C+ 초과는 대상 아님
+    if (latest.letter_grade !== 'F' && attempts.length >= 2) continue; // 이미 재수강 1회 사용
+
+    eligible.push({
+      id: latest.id,
+      name: latest.name,
+      credits: Number(latest.credits),
+      category: latest.category,
+      year: latest.year,
+      semester: latest.semester,
+      letterGrade: latest.letter_grade,
+    });
+  }
+
+  return eligible.sort((a, b) => b.year - a.year || b.semester - a.semester);
+}
+
 module.exports = {
   GRADE_POINT_MAP,
   VALID_CATEGORIES,
@@ -398,4 +457,6 @@ module.exports = {
   getTimetable,
   getSummary,
   listSemesters,
+  listRetakeEligibleCourses,
+  pickLatestAttemptPerCourse,
 };
