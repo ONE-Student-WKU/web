@@ -1247,10 +1247,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               )
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
-                <p className="courses-manual-hint">
-                  과목명/학점/이수구분만 입력하면 등록돼요(시간표는 선택). 어학성적·자격증 학점인정도
-                  여기로 등록하세요(이수구분: 교양선택).
-                </p>
+                <p className="courses-manual-hint">과목이 없거나 학점인정(어학·자격증)이면 여기서 등록하세요.</p>
                 <div className="auth-field">
                   <label>과목명</label>
                   <input
