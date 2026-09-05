@@ -102,16 +102,35 @@ async function fetchEarnedCreditsByCategory(studentId) {
   return map;
 }
 
-async function fetchMatchedCourseNames(studentId, courseNames) {
+// curriculum_required_courses(학과 문서 기준 요구과목명)와 course_offerings(실제 개설과목
+// 카탈로그) 표기가 구두점만 다른 경우가 있다 — 예: "졸업(시험·작품)논문"(가운뎃점, 학과
+// 문서) vs "졸업(시험.작품)논문"(마침표, 카탈로그. 학생이 카탈로그에서 선택하면 이 표기가
+// 그대로 student_courses.name에 저장됨). SQL 완전일치로는 두 표기가 영원히 안 맞는다 —
+// 구두점·공백을 지우고 비교해 표기 차이를 흡수한다.
+function normalizeCourseName(name) {
+  return name.replace(/[·.,\s]/g, '');
+}
+
+async function fetchMatchedCourseNames(studentId, courseNames, { requirePass = false } = {}) {
   if (courseNames.length === 0) return [];
-  // fetchEarnedCreditsByCategory와 동일하게 F/NP는 이수로 치지 않는다 — 수강만 하고
-  // 불합격한 과목이 졸업논문/졸업인증제 요건을 충족시키면 안 됨.
-  const [rows] = await pool.query(
-    `SELECT DISTINCT name FROM student_courses
-     WHERE student_id = ? AND name IN (?) AND (letter_grade IS NULL OR letter_grade NOT IN (?))`,
-    [studentId, courseNames, FAILING_GRADES]
-  );
-  return rows.map((r) => r.name);
+  const normalizedRequired = new Set(courseNames.map(normalizeCourseName));
+
+  const [rows] = await pool.query('SELECT name, letter_grade FROM student_courses WHERE student_id = ?', [
+    studentId,
+  ]);
+
+  const matched = new Set();
+  for (const row of rows) {
+    if (matched.has(row.name) || !normalizedRequired.has(normalizeCourseName(row.name))) continue;
+    // 졸업논문은 학칙시행규칙 제51조⑤에 따라 P/F로만 평가되므로 반드시 P여야 충족.
+    // 그 외(졸업인증제 등 일반 등급제 과목)는 기존처럼 F/NP만 아니면 충족 —
+    // 수강만 하고 불합격한 과목이 요건을 충족시키면 안 됨.
+    const passed = requirePass
+      ? row.letter_grade === 'P'
+      : row.letter_grade === null || !FAILING_GRADES.includes(row.letter_grade);
+    if (passed) matched.add(row.name);
+  }
+  return [...matched];
 }
 
 async function getGraduationStatus(studentId) {
@@ -230,7 +249,9 @@ async function getGraduationStatus(studentId) {
   const certifications = [];
   for (const row of certificationRows) {
     const requiredCourses = await fetchRequiredCourseNames(row.id);
-    const matched = await fetchMatchedCourseNames(studentId, requiredCourses);
+    const matched = await fetchMatchedCourseNames(studentId, requiredCourses, {
+      requirePass: row.category === '졸업논문',
+    });
     certifications.push({
       category: row.category,
       description: row.description,
