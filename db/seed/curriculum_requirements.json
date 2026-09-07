@@ -123,12 +123,34 @@
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
     "category": "일반선택",
-    "requiredCredits": 22,
+    "requiredCredits": 38,
     "minAdmissionYear": 2017,
+    "maxAdmissionYear": 2021,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 38학점, 2017~2021학번 (전공/교양 구분 없이 아무 과목이나 이수 가능, 총 136학점 충족용 — 136 - 전공75(19+56) - 교양23(5+18) = 38)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2022,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점, 2022~2024학번 (총 136학점 충족용 — 136 - 전공75(19+56) - 교양39(5+34) = 22). 2022학번 실사용자가 전과 절차 중 학교로부터 직접 안내받은 교양 39학점(교양필수5+교양선택34)과 일치 확인됨(2026-09-07)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 22학점 (전공/교양 구분 없이 아무 과목이나 이수 가능, 총 136학점 충족용 — 전공필수19+전공선택56+교양필수5+교양선택34=114에 더해 총량을 맞춤)",
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용 — 136 - 전공75(19+56) - 교양37(5+32) = 24). 이전엔 2017~2025학번 전체에 22 고정값이 잘못 적용돼 2025학번 요구학점 총합이 136이 아니라 134로 계산되던 버그 수정(2026-09-07)",
     "requiredCourses": []
   },
   {
