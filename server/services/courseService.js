@@ -420,6 +420,47 @@ async function getSummary(studentId) {
   };
 }
 
+// 재수강 대상: C+(평점 2.5) 이하 성적을 받은 과목(db/regulations/수강신청/재수강.md).
+// 재수강은 과목별 1회까지만 가능하지만 F 성적은 횟수 제한이 없다. "이미 재수강을 한 번
+// 썼는지"를 나타내는 별도 플래그가 없으므로, 같은 과목명의 등록 이력(연도·학기 순)에서
+// 추론한다 — 가장 최근 성적이 F가 아니면서 같은 이름으로 2번 이상 등록된 적 있으면 이미
+// 1회를 썼다고 보고 더 이상 안내하지 않는다.
+async function listRetakeEligibleCourses(studentId) {
+  const [rows] = await pool.query(
+    `SELECT id, name, credits, category, year, semester, gpa, letter_grade
+     FROM student_courses
+     WHERE student_id = ?
+     ORDER BY year, semester`,
+    [studentId]
+  );
+
+  const byName = new Map();
+  for (const row of rows) {
+    if (!byName.has(row.name)) byName.set(row.name, []);
+    byName.get(row.name).push(row);
+  }
+
+  const eligible = [];
+  for (const attempts of byName.values()) {
+    const latest = attempts[attempts.length - 1];
+    if (latest.gpa === null) continue; // 성적 미입력, 또는 P/F 채점 과목(평점 개념 없음)
+    if (Number(latest.gpa) > 2.5) continue; // C+ 초과는 대상 아님
+    if (latest.letter_grade !== 'F' && attempts.length >= 2) continue; // 이미 재수강 1회 사용
+
+    eligible.push({
+      id: latest.id,
+      name: latest.name,
+      credits: Number(latest.credits),
+      category: latest.category,
+      year: latest.year,
+      semester: latest.semester,
+      letterGrade: latest.letter_grade,
+    });
+  }
+
+  return eligible.sort((a, b) => b.year - a.year || b.semester - a.semester);
+}
+
 module.exports = {
   GRADE_POINT_MAP,
   VALID_CATEGORIES,
@@ -438,4 +479,5 @@ module.exports = {
   getTimetable,
   getSummary,
   listSemesters,
+  listRetakeEligibleCourses,
 };

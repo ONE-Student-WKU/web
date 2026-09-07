@@ -1,0 +1,60 @@
+# db-reseed 파이프라인 "등록 누락 감지" 전용 CI 체크.
+#
+# 이 워크플로우는 db-reseed.yml(실제 재시딩 트리거)과는 완전히 별개이며, 어떤 형태로도
+# Railway CLI 호출, DB 접속/쿼리, seed 스크립트 실행, workflow_dispatch 트리거 등을
+# 하지 않는다. PR에 올라온 diff만 정적으로 읽어 아래 두 가지만 확인한다:
+#
+#   1. db/regulations|curriculum|seed 하위에 새로 추가된 파일이 db-reseed.yml의
+#      paths: 필터에 걸리는지 (안 걸리면 재시딩이 조용히 스킵될 수 있음)
+#   2. db/schema.sql에 추가/수정된 CREATE TABLE이 IF NOT EXISTS를 쓰는지
+#      (안 쓰면 db/migrate.js 재실행 시 에러/멱등성 붕괴 가능)
+#
+# 두 체크 모두 scripts/ci/*.js 에 구현되어 있고, 필요하면 로컬에서 그대로 실행해
+# 재현/디버깅할 수 있다 (README나 PR 설명 참고).
+name: DB Reseed Guard (paths/schema 정적 체크)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-reseed-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: 경로 필터 / schema 멱등성 정적 체크
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # base/head diff 비교를 위해 전체 이력 필요.
+          fetch-depth: 0
+
+      - name: Fetch PR base branch
+        run: git fetch origin "${{ github.base_ref }}"
+
+      - name: paths 필터 누락 감지
+        run: |
+          node scripts/ci/check-db-reseed-paths.js \
+            --base "origin/${{ github.base_ref }}" \
+            --head "${{ github.event.pull_request.head.sha }}"
+
+      - name: schema.sql 멱등성(IF NOT EXISTS) 체크
+        if: always()
+        run: |
+          node scripts/ci/check-schema-idempotent.js \
+            --base "origin/${{ github.base_ref }}" \
+            --head "${{ github.event.pull_request.head.sha }}"
+
+      - name: Summary
+        if: failure()
+        run: |
+          echo "### DB Reseed Guard: 문제 발견" >> "$GITHUB_STEP_SUMMARY"
+          echo "위 스텝 로그를 확인하세요. 이 워크플로우는 실행을 막지 않고 정적 경고만 합니다." >> "$GITHUB_STEP_SUMMARY"

@@ -54,6 +54,8 @@ export const getGraduationStatus = () => apiRequest('/graduation/status');
 
 export const getSemesters = () => apiRequest('/my-courses/semesters');
 
+export const getRetakeEligibleCourses = () => apiRequest('/my-courses/retake-eligible');
+
 export const searchCatalog = (keyword, year, semester) =>
   apiRequest(`/courses/catalog?keyword=${encodeURIComponent(keyword)}&year=${year}&semester=${semester}`);
 

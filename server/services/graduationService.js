@@ -71,6 +71,33 @@ function applyMajorChangeLiberalArtsOverride(rows, student) {
   });
 }
 
+// 전과(3·4학년)는 전공을 75→48로, 컷오프 이전이면 교양도 고정값(29)으로 완화받는다.
+// 이 완화는 "졸업에 필요한 총 학점 자체가 줄어든다"는 뜻이 아니라 "전공·교양 최소 기준만
+// 채우면 나머지는 어느 카테고리로 채워도 된다"는 뜻이라, 완화로 비는 만큼을 일반선택이
+// 흡수해서 총 요구학점(전공+교양+일반선택 합)이 일반 재학생과 똑같이 유지돼야 한다.
+// 이걸 안 해주면(2026-09-07 발견) 총 요구학점이 109~115학점으로(실제 136보다 21~27학점
+// 적게) 계산되는 버그가 생긴다 — 일반 재학생 기준 총량(같은 학번의 전공+교양+일반선택
+// 원래 값 합)을 구해서, 전공·교양이 줄어든 만큼만 일반선택에 더 얹어준다.
+function applyMajorChangeGeneralElectiveOverride(rows, allRows, effectiveEnrollmentType) {
+  if (effectiveEnrollmentType !== 'MAJOR_CHANGE') return rows;
+
+  const generalRows = allRows.filter((r) => r.enrollment_type === null);
+  const totalDegreeCredits = generalRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
+
+  const majorRequired = rows
+    .filter((r) => r.category === '전공필수' || r.category === '전공선택' || r.category === '전공')
+    .reduce((sum, r) => sum + Number(r.required_credits), 0);
+  const liberalArtsRequired = rows
+    .filter((r) => r.category === '교양필수' || r.category === '교양선택')
+    .reduce((sum, r) => sum + Number(r.required_credits), 0);
+
+  const adjustedGeneralElective = totalDegreeCredits - majorRequired - liberalArtsRequired;
+
+  return rows.map((row) =>
+    row.category === '일반선택' ? { ...row, required_credits: adjustedGeneralElective } : row
+  );
+}
+
 async function fetchRequiredCourseNames(requirementId) {
   const [rows] = await pool.query(
     'SELECT course_name FROM curriculum_required_courses WHERE requirement_id = ?',
@@ -80,7 +107,6 @@ async function fetchRequiredCourseNames(requirementId) {
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
-  // getSummary(courseService.js)와 동일한 "FAILING_GRADES(F/NP)만 아니면 이수학점" 규칙 —
   // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
   // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
   //
@@ -103,16 +129,35 @@ async function fetchEarnedCreditsByCategory(studentId) {
   return map;
 }
 
-async function fetchMatchedCourseNames(studentId, courseNames) {
+// curriculum_required_courses(학과 문서 기준 요구과목명)와 course_offerings(실제 개설과목
+// 카탈로그) 표기가 구두점만 다른 경우가 있다 — 예: "졸업(시험·작품)논문"(가운뎃점, 학과
+// 문서) vs "졸업(시험.작품)논문"(마침표, 카탈로그. 학생이 카탈로그에서 선택하면 이 표기가
+// 그대로 student_courses.name에 저장됨). SQL 완전일치로는 두 표기가 영원히 안 맞는다 —
+// 구두점·공백을 지우고 비교해 표기 차이를 흡수한다.
+function normalizeCourseName(name) {
+  return name.replace(/[·.,\s]/g, '');
+}
+
+async function fetchMatchedCourseNames(studentId, courseNames, { requirePass = false } = {}) {
   if (courseNames.length === 0) return [];
-  // fetchEarnedCreditsByCategory와 동일하게 F/NP는 이수로 치지 않는다 — 수강만 하고
-  // 불합격한 과목이 졸업논문/졸업인증제 요건을 충족시키면 안 됨.
-  const [rows] = await pool.query(
-    `SELECT DISTINCT name FROM student_courses
-     WHERE student_id = ? AND name IN (?) AND (letter_grade IS NULL OR letter_grade NOT IN (?))`,
-    [studentId, courseNames, FAILING_GRADES]
-  );
-  return rows.map((r) => r.name);
+  const normalizedRequired = new Set(courseNames.map(normalizeCourseName));
+
+  const [rows] = await pool.query('SELECT name, letter_grade FROM student_courses WHERE student_id = ?', [
+    studentId,
+  ]);
+
+  const matched = new Set();
+  for (const row of rows) {
+    if (matched.has(row.name) || !normalizedRequired.has(normalizeCourseName(row.name))) continue;
+    // 졸업논문은 학칙시행규칙 제51조⑤에 따라 P/F로만 평가되므로 반드시 P여야 충족.
+    // 그 외(졸업인증제 등 일반 등급제 과목)는 기존처럼 F/NP만 아니면 충족 —
+    // 수강만 하고 불합격한 과목이 요건을 충족시키면 안 됨.
+    const passed = requirePass
+      ? row.letter_grade === 'P'
+      : row.letter_grade === null || !FAILING_GRADES.includes(row.letter_grade);
+    if (passed) matched.add(row.name);
+  }
+  return [...matched];
 }
 
 async function getGraduationStatus(studentId) {
@@ -125,9 +170,10 @@ async function getGraduationStatus(studentId) {
 
   const allRows = await fetchApplicableRequirements(student.department_id, student.admission_year);
   const effectiveEnrollmentType = resolveEffectiveEnrollmentType(student);
-  const requirementRows = applyMajorChangeLiberalArtsOverride(
-    selectRequirementRows(allRows, effectiveEnrollmentType),
-    student
+  const requirementRows = applyMajorChangeGeneralElectiveOverride(
+    applyMajorChangeLiberalArtsOverride(selectRequirementRows(allRows, effectiveEnrollmentType), student),
+    allRows,
+    effectiveEnrollmentType
   );
 
   // min_course_count가 있는 행은 졸업논문/졸업인증제처럼 "학점"이 아닌 "과목 이름 매칭"으로
@@ -231,7 +277,9 @@ async function getGraduationStatus(studentId) {
   const certifications = [];
   for (const row of certificationRows) {
     const requiredCourses = await fetchRequiredCourseNames(row.id);
-    const matched = await fetchMatchedCourseNames(studentId, requiredCourses);
+    const matched = await fetchMatchedCourseNames(studentId, requiredCourses, {
+      requirePass: row.category === '졸업논문',
+    });
     certifications.push({
       category: row.category,
       description: row.description,

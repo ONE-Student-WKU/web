@@ -19,9 +19,9 @@
 |---|---|
 | Client | React 18, Vite 6 |
 | Server | Node.js, Express, express-session, bcryptjs |
-| DB | MySQL (Aiven 클라우드), mysql2 |
+| DB | MySQL (Railway), mysql2 |
 | AI | Claude API 기반 RAG 챗봇 |
-| 배포 | 프론트엔드: Vercel (GitHub Actions CI/CD) · 백엔드: PM2 상시 구동 서버 |
+| 배포 | 프론트엔드: Vercel (GitHub Actions CI/CD) · 백엔드: Railway (GitHub 연동 자동배포) |
 
 ## 프로젝트 구조
 
