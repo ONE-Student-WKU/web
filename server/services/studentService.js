@@ -53,12 +53,32 @@ async function findById(id) {
   return rows[0] || null;
 }
 
-async function createStudent({ email, passwordHash, name }) {
+// Google OAuth 등 provider가 발급한 식별자로 계정을 찾는다. provider별로 스코프가 다른
+// 식별자라(예: Google sub) 항상 provider+id 쌍으로 조회한다.
+async function findByOauth(provider, oauthId) {
+  const [rows] = await pool.query(
+    'SELECT * FROM students WHERE oauth_provider = ? AND oauth_id = ?',
+    [provider, oauthId]
+  );
+  return rows[0] || null;
+}
+
+// OAuth로 처음 로그인한 사용자 신규 생성 — 비밀번호가 없으므로 password는 NULL로 남는다.
+async function createOauthStudent({ email, name, provider, oauthId }) {
   const [result] = await pool.query(
-    'INSERT INTO students (email, password, name) VALUES (?, ?, ?)',
-    [email, passwordHash, name]
+    'INSERT INTO students (email, name, oauth_provider, oauth_id) VALUES (?, ?, ?, ?)',
+    [email, name, provider, oauthId]
   );
   return result.insertId;
+}
+
+// 이메일이 일치하는 기존 계정(과거 비밀번호 로그인으로 만들어졌거나 아직 OAuth 미연결인
+// 계정)에 OAuth 식별자를 연결(link)한다.
+async function linkOauthToStudent(studentId, { provider, oauthId }) {
+  await pool.query(
+    'UPDATE students SET oauth_provider = ?, oauth_id = ? WHERE id = ?',
+    [provider, oauthId, studentId]
+  );
 }
 
 // 온보딩 화면이 학과별로 실제 입력 가능한 학번 범위를 알아야 해서(예: 컴퓨터·소프트웨어공학과는
@@ -142,10 +162,6 @@ async function updateProfile(studentId, updates) {
   await pool.query(`UPDATE students SET ${fields.join(', ')} WHERE id = ?`, params);
 }
 
-async function updatePassword(studentId, passwordHash) {
-  await pool.query('UPDATE students SET password = ? WHERE id = ?', [passwordHash, studentId]);
-}
-
 // 계정 삭제 — students.id를 참조하는 student_courses/chat_conversations는 스키마에
 // ON DELETE CASCADE로 걸려있어(db/schema.sql) 별도 정리 없이 이 한 줄로 연쇄 삭제된다.
 async function deleteStudent(studentId) {
@@ -159,13 +175,14 @@ module.exports = {
   serializeStudent,
   findByEmail,
   findById,
-  createStudent,
+  findByOauth,
+  createOauthStudent,
+  linkOauthToStudent,
   listDepartments,
   findDepartmentById,
   listTracks,
   findTrackById,
   completeOnboarding,
   updateProfile,
-  updatePassword,
   deleteStudent,
 };

@@ -8,6 +8,8 @@ import CareerExploration from './pages/CareerExploration.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
 import { getMe, logout } from './api/chatApi.js';
@@ -42,7 +44,43 @@ function resetAllUserCaches() {
 function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [view, setView] = useState('home'); // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
+  // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
+  // | 'privacy' | 'terms'
+  // privacy/terms는 Google OAuth 동의 화면 검증용으로 로그인 여부와 무관하게 접근 가능해야
+  // 하고, Google이 URL을 직접 방문해서 확인하므로 최초 로드 시 실제 pathname(/privacy,
+  // /terms)을 봐서 시작 화면을 정한다 — 이 SPA는 다른 화면 전환에는 URL을 안 쓰지만
+  // (history.pushState는 state 객체만 씀, pathname은 항상 '/'), 이 두 화면만 예외.
+  //
+  // reauth(계정 삭제 재인증)/authError 쿼리로 돌아온 경우도 마찬가지 이유로 초기값에서 처리
+  // 한다 — Google 재인증은 풀 페이지 리다이렉트라 브라우저가 완전히 새로 로드되면서 이전에
+  // Profile 화면에 있었다는 사실 자체가 사라지는데(모든 React 상태가 초기화됨), 기본값인
+  // 'home'으로 떨어지면 재인증 후 계정 삭제 버튼이 뜨는 Profile로 못 돌아간다(실제로 겪은
+  // 버그) — 그래서 이 두 쿼리가 있으면 시작 화면을 'profile'로 잡는다.
+  const [view, setView] = useState(() => {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    if (path === '/privacy') return 'privacy';
+    if (path === '/terms') return 'terms';
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reauth') || params.get('authError')) return 'profile';
+    return 'home';
+  });
+
+  // Google OAuth 콜백(로그인/재인증 공통, server/routes/auth.js 참고)은 풀 페이지 리다이렉트로
+  // 끝나서 결과를 동기 응답으로 못 받는다 — 대신 리다이렉트 URL의 쿼리 파라미터(authError/
+  // reauth)로 결과를 실어 보내고, 여기서 한 번만 읽어 상태로 남긴 뒤 새로고침 시 재노출되지
+  // 않도록 URL에서 제거한다(기존 popstate 히스토리 관리와 같은 결).
+  const [authError, setAuthError] = useState(null);
+  const [justReauthenticated, setJustReauthenticated] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('authError');
+    const reauth = params.get('reauth');
+    if (err) setAuthError(err);
+    if (reauth) setJustReauthenticated(true);
+    if (err || reauth) {
+      window.history.replaceState(window.history.state, '', window.location.pathname);
+    }
+  }, []);
 
   // 새로고침/재방문 시 세션 쿠키가 유효하면 로그인 화면을 건너뛰고 복원.
   // 이 조회가 끝나기 전까진(authChecked === false) 로그인 화면을 잠깐이라도
@@ -51,7 +89,12 @@ function App() {
     getMe()
       .then((data) => {
         setUser(data);
-        setView(data.onboardingCompleted ? 'home' : 'onboarding');
+        // /privacy, /terms로 직접 들어온 로그인 상태 사용자, 그리고 재인증(reauth)/에러
+        // 쿼리로 Profile로 돌아온 경우는 그대로 그 화면을 보여준다 — 그 외에는 기존과 동일하게
+        // 온보딩 완료 여부로 시작 화면을 정한다.
+        setView((v) =>
+          v === 'privacy' || v === 'terms' || v === 'profile' ? v : data.onboardingCompleted ? 'home' : 'onboarding'
+        );
       })
       .catch(() => {})
       .finally(() => setAuthChecked(true));
@@ -163,13 +206,12 @@ function App() {
   return (
     <div className="app-container">
       <div className="app-frame">
-        {!authChecked ? null : !user ? (
-          <Login
-            onLoginSuccess={(userData) => {
-              setUser(userData);
-              setView(userData.onboardingCompleted ? 'home' : 'onboarding');
-            }}
-          />
+        {view === 'privacy' ? (
+          <PrivacyPolicy onGoBack={() => setView(user ? 'profile' : 'home')} />
+        ) : view === 'terms' ? (
+          <TermsOfService onGoBack={() => setView(user ? 'profile' : 'home')} />
+        ) : !authChecked ? null : !user ? (
+          <Login error={authError} onOpenPrivacy={() => setView('privacy')} onOpenTerms={() => setView('terms')} />
         ) : view === 'chat' ? (
           <Chat
             user={user}
@@ -231,6 +273,7 @@ function App() {
             onGoHome={() => setView('home')}
             onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
             onAccountDeleted={handleAccountDeleted}
+            justReauthenticated={justReauthenticated}
           />
         ) : (
           <Home

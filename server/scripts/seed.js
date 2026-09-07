@@ -3,15 +3,12 @@ const path = require('path');
 // (npm workspace로 실행하면 cwd가 server/가 되어 기본 dotenv 탐색이 .env를 못 찾는 문제 방지)
 require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
-const bcrypt = require('bcryptjs');
 const pool = require('../db');
 
 const departments = require('../../db/seed/departments.json');
 const students = require('../../db/seed/students.json');
 const studentCourses = require('../../db/seed/student_courses.json');
 const curriculumRequirements = require('../../db/seed/curriculum_requirements.json');
-
-const BCRYPT_ROUNDS = 10;
 
 // student_courses.json의 course_id는 학수번호-분반 형태의 옛 표기("374124-01")로 남아있음 —
 // course_offerings 조회 시 학수번호(course_code)/분반(section)으로 쪼개 쓴다.
@@ -35,16 +32,18 @@ async function seedDepartments() {
   console.log(`departments: ${departments.length}건 처리`);
 }
 
+// 로그인이 Google OAuth로 대체되면서 password는 더 이상 채우지 않는다(nullable) — 시드
+// 학생 계정은 실제 로그인 대상이 아니라 course/curriculum 관련 기능 시딩용 더미 데이터라
+// oauth_provider/oauth_id 없이 만들어도 문제 없다(수동으로 DB에서 email을 실제 로그인할
+// Google 계정 이메일로 바꿔주면 첫 로그인 시 자동으로 연결됨 — auth.js의 linkOauthToStudent).
 async function seedStudents() {
   for (const s of students) {
-    const hashedPassword = await bcrypt.hash(s.password, BCRYPT_ROUNDS);
     await pool.query(
       `INSERT IGNORE INTO students
-        (email, password, name, department_id, admission_year, enrollment_type, onboarding_completed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (email, name, department_id, admission_year, enrollment_type, onboarding_completed_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
         s.email,
-        hashedPassword,
         s.name,
         s.department_id ?? null,
         s.admission_year ?? null,
