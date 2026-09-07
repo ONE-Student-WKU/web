@@ -71,6 +71,33 @@ function applyMajorChangeLiberalArtsOverride(rows, student) {
   });
 }
 
+// 전과(3·4학년)는 전공을 75→48로, 컷오프 이전이면 교양도 고정값(29)으로 완화받는다.
+// 이 완화는 "졸업에 필요한 총 학점 자체가 줄어든다"는 뜻이 아니라 "전공·교양 최소 기준만
+// 채우면 나머지는 어느 카테고리로 채워도 된다"는 뜻이라, 완화로 비는 만큼을 일반선택이
+// 흡수해서 총 요구학점(전공+교양+일반선택 합)이 일반 재학생과 똑같이 유지돼야 한다.
+// 이걸 안 해주면(2026-09-07 발견) 총 요구학점이 109~115학점으로(실제 136보다 21~27학점
+// 적게) 계산되는 버그가 생긴다 — 일반 재학생 기준 총량(같은 학번의 전공+교양+일반선택
+// 원래 값 합)을 구해서, 전공·교양이 줄어든 만큼만 일반선택에 더 얹어준다.
+function applyMajorChangeGeneralElectiveOverride(rows, allRows, effectiveEnrollmentType) {
+  if (effectiveEnrollmentType !== 'MAJOR_CHANGE') return rows;
+
+  const generalRows = allRows.filter((r) => r.enrollment_type === null);
+  const totalDegreeCredits = generalRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
+
+  const majorRequired = rows
+    .filter((r) => r.category === '전공필수' || r.category === '전공선택' || r.category === '전공')
+    .reduce((sum, r) => sum + Number(r.required_credits), 0);
+  const liberalArtsRequired = rows
+    .filter((r) => r.category === '교양필수' || r.category === '교양선택')
+    .reduce((sum, r) => sum + Number(r.required_credits), 0);
+
+  const adjustedGeneralElective = totalDegreeCredits - majorRequired - liberalArtsRequired;
+
+  return rows.map((row) =>
+    row.category === '일반선택' ? { ...row, required_credits: adjustedGeneralElective } : row
+  );
+}
+
 async function fetchRequiredCourseNames(requirementId) {
   const [rows] = await pool.query(
     'SELECT course_name FROM curriculum_required_courses WHERE requirement_id = ?',
@@ -143,9 +170,10 @@ async function getGraduationStatus(studentId) {
 
   const allRows = await fetchApplicableRequirements(student.department_id, student.admission_year);
   const effectiveEnrollmentType = resolveEffectiveEnrollmentType(student);
-  const requirementRows = applyMajorChangeLiberalArtsOverride(
-    selectRequirementRows(allRows, effectiveEnrollmentType),
-    student
+  const requirementRows = applyMajorChangeGeneralElectiveOverride(
+    applyMajorChangeLiberalArtsOverride(selectRequirementRows(allRows, effectiveEnrollmentType), student),
+    allRows,
+    effectiveEnrollmentType
   );
 
   // min_course_count가 있는 행은 졸업논문/졸업인증제처럼 "학점"이 아닌 "과목 이름 매칭"으로
