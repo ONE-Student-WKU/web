@@ -54,16 +54,20 @@ jobs:
       # 정해진 스케줄에만 실행된다(Railway 공식 문서 — cron 서비스는 "정의된 cron
       # 스케줄에 따라 start command를 실행"한다고만 명시, 배포 시 즉시 실행은 보장하지
       # 않음). 그래서 `up`으로 새로 빌드한 뒤, 그 "방금 올라간 최신 배포"를 `redeploy`로
-      # 한 번 더 즉시 재실행시켜야 우리가 원하는 시점에 새 코드가 실제로 돈다. 실제로
-      # `up`만 쓰고 검증했을 때 재시딩 로그에 옛 코드 실행 흔적이 남는 것을 확인함
-      # (Deployments 탭에는 새 빌드가 정상적으로 생겼는데도 그랬음 — 즉시 실행 트리거가
-      # 빠졌던 것).
+      # 한 번 더 즉시 재실행시켜야 우리가 원하는 시점에 새 코드가 실제로 돈다.
+      #
+      # 주의: `up`에 `--detach`를 붙이면 빌드/배포가 끝나기 전에 다음 줄로 넘어가는데,
+      # 그 상태에서 바로 `redeploy`를 부르면 "아직 빌드 중이라 재배포 불가"로 실패한다
+      # (실제로 한 번 이 에러로 실패함: "The latest deployment ... cannot be redeployed.
+      # This may be because it's currently building, deploying, or was removed."). 그래서
+      # `up`은 `--detach` 없이 빌드·배포가 완전히 끝날 때까지 기다리게 하고, 그 다음에만
+      # `redeploy`를 호출한다.
       - name: Deploy checked-out commit to reseed Cron Job
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           echo "Deploying commit ${{ github.sha }}"
-          railway up --service reseed-SAFE-ONLY-no-seed-js --detach
+          railway up --service reseed-SAFE-ONLY-no-seed-js
           railway redeploy --service reseed-SAFE-ONLY-no-seed-js --yes
 
       - name: Confirm execution via logs
