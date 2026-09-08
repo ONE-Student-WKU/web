@@ -13,6 +13,7 @@ const homeDataCache = { profile: null, status: null, shortfalls: null };
 // 로그아웃/계정 삭제 후 새 계정으로 들어오면, SPA라 페이지가 새로고침되지 않아 이 모듈
 // 스코프 캐시가 그대로 남아있어서 잠깐 이전 계정 데이터가 보이는 문제가 있었다(실사용
 // 확인). App.jsx가 로그아웃/계정 삭제 시점에 호출해 캐시를 비운다.
+// eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetHomeCache() {
   homeDataCache.profile = null;
   homeDataCache.status = null;

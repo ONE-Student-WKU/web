@@ -9,6 +9,7 @@ import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 let cachedConfirmedRoadmap;
 
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
+// eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetProfileCache() {
   cachedConfirmedRoadmap = undefined;
 }
