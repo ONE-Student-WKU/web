@@ -43,18 +43,28 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      # 이전: `railway redeploy`는 기존에 이미 빌드돼 있는 배포를 그대로 재실행할 뿐,
+      # 이전: `railway redeploy`만 쓰면 기존에 이미 빌드돼 있는 배포를 그대로 재실행할 뿐,
       # 체크아웃한 이 커밋을 새로 빌드하지 않는다(Railway 서비스가 GitHub과 연동돼 있지
       # 않거나 연동 브랜치/Auto-Deploy 설정이 어긋나 있으면 옛날 빌드가 계속 재시작됨 —
       # 실제로 이슈에서 관측된 증상). `railway up`은 지금 체크아웃된 디렉터리를 업로드해
       # 새로 빌드하므로, 대시보드 설정과 무관하게 항상 이 워크플로우를 트리거한 커밋이
       # 배포되는 것을 보장한다.
+      #
+      # 다만 Railway의 Cron Job 서비스는 새 배포가 올라간다고 즉시 실행되지 않고
+      # 정해진 스케줄에만 실행된다(Railway 공식 문서 — cron 서비스는 "정의된 cron
+      # 스케줄에 따라 start command를 실행"한다고만 명시, 배포 시 즉시 실행은 보장하지
+      # 않음). 그래서 `up`으로 새로 빌드한 뒤, 그 "방금 올라간 최신 배포"를 `redeploy`로
+      # 한 번 더 즉시 재실행시켜야 우리가 원하는 시점에 새 코드가 실제로 돈다. 실제로
+      # `up`만 쓰고 검증했을 때 재시딩 로그에 옛 코드 실행 흔적이 남는 것을 확인함
+      # (Deployments 탭에는 새 빌드가 정상적으로 생겼는데도 그랬음 — 즉시 실행 트리거가
+      # 빠졌던 것).
       - name: Deploy checked-out commit to reseed Cron Job
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           echo "Deploying commit ${{ github.sha }}"
           railway up --service reseed-SAFE-ONLY-no-seed-js --detach
+          railway redeploy --service reseed-SAFE-ONLY-no-seed-js --yes
 
       - name: Confirm execution via logs
         env:
