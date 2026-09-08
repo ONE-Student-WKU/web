@@ -2,6 +2,7 @@ import React from 'react';
 
 // CareerExploration.jsx(진로 탐색 결과 화면)와 Profile.jsx(확정한 진로 다시 보기)가
 // 같은 형태로 로드맵을 보여줘야 해서 공용 컴포넌트로 뺐다.
+// eslint-disable-next-line react-refresh/only-export-components -- 다른 화면이 재사용하는 순수 헬퍼라 의도적으로 컴포넌트와 같이 export함.
 export function groupRoadmapBySemester(roadmap) {
   const sorted = [...roadmap].sort((a, b) => a.grade - b.grade || a.semester - b.semester);
   const groups = [];

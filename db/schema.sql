@@ -71,15 +71,19 @@ CREATE TABLE IF NOT EXISTS tracks (
 
 -- ---------------------------------------------------------------------------
 -- 3. 학생 계정
--- 회원가입(email/password/name)과 온보딩(department/admission_year/enrollment_type)이
--- 분리된 2단계 플로우. 온보딩 관련 컬럼은 가입 직후 비어있을 수 있어 전부 NULL 허용하고,
--- onboarding_completed_at으로 온보딩 완료 여부를 명시적으로 구분한다.
+-- 로그인은 Google OAuth만 지원(비밀번호 로그인 폐지 — password 컬럼은 과거 호환용으로만
+-- nullable 유지, 신규 계정은 항상 NULL). oauth_provider/oauth_id로 최초 로그인 시 신규
+-- 생성되거나 기존 email 매칭 행에 연결(link)된다. 가입과 온보딩(department/admission_year/
+-- enrollment_type)은 분리된 2단계 플로우 — 온보딩 관련 컬럼은 가입 직후 비어있을 수 있어
+-- 전부 NULL 허용하고, onboarding_completed_at으로 온보딩 완료 여부를 명시적으로 구분한다.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   email                     VARCHAR(255) NOT NULL,
-  password                  VARCHAR(255) NOT NULL,
+  password                  VARCHAR(255) NULL,  -- Google OAuth 전환 이후 사용 안 함(레거시 비밀번호 계정 호환용으로만 컬럼 유지)
   name                      VARCHAR(50) NOT NULL,
+  oauth_provider            VARCHAR(20) NULL,   -- 예: 'google' (추후 다른 provider 추가 가능하도록 provider-agnostic하게 설계)
+  oauth_id                  VARCHAR(255) NULL,  -- provider가 발급한 고유 식별자(Google이면 ID 토큰의 sub)
 
   department_id             INT,
   track_id                  INT,     -- 공학3계열 등 광역단위 학과만 해당, 2학년 진급 시 선택. 그 외 NULL
@@ -101,6 +105,9 @@ CREATE TABLE IF NOT EXISTS students (
   created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_students_email UNIQUE (email),
+  -- oauth_provider/oauth_id 조합 UNIQUE. MySQL은 UNIQUE에서 NULL끼리는 서로 다른 값으로
+  -- 취급하므로, 아직 OAuth 연결이 안 된(둘 다 NULL) 레거시 행이 여러 개 있어도 위반되지 않음.
+  CONSTRAINT uq_students_oauth UNIQUE (oauth_provider, oauth_id),
   FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE SET NULL,
   FOREIGN KEY (second_department_id) REFERENCES departments(id) ON DELETE SET NULL
@@ -134,7 +141,10 @@ CREATE TABLE IF NOT EXISTS course_offerings (
   department_id     INT NOT NULL,
   track_id          INT,      -- 공학3계열처럼 트랙별로 갈리는 3·4학년 과목만, 계열공통/구학과는 NULL
   year              INT NOT NULL,
-  semester          TINYINT NOT NULL,
+  semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
+                                        -- 4=겨울 계절학기(2026-09 계절학기 지원 도입, db/migrate.js의
+                                        -- ensureSeasonSemesterRenumbering 참고). student_courses.semester와
+                                        -- 반드시 같은 체계를 써야 카탈로그 검색(연도/학기 매칭)이 안 깨진다.
   grade             TINYINT,  -- 조회 화면 기준 권장 학년, 없을 수 있어 NULL 허용
   raw_category      VARCHAR(10),   -- 원문 "구분" 코드 그대로 (교필/기전/선전/계필/기초 등)
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택'),  -- raw_category 정규화값
@@ -185,7 +195,11 @@ CREATE TABLE IF NOT EXISTS student_courses (
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
   year              INT NOT NULL,
-  semester          TINYINT NOT NULL,
+  semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
+                                        -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —
+                                        -- 재수강 판정(courseService.js의 listRetakeEligibleCourses)이
+                                        -- "연도,학기 오름차순 정렬 후 마지막 = 최신 성적"으로 판단하므로
+                                        -- 이 숫자가 실제 학사력 순서와 어긋나면 그 판정이 틀어진다.
 
   midterm           DECIMAL(5,2),
   final             DECIMAL(5,2),

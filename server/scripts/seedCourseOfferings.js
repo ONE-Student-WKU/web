@@ -72,11 +72,25 @@ async function findTrackId(departmentId, name) {
   return rows[0]?.id || null;
 }
 
+// 2026-09 계절학기 지원 도입으로 course_offerings.semester 체계가 학사력 시간순
+// (1=1학기, 2=여름 계절학기, 3=2학기, 4=겨울 계절학기)으로 바뀌었다(db/migrate.js의
+// ensureSeasonSemesterRenumbering 참고). 원본 스크래핑 소스(전공시간표_2017-2026.json)의
+// 파일명 키는 옛 체계(1,2)로 박혀 있고 계절학기 데이터 자체가 없어 이 스크립트가 계절학기를
+// 직접 다룰 일은 없지만, 재시딩(이 스크립트는 재실행 가능하게 설계됨) 시 옛 숫자를 그대로
+// 넣으면 이미 재배정된 DB의 새 체계와 충돌한다(옛 "2"가 새 체계에서는 여름 계절학기를
+// 뜻하므로) — 그래서 여기서 새 체계로 변환해서 쓴다.
+const LEGACY_SEMESTER_TO_CURRENT = { 1: 1, 2: 3 };
+
 function parseDatasetKey(key) {
   // "컴퓨터·소프트웨어공학과_2017_1" -> { deptKey, year, semester }
   const m = key.match(/^(.+)_(\d{4})_(\d)$/);
   if (!m) return null;
-  return { deptKey: m[1], year: Number(m[2]), semester: Number(m[3]) };
+  const semester = LEGACY_SEMESTER_TO_CURRENT[Number(m[3])];
+  if (!semester) {
+    console.warn(`[SKIP] ${key}: 알 수 없는 학기 값(${m[3]}) — 원본 소스는 1/2만 있어야 함`);
+    return null;
+  }
+  return { deptKey: m[1], year: Number(m[2]), semester };
 }
 
 // 현재 학기 정확한 값을 알 수 없어(서버는 클라이언트의 getCurrentYearSemester 학사력 추정
