@@ -461,7 +461,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
   const describeAddCourseError = (err) => {
     if (err.code === 'COURSE_ALREADY_ADDED') return '이미 추가된 과목이에요.';
-    if (err.code === 'INVALID_CREDITS') return '학점은 0보다 크고 9.9 이하로 입력해주세요.';
+    if (err.code === 'INVALID_CREDITS') return '학점은 0 이상 9.9 이하로 입력해주세요.';
     if (err.code === 'DUPLICATE_SCHEDULE_SLOT') return '같은 시간을 두 번 입력했어요.';
     if (err.code === 'SCHEDULE_CONFLICT') {
       const { day, period, conflictCourseName } = err.data || {};
@@ -1283,10 +1283,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </div>
                 <div className="auth-field">
                   <label>학점</label>
+                  {/* min=0 — 졸업논문처럼 P/F 판정에 졸업학점 합산이 안 되는 과목은 0학점으로
+                      등록해야 한다(실사용 확인: 등록할 방법이 아예 없다는 신고). */}
                   <input
                     type="number"
                     step="0.5"
-                    min="0.5"
+                    min="0"
                     max="9.9"
                     value={manualFields.credits}
                     onChange={(e) => setManualFields({ ...manualFields, credits: e.target.value })}
