@@ -58,6 +58,39 @@ async function ensureOauthColumns(connection) {
   }
 }
 
+// 계절학기 지원(2026-09) — student_courses/course_offerings의 semester 값 체계를
+// (1=1학기, 2=2학기)에서 학사력 시간순(1=1학기, 2=여름 계절학기, 3=2학기, 4=겨울 계절학기)으로
+// 재배정한다. 재수강 판정(server/services/courseService.js의 listRetakeEligibleCourses)이나
+// 학기 탭 정렬처럼 "semester 오름차순 = 학사력 순서"를 전제하는 코드가 여러 곳 있는데, 여름
+// 계절학기(6~7월)가 2학기(9~12월)보다 시간상 먼저 일어나므로 값을 단순히 이어붙이면(2학기=2,
+// 여름=3) 그 전제가 깨진다(db/schema.sql의 semester 컬럼 주석 참고).
+//
+// 이건 "기존 2학기(값 2) 데이터를 값 3으로 바꾼다"는 데이터 변경이라, 컬럼 존재 여부 확인만으론
+// 재실행 안전성을 보장할 수 없다 — 이미 재배정된 뒤에 앱이 새로 여름 계절학기(값 2)를 정상
+// 저장한 상태에서 이 UPDATE를 또 실행하면 그 정상 데이터를 값 3(2학기)으로 잘못 덮어써버린다.
+// 그래서 컬럼 코멘트를 "이미 재배정했다"는 표식으로 남겨 테이블당 딱 한 번만 실행되게 막는다.
+const SEASON_SEMESTER_MARKER = 'season_semester_renumbered_v1';
+async function ensureSeasonSemesterRenumbering(connection) {
+  const [cols] = await connection.query(
+    `SELECT TABLE_NAME, COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'semester'
+       AND TABLE_NAME IN ('student_courses', 'course_offerings')`
+  );
+  const commentByTable = Object.fromEntries(cols.map((c) => [c.TABLE_NAME, c.COLUMN_COMMENT]));
+
+  for (const table of ['student_courses', 'course_offerings']) {
+    if (commentByTable[table] === SEASON_SEMESTER_MARKER) continue; // 이미 재배정 완료
+
+    console.log(`[db:migrate] ${table}.semester 재배정(2학기: 2 → 3)...`);
+    await connection.query(`UPDATE ${table} SET semester = 3 WHERE semester = 2`);
+    // 재배정 완료 표식 — 다음 배포부터는 위 UPDATE를 건너뛰어서, 재배정 이후 정상적으로 쌓인
+    // 여름 계절학기(값 2) 데이터가 실수로 다시 3으로 밀리지 않는다.
+    await connection.query(
+      `ALTER TABLE ${table} MODIFY COLUMN semester TINYINT NOT NULL COMMENT '${SEASON_SEMESTER_MARKER}'`
+    );
+  }
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -83,6 +116,7 @@ async function migrate() {
     // 이미 존재하는 테이블에 대한 변경(신규 컬럼/제약)은 위 스키마 재실행만으로는 반영되지
     // 않으므로 별도 idempotent guard로 처리.
     await ensureOauthColumns(connection);
+    await ensureSeasonSemesterRenumbering(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {
