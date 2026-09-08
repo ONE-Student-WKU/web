@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { updateProfile, changePassword, deleteAccount, getLatestConfirmedRoadmap } from '../api/chatApi.js';
+import { updateProfile, deleteAccount, startGoogleReauth, getLatestConfirmedRoadmap } from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 
@@ -15,7 +15,8 @@ export function resetProfileCache() {
 
 /**
  * Profile Page
- * 계정 정보 수정 — 이름 변경, 비밀번호 변경, 계정 삭제(하드 삭제, 되돌릴 수 없음).
+ * 계정 정보 수정 — 이름 변경, 계정 삭제(하드 삭제, 되돌릴 수 없음). 로그인이 Google OAuth로만
+ * 이뤄지므로 비밀번호 변경 기능은 없음 — 계정 삭제는 Google 재인증(step-up)으로 확인한다.
  * 휴학 학기 수는 학과·학번 수정(Onboarding.jsx) 쪽으로 옮겨졌다 — 학과/학번과 서로 얽힌
  * 학적 데이터라 그쪽 요약 화면에서 같이 다루는 게 맞다는 판단(팀 논의, 2026-08-30).
  *
@@ -24,8 +25,11 @@ export function resetProfileCache() {
  * - onGoHome: function
  * - onNameChanged: function(name) — App.jsx의 user 상태 동기화용
  * - onAccountDeleted: function — 삭제 성공 시(서버에서 세션도 함께 파기됨) 로그인 화면으로 되돌림
+ * - justReauthenticated: boolean — Google 재인증 왕복 직후(App.jsx가 ?reauth=1 쿼리로 판단)인지.
+ *   서버의 재인증 유효 시간(5분)과 별개로, 새로고침하면 다시 false가 되는 프론트 전용 플래그라
+ *   실제 삭제 시점엔 서버가 다시 한번 유효성을 검사한다(REAUTH_REQUIRED).
  */
-function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
+function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthenticated }) {
   const [name, setName] = useState(user?.name || '');
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState(null);
@@ -49,13 +53,6 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
       .finally(() => setConfirmedRoadmapLoading(false));
   }, []);
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordSaved, setPasswordSaved] = useState(false);
-  const [passwordError, setPasswordError] = useState(null);
-
-  const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -77,47 +74,20 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
     }
   }
 
-  async function handleChangePassword(e) {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSaved(false);
-    if (newPassword.length < 8) {
-      setPasswordError('새 비밀번호는 8자 이상이어야 해요.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('새 비밀번호가 서로 달라요.');
-      return;
-    }
-    try {
-      await changePassword(currentPassword, newPassword);
-      setPasswordSaved(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setPasswordError(
-        err.code === 'INVALID_CURRENT_PASSWORD' ? '현재 비밀번호가 올바르지 않아요.' : '비밀번호 변경에 실패했어요.'
-      );
-    }
-  }
-
   async function handleDeleteAccount(e) {
     e.preventDefault();
     setDeleteError(null);
-    if (!deletePassword) {
-      setDeleteError('비밀번호를 입력해주세요.');
-      return;
-    }
     if (!window.confirm('정말 계정을 삭제할까요? 수강 이력, 대화 기록을 포함한 모든 데이터가 사라지고 되돌릴 수 없어요.')) {
       return;
     }
     setDeleting(true);
     try {
-      await deleteAccount(deletePassword);
+      await deleteAccount();
       onAccountDeleted();
     } catch (err) {
-      setDeleteError(err.code === 'INVALID_PASSWORD' ? '비밀번호가 올바르지 않아요.' : '삭제에 실패했어요.');
+      setDeleteError(
+        err.code === 'REAUTH_REQUIRED' ? '재인증이 만료됐어요. 다시 로그인해서 확인해주세요.' : '삭제에 실패했어요.'
+      );
       setDeleting(false);
     }
   }
@@ -178,59 +148,23 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted }) {
           )
         )}
 
-        <section className="home-card">
-          <p className="home-card-label">비밀번호 변경</p>
-          <form onSubmit={handleChangePassword}>
-            <div className="auth-field">
-              <label>현재 비밀번호</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="auth-field">
-              <label>새 비밀번호</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-            </div>
-            <div className="auth-field">
-              <label>새 비밀번호 확인</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-            {passwordError && <p className="home-error">{passwordError}</p>}
-            {passwordSaved && <p className="settings-field-hint">비밀번호를 변경했어요.</p>}
-            <button type="submit" className="auth-submit-btn">
-              비밀번호 변경
-            </button>
-          </form>
-        </section>
-
         <section className="home-card profile-danger-zone">
           <p className="home-card-label">계정 삭제</p>
           <p className="settings-field-hint">
             계정을 삭제하면 수강 이력, 대화 기록 등 모든 데이터가 함께 삭제되고 되돌릴 수 없어요.
           </p>
-          <form onSubmit={handleDeleteAccount}>
-            <div className="auth-field">
-              <label>비밀번호 확인</label>
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                required
-              />
-            </div>
-            {deleteError && <p className="home-error">{deleteError}</p>}
-            <button type="submit" className="profile-delete-btn" disabled={deleting}>
-              {deleting ? '삭제하는 중...' : '계정 삭제'}
+          {!justReauthenticated ? (
+            <button type="button" className="settings-theme-btn" onClick={startGoogleReauth}>
+              다시 로그인해서 확인
             </button>
-          </form>
+          ) : (
+            <form onSubmit={handleDeleteAccount}>
+              {deleteError && <p className="home-error">{deleteError}</p>}
+              <button type="submit" className="profile-delete-btn" disabled={deleting}>
+                {deleting ? '삭제하는 중...' : '계정 삭제'}
+              </button>
+            </form>
+          )}
         </section>
       </div>
     </div>

@@ -1,14 +1,13 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 
-const BCRYPT_ROUNDS = 10;
-
 /**
  * Routes for the current logged-in student (/api/me)
  * 근거: 위키 API-설계 2.1, 2.2 - https://github.com/ONE-Student-wku/web/wiki/API-설계
+ * (※ 이 문서는 PATCH /me/password가 있던 시절 기준 — 로그인이 Google OAuth로 대체되면서
+ *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
 const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, serializeStudent } = studentService;
@@ -131,55 +130,24 @@ router.patch('/me', requireAuth, async (req, res, next) => {
   }
 });
 
-// PATCH /api/me/password
-router.patch('/me/password', requireAuth, async (req, res, next) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
+// 재인증 유효 시간 — /api/auth/google/reauth/callback이 세션에 남긴 deleteReauthAt이
+// 이 시간 이내여야 계정 삭제를 허용한다(구글 재로그인 없이 세션만으로는 삭제 불가하게).
+const REAUTH_WINDOW_MS = 5 * 60 * 1000;
 
-    if (!currentPassword) {
-      return res.status(400).json({ status: 400, code: 'REQUIRED_CURRENT_PASSWORD', message: null, data: null });
-    }
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ status: 400, code: 'INVALID_NEW_PASSWORD', message: null, data: null });
-    }
-
-    const student = await studentService.findById(req.session.userId);
-    if (!student) {
-      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
-    }
-
-    const matches = await bcrypt.compare(currentPassword, student.password);
-    if (!matches) {
-      return res.status(401).json({ status: 401, code: 'INVALID_CURRENT_PASSWORD', message: null, data: null });
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await studentService.updatePassword(req.session.userId, passwordHash);
-
-    return res.status(200).json({ status: 200, code: 'PASSWORD_UPDATE_SUCCESS', message: null, data: null });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// DELETE /api/me — 비밀번호 재확인 후 계정 완전 삭제(하드 삭제). 수강 이력/대화 기록은
-// students FK의 ON DELETE CASCADE로 함께 지워진다(db/schema.sql).
+// DELETE /api/me — Google 재인증(step-up) 확인 후 계정 완전 삭제(하드 삭제). 수강 이력/대화
+// 기록은 students FK의 ON DELETE CASCADE로 함께 지워진다(db/schema.sql). 비밀번호가 없어진
+// 이후 재확인 수단은 세션 쿠키만으로는 부족하므로(이미 로그인 상태와 같은 신뢰수준) GET
+// /api/auth/google/reauth 왕복으로 Google 계정 소유를 다시 증명하게 한다.
 router.delete('/me', requireAuth, async (req, res, next) => {
   try {
-    const { password } = req.body;
-
-    if (!password) {
-      return res.status(400).json({ status: 400, code: 'REQUIRED_PASSWORD', message: null, data: null });
+    const reauthAt = req.session.deleteReauthAt;
+    if (!reauthAt || Date.now() - reauthAt > REAUTH_WINDOW_MS) {
+      return res.status(401).json({ status: 401, code: 'REAUTH_REQUIRED', message: null, data: null });
     }
 
     const student = await studentService.findById(req.session.userId);
     if (!student) {
       return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
-    }
-
-    const matches = await bcrypt.compare(password, student.password);
-    if (!matches) {
-      return res.status(401).json({ status: 401, code: 'INVALID_PASSWORD', message: null, data: null });
     }
 
     await studentService.deleteStudent(req.session.userId);

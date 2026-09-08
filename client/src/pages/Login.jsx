@@ -1,43 +1,24 @@
-import React, { useState } from 'react';
-import { login, signup } from '../api/chatApi';
+import React from 'react';
+import { startGoogleLogin } from '../api/chatApi';
+
+// Google OAuth 콜백은 풀 페이지 리다이렉트로 끝나기 때문에(로그인 성공을 동기 응답으로
+// 못 받음) App.jsx가 authError 쿼리 파라미터를 파싱해서 이 컴포넌트에 문구로만 전달한다.
+function describeAuthError(code) {
+  if (code === 'STATE_MISMATCH') return '로그인 요청이 만료됐어요. 다시 시도해주세요.';
+  if (code === 'EMAIL_NOT_VERIFIED') return '이메일이 인증되지 않은 구글 계정이에요. 다른 계정으로 시도해주세요.';
+  if (code === 'INVALID_CREDENTIALS') return '로그인에 실패했어요. 잠시 후 다시 시도해주세요.';
+  if (code === 'OAUTH_FAILED') return '구글 로그인에 실패했어요. 잠시 후 다시 시도해주세요.';
+  return '로그인에 실패했어요. 잠시 후 다시 시도해주세요.';
+}
 
 /**
  * Login Page Component
  *
  * Props:
- * - onLoginSuccess: function
+ * - error: string | null — App.jsx가 전달하는 authError 쿼리 코드
+ * - onOpenPrivacy / onOpenTerms: function — 개인정보처리방침/이용약관 화면으로 전환
  */
-function Login({ onLoginSuccess }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'signup'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState(null);
-
-  const describeAuthError = (err) => {
-    if (err.code === 'REQUIRED_EMAIL') return '이메일을 입력해주세요.';
-    if (err.code === 'REQUIRED_PASSWORD') return '비밀번호를 입력해주세요.';
-    if (err.code === 'REQUIRED_NAME') return '이름을 입력해주세요.';
-    if (err.code === 'PASSWORD_TOO_SHORT') return '비밀번호는 8자 이상이어야 해요.';
-    if (err.code === 'EMAIL_ALREADY_EXISTS') return '이미 가입된 이메일이에요.';
-    if (err.code === 'INVALID_CREDENTIALS') return '이메일 또는 비밀번호가 올바르지 않아요.';
-    return '요청에 실패했어요. 잠시 후 다시 시도해주세요.';
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      if (mode === 'signup') {
-        await signup(email, password, name);
-      }
-      const user = await login(email, password);
-      onLoginSuccess(user);
-    } catch (err) {
-      setError(describeAuthError(err));
-    }
-  };
-
+function Login({ error, onOpenPrivacy, onOpenTerms }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
@@ -45,46 +26,23 @@ function Login({ onLoginSuccess }) {
       </header>
 
       <div className="auth-body">
-        <h2 className="auth-heading">{mode === 'signup' ? '회원가입' : '로그인'}</h2>
+        <h2 className="auth-heading">로그인</h2>
         <p className="auth-subheading">원광대 학생의 입학부터 졸업까지, 학업과 진로를 연결하는 학생 생활 통합 서비스</p>
 
-        <form onSubmit={handleSubmit}>
-          {mode === 'signup' && (
-            <div className="auth-field">
-              <label>이름</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-          )}
-          <div className="auth-field">
-            <label>이메일</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className="auth-field">
-            <label>비밀번호</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </div>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" className="auth-submit-btn">
-            {mode === 'signup' ? '회원가입 후 로그인' : '로그인'}
-          </button>
-        </form>
+        {error && <p className="auth-error">{describeAuthError(error)}</p>}
+
+        <button type="button" className="auth-submit-btn" onClick={startGoogleLogin}>
+          Google로 로그인
+        </button>
 
         <p className="auth-toggle-text">
-          {mode === 'login' ? (
-            <>
-              계정이 없으신가요?{' '}
-              <button type="button" className="auth-toggle-link" onClick={() => setMode('signup')}>
-                회원가입
-              </button>
-            </>
-          ) : (
-            <>
-              이미 계정이 있으신가요?{' '}
-              <button type="button" className="auth-toggle-link" onClick={() => setMode('login')}>
-                로그인
-              </button>
-            </>
-          )}
+          <button type="button" className="auth-toggle-link" onClick={onOpenPrivacy}>
+            개인정보처리방침
+          </button>
+          {' · '}
+          <button type="button" className="auth-toggle-link" onClick={onOpenTerms}>
+            이용약관
+          </button>
         </p>
       </div>
     </div>

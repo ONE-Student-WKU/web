@@ -12,6 +12,52 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 // mysql2만으로 동작하는 root-level 스크립트다.
 const SCHEMA_PATH = path.resolve(__dirname, 'schema.sql');
 
+// schema.sql은 CREATE TABLE IF NOT EXISTS만 써서, 이미 배포된 운영 테이블(예: students)에는
+// 새로 추가되는 컬럼/제약이 반영되지 않는다(테이블이 이미 존재하면 그 CREATE TABLE 문 자체가
+// 통째로 no-op). 그래서 기존 테이블을 바꾸는 변경은 여기서 INFORMATION_SCHEMA로 현재 상태를
+// 확인한 뒤 필요한 경우에만 ALTER TABLE을 실행하는 방식으로 직접 idempotent하게 만든다 —
+// 매 배포(Pre-Deploy Command)마다 재실행돼도 두 번째부터는 전부 no-op이어야 안전하다.
+//
+// Google OAuth 전환(students.password nullable화 + oauth_provider/oauth_id 추가)용 guard.
+async function ensureOauthColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students'
+       AND COLUMN_NAME IN ('oauth_provider', 'oauth_id', 'password')`
+  );
+  const byName = Object.fromEntries(cols.map((c) => [c.COLUMN_NAME, c]));
+
+  // password: 이미 존재하는 컬럼이므로 CREATE TABLE IF NOT EXISTS로는 nullable화가 안 됨.
+  // MODIFY COLUMN은 이미 nullable이어도 재실행 시 에러가 나지 않아(자연히 idempotent) 별도
+  // 존재 여부 가드가 필요 없음 — NOT NULL일 때만 실행해서 불필요한 ALTER를 줄인다.
+  if (byName.password && byName.password.IS_NULLABLE === 'NO') {
+    console.log('[db:migrate] students.password를 NULL 허용으로 변경...');
+    await connection.query('ALTER TABLE students MODIFY COLUMN password VARCHAR(255) NULL');
+  }
+
+  // ADD COLUMN은 이미 존재하는 컬럼에 재실행하면 에러가 나므로(MySQL은 IF NOT EXISTS를
+  // ADD COLUMN에 이식성 있게 지원하지 않음) 존재 여부를 먼저 확인해야 idempotent해진다.
+  if (!byName.oauth_provider) {
+    console.log('[db:migrate] students.oauth_provider 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN oauth_provider VARCHAR(20) NULL');
+  }
+  if (!byName.oauth_id) {
+    console.log('[db:migrate] students.oauth_id 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN oauth_id VARCHAR(255) NULL');
+  }
+
+  const [idx] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND INDEX_NAME = 'uq_students_oauth'`
+  );
+  if (idx.length === 0) {
+    console.log('[db:migrate] uq_students_oauth 제약 추가...');
+    await connection.query(
+      'ALTER TABLE students ADD CONSTRAINT uq_students_oauth UNIQUE (oauth_provider, oauth_id)'
+    );
+  }
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -33,6 +79,11 @@ async function migrate() {
     // schema.sql 전체(CREATE DATABASE/USE 포함, 전부 IF NOT EXISTS)를 그대로 실행.
     // 몇 번을 실행해도 안전(멱등) — 이미 존재하는 테이블은 건드리지 않고 새 테이블만 생성한다.
     await connection.query(schema);
+
+    // 이미 존재하는 테이블에 대한 변경(신규 컬럼/제약)은 위 스키마 재실행만으로는 반영되지
+    // 않으므로 별도 idempotent guard로 처리.
+    await ensureOauthColumns(connection);
+
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {
     await connection.end();

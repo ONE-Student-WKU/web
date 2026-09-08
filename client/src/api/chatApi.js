@@ -23,11 +23,15 @@ async function apiRequest(path, options = {}) {
   return body.data;
 }
 
-export const signup = (email, password, name) =>
-  apiRequest('/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+// Google 로그인/재인증은 풀 페이지 브라우저 리다이렉트가 필요해서(fetch로는 Google의
+// 동의 화면 리다이렉트 체인을 탈 수 없음) apiRequest가 아니라 직접 네비게이션한다.
+export const startGoogleLogin = () => {
+  window.location.href = '/api/auth/google';
+};
 
-export const login = (email, password) =>
-  apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+export const startGoogleReauth = () => {
+  window.location.href = '/api/auth/google/reauth';
+};
 
 export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
 
@@ -35,11 +39,7 @@ export const getMe = () => apiRequest('/me');
 
 export const updateProfile = (payload) => apiRequest('/me', { method: 'PATCH', body: JSON.stringify(payload) });
 
-export const changePassword = (currentPassword, newPassword) =>
-  apiRequest('/me/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
-
-export const deleteAccount = (password) =>
-  apiRequest('/me', { method: 'DELETE', body: JSON.stringify({ password }) });
+export const deleteAccount = () => apiRequest('/me', { method: 'DELETE' });
 
 export const getDepartments = () => apiRequest('/onboarding/departments');
 
