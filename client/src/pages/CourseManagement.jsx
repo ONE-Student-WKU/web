@@ -282,6 +282,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualSchedule([]);
     searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
+
+    // "카탈로그 검색" 탭은 실제 현재 학기에서만 버튼이 보이므로(아래 courses-add-mode-toggle
+    // 참고), 실제 현재 학기가 아닌 탭으로 이동했는데 addMode가 여전히 'catalog'로 남아있으면
+    // 버튼으로는 되돌아갈 수 없는 상태가 된다 — 그 학기의 기본 탭인 '직접입력'으로 되돌린다.
+    const realNow = getCurrentYearSemester();
+    const isCurrentTerm = current.year === realNow.year && current.semester === realNow.semester;
+    if (!isCurrentTerm) setAddMode((prev) => (prev === 'catalog' ? 'manual' : prev));
   }, [current]);
 
   const tabs = useMemo(() => {
@@ -348,11 +355,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const isViewingRealCurrentSemester =
     current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
 
-  // 카탈로그(course_offerings)는 학기별 실제 개설 정보라 지금 보고 있는 탭(current.year/semester)
-  // 그대로 카탈로그 검색에 넘긴다 — 2017-1~2026-2 범위의 실제 분반/교수/시간이 그대로 나온다.
-  // 그 범위 밖(수집 전/이후 학기)은 검색해도 결과가 없을 뿐이라 별도 게이트가 필요 없다
-  // (저학년 필수과목처럼 아직 실제 개설 전이라 시간표를 확보 못 한 항목은 검색 결과에
-  // 교수/시간이 비어있고, 추가 시 사용자가 직접 시간표를 입력할 수 있다 — courseService.addMyCourse 참고).
+  // 카탈로그 검색은 "지금 학기에 뭘 들을지 찾아보는" 용도라 실제 현재 학기(isViewingRealCurrentSemester)
+  // 탭에서만 버튼을 보여준다(courses-add-mode-toggle 참고). 계절학기는 스크래핑 원본에 데이터 자체가
+  // 없어(seedCourseOfferings.js 참고) 검색해도 항상 0건이고, 지난 정규학기는 데이터가 있어도(2017-1~)
+  // 이미 뭘 들었는지 본인이 아는 상태라 검색보다 직접입력/PDF 가져오기가 더 자연스럽다 — 둘 다 카탈로그
+  // 검색을 남겨둘 이유가 약해 실제 현재 학기 한정으로 좁혔다(실사용 판단, 2026-09-08).
 
   const maxPeriod = Math.max(6, ...timetable.map((t) => t.period));
   const cellAt = (day, period) => timetable.find((t) => t.day === day && t.period === period);
@@ -889,13 +896,15 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             {error && <p className="home-error courses-form-error">{error}</p>}
             <div className="courses-add-form-header">
               <div className="courses-add-mode-toggle">
-                <button
-                  className={addMode === 'catalog' ? 'active' : ''}
-                  onClick={() => setAddMode('catalog')}
-                  type="button"
-                >
-                  카탈로그 검색
-                </button>
+                {isViewingRealCurrentSemester && (
+                  <button
+                    className={addMode === 'catalog' ? 'active' : ''}
+                    onClick={() => setAddMode('catalog')}
+                    type="button"
+                  >
+                    카탈로그 검색
+                  </button>
+                )}
                 <button
                   className={addMode === 'manual' ? 'active' : ''}
                   onClick={() => setAddMode('manual')}
