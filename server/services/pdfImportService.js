@@ -36,8 +36,16 @@ const TOTAL_CREDITS_RE = /총\s*취득학점[\t ]*(\d+(?:\.\d+)?)/;
 // 위치로 대응시켜야 한다 — extractGroupSubtotals가 이 역할을 한다.
 // "교양"/"전공"/"상담및미분류" 같은 상위 그룹 합계는 정확히 어떤 코드들의 합인지 문서
 // 구조를 더 깊이 가정해야 해서(잘못 짐작하면 없는 오류를 만들어낼 위험) 대조에서 제외.
+// 이 [12]는 우리 앱 내부 semester 코드가 아니라 원광대 문서 자체에 인쇄된 "YYYY/N" 표기의
+// N을 그대로 가리킨다(문서 원문을 정규식으로 스캔하는 단계라 우리 DB 값 체계와 무관함).
+// 계절학기 지원(2026-09) 도입 시점에 실물 계절학기 PDF 샘플이 아직 없어 원광대가 계절학기
+// 행을 "YYYY/N"에 어떤 숫자(혹은 "하계"/"여름" 같은 비숫자 표기)로 찍는지 확인이 안 됨 —
+// 그래서 숫자라면 몇이든 넓게 잡아두는 정도로만 방어적으로 대응한다. 실제로 비숫자 표기라면
+// 이 앵커가 계절학기 행을 못 잡아 소계 대조 없이 넘어갈 뿐, 이 대조 자체가 "틀렸을 때
+// 알려주는 보조 신호"일 뿐이라(파일 상단 주석 참고) import 자체가 깨지진 않는다. 실물 PDF를
+// 확보하면 실제 표기에 맞게 이 정규식을 다듬을 것.
 const ROW_CODE_ANCHOR_RE = new RegExp(
-  `(${CODE_ALT})[\\t ]+[\\s\\S]+?[\\t ]*\\d{4}\\/[12][\\t ]*\\*?\\d+(?:\\.\\d+)?\\*?`,
+  `(${CODE_ALT})[\\t ]+[\\s\\S]+?[\\t ]*\\d{4}\\/[1-9][\\t ]*\\*?\\d+(?:\\.\\d+)?\\*?`,
   'g'
 );
 const GROUP_SUBTOTAL_RE = /성적취득학점[\t ]*(\d+(?:\.\d+)?)/g;
@@ -177,6 +185,17 @@ async function parseCourseListText(rawText) {
 
 const SEMESTER_HEADER_RE = /(\d{4})\s*년\s*([12])\s*학기/g;
 
+// 위 정규식이 캡처하는 건 원광대 문서에 찍힌 학기 숫자(1/2)이지, 우리 내부 semester 코드가
+// 아니다. aiClient.js의 FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT가 이미 AI 추출 결과의 semester를
+// 학사력 시간순 내부 코드(1=1학기, 3=2학기)로 바꿔서 내놓으므로, 아래 학기 소계 대조가 그
+// 값과 같은 체계로 비교되려면 여기서도 반드시 같은 변환을 거쳐야 한다 — 안 그러면 원문 "2학기"
+// 헤더는 키 "2024-2"로, AI가 낸 같은 학기 과목은 "2024-3"으로 남아 서로 다른 키 취급되어
+// 대조가 전부 어긋난다. 계절학기 섹션 헤더가 실제로 이 "YYYY 년 N 학기" 패턴을 따르는지,
+// 따른다면 N이 몇으로 찍히는지 확인된 바 없어([12]로 제한해둔 이유) 여기서는 정규학기만
+// 다룬다 — 계절학기 소계 대조는 실물 PDF 확보 후 다듬을 것(못 잡아도 import 자체는 정상 동작).
+const RAW_SEMESTER_TO_CODE = { 1: 1, 2: 3 };
+const SEMESTER_DISPLAY_LABELS = { 1: '1학기', 2: '여름 계절학기', 3: '2학기', 4: '겨울 계절학기' };
+
 // 학기 소계("취득학점 평균평점" 다음 줄에 숫자 두 개, 예: "17.00 4.30") — 학기별 대조용.
 // 이 문서엔 전체 합계 표기가 따로 없어(학기 소계만 있음, 실제 PDF로 확인) 총합 대조
 // 대신 학기 단위로 대조한다 — 오히려 어느 학기에서 틀렸는지까지 짚어줄 수 있어 더 유용함.
@@ -197,7 +216,9 @@ async function parseFullTranscriptText(rawText) {
   const semRe = new RegExp(SEMESTER_HEADER_RE.source, 'g');
   let semMatch;
   while ((semMatch = semRe.exec(text)) !== null) {
-    semesterBoundaries.push({ index: semMatch.index, year: Number(semMatch[1]), semester: Number(semMatch[2]) });
+    const code = RAW_SEMESTER_TO_CODE[Number(semMatch[2])];
+    if (!code) continue; // [12]로 제한된 캡처라 항상 존재하지만 방어적으로.
+    semesterBoundaries.push({ index: semMatch.index, year: Number(semMatch[1]), semester: code });
   }
 
   // 학기 헤더 뒤에 나오는 위치는 다음 헤더가 나오기 전까지 그 학기 소속이다 — 학기
@@ -273,9 +294,10 @@ async function parseFullTranscriptText(rawText) {
       .filter((r) => `${r.year}-${r.semester}` === key && !r.isFail)
       .reduce((sum, r) => sum + r.credits, 0);
     if (Math.abs(declaredValue - extractedValue) > 0.01) {
-      const [year, semester] = key.split('-');
+      const [year, semesterCode] = key.split('-');
+      const semesterLabel = SEMESTER_DISPLAY_LABELS[Number(semesterCode)] || `${semesterCode}학기`;
       warnings.push(
-        `${year}년 ${semester}학기에서 취득학점은 ${declaredValue}학점인데 리스트에는 ${extractedValue}학점이 있어요. 해당 학기 과목을 원본과 대조해서 확인해주세요.`
+        `${year}년 ${semesterLabel}에서 취득학점은 ${declaredValue}학점인데 리스트에는 ${extractedValue}학점이 있어요. 해당 학기 과목을 원본과 대조해서 확인해주세요.`
       );
     }
   }

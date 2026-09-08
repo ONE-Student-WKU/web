@@ -141,7 +141,10 @@ CREATE TABLE IF NOT EXISTS course_offerings (
   department_id     INT NOT NULL,
   track_id          INT,      -- 공학3계열처럼 트랙별로 갈리는 3·4학년 과목만, 계열공통/구학과는 NULL
   year              INT NOT NULL,
-  semester          TINYINT NOT NULL,
+  semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
+                                        -- 4=겨울 계절학기(2026-09 계절학기 지원 도입, db/migrate.js의
+                                        -- ensureSeasonSemesterRenumbering 참고). student_courses.semester와
+                                        -- 반드시 같은 체계를 써야 카탈로그 검색(연도/학기 매칭)이 안 깨진다.
   grade             TINYINT,  -- 조회 화면 기준 권장 학년, 없을 수 있어 NULL 허용
   raw_category      VARCHAR(10),   -- 원문 "구분" 코드 그대로 (교필/기전/선전/계필/기초 등)
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택'),  -- raw_category 정규화값
@@ -192,7 +195,11 @@ CREATE TABLE IF NOT EXISTS student_courses (
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
   year              INT NOT NULL,
-  semester          TINYINT NOT NULL,
+  semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
+                                        -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —
+                                        -- 재수강 판정(courseService.js의 listRetakeEligibleCourses)이
+                                        -- "연도,학기 오름차순 정렬 후 마지막 = 최신 성적"으로 판단하므로
+                                        -- 이 숫자가 실제 학사력 순서와 어긋나면 그 판정이 틀어진다.
 
   midterm           DECIMAL(5,2),
   final             DECIMAL(5,2),

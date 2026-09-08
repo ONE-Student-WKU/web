@@ -27,15 +27,30 @@ const DAYS = ['월', '화', '수', '목', '금'];
 const GRADES = ['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F', 'P', 'NP'];
 const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
 
+// semester 값은 학사력 시간순으로 매겨져 있다: 1=1학기, 2=여름 계절학기, 3=2학기,
+// 4=겨울 계절학기(db/schema.sql 참고). 숫자를 시간순으로 둔 덕에 `.sort((a,b)=>a.semester-b.semester)`
+// 같은 코드가 곳곳에 있어도 손댈 필요 없이 그대로 학사력 순서가 된다 — 재수강 대상 판정
+// (server/services/courseService.js의 listRetakeEligibleCourses)처럼 "가장 최근 성적"을
+// 정렬 순서로 판단하는 로직이 정확히 동작하려면 이 순서가 중요하다.
+const SEMESTER_LABELS = { 1: '1학기', 2: '여름학기', 3: '2학기', 4: '겨울학기' };
+// 학기 토글 탭은 폭이 좁아 "여름학기"/"겨울학기"라고 다 쓰면 pill 4개가 줄바꿈되기 쉬워
+// 짧은 라벨을 따로 둔다.
+const SEMESTER_TAB_LABELS = { 1: '1학기', 2: '여름', 3: '2학기', 4: '겨울' };
+function semesterLabel(semester) {
+  return SEMESTER_LABELS[semester] || `${semester}학기`;
+}
+
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
 // 8월은 수업 자체는 방학이지만 2학기 수강신청이 이미 시작되는 시기라 2학기로 친다
-// (실제 사용자 확인: 8월 중순에 1학기로 뜨는 건 오답이었음).
+// (실제 사용자 확인: 8월 중순에 1학기로 뜨는 건 오답이었음). 계절학기는 "현재 학기" 기본값으로
+// 절대 잡지 않는다 — 계절학기는 등록 여부가 사람마다 갈리는 부가 학기라, 기본으로 보여줄
+// 시간표/수강목록 기준은 항상 정규학기(1학기=1 또는 2학기=3)여야 한다.
 function getCurrentYearSemester() {
   const now = new Date();
   const month = now.getMonth() + 1;
-  if (month <= 2) return { year: now.getFullYear() - 1, semester: 2 };
+  if (month <= 2) return { year: now.getFullYear() - 1, semester: 3 };
   if (month <= 7) return { year: now.getFullYear(), semester: 1 };
-  return { year: now.getFullYear(), semester: 2 };
+  return { year: now.getFullYear(), semester: 3 };
 }
 
 function semesterKey(year, semester) {
@@ -68,10 +83,17 @@ export function resetCourseMgmtCache() {
 // (정확히 어느 학기가 휴학이었는지는 students.leave_semesters가 누적 "개수"만 저장해서
 // 알 수 없음 — 정교하게 제외하는 대신 전부 깔아두고 비어있는 채로 두기로 함, 2026-08-15 결정).
 // 이러면 학생이 매번 "+학기 추가"를 누를 필요 없이 자기 재학 기간의 모든 학기 탭이 미리 보인다.
+//
+// 2026-09-08: 계절학기(여름=2, 겨울=4)도 1/2학기와 동일하게 항상 미리 깔아둔다 —
+// "직접입력"이 지금 보고 있는 탭(current.year/semester)에 그대로 등록하는 구조라서, 계절학기
+// 탭 자체가 안 보이면 계절학기 과목을 처음 등록할 진입점이 없기 때문(실제로 확인된 문제).
+// 한 해에 탭이 4개로 늘어 붐빌 수 있는데, 일단 이렇게 붙여보고 실사용 중 불편하면 그때
+// 접기/숨기기 등으로 조정하기로 함. [1,2,3,4]가 이미 학사력 시간순이라(semesterLabel 주석
+// 참고) endSemester 비교(`s > endSemester`)가 별도 손질 없이 그대로 올바르게 동작한다.
 function generateSemesterRange(startYear, endYear, endSemester) {
   const range = [];
   for (let y = startYear; y <= endYear; y++) {
-    for (const s of [1, 2]) {
+    for (const s of [1, 2, 3, 4]) {
       if (y === endYear && s > endSemester) break;
       range.push({ year: y, semester: s });
     }
@@ -637,7 +659,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <div key={c.id} className="courses-retake-item">
                   <p className="courses-list-item-name">{c.name}</p>
                   <p className="courses-list-item-meta">
-                    {c.year}-{c.semester}학기 · {displayCategory(c.category)} · {c.letterGrade}
+                    {c.year}-{semesterLabel(c.semester)} · {displayCategory(c.category)} · {c.letterGrade}
                   </p>
                 </div>
               ))}
@@ -673,7 +695,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 className={`courses-semester-btn ${t.semester === current.semester ? 'active' : ''}`}
                 onClick={() => setCurrent(t)}
               >
-                {t.semester}학기
+                {SEMESTER_TAB_LABELS[t.semester] || `${t.semester}학기`}
               </button>
             ))}
           </div>
@@ -981,7 +1003,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 <div className="courses-pdf-pf-item-info">
                                   <p className="courses-pdf-pf-item-name">{r.name}</p>
                                   <p className="courses-pdf-pf-item-meta">
-                                    {r.year}-{r.semester}학기 · {r.credits}학점
+                                    {r.year}-{semesterLabel(r.semester)} · {r.credits}학점
                                   </p>
                                 </div>
                                 <div className="courses-pdf-pf-toggle-group">
@@ -1090,7 +1112,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 onChange={(e) => updatePdfRow(r.tempId, 'semester', Number(e.target.value))}
                               >
                                 <option value={1}>1학기</option>
-                                <option value={2}>2학기</option>
+                                <option value={2}>여름학기</option>
+                                <option value={3}>2학기</option>
+                                <option value={4}>겨울학기</option>
                               </select>
                             </label>
                             {pdfDocType === 'full_transcript' && (
