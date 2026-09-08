@@ -177,8 +177,16 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const addFormRef = useRef(null);
   const searchResultsRef = useRef(null);
   const toastTimerRef = useRef(null);
-  const searchDebounceRef = useRef(null);
   const searchRequestIdRef = useRef(0);
+  // 한글 입력은 자음+모음이 조합돼야 완성된 글자가 된다("데" = ㄷ+ㅔ) — 조합 중간에 나오는
+  // 낱자 상태("빅ㄷ")는 실제 과목명 문자열에 없는 형태라 검색이 빈 결과를 내고, 그게 결과
+  // 목록이 껐다 켜졌다 깜빡이는 원인이었다(실사용 피드백). compositionstart~compositionend
+  // 구간(조합 중)에는 검색을 보류했다가 조합이 끝나는 순간(완성된 글자)에만 검색하면 이
+  // 깜빡임이 사라진다 — 글자가 웬만한 디바운스 대기시간보다 훨씬 빨리 완성되므로 체감 속도도
+  // 더 빨라진다.
+  const isComposingRef = useRef(false);
+  const searchInputRef = useRef(null);
+  const manualNameRef = useRef(null);
 
   // PDF로 한꺼번에 여러 과목(대부분 지난 학기들)을 등록하면, 화면은 계속 "현재 학기" 탭에
   // 머물러 있어서 정작 방금 추가된 과목은 안 보이고 아무 변화도 없는 것처럼 느껴지는 문제가
@@ -191,7 +199,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }
 
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
-  useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
 
   // "과목 추가"를 누르면 폼이 화면 아래쪽에 새로 생기는데 스크롤 위치는 그대로라 매번 직접
   // 내려야 했다 — 폼이 열리는 순간 자동으로 보이는 위치까지 스크롤한다.
@@ -420,29 +427,38 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     }
   };
 
-  // 타이핑마다 바로 요청을 보내면 (1) 서버 왕복 중에 다음 글자가 이미 입력돼 있어 결과 영역이
-  // 지웠다 채웠다 깜빡이고, (2) 네트워크 지연으로 응답이 늦게 도착하는 순서가 뒤바뀌면 오래된
-  // 검색어의 결과가 최신 검색어 결과를 덮어써버리는 문제가 있었다(실사용 확인: "빅데" 입력
-  // 중 "빅" 응답이 늦게 와서 잠깐 사라짐). 타이핑이 멈춘 뒤에만 요청을 보내고, 응답이 와도
-  // 그사이 검색어가 더 바뀌었으면(requestId 불일치) 버린다.
+  // 조합 중(한글 자모가 아직 완성된 글자로 안 합쳐진 상태, 위 isComposingRef 선언부 주석
+  // 참고)에는 검색을 보류하고, 조합이 끝나는 순간(handleCompositionEnd)에만 검색한다 —
+  // 그래서 여기엔 디바운스가 없다(타이핑을 멈추길 기다릴 필요 없이 글자가 완성되는 대로 바로
+  // 검색됨). 응답이 늦게 도착해 그사이 검색어가 더 바뀌었으면(requestId 불일치) 버린다 —
+  // 네트워크 지연으로 응답 순서가 뒤바뀌어 오래된 검색어 결과가 최신 결과를 덮어쓰는 걸 막음.
   const handleSearch = (value) => {
     setKeyword(value);
-    clearTimeout(searchDebounceRef.current);
 
     if (!value.trim()) {
       setSearchResults([]);
       return;
     }
+    if (isComposingRef.current) return; // 조합 중 — 완성되면 handleCompositionEnd가 다시 호출
 
     const requestId = ++searchRequestIdRef.current;
-    searchDebounceRef.current = setTimeout(async () => {
+    (async () => {
       try {
         const results = await searchCatalog(value, current.year, current.semester);
         if (requestId === searchRequestIdRef.current) setSearchResults(results);
       } catch {
         if (requestId === searchRequestIdRef.current) setSearchResults([]);
       }
-    }, 300);
+    })();
+  };
+
+  const handleSearchCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleSearchCompositionEnd = (e) => {
+    isComposingRef.current = false;
+    handleSearch(e.target.value);
   };
 
   const closeAddForm = () => {
@@ -456,6 +472,21 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setPdfDocType(null);
     setPdfWarnings([]);
     setPdfCreditsCheck(null);
+  };
+
+  // 과목을 하나 추가할 때마다 폼 전체가 닫혀서, 여러 과목을 연달아 등록하려면 매번 "과목 추가"
+  // 버튼과 검색창/입력창을 다시 눌러야 했다(실사용 피드백). 성공 후 폼을 닫는 대신 입력
+  // 흔적만 지우고 그대로 열어둔 채 입력창에 포커스를 돌려줘서, 클릭 없이 바로 다음 과목을
+  // 타이핑할 수 있게 한다. 다 썼으면 헤더의 닫기(X) 버튼으로 직접 닫으면 된다(closeAddForm).
+  // 이수구분(category)은 연달아 같은 값을 쓰는 경우가 많아 초기화하지 않고 유지한다.
+  const resetAfterAdd = () => {
+    setKeyword('');
+    setSearchResults([]);
+    setCatalogSelection(null);
+    setManualSchedule([]);
+    setManualFields((f) => ({ ...f, name: '', credits: '' }));
+    if (addMode === 'catalog') searchInputRef.current?.focus();
+    else if (addMode === 'manual') manualNameRef.current?.focus();
   };
 
   // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
@@ -472,14 +503,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const handleSelectCatalogResult = (r) => {
     if (formatSchedule(r.schedule)) {
-      handleAddFromCatalog(r.courseId);
+      handleAddFromCatalog(r.courseId, undefined, r.name);
     } else {
       setManualSchedule([]);
       setCatalogSelection(r);
     }
   };
 
-  const handleAddFromCatalog = async (courseId, schedule) => {
+  const handleAddFromCatalog = async (courseId, schedule, name) => {
     setError(null);
     try {
       const validSchedule = (schedule || []).filter((s) => s.day && s.period);
@@ -489,7 +520,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         semester: current.semester,
         schedule: validSchedule.length > 0 ? validSchedule : undefined,
       });
-      closeAddForm();
+      showToast(name ? `"${name}" 추가했어요` : '과목을 추가했어요');
+      resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
       setError(describeAddCourseError(err));
@@ -510,7 +542,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         semester: current.semester,
         schedule: validSchedule.length > 0 ? validSchedule : undefined,
       });
-      closeAddForm();
+      showToast(`"${manualFields.name}" 추가했어요`);
+      resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
       setError(describeAddCourseError(err));
@@ -1229,7 +1262,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   <button
                     type="button"
                     className="auth-submit-btn"
-                    onClick={() => handleAddFromCatalog(catalogSelection.courseId, manualSchedule)}
+                    onClick={() => handleAddFromCatalog(catalogSelection.courseId, manualSchedule, catalogSelection.name)}
                   >
                     추가하기
                   </button>
@@ -1249,7 +1282,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       type="text"
                       placeholder="과목명 검색"
                       value={keyword}
+                      ref={searchInputRef}
                       onChange={(e) => handleSearch(e.target.value)}
+                      onCompositionStart={handleSearchCompositionStart}
+                      onCompositionEnd={handleSearchCompositionEnd}
                     />
                   </div>
                   <div className="courses-search-results" ref={searchResultsRef}>
@@ -1277,6 +1313,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   <input
                     type="text"
                     value={manualFields.name}
+                    ref={manualNameRef}
                     onChange={(e) => setManualFields({ ...manualFields, name: e.target.value })}
                     required
                   />
