@@ -43,10 +43,18 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Trigger reseed Cron Job
+      # 이전: `railway redeploy`는 기존에 이미 빌드돼 있는 배포를 그대로 재실행할 뿐,
+      # 체크아웃한 이 커밋을 새로 빌드하지 않는다(Railway 서비스가 GitHub과 연동돼 있지
+      # 않거나 연동 브랜치/Auto-Deploy 설정이 어긋나 있으면 옛날 빌드가 계속 재시작됨 —
+      # 실제로 이슈에서 관측된 증상). `railway up`은 지금 체크아웃된 디렉터리를 업로드해
+      # 새로 빌드하므로, 대시보드 설정과 무관하게 항상 이 워크플로우를 트리거한 커밋이
+      # 배포되는 것을 보장한다.
+      - name: Deploy checked-out commit to reseed Cron Job
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway redeploy --service reseed-SAFE-ONLY-no-seed-js --yes
+        run: |
+          echo "Deploying commit ${{ github.sha }}"
+          railway up --service reseed-SAFE-ONLY-no-seed-js --detach
 
       - name: Confirm execution via logs
         env:
@@ -54,4 +62,10 @@ jobs:
         run: railway logs --service reseed-SAFE-ONLY-no-seed-js | tee reseed.log
 
       - name: Post result summary
-        run: cat reseed.log >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          {
+            echo "### Reseed deploy — commit \`${{ github.sha }}\`"
+            echo '```'
+            cat reseed.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
