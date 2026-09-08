@@ -106,11 +106,16 @@ router.post('/', async (req, res, next) => {
       }
     } else {
       if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
-      if (!credits) return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
+      // credits는 0(졸업논문 등 P/F, 졸업학점에 합산 안 되는 과목)도 유효한 값이라 `!credits`로
+      // 검사하면 안 된다 — 0이 falsy라 "입력 안 함"으로 오판해 졸업논문을 아예 등록할 수 없는
+      // 문제가 있었다(실사용 확인). undefined/null/빈 문자열만 "안 보냄"으로 취급한다.
+      if (credits === undefined || credits === null || credits === '') {
+        return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
+      }
       // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9). 이 범위를
       // 벗어나면 DB INSERT 단계에서 원인 불명 500으로 터져서 사용자가 이유를 알 수 없었다
       // (실사용 확인) — /import/confirm과 동일한 검증을 여기도 추가.
-      if (!(credits > 0 && credits <= 9.9)) {
+      if (!(credits >= 0 && credits <= 9.9)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: null });
       }
       if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
@@ -192,7 +197,10 @@ router.post('/import/confirm', async (req, res, next) => {
     }
 
     for (const row of rows) {
-      if (!row.name || !row.credits || !row.category || !row.year || !row.semester) {
+      // credits는 0(졸업논문 등 P/F 과목)도 유효한 값이라 다른 필드처럼 `!row.credits`로 한
+      // 번에 묶어 검사하면 안 된다 — 위 POST / 핸들러와 동일한 이유.
+      const hasCredits = row.credits !== undefined && row.credits !== null && row.credits !== '';
+      if (!row.name || !hasCredits || !row.category || !row.year || !row.semester) {
         return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
       }
       if (!courseService.VALID_CATEGORIES.includes(row.category)) {
@@ -209,7 +217,7 @@ router.post('/import/confirm', async (req, res, next) => {
         return res.status(400).json({ status: 400, code: 'ROW_NAME_TOO_LONG', message: null, data: { name: row.name } });
       }
       // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9).
-      if (!(row.credits > 0 && row.credits <= 9.9)) {
+      if (!(row.credits >= 0 && row.credits <= 9.9)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: { name: row.name, credits: row.credits } });
       }
     }
