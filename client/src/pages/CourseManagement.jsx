@@ -273,6 +273,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       .finally(() => setSemesterLoading(false));
   };
 
+  // 실제 "지금" 학기 탭에서만 시간표를 보여준다 — 지난 학기는 수강신청 당시 시간표 정보가
+  // 없어 대부분 비어있고, 미래 학기는 아직 개설 전이라 시간표 자체가 없다(실사용 확인).
+  const realCurrentSemester = getCurrentYearSemester();
+  const isViewingRealCurrentSemester =
+    current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
+
   useEffect(() => {
     // 학기를 바꿨는데 이전 학기 기준 검색 결과/선택이 그대로 남아있으면, 실제로는
     // 개설되지 않은 학기에도 그 과목을 추가할 수 있게 된다 — 학기 전환 시 함께 초기화.
@@ -282,7 +288,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualSchedule([]);
     searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
-  }, [current]);
+
+    // "카탈로그 검색"은 실제 현재 학기가 아닌 탭에서는 버튼도, 아래 addMode==='catalog' 렌더
+    // 분기도 isViewingRealCurrentSemester로 함께 막혀 있다(courses-add-mode-toggle 참고) —
+    // 여기서는 상태값 자체를 그 학기의 기본 탭인 '직접입력'으로 맞춰 토글의 active 표시도 정리한다.
+    if (!isViewingRealCurrentSemester) setAddMode((prev) => (prev === 'catalog' ? 'manual' : prev));
+  }, [current, isViewingRealCurrentSemester]);
 
   const tabs = useMemo(() => {
     const actualCurrentTerm = getCurrentYearSemester();
@@ -342,17 +353,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
-  // 실제 "지금" 학기 탭에서만 시간표를 보여준다 — 지난 학기는 수강신청 당시 시간표 정보가
-  // 없어 대부분 비어있고, 미래 학기는 아직 개설 전이라 시간표 자체가 없다(실사용 확인).
-  const realCurrentSemester = getCurrentYearSemester();
-  const isViewingRealCurrentSemester =
-    current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
-
-  // 카탈로그(course_offerings)는 학기별 실제 개설 정보라 지금 보고 있는 탭(current.year/semester)
-  // 그대로 카탈로그 검색에 넘긴다 — 2017-1~2026-2 범위의 실제 분반/교수/시간이 그대로 나온다.
-  // 그 범위 밖(수집 전/이후 학기)은 검색해도 결과가 없을 뿐이라 별도 게이트가 필요 없다
-  // (저학년 필수과목처럼 아직 실제 개설 전이라 시간표를 확보 못 한 항목은 검색 결과에
-  // 교수/시간이 비어있고, 추가 시 사용자가 직접 시간표를 입력할 수 있다 — courseService.addMyCourse 참고).
+  // 카탈로그 검색은 "지금 학기에 뭘 들을지 찾아보는" 용도라 실제 현재 학기(isViewingRealCurrentSemester)
+  // 탭에서만 버튼을 보여준다(courses-add-mode-toggle 참고). 계절학기는 스크래핑 원본에 데이터 자체가
+  // 없어(seedCourseOfferings.js 참고) 검색해도 항상 0건이고, 지난 정규학기는 데이터가 있어도(2017-1~)
+  // 이미 뭘 들었는지 본인이 아는 상태라 검색보다 직접입력/PDF 가져오기가 더 자연스럽다 — 둘 다 카탈로그
+  // 검색을 남겨둘 이유가 약해 실제 현재 학기 한정으로 좁혔다(실사용 판단, 2026-09-08).
 
   const maxPeriod = Math.max(6, ...timetable.map((t) => t.period));
   const cellAt = (day, period) => timetable.find((t) => t.day === day && t.period === period);
@@ -889,13 +894,15 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             {error && <p className="home-error courses-form-error">{error}</p>}
             <div className="courses-add-form-header">
               <div className="courses-add-mode-toggle">
-                <button
-                  className={addMode === 'catalog' ? 'active' : ''}
-                  onClick={() => setAddMode('catalog')}
-                  type="button"
-                >
-                  카탈로그 검색
-                </button>
+                {isViewingRealCurrentSemester && (
+                  <button
+                    className={addMode === 'catalog' ? 'active' : ''}
+                    onClick={() => setAddMode('catalog')}
+                    type="button"
+                  >
+                    카탈로그 검색
+                  </button>
+                )}
                 <button
                   className={addMode === 'manual' ? 'active' : ''}
                   onClick={() => setAddMode('manual')}
@@ -1216,7 +1223,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               </div>
             )}
 
-            {addMode !== 'pdf' && (addMode === 'catalog' ? (
+            {addMode !== 'pdf' && (addMode === 'catalog' && isViewingRealCurrentSemester ? (
               catalogSelection ? (
                 <div className="courses-manual-fields">
                   <p className="courses-manual-hint">
