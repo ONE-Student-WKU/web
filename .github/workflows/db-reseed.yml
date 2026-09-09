@@ -40,8 +40,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 버전 미지정 시 실행 시점의 latest가 깔려, CLI가 프롬프트/옵션을 바꾸면
+      # 무인 CI에서 조용히 오동작할 수 있음 — 의도적으로 올릴 때만 버전을 바꿀 것.
+      # 최신 버전 확인: npm view @railway/cli version
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@5.49.6
 
       # 이전: `railway redeploy`만 쓰면 기존에 이미 빌드돼 있는 배포를 그대로 재실행할 뿐,
       # 체크아웃한 이 커밋을 새로 빌드하지 않는다(Railway 서비스가 GitHub과 연동돼 있지
