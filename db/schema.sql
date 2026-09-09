@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS students (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   email                     VARCHAR(255) NOT NULL,
   password                  VARCHAR(255) NULL,  -- Google OAuth 전환 이후 사용 안 함(레거시 비밀번호 계정 호환용으로만 컬럼 유지)
-  name                      VARCHAR(50) NOT NULL,
+  name                      VARCHAR(50) NULL,  -- 가입 시 값 없음(자동 배정: user{id}) — 표시 시 name || `user${id}`로 계산(studentService.serializeStudent)
   oauth_provider            VARCHAR(20) NULL,   -- 예: 'google' (추후 다른 provider 추가 가능하도록 provider-agnostic하게 설계)
   oauth_id                  VARCHAR(255) NULL,  -- provider가 발급한 고유 식별자(Google이면 ID 토큰의 sub)
 
@@ -111,6 +111,25 @@ CREATE TABLE IF NOT EXISTS students (
   FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE SET NULL,
   FOREIGN KEY (second_department_id) REFERENCES departments(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 3-1. 이메일 인증코드 로그인 토큰
+-- 구글 OAuth의 두 번째 로그인 수단(PR #142 후속) — 도메인 제한 없이 어떤 이메일이든 인증코드로
+-- 로그인/가입 가능(이슈 #137 결정: 학교 이메일 인증 기각). 1회용 코드는 평문 저장하지 않고
+-- SHA-256 해시로만 저장한다(server/services/emailAuthService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_login_tokens (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  email        VARCHAR(255) NOT NULL,
+  code_hash    VARCHAR(64) NOT NULL,   -- SHA-256(코드) — 평문 코드는 어디에도 저장 안 함
+  purpose      VARCHAR(20) NOT NULL DEFAULT 'login',
+  attempts     INT NOT NULL DEFAULT 0,  -- 코드 대입 시도 횟수(무차별 대입 방지용 상한)
+  expires_at   DATETIME NOT NULL,
+  consumed_at  DATETIME NULL,           -- 이미 사용된 코드 재사용 방지
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_email_login_tokens_email (email)
 );
 
 -- ---------------------------------------------------------------------------

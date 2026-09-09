@@ -33,6 +33,14 @@ export const startGoogleReauth = () => {
   window.location.href = '/api/auth/google/reauth';
 };
 
+// 이메일 인증코드(OTP) 로그인 — 구글과 달리 fetch 응답으로 바로 끝나므로(풀 페이지
+// 리다이렉트 없음) apiRequest로 처리한다.
+export const requestEmailCode = (email) =>
+  apiRequest('/auth/email/request', { method: 'POST', body: JSON.stringify({ email }) });
+
+export const verifyEmailCode = (email, code) =>
+  apiRequest('/auth/email/verify', { method: 'POST', body: JSON.stringify({ email, code }) });
+
 export const logout = () => apiRequest('/auth/logout', { method: 'POST' });
 
 export const getMe = () => apiRequest('/me');

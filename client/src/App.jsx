@@ -85,8 +85,11 @@ function App() {
   // 새로고침/재방문 시 세션 쿠키가 유효하면 로그인 화면을 건너뛰고 복원.
   // 이 조회가 끝나기 전까진(authChecked === false) 로그인 화면을 잠깐이라도
   // 보여주지 않기 위해 렌더링을 보류한다.
-  useEffect(() => {
-    getMe()
+  // 구글 로그인(풀 페이지 리다이렉트)과 이메일 인증코드 로그인(fetch 응답으로 즉시 종료) 둘 다
+  // 로그인 성공 후 이 함수로 사용자 상태를 채운다 — 구글은 마운트 시 세션 쿠키 복원으로,
+  // 이메일 로그인은 Login.jsx가 성공 직후 직접 호출해서 같은 경로를 탄다.
+  const loadUser = () => {
+    return getMe()
       .then((data) => {
         setUser(data);
         // /privacy, /terms로 직접 들어온 로그인 상태 사용자, 그리고 재인증(reauth)/에러
@@ -96,8 +99,11 @@ function App() {
           v === 'privacy' || v === 'terms' || v === 'profile' ? v : data.onboardingCompleted ? 'home' : 'onboarding'
         );
       })
-      .catch(() => {})
-      .finally(() => setAuthChecked(true));
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadUser().finally(() => setAuthChecked(true));
   }, []);
 
   // 모바일 키보드가 뜨면 .app-frame의 높이를 실제 보이는 영역(visualViewport)에 맞춰
@@ -211,7 +217,12 @@ function App() {
         ) : view === 'terms' ? (
           <TermsOfService onGoBack={() => setView(user ? 'profile' : 'home')} />
         ) : !authChecked ? null : !user ? (
-          <Login error={authError} onOpenPrivacy={() => setView('privacy')} onOpenTerms={() => setView('terms')} />
+          <Login
+            error={authError}
+            onOpenPrivacy={() => setView('privacy')}
+            onOpenTerms={() => setView('terms')}
+            onLoginSuccess={loadUser}
+          />
         ) : view === 'chat' ? (
           <Chat
             user={user}

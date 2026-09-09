@@ -1,8 +1,11 @@
 const express = require('express');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { OAuth2Client } = require('google-auth-library');
 const router = express.Router();
 const studentService = require('../services/studentService');
+const emailAuthService = require('../services/emailAuthService');
+const mailer = require('../services/mailer');
 const { requireAuth } = require('../middleware/auth');
 
 /**
@@ -138,9 +141,10 @@ router.get('/google/callback', async (req, res, next) => {
         });
         student = existingByEmail;
       } else {
+        // 닉네임은 가입 시 자동 배정(user{id}) — 구글 실명을 그대로 노출하지 않고, 동명이인
+        // 중복도 기본키 기반이라 원천 차단된다. 원하면 나중에 Profile 화면에서 직접 변경 가능.
         const id = await studentService.createOauthStudent({
           email: payload.email,
-          name: payload.name || payload.email,
           provider: OAUTH_PROVIDER,
           oauthId: payload.sub,
         });
@@ -150,6 +154,70 @@ router.get('/google/callback', async (req, res, next) => {
 
     req.session.userId = student.id;
     return redirectToApp();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 같은 이메일/IP 반복 요청 방지 — 스팸/어뷰징 방지 목적.
+const requestCodeLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10분
+  max: 5,                    // IP당 10분에 5회
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
+// 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
+router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_EMAIL', message: null, data: null });
+    }
+
+    const code = await emailAuthService.createLoginToken(email);
+    await mailer.sendLoginCode(email, code);
+
+    return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/verify — 코드 확인 → 세션 발급. 신규/기존 계정 매칭은 구글 콜백과
+// 동일한 findByEmail 기반 — 이미 구글로 가입한 이메일이면 그 기존 행에 그대로 로그인된다
+// (oauth_provider/oauth_id는 구글 전용으로 유지, 여기선 건드리지 않음).
+router.post('/email/verify', async (req, res, next) => {
+  try {
+    // 이메일 앱에서 코드를 복사해 붙여넣을 때 앞뒤 공백/줄바꿈이 섞여 들어오는 경우가 있어
+    // (눈으로는 똑같아 보여도 해시 비교가 실패함), 클라이언트 trim과 별개로 서버에서도
+    // 한 번 더 trim한다 — API를 직접 호출하는 경우까지 포함해 계약을 명확히 하기 위함.
+    const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
+    const code = typeof req.body.code === 'string' ? req.body.code.trim() : req.body.code;
+    if (!isValidEmail(email) || !code) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
+    }
+
+    const result = await emailAuthService.verifyLoginToken(email, code);
+    if (!result.ok) {
+      return res.status(401).json({ status: 401, code: result.reason, message: null, data: null });
+    }
+
+    let student = await studentService.findByEmail(email);
+    if (!student) {
+      // 닉네임은 구글 가입과 동일하게 자동 배정(user{id}) — 별도 가입 단계 없이 이 한 번의
+      // INSERT로 끝난다.
+      const id = await studentService.createEmailStudent({ email });
+      student = { id };
+    }
+
+    req.session.userId = student.id;
+    return res.status(200).json({ status: 200, code: 'EMAIL_LOGIN_SUCCESS', message: null, data: null });
   } catch (err) {
     next(err);
   }
