@@ -273,6 +273,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       .finally(() => setSemesterLoading(false));
   };
 
+  // 실제 "지금" 학기 탭에서만 시간표를 보여준다 — 지난 학기는 수강신청 당시 시간표 정보가
+  // 없어 대부분 비어있고, 미래 학기는 아직 개설 전이라 시간표 자체가 없다(실사용 확인).
+  const realCurrentSemester = getCurrentYearSemester();
+  const isViewingRealCurrentSemester =
+    current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
+
   useEffect(() => {
     // 학기를 바꿨는데 이전 학기 기준 검색 결과/선택이 그대로 남아있으면, 실제로는
     // 개설되지 않은 학기에도 그 과목을 추가할 수 있게 된다 — 학기 전환 시 함께 초기화.
@@ -283,13 +289,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
 
-    // "카탈로그 검색" 탭은 실제 현재 학기에서만 버튼이 보이므로(아래 courses-add-mode-toggle
-    // 참고), 실제 현재 학기가 아닌 탭으로 이동했는데 addMode가 여전히 'catalog'로 남아있으면
-    // 버튼으로는 되돌아갈 수 없는 상태가 된다 — 그 학기의 기본 탭인 '직접입력'으로 되돌린다.
-    const realNow = getCurrentYearSemester();
-    const isCurrentTerm = current.year === realNow.year && current.semester === realNow.semester;
-    if (!isCurrentTerm) setAddMode((prev) => (prev === 'catalog' ? 'manual' : prev));
-  }, [current]);
+    // "카탈로그 검색"은 실제 현재 학기가 아닌 탭에서는 버튼도, 아래 addMode==='catalog' 렌더
+    // 분기도 isViewingRealCurrentSemester로 함께 막혀 있다(courses-add-mode-toggle 참고) —
+    // 여기서는 상태값 자체를 그 학기의 기본 탭인 '직접입력'으로 맞춰 토글의 active 표시도 정리한다.
+    if (!isViewingRealCurrentSemester) setAddMode((prev) => (prev === 'catalog' ? 'manual' : prev));
+  }, [current, isViewingRealCurrentSemester]);
 
   const tabs = useMemo(() => {
     const actualCurrentTerm = getCurrentYearSemester();
@@ -348,12 +352,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     (s) => s.year === current.year && s.semester === current.semester
   );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
-
-  // 실제 "지금" 학기 탭에서만 시간표를 보여준다 — 지난 학기는 수강신청 당시 시간표 정보가
-  // 없어 대부분 비어있고, 미래 학기는 아직 개설 전이라 시간표 자체가 없다(실사용 확인).
-  const realCurrentSemester = getCurrentYearSemester();
-  const isViewingRealCurrentSemester =
-    current.year === realCurrentSemester.year && current.semester === realCurrentSemester.semester;
 
   // 카탈로그 검색은 "지금 학기에 뭘 들을지 찾아보는" 용도라 실제 현재 학기(isViewingRealCurrentSemester)
   // 탭에서만 버튼을 보여준다(courses-add-mode-toggle 참고). 계절학기는 스크래핑 원본에 데이터 자체가
@@ -1225,7 +1223,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               </div>
             )}
 
-            {addMode !== 'pdf' && (addMode === 'catalog' ? (
+            {addMode !== 'pdf' && (addMode === 'catalog' && isViewingRealCurrentSemester ? (
               catalogSelection ? (
                 <div className="courses-manual-fields">
                   <p className="courses-manual-hint">
