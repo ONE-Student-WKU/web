@@ -2,11 +2,13 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
 // npm workspace로 실행하면 cwd가 server/로 바뀌어 기본 dotenv 탐색(cwd 기준)이
 // 리포지토리 루트의 .env를 못 찾는다. 항상 루트 .env를 절대경로로 지정해서 로드.
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
+const pool = require('./db');
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const onboardingRoutes = require('./routes/onboarding');
@@ -40,13 +42,27 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 기존 mysql2 커넥션 풀을 그대로 재사용 — 세션 전용 DB 접속 정보를 따로 두지 않는다.
+// createDatabaseTable: false — sessions 테이블은 db/schema.sql + db/migrate.js로 직접
+// 관리한다(다른 테이블과 동일한 컨벤션. 라이브러리가 조용히 자체 스키마를 만들게 두지 않음).
+const sessionStore = new MySQLStore({ createDatabaseTable: false }, pool);
+
+// 로그인 상태를 기본적으로 유지시킨다 — 30일 이내 재방문이면 별도 재로그인 없이 세션이
+// 살아있어야 한다(세션 저장소를 MemoryStore에서 DB로 옮긴 것과 짝을 이루는 변경 — 저장소만
+// 영속화하고 maxAge를 안 늘리면 브라우저 종료 시 어차피 로그아웃되어 체감 효과가 없다).
+const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 app.use(
   session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'wku-default-secret',
     resave: false,
     saveUninitialized: false,
-    // 배포 환경(HTTPS)에서만 secure 쿠키를 강제하고, 로컬 http 개발 환경은 기존과 동일하게 유지.
-    cookie: { secure: process.env.NODE_ENV === 'production' },
+    cookie: {
+      // 배포 환경(HTTPS)에서만 secure 쿠키를 강제하고, 로컬 http 개발 환경은 기존과 동일하게 유지.
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: SESSION_MAX_AGE_MS,
+    },
   })
 );
 

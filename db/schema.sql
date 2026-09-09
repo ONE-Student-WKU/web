@@ -114,6 +114,20 @@ CREATE TABLE IF NOT EXISTS students (
 );
 
 -- ---------------------------------------------------------------------------
+-- 3-1. 세션 저장소 (express-mysql-session)
+-- 기존 express-session 기본값(MemoryStore)은 프로세스 메모리에만 세션을 들고 있어
+-- 서버 재시작/재배포마다 전체 사용자가 강제 로그아웃되는 문제가 있었다. 세션을 DB 행으로
+-- 영속화해서 프로세스 생명주기와 로그인 상태를 분리한다. 컬럼 구성은 express-mysql-session
+-- 기본 스키마 그대로(createDatabaseTable: false로 자동 생성을 끄고 여기서 직접 관리 — 다른
+-- 테이블처럼 schema.sql + db/migrate.js 컨벤션을 따르기 위함).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sessions (
+  session_id VARCHAR(128) COLLATE utf8mb4_bin NOT NULL PRIMARY KEY,
+  expires INT(11) UNSIGNED NOT NULL,
+  data MEDIUMTEXT COLLATE utf8mb4_bin
+);
+
+-- ---------------------------------------------------------------------------
 -- 4. 전공 과목 카탈로그 (학기별 실제 개설 분반 단위)
 -- 교양은 카탈로그를 두지 않고 student_courses에 자유 입력한다 (아래 5번 참고).
 --
