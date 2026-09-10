@@ -25,6 +25,9 @@ function serializeStudent(student) {
     // 가입 시 닉네임은 자동 배정하지 않고 name을 NULL로 남겨두므로(2-2 참고), 표시 시점에
     // user{id} 폴백을 계산한다. id는 기본키라 절대 중복이 안 나 별도 카운터/중복체크가 불필요.
     name: student.name || `user${student.id}`,
+    // 계정 삭제 재인증 수단(Google 재로그인 vs 이메일 인증코드) 분기용 — 이메일 OTP로만
+    // 가입한 계정은 oauth_id가 항상 NULL(createEmailStudent).
+    hasGoogleAccount: !!student.oauth_id,
     department: student.department_name,
     departmentId: student.department_id,
     track: student.track_name,

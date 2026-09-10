@@ -216,8 +216,71 @@ router.post('/email/verify', async (req, res, next) => {
       student = { id };
     }
 
-    req.session.userId = student.id;
-    return res.status(200).json({ status: 200, code: 'EMAIL_LOGIN_SUCCESS', message: null, data: null });
+    // 세션 고정(Session Fixation) 방지 — 구글 콜백(/google/callback)과 동일하게 로그인 성공
+    // 시 세션 ID를 재발급한다. regenerate 콜백에서 req.session이 새 객체로 교체되므로, 그
+    // 이후 시점에 userId를 셋팅해야 한다.
+    req.session.regenerate((err) => {
+      if (err) return next(err);
+      req.session.userId = student.id;
+      req.session.save((saveErr) => {
+        if (saveErr) return next(saveErr);
+        return res.status(200).json({ status: 200, code: 'EMAIL_LOGIN_SUCCESS', message: null, data: null });
+      });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/delete-reauth/request — 이메일 전용 계정(oauth_id NULL)을 위한
+// 계정 삭제 재인증 코드 발송. 구글 가입 계정은 기존 GET /google/reauth를 그대로 쓰므로
+// 대상이 아니다(oauth_id로 로그인 방식 판별). 인증 대상 이메일은 요청 본문이 아니라 항상
+// 세션의 본인 계정 이메일로 고정 — 다른 사람 이메일로 코드를 보내게 하는 경로를 만들지
+// 않기 위함.
+router.post('/email/delete-reauth/request', requireAuth, requestCodeLimiter, async (req, res, next) => {
+  try {
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    if (student.oauth_id) {
+      return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
+    }
+
+    const code = await emailAuthService.createLoginToken(student.email, 'delete_reauth');
+    await mailer.sendLoginCode(student.email, code);
+
+    return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/delete-reauth/verify — 코드 확인 → deleteReauthAt 세팅. 이후
+// server/routes/me.js의 DELETE /me가 이 값을 구글 재인증(/google/callback REAUTH 분기)과
+// 동일한 계약(REAUTH_WINDOW_MS 이내)으로 검사한다.
+router.post('/email/delete-reauth/verify', requireAuth, async (req, res, next) => {
+  try {
+    const code = typeof req.body.code === 'string' ? req.body.code.trim() : req.body.code;
+    if (!code) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
+    }
+
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    if (student.oauth_id) {
+      return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
+    }
+
+    const result = await emailAuthService.verifyLoginToken(student.email, code, 'delete_reauth');
+    if (!result.ok) {
+      return res.status(401).json({ status: 401, code: result.reason, message: null, data: null });
+    }
+
+    req.session.deleteReauthAt = Date.now();
+    return res.status(200).json({ status: 200, code: 'REAUTH_SUCCESS', message: null, data: null });
   } catch (err) {
     next(err);
   }

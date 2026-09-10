@@ -22,26 +22,29 @@ function hashCode(code) {
 
 // 이메일 주소로 새 로그인 코드를 발급한다. 반환된 평문 코드는 발송 용도로만 호출부
 // (routes/auth.js)에서 쓰고, API 응답에는 절대 포함하지 않는다.
-async function createLoginToken(email) {
+// purpose로 용도를 구분(기본 'login') — 계정 삭제 재인증(delete_reauth) 등 다른 목적의 코드가
+// 서로의 검증 대상에 섞이지 않게 한다(db/schema.sql의 email_login_tokens.purpose 컬럼).
+async function createLoginToken(email, purpose = 'login') {
   const code = generateCode();
   const codeHash = hashCode(code);
   const expiresAt = new Date(Date.now() + CODE_TTL_MS);
 
   await pool.query(
     'INSERT INTO email_login_tokens (email, code_hash, purpose, expires_at) VALUES (?, ?, ?, ?)',
-    [email, codeHash, 'login', expiresAt]
+    [email, codeHash, purpose, expiresAt]
   );
 
   return code;
 }
 
-// 코드를 검증한다. 같은 이메일에 대해 아직 소비되지 않고 만료되지 않은 가장 최근 토큰만 대상.
-async function verifyLoginToken(email, code) {
+// 코드를 검증한다. 같은 이메일+purpose에 대해 아직 소비되지 않고 만료되지 않은 가장 최근
+// 토큰만 대상.
+async function verifyLoginToken(email, code, purpose = 'login') {
   const [rows] = await pool.query(
     `SELECT * FROM email_login_tokens
-     WHERE email = ? AND consumed_at IS NULL AND expires_at > NOW()
+     WHERE email = ? AND purpose = ? AND consumed_at IS NULL AND expires_at > NOW()
      ORDER BY id DESC LIMIT 1`,
-    [email]
+    [email, purpose]
   );
   const token = rows[0];
   if (!token) return { ok: false, reason: 'NOT_FOUND' };
