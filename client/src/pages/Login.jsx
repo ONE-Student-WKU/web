@@ -36,6 +36,8 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [emailError, setEmailError] = useState(null);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   const handleRequestCode = async (e) => {
     e.preventDefault();
@@ -48,6 +50,23 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
       setEmailError(describeEmailError(err.code));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // 코드 입력 화면에서 벗어나지 않고 재전송 — 기존엔 이메일 입력 단계로 되돌아갔다가 다시
+  // 제출해야만 재요청이 가능했음(2클릭). 서버의 IP/이메일당 레이트리밋(10분 5회)이 남용을
+  // 그대로 막아준다.
+  const handleResendCode = async () => {
+    setResending(true);
+    setEmailError(null);
+    setResent(false);
+    try {
+      await requestEmailCode(email.trim());
+      setResent(true);
+    } catch (err) {
+      setEmailError(describeEmailError(err.code));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -119,8 +138,22 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
               />
             </div>
             {emailError && <p className="auth-error">{emailError}</p>}
+            {/* .auth-body가 justify-content: center라 이 줄이 조건부로 있다 없다 하면 폼 전체
+                높이가 바뀌어 재중앙정렬되면서 위쪽 코드 입력란까지 흔들려 보인다(실사용
+                피드백) — 항상 렌더링해서 자리를 고정해두고 visibility만 토글한다. */}
+            <p className="settings-field-hint" style={{ visibility: resent ? 'visible' : 'hidden' }} aria-hidden={!resent}>
+              인증코드를 다시 보냈어요.
+            </p>
             <button type="submit" className="auth-submit-btn auth-submit-btn--secondary" disabled={submitting}>
               {submitting ? '확인 중...' : '로그인'}
+            </button>
+            <button
+              type="button"
+              className="auth-toggle-link auth-toggle-link--block"
+              onClick={handleResendCode}
+              disabled={resending}
+            >
+              {resending ? '재전송 중...' : '인증코드 재전송'}
             </button>
             <button
               type="button"
@@ -129,6 +162,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
                 setStep('email');
                 setCode('');
                 setEmailError(null);
+                setResent(false);
               }}
             >
               이메일 다시 입력하기

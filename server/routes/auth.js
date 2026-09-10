@@ -159,12 +159,31 @@ router.get('/google/callback', async (req, res, next) => {
   }
 });
 
-// 같은 이메일/IP 반복 요청 방지 — 스팸/어뷰징 방지 목적.
+// 초과 시 응답 포맷 — express-rate-limit 기본값(message가 문자열)은 res.send(message)로
+// 순수 텍스트가 나가 클라이언트 apiRequest의 res.json() 파싱이 실패한다. message를 객체로
+// 주면 Express의 res.send()가 자동으로 res.json()으로 처리해줘서, 핸들러를 직접 갈아끼우지
+// 않고도 프로젝트 표준 JSON 포맷을 그대로 낼 수 있다.
+const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
+
+// IP당 반복 요청 방지 — 스팸/어뷰징 방지 목적.
 const requestCodeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10분
   max: 5,                    // IP당 10분에 5회
   standardHeaders: true,
   legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+});
+
+// 이메일당 반복 요청 방지 — IP만 제한하면 IP를 바꿔가며 특정 이메일에 인증코드 메일을
+// 계속 보내는 어뷰징(메일 폭탄)이 가능해서 별도로 둔다. express.json()이 라우터 마운트보다
+// 먼저 전역 등록돼 있어(server/app.js) 이 시점엔 req.body.email이 이미 파싱돼 있다.
+const requestCodeByEmailLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10분
+  max: 5,                    // 이메일당 10분에 5회
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+  keyGenerator: (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : 'unknown'),
 });
 
 function isValidEmail(email) {
@@ -173,7 +192,7 @@ function isValidEmail(email) {
 
 // POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
 // 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
-router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
+router.post('/email/request', requestCodeLimiter, requestCodeByEmailLimiter, async (req, res, next) => {
   try {
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
     if (!isValidEmail(email)) {
