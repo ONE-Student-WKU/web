@@ -197,15 +197,21 @@ function App() {
       resetAllUserCaches();
       skipHistoryPush.current = true;
       setUser(null);
+      setJustReauthenticated(false);
       setView('home');
     });
   };
 
   // 계정 삭제는 서버(DELETE /api/me)에서 이미 세션을 파기하므로 /auth/logout을 다시 부를 필요는 없음.
+  // justReauthenticated(구글 재인증 성공 플래그)를 여기서 반드시 초기화해야 한다 — 안 그러면
+  // 같은 탭에서 새로고침 없이 다른 계정으로 다시 로그인했을 때, 그 계정 재인증 없이 Profile의
+  // 삭제 버튼이 곧바로 활성화되는 문제가 생긴다(실사용 중 발견 — 구글 계정 삭제 후 이메일
+  // 계정으로 로그인하니 재인증 없이 삭제 버튼이 뜸).
   const handleAccountDeleted = () => {
     resetAllUserCaches();
     skipHistoryPush.current = true;
     setUser(null);
+    setJustReauthenticated(false);
     setView('home');
   };
 
