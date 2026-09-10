@@ -81,6 +81,17 @@ app.get('/', (req, res) => {
   res.send('Wonkwang University AI Chat Server is Running');
 });
 
+// Version — 지금 응답 중인 서버가 어느 커밋을 돌리고 있는지 Railway 대시보드 접근 권한
+// 없이도 확인할 수 있게 함(PR #152 근본 원인: 배포 반영 여부를 아무도 쉽게 확인 못 함).
+// RAILWAY_GIT_COMMIT_SHA/RAILWAY_GIT_BRANCH는 Railway가 GitHub 연동 배포 시 자동 주입하는
+// 값 — 로컬처럼 이 값이 없는 환경에서는 'unknown'으로 대체되어 절대 예외를 던지지 않는다.
+app.get('/api/version', (req, res) => {
+  res.json({
+    commit: process.env.RAILWAY_GIT_COMMIT_SHA || 'unknown',
+    branch: process.env.RAILWAY_GIT_BRANCH || 'unknown',
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

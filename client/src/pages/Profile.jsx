@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { updateProfile, deleteAccount, startGoogleReauth, getLatestConfirmedRoadmap } from '../api/chatApi.js';
+import {
+  updateProfile,
+  deleteAccount,
+  startGoogleReauth,
+  requestDeleteReauthCode,
+  verifyDeleteReauthCode,
+  getLatestConfirmedRoadmap,
+} from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
+
+// 이메일 재인증 요청/확인 실패 코드는 서버(server/routes/auth.js)가 내려주는 err.code
+// 기준 — Login.jsx의 describeEmailError와 같은 코드 집합을 다루되 문구는 재인증 맥락에 맞춤.
+function describeReauthError(code) {
+  if (code === 'NOT_FOUND') return '인증코드를 다시 요청해주세요.';
+  if (code === 'INVALID_CODE') return '인증코드가 올바르지 않아요.';
+  if (code === 'TOO_MANY_ATTEMPTS') return '시도 횟수를 초과했어요. 인증코드를 다시 요청해주세요.';
+  return '요청에 실패했어요. 잠시 후 다시 시도해주세요.';
+}
 
 // confirmedRoadmap은 "확정한 진로 없음"도 유효한 응답(null)이라 캐시 없음 마커로 null을
 // 못 쓴다 — undefined로 "아직 조회 전"을 구분한다(Home.jsx와 동일한 이유로 재진입 시
@@ -56,6 +72,42 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
 
   const [deleteError, setDeleteError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // 이메일 OTP 전용 계정(user.hasGoogleAccount === false)의 삭제 재인증 — 구글처럼 풀 페이지
+  // 왕복이 아니라 이 화면 안에서 코드 요청/확인이 끝나므로, justReauthenticated(구글 재인증
+  // 전용 플래그)와 별개로 로컬 상태로 관리한다. 둘 중 하나만 true여도 삭제 폼을 보여준다.
+  const [emailReauthStep, setEmailReauthStep] = useState('idle'); // 'idle' | 'code'
+  const [emailReauthCode, setEmailReauthCode] = useState('');
+  const [emailReauthError, setEmailReauthError] = useState(null);
+  const [emailReauthSubmitting, setEmailReauthSubmitting] = useState(false);
+  const [emailReauthenticated, setEmailReauthenticated] = useState(false);
+
+  async function handleRequestEmailReauthCode() {
+    setEmailReauthError(null);
+    setEmailReauthSubmitting(true);
+    try {
+      await requestDeleteReauthCode();
+      setEmailReauthStep('code');
+    } catch {
+      setEmailReauthError('인증코드 발송에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setEmailReauthSubmitting(false);
+    }
+  }
+
+  async function handleVerifyEmailReauthCode(e) {
+    e.preventDefault();
+    setEmailReauthError(null);
+    setEmailReauthSubmitting(true);
+    try {
+      await verifyDeleteReauthCode(emailReauthCode.trim());
+      setEmailReauthenticated(true);
+    } catch (err) {
+      setEmailReauthError(describeReauthError(err.code));
+    } finally {
+      setEmailReauthSubmitting(false);
+    }
+  }
 
   async function handleSaveName(e) {
     e.preventDefault();
@@ -154,15 +206,54 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
           <p className="settings-field-hint">
             계정을 삭제하면 수강 이력, 대화 기록 등 모든 데이터가 함께 삭제되고 되돌릴 수 없어요.
           </p>
-          {!justReauthenticated ? (
-            <button type="button" className="settings-theme-btn" onClick={startGoogleReauth}>
-              다시 로그인해서 확인
-            </button>
-          ) : (
+          {justReauthenticated || emailReauthenticated ? (
             <form onSubmit={handleDeleteAccount}>
               {deleteError && <p className="home-error">{deleteError}</p>}
               <button type="submit" className="profile-delete-btn" disabled={deleting}>
                 {deleting ? '삭제하는 중...' : '계정 삭제'}
+              </button>
+            </form>
+          ) : user?.hasGoogleAccount ? (
+            <button type="button" className="settings-theme-btn" onClick={startGoogleReauth}>
+              다시 로그인해서 확인
+            </button>
+          ) : emailReauthStep === 'idle' ? (
+            <>
+              {emailReauthError && <p className="home-error">{emailReauthError}</p>}
+              <button
+                type="button"
+                className="settings-theme-btn"
+                onClick={handleRequestEmailReauthCode}
+                disabled={emailReauthSubmitting}
+              >
+                {emailReauthSubmitting ? '전송 중...' : '인증코드 받고 확인'}
+              </button>
+            </>
+          ) : (
+            <form onSubmit={handleVerifyEmailReauthCode}>
+              <p className="settings-field-hint">가입한 이메일로 인증코드를 보냈어요. 15분 이내에 입력해주세요.</p>
+              <div className="settings-inline-field">
+                <input
+                  type="text"
+                  className="onb-select"
+                  inputMode="numeric"
+                  placeholder="6자리 숫자"
+                  value={emailReauthCode}
+                  onChange={(e) => setEmailReauthCode(e.target.value)}
+                  required
+                />
+                <button type="submit" className="settings-theme-btn" disabled={emailReauthSubmitting}>
+                  {emailReauthSubmitting ? '확인 중...' : '확인'}
+                </button>
+              </div>
+              {emailReauthError && <p className="home-error">{emailReauthError}</p>}
+              <button
+                type="button"
+                className="settings-theme-btn"
+                onClick={handleRequestEmailReauthCode}
+                disabled={emailReauthSubmitting}
+              >
+                인증코드 다시 받기
               </button>
             </form>
           )}

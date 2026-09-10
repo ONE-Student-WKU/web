@@ -1,8 +1,11 @@
 const express = require('express');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { OAuth2Client } = require('google-auth-library');
 const router = express.Router();
 const studentService = require('../services/studentService');
+const emailAuthService = require('../services/emailAuthService');
+const mailer = require('../services/mailer');
 const { requireAuth } = require('../middleware/auth');
 
 /**
@@ -138,9 +141,10 @@ router.get('/google/callback', async (req, res, next) => {
         });
         student = existingByEmail;
       } else {
+        // 닉네임은 가입 시 자동 배정(user{id}) — 구글 실명을 그대로 노출하지 않고, 동명이인
+        // 중복도 기본키 기반이라 원천 차단된다. 원하면 나중에 Profile 화면에서 직접 변경 가능.
         const id = await studentService.createOauthStudent({
           email: payload.email,
-          name: payload.name || payload.email,
           provider: OAUTH_PROVIDER,
           oauthId: payload.sub,
         });
@@ -158,6 +162,152 @@ router.get('/google/callback', async (req, res, next) => {
         return redirectToApp();
       });
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 초과 시 응답 포맷 — express-rate-limit 기본값(message가 문자열)은 res.send(message)로
+// 순수 텍스트가 나가 클라이언트 apiRequest의 res.json() 파싱이 실패한다. message를 객체로
+// 주면 Express의 res.send()가 자동으로 res.json()으로 처리해줘서, 핸들러를 직접 갈아끼우지
+// 않고도 프로젝트 표준 JSON 포맷을 그대로 낼 수 있다.
+const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
+
+// IP당 반복 요청 방지 — 스팸/어뷰징 방지 목적.
+const requestCodeLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10분
+  max: 5,                    // IP당 10분에 5회
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+});
+
+// 이메일당 반복 요청 방지 — IP만 제한하면 IP를 바꿔가며 특정 이메일에 인증코드 메일을
+// 계속 보내는 어뷰징(메일 폭탄)이 가능해서 별도로 둔다. express.json()이 라우터 마운트보다
+// 먼저 전역 등록돼 있어(server/app.js) 이 시점엔 req.body.email이 이미 파싱돼 있다.
+const requestCodeByEmailLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10분
+  max: 5,                    // 이메일당 10분에 5회
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+  keyGenerator: (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : 'unknown'),
+});
+
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
+// 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
+router.post('/email/request', requestCodeLimiter, requestCodeByEmailLimiter, async (req, res, next) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_EMAIL', message: null, data: null });
+    }
+
+    const code = await emailAuthService.createLoginToken(email);
+    await mailer.sendLoginCode(email, code);
+
+    return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/verify — 코드 확인 → 세션 발급. 신규/기존 계정 매칭은 구글 콜백과
+// 동일한 findByEmail 기반 — 이미 구글로 가입한 이메일이면 그 기존 행에 그대로 로그인된다
+// (oauth_provider/oauth_id는 구글 전용으로 유지, 여기선 건드리지 않음).
+router.post('/email/verify', async (req, res, next) => {
+  try {
+    // 이메일 앱에서 코드를 복사해 붙여넣을 때 앞뒤 공백/줄바꿈이 섞여 들어오는 경우가 있어
+    // (눈으로는 똑같아 보여도 해시 비교가 실패함), 클라이언트 trim과 별개로 서버에서도
+    // 한 번 더 trim한다 — API를 직접 호출하는 경우까지 포함해 계약을 명확히 하기 위함.
+    const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
+    const code = typeof req.body.code === 'string' ? req.body.code.trim() : req.body.code;
+    if (!isValidEmail(email) || !code) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
+    }
+
+    const result = await emailAuthService.verifyLoginToken(email, code);
+    if (!result.ok) {
+      return res.status(401).json({ status: 401, code: result.reason, message: null, data: null });
+    }
+
+    let student = await studentService.findByEmail(email);
+    if (!student) {
+      // 닉네임은 구글 가입과 동일하게 자동 배정(user{id}) — 별도 가입 단계 없이 이 한 번의
+      // INSERT로 끝난다.
+      const id = await studentService.createEmailStudent({ email });
+      student = { id };
+    }
+
+    // 세션 고정(Session Fixation) 방지 — 구글 콜백(/google/callback)과 동일하게 로그인 성공
+    // 시 세션 ID를 재발급한다. regenerate 콜백에서 req.session이 새 객체로 교체되므로, 그
+    // 이후 시점에 userId를 셋팅해야 한다.
+    req.session.regenerate((err) => {
+      if (err) return next(err);
+      req.session.userId = student.id;
+      req.session.save((saveErr) => {
+        if (saveErr) return next(saveErr);
+        return res.status(200).json({ status: 200, code: 'EMAIL_LOGIN_SUCCESS', message: null, data: null });
+      });
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/delete-reauth/request — 이메일 전용 계정(oauth_id NULL)을 위한
+// 계정 삭제 재인증 코드 발송. 구글 가입 계정은 기존 GET /google/reauth를 그대로 쓰므로
+// 대상이 아니다(oauth_id로 로그인 방식 판별). 인증 대상 이메일은 요청 본문이 아니라 항상
+// 세션의 본인 계정 이메일로 고정 — 다른 사람 이메일로 코드를 보내게 하는 경로를 만들지
+// 않기 위함.
+router.post('/email/delete-reauth/request', requireAuth, requestCodeLimiter, async (req, res, next) => {
+  try {
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    if (student.oauth_id) {
+      return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
+    }
+
+    const code = await emailAuthService.createLoginToken(student.email, 'delete_reauth');
+    await mailer.sendLoginCode(student.email, code);
+
+    return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/email/delete-reauth/verify — 코드 확인 → deleteReauthAt 세팅. 이후
+// server/routes/me.js의 DELETE /me가 이 값을 구글 재인증(/google/callback REAUTH 분기)과
+// 동일한 계약(REAUTH_WINDOW_MS 이내)으로 검사한다.
+router.post('/email/delete-reauth/verify', requireAuth, async (req, res, next) => {
+  try {
+    const code = typeof req.body.code === 'string' ? req.body.code.trim() : req.body.code;
+    if (!code) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
+    }
+
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    if (student.oauth_id) {
+      return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
+    }
+
+    const result = await emailAuthService.verifyLoginToken(student.email, code, 'delete_reauth');
+    if (!result.ok) {
+      return res.status(401).json({ status: 401, code: result.reason, message: null, data: null });
+    }
+
+    req.session.deleteReauthAt = Date.now();
+    return res.status(200).json({ status: 200, code: 'REAUTH_SUCCESS', message: null, data: null });
   } catch (err) {
     next(err);
   }

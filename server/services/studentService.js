@@ -22,7 +22,12 @@ async function findByEmail(email) {
 function serializeStudent(student) {
   return {
     id: student.id,
-    name: student.name,
+    // 가입 시 닉네임은 자동 배정하지 않고 name을 NULL로 남겨두므로(2-2 참고), 표시 시점에
+    // user{id} 폴백을 계산한다. id는 기본키라 절대 중복이 안 나 별도 카운터/중복체크가 불필요.
+    name: student.name || `user${student.id}`,
+    // 계정 삭제 재인증 수단(Google 재로그인 vs 이메일 인증코드) 분기용 — 이메일 OTP로만
+    // 가입한 계정은 oauth_id가 항상 NULL(createEmailStudent).
+    hasGoogleAccount: !!student.oauth_id,
     department: student.department_name,
     departmentId: student.department_id,
     track: student.track_name,
@@ -64,10 +69,22 @@ async function findByOauth(provider, oauthId) {
 }
 
 // OAuth로 처음 로그인한 사용자 신규 생성 — 비밀번호가 없으므로 password는 NULL로 남는다.
-async function createOauthStudent({ email, name, provider, oauthId }) {
+// 닉네임은 구글 실명을 가져오지 않고 자동 배정(user{id})하므로 name은 항상 NULL로 INSERT —
+// serializeStudent가 표시 시점에 user{id}로 계산해 내려준다.
+async function createOauthStudent({ email, provider, oauthId }) {
   const [result] = await pool.query(
-    'INSERT INTO students (email, name, oauth_provider, oauth_id) VALUES (?, ?, ?, ?)',
-    [email, name, provider, oauthId]
+    'INSERT INTO students (email, name, oauth_provider, oauth_id) VALUES (?, NULL, ?, ?)',
+    [email, provider, oauthId]
+  );
+  return result.insertId;
+}
+
+// 이메일 인증코드(OTP)로 처음 로그인한 사용자 신규 생성 — oauth_provider/oauth_id는 구글
+// 전용으로 남겨두고 건드리지 않는다(NULL 유지). 닉네임은 createOauthStudent와 동일하게 자동 배정.
+async function createEmailStudent({ email }) {
+  const [result] = await pool.query(
+    'INSERT INTO students (email, name) VALUES (?, NULL)',
+    [email]
   );
   return result.insertId;
 }
@@ -177,6 +194,7 @@ module.exports = {
   findById,
   findByOauth,
   createOauthStudent,
+  createEmailStudent,
   linkOauthToStudent,
   listDepartments,
   findDepartmentById,

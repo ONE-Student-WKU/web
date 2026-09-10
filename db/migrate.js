@@ -58,6 +58,21 @@ async function ensureOauthColumns(connection) {
   }
 }
 
+// 닉네임 자동 배정(user{id}) 전환용 guard — 기존 운영 테이블에는 CREATE TABLE IF NOT EXISTS로
+// 반영이 안 되므로, name을 NULL 허용으로 직접 ALTER한다. 신규 계정은 name을 NULL로 INSERT하고
+// (studentService.createOauthStudent/createEmailStudent) 표시 시점에 `user${id}`로 폴백한다
+// (studentService.serializeStudent) — 기본키 기반이라 동명이인 중복이 원천적으로 발생하지 않는다.
+async function ensureNameNullable(connection) {
+  const [cols] = await connection.query(
+    `SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'name'`
+  );
+  if (cols[0] && cols[0].IS_NULLABLE === 'NO') {
+    console.log('[db:migrate] students.name을 NULL 허용으로 변경...');
+    await connection.query('ALTER TABLE students MODIFY COLUMN name VARCHAR(50) NULL');
+  }
+}
+
 // 계절학기 지원(2026-09) — student_courses/course_offerings의 semester 값 체계를
 // (1=1학기, 2=2학기)에서 학사력 시간순(1=1학기, 2=여름 계절학기, 3=2학기, 4=겨울 계절학기)으로
 // 재배정한다. 재수강 판정(server/services/courseService.js의 listRetakeEligibleCourses)이나
@@ -116,6 +131,7 @@ async function migrate() {
     // 이미 존재하는 테이블에 대한 변경(신규 컬럼/제약)은 위 스키마 재실행만으로는 반영되지
     // 않으므로 별도 idempotent guard로 처리.
     await ensureOauthColumns(connection);
+    await ensureNameNullable(connection);
     await ensureSeasonSemesterRenumbering(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
