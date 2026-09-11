@@ -81,9 +81,10 @@ CREATE TABLE IF NOT EXISTS students (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   email                     VARCHAR(255) NOT NULL,
   password                  VARCHAR(255) NULL,  -- Google OAuth 전환 이후 사용 안 함(레거시 비밀번호 계정 호환용으로만 컬럼 유지)
-  name                      VARCHAR(50) NOT NULL,
+  name                      VARCHAR(50) NULL,  -- 가입 시 값 없음(자동 배정: user{id}) — 표시 시 name || `user${id}`로 계산(studentService.serializeStudent)
   oauth_provider            VARCHAR(20) NULL,   -- 예: 'google' (추후 다른 provider 추가 가능하도록 provider-agnostic하게 설계)
   oauth_id                  VARCHAR(255) NULL,  -- provider가 발급한 고유 식별자(Google이면 ID 토큰의 sub)
+  role                      VARCHAR(20) NOT NULL DEFAULT 'student',  -- 'student' | 'admin' — 커뮤니티 승인 등 관리 기능 접근 권한
 
   department_id             INT,
   track_id                  INT,     -- 공학3계열 등 광역단위 학과만 해당, 2학년 진급 시 선택. 그 외 NULL
@@ -111,6 +112,39 @@ CREATE TABLE IF NOT EXISTS students (
   FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE SET NULL,
   FOREIGN KEY (second_department_id) REFERENCES departments(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 3-1. 세션 저장소 (express-mysql-session)
+-- 기존 express-session 기본값(MemoryStore)은 프로세스 메모리에만 세션을 들고 있어
+-- 서버 재시작/재배포마다 전체 사용자가 강제 로그아웃되는 문제가 있었다. 세션을 DB 행으로
+-- 영속화해서 프로세스 생명주기와 로그인 상태를 분리한다. 컬럼 구성은 express-mysql-session
+-- 기본 스키마 그대로(createDatabaseTable: false로 자동 생성을 끄고 여기서 직접 관리 — 다른
+-- 테이블처럼 schema.sql + db/migrate.js 컨벤션을 따르기 위함).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sessions (
+  session_id VARCHAR(128) COLLATE utf8mb4_bin NOT NULL PRIMARY KEY,
+  expires INT(11) UNSIGNED NOT NULL,
+  data MEDIUMTEXT COLLATE utf8mb4_bin
+);
+
+-- ---------------------------------------------------------------------------
+-- 3-2. 이메일 인증코드 로그인 토큰
+-- 구글 OAuth의 두 번째 로그인 수단(PR #142 후속) — 도메인 제한 없이 어떤 이메일이든 인증코드로
+-- 로그인/가입 가능(이슈 #137 결정: 학교 이메일 인증 기각). 1회용 코드는 평문 저장하지 않고
+-- SHA-256 해시로만 저장한다(server/services/emailAuthService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_login_tokens (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  email        VARCHAR(255) NOT NULL,
+  code_hash    VARCHAR(64) NOT NULL,   -- SHA-256(코드) — 평문 코드는 어디에도 저장 안 함
+  purpose      VARCHAR(20) NOT NULL DEFAULT 'login',
+  attempts     INT NOT NULL DEFAULT 0,  -- 코드 대입 시도 횟수(무차별 대입 방지용 상한)
+  expires_at   DATETIME NOT NULL,
+  consumed_at  DATETIME NULL,           -- 이미 사용된 코드 재사용 방지
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_email_login_tokens_email (email)
 );
 
 -- ---------------------------------------------------------------------------
@@ -416,6 +450,40 @@ CREATE TABLE IF NOT EXISTS career_roadmap_items (
   sort_order   INT NOT NULL DEFAULT 0,
 
   FOREIGN KEY (session_id) REFERENCES career_sessions(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 10. 커뮤니티 게시판 (스터디/프로젝트 모집, 관리자 승인제)
+-- 닉네임만 공개하고(students.name 폴백 재사용), 매칭 성사 시에만 서로 이메일을 공개해
+-- 이후 소통은 당사자끼리 한다 — 1:1 채팅 없음. 글은 관리자 승인 전엔 비공개(status=
+-- 'pending')이고, 승인 후에도 글쓴이가 "모집 마감"(closed_at)으로 직접 닫을 수 있다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS community_posts (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  author_id    INT NOT NULL,
+  title        VARCHAR(100) NOT NULL,
+  body         TEXT NOT NULL,
+  status       VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
+  closed_at    DATETIME NULL,  -- NULL = 모집 중, 값 있음 = 글쓴이가 마감
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decided_at   DATETIME NULL,  -- 관리자가 승인/반려한 시각
+
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 신청 메시지는 글쓴이만 볼 수 있음(비공개). 수락 시 서로 이메일 공개는 응답 조립
+-- 시점에 계산 — 별도 컬럼으로 저장하지 않는다.
+CREATE TABLE IF NOT EXISTS community_applications (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  post_id        INT NOT NULL,
+  applicant_id   INT NOT NULL,
+  message        TEXT NOT NULL,
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / accepted / rejected
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decided_at     DATETIME NULL,
+
+  FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------

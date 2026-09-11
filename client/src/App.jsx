@@ -85,8 +85,11 @@ function App() {
   // 새로고침/재방문 시 세션 쿠키가 유효하면 로그인 화면을 건너뛰고 복원.
   // 이 조회가 끝나기 전까진(authChecked === false) 로그인 화면을 잠깐이라도
   // 보여주지 않기 위해 렌더링을 보류한다.
-  useEffect(() => {
-    getMe()
+  // 구글 로그인(풀 페이지 리다이렉트)과 이메일 인증코드 로그인(fetch 응답으로 즉시 종료) 둘 다
+  // 로그인 성공 후 이 함수로 사용자 상태를 채운다 — 구글은 마운트 시 세션 쿠키 복원으로,
+  // 이메일 로그인은 Login.jsx가 성공 직후 직접 호출해서 같은 경로를 탄다.
+  const loadUser = () => {
+    return getMe()
       .then((data) => {
         setUser(data);
         // /privacy, /terms로 직접 들어온 로그인 상태 사용자, 그리고 재인증(reauth)/에러
@@ -96,8 +99,11 @@ function App() {
           v === 'privacy' || v === 'terms' || v === 'profile' ? v : data.onboardingCompleted ? 'home' : 'onboarding'
         );
       })
-      .catch(() => {})
-      .finally(() => setAuthChecked(true));
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadUser().finally(() => setAuthChecked(true));
   }, []);
 
   // 모바일 키보드가 뜨면 .app-frame의 높이를 실제 보이는 영역(visualViewport)에 맞춰
@@ -191,15 +197,21 @@ function App() {
       resetAllUserCaches();
       skipHistoryPush.current = true;
       setUser(null);
+      setJustReauthenticated(false);
       setView('home');
     });
   };
 
   // 계정 삭제는 서버(DELETE /api/me)에서 이미 세션을 파기하므로 /auth/logout을 다시 부를 필요는 없음.
+  // justReauthenticated(구글 재인증 성공 플래그)를 여기서 반드시 초기화해야 한다 — 안 그러면
+  // 같은 탭에서 새로고침 없이 다른 계정으로 다시 로그인했을 때, 그 계정 재인증 없이 Profile의
+  // 삭제 버튼이 곧바로 활성화되는 문제가 생긴다(실사용 중 발견 — 구글 계정 삭제 후 이메일
+  // 계정으로 로그인하니 재인증 없이 삭제 버튼이 뜸).
   const handleAccountDeleted = () => {
     resetAllUserCaches();
     skipHistoryPush.current = true;
     setUser(null);
+    setJustReauthenticated(false);
     setView('home');
   };
 
@@ -211,7 +223,12 @@ function App() {
         ) : view === 'terms' ? (
           <TermsOfService onGoBack={() => setView(user ? 'profile' : 'home')} />
         ) : !authChecked ? null : !user ? (
-          <Login error={authError} onOpenPrivacy={() => setView('privacy')} onOpenTerms={() => setView('terms')} />
+          <Login
+            error={authError}
+            onOpenPrivacy={() => setView('privacy')}
+            onOpenTerms={() => setView('terms')}
+            onLoginSuccess={loadUser}
+          />
         ) : view === 'chat' ? (
           <Chat
             user={user}
