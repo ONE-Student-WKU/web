@@ -11,6 +11,13 @@ const pool = require('../db');
 const CODE_TTL_MS = 15 * 60 * 1000;  // 15분
 const MAX_ATTEMPTS = 5;               // 코드 대입 시도 상한(무차별 대입 방지)
 
+// 도메인 제한 없이 아무 이메일이나 발송 대상이 될 수 있어(로그인 계정 소유 확인 전 단계),
+// 발송 자체를 좁게 제한해야 남의 메일함을 대상으로 한 이메일 폭탄을 막을 수 있다.
+// 정책: 발송 후 5분 쿨다운 + 24시간 내 최대 4회(최초 1회 + 재전송 3회) → 이후 그 날은 차단.
+// 5분/24시간 쿨다운 수치 자체는 checkResendAllowed의 SQL(INTERVAL 5 MINUTE / 24 HOUR)에
+// 있다 — 거기서 DB의 NOW() 기준으로 판정해야 해서 여기 상수로 안 빼고 SQL에 그대로 둠.
+const MAX_SENDS_PER_DAY = 4;
+
 function generateCode() {
   // 6자리 숫자 코드
   return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
@@ -62,4 +69,37 @@ async function verifyLoginToken(email, code, purpose = 'login') {
   return { ok: true };
 }
 
-module.exports = { createLoginToken, verifyLoginToken };
+// 코드 발송(최초/재전송) 전에 호출 — 쿨다운/일일 한도에 걸리면 언제 다시 시도할 수 있는지
+// (retryAt)를 같이 돌려줘서 호출부가 클라이언트에 타이머로 보여줄 수 있게 한다.
+// "쿨다운이 남았는지/얼마나 남았는지"는 MySQL의 NOW() 기준으로 초 단위 "남은 시간"만 받아오고,
+// 클라이언트에 내려줄 실제 시각(retryAt)은 그 남은 시간을 Node 프로세스의 Date.now()에
+// 더해서 만든다 — DB 서버와 앱 서버 시계가 어긋나 있어도(로컬 Docker에서 실제로 겪음: 컨테이너
+// 시계가 몇 시간씩 밀려 있었음) "얼마나 남았나"라는 상대값만 DB에서 받으므로 절대 시각 자체는
+// 클라이언트가 보는 시계(Node 서버 시계)와 항상 일치한다.
+async function checkResendAllowed(email, purpose = 'login') {
+  const [rows] = await pool.query(
+    `SELECT
+       TIMESTAMPDIFF(SECOND, NOW(), created_at + INTERVAL 5 MINUTE) AS cooldown_remaining_sec,
+       TIMESTAMPDIFF(SECOND, NOW(), created_at + INTERVAL 24 HOUR) AS daily_remaining_sec
+     FROM email_login_tokens
+     WHERE email = ? AND purpose = ? AND created_at > NOW() - INTERVAL 24 HOUR
+     ORDER BY created_at ASC`,
+    [email, purpose]
+  );
+
+  if (rows.length === 0) return { ok: true };
+
+  const last = rows[rows.length - 1];
+  if (last.cooldown_remaining_sec > 0) {
+    return { ok: false, retryAt: new Date(Date.now() + last.cooldown_remaining_sec * 1000) };
+  }
+
+  if (rows.length >= MAX_SENDS_PER_DAY) {
+    const oldest = rows[0];
+    return { ok: false, retryAt: new Date(Date.now() + Math.max(oldest.daily_remaining_sec, 0) * 1000) };
+  }
+
+  return { ok: true };
+}
+
+module.exports = { createLoginToken, verifyLoginToken, checkResendAllowed };

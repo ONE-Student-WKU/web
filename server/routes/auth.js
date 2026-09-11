@@ -41,14 +41,18 @@ function buildOauthClient() {
   });
 }
 
-function makeState(purpose) {
-  return `${purpose}:${crypto.randomBytes(16).toString('hex')}`;
+// remember: state 문자열에 실어서 콜백까지 들고 간다(풀 페이지 리다이렉트 왕복이라 다른 방법이
+// 없음 — 세션은 로그인 성공 전이라 아직 이 브라우저 전용값을 못 믿고, 쿼리스트링은 Google이
+// 그대로 왕복 전달해주지 않음). REAUTH는 새 세션을 만들지 않아 remember가 의미 없다.
+function makeState(purpose, remember = true) {
+  return `${purpose}:${remember ? '1' : '0'}:${crypto.randomBytes(16).toString('hex')}`;
 }
 
 // GET /api/auth/google — 로그인 시작. fetch가 아니라 실제 브라우저 네비게이션
 // (window.location.href)으로 호출해야 함 — Google 로그인 자체가 풀 페이지 리다이렉트 플로우.
 router.get('/google', (req, res) => {
-  const state = makeState(STATE_PURPOSE.LOGIN);
+  const remember = req.query.remember !== '0'; // 기본값 유지(체크 해제 시에만 '0')
+  const state = makeState(STATE_PURPOSE.LOGIN, remember);
   req.session.oauthState = state; // CSRF 방지 — 콜백에서 반드시 이 값과 비교
   const url = buildOauthClient().generateAuthUrl({
     access_type: 'online',
@@ -92,7 +96,8 @@ router.get('/google/callback', async (req, res, next) => {
       return redirectToApp('?authError=OAUTH_FAILED');
     }
 
-    const purpose = expectedState.split(':')[0];
+    const [purpose, rememberFlag] = expectedState.split(':');
+    const remember = rememberFlag !== '0';
 
     const oauthClient = buildOauthClient();
     const { tokens } = await oauthClient.getToken(code);
@@ -157,6 +162,11 @@ router.get('/google/callback', async (req, res, next) => {
     req.session.regenerate((err) => {
       if (err) return next(err);
       req.session.userId = student.id;
+      // remember=false면 영속 쿠키(server/app.js의 기본 30일) 대신 브라우저 세션 쿠키로
+      // 내려서, 브라우저를 닫으면 로그인이 풀리게 한다.
+      if (!remember) {
+        req.session.cookie.maxAge = null;
+      }
       req.session.save((saveErr) => {
         if (saveErr) return next(saveErr);
         return redirectToApp();
@@ -182,30 +192,37 @@ const requestCodeLimiter = rateLimit({
   message: RATE_LIMIT_RESPONSE,
 });
 
-// 이메일당 반복 요청 방지 — IP만 제한하면 IP를 바꿔가며 특정 이메일에 인증코드 메일을
-// 계속 보내는 어뷰징(메일 폭탄)이 가능해서 별도로 둔다. express.json()이 라우터 마운트보다
-// 먼저 전역 등록돼 있어(server/app.js) 이 시점엔 req.body.email이 이미 파싱돼 있다.
-const requestCodeByEmailLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10분
-  max: 5,                    // 이메일당 10분에 5회
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: RATE_LIMIT_RESPONSE,
-  keyGenerator: (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : 'unknown'),
-});
-
 function isValidEmail(email) {
   return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// 이메일당 반복 요청 방지 — 위 IP 레이트리밋만으로는 IP를 바꿔가며 특정 이메일에 인증코드
+// 메일을 계속 보내는 어뷰징(메일 폭탄)을 못 막는다. 아무 이메일이든(도메인 제한 없음, 소유
+// 확인 전 단계) 대상이 될 수 있어서, 발송 자체를 이메일 기준으로 좁게 제한한다(정책은
+// emailAuthService.checkResendAllowed 참고: 발송 후 5분 쿨다운 + 24시간 내 최대 4회).
+async function guardResend(email, purpose, res) {
+  const result = await emailAuthService.checkResendAllowed(email, purpose);
+  if (!result.ok) {
+    res.status(429).json({
+      status: 429,
+      code: 'RESEND_COOLDOWN',
+      message: null,
+      data: { retryAt: result.retryAt.toISOString() },
+    });
+    return false;
+  }
+  return true;
+}
+
 // POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
 // 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
-router.post('/email/request', requestCodeLimiter, requestCodeByEmailLimiter, async (req, res, next) => {
+router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
   try {
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
     if (!isValidEmail(email)) {
       return res.status(400).json({ status: 400, code: 'INVALID_EMAIL', message: null, data: null });
     }
+    if (!(await guardResend(email, 'login', res))) return;
 
     const code = await emailAuthService.createLoginToken(email);
     await mailer.sendLoginCode(email, code);
@@ -226,6 +243,7 @@ router.post('/email/verify', async (req, res, next) => {
     // 한 번 더 trim한다 — API를 직접 호출하는 경우까지 포함해 계약을 명확히 하기 위함.
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
     const code = typeof req.body.code === 'string' ? req.body.code.trim() : req.body.code;
+    const remember = req.body.remember !== false; // 기본값 유지(체크 해제 시에만 false)
     if (!isValidEmail(email) || !code) {
       return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
     }
@@ -249,6 +267,9 @@ router.post('/email/verify', async (req, res, next) => {
     req.session.regenerate((err) => {
       if (err) return next(err);
       req.session.userId = student.id;
+      if (!remember) {
+        req.session.cookie.maxAge = null; // 브라우저 세션 쿠키로 — 브라우저 닫으면 로그아웃
+      }
       req.session.save((saveErr) => {
         if (saveErr) return next(saveErr);
         return res.status(200).json({ status: 200, code: 'EMAIL_LOGIN_SUCCESS', message: null, data: null });
@@ -273,6 +294,7 @@ router.post('/email/delete-reauth/request', requireAuth, requestCodeLimiter, asy
     if (student.oauth_id) {
       return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
     }
+    if (!(await guardResend(student.email, 'delete_reauth', res))) return;
 
     const code = await emailAuthService.createLoginToken(student.email, 'delete_reauth');
     await mailer.sendLoginCode(student.email, code);
