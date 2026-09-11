@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS students (
   name                      VARCHAR(50) NULL,  -- 가입 시 값 없음(자동 배정: user{id}) — 표시 시 name || `user${id}`로 계산(studentService.serializeStudent)
   oauth_provider            VARCHAR(20) NULL,   -- 예: 'google' (추후 다른 provider 추가 가능하도록 provider-agnostic하게 설계)
   oauth_id                  VARCHAR(255) NULL,  -- provider가 발급한 고유 식별자(Google이면 ID 토큰의 sub)
+  role                      VARCHAR(20) NOT NULL DEFAULT 'student',  -- 'student' | 'admin' — 커뮤니티 승인 등 관리 기능 접근 권한
 
   department_id             INT,
   track_id                  INT,     -- 공학3계열 등 광역단위 학과만 해당, 2학년 진급 시 선택. 그 외 NULL
@@ -449,6 +450,40 @@ CREATE TABLE IF NOT EXISTS career_roadmap_items (
   sort_order   INT NOT NULL DEFAULT 0,
 
   FOREIGN KEY (session_id) REFERENCES career_sessions(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 10. 커뮤니티 게시판 (스터디/프로젝트 모집, 관리자 승인제)
+-- 닉네임만 공개하고(students.name 폴백 재사용), 매칭 성사 시에만 서로 이메일을 공개해
+-- 이후 소통은 당사자끼리 한다 — 1:1 채팅 없음. 글은 관리자 승인 전엔 비공개(status=
+-- 'pending')이고, 승인 후에도 글쓴이가 "모집 마감"(closed_at)으로 직접 닫을 수 있다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS community_posts (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  author_id    INT NOT NULL,
+  title        VARCHAR(100) NOT NULL,
+  body         TEXT NOT NULL,
+  status       VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
+  closed_at    DATETIME NULL,  -- NULL = 모집 중, 값 있음 = 글쓴이가 마감
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decided_at   DATETIME NULL,  -- 관리자가 승인/반려한 시각
+
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 신청 메시지는 글쓴이만 볼 수 있음(비공개). 수락 시 서로 이메일 공개는 응답 조립
+-- 시점에 계산 — 별도 컬럼으로 저장하지 않는다.
+CREATE TABLE IF NOT EXISTS community_applications (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  post_id        INT NOT NULL,
+  applicant_id   INT NOT NULL,
+  message        TEXT NOT NULL,
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / accepted / rejected
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decided_at     DATETIME NULL,
+
+  FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------

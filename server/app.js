@@ -17,6 +17,7 @@ const coursesRoutes = require('./routes/courses');
 const myCoursesRoutes = require('./routes/myCourses');
 const graduationRoutes = require('./routes/graduation');
 const careerRoutes = require('./routes/career');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -62,6 +63,10 @@ app.use(
       // 배포 환경(HTTPS)에서만 secure 쿠키를 강제하고, 로컬 http 개발 환경은 기존과 동일하게 유지.
       secure: process.env.NODE_ENV === 'production',
       maxAge: SESSION_MAX_AGE_MS,
+      // CSRF 방어를 브라우저의 SameSite 기본값(암묵적 Lax)에 기대지 않고 명시한다. 클라이언트는
+      // Vercel이 /api/*를 Railway로 프록시해서 브라우저 입장에서 항상 같은 오리진으로 호출하므로
+      // (client/vercel.json rewrites) 'lax'로 좁혀도 기존 로그인/세션 흐름에 영향 없다.
+      sameSite: 'lax',
     },
   })
 );
@@ -75,6 +80,7 @@ app.use('/api/my-courses', myCoursesRoutes);
 app.use('/api/graduation', graduationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/career', careerRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
