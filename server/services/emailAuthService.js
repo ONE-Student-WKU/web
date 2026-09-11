@@ -13,10 +13,16 @@ const MAX_ATTEMPTS = 5;               // 코드 대입 시도 상한(무차별 �
 
 // 도메인 제한 없이 아무 이메일이나 발송 대상이 될 수 있어(로그인 계정 소유 확인 전 단계),
 // 발송 자체를 좁게 제한해야 남의 메일함을 대상으로 한 이메일 폭탄을 막을 수 있다.
-// 정책: 발송 후 5분 쿨다운 + 24시간 내 최대 4회(최초 1회 + 재전송 3회) → 이후 그 날은 차단.
-// 5분/24시간 쿨다운 수치 자체는 checkResendAllowed의 SQL(INTERVAL 5 MINUTE / 24 HOUR)에
-// 있다 — 거기서 DB의 NOW() 기준으로 판정해야 해서 여기 상수로 안 빼고 SQL에 그대로 둠.
-const MAX_SENDS_PER_DAY = 4;
+// 정책: 발송 후 5분 쿨다운 + 24시간 내 미사용(consumed_at IS NULL) 코드 최대 8회 → 이후
+// 그 날은 차단. "미사용"만 세는 이유: 로그인에 실제로 성공한 코드는 그 순간 그 로그인
+// 시도가 끝난 것이므로, 같은 날 다른 기기/세션에서 또 로그인하려는 정상적인 재시도까지
+// 이 카운터에 묶이면 안 된다(로그인 상태 유지를 꺼뒀거나 세션이 끊겨서 하루에 여러 번
+// 로그인해야 하는 경우가 실사용에서 실제로 있었음 — 성공한 로그인까지 세면 스팸을
+// 안 보낸 사용자가 스팸 방지 장치에 락아웃당하는 꼴이 됨). 공격자가 보낸 코드는 받는
+// 사람이 입력할 수 없으니 항상 미사용으로 남아 이 카운터에 그대로 잡힌다.
+// 5분/24시간 수치 자체는 checkResendAllowed의 SQL(INTERVAL 5 MINUTE / 24 HOUR)에 있다 —
+// 거기서 DB의 NOW() 기준으로 판정해야 해서 여기 상수로 안 빼고 SQL에 그대로 둠.
+const MAX_SENDS_PER_DAY = 8;
 
 function generateCode() {
   // 6자리 숫자 코드
@@ -71,6 +77,7 @@ async function verifyLoginToken(email, code, purpose = 'login') {
 
 // 코드 발송(최초/재전송) 전에 호출 — 쿨다운/일일 한도에 걸리면 언제 다시 시도할 수 있는지
 // (retryAt)를 같이 돌려줘서 호출부가 클라이언트에 타이머로 보여줄 수 있게 한다.
+// consumed_at IS NULL(미사용 코드만) 대상으로 판정한다 — 위 MAX_SENDS_PER_DAY 주석 참고.
 // "쿨다운이 남았는지/얼마나 남았는지"는 MySQL의 NOW() 기준으로 초 단위 "남은 시간"만 받아오고,
 // 클라이언트에 내려줄 실제 시각(retryAt)은 그 남은 시간을 Node 프로세스의 Date.now()에
 // 더해서 만든다 — DB 서버와 앱 서버 시계가 어긋나 있어도(로컬 Docker에서 실제로 겪음: 컨테이너
@@ -82,7 +89,7 @@ async function checkResendAllowed(email, purpose = 'login') {
        TIMESTAMPDIFF(SECOND, NOW(), created_at + INTERVAL 5 MINUTE) AS cooldown_remaining_sec,
        TIMESTAMPDIFF(SECOND, NOW(), created_at + INTERVAL 24 HOUR) AS daily_remaining_sec
      FROM email_login_tokens
-     WHERE email = ? AND purpose = ? AND created_at > NOW() - INTERVAL 24 HOUR
+     WHERE email = ? AND purpose = ? AND consumed_at IS NULL AND created_at > NOW() - INTERVAL 24 HOUR
      ORDER BY created_at ASC`,
     [email, purpose]
   );

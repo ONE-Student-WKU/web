@@ -20,11 +20,16 @@ function describeReauthError(code) {
 }
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
-// data.retryAt(ISO 문자열)을 같이 내려준다 — Login.jsx와 동일한 규칙의 "mm:ss 후" 타이머.
+// data.retryAt(ISO 문자열)을 같이 내려준다 — Login.jsx와 동일한 규칙: 1시간 이상 남으면
+// h:mm:ss, 아니면 mm:ss.
 function formatCountdown(ms) {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
-  const min = Math.floor(totalSec / 60);
+  const hours = Math.floor(totalSec / 3600);
+  const min = Math.floor((totalSec % 3600) / 60);
   const sec = totalSec % 60;
+  if (hours > 0) {
+    return `${hours}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  }
   return `${min}:${String(sec).padStart(2, '0')}`;
 }
 
