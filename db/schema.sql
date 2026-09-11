@@ -114,7 +114,21 @@ CREATE TABLE IF NOT EXISTS students (
 );
 
 -- ---------------------------------------------------------------------------
--- 3-1. 이메일 인증코드 로그인 토큰
+-- 3-1. 세션 저장소 (express-mysql-session)
+-- 기존 express-session 기본값(MemoryStore)은 프로세스 메모리에만 세션을 들고 있어
+-- 서버 재시작/재배포마다 전체 사용자가 강제 로그아웃되는 문제가 있었다. 세션을 DB 행으로
+-- 영속화해서 프로세스 생명주기와 로그인 상태를 분리한다. 컬럼 구성은 express-mysql-session
+-- 기본 스키마 그대로(createDatabaseTable: false로 자동 생성을 끄고 여기서 직접 관리 — 다른
+-- 테이블처럼 schema.sql + db/migrate.js 컨벤션을 따르기 위함).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sessions (
+  session_id VARCHAR(128) COLLATE utf8mb4_bin NOT NULL PRIMARY KEY,
+  expires INT(11) UNSIGNED NOT NULL,
+  data MEDIUMTEXT COLLATE utf8mb4_bin
+);
+
+-- ---------------------------------------------------------------------------
+-- 3-2. 이메일 인증코드 로그인 토큰
 -- 구글 OAuth의 두 번째 로그인 수단(PR #142 후속) — 도메인 제한 없이 어떤 이메일이든 인증코드로
 -- 로그인/가입 가능(이슈 #137 결정: 학교 이메일 인증 기각). 1회용 코드는 평문 저장하지 않고
 -- SHA-256 해시로만 저장한다(server/services/emailAuthService.js).

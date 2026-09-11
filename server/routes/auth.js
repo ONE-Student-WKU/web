@@ -152,8 +152,16 @@ router.get('/google/callback', async (req, res, next) => {
       }
     }
 
-    req.session.userId = student.id;
-    return redirectToApp();
+    // 세션 고정(Session Fixation) 방지 — 로그인 성공 시 세션 ID를 재발급한다. regenerate는
+    // 콜백에서 req.session이 새 객체로 교체되므로, 그 이후 시점에 userId를 셋팅해야 한다.
+    req.session.regenerate((err) => {
+      if (err) return next(err);
+      req.session.userId = student.id;
+      req.session.save((saveErr) => {
+        if (saveErr) return next(saveErr);
+        return redirectToApp();
+      });
+    });
   } catch (err) {
     next(err);
   }
