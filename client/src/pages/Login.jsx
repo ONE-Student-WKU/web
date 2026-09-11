@@ -2,11 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { startGoogleLogin, requestEmailCode, verifyEmailCode } from '../api/chatApi';
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
-// data.retryAt(ISO 문자열)을 같이 내려준다 — "mm:ss 후 다시 시도" 타이머로 보여준다.
+// data.retryAt(ISO 문자열)을 같이 내려준다 — 일일 한도까지 걸리면 몇 시간 단위로 남을 수
+// 있어서(예: 832분) mm:ss만으로는 얼마나 기다려야 하는지 가늠이 안 된다 — 1시간 이상이면
+// h:mm:ss로, 아니면 기존처럼 mm:ss로 보여준다.
 function formatCountdown(ms) {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
-  const min = Math.floor(totalSec / 60);
+  const hours = Math.floor(totalSec / 3600);
+  const min = Math.floor((totalSec % 3600) / 60);
   const sec = totalSec % 60;
+  if (hours > 0) {
+    return `${hours}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  }
   return `${min}:${String(sec).padStart(2, '0')}`;
 }
 
