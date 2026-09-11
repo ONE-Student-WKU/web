@@ -507,7 +507,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   };
 
   const handleSelectCatalogResult = (r) => {
-    if (formatSchedule(r.schedule)) {
+    // 0학점 과목(졸업(시험·작품)논문 등)은 원래부터 실제 수업 시간이 없는 P/F 인증
+    // 항목이라(courseService.js 참고), 시간표를 물어볼 필요 없이 시간표 있는 과목과
+    // 동일하게 바로 등록한다.
+    if (formatSchedule(r.schedule) || r.credits === 0) {
       handleAddFromCatalog(r.courseId, undefined, r.name);
     } else {
       setManualSchedule([]);
@@ -1305,7 +1308,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         <span className="courses-list-item-name">{r.name}</span>
                         <span className="courses-list-item-meta">
                           {displayCategory(r.category)} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
-                          {formatSchedule(r.schedule) ? ` · ${formatSchedule(r.schedule)}` : ' · 시간표 미등록'}
+                          {formatSchedule(r.schedule)
+                            ? ` · ${formatSchedule(r.schedule)}`
+                            : r.credits === 0
+                              ? ''
+                              : ' · 시간표 미등록'}
                         </span>
                       </button>
                     ))}

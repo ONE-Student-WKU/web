@@ -63,11 +63,14 @@ async function searchCatalog(keyword, year, semester) {
     scheduleMap.get(s.course_id).push({ day: s.day, period: s.period });
   }
 
+  // 0학점 과목(졸업(시험·작품)논문 등 P/F 인증 항목)은 실제 강의가 아니라 원문 카탈로그의
+  // "담당교수" 값이 해마다 다른 교직원 이름으로 그냥 채워져 있을 뿐이라(실사용 확인 — 매년
+  // 다른 사람이 찍혀 있음), 학생에게 그 사람이 진짜 담당 교수인 것처럼 보이면 오해를 준다.
   return courses.map((c) => ({
     courseId: c.id,
     name: c.name,
     section: c.section,
-    professor: c.professor,
+    professor: Number(c.credits) === 0 ? null : c.professor,
     credits: Number(c.credits),
     category: c.category,
     schedule: scheduleMap.get(c.id) || [],
@@ -87,7 +90,8 @@ function mapMyCourseRow(row, supersededIds) {
     id: row.id,
     courseId: row.course_id,
     name: row.name,
-    professor: row.professor,
+    // searchCatalog와 동일한 이유로 0학점 과목은 professor를 숨긴다(위 주석 참고).
+    professor: Number(row.credits) === 0 ? null : row.professor,
     credits: Number(row.credits),
     category: row.category,
     year: row.year,
