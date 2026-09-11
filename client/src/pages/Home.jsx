@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMe, getGraduationStatus } from '../api/chatApi.js';
-import { IconBook, IconChecklist, IconAlertTriangle, IconCompass, IconUsers } from '../components/icons.jsx';
+import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -163,7 +163,10 @@ function Home({
                       : 'home-card-row shortfall-ok'
                 }
               >
-                <IconAlertTriangle />
+                {/* 초록색으로 칠해도 모양 자체가 경고 삼각형이면 "충족했다는데 왜 주의
+                    아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
+                    아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
+                {shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
                 <span>
                   {shortfalls === null
                     ? '졸업요건 진단에서 확인해보세요.'
