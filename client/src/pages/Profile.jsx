@@ -19,6 +19,15 @@ function describeReauthError(code) {
   return '요청에 실패했어요. 잠시 후 다시 시도해주세요.';
 }
 
+// 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
+// data.retryAt(ISO 문자열)을 같이 내려준다 — Login.jsx와 동일한 규칙의 "mm:ss 후" 타이머.
+function formatCountdown(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${String(sec).padStart(2, '0')}`;
+}
+
 // confirmedRoadmap은 "확정한 진로 없음"도 유효한 응답(null)이라 캐시 없음 마커로 null을
 // 못 쓴다 — undefined로 "아직 조회 전"을 구분한다(Home.jsx와 동일한 이유로 재진입 시
 // 빈 화면 깜빡임 방지용 모듈 스코프 캐시).
@@ -81,6 +90,20 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
   const [emailReauthError, setEmailReauthError] = useState(null);
   const [emailReauthSubmitting, setEmailReauthSubmitting] = useState(false);
   const [emailReauthenticated, setEmailReauthenticated] = useState(false);
+  // 재전송 쿨다운 마감 시각(ms epoch) — 서버가 429 RESEND_COOLDOWN으로 내려주는 data.retryAt.
+  const [retryAt, setRetryAt] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!retryAt) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [retryAt]);
+
+  const cooldownRemainingMs = retryAt ? retryAt - now : 0;
+  useEffect(() => {
+    if (retryAt && cooldownRemainingMs <= 0) setRetryAt(null);
+  }, [cooldownRemainingMs, retryAt]);
 
   async function handleRequestEmailReauthCode() {
     setEmailReauthError(null);
@@ -88,8 +111,14 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
     try {
       await requestDeleteReauthCode();
       setEmailReauthStep('code');
-    } catch {
-      setEmailReauthError('인증코드 발송에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } catch (err) {
+      if (err.code === 'RESEND_COOLDOWN' && err.data?.retryAt) {
+        setRetryAt(new Date(err.data.retryAt).getTime());
+        setNow(Date.now());
+        setEmailReauthStep('code'); // 이미 코드를 받은 적이 있다는 뜻 — 코드 입력 화면 유지
+      } else {
+        setEmailReauthError('인증코드 발송에 실패했어요. 잠시 후 다시 시도해주세요.');
+      }
     } finally {
       setEmailReauthSubmitting(false);
     }
@@ -224,9 +253,13 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                 type="button"
                 className="settings-theme-btn"
                 onClick={handleRequestEmailReauthCode}
-                disabled={emailReauthSubmitting}
+                disabled={emailReauthSubmitting || !!retryAt}
               >
-                {emailReauthSubmitting ? '전송 중...' : '인증코드 받고 확인'}
+                {emailReauthSubmitting
+                  ? '전송 중...'
+                  : retryAt
+                    ? `${formatCountdown(cooldownRemainingMs)} 후 다시 시도`
+                    : '인증코드 받고 확인'}
               </button>
             </>
           ) : (
@@ -251,9 +284,9 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                 type="button"
                 className="settings-theme-btn"
                 onClick={handleRequestEmailReauthCode}
-                disabled={emailReauthSubmitting}
+                disabled={emailReauthSubmitting || !!retryAt}
               >
-                인증코드 다시 받기
+                {retryAt ? `${formatCountdown(cooldownRemainingMs)} 후 다시 받기` : '인증코드 다시 받기'}
               </button>
             </form>
           )}

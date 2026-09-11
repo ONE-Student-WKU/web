@@ -25,8 +25,8 @@ async function apiRequest(path, options = {}) {
 
 // Google 로그인/재인증은 풀 페이지 브라우저 리다이렉트가 필요해서(fetch로는 Google의
 // 동의 화면 리다이렉트 체인을 탈 수 없음) apiRequest가 아니라 직접 네비게이션한다.
-export const startGoogleLogin = () => {
-  window.location.href = '/api/auth/google';
+export const startGoogleLogin = (remember = true) => {
+  window.location.href = `/api/auth/google?remember=${remember ? '1' : '0'}`;
 };
 
 export const startGoogleReauth = () => {
@@ -38,8 +38,8 @@ export const startGoogleReauth = () => {
 export const requestEmailCode = (email) =>
   apiRequest('/auth/email/request', { method: 'POST', body: JSON.stringify({ email }) });
 
-export const verifyEmailCode = (email, code) =>
-  apiRequest('/auth/email/verify', { method: 'POST', body: JSON.stringify({ email, code }) });
+export const verifyEmailCode = (email, code, remember = true) =>
+  apiRequest('/auth/email/verify', { method: 'POST', body: JSON.stringify({ email, code, remember }) });
 
 // 이메일 OTP로만 가입한 계정(oauth_id 없음)의 계정 삭제 재인증 — Google 계정은
 // startGoogleReauth를 그대로 쓴다. 대상 이메일은 서버가 세션의 본인 계정 것으로 고정하므로
