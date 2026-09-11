@@ -8,6 +8,7 @@ import CareerExploration from './pages/CareerExploration.jsx';
 import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
+import Community, { resetCommunityCache } from './pages/Community.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -16,8 +17,8 @@ import { getMe, logout } from './api/chatApi.js';
 
 // 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
 // null — 탭바는 보이되 아무 탭도 강조되지 않는다.
-const TAB_BAR_VIEWS = new Set(['home', 'chat', 'courses', 'graduation', 'career']);
-const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', career: 'career' };
+const TAB_BAR_VIEWS = new Set(['home', 'chat', 'courses', 'graduation', 'career', 'community']);
+const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', career: 'career', community: 'community' };
 
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
@@ -35,6 +36,7 @@ function resetAllUserCaches() {
   resetGraduationCache();
   resetProfileCache();
   resetChatCache();
+  resetCommunityCache();
 }
 
 /**
@@ -268,6 +270,15 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onInputFocusChange={setPromptInputFocused}
           />
+        ) : view === 'community' ? (
+          <Community
+            user={user}
+            onLogout={handleLogout}
+            onGoHome={() => setView('home')}
+            onOpenSettings={() => setView('settings')}
+            onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
+          />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
         ) : view === 'onboarding' ? (
@@ -299,6 +310,7 @@ function App() {
             onOpenCourses={() => setView('courses')}
             onOpenGraduation={() => setView('graduation')}
             onOpenCareer={() => setView('career')}
+            onOpenCommunity={() => setView('community')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
@@ -315,6 +327,7 @@ function App() {
             onOpenGraduation={() => setView('graduation')}
             onOpenChat={() => setView('chat')}
             onOpenCareer={() => setView('career')}
+            onOpenCommunity={() => setView('community')}
           />
         )}
       </div>

@@ -136,3 +136,12 @@ export const generateCareerCandidates = (sessionId) =>
 
 export const confirmCareer = (sessionId, careerName) =>
   apiRequest(`/career/sessions/${sessionId}/confirm`, { method: 'POST', body: JSON.stringify({ careerName }) });
+
+export const getCommunityPosts = () => apiRequest('/community');
+
+export const getMyCommunityPosts = () => apiRequest('/community/mine');
+
+export const getCommunityPost = (id) => apiRequest(`/community/${id}`);
+
+export const createCommunityPost = (payload) =>
+  apiRequest('/community', { method: 'POST', body: JSON.stringify(payload) });

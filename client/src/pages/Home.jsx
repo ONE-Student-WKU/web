@@ -43,6 +43,7 @@ function Home({
   onOpenCourses,
   onOpenGraduation,
   onOpenCareer,
+  onOpenCommunity,
   onOpenSettings,
   onOpenOnboarding,
   onOpenLeaveSettings,
@@ -191,7 +192,7 @@ function Home({
             <IconCompass />
             <span>진로 탐색</span>
           </button>
-          <button className="home-quick-btn" disabled>
+          <button className="home-quick-btn" onClick={onOpenCommunity}>
             <IconUsers />
             <span>커뮤니티</span>
           </button>
