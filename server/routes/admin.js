@@ -26,7 +26,10 @@ router.get('/community/posts', async (req, res, next) => {
 // POST /api/admin/community/posts/:id/approve
 router.post('/community/posts/:id/approve', async (req, res, next) => {
   try {
-    await communityService.decidePost(req.params.id, 'approved');
+    const decided = await communityService.decidePost(req.params.id, 'approved');
+    if (!decided) {
+      return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
+    }
     res.status(200).json({ status: 200, code: 'POST_APPROVED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -36,7 +39,10 @@ router.post('/community/posts/:id/approve', async (req, res, next) => {
 // POST /api/admin/community/posts/:id/reject
 router.post('/community/posts/:id/reject', async (req, res, next) => {
   try {
-    await communityService.decidePost(req.params.id, 'rejected');
+    const decided = await communityService.decidePost(req.params.id, 'rejected');
+    if (!decided) {
+      return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
+    }
     res.status(200).json({ status: 200, code: 'POST_REJECTED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -47,7 +53,10 @@ router.post('/community/posts/:id/reject', async (req, res, next) => {
 // 신청(community_applications)은 FK ON DELETE CASCADE로 같이 정리된다.
 router.delete('/community/posts/:id', async (req, res, next) => {
   try {
-    await communityService.deletePost(req.params.id);
+    const deleted = await communityService.deletePost(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
+    }
     res.status(200).json({ status: 200, code: 'POST_DELETED', message: null, data: null });
   } catch (err) {
     next(err);

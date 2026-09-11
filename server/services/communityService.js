@@ -15,16 +15,21 @@ async function listPostsForAdmin(status) {
 }
 
 // status가 이미 'pending'이 아니면 아무 것도 안 바뀐다 — 이미 처리된 글을 다시
-// 승인/반려하는 걸 막는 가드.
+// 승인/반려하는 걸 막는 가드. affectedRows를 돌려줘서 호출부가 "존재하지 않거나 이미
+// 처리된 글"을 실제 성공과 구분할 수 있게 한다(그렇지 않으면 관리자가 아무 효과 없는
+// 요청에도 성공 응답을 받는다).
 async function decidePost(id, status) {
-  await pool.query(
+  const [result] = await pool.query(
     "UPDATE community_posts SET status = ?, decided_at = NOW() WHERE id = ? AND status = 'pending'",
     [status, id]
   );
+  return result.affectedRows > 0;
 }
 
+// 존재하지 않는 id를 삭제 시도해도 조용히 200이 나가지 않도록 affectedRows를 돌려준다.
 async function deletePost(id) {
-  await pool.query('DELETE FROM community_posts WHERE id = ?', [id]);
+  const [result] = await pool.query('DELETE FROM community_posts WHERE id = ?', [id]);
+  return result.affectedRows > 0;
 }
 
 module.exports = { listPostsForAdmin, decidePost, deletePost };
