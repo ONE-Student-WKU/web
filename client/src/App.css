@@ -429,14 +429,21 @@ body {
   color: var(--color-text-secondary);
 }
 
-.auth-field input {
+.auth-field input,
+.auth-field textarea {
   width: 100%;
   padding: 13px 14px;
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   font-size: 0.9375rem;
+  font-family: inherit;
   background: var(--color-bg-card);
   color: var(--color-text-primary);
+}
+
+.auth-field textarea {
+  resize: vertical;
+  line-height: 1.5;
 }
 
 /* 화이트 모드는 --color-bg-frame(#fff)과 --color-bg-card(#f5f6f8) 차이가 거의 없어서
@@ -1507,6 +1514,78 @@ body {
   font-family: inherit;
   text-align: center;
   cursor: pointer;
+}
+
+/* 커뮤니티(스터디/프로젝트 모집) 게시판 — 2단계: 글쓰기 + 목록/상세 */
+
+.community-write-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.community-write-form {
+  margin-top: 14px;
+}
+
+.community-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  vertical-align: middle;
+  color: var(--color-accent-contrast);
+}
+
+.community-badge-pending {
+  background: var(--color-warning);
+}
+
+.community-badge-approved {
+  background: var(--color-success);
+}
+
+.community-badge-rejected {
+  background: var(--color-danger);
+}
+
+.community-badge-closed {
+  background: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.community-detail-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 12px 0 4px;
+  color: var(--color-text-primary);
+}
+
+.community-detail-meta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+.community-detail-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  margin: 0;
 }
 
 .courses-category-select {

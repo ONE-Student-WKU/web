@@ -18,6 +18,7 @@ const myCoursesRoutes = require('./routes/myCourses');
 const graduationRoutes = require('./routes/graduation');
 const careerRoutes = require('./routes/career');
 const adminRoutes = require('./routes/admin');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -81,6 +82,7 @@ app.use('/api/graduation', graduationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/career', careerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/community', communityRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
