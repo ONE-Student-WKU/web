@@ -145,3 +145,23 @@ export const getCommunityPost = (id) => apiRequest(`/community/${id}`);
 
 export const createCommunityPost = (payload) =>
   apiRequest('/community', { method: 'POST', body: JSON.stringify(payload) });
+
+export const editCommunityPost = (id, payload) =>
+  apiRequest(`/community/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+
+export const deleteCommunityPost = (id) => apiRequest(`/community/${id}`, { method: 'DELETE' });
+
+export const closeCommunityPost = (id) => apiRequest(`/community/${id}/close`, { method: 'POST' });
+
+export const applyToCommunityPost = (id, message) =>
+  apiRequest(`/community/${id}/apply`, { method: 'POST', body: JSON.stringify({ message }) });
+
+export const getMyCommunityApplications = () => apiRequest('/community/applications/mine');
+
+export const getCommunityApplicants = (id) => apiRequest(`/community/${id}/applications`);
+
+export const acceptCommunityApplication = (id) =>
+  apiRequest(`/community/applications/${id}/accept`, { method: 'POST' });
+
+export const rejectCommunityApplication = (id) =>
+  apiRequest(`/community/applications/${id}/reject`, { method: 'POST' });
