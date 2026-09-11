@@ -73,6 +73,20 @@ async function ensureNameNullable(connection) {
   }
 }
 
+// 커뮤니티 게시판(관리자 승인) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT
+// EXISTS로 반영이 안 되므로 role 컬럼을 직접 ALTER한다. 관리자 지정 자체는 배포 후
+// 수동 UPDATE 1회로 처리(마이그레이션에 특정 계정을 하드코딩하지 않음).
+async function ensureRoleColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'role'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.role 컬럼 추가...');
+    await connection.query("ALTER TABLE students ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'student'");
+  }
+}
+
 // 계절학기 지원(2026-09) — student_courses/course_offerings의 semester 값 체계를
 // (1=1학기, 2=2학기)에서 학사력 시간순(1=1학기, 2=여름 계절학기, 3=2학기, 4=겨울 계절학기)으로
 // 재배정한다. 재수강 판정(server/services/courseService.js의 listRetakeEligibleCourses)이나
@@ -132,6 +146,7 @@ async function migrate() {
     // 않으므로 별도 idempotent guard로 처리.
     await ensureOauthColumns(connection);
     await ensureNameNullable(connection);
+    await ensureRoleColumn(connection);
     await ensureSeasonSemesterRenumbering(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
