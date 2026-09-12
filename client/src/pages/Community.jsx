@@ -483,11 +483,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
               posts.length === 0 ? (
                 <p className="courses-manual-hint">아직 등록된 글이 없어요.</p>
               ) : (
-                <div className="courses-search-results community-post-list">
+                <div className="community-post-list">
                   {posts.map((p) => (
-                    <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
-                      <span className="courses-list-item-name">
-                        {p.title}
+                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                      <span className="community-post-list-row">
+                        <span className="community-post-list-title">{p.title}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
@@ -501,11 +501,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
               myPosts.length === 0 ? (
                 <p className="courses-manual-hint">아직 쓴 글이 없어요.</p>
               ) : (
-                <div className="courses-search-results community-post-list">
+                <div className="community-post-list">
                   {myPosts.map((p) => (
-                    <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
-                      <span className="courses-list-item-name">
-                        {p.title}
+                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                      <span className="community-post-list-row">
+                        <span className="community-post-list-title">{p.title}</span>
                         <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
@@ -517,11 +517,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             ) : myApplications.length === 0 ? (
               <p className="courses-manual-hint">아직 신청한 글이 없어요.</p>
             ) : (
-              <div className="courses-search-results community-post-list">
+              <div className="community-post-list">
                 {myApplications.map((a) => (
-                  <button key={a.id} className="courses-search-result" onClick={() => openPost(a.postId)} disabled={detailLoading}>
-                    <span className="courses-list-item-name">
-                      {a.postTitle}
+                  <button key={a.id} className="community-post-list-item" onClick={() => openPost(a.postId)} disabled={detailLoading}>
+                    <span className="community-post-list-row">
+                      <span className="community-post-list-title">{a.postTitle}</span>
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
                     </span>
                     <span className="courses-list-item-meta">

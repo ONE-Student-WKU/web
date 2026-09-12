@@ -1546,6 +1546,7 @@ body {
 
 .community-badge {
   display: inline-block;
+  flex-shrink: 0;
   margin-left: 6px;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1778,6 +1779,51 @@ body {
   font-size: 0.75rem;
   color: var(--color-accent);
   margin-top: 4px;
+}
+
+/* 글 목록(전체 글/내가 쓴 글/내 신청) — 원래 과목관리 검색결과 드롭다운용이던
+   courses-search-results(max-height + 내부 스크롤)를 재사용하고 있었는데, 이 목록은
+   그 화면의 메인 컨텐츠라 courses-list처럼 페이지 자체 스크롤을 따라가는 게 맞다
+   (박스에 갇혀 이중 스크롤이 되던 문제 수정). */
+.community-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.community-post-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* 제목 한 줄 말줄임 + 뱃지는 옆에 그대로 — 제목 span만 줄어들고(min-width:0으로
+   flex 기본 최소폭을 풀어줘야 함) 뱃지는 flex-shrink:0(community-badge에서 지정)으로
+   찌그러지지 않는다. */
+.community-post-list-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.community-post-list-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 /* 관리자 페이지(이슈 #164 4단계) — community-act-btn/community-outline-btn/
