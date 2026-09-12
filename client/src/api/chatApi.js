@@ -165,3 +165,13 @@ export const acceptCommunityApplication = (id) =>
 
 export const rejectCommunityApplication = (id) =>
   apiRequest(`/community/applications/${id}/reject`, { method: 'POST' });
+
+export const getAdminCommunityPosts = (status) => apiRequest(`/admin/community/posts?status=${status}`);
+
+export const approveAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/approve`, { method: 'POST' });
+
+export const rejectAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST' });
+
+export const deleteAdminPost = (id) => apiRequest(`/admin/community/posts/${id}`, { method: 'DELETE' });
+
+export const getAdminStats = () => apiRequest('/admin/stats');

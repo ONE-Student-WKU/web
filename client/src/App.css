@@ -206,6 +206,11 @@ body {
   color: var(--color-danger);
 }
 
+.account-menu-item-admin {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
 .account-menu-divider {
   height: 1px;
   margin: 6px 4px;
@@ -1754,6 +1759,65 @@ body {
   font-size: 0.75rem;
   color: var(--color-accent);
   margin-top: 4px;
+}
+
+/* 관리자 페이지(이슈 #164 4단계) — community-act-btn/community-outline-btn/
+   community-detail-meta/body 등은 위 커뮤니티 스타일을 그대로 재사용한다. */
+
+.admin-sub-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.admin-sub-tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--color-border-strong);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.admin-sub-tab.active {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+}
+
+.admin-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-post-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.admin-post-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.admin-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.admin-stat-desc {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 8px 0 14px;
 }
 
 .courses-category-select {

@@ -234,12 +234,25 @@ async function decideApplication(applicationId, authorId, status) {
   return result.affectedRows > 0;
 }
 
+// 관리자 화면(4단계)이 작성자를 author_id 숫자로만 보여주면 누가 쓴 글인지 알아볼 수
+// 없어서, 학생용 목록(listApprovedPosts 등)과 동일하게 닉네임까지 조인해서 내려준다.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    'SELECT id, author_id, title, body, status, created_at FROM community_posts WHERE status = ? ORDER BY created_at ASC',
+    `SELECT p.id, p.title, p.body, p.status, p.created_at, p.author_id, s.name AS author_name
+     FROM community_posts p
+     JOIN students s ON s.id = p.author_id
+     WHERE p.status = ?
+     ORDER BY p.created_at ASC`,
     [status]
   );
-  return rows;
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    status: row.status,
+    createdAt: row.created_at,
+    author: nicknameOf(row.author_name, row.author_id),
+  }));
 }
 
 // status가 이미 'pending'이 아니면 아무 것도 안 바뀐다 — 이미 처리된 글을 다시
