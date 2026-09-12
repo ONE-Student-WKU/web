@@ -168,12 +168,22 @@ async function closePost(id, authorId) {
 // 아니라서 걸리지 않으므로 반려 후 재신청은 자연히 허용된다(새 행으로 남아 이전 반려
 // 이력도 그대로 보존됨). 글이 신청 가능한 상태인지(승인됨/마감 안 됨/본인 글 아님)는
 // 호출부(routes/community.js)가 getPostById로 먼저 확인한다.
+const MAX_APPLICATIONS_PER_POST = 3;
+
 async function applyToPost(postId, applicantId, message) {
   const [existing] = await pool.query(
     "SELECT id FROM community_applications WHERE post_id = ? AND applicant_id = ? AND status IN ('pending', 'accepted') LIMIT 1",
     [postId, applicantId]
   );
   if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_APPLICATION' };
+
+  // 반려 후 재신청이 무제한이면 글쓴이를 계속 괴롭히는 용도로 악용될 수 있어, 한 글당 총
+  // 신청 횟수(상태 무관 — 대기/수락/반려 전부 포함)를 3회로 제한한다.
+  const [[{ count }]] = await pool.query(
+    'SELECT COUNT(*) AS count FROM community_applications WHERE post_id = ? AND applicant_id = ?',
+    [postId, applicantId]
+  );
+  if (count >= MAX_APPLICATIONS_PER_POST) return { ok: false, reason: 'APPLICATION_LIMIT_REACHED' };
 
   const [result] = await pool.query(
     "INSERT INTO community_applications (post_id, applicant_id, message, status) VALUES (?, ?, ?, 'pending')",
