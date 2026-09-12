@@ -163,8 +163,8 @@ export const getCommunityApplicants = (id) => apiRequest(`/community/${id}/appli
 export const acceptCommunityApplication = (id) =>
   apiRequest(`/community/applications/${id}/accept`, { method: 'POST' });
 
-export const rejectCommunityApplication = (id) =>
-  apiRequest(`/community/applications/${id}/reject`, { method: 'POST' });
+export const rejectCommunityApplication = (id, reason) =>
+  apiRequest(`/community/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export const getAdminCommunityPosts = (status) => apiRequest(`/admin/community/posts?status=${status}`);
 

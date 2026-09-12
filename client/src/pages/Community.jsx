@@ -63,6 +63,8 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   const [applicants, setApplicants] = useState([]);
   const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [applicantActionId, setApplicantActionId] = useState(null); // 수락/반려 처리 중인 신청 id
+  // 거부 메시지(선택) 입력값 — 신청 id별로 따로 들고 있어야 다른 신청자 카드와 안 섞인다.
+  const [rejectMessages, setRejectMessages] = useState({});
 
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [writeFields, setWriteFields] = useState({ title: '', body: '' });
@@ -241,8 +243,13 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setError(null);
     try {
       if (decision === 'accepted') await acceptCommunityApplication(applicationId);
-      else await rejectCommunityApplication(applicationId);
+      else await rejectCommunityApplication(applicationId, rejectMessages[applicationId]);
       showToast(decision === 'accepted' ? '수락했어요.' : '반려했어요.');
+      setRejectMessages((prev) => {
+        const next = { ...prev };
+        delete next[applicationId];
+        return next;
+      });
       if (selectedPost) {
         const updated = await getCommunityApplicants(selectedPost.id);
         setApplicants(updated);
@@ -324,29 +331,43 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <p className="community-applicant-msg">{a.message}</p>
                     <div className="community-applicant-date">{formatDate(a.createdAt)}</div>
                     {a.status === 'pending' && (
-                      <div className="community-applicant-actions">
-                        <button
-                          type="button"
-                          className="community-act-btn community-act-accept"
-                          onClick={() => handleDecideApplication(a.id, 'accepted')}
-                          disabled={applicantActionId === a.id}
-                        >
-                          수락
-                        </button>
-                        <button
-                          type="button"
-                          className="community-act-btn community-act-reject"
-                          onClick={() => handleDecideApplication(a.id, 'rejected')}
-                          disabled={applicantActionId === a.id}
-                        >
-                          거부
-                        </button>
-                      </div>
+                      <>
+                        <textarea
+                          className="community-reject-message-input"
+                          rows={2}
+                          placeholder="거부 사유(선택) — 신청자에게 전달돼요."
+                          value={rejectMessages[a.id] || ''}
+                          onChange={(e) => setRejectMessages((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                        />
+                        <div className="community-applicant-actions">
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-accept"
+                            onClick={() => handleDecideApplication(a.id, 'accepted')}
+                            disabled={applicantActionId === a.id}
+                          >
+                            수락
+                          </button>
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-reject"
+                            onClick={() => handleDecideApplication(a.id, 'rejected')}
+                            disabled={applicantActionId === a.id}
+                          >
+                            거부
+                          </button>
+                        </div>
+                      </>
                     )}
                     {a.status === 'accepted' && a.contactEmail && (
                       <div className="community-contact-box">
                         <b>연락 이메일</b> · {a.contactEmail}
                       </div>
+                    )}
+                    {a.status === 'rejected' && a.rejectReason && (
+                      <p className="community-reject-message">
+                        <b>거부 사유</b> · {a.rejectReason}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -386,6 +407,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             )}
             {post.myApplication.status === 'accepted' && (
               <p className="community-status-desc">수락됐어요! "내 신청" 탭에서 연락 이메일을 확인해보세요.</p>
+            )}
+            {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
+              <p className="community-reject-message">
+                <b>거부 사유</b> · {post.myApplication.rejectReason}
+              </p>
             )}
             {post.myApplication.status === 'rejected' && !post.closedAt && (
               <>

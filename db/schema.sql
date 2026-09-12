@@ -484,6 +484,7 @@ CREATE TABLE IF NOT EXISTS community_applications (
   status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / accepted / rejected
   created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   decided_at     DATETIME NULL,
+  reject_reason  TEXT NULL,  -- 거부 시 글쓴이가 남긴 메시지(선택). 수락 시엔 항상 NULL.
 
   FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
   FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE

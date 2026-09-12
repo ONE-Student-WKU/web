@@ -85,12 +85,18 @@ async function getPostById(id, { studentId }) {
   let myApplication = null;
   if (!isMine) {
     const [appRows] = await pool.query(
-      `SELECT id, status FROM community_applications
+      `SELECT id, status, reject_reason FROM community_applications
        WHERE post_id = ? AND applicant_id = ?
        ORDER BY created_at DESC LIMIT 1`,
       [id, studentId]
     );
-    if (appRows[0]) myApplication = { id: appRows[0].id, status: appRows[0].status };
+    if (appRows[0]) {
+      myApplication = {
+        id: appRows[0].id,
+        status: appRows[0].status,
+        rejectReason: appRows[0].status === 'rejected' ? appRows[0].reject_reason : null,
+      };
+    }
   }
 
   return {
@@ -203,7 +209,7 @@ async function getMyApplications(studentId) {
 // 글쓴이가 "예전에 왔던 사람"인지 알아볼 수 있게 해준다.
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
-    `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at,
+    `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
             s.name AS applicant_name, s.email AS applicant_email
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
@@ -223,20 +229,22 @@ async function getApplicantsForPost(postId) {
       applicant: nicknameOf(row.applicant_name, row.applicant_id),
       hasAppliedBefore,
       contactEmail: row.status === 'accepted' ? row.applicant_email : null,
+      rejectReason: row.status === 'rejected' ? row.reject_reason : null,
     };
   });
 }
 
 // 승인/반려와 동일한 "가드 달린 UPDATE + affectedRows" 패턴(아래 decidePost 참고) —
 // 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
-// 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다.
-async function decideApplication(applicationId, authorId, status) {
+// 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
+// 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
+async function decideApplication(applicationId, authorId, status, reason = null) {
   const [result] = await pool.query(
     `UPDATE community_applications a
      JOIN community_posts p ON p.id = a.post_id
-     SET a.status = ?, a.decided_at = NOW()
+     SET a.status = ?, a.decided_at = NOW(), a.reject_reason = ?
      WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
-    [status, applicationId, authorId]
+    [status, status === 'rejected' ? reason : null, applicationId, authorId]
   );
   return result.affectedRows > 0;
 }
