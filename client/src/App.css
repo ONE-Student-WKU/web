@@ -1606,6 +1606,25 @@ body {
   font-weight: 600;
 }
 
+.community-close-btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.community-close-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .community-owner-actions {
   display: flex;
   gap: 8px;

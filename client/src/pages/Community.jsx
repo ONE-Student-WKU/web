@@ -263,12 +263,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
 
         {post.isMine ? (
           <>
+            {post.status === 'approved' && !post.closedAt && (
+              <button type="button" className="community-close-btn" onClick={() => handleClose(post)} disabled={closeSubmitting}>
+                {closeSubmitting ? '처리 중...' : '모집 마감하기'}
+              </button>
+            )}
             <div className="community-owner-actions">
-              {!post.closedAt && (
-                <button type="button" className="community-outline-btn" onClick={() => handleClose(post)} disabled={closeSubmitting}>
-                  {closeSubmitting ? '처리 중...' : '모집 마감'}
-                </button>
-              )}
               <button type="button" className="community-outline-btn" onClick={() => startEdit(post)}>
                 수정
               </button>
