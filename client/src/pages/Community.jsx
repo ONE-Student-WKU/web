@@ -138,6 +138,20 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setShowWriteForm(false);
   };
 
+  // 헤더 좌측 화살표 — 목록/상세/글쓰기 중 어디에 있는지에 따라 한 단계만 뒤로 간다.
+  // 글쓰기·상세 화면에서도 그냥 onGoHome을 쓰면 커뮤니티 목록을 건너뛰고 바로 홈으로
+  // 나가버려서(글 쓰던 중이면 작성 중이던 내용까지 예고 없이 날아감), 서브뷰가 열려있을
+  // 땐 그 서브뷰만 닫고 목록으로 돌아가게 한다.
+  const handleHeaderBack = () => {
+    if (showWriteForm) {
+      resetAfterWrite();
+    } else if (selectedPost) {
+      setSelectedPost(null);
+    } else {
+      onGoHome();
+    }
+  };
+
   const handleWriteSubmit = async (e) => {
     e.preventDefault();
     if (!writeFields.title.trim() || !writeFields.body.trim()) return;
@@ -417,7 +431,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? '목록으로' : '홈으로'}>
             <IconChevronLeft />
           </button>
           <span className="screen-title">커뮤니티</span>
