@@ -1585,7 +1585,175 @@ body {
   line-height: 1.6;
   color: var(--color-text-primary);
   white-space: pre-wrap;
-  margin: 0;
+  margin: 0 0 20px;
+}
+
+/* 3단계 — 신청/수락·반려/모집마감/수정·삭제 */
+
+.community-badge-accepted {
+  background: var(--color-success);
+}
+
+.community-badge-reapply {
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.community-owner-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.community-outline-btn {
+  flex: 1;
+  padding: 10px;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.community-outline-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.community-outline-btn.community-danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.community-section-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+}
+
+.community-applicant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.community-applicant-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.community-applicant-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.community-applicant-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.community-applicant-msg {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 4px 0 6px;
+}
+
+.community-applicant-date {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.community-applicant-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.community-act-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.community-act-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.community-act-accept {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.community-act-reject {
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
+}
+
+.community-contact-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--color-accent-bg);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.community-contact-box b {
+  color: var(--color-accent);
+}
+
+.community-apply-form {
+  margin-top: 4px;
+}
+
+.community-status-box {
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.community-status-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.community-status-label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.community-status-desc {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 4px;
+}
+
+.community-row-contact {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  margin-top: 4px;
 }
 
 .courses-category-select {
