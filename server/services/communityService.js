@@ -129,10 +129,11 @@ async function deletePostByAuthor(id, authorId) {
 
 // 마감 시점에 대기 중이던 신청은 자동 반려(이슈 명세) — 글쓴이가 마감한 순간 더 이상
 // 검토 대상이 아니게 됐다는 뜻이라, 신청자 쪽에도 "대기중"으로 영원히 멈춰있지 않고
-// 결과가 나가야 한다.
+// 결과가 나가야 한다. status='approved' 글만 마감 가능 — 아직 관리자 승인을 못 받은
+// (혹은 반려된) 글은 애초에 "모집 중"인 적이 없으므로 마감이라는 개념 자체가 성립하지 않는다.
 async function closePost(id, authorId) {
   const [result] = await pool.query(
-    'UPDATE community_posts SET closed_at = NOW() WHERE id = ? AND author_id = ? AND closed_at IS NULL',
+    "UPDATE community_posts SET closed_at = NOW() WHERE id = ? AND author_id = ? AND status = 'approved' AND closed_at IS NULL",
     [id, authorId]
   );
   if (result.affectedRows === 0) return false;
