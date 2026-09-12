@@ -275,6 +275,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         </p>
         <p className="community-detail-body">{post.body}</p>
 
+        {post.status === 'rejected' && post.rejectReason && (
+          <p className="admin-reject-reason">
+            <b>반려 사유</b> · {post.rejectReason}
+          </p>
+        )}
+
         {post.isMine ? (
           <>
             {post.status === 'approved' && !post.closedAt && (

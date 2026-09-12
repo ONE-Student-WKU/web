@@ -71,7 +71,7 @@ async function listMyPosts(studentId) {
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
 async function getPostById(id, { studentId }) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.status, p.closed_at, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.id = ?`,
@@ -103,6 +103,7 @@ async function getPostById(id, { studentId }) {
     author: nicknameOf(row.author_name, row.author_id),
     isMine,
     myApplication,
+    rejectReason: isMine ? row.reject_reason : null,
   };
 }
 
@@ -244,7 +245,7 @@ async function decideApplication(applicationId, authorId, status) {
 // 없어서, 학생용 목록(listApprovedPosts 등)과 동일하게 닉네임까지 조인해서 내려준다.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.status, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.status, p.created_at, p.author_id, p.reject_reason, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = ?
@@ -258,6 +259,7 @@ async function listPostsForAdmin(status) {
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
+    rejectReason: row.reject_reason,
   }));
 }
 
@@ -265,10 +267,12 @@ async function listPostsForAdmin(status) {
 // 승인/반려하는 걸 막는 가드. affectedRows를 돌려줘서 호출부가 "존재하지 않거나 이미
 // 처리된 글"을 실제 성공과 구분할 수 있게 한다(그렇지 않으면 관리자가 아무 효과 없는
 // 요청에도 성공 응답을 받는다).
-async function decidePost(id, status) {
+// reason은 반려일 때만 의미가 있어 승인 시엔 항상 NULL로 저장한다 — 이전에 반려됐다가
+// 수정 후 재승인되는 경우 등, 예전 반려 사유가 새 결정에도 남아있지 않게 하기 위함.
+async function decidePost(id, status, reason = null) {
   const [result] = await pool.query(
-    "UPDATE community_posts SET status = ?, decided_at = NOW() WHERE id = ? AND status = 'pending'",
-    [status, id]
+    "UPDATE community_posts SET status = ?, decided_at = NOW(), reject_reason = ? WHERE id = ? AND status = 'pending'",
+    [status, status === 'rejected' ? reason : null, id]
   );
   return result.affectedRows > 0;
 }
