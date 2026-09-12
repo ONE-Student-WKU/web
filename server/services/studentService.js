@@ -25,6 +25,12 @@ function serializeStudent(student) {
     // 가입 시 닉네임은 자동 배정하지 않고 name을 NULL로 남겨두므로(2-2 참고), 표시 시점에
     // user{id} 폴백을 계산한다. id는 기본키라 절대 중복이 안 나 별도 카운터/중복체크가 불필요.
     name: student.name || `user${student.id}`,
+    // 관리자 페이지 진입점 노출 여부(client/src/components/AccountMenu.jsx)를 클라이언트가
+    // 스스로 판단할 수 있어야 해서 포함— 지금까지는 role이 서버 내부(requireAdmin)에서만
+    // 쓰이고 클라이언트로 전혀 안 내려가서, 관리자 계정도 "관리자" 메뉴가 안 보이는 문제가
+    // 있었음. 실제 권한 검사는 여전히 requireAdmin(server/middleware/auth.js)이 서버에서
+    // 매번 다시 하므로, 이 값은 UI 노출용일 뿐 보안 경계가 아니다.
+    role: student.role,
     // 계정 삭제 재인증 수단(Google 재로그인 vs 이메일 인증코드) 분기용 — 이메일 OTP로만
     // 가입한 계정은 oauth_id가 항상 NULL(createEmailStudent).
     hasGoogleAccount: !!student.oauth_id,

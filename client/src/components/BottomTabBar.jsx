@@ -4,17 +4,18 @@ import { IconHome, IconChecklist, IconMessageCircle, IconCompass, IconUsers } fr
 /**
  * BottomTabBar Component
  * 앱 전체 화면 하단에 고정되는 5개 아이콘 전용 탭바 — 홈/졸업요건진단/채팅(중앙 강조)/
- * 진로탐색/커뮤니티(준비 중, 비활성). 과목 관리는 탭에 없음 — Home의 메뉴 버튼과
+ * 진로탐색/커뮤니티. 과목 관리는 탭에 없음 — Home의 메뉴 버튼과
  * 졸업요건 진단 화면의 "과목 관리로 이동" 버튼으로 이미 충분히 닿을 수 있어 제외했다.
  *
  * Props:
- * - active: 'home' | 'graduation' | 'chat' | 'career' | null
+ * - active: 'home' | 'graduation' | 'chat' | 'career' | 'community' | null
  * - onOpenHome: function
  * - onOpenGraduation: function
  * - onOpenChat: function
  * - onOpenCareer: function
+ * - onOpenCommunity: function
  */
-function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpenCareer }) {
+function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpenCareer, onOpenCommunity }) {
   return (
     <nav className="bottom-tab-bar" aria-label="주요 화면 이동">
       <button
@@ -53,7 +54,13 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
       >
         <IconCompass size={21} />
       </button>
-      <button type="button" className="bottom-tab bottom-tab-disabled" disabled aria-label="커뮤니티 (준비 중)">
+      <button
+        type="button"
+        className={active === 'community' ? 'bottom-tab active' : 'bottom-tab'}
+        onClick={onOpenCommunity}
+        aria-label="커뮤니티"
+        aria-current={active === 'community' ? 'page' : undefined}
+      >
         <IconUsers size={21} />
       </button>
     </nav>
