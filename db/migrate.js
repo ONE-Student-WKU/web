@@ -120,6 +120,25 @@ async function ensureSeasonSemesterRenumbering(connection) {
   }
 }
 
+// 카테고리(스터디/프로젝트)·모집 인원 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF
+// NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
+async function ensureCommunityCategoryCapacityColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_posts'
+       AND COLUMN_NAME IN ('category', 'capacity')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('category')) {
+    console.log('[db:migrate] community_posts.category 컬럼 추가...');
+    await connection.query("ALTER TABLE community_posts ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'study'");
+  }
+  if (!existing.has('capacity')) {
+    console.log('[db:migrate] community_posts.capacity 컬럼 추가...');
+    await connection.query('ALTER TABLE community_posts ADD COLUMN capacity INT NULL');
+  }
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -148,6 +167,7 @@ async function migrate() {
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
     await ensureSeasonSemesterRenumbering(connection);
+    await ensureCommunityCategoryCapacityColumns(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {

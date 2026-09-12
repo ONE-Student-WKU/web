@@ -15,6 +15,7 @@ function formatDate(dateStr) {
 }
 
 const SUB_FILTER_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
+const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
 const SUB_FILTERS = ['pending', 'approved', 'rejected'];
 
 /**
@@ -166,6 +167,8 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                     <p className="admin-post-title">{p.title}</p>
                     <p className="community-detail-meta">
                       {p.author} · {formatDate(p.createdAt)}
+                      <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
+                      {p.capacity && <span className="community-badge community-badge-category">모집인원 {p.capacity}명</span>}
                     </p>
                     <p className="community-detail-body">{p.body}</p>
                     <div className="community-applicant-actions">

@@ -29,6 +29,7 @@ export function resetCommunityCache() {
 
 const MY_POST_STATUS_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
 const APPLICATION_STATUS_LABEL = { pending: '대기중', accepted: '수락됨', rejected: '반려됨' };
+const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -65,7 +66,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   const [applicantActionId, setApplicantActionId] = useState(null); // 수락/반려 처리 중인 신청 id
 
   const [showWriteForm, setShowWriteForm] = useState(false);
-  const [writeFields, setWriteFields] = useState({ title: '', body: '' });
+  const [writeFields, setWriteFields] = useState({ title: '', body: '', category: 'study', capacity: '' });
   const [writeSubmitting, setWriteSubmitting] = useState(false);
   // null이면 새 글 작성, 값이 있으면 그 id의 글을 수정 중(같은 폼을 재사용).
   const [editingPostId, setEditingPostId] = useState(null);
@@ -133,7 +134,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   };
 
   const resetAfterWrite = () => {
-    setWriteFields({ title: '', body: '' });
+    setWriteFields({ title: '', body: '', category: 'study', capacity: '' });
     setEditingPostId(null);
     setShowWriteForm(false);
   };
@@ -158,7 +159,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setWriteSubmitting(true);
     setError(null);
     try {
-      const payload = { title: writeFields.title.trim(), body: writeFields.body.trim() };
+      const payload = {
+        title: writeFields.title.trim(),
+        body: writeFields.body.trim(),
+        category: writeFields.category,
+        capacity: writeFields.capacity === '' ? null : Number(writeFields.capacity),
+      };
       if (editingPostId) {
         await editCommunityPost(editingPostId, payload);
         showToast('수정했어요 — 다시 승인 대기 중이에요.');
@@ -178,7 +184,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   };
 
   const startEdit = (post) => {
-    setWriteFields({ title: post.title, body: post.body });
+    setWriteFields({
+      title: post.title,
+      body: post.body,
+      category: post.category,
+      capacity: post.capacity === null || post.capacity === undefined ? '' : String(post.capacity),
+    });
     setEditingPostId(post.id);
     setSelectedPost(null);
     setShowWriteForm(true);
@@ -268,6 +279,8 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         <h2 className="community-detail-title">{post.title}</h2>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
+          <span className="community-badge community-badge-category">{CATEGORY_LABEL[post.category]}</span>
+          {post.capacity && <span className="community-badge community-badge-category">모집인원 {post.capacity}명</span>}
           {post.closedAt && <span className="community-badge community-badge-closed">모집 마감</span>}
           {post.status !== 'approved' && (
             <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
@@ -404,6 +417,26 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           ? '수정하면 다시 관리자 승인을 받아야 목록에 노출돼요.'
           : '스터디·프로젝트 팀원을 구하는 글을 올려보세요. 관리자 승인 후 목록에 노출돼요.'}
       </p>
+      <div className="community-write-row">
+        <div className="auth-field">
+          <label>구분</label>
+          <select value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
+            <option value="study">스터디</option>
+            <option value="project">프로젝트</option>
+          </select>
+        </div>
+        <div className="auth-field">
+          <label>모집 인원 (선택)</label>
+          <input
+            type="number"
+            min={1}
+            max={999}
+            placeholder="예: 4"
+            value={writeFields.capacity}
+            onChange={(e) => setWriteFields((f) => ({ ...f, capacity: e.target.value }))}
+          />
+        </div>
+      </div>
       <div className="auth-field">
         <label>제목</label>
         <input
@@ -488,10 +521,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
                       <span className="courses-list-item-name">
                         {p.title}
+                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
                         {p.author} · {formatDate(p.createdAt)}
+                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
                       </span>
                     </button>
                   ))}
@@ -506,10 +541,14 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
                       <span className="courses-list-item-name">
                         {p.title}
+                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
                         <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
-                      <span className="courses-list-item-meta">{formatDate(p.createdAt)}</span>
+                      <span className="courses-list-item-meta">
+                        {formatDate(p.createdAt)}
+                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -522,6 +561,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                   <button key={a.id} className="courses-search-result" onClick={() => openPost(a.postId)} disabled={detailLoading}>
                     <span className="courses-list-item-name">
                       {a.postTitle}
+                      <span className="community-badge community-badge-category">{CATEGORY_LABEL[a.postCategory]}</span>
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
                     </span>
                     <span className="courses-list-item-meta">

@@ -19,17 +19,17 @@ function nicknameOf(name, id) {
 // 글은 목록/상세 어디서도 제3자에게 노출되면 안 된다(db/schema.sql 커뮤니티 게시판 주석
 // 참고 — 관리자 승인 전엔 비공개). 아래 학생용 함수들이 이 규칙을 지킨다.
 
-async function createPost(authorId, { title, body }) {
+async function createPost(authorId, { title, body, category, capacity }) {
   const [result] = await pool.query(
-    "INSERT INTO community_posts (author_id, title, body, status) VALUES (?, ?, ?, 'pending')",
-    [authorId, title, body]
+    "INSERT INTO community_posts (author_id, title, body, category, capacity, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+    [authorId, title, body, category, capacity]
   );
   return result.insertId;
 }
 
 async function listApprovedPosts() {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.closed_at, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = 'approved'
@@ -39,6 +39,8 @@ async function listApprovedPosts() {
     id: row.id,
     title: row.title,
     body: row.body,
+    category: row.category,
+    capacity: row.capacity,
     closedAt: row.closed_at,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
@@ -49,7 +51,7 @@ async function listApprovedPosts() {
 // 목록에 안 뜨니 이게 없으면 글을 썼는지 확인할 방법이 없다.
 async function listMyPosts(studentId) {
   const [rows] = await pool.query(
-    `SELECT id, title, body, status, closed_at, created_at
+    `SELECT id, title, body, category, capacity, status, closed_at, created_at
      FROM community_posts
      WHERE author_id = ?
      ORDER BY created_at DESC`,
@@ -59,6 +61,8 @@ async function listMyPosts(studentId) {
     id: row.id,
     title: row.title,
     body: row.body,
+    category: row.category,
+    capacity: row.capacity,
     status: row.status,
     closedAt: row.closed_at,
     createdAt: row.created_at,
@@ -71,7 +75,7 @@ async function listMyPosts(studentId) {
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
 async function getPostById(id, { studentId }) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.status, p.closed_at, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.id = ?`,
@@ -97,6 +101,8 @@ async function getPostById(id, { studentId }) {
     id: row.id,
     title: row.title,
     body: row.body,
+    category: row.category,
+    capacity: row.capacity,
     status: row.status,
     closedAt: row.closed_at,
     createdAt: row.created_at,
@@ -111,10 +117,11 @@ async function getPostById(id, { studentId }) {
 // 적용돼 공개 목록에서 사라진다). closed_at은 건드리지 않는다(마감 여부는 수정과 무관한
 // 별개 상태). 이미 달린 신청(대기/수락 포함)도 그대로 둔다 — 수정은 글 노출 여부만
 // 잠그지, 신청 데이터를 건드리지 않는다.
-async function editPost(id, authorId, { title, body }) {
+async function editPost(id, authorId, { title, body, category, capacity }) {
   const [result] = await pool.query(
-    "UPDATE community_posts SET title = ?, body = ?, status = 'pending', decided_at = NULL WHERE id = ? AND author_id = ?",
-    [title, body, id, authorId]
+    `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?, status = 'pending', decided_at = NULL
+     WHERE id = ? AND author_id = ?`,
+    [title, body, category, capacity, id, authorId]
   );
   return result.affectedRows > 0;
 }
@@ -169,7 +176,7 @@ async function applyToPost(postId, applicantId, message) {
 async function getMyApplications(studentId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
-            p.title AS post_title, p.closed_at AS post_closed_at,
+            p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
             s.name AS author_name, s.id AS author_id, s.email AS author_email
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
@@ -182,6 +189,7 @@ async function getMyApplications(studentId) {
     id: row.id,
     postId: row.post_id,
     postTitle: row.post_title,
+    postCategory: row.post_category,
     postClosedAt: row.post_closed_at,
     message: row.message,
     status: row.status,
@@ -239,7 +247,7 @@ async function decideApplication(applicationId, authorId, status) {
 // 없어서, 학생용 목록(listApprovedPosts 등)과 동일하게 닉네임까지 조인해서 내려준다.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.status, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = ?
@@ -250,6 +258,8 @@ async function listPostsForAdmin(status) {
     id: row.id,
     title: row.title,
     body: row.body,
+    category: row.category,
+    capacity: row.capacity,
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
