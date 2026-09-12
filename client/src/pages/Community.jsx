@@ -6,6 +6,7 @@ import {
   createCommunityPost,
   editCommunityPost,
   deleteCommunityPost,
+  deleteAdminPost,
   closeCommunityPost,
   applyToCommunityPost,
   getMyCommunityApplications,
@@ -214,6 +215,26 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     }
   };
 
+  // 관리자가 남의 글(승인된 글만 여기서 조회 가능)을 커뮤니티 화면에서 바로 삭제 —
+  // 관리자 페이지까지 가서 찾을 필요 없이 즉각 조치할 수 있게 한다. deleteCommunityPost(작성자
+  // 전용)가 아니라 admin.js의 deleteAdminPost를 쓴다 — 서버도 requireAdmin으로 다시 확인한다.
+  const handleAdminDelete = async (post) => {
+    if (!window.confirm('관리자 권한으로 이 글을 완전히 삭제할까요? 신청 내역도 함께 삭제되고 되돌릴 수 없어요.')) return;
+    setDeleteSubmitting(true);
+    setError(null);
+    try {
+      await deleteAdminPost(post.id);
+      showToast('삭제했어요.');
+      setSelectedPost(null);
+      setTab('list');
+      await refreshLists();
+    } catch {
+      setError('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
   const handleClose = async (post) => {
     setCloseSubmitting(true);
     setError(null);
@@ -243,7 +264,9 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       setMyApplications(myApps);
       communityCache.myApplications = myApps;
     } catch (err) {
-      setError(err.code === 'DUPLICATE_APPLICATION' ? '이미 이 글에 신청했어요.' : '신청하지 못했어요. 잠시 후 다시 시도해주세요.');
+      if (err.code === 'DUPLICATE_APPLICATION') setError('이미 이 글에 신청했어요.');
+      else if (err.code === 'APPLICATION_LIMIT_REACHED') setError('이 글에는 최대 3번까지만 신청할 수 있어요.');
+      else setError('신청하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setApplySubmitting(false);
     }
@@ -276,18 +299,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     const post = selectedPost;
     return (
       <div className="community-detail">
-        <button
-          type="button"
-          className="courses-manual-only-note courses-catalog-back"
-          onClick={() => setSelectedPost(null)}
-        >
-          ‹ 목록으로 돌아가기
-        </button>
+        {error && <p className="home-error">{error}</p>}
         <h2 className="community-detail-title">{post.title}</h2>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
-          <span className="community-badge community-badge-category">{CATEGORY_LABEL[post.category]}</span>
-          {post.capacity && <span className="community-badge community-badge-category">모집인원 {post.capacity}명</span>}
+          <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
+          {post.capacity && <span className="community-badge community-badge-capacity">모집인원 {post.capacity}명</span>}
           {post.closedAt && <span className="community-badge community-badge-closed">모집 마감</span>}
           {post.status !== 'approved' && (
             <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
@@ -387,66 +404,80 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
               </div>
             )}
           </>
-        ) : post.myApplication === null ? (
-          post.closedAt ? (
-            <p className="courses-manual-hint">모집이 마감됐어요.</p>
-          ) : (
-            <form className="community-apply-form" onSubmit={handleApply}>
-              <div className="auth-field">
-                <label>신청 메시지</label>
-                <textarea
-                  rows={5}
-                  value={applyMessage}
-                  onChange={(e) => setApplyMessage(e.target.value)}
-                  placeholder="간단한 소개나 참여하고 싶은 이유를 적어주세요."
-                  required
-                />
-              </div>
-              <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                {applySubmitting ? '신청하는 중...' : '신청하기'}
-              </button>
-            </form>
-          )
         ) : (
-          <div className="community-status-box">
-            <div className="community-status-top">
-              <span className="community-status-label">내 신청</span>
-              <span className={`community-badge community-badge-${post.myApplication.status}`}>
-                {APPLICATION_STATUS_LABEL[post.myApplication.status]}
-              </span>
-            </div>
-            {post.myApplication.status === 'pending' && (
-              <p className="community-status-desc">글쓴이가 아직 검토하지 않았어요.</p>
+          <>
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                className="community-outline-btn community-danger"
+                onClick={() => handleAdminDelete(post)}
+                disabled={deleteSubmitting}
+              >
+                {deleteSubmitting ? '삭제 중...' : '삭제 (관리자)'}
+              </button>
             )}
-            {post.myApplication.status === 'accepted' && (
-              <p className="community-status-desc">수락됐어요! "내 신청" 탭에서 연락 이메일을 확인해보세요.</p>
-            )}
-            {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
-              <p className="community-reject-message">
-                <b>거부 사유</b> · {post.myApplication.rejectReason}
-              </p>
-            )}
-            {post.myApplication.status === 'rejected' && !post.closedAt && (
-              <>
-                <p className="community-status-desc">아쉽지만 이번엔 선정되지 않았어요. 메시지를 보완해서 다시 신청할 수 있어요.</p>
+            {post.myApplication === null ? (
+              post.closedAt ? (
+                <p className="courses-manual-hint">모집이 마감됐어요.</p>
+              ) : (
                 <form className="community-apply-form" onSubmit={handleApply}>
                   <div className="auth-field">
-                    <label>다시 신청하기</label>
+                    <label>신청 메시지</label>
                     <textarea
-                      rows={4}
+                      rows={5}
                       value={applyMessage}
                       onChange={(e) => setApplyMessage(e.target.value)}
-                      placeholder="이전과 다른 점을 보완해서 다시 적어보세요."
+                      placeholder="간단한 소개나 참여하고 싶은 이유를 적어주세요."
                       required
                     />
                   </div>
                   <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                    {applySubmitting ? '신청하는 중...' : '재신청하기'}
+                    {applySubmitting ? '신청하는 중...' : '신청하기'}
                   </button>
                 </form>
-              </>
+              )
+            ) : (
+              <div className="community-status-box">
+                <div className="community-status-top">
+                  <span className="community-status-label">내 신청</span>
+                  <span className={`community-badge community-badge-${post.myApplication.status}`}>
+                    {APPLICATION_STATUS_LABEL[post.myApplication.status]}
+                  </span>
+                </div>
+                {post.myApplication.status === 'pending' && (
+                  <p className="community-status-desc">글쓴이가 아직 검토하지 않았어요.</p>
+                )}
+                {post.myApplication.status === 'accepted' && (
+                  <p className="community-status-desc">수락됐어요! "내 신청" 탭에서 연락 이메일을 확인해보세요.</p>
+                )}
+                {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
+                  <p className="community-reject-message">
+                    <b>거부 사유</b> · {post.myApplication.rejectReason}
+                  </p>
+                )}
+                {post.myApplication.status === 'rejected' && !post.closedAt && (
+                  <>
+                    <p className="community-status-desc">아쉽지만 이번엔 선정되지 않았어요. 메시지를 보완해서 다시 신청할 수 있어요.</p>
+                    <form className="community-apply-form" onSubmit={handleApply}>
+                      <div className="auth-field">
+                        <label>다시 신청하기</label>
+                        <textarea
+                          rows={4}
+                          value={applyMessage}
+                          onChange={(e) => setApplyMessage(e.target.value)}
+                          placeholder="이전과 다른 점을 보완해서 다시 적어보세요."
+                          required
+                        />
+                      </div>
+                      <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
+                        {applySubmitting ? '신청하는 중...' : '재신청하기'}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
     );
@@ -563,7 +594,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
                       <span className="community-post-list-row">
                         <span className="community-post-list-title">{p.title}</span>
-                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
+                        <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
@@ -583,7 +614,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
                       <span className="community-post-list-row">
                         <span className="community-post-list-title">{p.title}</span>
-                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
+                        <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
                         <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
@@ -603,7 +634,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                   <button key={a.id} className="community-post-list-item" onClick={() => openPost(a.postId)} disabled={detailLoading}>
                     <span className="community-post-list-row">
                       <span className="community-post-list-title">{a.postTitle}</span>
-                      <span className="community-badge community-badge-category">{CATEGORY_LABEL[a.postCategory]}</span>
+                      <span className={`community-badge community-badge-${a.postCategory}`}>{CATEGORY_LABEL[a.postCategory]}</span>
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
                     </span>
                     <span className="courses-list-item-meta">

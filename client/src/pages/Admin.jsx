@@ -174,8 +174,8 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                     <p className="admin-post-title">{p.title}</p>
                     <p className="community-detail-meta">
                       {p.author} · {formatDate(p.createdAt)}
-                      <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
-                      {p.capacity && <span className="community-badge community-badge-category">모집인원 {p.capacity}명</span>}
+                      <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
+                      {p.capacity && <span className="community-badge community-badge-capacity">모집인원 {p.capacity}명</span>}
                     </p>
                     <p className="community-detail-body">{p.body}</p>
                     {subFilter === 'rejected' && p.rejectReason && (
