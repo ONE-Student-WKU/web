@@ -9,6 +9,7 @@ import Settings from './pages/Settings.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
 import Community, { resetCommunityCache } from './pages/Community.jsx';
+import Admin from './pages/Admin.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -303,6 +304,15 @@ function App() {
             onAccountDeleted={handleAccountDeleted}
             justReauthenticated={justReauthenticated}
           />
+        ) : view === 'admin' ? (
+          <Admin
+            user={user}
+            onLogout={handleLogout}
+            onGoHome={() => setView('home')}
+            onOpenSettings={() => setView('settings')}
+            onOpenOnboarding={() => setView('onboarding')}
+            onOpenProfile={() => setView('profile')}
+          />
         ) : (
           <Home
             user={user}
@@ -314,6 +324,7 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
               setView('onboarding');

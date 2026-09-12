@@ -12,8 +12,11 @@ import { IconUser } from './icons.jsx';
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenProfile: function
+ * - onOpenAdmin: function (선택) — user.role === 'admin'일 때만 "관리자" 항목을 보여준다.
+ *   지금은 Home.jsx에서만 연결돼 있음(다른 화면 헤더까지 다 뚫을 필요 없음 — 관리자는
+ *   홈을 거쳐서 들어가면 충분).
  */
-function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -34,6 +37,20 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
       </button>
       {open && (
         <div className="account-menu-dropdown">
+          {user?.role === 'admin' && onOpenAdmin && (
+            <>
+              <button
+                className="account-menu-item account-menu-item-admin"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenAdmin();
+                }}
+              >
+                관리자
+              </button>
+              <div className="account-menu-divider" />
+            </>
+          )}
           <button
             className="account-menu-item"
             onClick={() => {
