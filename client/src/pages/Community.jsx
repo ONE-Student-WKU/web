@@ -278,9 +278,19 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         {post.isMine ? (
           <>
             {post.status === 'approved' && !post.closedAt && (
-              <button type="button" className="community-close-btn" onClick={() => handleClose(post)} disabled={closeSubmitting}>
-                {closeSubmitting ? '처리 중...' : '모집 마감하기'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="community-close-btn"
+                  onClick={() => handleClose(post)}
+                  disabled={closeSubmitting || applicantsLoading || applicants.length === 0}
+                >
+                  {closeSubmitting ? '처리 중...' : '모집 마감하기'}
+                </button>
+                {!applicantsLoading && applicants.length === 0 && (
+                  <p className="community-close-hint">신청자가 1명 이상 있어야 마감할 수 있어요.</p>
+                )}
+              </>
             )}
             <div className="community-owner-actions">
               <button type="button" className="community-outline-btn" onClick={() => startEdit(post)}>
