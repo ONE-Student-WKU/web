@@ -435,7 +435,8 @@ body {
 }
 
 .auth-field input,
-.auth-field textarea {
+.auth-field textarea,
+.auth-field select {
   width: 100%;
   padding: 13px 14px;
   border: 1px solid var(--color-border-strong);
@@ -1609,6 +1610,13 @@ body {
   font-weight: 600;
 }
 
+.community-badge-category {
+  background: none;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
 .community-close-btn {
   display: block;
   width: 100%;
@@ -1780,6 +1788,16 @@ body {
 
 .community-apply-form {
   margin-top: 4px;
+}
+
+.community-write-row {
+  display: flex;
+  gap: 10px;
+}
+
+.community-write-row .auth-field {
+  flex: 1;
+  min-width: 0;
 }
 
 .community-status-box {

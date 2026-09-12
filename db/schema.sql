@@ -463,6 +463,8 @@ CREATE TABLE IF NOT EXISTS community_posts (
   author_id    INT NOT NULL,
   title        VARCHAR(100) NOT NULL,
   body         TEXT NOT NULL,
+  category     VARCHAR(20) NOT NULL DEFAULT 'study',  -- study(스터디) / project(프로젝트)
+  capacity     INT NULL,  -- 모집 인원(선택, 정보 표시용 — 자동 마감 등 강제 로직은 없음)
   status       VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
   closed_at    DATETIME NULL,  -- NULL = 모집 중, 값 있음 = 글쓴이가 마감
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
