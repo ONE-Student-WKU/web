@@ -13,6 +13,7 @@ const communityService = require('../services/communityService');
 router.use(requireAuth);
 
 const TITLE_MAX_LENGTH = 100;
+const VALID_CATEGORIES = ['study', 'project'];
 
 function isValidTitle(title) {
   return typeof title === 'string' && title.trim().length > 0 && title.trim().length <= TITLE_MAX_LENGTH;
@@ -20,6 +21,19 @@ function isValidTitle(title) {
 
 function isValidBody(body) {
   return typeof body === 'string' && body.trim().length > 0;
+}
+
+function isValidCategory(category) {
+  return VALID_CATEGORIES.includes(category);
+}
+
+// capacity(모집 인원)는 선택 — 안 적으면 null로 저장(정보 표시용일 뿐 신청 수를
+// 강제로 제한하지 않음). 적었다면 1~999 사이 정수여야 한다.
+function normalizeCapacity(capacity) {
+  if (capacity === undefined || capacity === null || capacity === '') return { ok: true, value: null };
+  const n = Number(capacity);
+  if (!Number.isInteger(n) || n < 1 || n > 999) return { ok: false, value: null };
+  return { ok: true, value: n };
 }
 
 // POST /api/community — 글 작성. 항상 status='pending'으로 시작(관리자 승인 전엔 비공개).
@@ -33,8 +47,20 @@ router.post('/', async (req, res, next) => {
     if (!isValidBody(body)) {
       return res.status(400).json({ status: 400, code: 'INVALID_BODY', message: null, data: null });
     }
+    if (!isValidCategory(req.body.category)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+    }
+    const capacityResult = normalizeCapacity(req.body.capacity);
+    if (!capacityResult.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CAPACITY', message: null, data: null });
+    }
 
-    const id = await communityService.createPost(req.session.userId, { title, body });
+    const id = await communityService.createPost(req.session.userId, {
+      title,
+      body,
+      category: req.body.category,
+      capacity: capacityResult.value,
+    });
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
     next(err);
@@ -87,8 +113,20 @@ router.patch('/:id', async (req, res, next) => {
     if (!isValidBody(body)) {
       return res.status(400).json({ status: 400, code: 'INVALID_BODY', message: null, data: null });
     }
+    if (!isValidCategory(req.body.category)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+    }
+    const capacityResult = normalizeCapacity(req.body.capacity);
+    if (!capacityResult.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CAPACITY', message: null, data: null });
+    }
 
-    const edited = await communityService.editPost(req.params.id, req.session.userId, { title, body });
+    const edited = await communityService.editPost(req.params.id, req.session.userId, {
+      title,
+      body,
+      category: req.body.category,
+      capacity: capacityResult.value,
+    });
     if (!edited) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
@@ -197,9 +235,11 @@ router.post('/applications/:id/accept', async (req, res, next) => {
   }
 });
 
+// reason은 선택 — 글쓴이가 신청자에게 남기는 거부 메시지.
 router.post('/applications/:id/reject', async (req, res, next) => {
   try {
-    const decided = await communityService.decideApplication(req.params.id, req.session.userId, 'rejected');
+    const reason = typeof req.body.reason === 'string' && req.body.reason.trim() ? req.body.reason.trim() : null;
+    const decided = await communityService.decideApplication(req.params.id, req.session.userId, 'rejected', reason);
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
     }

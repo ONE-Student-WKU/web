@@ -29,6 +29,7 @@ export function resetCommunityCache() {
 
 const MY_POST_STATUS_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
 const APPLICATION_STATUS_LABEL = { pending: '대기중', accepted: '수락됨', rejected: '반려됨' };
+const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -63,9 +64,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   const [applicants, setApplicants] = useState([]);
   const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [applicantActionId, setApplicantActionId] = useState(null); // 수락/반려 처리 중인 신청 id
+  // 거부 메시지(선택) 입력값 — 신청 id별로 따로 들고 있어야 다른 신청자 카드와 안 섞인다.
+  const [rejectMessages, setRejectMessages] = useState({});
 
   const [showWriteForm, setShowWriteForm] = useState(false);
-  const [writeFields, setWriteFields] = useState({ title: '', body: '' });
+  const [writeFields, setWriteFields] = useState({ title: '', body: '', category: 'study', capacity: '' });
   const [writeSubmitting, setWriteSubmitting] = useState(false);
   // null이면 새 글 작성, 값이 있으면 그 id의 글을 수정 중(같은 폼을 재사용).
   const [editingPostId, setEditingPostId] = useState(null);
@@ -133,9 +136,23 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   };
 
   const resetAfterWrite = () => {
-    setWriteFields({ title: '', body: '' });
+    setWriteFields({ title: '', body: '', category: 'study', capacity: '' });
     setEditingPostId(null);
     setShowWriteForm(false);
+  };
+
+  // 헤더 좌측 화살표 — 목록/상세/글쓰기 중 어디에 있는지에 따라 한 단계만 뒤로 간다.
+  // 글쓰기·상세 화면에서도 그냥 onGoHome을 쓰면 커뮤니티 목록을 건너뛰고 바로 홈으로
+  // 나가버려서(글 쓰던 중이면 작성 중이던 내용까지 예고 없이 날아감), 서브뷰가 열려있을
+  // 땐 그 서브뷰만 닫고 목록으로 돌아가게 한다.
+  const handleHeaderBack = () => {
+    if (showWriteForm) {
+      resetAfterWrite();
+    } else if (selectedPost) {
+      setSelectedPost(null);
+    } else {
+      onGoHome();
+    }
   };
 
   const handleWriteSubmit = async (e) => {
@@ -144,7 +161,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setWriteSubmitting(true);
     setError(null);
     try {
-      const payload = { title: writeFields.title.trim(), body: writeFields.body.trim() };
+      const payload = {
+        title: writeFields.title.trim(),
+        body: writeFields.body.trim(),
+        category: writeFields.category,
+        capacity: writeFields.capacity === '' ? null : Number(writeFields.capacity),
+      };
       if (editingPostId) {
         await editCommunityPost(editingPostId, payload);
         showToast('수정했어요 — 다시 승인 대기 중이에요.');
@@ -164,7 +186,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   };
 
   const startEdit = (post) => {
-    setWriteFields({ title: post.title, body: post.body });
+    setWriteFields({
+      title: post.title,
+      body: post.body,
+      category: post.category,
+      capacity: post.capacity === null || post.capacity === undefined ? '' : String(post.capacity),
+    });
     setEditingPostId(post.id);
     setSelectedPost(null);
     setShowWriteForm(true);
@@ -227,8 +254,13 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setError(null);
     try {
       if (decision === 'accepted') await acceptCommunityApplication(applicationId);
-      else await rejectCommunityApplication(applicationId);
+      else await rejectCommunityApplication(applicationId, rejectMessages[applicationId]);
       showToast(decision === 'accepted' ? '수락했어요.' : '반려했어요.');
+      setRejectMessages((prev) => {
+        const next = { ...prev };
+        delete next[applicationId];
+        return next;
+      });
       if (selectedPost) {
         const updated = await getCommunityApplicants(selectedPost.id);
         setApplicants(updated);
@@ -254,6 +286,8 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         <h2 className="community-detail-title">{post.title}</h2>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
+          <span className="community-badge community-badge-category">{CATEGORY_LABEL[post.category]}</span>
+          {post.capacity && <span className="community-badge community-badge-category">모집인원 {post.capacity}명</span>}
           {post.closedAt && <span className="community-badge community-badge-closed">모집 마감</span>}
           {post.status !== 'approved' && (
             <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
@@ -261,14 +295,30 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         </p>
         <p className="community-detail-body">{post.body}</p>
 
+        {post.status === 'rejected' && post.rejectReason && (
+          <p className="admin-reject-reason">
+            <b>반려 사유</b> · {post.rejectReason}
+          </p>
+        )}
+
         {post.isMine ? (
           <>
-            <div className="community-owner-actions">
-              {!post.closedAt && (
-                <button type="button" className="community-outline-btn" onClick={() => handleClose(post)} disabled={closeSubmitting}>
-                  {closeSubmitting ? '처리 중...' : '모집 마감'}
+            {post.status === 'approved' && !post.closedAt && (
+              <>
+                <button
+                  type="button"
+                  className="community-close-btn"
+                  onClick={() => handleClose(post)}
+                  disabled={closeSubmitting || applicantsLoading || applicants.length === 0}
+                >
+                  {closeSubmitting ? '처리 중...' : '모집 마감하기'}
                 </button>
-              )}
+                {!applicantsLoading && applicants.length === 0 && (
+                  <p className="community-close-hint">신청자가 1명 이상 있어야 마감할 수 있어요.</p>
+                )}
+              </>
+            )}
+            <div className="community-owner-actions">
               <button type="button" className="community-outline-btn" onClick={() => startEdit(post)}>
                 수정
               </button>
@@ -294,29 +344,43 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                     <p className="community-applicant-msg">{a.message}</p>
                     <div className="community-applicant-date">{formatDate(a.createdAt)}</div>
                     {a.status === 'pending' && (
-                      <div className="community-applicant-actions">
-                        <button
-                          type="button"
-                          className="community-act-btn community-act-accept"
-                          onClick={() => handleDecideApplication(a.id, 'accepted')}
-                          disabled={applicantActionId === a.id}
-                        >
-                          수락
-                        </button>
-                        <button
-                          type="button"
-                          className="community-act-btn community-act-reject"
-                          onClick={() => handleDecideApplication(a.id, 'rejected')}
-                          disabled={applicantActionId === a.id}
-                        >
-                          거부
-                        </button>
-                      </div>
+                      <>
+                        <textarea
+                          className="community-reject-message-input"
+                          rows={2}
+                          placeholder="거부 사유(선택) — 신청자에게 전달돼요."
+                          value={rejectMessages[a.id] || ''}
+                          onChange={(e) => setRejectMessages((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                        />
+                        <div className="community-applicant-actions">
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-accept"
+                            onClick={() => handleDecideApplication(a.id, 'accepted')}
+                            disabled={applicantActionId === a.id}
+                          >
+                            수락
+                          </button>
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-reject"
+                            onClick={() => handleDecideApplication(a.id, 'rejected')}
+                            disabled={applicantActionId === a.id}
+                          >
+                            거부
+                          </button>
+                        </div>
+                      </>
                     )}
                     {a.status === 'accepted' && a.contactEmail && (
                       <div className="community-contact-box">
                         <b>연락 이메일</b> · {a.contactEmail}
                       </div>
+                    )}
+                    {a.status === 'rejected' && a.rejectReason && (
+                      <p className="community-reject-message">
+                        <b>거부 사유</b> · {a.rejectReason}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -357,6 +421,11 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             {post.myApplication.status === 'accepted' && (
               <p className="community-status-desc">수락됐어요! "내 신청" 탭에서 연락 이메일을 확인해보세요.</p>
             )}
+            {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
+              <p className="community-reject-message">
+                <b>거부 사유</b> · {post.myApplication.rejectReason}
+              </p>
+            )}
             {post.myApplication.status === 'rejected' && !post.closedAt && (
               <>
                 <p className="community-status-desc">아쉽지만 이번엔 선정되지 않았어요. 메시지를 보완해서 다시 신청할 수 있어요.</p>
@@ -390,6 +459,26 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           ? '수정하면 다시 관리자 승인을 받아야 목록에 노출돼요.'
           : '스터디·프로젝트 팀원을 구하는 글을 올려보세요. 관리자 승인 후 목록에 노출돼요.'}
       </p>
+      <div className="community-write-row">
+        <div className="auth-field">
+          <label>구분</label>
+          <select value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
+            <option value="study">스터디</option>
+            <option value="project">프로젝트</option>
+          </select>
+        </div>
+        <div className="auth-field">
+          <label>모집 인원 (선택)</label>
+          <input
+            type="number"
+            min={1}
+            max={999}
+            placeholder="예: 4"
+            value={writeFields.capacity}
+            onChange={(e) => setWriteFields((f) => ({ ...f, capacity: e.target.value }))}
+          />
+        </div>
+      </div>
       <div className="auth-field">
         <label>제목</label>
         <input
@@ -417,7 +506,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? '목록으로' : '홈으로'}>
             <IconChevronLeft />
           </button>
           <span className="screen-title">커뮤니티</span>
@@ -469,15 +558,17 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
               posts.length === 0 ? (
                 <p className="courses-manual-hint">아직 등록된 글이 없어요.</p>
               ) : (
-                <div className="courses-search-results community-post-list">
+                <div className="community-post-list">
                   {posts.map((p) => (
-                    <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
-                      <span className="courses-list-item-name">
-                        {p.title}
+                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                      <span className="community-post-list-row">
+                        <span className="community-post-list-title">{p.title}</span>
+                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
                         {p.author} · {formatDate(p.createdAt)}
+                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
                       </span>
                     </button>
                   ))}
@@ -487,15 +578,19 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
               myPosts.length === 0 ? (
                 <p className="courses-manual-hint">아직 쓴 글이 없어요.</p>
               ) : (
-                <div className="courses-search-results community-post-list">
+                <div className="community-post-list">
                   {myPosts.map((p) => (
-                    <button key={p.id} className="courses-search-result" onClick={() => openPost(p.id)} disabled={detailLoading}>
-                      <span className="courses-list-item-name">
-                        {p.title}
+                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                      <span className="community-post-list-row">
+                        <span className="community-post-list-title">{p.title}</span>
+                        <span className="community-badge community-badge-category">{CATEGORY_LABEL[p.category]}</span>
                         <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
                         {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
-                      <span className="courses-list-item-meta">{formatDate(p.createdAt)}</span>
+                      <span className="courses-list-item-meta">
+                        {formatDate(p.createdAt)}
+                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -503,11 +598,12 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             ) : myApplications.length === 0 ? (
               <p className="courses-manual-hint">아직 신청한 글이 없어요.</p>
             ) : (
-              <div className="courses-search-results community-post-list">
+              <div className="community-post-list">
                 {myApplications.map((a) => (
-                  <button key={a.id} className="courses-search-result" onClick={() => openPost(a.postId)} disabled={detailLoading}>
-                    <span className="courses-list-item-name">
-                      {a.postTitle}
+                  <button key={a.id} className="community-post-list-item" onClick={() => openPost(a.postId)} disabled={detailLoading}>
+                    <span className="community-post-list-row">
+                      <span className="community-post-list-title">{a.postTitle}</span>
+                      <span className="community-badge community-badge-category">{CATEGORY_LABEL[a.postCategory]}</span>
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
                     </span>
                     <span className="courses-list-item-meta">
