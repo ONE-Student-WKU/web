@@ -469,6 +469,9 @@ CREATE TABLE IF NOT EXISTS community_posts (
   closed_at    DATETIME NULL,  -- NULL = 모집 중, 값 있음 = 글쓴이가 마감
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   decided_at   DATETIME NULL,  -- 관리자가 승인/반려한 시각
+  reject_reason TEXT NULL,  -- 반려 시 관리자가 남긴 사유(선택, decidePost가 매 결정마다 덮어씀 —
+                            -- 승인 시 NULL). status가 pending/approved일 땐 화면에서 안 보여주므로
+                            -- 수정 후 재검토 대기 중에 이전 반려 사유가 남아있어도 노출되지 않는다.
 
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE
 );
@@ -483,6 +486,7 @@ CREATE TABLE IF NOT EXISTS community_applications (
   status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / accepted / rejected
   created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   decided_at     DATETIME NULL,
+  reject_reason  TEXT NULL,  -- 거부 시 글쓴이가 남긴 메시지(선택). 수락 시엔 항상 NULL.
 
   FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
   FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE

@@ -163,14 +163,15 @@ export const getCommunityApplicants = (id) => apiRequest(`/community/${id}/appli
 export const acceptCommunityApplication = (id) =>
   apiRequest(`/community/applications/${id}/accept`, { method: 'POST' });
 
-export const rejectCommunityApplication = (id) =>
-  apiRequest(`/community/applications/${id}/reject`, { method: 'POST' });
+export const rejectCommunityApplication = (id, reason) =>
+  apiRequest(`/community/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export const getAdminCommunityPosts = (status) => apiRequest(`/admin/community/posts?status=${status}`);
 
 export const approveAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/approve`, { method: 'POST' });
 
-export const rejectAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST' });
+export const rejectAdminPost = (id, reason) =>
+  apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export const deleteAdminPost = (id) => apiRequest(`/admin/community/posts/${id}`, { method: 'DELETE' });
 

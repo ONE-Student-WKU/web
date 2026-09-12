@@ -36,10 +36,11 @@ router.post('/community/posts/:id/approve', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/community/posts/:id/reject
+// POST /api/admin/community/posts/:id/reject — reason은 선택.
 router.post('/community/posts/:id/reject', async (req, res, next) => {
   try {
-    const decided = await communityService.decidePost(req.params.id, 'rejected');
+    const reason = typeof req.body.reason === 'string' && req.body.reason.trim() ? req.body.reason.trim() : null;
+    const decided = await communityService.decidePost(req.params.id, 'rejected', reason);
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }

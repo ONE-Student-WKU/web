@@ -120,6 +120,32 @@ async function ensureSeasonSemesterRenumbering(connection) {
   }
 }
 
+// 반려 사유(선택) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로
+// 반영이 안 되므로 컬럼을 직접 ALTER한다.
+async function ensureCommunityRejectReasonColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_posts' AND COLUMN_NAME = 'reject_reason'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] community_posts.reject_reason 컬럼 추가...');
+    await connection.query('ALTER TABLE community_posts ADD COLUMN reject_reason TEXT NULL');
+  }
+}
+
+// 신청 거부 메시지(선택) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로
+// 반영이 안 되므로 컬럼을 직접 ALTER한다.
+async function ensureApplicationRejectReasonColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_applications' AND COLUMN_NAME = 'reject_reason'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] community_applications.reject_reason 컬럼 추가...');
+    await connection.query('ALTER TABLE community_applications ADD COLUMN reject_reason TEXT NULL');
+  }
+}
+
 // 카테고리(스터디/프로젝트)·모집 인원 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF
 // NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
 async function ensureCommunityCategoryCapacityColumns(connection) {
@@ -167,6 +193,8 @@ async function migrate() {
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
     await ensureSeasonSemesterRenumbering(connection);
+    await ensureCommunityRejectReasonColumn(connection);
+    await ensureApplicationRejectReasonColumn(connection);
     await ensureCommunityCategoryCapacityColumns(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');

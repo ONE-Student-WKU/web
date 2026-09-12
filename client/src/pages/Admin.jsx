@@ -43,6 +43,8 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionId, setActionId] = useState(null); // 승인/반려/삭제 처리 중인 글 id
+  // 반려 사유(선택) 입력값 — 글 id별로 따로 들고 있어야 여러 대기중 카드가 서로 안 섞인다.
+  const [rejectReasons, setRejectReasons] = useState({});
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -84,8 +86,13 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     setError(null);
     try {
       if (action === 'approve') await approveAdminPost(id);
-      else await rejectAdminPost(id);
+      else await rejectAdminPost(id, rejectReasons[id]);
       setPosts((prev) => prev.filter((p) => p.id !== id));
+      setRejectReasons((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       showToast(action === 'approve' ? '승인했어요.' : '반려했어요.');
     } catch {
       setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
@@ -171,6 +178,20 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                       {p.capacity && <span className="community-badge community-badge-category">모집인원 {p.capacity}명</span>}
                     </p>
                     <p className="community-detail-body">{p.body}</p>
+                    {subFilter === 'rejected' && p.rejectReason && (
+                      <p className="admin-reject-reason">
+                        <b>반려 사유</b> · {p.rejectReason}
+                      </p>
+                    )}
+                    {subFilter === 'pending' && (
+                      <textarea
+                        className="admin-reject-reason-input"
+                        rows={2}
+                        placeholder="반려 사유(선택) — 반려할 때만 사용돼요."
+                        value={rejectReasons[p.id] || ''}
+                        onChange={(e) => setRejectReasons((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                      />
+                    )}
                     <div className="community-applicant-actions">
                       {subFilter === 'pending' && (
                         <>
