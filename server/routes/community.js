@@ -197,9 +197,11 @@ router.post('/applications/:id/accept', async (req, res, next) => {
   }
 });
 
+// reason은 선택 — 글쓴이가 신청자에게 남기는 거부 메시지.
 router.post('/applications/:id/reject', async (req, res, next) => {
   try {
-    const decided = await communityService.decideApplication(req.params.id, req.session.userId, 'rejected');
+    const reason = typeof req.body.reason === 'string' && req.body.reason.trim() ? req.body.reason.trim() : null;
+    const decided = await communityService.decideApplication(req.params.id, req.session.userId, 'rejected', reason);
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
     }
