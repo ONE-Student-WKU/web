@@ -170,7 +170,8 @@ export const getAdminCommunityPosts = (status) => apiRequest(`/admin/community/p
 
 export const approveAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/approve`, { method: 'POST' });
 
-export const rejectAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST' });
+export const rejectAdminPost = (id, reason) =>
+  apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export const deleteAdminPost = (id) => apiRequest(`/admin/community/posts/${id}`, { method: 'DELETE' });
 
