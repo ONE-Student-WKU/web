@@ -510,6 +510,22 @@ CREATE TABLE IF NOT EXISTS community_email_proxies (
   FOREIGN KEY (owner_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+-- 커뮤니티 글/신청 메시지 신고(#187). target_type으로 대상 테이블을 구분하는 다형(polymorphic)
+-- 참조라 target_id에 DB 레벨 FK를 걸 수 없다(한 컬럼이 서로 다른 두 테이블을 가리켜야 함) —
+-- 대상 존재 여부/유효성은 communityService.createReport가 애플리케이션 레벨에서 검증한다.
+CREATE TABLE IF NOT EXISTS community_reports (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  reporter_id    INT NOT NULL,
+  target_type    VARCHAR(20) NOT NULL,  -- 'post' / 'application'
+  target_id      INT NOT NULL,
+  reason         TEXT NOT NULL,
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at    DATETIME NULL,
+
+  FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
 -- ---------------------------------------------------------------------------
 -- 학과·트랙 마스터 초기 시드
 -- "컴퓨터·소프트웨어공학과"는 ~2025학번(136점 체계, 트랙 없음), "공학3계열"은
