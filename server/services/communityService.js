@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const pool = require('../db');
 
 /**
@@ -5,6 +6,39 @@ const pool = require('../db');
  * 커뮤니티(스터디/프로젝트 모집) 게시판 — DB 접근 계층.
  * 신청/수락/모집마감 관련 함수는 3단계에서 추가된다.
  */
+
+// EMAIL_PROXY_DOMAIN은 .env(로컬) / Railway 환경변수(운영)에서 주입 (#182 — 이메일 프록시,
+// mailer.js의 RESEND_FROM_ADDRESS와 동일한 주입 방식). 인바운드 수신 서비스(2단계)가
+// 이 도메인의 MX 레코드를 받도록 설정돼야 프록시 주소로 온 메일이 실제로 전달된다.
+const EMAIL_PROXY_DOMAIN = process.env.EMAIL_PROXY_DOMAIN;
+
+// 프록시 주소는 실제 이메일과 무관한 무작위 토큰이어야 한다 — 원래 주소의 일부라도
+// 남으면(예: hong-xxxx@) 역추적 단서가 되거나 다른 사람이 패턴으로 프록시 주소를 추측할
+// 여지가 생긴다.
+function generateProxyEmail() {
+  return `${crypto.randomBytes(8).toString('hex')}@${EMAIL_PROXY_DOMAIN}`;
+}
+
+// 신청이 수락되면(매칭 성사) 신청자·글쓴이 각자를 위한 프록시를 하나씩 만든다. owner_id는
+// "이 프록시로 온 메일을 실제로 받을 사람"이라, 신청자에게 보여줄 프록시는 owner_id=authorId로,
+// 글쓴이에게 보여줄 프록시는 owner_id=applicantId로 만든다(getMyApplications/
+// getApplicantsForPost가 조회 시점에 각자 반대쪽 프록시를 찾아서 내려줌). UNIQUE 제약과
+// 충돌하면(극히 낮은 확률) 재생성해서 재시도한다.
+async function createEmailProxiesForApplication(applicationId, applicantId, authorId) {
+  for (const ownerId of [applicantId, authorId]) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await pool.query(
+          'INSERT INTO community_email_proxies (application_id, owner_id, proxy_email) VALUES (?, ?, ?)',
+          [applicationId, ownerId, generateProxyEmail()]
+        );
+        break;
+      } catch (err) {
+        if (err.code !== 'ER_DUP_ENTRY' || attempt >= 2) throw err;
+      }
+    }
+  }
+}
 
 // studentService.js의 serializeStudent()와 동일한 닉네임 폴백(student.name || user{id}) —
 // 가입 시 name을 NULL로 남겨두는 정책이라 표시 시점에 계산해야 한다. 한 곳(studentService)의
@@ -200,17 +234,18 @@ async function applyToPost(postId, applicantId, message) {
   return { ok: true, id: result.insertId };
 }
 
-// 내가 낸 신청 전체 — 수락된 건만 글쓴이 연락 이메일을 같이 내려준다(매칭 성사 시에만
-// 이메일 공개, db/schema.sql 커뮤니티 게시판 주석 참고 — 별도 컬럼으로 저장하지 않고
-// 응답 조립 시점에 계산).
+// 내가 낸 신청 전체 — 수락된 건만 글쓴이 연락처를 같이 내려준다(매칭 성사 시에만 공개).
+// 실제 이메일이 아니라 그 신청 건 전용 프록시 주소를 내려준다(#182 — 이메일 프록시) —
+// 실제 이메일은 이 조회에서 아예 select하지 않는다.
 async function getMyApplications(studentId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
-            s.name AS author_name, s.id AS author_id, s.email AS author_email
+            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
      JOIN students s ON s.id = p.author_id
+     LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = p.author_id
      WHERE a.applicant_id = ?
      ORDER BY a.created_at DESC`,
     [studentId]
@@ -225,7 +260,7 @@ async function getMyApplications(studentId) {
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
-    contactEmail: row.status === 'accepted' ? row.author_email : null,
+    contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
   }));
 }
 
@@ -236,9 +271,10 @@ async function getMyApplications(studentId) {
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
-            s.name AS applicant_name, s.email AS applicant_email
+            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
+     LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = a.applicant_id
      WHERE a.post_id = ?
      ORDER BY a.created_at ASC`,
     [postId]
@@ -254,7 +290,7 @@ async function getApplicantsForPost(postId) {
       createdAt: row.created_at,
       applicant: nicknameOf(row.applicant_name, row.applicant_id),
       hasAppliedBefore,
-      contactEmail: row.status === 'accepted' ? row.applicant_email : null,
+      contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
       rejectReason: row.status === 'rejected' ? row.reject_reason : null,
     };
   });
@@ -272,7 +308,15 @@ async function decideApplication(applicationId, authorId, status, reason = null)
      WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
     [status, status === 'rejected' ? reason : null, applicationId, authorId]
   );
-  return result.affectedRows > 0;
+  if (result.affectedRows === 0) return false;
+
+  if (status === 'accepted') {
+    const [[application]] = await pool.query('SELECT applicant_id FROM community_applications WHERE id = ?', [
+      applicationId,
+    ]);
+    await createEmailProxiesForApplication(applicationId, application.applicant_id, authorId);
+  }
+  return true;
 }
 
 // 관리자 화면(4단계)이 작성자를 author_id 숫자로만 보여주면 누가 쓴 글인지 알아볼 수
