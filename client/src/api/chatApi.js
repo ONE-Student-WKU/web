@@ -195,5 +195,3 @@ export const getMyInquiries = () => apiRequest('/inquiries/mine');
 export const getAdminInquiries = (status) => apiRequest(`/admin/inquiries?status=${status}`);
 
 export const resolveAdminInquiry = (id) => apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST' });
-
-export const getAdminStats = () => apiRequest('/admin/stats');

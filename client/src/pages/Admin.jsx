@@ -9,10 +9,9 @@ import {
   resolveAdminReport,
   getAdminInquiries,
   resolveAdminInquiry,
-  getAdminStats,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers } from '../components/icons.jsx';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -26,10 +25,14 @@ const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료'
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
 const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
+const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함' };
 
 /**
  * Admin Page
- * 관리자 전용(이슈 #164 4단계) — 커뮤니티 승인/신고함(#187)/문의함(#166)/통계 4개 탭.
+ * 관리자 전용(이슈 #164 4단계) — 학생 홈 화면과 같은 구조(위: 현황 대시보드, 아래: 기능
+ * 타일)로 진입해서, 타일을 누르면 커뮤니티 승인/신고함(#187)/문의함(#166)으로 들어간다.
+ * 대시보드 통계 카드는 지금은 자리만 잡아둔 상태(값 표시 없음) — 가입자 수/미처리
+ * 건수/현재 접속자 수를 집계하는 API가 아직 없어서, 그건 후속 작업으로 남겨둔다.
  * AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
  * 실제 접근 제어는 서버(server/middleware/auth.js의 requireAdmin)가 매 요청마다 다시
  * 하므로, 여기서는 admin이 아닌 사용자가 어쩌다 들어와도 API가 403을 낼 뿐 안전하다.
@@ -47,7 +50,7 @@ const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
  * - onOpenInquiry: function
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry }) {
-  const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'reports' | 'inquiries' | 'stats'
+  const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries'
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,9 +69,6 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiryActionId, setInquiryActionId] = useState(null); // 처리완료 처리 중인 문의 id
 
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
   function showToast(message) {
@@ -79,47 +79,41 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   useEffect(() => {
-    if (mainTab !== 'approval') return;
+    if (adminView !== 'approval') return;
     setLoading(true);
     setError(null);
     getAdminCommunityPosts(subFilter)
       .then(setPosts)
       .catch(() => setError('목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setLoading(false));
-  }, [mainTab, subFilter]);
+  }, [adminView, subFilter]);
 
   useEffect(() => {
-    if (mainTab !== 'reports') return;
+    if (adminView !== 'reports') return;
     setReportsLoading(true);
     setError(null);
     getAdminReports(reportSubFilter)
       .then(setReports)
       .catch(() => setError('신고 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setReportsLoading(false));
-  }, [mainTab, reportSubFilter]);
+  }, [adminView, reportSubFilter]);
 
   useEffect(() => {
-    if (mainTab !== 'inquiries') return;
+    if (adminView !== 'inquiries') return;
     setInquiriesLoading(true);
     setError(null);
     getAdminInquiries(inquirySubFilter)
       .then(setInquiries)
       .catch(() => setError('문의 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setInquiriesLoading(false));
-  }, [mainTab, inquirySubFilter]);
+  }, [adminView, inquirySubFilter]);
 
-  const loadStats = () => {
-    setStatsLoading(true);
-    setError(null);
-    getAdminStats()
-      .then((data) => setStats(data))
-      .catch(() => setError('통계를 불러오지 못했어요.'))
-      .finally(() => setStatsLoading(false));
+  // 대시보드 → 타일 클릭 시 해당 화면으로, 그 화면에서 뒤로가기를 누르면 다시
+  // 대시보드로 돌아간다(대시보드에서 뒤로가기를 누르면 그때 홈으로 나간다).
+  const handleBack = () => {
+    if (adminView === 'dashboard') onGoHome();
+    else setAdminView('dashboard');
   };
-
-  useEffect(() => {
-    if (mainTab === 'stats' && stats === null) loadStats();
-  }, [mainTab]); // eslint-disable-line react-hooks/exhaustive-deps -- stats를 deps에 넣으면 새로고침마다 다시 도는 루프가 됨, mainTab 진입 시 1회만 자동 로드하면 충분
 
   const handleDecide = async (id, action) => {
     setActionId(id);
@@ -208,10 +202,10 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={handleBack} aria-label={adminView === 'dashboard' ? '홈으로' : '뒤로'}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">관리자</span>
+          <span className="screen-title">{VIEW_TITLE[adminView]}</span>
         </div>
         <AccountMenu
           user={user}
@@ -231,24 +225,47 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
       )}
 
       <div className="courses-body">
-        <div className="courses-year-tabs">
-          <button type="button" className={`courses-year-tab ${mainTab === 'approval' ? 'active' : ''}`} onClick={() => setMainTab('approval')}>
-            커뮤니티 승인
-          </button>
-          <button type="button" className={`courses-year-tab ${mainTab === 'reports' ? 'active' : ''}`} onClick={() => setMainTab('reports')}>
-            신고함
-          </button>
-          <button type="button" className={`courses-year-tab ${mainTab === 'inquiries' ? 'active' : ''}`} onClick={() => setMainTab('inquiries')}>
-            문의함
-          </button>
-          <button type="button" className={`courses-year-tab ${mainTab === 'stats' ? 'active' : ''}`} onClick={() => setMainTab('stats')}>
-            통계
-          </button>
-        </div>
-
         {error && <p className="home-error">{error}</p>}
 
-        {mainTab === 'approval' ? (
+        {adminView === 'dashboard' ? (
+          <>
+            <p className="home-quick-label">현황</p>
+            <div className="admin-dashboard-stats">
+              <div className="admin-stat-cell">
+                <p className="admin-stat-label">가입 이메일</p>
+                <div className="admin-stat-value placeholder">—</div>
+              </div>
+              <div className="admin-stat-cell">
+                <p className="admin-stat-label">현재 접속자</p>
+                <div className="admin-stat-value placeholder">—</div>
+              </div>
+              <div className="admin-stat-cell">
+                <p className="admin-stat-label">미처리 신고</p>
+                <div className="admin-stat-value placeholder">—</div>
+              </div>
+              <div className="admin-stat-cell">
+                <p className="admin-stat-label">미처리 문의</p>
+                <div className="admin-stat-value placeholder">—</div>
+              </div>
+            </div>
+
+            <p className="home-quick-label">메뉴</p>
+            <div className="admin-tiles">
+              <button type="button" className="admin-tile" onClick={() => setAdminView('reports')}>
+                <IconSiren size={22} />
+                <span>신고함</span>
+              </button>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('inquiries')}>
+                <IconMessageCircle size={22} />
+                <span>문의함</span>
+              </button>
+              <button type="button" className="admin-tile wide" onClick={() => setAdminView('approval')}>
+                <IconUsers size={22} />
+                <span>커뮤니티 관리</span>
+              </button>
+            </div>
+          </>
+        ) : adminView === 'approval' ? (
           <>
             <div className="admin-sub-tabs">
               {SUB_FILTERS.map((f) => (
@@ -322,7 +339,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               </div>
             )}
           </>
-        ) : mainTab === 'reports' ? (
+        ) : adminView === 'reports' ? (
           <>
             <div className="admin-sub-tabs">
               {REPORT_SUB_FILTERS.map((f) => (
@@ -385,7 +402,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               </div>
             )}
           </>
-        ) : mainTab === 'inquiries' ? (
+        ) : adminView === 'inquiries' ? (
           <>
             <div className="admin-sub-tabs">
               {INQUIRY_SUB_FILTERS.map((f) => (
@@ -425,18 +442,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               </div>
             )}
           </>
-        ) : (
-          <div className="home-card">
-            <p className="home-card-label">현재 활성 세션</p>
-            <div className="admin-stat-value">{statsLoading ? '-' : (stats?.activeSessions ?? '-')}개</div>
-            <p className="admin-stat-desc">
-              로그인 상태가 유지 중인 세션 수예요(만료되지 않은 세션 기준). 실제 동시 접속자 수와는 다를 수 있어요.
-            </p>
-            <button type="button" className="community-outline-btn" onClick={loadStats} disabled={statsLoading}>
-              {statsLoading ? '불러오는 중...' : '새로고침'}
-            </button>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

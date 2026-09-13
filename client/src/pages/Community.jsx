@@ -17,7 +17,7 @@ import {
   reportCommunityApplication,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconPlus } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconSiren } from '../components/icons.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 const communityCache = { posts: null, myPosts: null, myApplications: null };
@@ -355,7 +355,14 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     return (
       <div className="community-detail">
         {error && <p className="home-error">{error}</p>}
-        <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
+        <div className="community-detail-title-row">
+          <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
+          {!post.isMine && (
+            <button type="button" className="community-report-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
+              <IconSiren size={20} />
+            </button>
+          )}
+        </div>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
           <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
@@ -495,7 +502,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           </>
         ) : (
           <>
-            {reportFormOpen ? (
+            {reportFormOpen && (
               <form className="community-apply-form" onSubmit={handleReportPost}>
                 <div className="auth-field">
                   <label>신고 사유</label>
@@ -516,10 +523,6 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                   </button>
                 </div>
               </form>
-            ) : (
-              <button type="button" className="community-outline-btn community-danger" onClick={() => setReportFormOpen(true)}>
-                신고하기
-              </button>
             )}
             {user?.role === 'admin' && (
               <button
