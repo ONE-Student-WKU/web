@@ -15,6 +15,13 @@ async function findByEmail(email) {
   return rows[0] || null;
 }
 
+// 닉네임 중복 확인용(PATCH /api/me) — students.name의 UNIQUE 제약(db/schema.sql)과 같은
+// collation(utf8mb4_unicode_ci, 대소문자 구분 안 함)으로 비교되므로 결과가 서로 일치한다.
+async function findByName(name) {
+  const [rows] = await pool.query('SELECT id FROM students WHERE name = ?', [name]);
+  return rows[0] || null;
+}
+
 // 클라이언트에 내려주는 학생 프로필 형태로 변환 — /api/auth/login과 /api/me가 같은
 // 모양의 데이터를 줘야 한다(로그인 응답에 departmentId/admissionYear 등이 빠져있으면,
 // 그 값을 그대로 믿는 화면(Onboarding.jsx 등)이 이미 등록된 정보를 "선택 필요"로 잘못
@@ -204,6 +211,7 @@ module.exports = {
   VALID_MAJOR_CHANGE_SEMESTERS,
   serializeStudent,
   findByEmail,
+  findByName,
   findById,
   findByOauth,
   createOauthStudent,

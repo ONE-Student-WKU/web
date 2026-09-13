@@ -87,6 +87,34 @@ async function ensureRoleColumn(connection) {
   }
 }
 
+// 닉네임 사칭/도용 방지용 UNIQUE 도입 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT
+// EXISTS로 반영이 안 되므로 제약을 직접 ALTER한다. 이미 중복 닉네임이 존재하는 상태에서
+// UNIQUE를 추가하면 ALTER 자체가 실패해 배포(Pre-Deploy Command)가 막히므로, 먼저 중복
+// 여부를 확인하고 있으면 이번 실행은 건너뛰고 로그만 남긴다 — 중복을 임의로 자동 변경하지
+// 않고(사용자가 정한 닉네임이라 서버가 조용히 바꾸면 안 됨), 운영자가 직접 정리한 뒤
+// 재배포하면 그때 자연스럽게 제약이 걸린다.
+async function ensureNameUniqueConstraint(connection) {
+  const [idx] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND INDEX_NAME = 'uq_students_name'`
+  );
+  if (idx.length > 0) return;
+
+  const [dupes] = await connection.query(
+    `SELECT name, COUNT(*) AS count FROM students WHERE name IS NOT NULL GROUP BY name HAVING COUNT(*) > 1`
+  );
+  if (dupes.length > 0) {
+    console.warn(
+      '[db:migrate] students.name 중복이 있어 uq_students_name 제약을 건너뜁니다. 중복 닉네임:',
+      dupes.map((d) => d.name).join(', ')
+    );
+    return;
+  }
+
+  console.log('[db:migrate] uq_students_name 제약 추가...');
+  await connection.query('ALTER TABLE students ADD CONSTRAINT uq_students_name UNIQUE (name)');
+}
+
 // 계절학기 지원(2026-09) — student_courses/course_offerings의 semester 값 체계를
 // (1=1학기, 2=2학기)에서 학사력 시간순(1=1학기, 2=여름 계절학기, 3=2학기, 4=겨울 계절학기)으로
 // 재배정한다. 재수강 판정(server/services/courseService.js의 listRetakeEligibleCourses)이나
@@ -192,6 +220,7 @@ async function migrate() {
     await ensureOauthColumns(connection);
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
+    await ensureNameUniqueConstraint(connection);
     await ensureSeasonSemesterRenumbering(connection);
     await ensureCommunityRejectReasonColumn(connection);
     await ensureApplicationRejectReasonColumn(connection);
