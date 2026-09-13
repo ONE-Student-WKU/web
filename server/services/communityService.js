@@ -15,7 +15,11 @@ const EMAIL_PROXY_DOMAIN = process.env.EMAIL_PROXY_DOMAIN;
 // 프록시 주소는 실제 이메일과 무관한 무작위 토큰이어야 한다 — 원래 주소의 일부라도
 // 남으면(예: hong-xxxx@) 역추적 단서가 되거나 다른 사람이 패턴으로 프록시 주소를 추측할
 // 여지가 생긴다.
+// EMAIL_PROXY_DOMAIN 미설정 시 `token@undefined`처럼 깨진 주소를 조용히 만들어 DB에
+// 남기는 대신, 그 자리에서 바로 에러를 던진다 — 신청 수락이 실패하는 게(사용자가 바로
+// 알아차리고 재시도 가능) 깨진 프록시가 실제 데이터로 저장되는 것보다 낫다.
 function generateProxyEmail() {
+  if (!EMAIL_PROXY_DOMAIN) throw new Error('EMAIL_PROXY_DOMAIN 환경변수가 설정되지 않았습니다.');
   return `${crypto.randomBytes(8).toString('hex')}@${EMAIL_PROXY_DOMAIN}`;
 }
 
@@ -325,7 +329,23 @@ async function getApplicantsForPost(postId) {
 // 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
 // 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
 // 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
+// 수락(accepted)일 땐 프록시 생성을 상태 변경 UPDATE보다 먼저 한다 — 이 코드베이스엔
+// 트랜잭션이 없어서, 만약 UPDATE부터 하고 프록시 생성이 나중에 실패하면(EMAIL_PROXY_DOMAIN
+// 미설정 등) status만 'accepted'로 바뀐 채 연락처 없는 상태로 멈춰버리고, WHERE status=
+// 'pending' 가드 때문에 재시도(재수락)도 안 된다. 프록시 생성을 먼저 해서 실패 시 상태가
+// 아직 'pending'인 채로 남아있게 하면, 사용자가 그냥 다시 수락을 누르기만 하면 된다.
 async function decideApplication(applicationId, authorId, status, reason = null) {
+  if (status === 'accepted') {
+    const [[application]] = await pool.query(
+      `SELECT a.applicant_id FROM community_applications a
+       JOIN community_posts p ON p.id = a.post_id
+       WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
+      [applicationId, authorId]
+    );
+    if (!application) return false;
+    await createEmailProxiesForApplication(applicationId, application.applicant_id, authorId);
+  }
+
   const [result] = await pool.query(
     `UPDATE community_applications a
      JOIN community_posts p ON p.id = a.post_id
@@ -333,15 +353,7 @@ async function decideApplication(applicationId, authorId, status, reason = null)
      WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
     [status, status === 'rejected' ? reason : null, applicationId, authorId]
   );
-  if (result.affectedRows === 0) return false;
-
-  if (status === 'accepted') {
-    const [[application]] = await pool.query('SELECT applicant_id FROM community_applications WHERE id = ?', [
-      applicationId,
-    ]);
-    await createEmailProxiesForApplication(applicationId, application.applicant_id, authorId);
-  }
-  return true;
+  return result.affectedRows > 0;
 }
 
 // 관리자 화면(4단계)이 작성자를 author_id 숫자로만 보여주면 누가 쓴 글인지 알아볼 수
