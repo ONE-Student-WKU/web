@@ -14,8 +14,9 @@ import { IconUser } from './icons.jsx';
  * - onOpenProfile: function
  * - onOpenAdmin: function (선택) — user.role === 'admin'일 때만 "관리자" 항목을 보여준다.
  * - onOpenInquiry: function (선택) — "문의하기" 항목을 보여준다.
- *   onOpenAdmin/onOpenInquiry 둘 다 지금은 Home.jsx에서만 연결돼 있음(다른 화면 헤더까지
- *   다 뚫을 필요 없음 — 관리자든 문의하기든 홈을 거쳐서 들어가면 충분).
+ *   어느 화면에서 문제를 겪었든 그 자리에서 바로 관리자/문의하기로 갈 수 있어야 해서, 이
+ *   메뉴를 쓰는 모든 화면(Home/Community/CourseManagement/GraduationStatus/
+ *   CareerExploration/Admin)에서 둘 다 연결돼 있음.
  */
 function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [open, setOpen] = useState(false);

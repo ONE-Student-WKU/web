@@ -17,7 +17,7 @@ import {
   reportCommunityApplication,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconPlus } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconSiren } from '../components/icons.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 const communityCache = { posts: null, myPosts: null, myApplications: null };
@@ -52,8 +52,22 @@ function formatDate(dateStr) {
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenProfile: function
+ * - initialPostId: number (선택) — 관리자 신고함의 "그 글로 이동"에서 넘어온 글 id.
+ *   마운트 시 1회 해당 글을 열고 onInitialPostConsumed로 소비했음을 알린다.
+ * - onInitialPostConsumed: function (선택)
  */
-function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function Community({
+  user,
+  onGoHome,
+  onLogout,
+  onOpenSettings,
+  onOpenOnboarding,
+  onOpenProfile,
+  onOpenAdmin,
+  onOpenInquiry,
+  initialPostId,
+  onInitialPostConsumed,
+}) {
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications'
   const [posts, setPosts] = useState(communityCache.posts || []);
   const [myPosts, setMyPosts] = useState(communityCache.myPosts || []);
@@ -137,6 +151,16 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       .catch(() => setError('글을 불러오지 못했어요.'))
       .finally(() => setDetailLoading(false));
   };
+
+  // 관리자 신고함의 "그 글로 이동"에서 넘어온 경우 — 마운트 시 한 번만 그 글을 열고,
+  // App.jsx의 상태를 바로 비워달라고 알려서 다음에 커뮤니티에 평범하게 들어왔을 때
+  // 같은 글이 다시 열리지 않게 한다.
+  useEffect(() => {
+    if (!initialPostId) return;
+    openPost(initialPostId);
+    onInitialPostConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 소비하면 됨
+  }, []);
 
   // 목록 3개(전체 글/내가 쓴 글/내 신청)를 전부 다시 불러온다 — 글/신청 상태가 바뀌는
   // 액션(작성/수정/삭제/신청/수락/반려/마감) 뒤에는 여러 목록에 동시에 영향을 주므로
@@ -355,7 +379,14 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     return (
       <div className="community-detail">
         {error && <p className="home-error">{error}</p>}
-        <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
+        <div className="community-detail-title-row">
+          <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
+          {!post.isMine && (
+            <button type="button" className="community-report-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
+              <IconSiren size={20} />
+            </button>
+          )}
+        </div>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
           <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
@@ -495,7 +526,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           </>
         ) : (
           <>
-            {reportFormOpen ? (
+            {reportFormOpen && (
               <form className="community-apply-form" onSubmit={handleReportPost}>
                 <div className="auth-field">
                   <label>신고 사유</label>
@@ -516,10 +547,6 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                   </button>
                 </div>
               </form>
-            ) : (
-              <button type="button" className="community-outline-btn community-danger" onClick={() => setReportFormOpen(true)}>
-                신고하기
-              </button>
             )}
             {user?.role === 'admin' && (
               <button
@@ -663,6 +690,8 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 

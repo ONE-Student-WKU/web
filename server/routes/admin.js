@@ -3,12 +3,13 @@ const router = express.Router();
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
+const studentService = require('../services/studentService');
 const pool = require('../db');
 
 /**
  * server/routes/admin.js
  * 관리자 전용 API — 커뮤니티 게시글/신고 승인·반려·삭제(#164, #187), 문의함(#166),
- * 활성 세션 수 통계.
+ * 대시보드 통계.
  */
 
 router.use(requireAuth, requireAdmin);
@@ -127,15 +128,22 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats — 현재 활성 세션 수(로그인 상태 유지 중인 사용자 수 근사치).
-// sessions 테이블(express-mysql-session, PR #162)의 만료 안 된 행 개수를 그대로 셈 —
-// 별도 계측 없이 기존 세션 저장소만 조회.
+// GET /api/admin/stats — 관리자 대시보드 상단 통계. activeSessions는 현재 활성 세션 수
+// (로그인 상태 유지 중인 사용자 수 근사치 — sessions 테이블(express-mysql-session, PR #162)의
+// 만료 안 된 행 개수를 그대로 셈, 별도 계측 없이 기존 세션 저장소만 조회). totalStudents는
+// 가입 계정 수(studentService.countAll).
 router.get('/stats', async (req, res, next) => {
   try {
     const [[{ count }]] = await pool.query(
       'SELECT COUNT(*) AS count FROM sessions WHERE expires > UNIX_TIMESTAMP()'
     );
-    res.status(200).json({ status: 200, code: 'ADMIN_STATS', message: null, data: { activeSessions: count } });
+    const totalStudents = await studentService.countAll();
+    res.status(200).json({
+      status: 200,
+      code: 'ADMIN_STATS',
+      message: null,
+      data: { activeSessions: count, totalStudents },
+    });
   } catch (err) {
     next(err);
   }
