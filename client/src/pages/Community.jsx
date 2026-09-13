@@ -69,10 +69,11 @@ function Community({
   onInitialPostConsumed,
 }) {
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications'
-  const [posts, setPosts] = useState(communityCache.posts || []);
-  const [myPosts, setMyPosts] = useState(communityCache.myPosts || []);
-  const [myApplications, setMyApplications] = useState(communityCache.myApplications || []);
-  const [loading, setLoading] = useState(communityCache.posts === null);
+  // null이면 "아직 안 불러옴"(첫 진입) — 빈 배열([])과는 구분해야 실제로 글이 0개인 것과
+  // 로딩 중인 것을 헷갈리지 않는다(Home.jsx의 profile/status와 동일한 패턴).
+  const [posts, setPosts] = useState(communityCache.posts);
+  const [myPosts, setMyPosts] = useState(communityCache.myPosts);
+  const [myApplications, setMyApplications] = useState(communityCache.myApplications);
   const [error, setError] = useState(null);
 
   const [selectedPost, setSelectedPost] = useState(null); // 상세 뷰(목록 클릭 시)
@@ -149,19 +150,36 @@ function Community({
   }
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
+  // 지금 보고 있는 탭 데이터만 그때그때 불러온다(Admin.jsx가 adminView별로 지연 로딩하는
+  // 것과 같은 방식) — 예전엔 진입할 때마다 탭 3개(전체 글/내 글/내 신청) 데이터를 한꺼번에
+  // 다 가져와서, 화면에 보이지도 않는 탭까지 매번 새로 왕복했다. 배포 환경에서 실측해보니
+  // 요청 1번당 데이터 유무와 무관하게 ~300ms 고정 비용이 붙어서(네트워크 왕복 자체가
+  // 병목), 안 보이는 요청을 없애는 게 응답을 가볍게 만드는 것보다 훨씬 효과적이었다.
+  // 캐시가 있으면 Home.jsx와 동일하게 그 값을 먼저 보여주고 뒤에서 조용히 새로고침한다.
   useEffect(() => {
-    Promise.all([getCommunityPosts(), getMyCommunityPosts(), getMyCommunityApplications()])
-      .then(([list, mine, myApps]) => {
-        setPosts(list);
-        setMyPosts(mine);
-        setMyApplications(myApps);
-        communityCache.posts = list;
-        communityCache.myPosts = mine;
-        communityCache.myApplications = myApps;
-      })
-      .catch(() => setError('커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
-      .finally(() => setLoading(false));
-  }, []);
+    if (tab === 'list') {
+      getCommunityPosts()
+        .then((list) => {
+          setPosts(list);
+          communityCache.posts = list;
+        })
+        .catch(() => setError('커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+    } else if (tab === 'mine') {
+      getMyCommunityPosts()
+        .then((mine) => {
+          setMyPosts(mine);
+          communityCache.myPosts = mine;
+        })
+        .catch(() => setError('내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+    } else {
+      getMyCommunityApplications()
+        .then((myApps) => {
+          setMyApplications(myApps);
+          communityCache.myApplications = myApps;
+        })
+        .catch(() => setError('신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+    }
+  }, [tab]);
 
   const openPost = (id) => {
     setDetailLoading(true);
@@ -742,10 +760,10 @@ function Community({
               </button>
             </div>
 
-            {loading ? (
-              <p className="courses-manual-hint">불러오는 중...</p>
-            ) : tab === 'list' ? (
-              posts.length === 0 ? (
+            {tab === 'list' ? (
+              posts === null ? (
+                <p className="courses-manual-hint">불러오는 중...</p>
+              ) : posts.length === 0 ? (
                 <p className="courses-manual-hint">아직 등록된 글이 없어요.</p>
               ) : (
                 <div className="community-post-list">
@@ -765,7 +783,9 @@ function Community({
                 </div>
               )
             ) : tab === 'mine' ? (
-              myPosts.length === 0 ? (
+              myPosts === null ? (
+                <p className="courses-manual-hint">불러오는 중...</p>
+              ) : myPosts.length === 0 ? (
                 <p className="courses-manual-hint">아직 쓴 글이 없어요.</p>
               ) : (
                 <div className="community-post-list">
@@ -785,6 +805,8 @@ function Community({
                   ))}
                 </div>
               )
+            ) : myApplications === null ? (
+              <p className="courses-manual-hint">불러오는 중...</p>
             ) : myApplications.length === 0 ? (
               <p className="courses-manual-hint">아직 신청한 글이 없어요.</p>
             ) : (
