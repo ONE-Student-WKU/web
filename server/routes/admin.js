@@ -64,6 +64,44 @@ router.delete('/community/posts/:id', async (req, res, next) => {
   }
 });
 
+// DELETE /api/admin/community/applications/:id — 신고된 신청 삭제(#187, 소유권 무관).
+// FK ON DELETE CASCADE로 연결된 이메일 프록시(#182)도 같이 정리된다.
+router.delete('/community/applications/:id', async (req, res, next) => {
+  try {
+    const deleted = await communityService.deleteApplication(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'APPLICATION_DELETED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/community/reports?status=pending
+router.get('/community/reports', async (req, res, next) => {
+  try {
+    const status = req.query.status || 'pending';
+    const reports = await communityService.listReportsForAdmin(status);
+    res.status(200).json({ status: 200, code: 'ADMIN_REPORTS_LIST', message: null, data: reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/community/reports/:id/resolve — "처리완료" 표시(신고 자체를 지우진 않음).
+router.post('/community/reports/:id/resolve', async (req, res, next) => {
+  try {
+    const resolved = await communityService.resolveReport(req.params.id);
+    if (!resolved) {
+      return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/admin/stats — 현재 활성 세션 수(로그인 상태 유지 중인 사용자 수 근사치).
 // sessions 테이블(express-mysql-session, PR #162)의 만료 안 된 행 개수를 그대로 셈 —
 // 별도 계측 없이 기존 세션 저장소만 조회.

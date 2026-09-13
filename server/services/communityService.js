@@ -388,6 +388,103 @@ async function deletePost(id) {
   return result.affectedRows > 0;
 }
 
+// 관리자 전용 신청 삭제(#187 — 신고된 신청 메시지 조치용). deletePost와 동일하게 소유권
+// 확인 없이 id만으로 삭제한다. FK ON DELETE CASCADE로 연결된 이메일 프록시(#182)도 같이
+// 정리된다.
+async function deleteApplication(id) {
+  const [result] = await pool.query('DELETE FROM community_applications WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// 신청 메시지 신고(#187) 권한 확인 — 신청 메시지는 글쓴이만 볼 수 있으므로(getApplicantsForPost)
+// 신고도 글쓴이만 가능해야 한다. decideApplication의 소유권 확인과 동일한 JOIN 패턴.
+async function isApplicationOwnedByPostAuthor(applicationId, authorId) {
+  const [rows] = await pool.query(
+    `SELECT 1 FROM community_applications a
+     JOIN community_posts p ON p.id = a.post_id
+     WHERE a.id = ? AND p.author_id = ?`,
+    [applicationId, authorId]
+  );
+  return rows.length > 0;
+}
+
+// 신고 생성(#187). target_type은 'post' | 'application' — DB에 다형 FK를 걸 수 없어서
+// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 대기중 상태로
+// 중복 신고하는 것은 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
+async function createReport(reporterId, targetType, targetId, reason) {
+  const targetTable = targetType === 'post' ? 'community_posts' : 'community_applications';
+  const [targetRows] = await pool.query(`SELECT id FROM ${targetTable} WHERE id = ?`, [targetId]);
+  if (targetRows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
+
+  const [existing] = await pool.query(
+    "SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'pending' LIMIT 1",
+    [reporterId, targetType, targetId]
+  );
+  if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_REPORT' };
+
+  const [result] = await pool.query(
+    'INSERT INTO community_reports (reporter_id, target_type, target_id, reason) VALUES (?, ?, ?, ?)',
+    [reporterId, targetType, targetId, reason]
+  );
+  return { ok: true, id: result.insertId };
+}
+
+// 관리자 신고함 목록(#187). target_type이 다형이라 신고 목록을 한 번에 조회한 뒤, 각 신고가
+// 가리키는 대상(글 제목 또는 신청 메시지)을 신고 건별로 따로 조회해서 붙인다 — 신고 건수가
+// 적은 서비스 규모라 N+1 쿼리를 단일 UNION 쿼리로 합치는 복잡도를 감수할 필요가 없다.
+// 대상이 이미 삭제됐으면 target은 null — 화면에서 "삭제된 대상"으로 표시.
+async function listReportsForAdmin(status) {
+  const [rows] = await pool.query(
+    `SELECT r.id, r.target_type, r.target_id, r.reason, r.status, r.created_at, r.resolved_at,
+            s.name AS reporter_name, s.id AS reporter_id
+     FROM community_reports r
+     JOIN students s ON s.id = r.reporter_id
+     WHERE r.status = ?
+     ORDER BY r.created_at ASC`,
+    [status]
+  );
+
+  const results = [];
+  for (const row of rows) {
+    let target = null;
+    if (row.target_type === 'post') {
+      const [[post]] = await pool.query('SELECT id, title, status FROM community_posts WHERE id = ?', [row.target_id]);
+      if (post) target = { type: 'post', id: post.id, title: post.title, status: post.status };
+    } else {
+      const [[application]] = await pool.query(
+        `SELECT a.id, a.message, a.post_id, p.title AS post_title
+         FROM community_applications a
+         JOIN community_posts p ON p.id = a.post_id
+         WHERE a.id = ?`,
+        [row.target_id]
+      );
+      if (application) {
+        target = { type: 'application', id: application.id, message: application.message, postId: application.post_id, postTitle: application.post_title };
+      }
+    }
+
+    results.push({
+      id: row.id,
+      reporter: nicknameOf(row.reporter_name, row.reporter_id),
+      reason: row.reason,
+      status: row.status,
+      createdAt: row.created_at,
+      resolvedAt: row.resolved_at,
+      target,
+    });
+  }
+  return results;
+}
+
+// status가 이미 'pending'이 아니면 아무 것도 안 바뀐다(decidePost와 동일한 재처리 방지 가드).
+async function resolveReport(id) {
+  const [result] = await pool.query(
+    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW() WHERE id = ? AND status = 'pending'",
+    [id]
+  );
+  return result.affectedRows > 0;
+}
+
 module.exports = {
   createPost,
   listApprovedPosts,
@@ -404,4 +501,9 @@ module.exports = {
   listPostsForAdmin,
   decidePost,
   deletePost,
+  deleteApplication,
+  isApplicationOwnedByPostAuthor,
+  createReport,
+  listReportsForAdmin,
+  resolveReport,
 };

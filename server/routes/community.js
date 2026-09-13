@@ -14,6 +14,7 @@ router.use(requireAuth);
 
 const TITLE_MAX_LENGTH = 20;
 const BODY_MAX_LENGTH = 1000;
+const REPORT_REASON_MAX_LENGTH = 500;
 const VALID_CATEGORIES = ['study', 'project'];
 
 function isValidTitle(title) {
@@ -26,6 +27,29 @@ function isValidBody(body) {
 
 function isValidCategory(category) {
   return VALID_CATEGORIES.includes(category);
+}
+
+function isValidReportReason(reason) {
+  return typeof reason === 'string' && reason.trim().length > 0 && reason.trim().length <= REPORT_REASON_MAX_LENGTH;
+}
+
+// 신고 생성 라우트 2개(글/신청)가 target_type만 다르고 나머지 로직이 동일해서 공유한다.
+async function handleReport(req, res, next, targetType) {
+  try {
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.trim() : req.body.reason;
+    if (!isValidReportReason(reason)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REASON', message: null, data: null });
+    }
+
+    const result = await communityService.createReport(req.session.userId, targetType, req.params.id, reason);
+    if (!result.ok) {
+      const status = result.reason === 'DUPLICATE_REPORT' ? 409 : 404;
+      return res.status(status).json({ status, code: result.reason, message: null, data: null });
+    }
+    res.status(201).json({ status: 201, code: 'COMMUNITY_REPORT_CREATED', message: null, data: { id: result.id } });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // capacity(모집 인원)는 선택 — 안 적으면 null로 저장(정보 표시용일 뿐 신청 수를
@@ -164,6 +188,9 @@ router.post('/:id/close', async (req, res, next) => {
   }
 });
 
+// POST /api/community/:id/report — 글 신고(#187).
+router.post('/:id/report', (req, res, next) => handleReport(req, res, next, 'post'));
+
 // POST /api/community/:id/apply — 신청. getPostById를 그대로 재사용해 "신청 가능한
 // 글인지"(승인됨 + 본인 글 아님 + 마감 안 됨)를 판정한다 — 목록/상세 노출 규칙과 신청
 // 가능 여부가 항상 같은 기준을 쓰게 하기 위함.
@@ -234,6 +261,22 @@ router.post('/applications/:id/accept', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// POST /api/community/applications/:id/report — 신청 메시지 신고(#187). 신청 메시지는
+// 글쓴이만 볼 수 있으므로(getApplicantsForPost) 신고도 글쓴이만 가능하도록 소유권을 먼저
+// 확인한다 — handleReport의 대상 존재 확인만으로는 "아무 신청 id나 신고 가능"해지는
+// 허점이 생기기 때문.
+router.post('/applications/:id/report', async (req, res, next) => {
+  try {
+    const isAuthor = await communityService.isApplicationOwnedByPostAuthor(req.params.id, req.session.userId);
+    if (!isAuthor) {
+      return res.status(403).json({ status: 403, code: 'FORBIDDEN', message: null, data: null });
+    }
+  } catch (err) {
+    return next(err);
+  }
+  return handleReport(req, res, next, 'application');
 });
 
 // reason은 선택 — 글쓴이가 신청자에게 남기는 거부 메시지.

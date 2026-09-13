@@ -4,6 +4,9 @@ import {
   approveAdminPost,
   rejectAdminPost,
   deleteAdminPost,
+  deleteAdminApplication,
+  getAdminReports,
+  resolveAdminReport,
   getAdminStats,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
@@ -17,11 +20,13 @@ function formatDate(dateStr) {
 const SUB_FILTER_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
 const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
 const SUB_FILTERS = ['pending', 'approved', 'rejected'];
+const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료' };
+const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 
 /**
  * Admin Page
- * 관리자 전용(이슈 #164 4단계) — 지금은 커뮤니티 승인/통계 2개 탭만. 신고함/문의함은
- * 후속 이슈. AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
+ * 관리자 전용(이슈 #164 4단계) — 커뮤니티 승인/신고함(#187)/통계 3개 탭. 문의함은 후속
+ * 이슈. AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
  * 실제 접근 제어는 서버(server/middleware/auth.js의 requireAdmin)가 매 요청마다 다시
  * 하므로, 여기서는 admin이 아닌 사용자가 어쩌다 들어와도 API가 403을 낼 뿐 안전하다.
  *
@@ -37,7 +42,7 @@ const SUB_FILTERS = ['pending', 'approved', 'rejected'];
  * - onOpenProfile: function
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
-  const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'stats'
+  const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'reports' | 'stats'
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +50,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [actionId, setActionId] = useState(null); // 승인/반려/삭제 처리 중인 글 id
   // 반려 사유(선택) 입력값 — 글 id별로 따로 들고 있어야 여러 대기중 카드가 서로 안 섞인다.
   const [rejectReasons, setRejectReasons] = useState({});
+
+  const [reportSubFilter, setReportSubFilter] = useState('pending');
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
+  const [reportActionId, setReportActionId] = useState(null); // 처리완료/대상삭제 처리 중인 신고 id
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -67,6 +77,16 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
       .catch(() => setError('목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setLoading(false));
   }, [mainTab, subFilter]);
+
+  useEffect(() => {
+    if (mainTab !== 'reports') return;
+    setReportsLoading(true);
+    setError(null);
+    getAdminReports(reportSubFilter)
+      .then(setReports)
+      .catch(() => setError('신고 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .finally(() => setReportsLoading(false));
+  }, [mainTab, reportSubFilter]);
 
   const loadStats = () => {
     setStatsLoading(true);
@@ -116,6 +136,40 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
   };
 
+  const handleResolveReport = async (id) => {
+    setReportActionId(id);
+    setError(null);
+    try {
+      await resolveAdminReport(id);
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      showToast('처리완료로 표시했어요.');
+    } catch {
+      setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setReportActionId(null);
+    }
+  };
+
+  // 신고된 대상(글/신청)을 삭제하고, 신고 자체도 같이 처리완료로 넘긴다 — 조치를 했는데
+  // 신고함에 그대로 남아있으면 관리자가 또 확인해야 하는 번거로움이 생긴다.
+  const handleDeleteReportTarget = async (report) => {
+    if (!report.target) return;
+    if (!window.confirm('신고된 대상을 완전히 삭제할까요? 되돌릴 수 없어요.')) return;
+    setReportActionId(report.id);
+    setError(null);
+    try {
+      if (report.target.type === 'post') await deleteAdminPost(report.target.id);
+      else await deleteAdminApplication(report.target.id);
+      await resolveAdminReport(report.id);
+      setReports((prev) => prev.filter((r) => r.id !== report.id));
+      showToast('삭제하고 처리완료로 표시했어요.');
+    } catch {
+      setError('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setReportActionId(null);
+    }
+  };
+
   return (
     <div className="courses-page">
       <header className="screen-header">
@@ -145,6 +199,9 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
         <div className="courses-year-tabs">
           <button type="button" className={`courses-year-tab ${mainTab === 'approval' ? 'active' : ''}`} onClick={() => setMainTab('approval')}>
             커뮤니티 승인
+          </button>
+          <button type="button" className={`courses-year-tab ${mainTab === 'reports' ? 'active' : ''}`} onClick={() => setMainTab('reports')}>
+            신고함
           </button>
           <button type="button" className={`courses-year-tab ${mainTab === 'stats' ? 'active' : ''}`} onClick={() => setMainTab('stats')}>
             통계
@@ -222,6 +279,69 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                         삭제
                       </button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : mainTab === 'reports' ? (
+          <>
+            <div className="admin-sub-tabs">
+              {REPORT_SUB_FILTERS.map((f) => (
+                <button key={f} type="button" className={`admin-sub-tab ${reportSubFilter === f ? 'active' : ''}`} onClick={() => setReportSubFilter(f)}>
+                  {REPORT_SUB_FILTER_LABEL[f]}
+                </button>
+              ))}
+            </div>
+
+            {reportsLoading ? (
+              <p className="courses-manual-hint">불러오는 중...</p>
+            ) : reports.length === 0 ? (
+              <p className="courses-manual-hint">{REPORT_SUB_FILTER_LABEL[reportSubFilter]} 신고가 없어요.</p>
+            ) : (
+              <div className="admin-post-list">
+                {reports.map((r) => (
+                  <div className="admin-post-card" key={r.id}>
+                    <p className="admin-post-title">
+                      {r.target
+                        ? r.target.type === 'post'
+                          ? `글 신고 · ${r.target.title}`
+                          : `신청 신고 · ${r.target.postTitle}`
+                        : '대상이 삭제된 신고'}
+                    </p>
+                    <p className="community-detail-meta">
+                      신고자 {r.reporter} · {formatDate(r.createdAt)}
+                    </p>
+                    <p className="community-detail-body">
+                      <b>신고 사유</b> · {r.reason}
+                    </p>
+                    {r.target?.type === 'application' && (
+                      <p className="community-applicant-msg">
+                        <b>신고된 메시지</b> · {r.target.message}
+                      </p>
+                    )}
+                    {reportSubFilter === 'pending' && (
+                      <div className="community-applicant-actions">
+                        <button
+                          type="button"
+                          className="community-act-btn community-act-accept"
+                          onClick={() => handleResolveReport(r.id)}
+                          disabled={reportActionId === r.id}
+                        >
+                          처리완료
+                        </button>
+                        {r.target && (
+                          <button
+                            type="button"
+                            className="community-outline-btn community-danger"
+                            onClick={() => handleDeleteReportTarget(r)}
+                            disabled={reportActionId === r.id}
+                          >
+                            대상 삭제
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

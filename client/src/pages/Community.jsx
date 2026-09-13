@@ -13,6 +13,8 @@ import {
   getCommunityApplicants,
   acceptCommunityApplication,
   rejectCommunityApplication,
+  reportCommunityPost,
+  reportCommunityApplication,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck, IconPlus } from '../components/icons.jsx';
@@ -79,6 +81,16 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   const [closeSubmitting, setCloseSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
+  // 글 신고 — 상세 화면 하나에 글이 하나뿐이라 단일 상태로 충분.
+  const [reportFormOpen, setReportFormOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  // 신청 메시지 신고 — 신청자 목록엔 여러 카드가 있어서 id별로 따로 들고 있어야 한다
+  // (rejectMessages와 동일한 이유).
+  const [applicantReportOpenId, setApplicantReportOpenId] = useState(null);
+  const [applicantReportReasons, setApplicantReportReasons] = useState({});
+  const [applicantReportSubmittingId, setApplicantReportSubmittingId] = useState(null);
+
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
@@ -108,6 +120,9 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setError(null);
     setApplyMessage('');
     setApplicants([]);
+    setReportFormOpen(false);
+    setReportReason('');
+    setApplicantReportOpenId(null);
     getCommunityPost(id)
       .then((post) => {
         setSelectedPost(post);
@@ -295,6 +310,46 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     }
   };
 
+  const handleReportPost = async (e) => {
+    e.preventDefault();
+    if (!reportReason.trim() || !selectedPost) return;
+    setReportSubmitting(true);
+    setError(null);
+    try {
+      await reportCommunityPost(selectedPost.id, reportReason.trim());
+      showToast('신고했어요 — 관리자가 확인할게요.');
+      setReportReason('');
+      setReportFormOpen(false);
+    } catch (err) {
+      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 글이에요.');
+      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+  const handleReportApplication = async (applicationId) => {
+    const reason = (applicantReportReasons[applicationId] || '').trim();
+    if (!reason) return;
+    setApplicantReportSubmittingId(applicationId);
+    setError(null);
+    try {
+      await reportCommunityApplication(applicationId, reason);
+      showToast('신고했어요 — 관리자가 확인할게요.');
+      setApplicantReportReasons((prev) => {
+        const next = { ...prev };
+        delete next[applicationId];
+        return next;
+      });
+      setApplicantReportOpenId(null);
+    } catch (err) {
+      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 신청이에요.');
+      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setApplicantReportSubmittingId(null);
+    }
+  };
+
   const renderDetail = () => {
     const post = selectedPost;
     return (
@@ -405,6 +460,34 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                         <b>거부 사유</b> · {a.rejectReason}
                       </p>
                     )}
+                    {applicantReportOpenId === a.id ? (
+                      <>
+                        <textarea
+                          className="community-reject-message-input"
+                          rows={2}
+                          placeholder="신고 사유를 적어주세요."
+                          value={applicantReportReasons[a.id] || ''}
+                          onChange={(e) => setApplicantReportReasons((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                        />
+                        <div className="community-applicant-actions">
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-reject"
+                            onClick={() => handleReportApplication(a.id)}
+                            disabled={applicantReportSubmittingId === a.id}
+                          >
+                            {applicantReportSubmittingId === a.id ? '신고하는 중...' : '신고 제출'}
+                          </button>
+                          <button type="button" className="community-outline-btn" onClick={() => setApplicantReportOpenId(null)}>
+                            취소
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button type="button" className="community-outline-btn community-danger" onClick={() => setApplicantReportOpenId(a.id)}>
+                        신고하기
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -412,6 +495,32 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           </>
         ) : (
           <>
+            {reportFormOpen ? (
+              <form className="community-apply-form" onSubmit={handleReportPost}>
+                <div className="auth-field">
+                  <label>신고 사유</label>
+                  <textarea
+                    rows={3}
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="신고하는 이유를 적어주세요."
+                    required
+                  />
+                </div>
+                <div className="community-applicant-actions">
+                  <button type="submit" className="community-act-btn community-act-reject" disabled={reportSubmitting}>
+                    {reportSubmitting ? '신고하는 중...' : '신고 제출'}
+                  </button>
+                  <button type="button" className="community-outline-btn" onClick={() => setReportFormOpen(false)}>
+                    취소
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button type="button" className="community-outline-btn community-danger" onClick={() => setReportFormOpen(true)}>
+                신고하기
+              </button>
+            )}
             {user?.role === 'admin' && (
               <button
                 type="button"
