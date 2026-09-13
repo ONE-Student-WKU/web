@@ -4,11 +4,21 @@ import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, Ico
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
-// 페이지를 새로고침하지 않는 한(모듈이 다시 로드되지 않는 한) 유지되는 메모리 캐시.
-// 홈 화면을 나갔다가 돌아올 때마다 서버 응답을 기다리며 빈 화면을 보여주는 대신,
-// 직전에 불러온 값을 바로 보여줄 수 있게 컴포넌트 바깥(마운트/언마운트와 무관)에 둔다.
-const homeDataCache = { profile: null, status: null, shortfalls: null };
+// 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
+// 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
+// 새로고침 등)에도 직전에 불러온 값을 바로 보여줄 수 있다(utils/sessionCache.js 참고).
+const homeDataCache = {
+  profile: readCache('home_profile'),
+  status: readCache('home_status'),
+  shortfalls: readCache('home_shortfalls'),
+};
+
+function setHomeCache(key, value) {
+  homeDataCache[key] = value;
+  writeCache(`home_${key}`, value);
+}
 
 // 로그아웃/계정 삭제 후 새 계정으로 들어오면, SPA라 페이지가 새로고침되지 않아 이 모듈
 // 스코프 캐시가 그대로 남아있어서 잠깐 이전 계정 데이터가 보이는 문제가 있었다(실사용
@@ -18,6 +28,9 @@ export function resetHomeCache() {
   homeDataCache.profile = null;
   homeDataCache.status = null;
   homeDataCache.shortfalls = null;
+  clearCache('home_profile');
+  clearCache('home_status');
+  clearCache('home_shortfalls');
 }
 
 /**
@@ -61,7 +74,7 @@ function Home({
     getMe()
       .then((data) => {
         setProfile(data);
-        homeDataCache.profile = data;
+        setHomeCache('profile', data);
       })
       .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
 
@@ -74,10 +87,10 @@ function Home({
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
-        homeDataCache.status = data;
+        setHomeCache('status', data);
         const nextShortfalls = summarizeShortfalls(mergeMajorCategories(data.categories), data.certifications);
         setShortfalls(nextShortfalls);
-        homeDataCache.shortfalls = nextShortfalls;
+        setHomeCache('shortfalls', nextShortfalls);
       })
       .catch(() => setShortfalls(null));
   }, []);

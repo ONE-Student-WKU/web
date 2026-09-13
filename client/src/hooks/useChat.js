@@ -1,13 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCurrentConversation, sendChatMessage } from '../api/chatApi';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막 대화를 캐시해둔다.
-const chatCache = { conversationId: null, messages: null };
+// sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
+// (utils/sessionCache.js 참고)에도 즉시 보여줄 수 있다.
+const chatCache = {
+  conversationId: readCache('chat_conversationId'),
+  messages: readCache('chat_messages'),
+};
 
 // pages/Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 export function resetChatCache() {
   chatCache.conversationId = null;
   chatCache.messages = null;
+  clearCache('chat_conversationId');
+  clearCache('chat_messages');
 }
 
 /**
@@ -31,6 +39,7 @@ function useChat() {
           }))
         );
         chatCache.conversationId = data.conversationId;
+        writeCache('chat_conversationId', data.conversationId);
       })
       .catch((error) => console.error('Failed to load conversation:', error))
       .finally(() => setInitialLoading(false));
@@ -40,6 +49,7 @@ function useChat() {
   // 바뀔 때마다(전송/응답 도착 포함) 캐시도 같이 갱신해둔다.
   useEffect(() => {
     chatCache.messages = messages;
+    writeCache('chat_messages', messages);
   }, [messages]);
 
   const sendMessage = useCallback(
