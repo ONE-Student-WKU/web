@@ -19,6 +19,7 @@ const graduationRoutes = require('./routes/graduation');
 const careerRoutes = require('./routes/career');
 const adminRoutes = require('./routes/admin');
 const communityRoutes = require('./routes/community');
+const emailRelayRoutes = require('./routes/emailRelay');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -41,7 +42,11 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 // Middlewares
 // CLIENT_ORIGIN 미설정 시(로컬 개발 등) 기존과 동일하게 모든 origin을 허용함.
 app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
-app.use(express.json());
+// verify로 원문 바이트를 req.rawBody에 같이 담아둔다 — 대부분의 라우트는 파싱된 req.body만
+// 쓰지만, Resend 인바운드 웹훅(routes/emailRelay.js)의 서명 검증은 파싱 전 원문 바이트가
+// 있어야 해서(JSON.stringify로 재구성하면 공백/키 순서 차이로 서명이 깨짐) 매 요청마다
+// 미리 잡아둔다.
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 app.use(express.urlencoded({ extended: true }));
 
 // 기존 mysql2 커넥션 풀을 그대로 재사용 — 세션 전용 DB 접속 정보를 따로 두지 않는다.
@@ -83,6 +88,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/career', careerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/email-relay', emailRelayRoutes);
 
 // Base Route
 app.get('/', (req, res) => {

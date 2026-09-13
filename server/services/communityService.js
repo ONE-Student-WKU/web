@@ -40,6 +40,31 @@ async function createEmailProxiesForApplication(applicationId, applicantId, auth
   }
 }
 
+// 인바운드로 온 메일의 수신 주소(프록시)로 "실제 수신자 이메일"과 "상대방 프록시 주소
+// (발신자로 표시할 값)"를 찾는다(#182 2단계, server/routes/emailRelay.js가 호출). 한
+// application당 프록시가 정확히 2개라 "나(매칭된 프록시) 아닌 쪽"이 곧 상대방이라는
+// 사실만으로 찾을 수 있다 — 인바운드 메일의 실제 발신 주소(from)는 신뢰하지 않는다
+// (신뢰할 필요도 없다).
+async function findEmailRelayTarget(toProxyEmail) {
+  const [rows] = await pool.query('SELECT application_id, owner_id FROM community_email_proxies WHERE proxy_email = ?', [
+    toProxyEmail,
+  ]);
+  const matched = rows[0];
+  if (!matched) return null;
+
+  const [[recipient]] = await pool.query('SELECT email FROM students WHERE id = ?', [matched.owner_id]);
+  if (!recipient) return null;
+
+  const [siblingRows] = await pool.query(
+    'SELECT proxy_email FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
+    [matched.application_id, matched.owner_id]
+  );
+  const sibling = siblingRows[0];
+  if (!sibling) return null;
+
+  return { recipientEmail: recipient.email, senderProxyEmail: sibling.proxy_email };
+}
+
 // studentService.js의 serializeStudent()와 동일한 닉네임 폴백(student.name || user{id}) —
 // 가입 시 name을 NULL로 남겨두는 정책이라 표시 시점에 계산해야 한다. 한 곳(studentService)의
 // 규칙을 SQL로 다시 구현하지 않고 그대로 재사용. 닉네임을 어디에도 스냅샷 저장하지 않고
@@ -375,6 +400,7 @@ module.exports = {
   getMyApplications,
   getApplicantsForPost,
   decideApplication,
+  findEmailRelayTarget,
   listPostsForAdmin,
   decidePost,
   deletePost,
