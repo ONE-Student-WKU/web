@@ -18,9 +18,21 @@ import {
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX } from '../components/icons.jsx';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
-const communityCache = { posts: null, myPosts: null, myApplications: null };
+// sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
+// (utils/sessionCache.js 참고)에도 즉시 보여줄 수 있다.
+const communityCache = {
+  posts: readCache('community_posts'),
+  myPosts: readCache('community_myPosts'),
+  myApplications: readCache('community_myApplications'),
+};
+
+function setCommunityCache(key, value) {
+  communityCache[key] = value;
+  writeCache(`community_${key}`, value);
+}
 
 // App.jsx의 resetAllUserCaches가 로그아웃/계정 삭제 시 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
@@ -28,6 +40,9 @@ export function resetCommunityCache() {
   communityCache.posts = null;
   communityCache.myPosts = null;
   communityCache.myApplications = null;
+  clearCache('community_posts');
+  clearCache('community_myPosts');
+  clearCache('community_myApplications');
 }
 
 const MY_POST_STATUS_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
@@ -161,21 +176,21 @@ function Community({
       getCommunityPosts()
         .then((list) => {
           setPosts(list);
-          communityCache.posts = list;
+          setCommunityCache('posts', list);
         })
         .catch(() => setError('커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     } else if (tab === 'mine') {
       getMyCommunityPosts()
         .then((mine) => {
           setMyPosts(mine);
-          communityCache.myPosts = mine;
+          setCommunityCache('myPosts', mine);
         })
         .catch(() => setError('내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     } else {
       getMyCommunityApplications()
         .then((myApps) => {
           setMyApplications(myApps);
-          communityCache.myApplications = myApps;
+          setCommunityCache('myApplications', myApps);
         })
         .catch(() => setError('신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     }
@@ -222,9 +237,9 @@ function Community({
     setPosts(list);
     setMyPosts(mine);
     setMyApplications(myApps);
-    communityCache.posts = list;
-    communityCache.myPosts = mine;
-    communityCache.myApplications = myApps;
+    setCommunityCache('posts', list);
+    setCommunityCache('myPosts', mine);
+    setCommunityCache('myApplications', myApps);
   };
 
   const resetAfterWrite = () => {
@@ -353,7 +368,7 @@ function Community({
       openPost(selectedPost.id);
       const myApps = await getMyCommunityApplications();
       setMyApplications(myApps);
-      communityCache.myApplications = myApps;
+      setCommunityCache('myApplications', myApps);
     } catch (err) {
       if (err.code === 'DUPLICATE_APPLICATION') setError('이미 이 글에 신청했어요.');
       else if (err.code === 'APPLICATION_LIMIT_REACHED') setError('이 글에는 최대 3번까지만 신청할 수 있어요.');

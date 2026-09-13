@@ -18,6 +18,7 @@ import {
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck, IconAlertTriangle } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { displayCategory } from '../utils/graduation.js';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 const DAYS = ['월', '화', '수', '목', '금'];
 // P(Pass)/NP(Not Pass)는 "전체성적조회" PDF 가져오기로만 들어오는 값(P/F 채점 과목) —
@@ -59,14 +60,22 @@ function semesterKey(year, semester) {
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // 학기별 데이터(myCourses/timetable)는 학기 탭마다 값이 다르므로 학기 키별로 따로 캐시한다.
+// sessionStorage 복원은 profile/summary/semesters/status/retakeEligible(스칼라 값)에만
+// 적용한다 — semesterData는 Map이라 그대로 직렬화가 안 되고, 학기별 세부 데이터까지는
+// 최초 화면(요약 카드들)만큼 "즉시 안 보이면 눈에 띄는" 정보가 아니라 스코프에서 뺐다.
 const courseMgmtCache = {
-  profile: null,
-  summary: null,
-  semesters: null,
-  status: null,
-  retakeEligible: null,
+  profile: readCache('courseMgmt_profile'),
+  summary: readCache('courseMgmt_summary'),
+  semesters: readCache('courseMgmt_semesters'),
+  status: readCache('courseMgmt_status'),
+  retakeEligible: readCache('courseMgmt_retakeEligible'),
   semesterData: new Map(), // key: semesterKey(year, semester) -> { myCourses, timetable }
 };
+
+function setCourseMgmtCache(key, value) {
+  courseMgmtCache[key] = value;
+  writeCache(`courseMgmt_${key}`, value);
+}
 
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
@@ -77,6 +86,11 @@ export function resetCourseMgmtCache() {
   courseMgmtCache.status = null;
   courseMgmtCache.retakeEligible = null;
   courseMgmtCache.semesterData.clear();
+  clearCache('courseMgmt_profile');
+  clearCache('courseMgmt_summary');
+  clearCache('courseMgmt_semesters');
+  clearCache('courseMgmt_status');
+  clearCache('courseMgmt_retakeEligible');
 }
 
 // 입학년도 1학기부터 현재 학기까지 전체 범위를 생성 — 휴학 학기도 그냥 빈 탭으로 포함된다
@@ -217,25 +231,25 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     getMe()
       .then((data) => {
         setProfile(data);
-        courseMgmtCache.profile = data;
+        setCourseMgmtCache('profile', data);
       })
       .catch(() => {});
     getCourseSummary()
       .then((data) => {
         setSummary(data);
-        courseMgmtCache.summary = data;
+        setCourseMgmtCache('summary', data);
       })
       .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     getSemesters()
       .then((data) => {
         setSemesters(data);
-        courseMgmtCache.semesters = data;
+        setCourseMgmtCache('semesters', data);
       })
       .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     getRetakeEligibleCourses()
       .then((data) => {
         setRetakeEligible(data);
-        courseMgmtCache.retakeEligible = data;
+        setCourseMgmtCache('retakeEligible', data);
       })
       .catch(() => {});
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
@@ -244,7 +258,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
-        courseMgmtCache.status = data;
+        setCourseMgmtCache('status', data);
       })
       .catch(() => setStatus(null))
       .finally(() => setPageLoading(false));
@@ -383,9 +397,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setSummary(s);
     setSemesters(sems);
     setRetakeEligible(retake);
-    courseMgmtCache.summary = s;
-    courseMgmtCache.semesters = sems;
-    courseMgmtCache.retakeEligible = retake;
+    setCourseMgmtCache('summary', s);
+    setCourseMgmtCache('semesters', sems);
+    setCourseMgmtCache('retakeEligible', retake);
     if (highlightTotalChange && previousTotal !== undefined && s.total.earnedCredits !== previousTotal) {
       setTotalCreditsHighlight(true);
       setTimeout(() => setTotalCreditsHighlight(false), 2100); // settings-highlight-pulse 지속 시간(0.7s x 3)
@@ -393,7 +407,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
-        courseMgmtCache.status = data;
+        setCourseMgmtCache('status', data);
       })
       .catch(() => setStatus(null));
   }
