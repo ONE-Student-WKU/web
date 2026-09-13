@@ -9,6 +9,7 @@ import {
   resolveAdminReport,
   getAdminInquiries,
   resolveAdminInquiry,
+  getAdminStats,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers } from '../components/icons.jsx';
@@ -31,8 +32,9 @@ const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', re
  * Admin Page
  * 관리자 전용(이슈 #164 4단계) — 학생 홈 화면과 같은 구조(위: 현황 대시보드, 아래: 기능
  * 타일)로 진입해서, 타일을 누르면 커뮤니티 승인/신고함(#187)/문의함(#166)으로 들어간다.
- * 대시보드 통계 카드는 지금은 자리만 잡아둔 상태(값 표시 없음) — 가입자 수/미처리
- * 건수/현재 접속자 수를 집계하는 API가 아직 없어서, 그건 후속 작업으로 남겨둔다.
+ * 대시보드 통계(가입 이메일/현재 접속자/미처리 신고/미처리 문의)는 기존 GET /api/admin/stats
+ * (+ totalStudents 추가)와 신고함/문의함이 이미 쓰던 목록 API를 그대로 재사용해서 뽑아낸
+ * 값이라 새 스키마·집계 로직이 필요 없었다 — 대시보드 진입할 때마다 다시 불러온다.
  * AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
  * 실제 접근 제어는 서버(server/middleware/auth.js의 requireAdmin)가 매 요청마다 다시
  * 하므로, 여기서는 admin이 아닌 사용자가 어쩌다 들어와도 API가 403을 낼 뿐 안전하다.
@@ -52,6 +54,8 @@ const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', re
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry, onOpenPost }) {
   const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries'
+  const [dashboardStats, setDashboardStats] = useState(null); // { totalStudents, activeSessions, pendingReports, pendingInquiries }
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +82,25 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   }
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+
+  // 대시보드 진입할 때마다 새로 불러온다 — 신고함/문의함에서 처리하고 돌아왔을 때 그
+  // 숫자가 그대로 남아있으면(특히 미처리 건수) 실제로 처리됐는지 헷갈리게 된다.
+  useEffect(() => {
+    if (adminView !== 'dashboard') return;
+    setDashboardLoading(true);
+    setError(null);
+    Promise.all([getAdminStats(), getAdminReports('pending'), getAdminInquiries('open')])
+      .then(([stats, pendingReports, pendingInquiries]) => {
+        setDashboardStats({
+          totalStudents: stats.totalStudents,
+          activeSessions: stats.activeSessions,
+          pendingReports: pendingReports.length,
+          pendingInquiries: pendingInquiries.length,
+        });
+      })
+      .catch(() => setError('현황을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .finally(() => setDashboardLoading(false));
+  }, [adminView]);
 
   useEffect(() => {
     if (adminView !== 'approval') return;
@@ -242,19 +265,27 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
             <div className="admin-dashboard-stats">
               <div className="admin-stat-cell">
                 <p className="admin-stat-label">가입 이메일</p>
-                <div className="admin-stat-value placeholder">—</div>
+                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                  {dashboardLoading ? '—' : dashboardStats?.totalStudents ?? '—'}
+                </div>
               </div>
               <div className="admin-stat-cell">
                 <p className="admin-stat-label">현재 접속자</p>
-                <div className="admin-stat-value placeholder">—</div>
+                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                  {dashboardLoading ? '—' : dashboardStats?.activeSessions ?? '—'}
+                </div>
               </div>
               <div className="admin-stat-cell">
                 <p className="admin-stat-label">미처리 신고</p>
-                <div className="admin-stat-value placeholder">—</div>
+                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                  {dashboardLoading ? '—' : dashboardStats?.pendingReports ?? '—'}
+                </div>
               </div>
               <div className="admin-stat-cell">
                 <p className="admin-stat-label">미처리 문의</p>
-                <div className="admin-stat-value placeholder">—</div>
+                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                  {dashboardLoading ? '—' : dashboardStats?.pendingInquiries ?? '—'}
+                </div>
               </div>
             </div>
 
