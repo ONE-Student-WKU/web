@@ -527,6 +527,23 @@ CREATE TABLE IF NOT EXISTS community_reports (
 );
 
 -- ---------------------------------------------------------------------------
+-- 11. 문의하기 (#166 — 버그/문제 제보, 커뮤니티와 무관한 범용 채널)
+-- 스크린샷 등 첨부파일은 1차 스코프에서 제외(텍스트만) — Railway 파일시스템이 재배포마다
+-- 초기화되는 임시 저장소라 별도 스토리지 연동 없이는 첨부를 못 남긴다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS inquiries (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  student_id   INT NOT NULL,
+  title        VARCHAR(50) NOT NULL,
+  content      TEXT NOT NULL,
+  status       VARCHAR(20) NOT NULL DEFAULT 'open',  -- open / resolved
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at  DATETIME NULL,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
 -- 학과·트랙 마스터 초기 시드
 -- "컴퓨터·소프트웨어공학과"는 ~2025학번(136점 체계, 트랙 없음), "공학3계열"은
 -- 2026학번~(130점 체계, 아래 두 트랙 중 하나를 2학년 진급 시 선택)에 대응.

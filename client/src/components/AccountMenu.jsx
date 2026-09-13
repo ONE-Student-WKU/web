@@ -13,10 +13,11 @@ import { IconUser } from './icons.jsx';
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  * - onOpenAdmin: function (선택) — user.role === 'admin'일 때만 "관리자" 항목을 보여준다.
- *   지금은 Home.jsx에서만 연결돼 있음(다른 화면 헤더까지 다 뚫을 필요 없음 — 관리자는
- *   홈을 거쳐서 들어가면 충분).
+ * - onOpenInquiry: function (선택) — "문의하기" 항목을 보여준다.
+ *   onOpenAdmin/onOpenInquiry 둘 다 지금은 Home.jsx에서만 연결돼 있음(다른 화면 헤더까지
+ *   다 뚫을 필요 없음 — 관리자든 문의하기든 홈을 거쳐서 들어가면 충분).
  */
-function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin }) {
+function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -78,6 +79,17 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
           >
             계정 정보 수정
           </button>
+          {onOpenInquiry && (
+            <button
+              className="account-menu-item"
+              onClick={() => {
+                setOpen(false);
+                onOpenInquiry();
+              }}
+            >
+              문의하기
+            </button>
+          )}
           <div className="account-menu-divider" />
           <button
             className="account-menu-item danger"
