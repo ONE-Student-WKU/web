@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const communityService = require('../services/communityService');
+const inquiryService = require('../services/inquiryService');
 const pool = require('../db');
 
 /**
  * server/routes/admin.js
- * 관리자 전용 API — 이번 단계는 커뮤니티 게시글 승인/반려/삭제와 활성 세션 수 통계만.
- * 화면(관리자 페이지)은 이 API 위에 나중에 얹는다(이슈 #164 4단계).
+ * 관리자 전용 API — 커뮤니티 게시글/신고 승인·반려·삭제(#164, #187), 문의함(#166),
+ * 활성 세션 수 통계.
  */
 
 router.use(requireAuth, requireAdmin);
@@ -59,6 +60,68 @@ router.delete('/community/posts/:id', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'POST_DELETED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/community/applications/:id — 신고된 신청 삭제(#187, 소유권 무관).
+// FK ON DELETE CASCADE로 연결된 이메일 프록시(#182)도 같이 정리된다.
+router.delete('/community/applications/:id', async (req, res, next) => {
+  try {
+    const deleted = await communityService.deleteApplication(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'APPLICATION_DELETED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/community/reports?status=pending
+router.get('/community/reports', async (req, res, next) => {
+  try {
+    const status = req.query.status || 'pending';
+    const reports = await communityService.listReportsForAdmin(status);
+    res.status(200).json({ status: 200, code: 'ADMIN_REPORTS_LIST', message: null, data: reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/community/reports/:id/resolve — "처리완료" 표시(신고 자체를 지우진 않음).
+router.post('/community/reports/:id/resolve', async (req, res, next) => {
+  try {
+    const resolved = await communityService.resolveReport(req.params.id);
+    if (!resolved) {
+      return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/inquiries?status=open
+router.get('/inquiries', async (req, res, next) => {
+  try {
+    const status = req.query.status || 'open';
+    const inquiries = await inquiryService.listInquiriesForAdmin(status);
+    res.status(200).json({ status: 200, code: 'ADMIN_INQUIRIES_LIST', message: null, data: inquiries });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/inquiries/:id/resolve
+router.post('/inquiries/:id/resolve', async (req, res, next) => {
+  try {
+    const resolved = await inquiryService.resolveInquiry(req.params.id);
+    if (!resolved) {
+      return res.status(404).json({ status: 404, code: 'INQUIRY_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'INQUIRY_RESOLVED', message: null, data: null });
   } catch (err) {
     next(err);
   }

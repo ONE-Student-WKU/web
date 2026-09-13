@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const pool = require('../db');
 
 /**
@@ -5,6 +6,68 @@ const pool = require('../db');
  * 커뮤니티(스터디/프로젝트 모집) 게시판 — DB 접근 계층.
  * 신청/수락/모집마감 관련 함수는 3단계에서 추가된다.
  */
+
+// EMAIL_PROXY_DOMAIN은 .env(로컬) / Railway 환경변수(운영)에서 주입 (#182 — 이메일 프록시,
+// mailer.js의 RESEND_FROM_ADDRESS와 동일한 주입 방식). 인바운드 수신 서비스(2단계)가
+// 이 도메인의 MX 레코드를 받도록 설정돼야 프록시 주소로 온 메일이 실제로 전달된다.
+const EMAIL_PROXY_DOMAIN = process.env.EMAIL_PROXY_DOMAIN;
+
+// 프록시 주소는 실제 이메일과 무관한 무작위 토큰이어야 한다 — 원래 주소의 일부라도
+// 남으면(예: hong-xxxx@) 역추적 단서가 되거나 다른 사람이 패턴으로 프록시 주소를 추측할
+// 여지가 생긴다.
+// EMAIL_PROXY_DOMAIN 미설정 시 `token@undefined`처럼 깨진 주소를 조용히 만들어 DB에
+// 남기는 대신, 그 자리에서 바로 에러를 던진다 — 신청 수락이 실패하는 게(사용자가 바로
+// 알아차리고 재시도 가능) 깨진 프록시가 실제 데이터로 저장되는 것보다 낫다.
+function generateProxyEmail() {
+  if (!EMAIL_PROXY_DOMAIN) throw new Error('EMAIL_PROXY_DOMAIN 환경변수가 설정되지 않았습니다.');
+  return `${crypto.randomBytes(8).toString('hex')}@${EMAIL_PROXY_DOMAIN}`;
+}
+
+// 신청이 수락되면(매칭 성사) 신청자·글쓴이 각자를 위한 프록시를 하나씩 만든다. owner_id는
+// "이 프록시로 온 메일을 실제로 받을 사람"이라, 신청자에게 보여줄 프록시는 owner_id=authorId로,
+// 글쓴이에게 보여줄 프록시는 owner_id=applicantId로 만든다(getMyApplications/
+// getApplicantsForPost가 조회 시점에 각자 반대쪽 프록시를 찾아서 내려줌). UNIQUE 제약과
+// 충돌하면(극히 낮은 확률) 재생성해서 재시도한다.
+async function createEmailProxiesForApplication(applicationId, applicantId, authorId) {
+  for (const ownerId of [applicantId, authorId]) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await pool.query(
+          'INSERT INTO community_email_proxies (application_id, owner_id, proxy_email) VALUES (?, ?, ?)',
+          [applicationId, ownerId, generateProxyEmail()]
+        );
+        break;
+      } catch (err) {
+        if (err.code !== 'ER_DUP_ENTRY' || attempt >= 2) throw err;
+      }
+    }
+  }
+}
+
+// 인바운드로 온 메일의 수신 주소(프록시)로 "실제 수신자 이메일"과 "상대방 프록시 주소
+// (발신자로 표시할 값)"를 찾는다(#182 2단계, server/routes/emailRelay.js가 호출). 한
+// application당 프록시가 정확히 2개라 "나(매칭된 프록시) 아닌 쪽"이 곧 상대방이라는
+// 사실만으로 찾을 수 있다 — 인바운드 메일의 실제 발신 주소(from)는 신뢰하지 않는다
+// (신뢰할 필요도 없다).
+async function findEmailRelayTarget(toProxyEmail) {
+  const [rows] = await pool.query('SELECT application_id, owner_id FROM community_email_proxies WHERE proxy_email = ?', [
+    toProxyEmail,
+  ]);
+  const matched = rows[0];
+  if (!matched) return null;
+
+  const [[recipient]] = await pool.query('SELECT email FROM students WHERE id = ?', [matched.owner_id]);
+  if (!recipient) return null;
+
+  const [siblingRows] = await pool.query(
+    'SELECT proxy_email FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
+    [matched.application_id, matched.owner_id]
+  );
+  const sibling = siblingRows[0];
+  if (!sibling) return null;
+
+  return { recipientEmail: recipient.email, senderProxyEmail: sibling.proxy_email };
+}
 
 // studentService.js의 serializeStudent()와 동일한 닉네임 폴백(student.name || user{id}) —
 // 가입 시 name을 NULL로 남겨두는 정책이라 표시 시점에 계산해야 한다. 한 곳(studentService)의
@@ -83,7 +146,6 @@ async function getPostById(id, { studentId }) {
   );
   const row = rows[0];
   if (!row) return null;
-  if (row.status !== 'approved' && row.author_id !== studentId) return null;
 
   const isMine = row.author_id === studentId;
   let myApplication = null;
@@ -103,10 +165,18 @@ async function getPostById(id, { studentId }) {
     }
   }
 
+  // 미승인(수정 후 재검수 대기 포함) 글은 원래 작성자만 조회 가능하지만, 이미 수락된
+  // 신청자는 예외로 조회 자체는 허용한다 — 다만 재검수 전 콘텐츠(제목·본문)는 계속 가리고
+  // 신청 상태만 확인할 수 있게 한다(이슈 #196: "글 콘텐츠 열람"과 "내 신청 상태 확인" 분리).
+  const isAcceptedApplicant = myApplication?.status === 'accepted';
+  if (row.status !== 'approved' && !isMine && !isAcceptedApplicant) return null;
+
+  const contentHidden = row.status !== 'approved' && !isMine;
+
   return {
     id: row.id,
-    title: row.title,
-    body: row.body,
+    title: contentHidden ? null : row.title,
+    body: contentHidden ? null : row.body,
     category: row.category,
     capacity: row.capacity,
     status: row.status,
@@ -116,6 +186,7 @@ async function getPostById(id, { studentId }) {
     isMine,
     myApplication,
     rejectReason: isMine ? row.reject_reason : null,
+    contentHidden,
   };
 }
 
@@ -192,17 +263,18 @@ async function applyToPost(postId, applicantId, message) {
   return { ok: true, id: result.insertId };
 }
 
-// 내가 낸 신청 전체 — 수락된 건만 글쓴이 연락 이메일을 같이 내려준다(매칭 성사 시에만
-// 이메일 공개, db/schema.sql 커뮤니티 게시판 주석 참고 — 별도 컬럼으로 저장하지 않고
-// 응답 조립 시점에 계산).
+// 내가 낸 신청 전체 — 수락된 건만 글쓴이 연락처를 같이 내려준다(매칭 성사 시에만 공개).
+// 실제 이메일이 아니라 그 신청 건 전용 프록시 주소를 내려준다(#182 — 이메일 프록시) —
+// 실제 이메일은 이 조회에서 아예 select하지 않는다.
 async function getMyApplications(studentId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
-            s.name AS author_name, s.id AS author_id, s.email AS author_email
+            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
      JOIN students s ON s.id = p.author_id
+     LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = p.author_id
      WHERE a.applicant_id = ?
      ORDER BY a.created_at DESC`,
     [studentId]
@@ -217,7 +289,7 @@ async function getMyApplications(studentId) {
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
-    contactEmail: row.status === 'accepted' ? row.author_email : null,
+    contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
   }));
 }
 
@@ -228,9 +300,10 @@ async function getMyApplications(studentId) {
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
-            s.name AS applicant_name, s.email AS applicant_email
+            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
+     LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = a.applicant_id
      WHERE a.post_id = ?
      ORDER BY a.created_at ASC`,
     [postId]
@@ -246,7 +319,7 @@ async function getApplicantsForPost(postId) {
       createdAt: row.created_at,
       applicant: nicknameOf(row.applicant_name, row.applicant_id),
       hasAppliedBefore,
-      contactEmail: row.status === 'accepted' ? row.applicant_email : null,
+      contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
       rejectReason: row.status === 'rejected' ? row.reject_reason : null,
     };
   });
@@ -256,7 +329,23 @@ async function getApplicantsForPost(postId) {
 // 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
 // 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
 // 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
+// 수락(accepted)일 땐 프록시 생성을 상태 변경 UPDATE보다 먼저 한다 — 이 코드베이스엔
+// 트랜잭션이 없어서, 만약 UPDATE부터 하고 프록시 생성이 나중에 실패하면(EMAIL_PROXY_DOMAIN
+// 미설정 등) status만 'accepted'로 바뀐 채 연락처 없는 상태로 멈춰버리고, WHERE status=
+// 'pending' 가드 때문에 재시도(재수락)도 안 된다. 프록시 생성을 먼저 해서 실패 시 상태가
+// 아직 'pending'인 채로 남아있게 하면, 사용자가 그냥 다시 수락을 누르기만 하면 된다.
 async function decideApplication(applicationId, authorId, status, reason = null) {
+  if (status === 'accepted') {
+    const [[application]] = await pool.query(
+      `SELECT a.applicant_id FROM community_applications a
+       JOIN community_posts p ON p.id = a.post_id
+       WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
+      [applicationId, authorId]
+    );
+    if (!application) return false;
+    await createEmailProxiesForApplication(applicationId, application.applicant_id, authorId);
+  }
+
   const [result] = await pool.query(
     `UPDATE community_applications a
      JOIN community_posts p ON p.id = a.post_id
@@ -311,6 +400,103 @@ async function deletePost(id) {
   return result.affectedRows > 0;
 }
 
+// 관리자 전용 신청 삭제(#187 — 신고된 신청 메시지 조치용). deletePost와 동일하게 소유권
+// 확인 없이 id만으로 삭제한다. FK ON DELETE CASCADE로 연결된 이메일 프록시(#182)도 같이
+// 정리된다.
+async function deleteApplication(id) {
+  const [result] = await pool.query('DELETE FROM community_applications WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// 신청 메시지 신고(#187) 권한 확인 — 신청 메시지는 글쓴이만 볼 수 있으므로(getApplicantsForPost)
+// 신고도 글쓴이만 가능해야 한다. decideApplication의 소유권 확인과 동일한 JOIN 패턴.
+async function isApplicationOwnedByPostAuthor(applicationId, authorId) {
+  const [rows] = await pool.query(
+    `SELECT 1 FROM community_applications a
+     JOIN community_posts p ON p.id = a.post_id
+     WHERE a.id = ? AND p.author_id = ?`,
+    [applicationId, authorId]
+  );
+  return rows.length > 0;
+}
+
+// 신고 생성(#187). target_type은 'post' | 'application' — DB에 다형 FK를 걸 수 없어서
+// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 대기중 상태로
+// 중복 신고하는 것은 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
+async function createReport(reporterId, targetType, targetId, reason) {
+  const targetTable = targetType === 'post' ? 'community_posts' : 'community_applications';
+  const [targetRows] = await pool.query(`SELECT id FROM ${targetTable} WHERE id = ?`, [targetId]);
+  if (targetRows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
+
+  const [existing] = await pool.query(
+    "SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'pending' LIMIT 1",
+    [reporterId, targetType, targetId]
+  );
+  if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_REPORT' };
+
+  const [result] = await pool.query(
+    'INSERT INTO community_reports (reporter_id, target_type, target_id, reason) VALUES (?, ?, ?, ?)',
+    [reporterId, targetType, targetId, reason]
+  );
+  return { ok: true, id: result.insertId };
+}
+
+// 관리자 신고함 목록(#187). target_type이 다형이라 신고 목록을 한 번에 조회한 뒤, 각 신고가
+// 가리키는 대상(글 제목 또는 신청 메시지)을 신고 건별로 따로 조회해서 붙인다 — 신고 건수가
+// 적은 서비스 규모라 N+1 쿼리를 단일 UNION 쿼리로 합치는 복잡도를 감수할 필요가 없다.
+// 대상이 이미 삭제됐으면 target은 null — 화면에서 "삭제된 대상"으로 표시.
+async function listReportsForAdmin(status) {
+  const [rows] = await pool.query(
+    `SELECT r.id, r.target_type, r.target_id, r.reason, r.status, r.created_at, r.resolved_at,
+            s.name AS reporter_name, s.id AS reporter_id
+     FROM community_reports r
+     JOIN students s ON s.id = r.reporter_id
+     WHERE r.status = ?
+     ORDER BY r.created_at ASC`,
+    [status]
+  );
+
+  const results = [];
+  for (const row of rows) {
+    let target = null;
+    if (row.target_type === 'post') {
+      const [[post]] = await pool.query('SELECT id, title, status FROM community_posts WHERE id = ?', [row.target_id]);
+      if (post) target = { type: 'post', id: post.id, title: post.title, status: post.status };
+    } else {
+      const [[application]] = await pool.query(
+        `SELECT a.id, a.message, a.post_id, p.title AS post_title
+         FROM community_applications a
+         JOIN community_posts p ON p.id = a.post_id
+         WHERE a.id = ?`,
+        [row.target_id]
+      );
+      if (application) {
+        target = { type: 'application', id: application.id, message: application.message, postId: application.post_id, postTitle: application.post_title };
+      }
+    }
+
+    results.push({
+      id: row.id,
+      reporter: nicknameOf(row.reporter_name, row.reporter_id),
+      reason: row.reason,
+      status: row.status,
+      createdAt: row.created_at,
+      resolvedAt: row.resolved_at,
+      target,
+    });
+  }
+  return results;
+}
+
+// status가 이미 'pending'이 아니면 아무 것도 안 바뀐다(decidePost와 동일한 재처리 방지 가드).
+async function resolveReport(id) {
+  const [result] = await pool.query(
+    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW() WHERE id = ? AND status = 'pending'",
+    [id]
+  );
+  return result.affectedRows > 0;
+}
+
 module.exports = {
   createPost,
   listApprovedPosts,
@@ -323,7 +509,13 @@ module.exports = {
   getMyApplications,
   getApplicantsForPost,
   decideApplication,
+  findEmailRelayTarget,
   listPostsForAdmin,
   decidePost,
   deletePost,
+  deleteApplication,
+  isApplicationOwnedByPostAuthor,
+  createReport,
+  listReportsForAdmin,
+  resolveReport,
 };

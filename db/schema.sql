@@ -454,8 +454,9 @@ CREATE TABLE IF NOT EXISTS career_roadmap_items (
 
 -- ---------------------------------------------------------------------------
 -- 10. 커뮤니티 게시판 (스터디/프로젝트 모집, 관리자 승인제)
--- 닉네임만 공개하고(students.name 폴백 재사용), 매칭 성사 시에만 서로 이메일을 공개해
--- 이후 소통은 당사자끼리 한다 — 1:1 채팅 없음. 글은 관리자 승인 전엔 비공개(status=
+-- 닉네임만 공개하고(students.name 폴백 재사용), 매칭 성사 시에만 서로 연락처를 공개해
+-- 이후 소통은 당사자끼리 한다 — 1:1 채팅 없음. 연락처는 실제 이메일이 아니라 프록시 주소다
+-- (community_email_proxies 참고, #182). 글은 관리자 승인 전엔 비공개(status=
 -- 'pending')이고, 승인 후에도 글쓴이가 "모집 마감"(closed_at)으로 직접 닫을 수 있다.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS community_posts (
@@ -476,8 +477,7 @@ CREATE TABLE IF NOT EXISTS community_posts (
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
--- 신청 메시지는 글쓴이만 볼 수 있음(비공개). 수락 시 서로 이메일 공개는 응답 조립
--- 시점에 계산 — 별도 컬럼으로 저장하지 않는다.
+-- 신청 메시지는 글쓴이만 볼 수 있음(비공개).
 CREATE TABLE IF NOT EXISTS community_applications (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   post_id        INT NOT NULL,
@@ -490,6 +490,57 @@ CREATE TABLE IF NOT EXISTS community_applications (
 
   FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
   FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 신청 수락(매칭 성사) 시 신청자·글쓴이 각각을 위해 한 쌍(2행)으로 생성되는 프록시 이메일
+-- (#182). owner_id는 "이 프록시로 온 메일을 실제로 받을 사람" — 신청자에게 보여줄
+-- 프록시는 owner_id=글쓴이, 글쓴이에게 보여줄 프록시는 owner_id=신청자다. proxy_email은
+-- 실제 주소와 무관한 무작위 토큰(communityService.generateProxyEmail)이라 역추적 단서가
+-- 되지 않는다. Resend 인바운드 웹훅(server/routes/emailRelay.js, 2단계)이 이 매핑으로
+-- 실제 수신자를 찾아 forward한다.
+CREATE TABLE IF NOT EXISTS community_email_proxies (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  application_id INT NOT NULL,
+  owner_id       INT NOT NULL,
+  proxy_email    VARCHAR(255) NOT NULL,
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_community_email_proxies_email (proxy_email),
+  FOREIGN KEY (application_id) REFERENCES community_applications(id) ON DELETE CASCADE,
+  FOREIGN KEY (owner_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 커뮤니티 글/신청 메시지 신고(#187). target_type으로 대상 테이블을 구분하는 다형(polymorphic)
+-- 참조라 target_id에 DB 레벨 FK를 걸 수 없다(한 컬럼이 서로 다른 두 테이블을 가리켜야 함) —
+-- 대상 존재 여부/유효성은 communityService.createReport가 애플리케이션 레벨에서 검증한다.
+CREATE TABLE IF NOT EXISTS community_reports (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  reporter_id    INT NOT NULL,
+  target_type    VARCHAR(20) NOT NULL,  -- 'post' / 'application'
+  target_id      INT NOT NULL,
+  reason         TEXT NOT NULL,
+  status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at    DATETIME NULL,
+
+  FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 11. 문의하기 (#166 — 버그/문제 제보, 커뮤니티와 무관한 범용 채널)
+-- 스크린샷 등 첨부파일은 1차 스코프에서 제외(텍스트만) — Railway 파일시스템이 재배포마다
+-- 초기화되는 임시 저장소라 별도 스토리지 연동 없이는 첨부를 못 남긴다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS inquiries (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  student_id   INT NOT NULL,
+  title        VARCHAR(50) NOT NULL,
+  content      TEXT NOT NULL,
+  status       VARCHAR(20) NOT NULL DEFAULT 'open',  -- open / resolved
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at  DATETIME NULL,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------

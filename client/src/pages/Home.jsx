@@ -49,6 +49,7 @@ function Home({
   onOpenLeaveSettings,
   onOpenProfile,
   onOpenAdmin,
+  onOpenInquiry,
   onLogout,
 }) {
   const [profile, setProfile] = useState(homeDataCache.profile);
@@ -105,6 +106,7 @@ function Home({
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
           onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 

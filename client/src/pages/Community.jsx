@@ -13,6 +13,8 @@ import {
   getCommunityApplicants,
   acceptCommunityApplication,
   rejectCommunityApplication,
+  reportCommunityPost,
+  reportCommunityApplication,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck, IconPlus } from '../components/icons.jsx';
@@ -79,6 +81,16 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
   const [closeSubmitting, setCloseSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
+  // 글 신고 — 상세 화면 하나에 글이 하나뿐이라 단일 상태로 충분.
+  const [reportFormOpen, setReportFormOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  // 신청 메시지 신고 — 신청자 목록엔 여러 카드가 있어서 id별로 따로 들고 있어야 한다
+  // (rejectMessages와 동일한 이유).
+  const [applicantReportOpenId, setApplicantReportOpenId] = useState(null);
+  const [applicantReportReasons, setApplicantReportReasons] = useState({});
+  const [applicantReportSubmittingId, setApplicantReportSubmittingId] = useState(null);
+
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
@@ -108,6 +120,9 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     setError(null);
     setApplyMessage('');
     setApplicants([]);
+    setReportFormOpen(false);
+    setReportReason('');
+    setApplicantReportOpenId(null);
     getCommunityPost(id)
       .then((post) => {
         setSelectedPost(post);
@@ -295,12 +310,52 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     }
   };
 
+  const handleReportPost = async (e) => {
+    e.preventDefault();
+    if (!reportReason.trim() || !selectedPost) return;
+    setReportSubmitting(true);
+    setError(null);
+    try {
+      await reportCommunityPost(selectedPost.id, reportReason.trim());
+      showToast('신고했어요 — 관리자가 확인할게요.');
+      setReportReason('');
+      setReportFormOpen(false);
+    } catch (err) {
+      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 글이에요.');
+      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+  const handleReportApplication = async (applicationId) => {
+    const reason = (applicantReportReasons[applicationId] || '').trim();
+    if (!reason) return;
+    setApplicantReportSubmittingId(applicationId);
+    setError(null);
+    try {
+      await reportCommunityApplication(applicationId, reason);
+      showToast('신고했어요 — 관리자가 확인할게요.');
+      setApplicantReportReasons((prev) => {
+        const next = { ...prev };
+        delete next[applicationId];
+        return next;
+      });
+      setApplicantReportOpenId(null);
+    } catch (err) {
+      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 신청이에요.');
+      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setApplicantReportSubmittingId(null);
+    }
+  };
+
   const renderDetail = () => {
     const post = selectedPost;
     return (
       <div className="community-detail">
         {error && <p className="home-error">{error}</p>}
-        <h2 className="community-detail-title">{post.title}</h2>
+        <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
           <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
@@ -310,7 +365,13 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
           )}
         </p>
-        <p className="community-detail-body">{post.body}</p>
+        {post.contentHidden ? (
+          <p className="courses-manual-hint">
+            이 글은 수정되어 재승인 대기 중이라 내용을 다시 볼 수 없어요. 신청 상태는 아래에서 계속 확인할 수 있어요.
+          </p>
+        ) : (
+          <p className="community-detail-body">{post.body}</p>
+        )}
 
         {post.status === 'rejected' && post.rejectReason && (
           <p className="admin-reject-reason">
@@ -399,6 +460,34 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
                         <b>거부 사유</b> · {a.rejectReason}
                       </p>
                     )}
+                    {applicantReportOpenId === a.id ? (
+                      <>
+                        <textarea
+                          className="community-reject-message-input"
+                          rows={2}
+                          placeholder="신고 사유를 적어주세요."
+                          value={applicantReportReasons[a.id] || ''}
+                          onChange={(e) => setApplicantReportReasons((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                        />
+                        <div className="community-applicant-actions">
+                          <button
+                            type="button"
+                            className="community-act-btn community-act-reject"
+                            onClick={() => handleReportApplication(a.id)}
+                            disabled={applicantReportSubmittingId === a.id}
+                          >
+                            {applicantReportSubmittingId === a.id ? '신고하는 중...' : '신고 제출'}
+                          </button>
+                          <button type="button" className="community-outline-btn" onClick={() => setApplicantReportOpenId(null)}>
+                            취소
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button type="button" className="community-outline-btn community-danger" onClick={() => setApplicantReportOpenId(a.id)}>
+                        신고하기
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -406,6 +495,32 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           </>
         ) : (
           <>
+            {reportFormOpen ? (
+              <form className="community-apply-form" onSubmit={handleReportPost}>
+                <div className="auth-field">
+                  <label>신고 사유</label>
+                  <textarea
+                    rows={3}
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="신고하는 이유를 적어주세요."
+                    required
+                  />
+                </div>
+                <div className="community-applicant-actions">
+                  <button type="submit" className="community-act-btn community-act-reject" disabled={reportSubmitting}>
+                    {reportSubmitting ? '신고하는 중...' : '신고 제출'}
+                  </button>
+                  <button type="button" className="community-outline-btn" onClick={() => setReportFormOpen(false)}>
+                    취소
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button type="button" className="community-outline-btn community-danger" onClick={() => setReportFormOpen(true)}>
+                신고하기
+              </button>
+            )}
             {user?.role === 'admin' && (
               <button
                 type="button"
@@ -493,7 +608,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       <div className="community-write-row">
         <div className="auth-field">
           <label>구분</label>
-          <select value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
+          <select className="onb-select" value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
             <option value="study">스터디</option>
             <option value="project">프로젝트</option>
           </select>
@@ -514,7 +629,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         <label>제목</label>
         <input
           type="text"
-          maxLength={100}
+          maxLength={20}
           value={writeFields.title}
           onChange={(e) => setWriteFields((f) => ({ ...f, title: e.target.value }))}
           required
@@ -522,7 +637,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       </div>
       <div className="auth-field">
         <label>내용</label>
-        <textarea rows={6} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
+        <textarea rows={6} maxLength={1000} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
       </div>
       <button type="submit" className="auth-submit-btn" disabled={writeSubmitting}>
         {writeSubmitting ? '저장하는 중...' : editingPostId ? '수정하기' : '등록하기'}

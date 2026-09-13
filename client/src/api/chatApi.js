@@ -166,6 +166,12 @@ export const acceptCommunityApplication = (id) =>
 export const rejectCommunityApplication = (id, reason) =>
   apiRequest(`/community/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
+export const reportCommunityPost = (id, reason) =>
+  apiRequest(`/community/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
+
+export const reportCommunityApplication = (id, reason) =>
+  apiRequest(`/community/applications/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
+
 export const getAdminCommunityPosts = (status) => apiRequest(`/admin/community/posts?status=${status}`);
 
 export const approveAdminPost = (id) => apiRequest(`/admin/community/posts/${id}/approve`, { method: 'POST' });
@@ -174,5 +180,20 @@ export const rejectAdminPost = (id, reason) =>
   apiRequest(`/admin/community/posts/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
 export const deleteAdminPost = (id) => apiRequest(`/admin/community/posts/${id}`, { method: 'DELETE' });
+
+export const deleteAdminApplication = (id) => apiRequest(`/admin/community/applications/${id}`, { method: 'DELETE' });
+
+export const getAdminReports = (status) => apiRequest(`/admin/community/reports?status=${status}`);
+
+export const resolveAdminReport = (id) => apiRequest(`/admin/community/reports/${id}/resolve`, { method: 'POST' });
+
+export const createInquiry = (title, content) =>
+  apiRequest('/inquiries', { method: 'POST', body: JSON.stringify({ title, content }) });
+
+export const getMyInquiries = () => apiRequest('/inquiries/mine');
+
+export const getAdminInquiries = (status) => apiRequest(`/admin/inquiries?status=${status}`);
+
+export const resolveAdminInquiry = (id) => apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST' });
 
 export const getAdminStats = () => apiRequest('/admin/stats');
