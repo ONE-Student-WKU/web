@@ -54,6 +54,32 @@ const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', re
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry, onOpenPost }) {
   const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries'
+
+  // App.jsx의 view 히스토리 관리와 같은 이유·같은 방식 — adminView 전환은 App.jsx 입장에서
+  // view가 그대로 'admin'이라 히스토리에 전혀 안 쌓여서, 신고함/문의함 등 하위 화면에 있을 때
+  // 모바일 뒤로가기를 누르면 대시보드를 거치지 않고 곧장 admin 진입 전 화면(홈)으로 나가버리는
+  // 문제가 있었다(실사용 확인). App.jsx의 popstate 리스너와 같은 이벤트에 별도로 반응해서
+  // adminView만 추가로 히스토리에 반영한다 — state를 덮어쓰지 않고 펼쳐써서 App.jsx가 쓰는
+  // view 필드는 그대로 보존한다.
+  const skipHistoryPush = useRef(true);
+
+  useEffect(() => {
+    function handlePopState(event) {
+      skipHistoryPush.current = true;
+      setAdminView(event.state?.adminView || 'dashboard');
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (skipHistoryPush.current) {
+      window.history.replaceState({ ...window.history.state, adminView }, '');
+      skipHistoryPush.current = false;
+      return;
+    }
+    window.history.pushState({ ...window.history.state, adminView }, '');
+  }, [adminView]);
   const [dashboardStats, setDashboardStats] = useState(null); // { totalStudents, activeSessions, pendingReports, pendingInquiries }
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [subFilter, setSubFilter] = useState('pending');

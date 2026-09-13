@@ -17,7 +17,7 @@ import {
   reportCommunityApplication,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconPlus, IconSiren } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX } from '../components/icons.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 const communityCache = { posts: null, myPosts: null, myApplications: null };
@@ -382,9 +382,22 @@ function Community({
         <div className="community-detail-title-row">
           <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
           {!post.isMine && (
-            <button type="button" className="community-report-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
-              <IconSiren size={20} />
-            </button>
+            <div className="community-detail-title-actions">
+              <button type="button" className="community-title-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
+                <IconSiren size={20} />
+              </button>
+              {user?.role === 'admin' && (
+                <button
+                  type="button"
+                  className="community-title-icon-btn"
+                  onClick={() => handleAdminDelete(post)}
+                  disabled={deleteSubmitting}
+                  aria-label="관리자 권한으로 삭제"
+                >
+                  <IconX size={20} />
+                </button>
+              )}
+            </div>
           )}
         </div>
         <p className="community-detail-meta">
@@ -526,38 +539,6 @@ function Community({
           </>
         ) : (
           <>
-            {reportFormOpen && (
-              <form className="community-apply-form" onSubmit={handleReportPost}>
-                <div className="auth-field">
-                  <label>신고 사유</label>
-                  <textarea
-                    rows={3}
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                    placeholder="신고하는 이유를 적어주세요."
-                    required
-                  />
-                </div>
-                <div className="community-applicant-actions">
-                  <button type="submit" className="community-act-btn community-act-reject" disabled={reportSubmitting}>
-                    {reportSubmitting ? '신고하는 중...' : '신고 제출'}
-                  </button>
-                  <button type="button" className="community-outline-btn" onClick={() => setReportFormOpen(false)}>
-                    취소
-                  </button>
-                </div>
-              </form>
-            )}
-            {user?.role === 'admin' && (
-              <button
-                type="button"
-                className="community-outline-btn community-danger"
-                onClick={() => handleAdminDelete(post)}
-                disabled={deleteSubmitting}
-              >
-                {deleteSubmitting ? '삭제 중...' : '삭제 (관리자)'}
-              </button>
-            )}
             {post.myApplication === null ? (
               post.closedAt ? (
                 <p className="courses-manual-hint">모집이 마감됐어요.</p>
@@ -798,6 +779,33 @@ function Community({
           </>
         )}
       </div>
+
+      {reportFormOpen && (
+        <div className="career-confirm-overlay" onClick={() => setReportFormOpen(false)}>
+          <form className="career-confirm-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleReportPost}>
+            {error && <p className="home-error">{error}</p>}
+            <div className="auth-field">
+              <label>신고 사유</label>
+              <textarea
+                rows={3}
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="신고하는 이유를 적어주세요."
+                required
+                autoFocus
+              />
+            </div>
+            <div className="community-applicant-actions">
+              <button type="submit" className="community-act-btn community-act-reject" disabled={reportSubmitting}>
+                {reportSubmitting ? '신고하는 중...' : '신고 제출'}
+              </button>
+              <button type="button" className="community-outline-btn" onClick={() => setReportFormOpen(false)}>
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
