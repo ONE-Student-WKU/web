@@ -187,4 +187,13 @@ export const getAdminReports = (status) => apiRequest(`/admin/community/reports?
 
 export const resolveAdminReport = (id) => apiRequest(`/admin/community/reports/${id}/resolve`, { method: 'POST' });
 
+export const createInquiry = (title, content) =>
+  apiRequest('/inquiries', { method: 'POST', body: JSON.stringify({ title, content }) });
+
+export const getMyInquiries = () => apiRequest('/inquiries/mine');
+
+export const getAdminInquiries = (status) => apiRequest(`/admin/inquiries?status=${status}`);
+
+export const resolveAdminInquiry = (id) => apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST' });
+
 export const getAdminStats = () => apiRequest('/admin/stats');

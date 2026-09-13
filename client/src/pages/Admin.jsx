@@ -7,6 +7,8 @@ import {
   deleteAdminApplication,
   getAdminReports,
   resolveAdminReport,
+  getAdminInquiries,
+  resolveAdminInquiry,
   getAdminStats,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
@@ -22,11 +24,13 @@ const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
 const SUB_FILTERS = ['pending', 'approved', 'rejected'];
 const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료' };
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
+const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
+const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
 
 /**
  * Admin Page
- * 관리자 전용(이슈 #164 4단계) — 커뮤니티 승인/신고함(#187)/통계 3개 탭. 문의함은 후속
- * 이슈. AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
+ * 관리자 전용(이슈 #164 4단계) — 커뮤니티 승인/신고함(#187)/문의함(#166)/통계 4개 탭.
+ * AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
  * 실제 접근 제어는 서버(server/middleware/auth.js의 requireAdmin)가 매 요청마다 다시
  * 하므로, 여기서는 admin이 아닌 사용자가 어쩌다 들어와도 API가 403을 낼 뿐 안전하다.
  *
@@ -42,7 +46,7 @@ const REPORT_SUB_FILTERS = ['pending', 'resolved'];
  * - onOpenProfile: function
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
-  const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'reports' | 'stats'
+  const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'reports' | 'inquiries' | 'stats'
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [reportActionId, setReportActionId] = useState(null); // 처리완료/대상삭제 처리 중인 신고 id
+
+  const [inquirySubFilter, setInquirySubFilter] = useState('open');
+  const [inquiries, setInquiries] = useState([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(true);
+  const [inquiryActionId, setInquiryActionId] = useState(null); // 처리완료 처리 중인 문의 id
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -87,6 +96,16 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
       .catch(() => setError('신고 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setReportsLoading(false));
   }, [mainTab, reportSubFilter]);
+
+  useEffect(() => {
+    if (mainTab !== 'inquiries') return;
+    setInquiriesLoading(true);
+    setError(null);
+    getAdminInquiries(inquirySubFilter)
+      .then(setInquiries)
+      .catch(() => setError('문의 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .finally(() => setInquiriesLoading(false));
+  }, [mainTab, inquirySubFilter]);
 
   const loadStats = () => {
     setStatsLoading(true);
@@ -150,6 +169,20 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
   };
 
+  const handleResolveInquiry = async (id) => {
+    setInquiryActionId(id);
+    setError(null);
+    try {
+      await resolveAdminInquiry(id);
+      setInquiries((prev) => prev.filter((i) => i.id !== id));
+      showToast('처리완료로 표시했어요.');
+    } catch {
+      setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setInquiryActionId(null);
+    }
+  };
+
   // 신고된 대상(글/신청)을 삭제하고, 신고 자체도 같이 처리완료로 넘긴다 — 조치를 했는데
   // 신고함에 그대로 남아있으면 관리자가 또 확인해야 하는 번거로움이 생긴다.
   const handleDeleteReportTarget = async (report) => {
@@ -202,6 +235,9 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
           </button>
           <button type="button" className={`courses-year-tab ${mainTab === 'reports' ? 'active' : ''}`} onClick={() => setMainTab('reports')}>
             신고함
+          </button>
+          <button type="button" className={`courses-year-tab ${mainTab === 'inquiries' ? 'active' : ''}`} onClick={() => setMainTab('inquiries')}>
+            문의함
           </button>
           <button type="button" className={`courses-year-tab ${mainTab === 'stats' ? 'active' : ''}`} onClick={() => setMainTab('stats')}>
             통계
@@ -340,6 +376,46 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                             대상 삭제
                           </button>
                         )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : mainTab === 'inquiries' ? (
+          <>
+            <div className="admin-sub-tabs">
+              {INQUIRY_SUB_FILTERS.map((f) => (
+                <button key={f} type="button" className={`admin-sub-tab ${inquirySubFilter === f ? 'active' : ''}`} onClick={() => setInquirySubFilter(f)}>
+                  {INQUIRY_SUB_FILTER_LABEL[f]}
+                </button>
+              ))}
+            </div>
+
+            {inquiriesLoading ? (
+              <p className="courses-manual-hint">불러오는 중...</p>
+            ) : inquiries.length === 0 ? (
+              <p className="courses-manual-hint">{INQUIRY_SUB_FILTER_LABEL[inquirySubFilter]} 문의가 없어요.</p>
+            ) : (
+              <div className="admin-post-list">
+                {inquiries.map((i) => (
+                  <div className="admin-post-card" key={i.id}>
+                    <p className="admin-post-title">{i.title}</p>
+                    <p className="community-detail-meta">
+                      {i.student} · {formatDate(i.createdAt)}
+                    </p>
+                    <p className="community-detail-body">{i.content}</p>
+                    {inquirySubFilter === 'open' && (
+                      <div className="community-applicant-actions">
+                        <button
+                          type="button"
+                          className="community-act-btn community-act-accept"
+                          onClick={() => handleResolveInquiry(i.id)}
+                          disabled={inquiryActionId === i.id}
+                        >
+                          처리완료
+                        </button>
                       </div>
                     )}
                   </div>

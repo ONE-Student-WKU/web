@@ -10,6 +10,7 @@ import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
 import Community, { resetCommunityCache } from './pages/Community.jsx';
 import Admin from './pages/Admin.jsx';
+import Inquiry from './pages/Inquiry.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -48,7 +49,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
-  // | 'privacy' | 'terms'
+  // | 'admin' | 'inquiry' | 'privacy' | 'terms'
   // privacy/terms는 Google OAuth 동의 화면 검증용으로 로그인 여부와 무관하게 접근 가능해야
   // 하고, Google이 URL을 직접 방문해서 확인하므로 최초 로드 시 실제 pathname(/privacy,
   // /terms)을 봐서 시작 화면을 정한다 — 이 SPA는 다른 화면 전환에는 URL을 안 쓰지만
@@ -313,6 +314,8 @@ function App() {
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
           />
+        ) : view === 'inquiry' ? (
+          <Inquiry onGoHome={() => setView('home')} />
         ) : (
           <Home
             user={user}
@@ -325,6 +328,7 @@ function App() {
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
             onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
               setView('onboarding');
