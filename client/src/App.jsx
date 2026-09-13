@@ -251,6 +251,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'graduation' ? (
           <GraduationStatus
@@ -261,6 +263,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'career' ? (
           <CareerExploration
@@ -270,6 +274,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
             onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'community' ? (
@@ -280,6 +286,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
@@ -313,6 +321,7 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'inquiry' ? (
           <Inquiry onGoHome={() => setView('home')} />

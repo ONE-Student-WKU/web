@@ -17,9 +17,8 @@ function formatDate(dateStr) {
 
 /**
  * Inquiry Page
- * 문의하기(#166) — 버그/문제 제보, 커뮤니티와 무관한 범용 채널. AccountMenu에서 진입
- * (Admin과 동일하게 Home.jsx에서만 연결 — 어느 화면에서 문제를 겪었든 홈을 거쳐서
- * 들어가면 충분하다는 판단, admin 진입점과 같은 이유).
+ * 문의하기(#166) — 버그/문제 제보, 커뮤니티와 무관한 범용 채널. 어느 화면에서 문제를
+ * 겪었든 그 자리에서 바로 올 수 있도록 AccountMenu를 쓰는 모든 화면에서 진입 가능.
  *
  * Props:
  * - onGoHome: function

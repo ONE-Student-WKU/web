@@ -44,8 +44,9 @@ const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenProfile: function
+ * - onOpenInquiry: function
  */
-function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry }) {
   const [mainTab, setMainTab] = useState('approval'); // 'approval' | 'reports' | 'inquiries' | 'stats'
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
@@ -218,6 +219,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 

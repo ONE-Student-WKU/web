@@ -26,7 +26,7 @@ export function resetGraduationCache() {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
   const [error, setError] = useState(null);
@@ -73,6 +73,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 

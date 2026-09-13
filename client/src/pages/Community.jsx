@@ -53,7 +53,7 @@ function formatDate(dateStr) {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications'
   const [posts, setPosts] = useState(communityCache.posts || []);
   const [myPosts, setMyPosts] = useState(communityCache.myPosts || []);
@@ -663,6 +663,8 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 
