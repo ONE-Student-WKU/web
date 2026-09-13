@@ -52,6 +52,13 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     // 위반이 실제로 날 수 있어 아래 catch에서도 ER_DUP_ENTRY를 한 번 더 처리한다).
     if (name !== undefined) {
       const trimmedName = name.trim();
+      // "user{id}"는 닉네임 미설정 계정의 표시용 대체값(studentService.serializeStudent)일
+      // 뿐 실제 저장되는 값이 아니라서, name 컬럼 UNIQUE 제약이나 findByName 비교로는 안
+      // 걸린다 — 이 형식을 직접 자기 닉네임으로 쓰면 아직 닉네임을 안 정한 다른 계정을 화면에서
+      // 구분 못 하게 사칭할 수 있다(실사용 확인). 존재하는 id인지와 무관하게 형식 자체를 막는다.
+      if (/^user\d+$/i.test(trimmedName)) {
+        return res.status(400).json({ status: 400, code: 'RESERVED_NAME', message: null, data: null });
+      }
       const existing = await studentService.findByName(trimmedName);
       if (existing && existing.id !== student.id) {
         return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });

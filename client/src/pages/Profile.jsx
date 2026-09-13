@@ -164,7 +164,9 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       onNameChanged?.(trimmed);
       setNameSaved(true);
     } catch (err) {
-      setNameError(err.code === 'DUPLICATE_NAME' ? '이미 사용 중인 닉네임이에요.' : '저장에 실패했어요.');
+      if (err.code === 'DUPLICATE_NAME') setNameError('이미 사용 중인 닉네임이에요.');
+      else if (err.code === 'RESERVED_NAME') setNameError('"user숫자" 형식은 자동 배정용이라 쓸 수 없어요.');
+      else setNameError('저장에 실패했어요.');
     }
   }
 
