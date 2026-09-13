@@ -12,7 +12,8 @@ const communityService = require('../services/communityService');
 
 router.use(requireAuth);
 
-const TITLE_MAX_LENGTH = 100;
+const TITLE_MAX_LENGTH = 20;
+const BODY_MAX_LENGTH = 1000;
 const VALID_CATEGORIES = ['study', 'project'];
 
 function isValidTitle(title) {
@@ -20,7 +21,7 @@ function isValidTitle(title) {
 }
 
 function isValidBody(body) {
-  return typeof body === 'string' && body.trim().length > 0;
+  return typeof body === 'string' && body.trim().length > 0 && body.trim().length <= BODY_MAX_LENGTH;
 }
 
 function isValidCategory(category) {
