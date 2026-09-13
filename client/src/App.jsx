@@ -139,6 +139,10 @@ function App() {
   // 홈의 "학년이 다르신가요?" 링크로 설정에 왔을 때만 휴학 학기 수 입력란을 강조 — 계정
   // 메뉴로 평범하게 들어온 경우엔 안 켜지게 별도 플래그로 관리.
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
+  // 관리자 신고함에서 "그 글로 이동"을 누르면 커뮤니티 화면을 그 글이 열린 상태로 띄운다 —
+  // Community.jsx가 마운트 시 한 번 소비하고 onInitialPostConsumed로 다시 null로 돌려놔야,
+  // 나중에 하단 탭바로 평범하게 커뮤니티에 들어갔을 때 같은 글이 또 열리지 않는다.
+  const [communityInitialPostId, setCommunityInitialPostId] = useState(null);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
   // 채팅/진로 탐색처럼 ChatInput을 쓰는 화면에서 입력창이 포커스를 받으면(모바일 키보드가
   // 뜨면) 하단 탭바를 잠깐 숨겨 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는
@@ -251,6 +255,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'graduation' ? (
           <GraduationStatus
@@ -261,6 +267,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
           />
         ) : view === 'career' ? (
           <CareerExploration
@@ -270,6 +278,8 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
             onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'community' ? (
@@ -280,6 +290,10 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenAdmin={() => setView('admin')}
+            onOpenInquiry={() => setView('inquiry')}
+            initialPostId={communityInitialPostId}
+            onInitialPostConsumed={() => setCommunityInitialPostId(null)}
           />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
@@ -313,6 +327,11 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
+            onOpenInquiry={() => setView('inquiry')}
+            onOpenPost={(postId) => {
+              setCommunityInitialPostId(postId);
+              setView('community');
+            }}
           />
         ) : view === 'inquiry' ? (
           <Inquiry onGoHome={() => setView('home')} />

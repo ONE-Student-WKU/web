@@ -191,6 +191,13 @@ async function deleteStudent(studentId) {
   await pool.query('DELETE FROM students WHERE id = ?', [studentId]);
 }
 
+// 관리자 대시보드 가입 이메일 수 — 탈퇴 계정은 DELETE로 완전히 지워지는 정책이라
+// (deleteStudent) 이 COUNT가 곧 "현재 가입돼 있는 계정 수"와 같다.
+async function countAll() {
+  const [[{ count }]] = await pool.query('SELECT COUNT(*) AS count FROM students');
+  return count;
+}
+
 module.exports = {
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
@@ -209,4 +216,5 @@ module.exports = {
   completeOnboarding,
   updateProfile,
   deleteStudent,
+  countAll,
 };

@@ -127,7 +127,7 @@ function formatSchedule(schedule) {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [profile, setProfile] = useState(courseMgmtCache.profile);
   const [summary, setSummary] = useState(courseMgmtCache.summary);
@@ -673,6 +673,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           onOpenSettings={onOpenSettings}
           onOpenOnboarding={onOpenOnboarding}
           onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
         />
       </header>
 

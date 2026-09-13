@@ -163,6 +163,17 @@ export function IconCompass({ size = 18 }) {
   );
 }
 
+export function IconSiren({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <path d="M6 15v-4a6 6 0 0 1 12 0v4" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+      <line x1="12" y1="15" x2="12" y2="18" />
+      <line x1="12" y1="4" x2="12" y2="2" />
+    </svg>
+  );
+}
+
 export function IconUsers({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

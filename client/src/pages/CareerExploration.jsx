@@ -102,7 +102,7 @@ function parseFixedAnswersFromMessages(messages) {
  * - onInputFocusChange: function(boolean) — optional, 대화 단계 입력창 포커스 상태를 상위(App)에
  *   전달해 모바일 키보드가 떠 있는 동안 하단 탭바를 같이 숨길 수 있게 한다.
  */
-function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onInputFocusChange }) {
+function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry, onInputFocusChange }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
@@ -373,7 +373,15 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
               </div>
             </>
           )}
-          <AccountMenu user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} onOpenOnboarding={onOpenOnboarding} onOpenProfile={onOpenProfile} />
+          <AccountMenu
+            user={user}
+            onLogout={onLogout}
+            onOpenSettings={onOpenSettings}
+            onOpenOnboarding={onOpenOnboarding}
+            onOpenProfile={onOpenProfile}
+            onOpenAdmin={onOpenAdmin}
+            onOpenInquiry={onOpenInquiry}
+          />
         </div>
       </header>
 
