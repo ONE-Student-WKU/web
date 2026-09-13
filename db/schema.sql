@@ -496,8 +496,8 @@ CREATE TABLE IF NOT EXISTS community_applications (
 -- (#182). owner_id는 "이 프록시로 온 메일을 실제로 받을 사람" — 신청자에게 보여줄
 -- 프록시는 owner_id=글쓴이, 글쓴이에게 보여줄 프록시는 owner_id=신청자다. proxy_email은
 -- 실제 주소와 무관한 무작위 토큰(communityService.generateProxyEmail)이라 역추적 단서가
--- 되지 않는다. 인바운드 이메일 수신 서비스가 이 매핑으로 실제 수신자에게 전달한다(2단계,
--- 아직 미구현 — 지금은 화면에 실제 이메일 대신 이 주소를 보여주는 것까지만 반영).
+-- 되지 않는다. Resend 인바운드 웹훅(server/routes/emailRelay.js, 2단계)이 이 매핑으로
+-- 실제 수신자를 찾아 forward한다.
 CREATE TABLE IF NOT EXISTS community_email_proxies (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   application_id INT NOT NULL,
