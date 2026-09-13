@@ -21,6 +21,7 @@ const adminRoutes = require('./routes/admin');
 const communityRoutes = require('./routes/community');
 const emailRelayRoutes = require('./routes/emailRelay');
 const inquiriesRoutes = require('./routes/inquiries');
+const { trackActivity } = require('./middleware/activityTracker');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -77,6 +78,9 @@ app.use(
     },
   })
 );
+
+// 관리자 대시보드 "현재 접속자" 집계용 — 로그인된 요청마다 계정별 마지막 활동 시각을 기록한다.
+app.use(trackActivity);
 
 // Routes mounting
 app.use('/api/auth', authRoutes);
