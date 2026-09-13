@@ -48,8 +48,9 @@ const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', re
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  * - onOpenInquiry: function
+ * - onOpenPost: function(postId) — 신고함 카드를 눌렀을 때 그 글의 커뮤니티 상세로 이동.
  */
-function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry }) {
+function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry, onOpenPost }) {
   const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries'
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
@@ -196,6 +197,14 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     } finally {
       setReportActionId(null);
     }
+  };
+
+  // 신고 카드를 누르면 그 글로 이동 — 신청 신고는 신청 자체를 볼 수 있는 화면이 따로
+  // 없어서(작성자 전용), 그 신청이 달린 글로 대신 이동한다(target.postId).
+  const handleGoToReportedPost = (report) => {
+    if (!report.target) return;
+    const postId = report.target.type === 'post' ? report.target.id : report.target.postId;
+    onOpenPost(postId);
   };
 
   return (
@@ -356,7 +365,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
             ) : (
               <div className="admin-post-list">
                 {reports.map((r) => (
-                  <div className="admin-post-card" key={r.id}>
+                  <div
+                    className={`admin-post-card ${r.target ? 'clickable' : ''}`}
+                    key={r.id}
+                    onClick={r.target ? () => handleGoToReportedPost(r) : undefined}
+                  >
                     <p className="admin-post-title">
                       {r.target
                         ? r.target.type === 'post'
@@ -376,7 +389,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                       </p>
                     )}
                     {reportSubFilter === 'pending' && (
-                      <div className="community-applicant-actions">
+                      <div className="community-applicant-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           className="community-act-btn community-act-accept"

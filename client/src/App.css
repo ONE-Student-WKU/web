@@ -1951,6 +1951,10 @@ body {
   padding: 14px;
 }
 
+.admin-post-card.clickable {
+  cursor: pointer;
+}
+
 .admin-post-title {
   font-size: 0.9375rem;
   font-weight: 700;
