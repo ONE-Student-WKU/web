@@ -300,7 +300,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
     return (
       <div className="community-detail">
         {error && <p className="home-error">{error}</p>}
-        <h2 className="community-detail-title">{post.title}</h2>
+        <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
           <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
@@ -310,7 +310,13 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
             <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
           )}
         </p>
-        <p className="community-detail-body">{post.body}</p>
+        {post.contentHidden ? (
+          <p className="courses-manual-hint">
+            이 글은 수정되어 재승인 대기 중이라 내용을 다시 볼 수 없어요. 신청 상태는 아래에서 계속 확인할 수 있어요.
+          </p>
+        ) : (
+          <p className="community-detail-body">{post.body}</p>
+        )}
 
         {post.status === 'rejected' && post.rejectReason && (
           <p className="admin-reject-reason">
@@ -493,7 +499,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       <div className="community-write-row">
         <div className="auth-field">
           <label>구분</label>
-          <select value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
+          <select className="onb-select" value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
             <option value="study">스터디</option>
             <option value="project">프로젝트</option>
           </select>
@@ -514,7 +520,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
         <label>제목</label>
         <input
           type="text"
-          maxLength={100}
+          maxLength={20}
           value={writeFields.title}
           onChange={(e) => setWriteFields((f) => ({ ...f, title: e.target.value }))}
           required
@@ -522,7 +528,7 @@ function Community({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding,
       </div>
       <div className="auth-field">
         <label>내용</label>
-        <textarea rows={6} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
+        <textarea rows={6} maxLength={1000} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
       </div>
       <button type="submit" className="auth-submit-btn" disabled={writeSubmitting}>
         {writeSubmitting ? '저장하는 중...' : editingPostId ? '수정하기' : '등록하기'}

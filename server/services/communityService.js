@@ -83,7 +83,6 @@ async function getPostById(id, { studentId }) {
   );
   const row = rows[0];
   if (!row) return null;
-  if (row.status !== 'approved' && row.author_id !== studentId) return null;
 
   const isMine = row.author_id === studentId;
   let myApplication = null;
@@ -103,10 +102,18 @@ async function getPostById(id, { studentId }) {
     }
   }
 
+  // 미승인(수정 후 재검수 대기 포함) 글은 원래 작성자만 조회 가능하지만, 이미 수락된
+  // 신청자는 예외로 조회 자체는 허용한다 — 다만 재검수 전 콘텐츠(제목·본문)는 계속 가리고
+  // 신청 상태만 확인할 수 있게 한다(이슈 #196: "글 콘텐츠 열람"과 "내 신청 상태 확인" 분리).
+  const isAcceptedApplicant = myApplication?.status === 'accepted';
+  if (row.status !== 'approved' && !isMine && !isAcceptedApplicant) return null;
+
+  const contentHidden = row.status !== 'approved' && !isMine;
+
   return {
     id: row.id,
-    title: row.title,
-    body: row.body,
+    title: contentHidden ? null : row.title,
+    body: contentHidden ? null : row.body,
     category: row.category,
     capacity: row.capacity,
     status: row.status,
@@ -116,6 +123,7 @@ async function getPostById(id, { studentId }) {
     isMine,
     myApplication,
     rejectReason: isMine ? row.reject_reason : null,
+    contentHidden,
   };
 }
 
