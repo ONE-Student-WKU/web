@@ -9,6 +9,7 @@ import {
 } from '../api/chatApi.js';
 import { IconChevronLeft } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // 이메일 재인증 요청/확인 실패 코드는 서버(server/routes/auth.js)가 내려주는 err.code
 // 기준 — Login.jsx의 describeEmailError와 같은 코드 집합을 다루되 문구는 재인증 맥락에 맞춤.
@@ -35,13 +36,17 @@ function formatCountdown(ms) {
 
 // confirmedRoadmap은 "확정한 진로 없음"도 유효한 응답(null)이라 캐시 없음 마커로 null을
 // 못 쓴다 — undefined로 "아직 조회 전"을 구분한다(Home.jsx와 동일한 이유로 재진입 시
-// 빈 화면 깜빡임 방지용 모듈 스코프 캐시).
-let cachedConfirmedRoadmap;
+// 빈 화면 깜빡임 방지용 모듈 스코프 캐시). sessionStorage는 JSON이라 undefined를 그대로
+// 못 담으므로 { value }로 한 번 감싸서 저장하고, 꺼낼 때 감싼 적이 있었는지(=조회한 적
+// 있는지)로 undefined와 null을 구분한다.
+const cachedRoadmapWrapper = readCache('profile_confirmedRoadmap');
+let cachedConfirmedRoadmap = cachedRoadmapWrapper === null ? undefined : cachedRoadmapWrapper.value;
 
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetProfileCache() {
   cachedConfirmedRoadmap = undefined;
+  clearCache('profile_confirmedRoadmap');
 }
 
 /**
@@ -76,10 +81,12 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       .then((data) => {
         setConfirmedRoadmap(data);
         cachedConfirmedRoadmap = data;
+        writeCache('profile_confirmedRoadmap', { value: data });
       })
       .catch(() => {
         setConfirmedRoadmap(null);
         cachedConfirmedRoadmap = null;
+        writeCache('profile_confirmedRoadmap', { value: null });
       })
       .finally(() => setConfirmedRoadmapLoading(false));
   }, []);

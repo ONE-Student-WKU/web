@@ -3,15 +3,18 @@ import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor } from '../utils/graduation.js';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
-// 불러온 졸업요건 데이터를 캐시해둔다.
-let cachedStatus = null;
+// 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
+// 채로 페이지가 다시 로드되는 경우(utils/sessionCache.js 참고)에도 즉시 보여줄 수 있다.
+let cachedStatus = readCache('graduation_status');
 
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetGraduationCache() {
   cachedStatus = null;
+  clearCache('graduation_status');
 }
 
 /**
@@ -37,6 +40,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       .then((data) => {
         setStatus(data);
         cachedStatus = data;
+        writeCache('graduation_status', data);
       })
       .catch((err) => {
         if (err.code === 'ONBOARDING_REQUIRED') {
