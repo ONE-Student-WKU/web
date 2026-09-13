@@ -166,10 +166,11 @@ export function IconCompass({ size = 18 }) {
 export function IconSiren({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
-      <path d="M6 15v-4a6 6 0 0 1 12 0v4" />
-      <line x1="4" y1="18" x2="20" y2="18" />
-      <line x1="12" y1="15" x2="12" y2="18" />
-      <line x1="12" y1="4" x2="12" y2="2" />
+      <path d="M7 17V13a5 5 0 0 1 10 0v4" />
+      <rect x="3" y="17" width="18" height="4" rx="1" />
+      <line x1="12" y1="5" x2="12" y2="2" />
+      <line x1="6" y1="7" x2="4" y2="5" />
+      <line x1="18" y1="7" x2="20" y2="5" />
     </svg>
   );
 }

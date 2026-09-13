@@ -105,6 +105,40 @@ function Community({
   const [applicantReportReasons, setApplicantReportReasons] = useState({});
   const [applicantReportSubmittingId, setApplicantReportSubmittingId] = useState(null);
 
+  // 목록 → 상세/글쓰기 이동도 모바일 뒤로가기 스택에 반영해야, 뒤로가기를 눌렀을 때 곧장
+  // 홈으로 나가지 않고 먼저 목록으로 돌아온다(App.jsx의 view 히스토리 관리, Admin.jsx의
+  // adminView 히스토리 관리와 같은 방식 — 실사용 확인된 문제: 상세 보다가 뒤로가기를 누르면
+  // 목록을 건너뛰고 곧장 홈으로 나가버림). 상세/글쓰기는 글 id 등 실제 데이터가 있어야
+  // 복원 가능해서, 뒤로가기로는 항상 목록으로만 돌아가게 하고 그 안의 세부 화면(상세 vs
+  // 글쓰기)까지 구분해서 복원하지는 않는다 — 목록 밖으로 새지만 않으면 되는 문제라 이 정도로 충분.
+  const inSubView = showWriteForm || !!selectedPost;
+  const skipHistoryPush = useRef(true);
+
+  useEffect(() => {
+    function handlePopState(event) {
+      skipHistoryPush.current = true;
+      if (!event.state?.communityInSubView) {
+        setSelectedPost(null);
+        setShowWriteForm(false);
+      }
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (skipHistoryPush.current) {
+      window.history.replaceState({ ...window.history.state, communityInSubView: inSubView }, '');
+      skipHistoryPush.current = false;
+      return;
+    }
+    if (inSubView) {
+      window.history.pushState({ ...window.history.state, communityInSubView: inSubView }, '');
+    } else {
+      window.history.replaceState({ ...window.history.state, communityInSubView: inSubView }, '');
+    }
+  }, [inSubView]);
+
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
