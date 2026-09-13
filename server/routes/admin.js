@@ -128,14 +128,15 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats — 관리자 대시보드 상단 통계. activeSessions는 현재 활성 세션 수
-// (로그인 상태 유지 중인 사용자 수 근사치 — sessions 테이블(express-mysql-session, PR #162)의
-// 만료 안 된 행 개수를 그대로 셈, 별도 계측 없이 기존 세션 저장소만 조회). totalStudents는
-// 가입 계정 수(studentService.countAll).
+// GET /api/admin/stats — 관리자 대시보드 상단 통계. activeSessions는 "현재 접속자"
+// (최근 5분 내 요청이 있었던 계정 수 — student_activity, middleware/activityTracker.js).
+// 원래 sessions 테이블(express-mysql-session)의 만료 안 된 행 개수를 그대로 셌는데, 로그인
+// 유지 기간이 30일이라 실제 접속 여부와 무관하게 값이 크게 부풀려지는 문제가 있었다(실사용
+// 확인 — 접속자가 1~3명뿐인데 8로 표시됨). totalStudents는 가입 계정 수(studentService.countAll).
 router.get('/stats', async (req, res, next) => {
   try {
     const [[{ count }]] = await pool.query(
-      'SELECT COUNT(*) AS count FROM sessions WHERE expires > UNIX_TIMESTAMP()'
+      'SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at > NOW() - INTERVAL 5 MINUTE'
     );
     const totalStudents = await studentService.countAll();
     res.status(200).json({
