@@ -47,6 +47,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
     }
 
+    // 닉네임 사칭/도용 방지 — students.name의 UNIQUE 제약(db/schema.sql)이 최종 방어선이고,
+    // 이건 그 전에 사용자에게 원인을 알려주기 위한 사전 확인이다(동시 요청 경합 시 UNIQUE
+    // 위반이 실제로 날 수 있어 아래 catch에서도 ER_DUP_ENTRY를 한 번 더 처리한다).
+    if (name !== undefined) {
+      const trimmedName = name.trim();
+      const existing = await studentService.findByName(trimmedName);
+      if (existing && existing.id !== student.id) {
+        return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
+      }
+    }
+
     if (enrollmentType !== undefined && !VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
     }
@@ -126,6 +137,9 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
   } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY' && err.sqlMessage?.includes('uq_students_name')) {
+      return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
+    }
     next(err);
   }
 });

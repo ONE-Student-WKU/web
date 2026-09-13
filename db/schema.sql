@@ -81,7 +81,8 @@ CREATE TABLE IF NOT EXISTS students (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   email                     VARCHAR(255) NOT NULL,
   password                  VARCHAR(255) NULL,  -- Google OAuth 전환 이후 사용 안 함(레거시 비밀번호 계정 호환용으로만 컬럼 유지)
-  name                      VARCHAR(50) NULL,  -- 가입 시 값 없음(자동 배정: user{id}) — 표시 시 name || `user${id}`로 계산(studentService.serializeStudent)
+  name                      VARCHAR(50) NULL,  -- 가입 시 값 없음(자동 배정: user{id}) — 표시 시 name || `user${id}`로 계산(studentService.serializeStudent).
+                                                -- UNIQUE라 닉네임 사칭/도용 방지 — NULL끼리는 서로 다른 값으로 취급되므로 미설정 계정들끼리는 충돌 없음.
   oauth_provider            VARCHAR(20) NULL,   -- 예: 'google' (추후 다른 provider 추가 가능하도록 provider-agnostic하게 설계)
   oauth_id                  VARCHAR(255) NULL,  -- provider가 발급한 고유 식별자(Google이면 ID 토큰의 sub)
   role                      VARCHAR(20) NOT NULL DEFAULT 'student',  -- 'student' | 'admin' — 커뮤니티 승인 등 관리 기능 접근 권한
@@ -109,6 +110,9 @@ CREATE TABLE IF NOT EXISTS students (
   -- oauth_provider/oauth_id 조합 UNIQUE. MySQL은 UNIQUE에서 NULL끼리는 서로 다른 값으로
   -- 취급하므로, 아직 OAuth 연결이 안 된(둘 다 NULL) 레거시 행이 여러 개 있어도 위반되지 않음.
   CONSTRAINT uq_students_oauth UNIQUE (oauth_provider, oauth_id),
+  -- 닉네임 사칭/도용 방지용 UNIQUE. 테이블 기본 collation(utf8mb4_unicode_ci)이 대소문자를
+  -- 구분하지 않으므로 "admin"과 "Admin"도 같은 값으로 취급되어 충돌한다 — 의도된 동작.
+  CONSTRAINT uq_students_name UNIQUE (name),
   FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE SET NULL,
   FOREIGN KEY (second_department_id) REFERENCES departments(id) ON DELETE SET NULL

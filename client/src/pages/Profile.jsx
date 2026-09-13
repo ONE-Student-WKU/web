@@ -156,8 +156,8 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       await updateProfile({ name: trimmed });
       onNameChanged?.(trimmed);
       setNameSaved(true);
-    } catch {
-      setNameError('저장에 실패했어요.');
+    } catch (err) {
+      setNameError(err.code === 'DUPLICATE_NAME' ? '이미 사용 중인 닉네임이에요.' : '저장에 실패했어요.');
     }
   }
 
