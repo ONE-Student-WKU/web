@@ -15,6 +15,7 @@
   --color-accent-bg: #24365c;
   --color-accent-disabled: #33456c;
   --color-danger: #f37c71;
+  --color-alert: #ff5449;
   --color-success: #5fc164;
   --color-warning: #e3b341;
   /* 시간표 과목별 구분색 — 테마별로 다시 정의하지 않아도 됨: 실제 사용되는 색은
@@ -63,6 +64,7 @@
   --color-accent-bg: #e8f0fe;
   --color-accent-disabled: #c7d7f5;
   --color-danger: #d9483c;
+  --color-alert: #e0301e;
   --color-success: #3d8b40;
   --color-warning: #9a6700;
   color-scheme: light;
@@ -1595,7 +1597,14 @@ body {
   overflow-wrap: break-word;
 }
 
-.community-report-icon-btn {
+.community-detail-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.community-title-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1604,8 +1613,13 @@ body {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--color-danger);
+  color: var(--color-alert);
   cursor: pointer;
+}
+
+.community-title-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .community-detail-meta {
