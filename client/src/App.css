@@ -1548,6 +1548,100 @@ body {
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.community-write-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 사용자 제재(#201) — 경고성 정지 배너(목록은 그대로 보임) */
+.community-sanction-banner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--color-warning) 15%, var(--color-bg-frame));
+  border: 1px solid var(--color-warning);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+
+.community-sanction-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-warning);
+}
+
+.community-sanction-banner p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.community-sanction-banner b {
+  color: var(--color-warning);
+}
+
+/* 사용자 제재(#201) — 전면 정지 안내 화면(커뮤니티 전체 대체) */
+.community-sanction-full {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.community-sanction-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-alert) 18%, var(--color-bg-frame));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-alert);
+}
+
+.community-sanction-heading {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.community-sanction-detail {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.community-sanction-reason-box {
+  width: 100%;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.community-sanction-reason-box b {
+  color: var(--color-text-primary);
+}
+
+.community-sanction-footer {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+
 .community-write-form {
   margin-top: 14px;
 }
@@ -1793,6 +1887,11 @@ body {
   background: var(--color-bg-card);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border-strong);
+}
+
+.community-act-sanction {
+  background: var(--color-alert);
+  color: #fff;
 }
 
 .community-contact-box {
@@ -2065,13 +2164,6 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
-}
-
-.admin-tile.wide {
-  grid-column: span 2;
-  flex-direction: row;
-  justify-content: flex-start;
-  padding: 14px 16px;
 }
 
 .courses-category-select {

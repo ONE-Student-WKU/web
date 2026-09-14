@@ -423,10 +423,34 @@ async function isApplicationOwnedByPostAuthor(applicationId, authorId) {
 // 신고 생성(#187). target_type은 'post' | 'application' — DB에 다형 FK를 걸 수 없어서
 // 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 대기중 상태로
 // 중복 신고하는 것은 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
+//
+// 접수 시점에 신고 대상(작성자/신청자 id)과 내용(제목/본문 또는 메시지)을 스냅샷으로 같이
+// 저장한다(#201) — 나중에 제재 조치로 원본이 삭제돼도 "누구를, 무엇 때문에" 신고했는지
+// community_reports 행 자체만으로 계속 확인할 수 있어야 하기 때문(target_id의 실시간
+// JOIN에 의존하면 원본 삭제 시 정보가 통째로 사라짐).
 async function createReport(reporterId, targetType, targetId, reason) {
-  const targetTable = targetType === 'post' ? 'community_posts' : 'community_applications';
-  const [targetRows] = await pool.query(`SELECT id FROM ${targetTable} WHERE id = ?`, [targetId]);
-  if (targetRows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
+  let reportedStudentId = null;
+  let targetTitle = null;
+  let targetBody = null;
+
+  if (targetType === 'post') {
+    const [rows] = await pool.query('SELECT author_id, title, body FROM community_posts WHERE id = ?', [targetId]);
+    if (rows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
+    reportedStudentId = rows[0].author_id;
+    targetTitle = rows[0].title;
+    targetBody = rows[0].body;
+  } else {
+    const [rows] = await pool.query(
+      `SELECT a.applicant_id, a.message, p.title AS post_title
+       FROM community_applications a JOIN community_posts p ON p.id = a.post_id
+       WHERE a.id = ?`,
+      [targetId]
+    );
+    if (rows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
+    reportedStudentId = rows[0].applicant_id;
+    targetTitle = rows[0].post_title;
+    targetBody = rows[0].message;
+  }
 
   const [existing] = await pool.query(
     "SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'pending' LIMIT 1",
@@ -435,22 +459,38 @@ async function createReport(reporterId, targetType, targetId, reason) {
   if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_REPORT' };
 
   const [result] = await pool.query(
-    'INSERT INTO community_reports (reporter_id, target_type, target_id, reason) VALUES (?, ?, ?, ?)',
-    [reporterId, targetType, targetId, reason]
+    `INSERT INTO community_reports (reporter_id, target_type, target_id, reported_student_id, target_title, target_body, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [reporterId, targetType, targetId, reportedStudentId, targetTitle, targetBody, reason]
   );
   return { ok: true, id: result.insertId };
 }
 
-// 관리자 신고함 목록(#187). target_type이 다형이라 신고 목록을 한 번에 조회한 뒤, 각 신고가
-// 가리키는 대상(글 제목 또는 신청 메시지)을 신고 건별로 따로 조회해서 붙인다 — 신고 건수가
-// 적은 서비스 규모라 N+1 쿼리를 단일 UNION 쿼리로 합치는 복잡도를 감수할 필요가 없다.
-// 대상이 이미 삭제됐으면 target은 null — 화면에서 "삭제된 대상"으로 표시.
+// 관리자가 제재를 적용할 때 대상(reportedStudentId)과 실제 삭제 대상(targetType/targetId)을
+// 확인하는 용도(server/routes/admin.js의 POST /community/reports/:id/sanction).
+async function getReportById(id) {
+  const [rows] = await pool.query(
+    'SELECT id, target_type, target_id, reported_student_id FROM community_reports WHERE id = ?',
+    [id]
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return { id: row.id, targetType: row.target_type, targetId: row.target_id, reportedStudentId: row.reported_student_id };
+}
+
+// 관리자 신고함 목록(#187). 표시용 정보(신고 대상 닉네임/제목/본문)는 접수 시점 스냅샷
+// (createReport 참고)을 그대로 쓰므로 원본이 삭제돼도 항상 채워져 있다. 원본이 아직
+// 살아있는지만 별도로 확인해서 "그 글로 이동"(targetExists) 가능 여부를 알려준다 — 신고
+// 건수가 적은 서비스 규모라 건별 조회를 단일 쿼리로 합치는 복잡도를 감수할 필요는 없다.
 async function listReportsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT r.id, r.target_type, r.target_id, r.reason, r.status, r.created_at, r.resolved_at,
-            s.name AS reporter_name, s.id AS reporter_id
+    `SELECT r.id, r.target_type, r.target_id, r.reported_student_id, r.target_title, r.target_body,
+            r.reason, r.status, r.created_at, r.resolved_at,
+            s.name AS reporter_name, s.id AS reporter_id,
+            rs.name AS reported_name
      FROM community_reports r
      JOIN students s ON s.id = r.reporter_id
+     LEFT JOIN students rs ON rs.id = r.reported_student_id
      WHERE r.status = ?
      ORDER BY r.created_at ASC`,
     [status]
@@ -458,21 +498,13 @@ async function listReportsForAdmin(status) {
 
   const results = [];
   for (const row of rows) {
-    let target = null;
+    let targetPostId = null;
     if (row.target_type === 'post') {
-      const [[post]] = await pool.query('SELECT id, title, status FROM community_posts WHERE id = ?', [row.target_id]);
-      if (post) target = { type: 'post', id: post.id, title: post.title, status: post.status };
+      const [[live]] = await pool.query('SELECT id FROM community_posts WHERE id = ?', [row.target_id]);
+      if (live) targetPostId = live.id;
     } else {
-      const [[application]] = await pool.query(
-        `SELECT a.id, a.message, a.post_id, p.title AS post_title
-         FROM community_applications a
-         JOIN community_posts p ON p.id = a.post_id
-         WHERE a.id = ?`,
-        [row.target_id]
-      );
-      if (application) {
-        target = { type: 'application', id: application.id, message: application.message, postId: application.post_id, postTitle: application.post_title };
-      }
+      const [[live]] = await pool.query('SELECT post_id FROM community_applications WHERE id = ?', [row.target_id]);
+      if (live) targetPostId = live.post_id;
     }
 
     results.push({
@@ -482,7 +514,14 @@ async function listReportsForAdmin(status) {
       status: row.status,
       createdAt: row.created_at,
       resolvedAt: row.resolved_at,
-      target,
+      targetType: row.target_type,
+      // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
+      // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
+      reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
+      targetTitle: row.target_title,
+      targetBody: row.target_body,
+      targetExists: targetPostId !== null,
+      targetPostId,
     });
   }
   return results;
@@ -516,6 +555,7 @@ module.exports = {
   deleteApplication,
   isApplicationOwnedByPostAuthor,
   createReport,
+  getReportById,
   listReportsForAdmin,
   resolveReport,
 };

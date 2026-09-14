@@ -187,6 +187,15 @@ export const getAdminReports = (status) => apiRequest(`/admin/community/reports?
 
 export const resolveAdminReport = (id) => apiRequest(`/admin/community/reports/${id}/resolve`, { method: 'POST' });
 
+export const sanctionReport = (id, { scope, duration, reason }) =>
+  apiRequest(`/admin/community/reports/${id}/sanction`, { method: 'POST', body: JSON.stringify({ scope, duration, reason }) });
+
+export const getAdminSanctions = () => apiRequest('/admin/sanctions');
+
+export const liftSanction = (id) => apiRequest(`/admin/sanctions/${id}/lift`, { method: 'POST' });
+
+export const getMySanction = () => apiRequest('/community/my-sanction');
+
 export const createInquiry = (title, content) =>
   apiRequest('/inquiries', { method: 'POST', body: JSON.stringify({ title, content }) });
 

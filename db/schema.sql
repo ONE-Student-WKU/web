@@ -518,16 +518,47 @@ CREATE TABLE IF NOT EXISTS community_email_proxies (
 -- 참조라 target_id에 DB 레벨 FK를 걸 수 없다(한 컬럼이 서로 다른 두 테이블을 가리켜야 함) —
 -- 대상 존재 여부/유효성은 communityService.createReport가 애플리케이션 레벨에서 검증한다.
 CREATE TABLE IF NOT EXISTS community_reports (
-  id             INT AUTO_INCREMENT PRIMARY KEY,
-  reporter_id    INT NOT NULL,
-  target_type    VARCHAR(20) NOT NULL,  -- 'post' / 'application'
-  target_id      INT NOT NULL,
-  reason         TEXT NOT NULL,
-  status         VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
-  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  resolved_at    DATETIME NULL,
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  reporter_id          INT NOT NULL,
+  target_type          VARCHAR(20) NOT NULL,  -- 'post' / 'application'
+  target_id            INT NOT NULL,
+  -- 신고 접수 시점에 찍어두는 스냅샷(#201) — 원본 글/신청이 나중에 삭제(제재 조치 등)돼도
+  -- "누구를, 무엇 때문에" 신고했는지 계속 확인할 수 있어야 해서 target_id의 실시간 JOIN에
+  -- 의존하지 않는다. reported_student_id는 글 신고면 작성자, 신청 신고면 신청자.
+  reported_student_id  INT NULL,
+  target_title         VARCHAR(50) NULL,  -- 글 제목(신청 신고면 그 신청이 달린 글의 제목)
+  target_body          TEXT NULL,          -- 글 본문 또는 신청 메시지
+  reason               TEXT NOT NULL,
+  status               VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
+  created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at          DATETIME NULL,
 
-  FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE
+  FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 10-1. 사용자 제재 (#201) — 커뮤니티 신고에서 이어지는 계정 단위 조치(정지).
+-- students 컬럼이 아니라 별도 테이블로 둔 이유: 이력이 남아야 하고(관리자가 신고와 무관하게
+-- 직접 내리는 조치도 있을 수 있음), 한 계정에 여러 번 제재가 쌓일 수 있어서다. "지금 유효한
+-- 제재"는 lifted_at이 비어있고 ends_at이 지나지 않은 것 중 가장 최근 것 하나로 판단한다
+-- (server/services/sanctionService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS student_sanctions (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  student_id    INT NOT NULL,
+  reason        TEXT NOT NULL,
+  scope         VARCHAR(20) NOT NULL,  -- 'post_apply'(글쓰기·신청만 금지) / 'full'(커뮤니티 진입 자체 차단)
+  starts_at     DATETIME NOT NULL,
+  ends_at       DATETIME NULL,          -- NULL = 영구정지
+  lifted_at     DATETIME NULL,          -- 관리자가 조기 해제한 시각
+  created_by    INT NOT NULL,           -- 제재를 건 관리자 id
+  report_id     INT NULL,               -- 신고함에서 이어진 조치면 그 신고 id
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES students(id),
+  FOREIGN KEY (report_id) REFERENCES community_reports(id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
+const sanctionService = require('../services/sanctionService');
 const pool = require('../db');
 
 /**
@@ -91,7 +92,7 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/community/reports/:id/resolve — "처리완료" 표시(신고 자체를 지우진 않음).
+// POST /api/admin/community/reports/:id/resolve — "반려"(조치 없이 신고만 처리완료).
 router.post('/community/reports/:id/resolve', async (req, res, next) => {
   try {
     const resolved = await communityService.resolveReport(req.params.id);
@@ -99,6 +100,80 @@ router.post('/community/reports/:id/resolve', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const SANCTION_SCOPES = ['post_apply', 'full'];
+// null = 영구정지.
+const SANCTION_DURATIONS = { '1d': 1, '3d': 3, '7d': 7, '30d': 30, permanent: null };
+
+// POST /api/admin/community/reports/:id/sanction — "제재"(#201). 신고 대상 계정에 정지를
+// 걸고, 신고된 글/신청을 실제로 삭제하고(이미 지워졌으면 조용히 건너뜀), 신고를
+// 처리완료로 표시한다 — 세 가지가 한 번의 조치로 묶여야 신고함에 "제재는 걸었는데
+// 글은 안 지워짐" 같은 어중간한 상태가 안 남는다.
+router.post('/community/reports/:id/sanction', async (req, res, next) => {
+  try {
+    const { scope, duration, reason } = req.body;
+    if (!SANCTION_SCOPES.includes(scope)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SCOPE', message: null, data: null });
+    }
+    if (!Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DURATION', message: null, data: null });
+    }
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+    if (!trimmedReason) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_REASON', message: null, data: null });
+    }
+
+    const report = await communityService.getReportById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
+    }
+    // 스냅샷 컬럼 도입 전에 접수된 구버전 신고는 신고 대상 id가 없어서 제재할 계정을
+    // 특정할 수 없다 — 이 경우 그냥 "반려" 경로를 쓰라고 안내.
+    if (!report.reportedStudentId) {
+      return res.status(400).json({ status: 400, code: 'NO_REPORTED_STUDENT', message: null, data: null });
+    }
+
+    await sanctionService.createSanction({
+      studentId: report.reportedStudentId,
+      reason: trimmedReason,
+      scope,
+      durationDays: SANCTION_DURATIONS[duration],
+      createdBy: req.session.userId,
+      reportId: report.id,
+    });
+
+    if (report.targetType === 'post') await communityService.deletePost(report.targetId);
+    else await communityService.deleteApplication(report.targetId);
+
+    await communityService.resolveReport(report.id);
+    res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/sanctions — 현재 유효한(해제 안 됐고 기간이 안 지난) 제재 전체.
+router.get('/sanctions', async (req, res, next) => {
+  try {
+    const sanctions = await sanctionService.listActiveSanctions();
+    res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/sanctions/:id/lift — 조기 해제.
+router.post('/sanctions/:id/lift', async (req, res, next) => {
+  try {
+    const lifted = await sanctionService.liftSanction(req.params.id);
+    if (!lifted) {
+      return res.status(404).json({ status: 404, code: 'SANCTION_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'SANCTION_LIFTED', message: null, data: null });
   } catch (err) {
     next(err);
   }

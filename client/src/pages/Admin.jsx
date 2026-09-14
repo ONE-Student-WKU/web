@@ -4,15 +4,17 @@ import {
   approveAdminPost,
   rejectAdminPost,
   deleteAdminPost,
-  deleteAdminApplication,
   getAdminReports,
   resolveAdminReport,
+  sanctionReport,
+  getAdminSanctions,
+  liftSanction,
   getAdminInquiries,
   resolveAdminInquiry,
   getAdminStats,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers, IconBan, IconAlertTriangle } from '../components/icons.jsx';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -26,7 +28,21 @@ const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료'
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
 const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
-const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함' };
+const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리' };
+// 제재 팝업의 기간 선택지(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질
+// 수 있어 프리셋으로 제한한다. permanent는 ends_at을 NULL로 저장(영구정지).
+const SANCTION_DURATIONS = [
+  { value: '1d', label: '1일' },
+  { value: '3d', label: '3일' },
+  { value: '7d', label: '7일' },
+  { value: '30d', label: '30일' },
+  { value: 'permanent', label: '영구정지' },
+];
+const SANCTION_SCOPES = [
+  { value: 'post_apply', label: '경고성 (글쓰기·신청 금지)' },
+  { value: 'full', label: '전면 정지 (커뮤니티 진입 차단)' },
+];
+const SANCTION_SCOPE_BADGE_LABEL = { post_apply: '경고성', full: '전면 정지' };
 
 /**
  * Admin Page
@@ -53,7 +69,7 @@ const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', re
  * - onOpenPost: function(postId) — 신고함 카드를 눌렀을 때 그 글의 커뮤니티 상세로 이동.
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry, onOpenPost }) {
-  const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries'
+  const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries' | 'sanctions'
 
   // App.jsx의 view 히스토리 관리와 같은 이유·같은 방식 — adminView 전환은 App.jsx 입장에서
   // view가 그대로 'admin'이라 히스토리에 전혀 안 쌓여서, 신고함/문의함 등 하위 화면에 있을 때
@@ -99,6 +115,17 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [inquiries, setInquiries] = useState([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiryActionId, setInquiryActionId] = useState(null); // 처리완료 처리 중인 문의 id
+
+  const [sanctions, setSanctions] = useState([]);
+  const [sanctionsLoading, setSanctionsLoading] = useState(true);
+  const [sanctionActionId, setSanctionActionId] = useState(null); // 조기 해제 처리 중인 제재 id
+
+  // 신고함 "제재" 팝업 — 대상 신고를 들고 있으면 열림, null이면 닫힘.
+  const [sanctionTargetReport, setSanctionTargetReport] = useState(null);
+  const [sanctionScope, setSanctionScope] = useState('post_apply');
+  const [sanctionDuration, setSanctionDuration] = useState('7d');
+  const [sanctionReason, setSanctionReason] = useState('');
+  const [sanctionSubmitting, setSanctionSubmitting] = useState(false);
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -157,6 +184,16 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
       .catch(() => setError('문의 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setInquiriesLoading(false));
   }, [adminView, inquirySubFilter]);
+
+  useEffect(() => {
+    if (adminView !== 'sanctions') return;
+    setSanctionsLoading(true);
+    setError(null);
+    getAdminSanctions()
+      .then(setSanctions)
+      .catch(() => setError('제재 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .finally(() => setSanctionsLoading(false));
+  }, [adminView]);
 
   // 대시보드 → 타일 클릭 시 해당 화면으로, 그 화면에서 뒤로가기를 누르면 다시
   // 대시보드로 돌아간다(대시보드에서 뒤로가기를 누르면 그때 홈으로 나간다).
@@ -228,32 +265,58 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
   };
 
-  // 신고된 대상(글/신청)을 삭제하고, 신고 자체도 같이 처리완료로 넘긴다 — 조치를 했는데
-  // 신고함에 그대로 남아있으면 관리자가 또 확인해야 하는 번거로움이 생긴다.
-  const handleDeleteReportTarget = async (report) => {
-    if (!report.target) return;
-    if (!window.confirm('신고된 대상을 완전히 삭제할까요? 되돌릴 수 없어요.')) return;
-    setReportActionId(report.id);
+  // 신고 카드를 누르면 그 글로 이동 — 신청 신고는 신청 자체를 볼 수 있는 화면이 따로
+  // 없어서(작성자 전용), 그 신청이 달린 글로 대신 이동한다(targetPostId가 두 경우 다 처리).
+  // 원본이 이미 삭제됐으면(targetExists === false) 이동할 곳이 없으니 무시.
+  const handleGoToReportedPost = (report) => {
+    if (!report.targetExists) return;
+    onOpenPost(report.targetPostId);
+  };
+
+  const openSanctionModal = (report) => {
+    setSanctionTargetReport(report);
+    setSanctionScope('post_apply');
+    setSanctionDuration('7d');
+    setSanctionReason(report.reason);
+  };
+
+  const closeSanctionModal = () => setSanctionTargetReport(null);
+
+  // "제재" 확정 — 계정 정지 + 신고된 글/신청 실제 삭제 + 신고 처리완료를 서버가 한 번에
+  // 처리한다(server/routes/admin.js). 셋을 따로따로 호출하면 중간에 실패했을 때 "정지는
+  // 걸렸는데 글은 안 지워짐" 같은 어중간한 상태가 생길 수 있어 단일 요청으로 묶었다.
+  const handleConfirmSanction = async () => {
+    if (!sanctionTargetReport || !sanctionReason.trim()) return;
+    setSanctionSubmitting(true);
     setError(null);
     try {
-      if (report.target.type === 'post') await deleteAdminPost(report.target.id);
-      else await deleteAdminApplication(report.target.id);
-      await resolveAdminReport(report.id);
-      setReports((prev) => prev.filter((r) => r.id !== report.id));
-      showToast('삭제하고 처리완료로 표시했어요.');
+      await sanctionReport(sanctionTargetReport.id, {
+        scope: sanctionScope,
+        duration: sanctionDuration,
+        reason: sanctionReason.trim(),
+      });
+      setReports((prev) => prev.filter((r) => r.id !== sanctionTargetReport.id));
+      showToast('제재를 적용했어요.');
+      closeSanctionModal();
     } catch {
-      setError('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setError('제재를 적용하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
-      setReportActionId(null);
+      setSanctionSubmitting(false);
     }
   };
 
-  // 신고 카드를 누르면 그 글로 이동 — 신청 신고는 신청 자체를 볼 수 있는 화면이 따로
-  // 없어서(작성자 전용), 그 신청이 달린 글로 대신 이동한다(target.postId).
-  const handleGoToReportedPost = (report) => {
-    if (!report.target) return;
-    const postId = report.target.type === 'post' ? report.target.id : report.target.postId;
-    onOpenPost(postId);
+  const handleLiftSanction = async (id) => {
+    setSanctionActionId(id);
+    setError(null);
+    try {
+      await liftSanction(id);
+      setSanctions((prev) => prev.filter((s) => s.id !== id));
+      showToast('제재를 해제했어요.');
+    } catch {
+      setError('해제하지 못했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setSanctionActionId(null);
+    }
   };
 
   return (
@@ -325,7 +388,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                 <IconMessageCircle size={22} />
                 <span>문의함</span>
               </button>
-              <button type="button" className="admin-tile wide" onClick={() => setAdminView('approval')}>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('sanctions')}>
+                <IconBan size={22} />
+                <span>제재 관리</span>
+              </button>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('approval')}>
                 <IconUsers size={22} />
                 <span>커뮤니티 관리</span>
               </button>
@@ -423,48 +490,48 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               <div className="admin-post-list">
                 {reports.map((r) => (
                   <div
-                    className={`admin-post-card ${r.target ? 'clickable' : ''}`}
+                    className={`admin-post-card ${r.targetExists ? 'clickable' : ''}`}
                     key={r.id}
-                    onClick={r.target ? () => handleGoToReportedPost(r) : undefined}
+                    onClick={r.targetExists ? () => handleGoToReportedPost(r) : undefined}
                   >
                     <p className="admin-post-title">
-                      {r.target
-                        ? r.target.type === 'post'
-                          ? `글 신고 · ${r.target.title}`
-                          : `신청 신고 · ${r.target.postTitle}`
-                        : '대상이 삭제된 신고'}
+                      {r.targetType === 'post' ? `글 신고 · ${r.targetTitle}` : `신청 신고 · ${r.targetTitle}`}
                     </p>
                     <p className="community-detail-meta">
                       신고자 {r.reporter} · {formatDate(r.createdAt)}
                     </p>
+                    {r.reportedStudent && (
+                      <p className="community-detail-meta">
+                        신고 대상 · <b>{r.reportedStudent}</b>
+                      </p>
+                    )}
+                    {r.targetType === 'application' && (
+                      <p className="community-applicant-msg">
+                        <b>신고된 메시지</b> · {r.targetBody}
+                      </p>
+                    )}
                     <p className="community-detail-body">
                       <b>신고 사유</b> · {r.reason}
                     </p>
-                    {r.target?.type === 'application' && (
-                      <p className="community-applicant-msg">
-                        <b>신고된 메시지</b> · {r.target.message}
-                      </p>
-                    )}
                     {reportSubFilter === 'pending' && (
                       <div className="community-applicant-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          className="community-act-btn community-act-accept"
+                          className="community-act-btn community-act-sanction"
+                          onClick={() => openSanctionModal(r)}
+                          disabled={reportActionId === r.id || !r.reportedStudent}
+                          title={r.reportedStudent ? undefined : '대상 정보가 없는 구버전 신고예요. 반려만 가능해요.'}
+                        >
+                          제재
+                        </button>
+                        <button
+                          type="button"
+                          className="community-act-btn community-act-reject"
                           onClick={() => handleResolveReport(r.id)}
                           disabled={reportActionId === r.id}
                         >
-                          처리완료
+                          반려
                         </button>
-                        {r.target && (
-                          <button
-                            type="button"
-                            className="community-outline-btn community-danger"
-                            onClick={() => handleDeleteReportTarget(r)}
-                            disabled={reportActionId === r.id}
-                          >
-                            대상 삭제
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>
@@ -512,8 +579,112 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               </div>
             )}
           </>
+        ) : adminView === 'sanctions' ? (
+          <>
+            <p className="community-section-label">현재 정지 중 ({sanctions.length}명)</p>
+            {sanctionsLoading ? (
+              <p className="courses-manual-hint">불러오는 중...</p>
+            ) : sanctions.length === 0 ? (
+              <p className="courses-manual-hint">지금 정지 중인 계정이 없어요.</p>
+            ) : (
+              <div className="admin-post-list">
+                {sanctions.map((s) => (
+                  <div className="admin-post-card" key={s.id}>
+                    <p className="admin-post-title">
+                      {s.student}
+                      <span className={`community-badge ${s.scope === 'full' ? 'community-badge-rejected' : 'community-badge-pending'}`}>
+                        {SANCTION_SCOPE_BADGE_LABEL[s.scope]}
+                      </span>
+                    </p>
+                    <p className="community-detail-meta">
+                      {formatDate(s.startsAt)} ~ {s.endsAt ? formatDate(s.endsAt) : '영구정지'}
+                    </p>
+                    <p className="community-detail-body">
+                      <b>사유</b> · {s.reason}
+                    </p>
+                    <div className="community-applicant-actions">
+                      <button
+                        type="button"
+                        className="community-outline-btn"
+                        onClick={() => handleLiftSanction(s.id)}
+                        disabled={sanctionActionId === s.id}
+                      >
+                        조기 해제
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         ) : null}
       </div>
+
+      {sanctionTargetReport && (
+        <div className="career-confirm-overlay" onClick={closeSanctionModal}>
+          <form
+            className="career-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleConfirmSanction();
+            }}
+          >
+            <p className="admin-post-title">제재하기</p>
+            <p className="community-detail-meta">
+              대상 · <b>{sanctionTargetReport.reportedStudent}</b>
+              {sanctionTargetReport.targetTitle && ` (글 "${sanctionTargetReport.targetTitle}")`}
+            </p>
+
+            <div className="admin-reject-reason" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <IconAlertTriangle size={16} />
+              <span>제재를 확정하면 신고된 글/신청도 함께 삭제되며, 되돌릴 수 없어요.</span>
+            </div>
+
+            <p className="community-section-label">범위</p>
+            <div className="admin-sub-tabs" style={{ flexWrap: 'wrap' }}>
+              {SANCTION_SCOPES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  className={`admin-sub-tab ${sanctionScope === s.value ? 'active' : ''}`}
+                  onClick={() => setSanctionScope(s.value)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="community-section-label">기간</p>
+            <div className="admin-sub-tabs" style={{ flexWrap: 'wrap' }}>
+              {SANCTION_DURATIONS.map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  className={`admin-sub-tab ${sanctionDuration === d.value ? 'active' : ''}`}
+                  onClick={() => setSanctionDuration(d.value)}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="auth-field">
+              <label>제재 사유</label>
+              <textarea rows={2} value={sanctionReason} onChange={(e) => setSanctionReason(e.target.value)} required />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button type="submit" className="community-close-btn" disabled={sanctionSubmitting || !sanctionReason.trim()}>
+                {sanctionSubmitting ? '적용하는 중...' : '제재 확정'}
+              </button>
+              <button type="button" className="community-outline-btn" onClick={closeSanctionModal}>
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
