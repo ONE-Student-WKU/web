@@ -193,6 +193,33 @@ async function ensureCommunityCategoryCapacityColumns(connection) {
   }
 }
 
+// 사용자 제재(#201) 도입용 guard — 기존 운영 테이블(community_reports)엔 CREATE TABLE IF
+// NOT EXISTS로 반영이 안 되므로 컬럼/제약을 직접 ALTER한다. 신고 접수 시점 스냅샷 컬럼이라
+// 기존 행들은 NULL로 남아도 안전(UI에서 null 처리).
+async function ensureCommunityReportSanctionColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_reports'
+       AND COLUMN_NAME IN ('reported_student_id', 'target_title', 'target_body')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('reported_student_id')) {
+    console.log('[db:migrate] community_reports.reported_student_id 컬럼 추가...');
+    await connection.query('ALTER TABLE community_reports ADD COLUMN reported_student_id INT NULL');
+    await connection.query(
+      'ALTER TABLE community_reports ADD CONSTRAINT fk_reports_reported_student FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL'
+    );
+  }
+  if (!existing.has('target_title')) {
+    console.log('[db:migrate] community_reports.target_title 컬럼 추가...');
+    await connection.query('ALTER TABLE community_reports ADD COLUMN target_title VARCHAR(50) NULL');
+  }
+  if (!existing.has('target_body')) {
+    console.log('[db:migrate] community_reports.target_body 컬럼 추가...');
+    await connection.query('ALTER TABLE community_reports ADD COLUMN target_body TEXT NULL');
+  }
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -221,6 +248,7 @@ async function migrate() {
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
     await ensureNameUniqueConstraint(connection);
+    await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);
     await ensureCommunityRejectReasonColumn(connection);
     await ensureApplicationRejectReasonColumn(connection);

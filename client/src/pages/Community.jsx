@@ -15,9 +15,10 @@ import {
   rejectCommunityApplication,
   reportCommunityPost,
   reportCommunityApplication,
+  getMySanction,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
@@ -90,6 +91,17 @@ function Community({
   const [myPosts, setMyPosts] = useState(communityCache.myPosts);
   const [myApplications, setMyApplications] = useState(communityCache.myApplications);
   const [error, setError] = useState(null);
+
+  // 사용자 제재(#201) — null이면 정지 아님. scope==='full'이면 이 화면 진입 자체가 서버에서
+  // 이미 막혀 있어서(전체 탭 fetch의 catch에서 SANCTIONED로 채워짐) 커뮤니티 전체를 안내
+  // 화면으로 대체하고, scope==='post_apply'면 목록은 그대로 두고 글쓰기/신청만 막는다.
+  const [sanction, setSanction] = useState(null);
+
+  useEffect(() => {
+    getMySanction()
+      .then(setSanction)
+      .catch(() => {}); // 조회 실패는 조용히 무시 — 배너 하나 못 보여줄 뿐 화면 전체를 막을 정도는 아님
+  }, []);
 
   const [selectedPost, setSelectedPost] = useState(null); // 상세 뷰(목록 클릭 시)
   const [detailLoading, setDetailLoading] = useState(false);
@@ -172,27 +184,35 @@ function Community({
   // 병목), 안 보이는 요청을 없애는 게 응답을 가볍게 만드는 것보다 훨씬 효과적이었다.
   // 캐시가 있으면 Home.jsx와 동일하게 그 값을 먼저 보여주고 뒤에서 조용히 새로고침한다.
   useEffect(() => {
+    // 전면 정지(scope='full')는 서버가 이 라우터 전체를 403 SANCTIONED로 막으므로, 셋 중
+    // 어느 탭을 불러오든 이 catch로 잡힌다 — 그 경우 일반 에러 대신 sanction 상태를 채워서
+    // 화면 전체를 안내 화면으로 대체한다(아래 return의 sanction?.scope === 'full' 분기).
+    function handleFetchError(err, fallbackMessage) {
+      if (err.code === 'SANCTIONED') setSanction(err.data);
+      else setError(fallbackMessage);
+    }
+
     if (tab === 'list') {
       getCommunityPosts()
         .then((list) => {
           setPosts(list);
           setCommunityCache('posts', list);
         })
-        .catch(() => setError('커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, '커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     } else if (tab === 'mine') {
       getMyCommunityPosts()
         .then((mine) => {
           setMyPosts(mine);
           setCommunityCache('myPosts', mine);
         })
-        .catch(() => setError('내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, '내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     } else {
       getMyCommunityApplications()
         .then((myApps) => {
           setMyApplications(myApps);
           setCommunityCache('myApplications', myApps);
         })
-        .catch(() => setError('신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, '신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
     }
   }, [tab]);
 
@@ -609,6 +629,8 @@ function Community({
             {post.myApplication === null ? (
               post.closedAt ? (
                 <p className="courses-manual-hint">모집이 마감됐어요.</p>
+              ) : sanction?.scope === 'post_apply' ? (
+                <p className="courses-manual-hint">신청이 제한됐어요 · 사유: {sanction.reason}</p>
               ) : (
                 <form className="community-apply-form" onSubmit={handleApply}>
                   <div className="auth-field">
@@ -648,21 +670,25 @@ function Community({
                 {post.myApplication.status === 'rejected' && !post.closedAt && (
                   <>
                     <p className="community-status-desc">아쉽지만 이번엔 선정되지 않았어요. 메시지를 보완해서 다시 신청할 수 있어요.</p>
-                    <form className="community-apply-form" onSubmit={handleApply}>
-                      <div className="auth-field">
-                        <label>다시 신청하기</label>
-                        <textarea
-                          rows={4}
-                          value={applyMessage}
-                          onChange={(e) => setApplyMessage(e.target.value)}
-                          placeholder="이전과 다른 점을 보완해서 다시 적어보세요."
-                          required
-                        />
-                      </div>
-                      <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                        {applySubmitting ? '신청하는 중...' : '재신청하기'}
-                      </button>
-                    </form>
+                    {sanction?.scope === 'post_apply' ? (
+                      <p className="courses-manual-hint">재신청이 제한됐어요 · 사유: {sanction.reason}</p>
+                    ) : (
+                      <form className="community-apply-form" onSubmit={handleApply}>
+                        <div className="auth-field">
+                          <label>다시 신청하기</label>
+                          <textarea
+                            rows={4}
+                            value={applyMessage}
+                            onChange={(e) => setApplyMessage(e.target.value)}
+                            placeholder="이전과 다른 점을 보완해서 다시 적어보세요."
+                            required
+                          />
+                        </div>
+                        <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
+                          {applySubmitting ? '신청하는 중...' : '재신청하기'}
+                        </button>
+                      </form>
+                    )}
                   </>
                 )}
               </div>
@@ -751,13 +777,36 @@ function Community({
       )}
 
       <div className="courses-body">
-        {selectedPost ? (
+        {sanction?.scope === 'full' ? (
+          <div className="community-sanction-full">
+            <div className="community-sanction-icon">
+              <IconBan size={28} />
+            </div>
+            <p className="community-sanction-heading">커뮤니티 이용이 제한되었어요</p>
+            <p className="community-sanction-detail">
+              {sanction.endsAt ? `${formatDate(sanction.endsAt)}까지 커뮤니티 전체 이용이 제한됩니다.` : '커뮤니티 전체 이용이 영구 제한됩니다.'}
+            </p>
+            <div className="community-sanction-reason-box">
+              <b>사유</b> · {sanction.reason}
+            </div>
+            <p className="community-sanction-footer">문의사항은 프로필 메뉴의 문의하기를 이용해주세요</p>
+          </div>
+        ) : selectedPost ? (
           renderDetail()
         ) : showWriteForm ? (
           renderWriteForm()
         ) : (
           <>
             {error && <p className="home-error">{error}</p>}
+
+            {sanction?.scope === 'post_apply' && (
+              <div className="community-sanction-banner">
+                <IconAlertTriangle size={16} />
+                <p>
+                  {sanction.endsAt ? <b>{formatDate(sanction.endsAt)}까지</b> : <b>영구히</b>} 글 작성·신청이 제한돼요 · 사유: {sanction.reason}
+                </p>
+              </div>
+            )}
 
             <div className="courses-year-tabs">
               <button type="button" className={`courses-year-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
@@ -843,8 +892,14 @@ function Community({
             )}
 
             {tab !== 'applications' && (
-              <button type="button" className="community-write-btn" onClick={() => setShowWriteForm(true)}>
-                <IconPlus size={16} />글 쓰기
+              <button
+                type="button"
+                className="community-write-btn"
+                onClick={() => setShowWriteForm(true)}
+                disabled={sanction?.scope === 'post_apply'}
+              >
+                <IconPlus size={16} />
+                {sanction?.scope === 'post_apply' ? '글 쓰기 (제한됨)' : '글 쓰기'}
               </button>
             )}
           </>
