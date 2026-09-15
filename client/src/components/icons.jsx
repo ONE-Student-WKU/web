@@ -175,6 +175,15 @@ export function IconSiren({ size = 18 }) {
   );
 }
 
+export function IconBan({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="5.5" y1="18.5" x2="18.5" y2="5.5" />
+    </svg>
+  );
+}
+
 export function IconUsers({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

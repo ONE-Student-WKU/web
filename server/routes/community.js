@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
+const { requireNotFullySanctioned, requireNotWritingSanctioned } = require('../middleware/sanction');
 const communityService = require('../services/communityService');
+const sanctionService = require('../services/sanctionService');
 
 /**
  * server/routes/community.js
@@ -11,6 +13,10 @@ const communityService = require('../services/communityService');
  */
 
 router.use(requireAuth);
+// 전면 정지(scope='full')면 이 라우터 전체(조회 포함)를 차단한다(#201). 통과 시
+// req.activeSanction에 담겨서, 글쓰기/신청 라우트의 requireNotWritingSanctioned가
+// 다시 조회하지 않고 재사용한다.
+router.use(requireNotFullySanctioned);
 
 const TITLE_MAX_LENGTH = 20;
 const BODY_MAX_LENGTH = 1000;
@@ -61,8 +67,25 @@ function normalizeCapacity(capacity) {
   return { ok: true, value: n };
 }
 
+// GET /api/community/my-sanction — 지금 내게 적용 중인 제재(경고성/전면) 조회. 전면
+// 정지는 위 requireNotFullySanctioned가 이미 걸러내므로, 이 라우트가 실제로 응답하는
+// 건 경고성 정지 여부 확인용(커뮤니티 화면 상단 안내 배너 표시)이다.
+router.get('/my-sanction', async (req, res, next) => {
+  try {
+    const sanction = await sanctionService.getActiveSanction(req.session.userId);
+    res.status(200).json({
+      status: 200,
+      code: 'MY_SANCTION',
+      message: null,
+      data: sanction ? { scope: sanction.scope, reason: sanction.reason, endsAt: sanction.ends_at } : null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/community — 글 작성. 항상 status='pending'으로 시작(관리자 승인 전엔 비공개).
-router.post('/', async (req, res, next) => {
+router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
   try {
     const title = typeof req.body.title === 'string' ? req.body.title.trim() : req.body.title;
     const body = typeof req.body.body === 'string' ? req.body.body.trim() : req.body.body;
@@ -128,7 +151,7 @@ router.get('/:id', async (req, res, next) => {
 
 // PATCH /api/community/:id — 글 수정(작성자 전용). 재승인 대상이라 저장하면 status가
 // pending으로 돌아간다(editPost 참고) — 그동안 공개 목록에서 사라짐.
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
   try {
     const title = typeof req.body.title === 'string' ? req.body.title.trim() : req.body.title;
     const body = typeof req.body.body === 'string' ? req.body.body.trim() : req.body.body;
@@ -194,7 +217,7 @@ router.post('/:id/report', (req, res, next) => handleReport(req, res, next, 'pos
 // POST /api/community/:id/apply — 신청. getPostById를 그대로 재사용해 "신청 가능한
 // 글인지"(승인됨 + 본인 글 아님 + 마감 안 됨)를 판정한다 — 목록/상세 노출 규칙과 신청
 // 가능 여부가 항상 같은 기준을 쓰게 하기 위함.
-router.post('/:id/apply', async (req, res, next) => {
+router.post('/:id/apply', requireNotWritingSanctioned, async (req, res, next) => {
   try {
     const message = typeof req.body.message === 'string' ? req.body.message.trim() : req.body.message;
     if (!message) {
