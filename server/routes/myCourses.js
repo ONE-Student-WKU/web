@@ -266,7 +266,7 @@ router.patch('/:id', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'MY_COURSE_NOT_FOUND', message: null, data: null });
     }
 
-    await courseService.updateMyCourse(req.params.id, req.body);
+    await courseService.updateMyCourse(req.session.userId, req.params.id, req.body);
 
     return res.status(200).json({
       status: 200,
@@ -298,7 +298,7 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'MY_COURSE_NOT_FOUND', message: null, data: null });
     }
 
-    await courseService.deleteMyCourse(req.params.id);
+    await courseService.deleteMyCourse(req.session.userId, req.params.id);
     return res.status(200).json({ status: 200, code: 'MY_COURSE_DELETE_SUCCESS', message: null, data: null });
   } catch (err) {
     next(err);
