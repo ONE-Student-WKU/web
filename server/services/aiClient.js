@@ -119,6 +119,9 @@ async function rewriteSearchQuery(rawQuery) {
         system: QUERY_REWRITE_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: rawQuery }],
       }),
+      // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
+      // 실패해도 원문 그대로 폴백하는 경로라 짧게 잡아도 안전하다.
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) return rawQuery;
@@ -154,6 +157,8 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
       system: buildSystemPrompt(student, graduationStatus),
       messages,
     }),
+    // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
+    signal: AbortSignal.timeout(30000),
   });
 
   if (!res.ok) {
@@ -223,7 +228,9 @@ function buildCareerStudentNote(student, completedCourses) {
   return [`이 학생의 프로필 — ${parts.join(', ')}.`, nameInstruction, courseNote].filter(Boolean).join('\n');
 }
 
-async function callClaude(system, messages, maxTokens = 500) {
+// timeoutMs: max_tokens이 클수록(예: PDF 추출 8000) 생성에 오래 걸릴 수 있어 호출부가
+// 필요에 맞게 늘려 잡을 수 있게 파라미터로 뺐다.
+async function callClaude(system, messages, maxTokens = 500, timeoutMs = 30000) {
   const res = await fetch(ANTHROPIC_API_URL, {
     method: 'POST',
     headers: {
@@ -232,6 +239,8 @@ async function callClaude(system, messages, maxTokens = 500) {
       'anthropic-version': ANTHROPIC_VERSION,
     },
     body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages }),
+    // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!res.ok) {
@@ -348,12 +357,12 @@ const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성
 // 소계/카테고리 대조(pdfImportService.js)는 여기서 뽑은 rawCategory/credits를 그대로 쓰므로,
 // 이 프롬프트가 코드값을 변형 없이 옮기게 강제하는 게 대조 정확도에 중요하다.
 async function extractCourseListRows(rawText) {
-  const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000);
+  const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
   return parseJsonArray(text);
 }
 
 async function extractFullTranscriptRows(rawText) {
-  const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000);
+  const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
   return parseJsonArray(text);
 }
 
