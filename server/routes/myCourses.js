@@ -1,9 +1,26 @@
 const express = require('express');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const courseService = require('../services/courseService');
 const { parseCourseListPdf } = require('../services/pdfImportService');
+
+// 초과 시 응답 포맷 — auth.js의 RATE_LIMIT_RESPONSE와 동일한 이유(클라이언트 apiRequest의
+// res.json() 파싱이 순수 텍스트 응답에 실패하는 문제를 피함).
+const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
+
+// PDF는 multer가 파일 전체를 프로세스 메모리에 올린 뒤(memoryStorage) 파싱까지 하는 무거운
+// 요청이라, 동시/반복 업로드 개수에 제한이 없으면 여러 명이 몰릴 때 메모리 압박으로 이어질
+// 수 있다. IP당 이 정도면 정상적인 재시도(파싱 실패 후 다시 시도 등)는 충분히 허용하면서도
+// 남용은 막는다. multer보다 앞에 둬서, 제한에 걸린 요청은 파일을 메모리에 올리기도 전에 막는다.
+const pdfImportLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10분
+  max: 10,                   // IP당 10분에 10회
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+});
 
 // 메모리 저장만(디스크에 남기지 않음) — 이수과목확인리스트 PDF는 학사정보라 파싱 즉시 버린다.
 // mimetype만 보면 모바일에서 자주 실패한다 — 카카오톡으로 받은 파일이나 일부 앱 공유
@@ -171,7 +188,7 @@ router.post('/', async (req, res, next) => {
 // "이수과목확인리스트" 또는 "전체성적조회" PDF를 업로드 → 문서 제목 텍스트로 자동 판별해
 // 과목명/학점/이수구분/이수학기(+전체성적조회면 등급까지)를 파싱해 미리보기로 반환.
 // 저장은 하지 않음 — 사용자가 검토·수정 후 /import/confirm으로 확정해야 DB에 반영된다.
-router.post('/import/pdf', pdfUpload.single('file'), async (req, res, next) => {
+router.post('/import/pdf', pdfImportLimiter, pdfUpload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_PDF_FILE', message: null, data: null });

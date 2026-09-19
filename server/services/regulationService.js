@@ -26,6 +26,24 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+// regulation_chunks는 관리자가 학칙을 재시딩하기 전까진 안 바뀌는 데이터인데, 매 챗봇
+// 메시지마다 통째로 다시 읽어오고 있었다. 재시딩 이벤트를 별도로 감지하는 장치는 없으니
+// TTL로 무효화한다 — 재시딩 후 최악의 경우에도 이 시간 안엔 최신 데이터로 갱신된다.
+const CHUNK_CACHE_TTL_MS = 5 * 60 * 1000;
+let chunkCache = { rows: null, expiresAt: 0 };
+
+async function getAllChunkRows() {
+  if (chunkCache.rows && Date.now() < chunkCache.expiresAt) return chunkCache.rows;
+
+  const [rows] = await pool.query(
+    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title
+     FROM regulation_chunks rc
+     JOIN regulation_documents rd ON rd.id = rc.document_id`
+  );
+  chunkCache = { rows, expiresAt: Date.now() + CHUNK_CACHE_TTL_MS };
+  return rows;
+}
+
 // 청크가 수백 개 규모라 전부 메모리로 읽어 서버(Node.js)에서 유사도 계산 (schema.sql 7번 섹션 설계 결정)
 //
 // 예전엔 여기서 교육과정(db/curriculum) 청크도 함께 검색했는데, "특정 학기 과목 전부
@@ -34,11 +52,7 @@ function cosineSimilarity(a, b) {
 // 과목명/학년·학기를 정규식으로 강제 포함시키던 로직도 같이 필요 없어져 제거함 — RAG는
 // 이제 학칙처럼 진짜 비정형 프로즈 문서만 대상으로 하므로 순수 유사도 검색으로 충분하다.
 async function findRelevantChunks(queryEmbedding) {
-  const [rows] = await pool.query(
-    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title
-     FROM regulation_chunks rc
-     JOIN regulation_documents rd ON rd.id = rc.document_id`
-  );
+  const rows = await getAllChunkRows();
 
   const scored = rows.map((row) => ({
     chunkId: row.id,
