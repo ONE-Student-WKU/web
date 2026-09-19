@@ -478,7 +478,10 @@ CREATE TABLE IF NOT EXISTS community_posts (
                             -- 승인 시 NULL). status가 pending/approved일 땐 화면에서 안 보여주므로
                             -- 수정 후 재검토 대기 중에 이전 반려 사유가 남아있어도 노출되지 않는다.
 
-  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE,
+  -- status는 FK가 아니라 자동 인덱스가 안 붙는다. listApprovedPosts/listPostsForAdmin이
+  -- status 단독으로 필터링하는데 게시글이 늘어나면 풀스캔이 되므로 명시적으로 인덱스를 건다.
+  INDEX idx_community_posts_status (status)
 );
 
 -- 신청 메시지는 글쓴이만 볼 수 있음(비공개).
@@ -534,7 +537,9 @@ CREATE TABLE IF NOT EXISTS community_reports (
   resolved_at          DATETIME NULL,
 
   FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
-  FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL
+  FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL,
+  -- community_posts.status와 동일한 이유 — listReportsForAdmin이 status 단독으로 필터링함.
+  INDEX idx_community_reports_status (status)
 );
 
 -- ---------------------------------------------------------------------------

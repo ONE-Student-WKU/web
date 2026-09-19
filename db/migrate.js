@@ -220,6 +220,27 @@ async function ensureCommunityReportSanctionColumns(connection) {
   }
 }
 
+// 커뮤니티 status 필터 인덱스 도입용 guard — status는 FK가 아니라 CREATE TABLE IF NOT
+// EXISTS의 INDEX 선언이 기존 운영 테이블에는 반영되지 않으므로 직접 ALTER한다.
+// (listApprovedPosts/listPostsForAdmin/listReportsForAdmin이 status 단독으로 필터링함)
+async function ensureCommunityStatusIndexes(connection) {
+  const [idx] = await connection.query(
+    `SELECT TABLE_NAME, INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('community_posts', 'community_reports')
+       AND INDEX_NAME IN ('idx_community_posts_status', 'idx_community_reports_status')`
+  );
+  const existing = new Set(idx.map((r) => r.INDEX_NAME));
+
+  if (!existing.has('idx_community_posts_status')) {
+    console.log('[db:migrate] community_posts.status 인덱스 추가...');
+    await connection.query('ALTER TABLE community_posts ADD INDEX idx_community_posts_status (status)');
+  }
+  if (!existing.has('idx_community_reports_status')) {
+    console.log('[db:migrate] community_reports.status 인덱스 추가...');
+    await connection.query('ALTER TABLE community_reports ADD INDEX idx_community_reports_status (status)');
+  }
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -253,6 +274,7 @@ async function migrate() {
     await ensureCommunityRejectReasonColumn(connection);
     await ensureApplicationRejectReasonColumn(connection);
     await ensureCommunityCategoryCapacityColumns(connection);
+    await ensureCommunityStatusIndexes(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {
