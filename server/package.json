@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "test": "node --require ./test-helpers/setup.js --test",
     "seed": "node scripts/seed.js",
     "seed:reference-data": "node scripts/seedReferenceData.js",
     "seed:course-offerings": "node scripts/seedCourseOfferings.js",
@@ -14,6 +15,7 @@
     "scrape:timetable": "node scripts/scrapeTimetable.js"
   },
   "dependencies": {
+    "@sentry/node": "^10.75.0",
     "cors": "^2.8.5",
     "denque": "^2.1.0",
     "dotenv": "^16.4.5",

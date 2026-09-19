@@ -93,24 +93,25 @@ router.post('/messages', async (req, res, next) => {
       graduationService.getGraduationStatus(req.session.userId).catch(() => null),
     ]);
 
+    // 아래 세 조회는 서로 결과를 참조하지 않는 독립적인 읽기라 Promise.all로 동시에 실행한다.
+    //
     // 교육과정(학년/학기별 과목 편성)은 RAG 유사도 검색이 아니라 curriculum_courses 조건
     // 조회로 처리한다 — "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부
     // 과목이 누락되는 문제가 반복 확인되어서다. 원문 메시지(재작성 전)로 감지해야
     // 여러 턴에 걸친 검색어 재작성 과정에서 학년/학기가 뒤섞이는 문제를 피할 수 있다.
-    const curriculumChunks = await curriculumService.lookupFromMessage(message, student);
-
+    //
     // 졸업인증제(기업연계프로젝트1/2 중 1과목 등)처럼 "N개 중 M개만 이수하면 충족"인 요건도
     // curriculum_courses와 같은 이유로 구조화 조회한다 — 정규화된 검색어(normalizedSearchQuery)를
     // 같이 넘겨서 "기연프" 같은 줄임말도 매칭되게 한다.
-    const requirementChunks = await curriculumService.lookupRequirementsFromMessage(
-      `${message} ${normalizedSearchQuery}`,
-      student
-    );
-
+    //
     // "2022년에 들을 수 있었던 과목" 같은 특정 연도 개설과목 질문도 curriculum_courses(편성
     // 계획)와 별개로 course_offerings(실제 개설 이력)를 구조화 조회해야 한다 — RAG 임베딩에는
     // 애초에 이 테이블이 들어가 있지 않아 그런 질문에 챗봇이 회피 답변하는 문제가 있었다.
-    const offeringChunks = await curriculumService.lookupOfferingsFromMessage(message, student);
+    const [curriculumChunks, requirementChunks, offeringChunks] = await Promise.all([
+      curriculumService.lookupFromMessage(message, student),
+      curriculumService.lookupRequirementsFromMessage(`${message} ${normalizedSearchQuery}`, student),
+      curriculumService.lookupOfferingsFromMessage(message, student),
+    ]);
 
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면

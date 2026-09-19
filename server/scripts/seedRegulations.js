@@ -132,7 +132,9 @@ async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl
   // 영영 재시도가 안 되는 문제가 생긴다.
   const embeddings = [];
   for (const batch of splitIntoBatches(chunks)) {
-    const batchEmbeddings = await embeddingClient.getEmbeddings(batch, 'document');
+    // 배치 시딩은 몇 분 기다려도 무방하니(챗봇 실시간 요청과 달리 사용자가 기다리는 게 아님)
+    // 기본값보다 훨씬 관대하게 재시도해서 429 때문에 시딩 자체가 실패하지 않게 한다.
+    const batchEmbeddings = await embeddingClient.getEmbeddings(batch, 'document', { maxRetries: 6 });
     embeddings.push(...batchEmbeddings);
   }
 

@@ -151,8 +151,7 @@ async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student) {
     await saveMessage(sessionId, 'user', answer || '(잘 모르겠어요, 건너뜀)');
   }
 
-  const history = await listMessages(sessionId);
-  const completedCourses = await getCompletedCourses(studentId);
+  const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
   const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses);
   await saveMessage(sessionId, 'assistant', followUp);
 
@@ -165,8 +164,7 @@ async function postMessage(studentId, sessionId, content, student) {
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
   await saveMessage(sessionId, 'user', content);
-  const history = await listMessages(sessionId);
-  const completedCourses = await getCompletedCourses(studentId);
+  const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
   const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses);
   await saveMessage(sessionId, 'assistant', followUp);
 
