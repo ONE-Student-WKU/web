@@ -97,8 +97,24 @@ function extractAdmissionYear(text) {
 
 // 메시지 자유 텍스트에서 바로 과목명을 추출하기는 어려우니, DB에 실제로 존재하는 과목명
 // 목록을 거꾸로 메시지에 포함되는지 검사한다(옛 COURSE_NAME_RE 정확매칭과 같은 방식).
-async function findMentionedCourseNames(message) {
-  const [rows] = await pool.query('SELECT DISTINCT course_name FROM curriculum_courses');
+//
+// department/track이 있으면 그 학과·트랙 과목명만 후보로 놓는다(모르면 lookupFromMessage와
+// 동일하게 전체를 대상으로 함) — 아래 findCourses(baseFilter) 호출이 어차피 학과/트랙으로
+// 다시 걸러내므로 결과는 동일하고, 학과가 늘어날수록 커지는 전체 스캔만 피하는 효과.
+async function findMentionedCourseNames(message, { departmentId, trackId } = {}) {
+  const conditions = [];
+  const params = [];
+  if (departmentId) {
+    conditions.push('department_id = ?');
+    params.push(departmentId);
+  }
+  if (trackId) {
+    conditions.push('track_id = ?');
+    params.push(trackId);
+  }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const [rows] = await pool.query(`SELECT DISTINCT course_name FROM curriculum_courses ${where}`, params);
   return rows.map((r) => r.course_name).filter((name) => message.includes(name));
 }
 
@@ -214,7 +230,10 @@ function formatChunk(row) {
 // student의 학과/트랙/입학년도를 알면 그 학생에게 실제로 해당하는 커리큘럼으로 좁히고,
 // 모르면(온보딩 전 등) 전체를 다 보여줘 사용자가 스스로 판단할 수 있게 한다.
 async function lookupFromMessage(message, student) {
-  const mentionedCourseNames = await findMentionedCourseNames(message);
+  const mentionedCourseNames = await findMentionedCourseNames(message, {
+    departmentId: student?.department_id,
+    trackId: student?.track_id,
+  });
   const gradeSemester = extractGradeSemester(message);
   if (mentionedCourseNames.length === 0 && !gradeSemester) return [];
 
