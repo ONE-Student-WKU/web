@@ -172,13 +172,13 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
   let hasOfficialSchedule = false;
 
   if (courseId) {
-    const course = await findCourseById(courseId);
+    // 서로 결과를 참조하지 않는 독립적인 조회라 Promise.all로 동시에 실행한다.
+    const [course, [scheduleRows]] = await Promise.all([
+      findCourseById(courseId),
+      pool.query('SELECT 1 FROM course_offering_schedules WHERE offering_id = ? LIMIT 1', [courseId]),
+    ]);
     if (!course) throw new Error('COURSE_NOT_FOUND');
     row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category };
-
-    const [scheduleRows] = await pool.query('SELECT 1 FROM course_offering_schedules WHERE offering_id = ? LIMIT 1', [
-      courseId,
-    ]);
     hasOfficialSchedule = scheduleRows.length > 0;
   }
 
