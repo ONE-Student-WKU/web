@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMe, getGraduationStatus } from '../api/chatApi.js';
+import { getGraduationStatus } from '../api/chatApi.js';
 import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
@@ -10,7 +10,6 @@ import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
 // 새로고침 등)에도 직전에 불러온 값을 바로 보여줄 수 있다(utils/sessionCache.js 참고).
 const homeDataCache = {
-  profile: readCache('home_profile'),
   status: readCache('home_status'),
   shortfalls: readCache('home_shortfalls'),
 };
@@ -25,10 +24,8 @@ function setHomeCache(key, value) {
 // 확인). App.jsx가 로그아웃/계정 삭제 시점에 호출해 캐시를 비운다.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetHomeCache() {
-  homeDataCache.profile = null;
   homeDataCache.status = null;
   homeDataCache.shortfalls = null;
-  clearCache('home_profile');
   clearCache('home_status');
   clearCache('home_shortfalls');
 }
@@ -65,19 +62,10 @@ function Home({
   onOpenInquiry,
   onLogout,
 }) {
-  const [profile, setProfile] = useState(homeDataCache.profile);
   const [status, setStatus] = useState(homeDataCache.status);
-  const [error, setError] = useState(null);
   const [shortfalls, setShortfalls] = useState(homeDataCache.shortfalls);
 
   useEffect(() => {
-    getMe()
-      .then((data) => {
-        setProfile(data);
-        setHomeCache('profile', data);
-      })
-      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
-
     // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
     // 항상 맞는다 — 예전엔 진행률 카드가 courseService.getSummary()의 카테고리 상한 없는
     // 단순 합계를 썼는데, 부족 요건 쪽은 상한이 적용된 총계를 써서 같은 화면에서 "15학점
@@ -95,13 +83,14 @@ function Home({
       .catch(() => setShortfalls(null));
   }, []);
 
-  // 뒤로가기 등으로 홈에 재진입할 때마다 서버 응답을 기다리는 동안 "학과 정보 없음"/"0학점"
-  // 같은 빈 기본값이 잠깐 보이는 문제(배포 환경처럼 왕복 지연이 있으면 눈에 띔) 방지 —
-  // 첫 진입이라 캐시가 없을 때만 로딩 스켈레톤을 보여주고, 두 번째 방문부터는 직전에 불러온
-  // 데이터를 즉시 보여준 뒤 뒤에서 조용히 최신 데이터로 갱신한다.
-  const isFirstLoad = profile === null && status === null;
+  // 뒤로가기 등으로 홈에 재진입할 때마다 서버 응답을 기다리는 동안 "0학점" 같은 빈 기본값이
+  // 잠깐 보이는 문제(배포 환경처럼 왕복 지연이 있으면 눈에 띔) 방지 — 첫 진입이라 캐시가
+  // 없을 때만 로딩 스켈레톤을 보여주고, 두 번째 방문부터는 직전에 불러온 데이터를 즉시
+  // 보여준 뒤 뒤에서 조용히 최신 데이터로 갱신한다. user는 App.jsx가 이미 로딩을 마친
+  // 뒤에만 이 화면을 렌더링하므로(authChecked 게이팅) 항상 준비돼 있어 이 판단에서 제외.
+  const isFirstLoad = status === null;
 
-  const gradeLevel = getGradeLevel(profile?.admissionYear, profile?.leaveSemesters);
+  const gradeLevel = getGradeLevel(user?.admissionYear, user?.leaveSemesters);
   const earnedCredits = status?.totalEarnedCredits ?? 0;
   const requiredTotal = status?.totalRequiredCredits ?? null;
   const progressPercent = requiredTotal ? Math.min(100, Math.round((earnedCredits / requiredTotal) * 100)) : 0;
@@ -124,8 +113,6 @@ function Home({
       </header>
 
       <div className="home-body">
-        {error && <p className="home-error">{error}</p>}
-
         {isFirstLoad ? (
           <>
             <div className="skeleton skeleton-text skeleton-greeting" />
@@ -145,7 +132,7 @@ function Home({
             <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
             <div className="home-subgreeting-row">
               <p className="home-subgreeting">
-                {profile?.department || '학과 정보 없음'}
+                {user?.department || '학과 정보 없음'}
                 {gradeLevel ? ` ${gradeLevel}학년` : ''}
               </p>
               {gradeLevel && (
