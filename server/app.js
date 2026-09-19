@@ -1,12 +1,14 @@
-const path = require('path');
+// Sentry 공식 가이드: 계측이 걸리려면 다른 모듈보다 먼저 require돼야 한다.
+require('./instrument');
+
 const express = require('express');
+const Sentry = require('@sentry/node');
 const cors = require('cors');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 
-// npm workspace로 실행하면 cwd가 server/로 바뀌어 기본 dotenv 탐색(cwd 기준)이
-// 리포지토리 루트의 .env를 못 찾는다. 항상 루트 .env를 절대경로로 지정해서 로드.
-require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+// .env 로드는 instrument.js(맨 위에서 이미 require됨)가 먼저 처리한다 — 여기서
+// 또 하지 않아도 이 시점엔 이미 process.env가 채워져 있다.
 
 const pool = require('./db');
 const authRoutes = require('./routes/auth');
@@ -111,6 +113,11 @@ app.get('/api/version', (req, res) => {
     branch: process.env.RAILWAY_GIT_BRANCH || 'unknown',
   });
 });
+
+// Sentry 공식 가이드: 모든 라우트 등록 이후, 우리 자체 에러 핸들러보다 앞에 붙여야
+// 라우트 핸들러/미들웨어에서 던져진 에러를 가로채 Sentry로 보낼 수 있다. SENTRY_DSN이
+// 없으면(로컬 개발 등) instrument.js에서 SDK가 이미 비활성 상태라 그냥 통과만 시킨다.
+Sentry.setupExpressErrorHandler(app);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
