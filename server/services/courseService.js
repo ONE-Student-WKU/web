@@ -275,7 +275,7 @@ async function findMyCourseById(studentId, id) {
   return rows[0] || null;
 }
 
-async function updateMyCourse(id, updates) {
+async function updateMyCourse(studentId, id, updates) {
   const columnMap = {
     midterm: 'midterm',
     final: 'final',
@@ -304,16 +304,17 @@ async function updateMyCourse(id, updates) {
 
   if (fields.length === 0) return;
 
-  params.push(id);
-  await pool.query(`UPDATE student_courses SET ${fields.join(', ')} WHERE id = ?`, params);
+  params.push(id, studentId);
+  await pool.query(`UPDATE student_courses SET ${fields.join(', ')} WHERE id = ? AND student_id = ?`, params);
 }
 
-async function deleteMyCourse(id) {
-  await pool.query('DELETE FROM student_courses WHERE id = ?', [id]);
+async function deleteMyCourse(studentId, id) {
+  await pool.query('DELETE FROM student_courses WHERE id = ? AND student_id = ?', [id, studentId]);
 }
 
 // 등록된 과목 전체 삭제(테스트/재입력 편의용) — student_id로 직접 범위를 좁히므로
-// deleteMyCourse와 달리 호출 전 소유권 확인이 따로 필요 없다.
+// updateMyCourse/deleteMyCourse처럼 별도로 findMyCourseById 호출 전 확인할 대상 id가
+// 없어 그 자체로 소유권 범위가 명확하다.
 async function deleteAllMyCourses(studentId) {
   await pool.query('DELETE FROM student_courses WHERE student_id = ?', [studentId]);
 }
