@@ -13,10 +13,12 @@ const graduationService = require('../services/graduationService');
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
-const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 학사지원과에 직접 확인해주세요.';
+const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 질문을 다르게 표현해보시거나, 관련 부서에 직접 확인해주세요.';
 // AI 호출에 실어 보낼 최근 대화 이력 개수(비용/토큰 상한 목적). 대화가 길어질수록 이보다
 // 오래된 turn은 컨텍스트에서 자연히 빠짐.
 const HISTORY_LIMIT = 10;
+// 사용자당 1일 채팅 한도(임베딩+Claude 호출 비용 상한 목적). 자정(서버 시각) 리셋.
+const DAILY_MESSAGE_LIMIT = 20;
 
 // "비공식 참고용" 문구는 화면에 고정으로 표시하기로 하고 시스템 프롬프트에서도 넣지 말라고
 // 지시했는데, 예전 대화(이 문구가 이미 여러 번 등장한 이력)를 history로 넘기면 모델이 지시보다
@@ -63,6 +65,16 @@ router.post('/messages', async (req, res, next) => {
     const conversation = await regulationService.findConversationById(req.session.userId, conversationId);
     if (!conversation) {
       return res.status(404).json({ status: 404, code: 'CONVERSATION_NOT_FOUND', message: null, data: null });
+    }
+
+    const todayMessageCount = await regulationService.countTodayUserMessages(req.session.userId);
+    if (todayMessageCount >= DAILY_MESSAGE_LIMIT) {
+      return res.status(429).json({
+        status: 429,
+        code: 'CHAT_DAILY_LIMIT_EXCEEDED',
+        message: null,
+        data: { limit: DAILY_MESSAGE_LIMIT },
+      });
     }
 
     // 이번 메시지를 저장하기 전에 이전 이력을 먼저 읽어둔다 — AI에 대화 맥락(history)으로

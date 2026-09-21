@@ -119,6 +119,18 @@ async function listMessages(conversationId) {
   }));
 }
 
+// 사용자당 1일 채팅 한도 판정용 — 오늘 이 학생이 보낸 user 메시지 수(자정 리셋, 서버 시각 기준).
+async function countTodayUserMessages(studentId) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS count
+     FROM chat_messages cm
+     JOIN chat_conversations cc ON cc.id = cm.conversation_id
+     WHERE cc.student_id = ? AND cm.role = 'user' AND DATE(cm.created_at) = CURDATE()`,
+    [studentId]
+  );
+  return rows[0].count;
+}
+
 async function saveMessage(conversationId, { role, content, citedChunkIds }) {
   await pool.query(
     'INSERT INTO chat_messages (conversation_id, role, content, cited_chunk_ids) VALUES (?, ?, ?, ?)',
@@ -135,4 +147,5 @@ module.exports = {
   touchConversation,
   listMessages,
   saveMessage,
+  countTodayUserMessages,
 };

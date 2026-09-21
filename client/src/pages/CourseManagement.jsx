@@ -577,6 +577,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualSchedule((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   const removeScheduleRow = (index) => setManualSchedule((prev) => prev.filter((_, i) => i !== index));
 
+  const describePdfImportError = (err) => {
+    if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') {
+      return `이번 학기 PDF 가져오기 한도(${err.data?.limit ?? 5}회)를 모두 사용했어요. 다음 학기에 다시 이용해주세요.`;
+    }
+    return 'PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.';
+  };
+
   const handlePdfFileSelect = async (e) => {
     const file = e.target.files[0];
     e.target.value = ''; // 같은 파일을 다시 선택해도 onChange가 또 뜨도록.
@@ -610,8 +617,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           ? null
           : { declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits }
       );
-    } catch {
-      setError('PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
+    } catch (err) {
+      setError(describePdfImportError(err));
     } finally {
       setPdfLoading(false);
     }

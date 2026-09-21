@@ -241,10 +241,18 @@ async function parseFullTranscriptText(rawText) {
     declaredBySemester.set(`${sem.year}-${sem.semester}`, Number(subtotalMatch[1]));
   }
 
+  // 문서 맨 위 학생 개인정보(학과/학번/성명) 블록은 첫 학기 섹션 헤더보다 앞에 있다
+  // (FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT 주석 참고) — parseCourseListText가 이수과목확인
+  // 리스트 헤더 이전을 잘라내는 것과 동일한 이유로, AI에는 첫 학기 섹션부터만 보내서
+  // 애초에 이름·학번이 API 호출에 실리지 않게 한다. 소계 대조(위 declaredBySemester)는
+  // 원문 전체 기준 인덱스가 필요하므로 이 자르기는 AI로 보낼 사본에만 적용한다.
+  const firstSemesterIndex = semesterBoundaries[0]?.index;
+  const contentForAi = firstSemesterIndex != null ? text.slice(firstSemesterIndex) : text;
+
   const warnings = [];
   let extracted = [];
   try {
-    extracted = await extractFullTranscriptRows(text);
+    extracted = await extractFullTranscriptRows(contentForAi);
   } catch (err) {
     warnings.push('과목을 인식하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
   }
