@@ -4,7 +4,12 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const courseService = require('../services/courseService');
-const { parseCourseListPdf } = require('../services/pdfImportService');
+const { parseCourseListPdf, parseFullTranscriptText, parseFullTranscriptTextRuleBased } = require('../services/pdfImportService');
+
+// 붙여넣기로 들어오는 텍스트 길이 상한 — 전체성적조회 전체 학기를 복사해도 이보다 훨씬
+// 작다(실사용 샘플 기준 학기당 1~2천자 수준). 과도하게 긴 입력으로 Claude API 비용이
+// 튀는 것을 막는 안전장치일 뿐, 정상 사용에는 걸리지 않는다.
+const PASTED_TEXT_MAX_LENGTH = 50000;
 
 // 초과 시 응답 포맷 — auth.js의 RATE_LIMIT_RESPONSE와 동일한 이유(클라이언트 apiRequest의
 // res.json() 파싱이 순수 텍스트 응답에 실패하는 문제를 피함).
@@ -210,6 +215,71 @@ router.post('/import/pdf', pdfImportLimiter, pdfUpload.single('file'), async (re
     const result = await parseCourseListPdf(req.file.buffer);
     await courseService.logPdfImport(req.session.userId);
     return res.status(200).json({ status: 200, code: 'PDF_IMPORT_PARSE_SUCCESS', message: null, data: result });
+  } catch (err) {
+    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
+  }
+});
+
+// POST /api/my-courses/import/text
+// iOS에서 "전체성적조회"를 PDF로 저장하면 브라우저가 한글 글자를 텍스트 없이 인코딩해버려
+// (실사용 확인, 2026-09) PDF 경로 자체가 막히는 기기가 있다 — 반면 화면의 텍스트를 손가락으로
+// 선택해 복사하는 것은 정상 동작하므로, 그렇게 복사해 붙여넣은 텍스트를 PDF 없이 바로
+// 파싱하는 대체 경로. "전체성적조회" 문서만 대상으로 한다 — 이수과목확인리스트는 PDF 경로가
+// 문제없이 동작해 이 대체 경로가 필요 없다.
+//
+// 붙여넣은 텍스트는 PDF와 달리 기기마다 레이아웃이 흔들리지 않는 깨끗한 탭 구분 형식임을
+// 실사용 샘플로 확인했다(pdfImportService.js의 parseFullTranscriptTextRuleBased 주석 참고) —
+// 그래서 Claude 호출 없는 규칙 기반 파싱을 먼저 시도하고, 그 결과가 문서상 소계와 전부
+// 맞아떨어질 때만("신뢰할 수 있을 때만") 그대로 쓴다. 형식이 예상과 다르면 null이 돌아오므로
+// 그때만 기존 AI 경로로 폴백한다 — AI를 실제로 쓴 시도만 학기당 한도(PDF_IMPORT_LIMIT_PER_PERIOD)에
+// 넣는다. parseMethod를 응답에 실어서 어느 경로로 처리됐는지 클라이언트가 알 수 있게 한다.
+router.post('/import/text', pdfImportLimiter, async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    if (typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_TEXT', message: null, data: null });
+    }
+    if (text.length > PASTED_TEXT_MAX_LENGTH) {
+      return res.status(400).json({ status: 400, code: 'TEXT_TOO_LONG', message: null, data: null });
+    }
+
+    const ruleResult = parseFullTranscriptTextRuleBased(text);
+    let result;
+    let parseMethod;
+
+    if (ruleResult) {
+      result = ruleResult;
+      parseMethod = 'rule';
+    } else {
+      // /import/pdf와 동일한 이유(Claude API 호출 비용)로 같은 학기당 한도를 공유한다 — 규칙
+      // 기반으로 끝난 요청은 비용이 안 들었으니 이 한도 확인 자체를 건너뛴다(위 if 분기).
+      const importCount = await courseService.countPdfImportsThisPeriod(req.session.userId);
+      if (importCount >= courseService.PDF_IMPORT_LIMIT_PER_PERIOD) {
+        return res.status(429).json({
+          status: 429,
+          code: 'PDF_IMPORT_LIMIT_EXCEEDED',
+          message: null,
+          data: { limit: courseService.PDF_IMPORT_LIMIT_PER_PERIOD },
+        });
+      }
+      result = await parseFullTranscriptText(text);
+      await courseService.logPdfImport(req.session.userId);
+      parseMethod = 'ai';
+    }
+
+    return res.status(200).json({
+      status: 200,
+      code: 'PDF_IMPORT_PARSE_SUCCESS',
+      message: null,
+      data: {
+        docType: 'full_transcript',
+        rows: result.rows,
+        declaredTotalCredits: null,
+        extractedTotalCredits: result.extractedTotalCredits,
+        warnings: result.warnings,
+        parseMethod,
+      },
+    });
   } catch (err) {
     return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
   }

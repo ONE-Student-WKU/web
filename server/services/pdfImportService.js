@@ -209,9 +209,36 @@ function detectDocumentType(rawText) {
   return FULL_TRANSCRIPT_TITLE_RE.test(rawText.trim()) ? 'full_transcript' : 'course_list';
 }
 
-async function parseFullTranscriptText(rawText) {
-  const text = rawText.replace(/\r/g, '');
+// iOS에서 "전체성적조회"를 PDF로 저장하면(실사용 확인, 2026-09) 브라우저가 그 페이지를 PDF로
+// 인코딩하는 과정에서 한글 글자만 통째로 텍스트 레이어에서 빠지는 경우가 있다(영어/숫자/기호는
+// 멀쩡히 남음 — 예: 제목 "전체성적조회", "년"/"학기", 이수구분 코드, 과목명의 한글 부분이 전부
+// 사라지고 "iOS", "AI", "Java" 같은 과목명 속 영단어 조각만 남는 패턴으로 확인됨). 이 경우
+// 이수구분·과목명 데이터 자체가 파일 안에 없어 정규식/AI 어느 쪽으로도 복구가 불가능하므로,
+// 파싱을 시도하는 대신 원인과 해결책을 바로 안내한다. 정상 문서라면 제목만으로도 한글이 여러
+// 글자 있어야 하니 "전혀 없음"은 이 문제의 안전한 신호다.
+const HANGUL_RE = /[가-힣]/;
 
+function hasNoHangulText(rawText) {
+  return !HANGUL_RE.test(rawText);
+}
+
+// "첫 학기 헤더 이전 잘라내기"(아래 contentForAi)는 학생정보 블록이 표보다 위에 있다는
+// 위치 가정에 의존한다 — PDF 인쇄본은 이게 항상 성립함을 확인했지만(iOS 디버그로도 재확인),
+// 사용자가 "복사해서 붙여넣기"를 쓸 때는 원문 그대로 페이지 전체(네비게이션 포함)를 선택해
+// 붙여넣을 수도 있어 위치를 더는 보장할 수 없다. 위치에 기대지 않고, 어디에 있든 학번/이름
+// 패턴이면 가리는 마지막 방어선이 필요하다. 학수번호(예: 003308, L00316)는 6자 이하라
+// 7자리 이상 연속 숫자만 가리는 이 기준에 걸리지 않는다(실사용 PDF로 학번 8자리 확인).
+const STUDENT_ID_RE = /\d{7,}/g;
+const STUDENT_NAME_RE = /((?:성명|이름)[\t ]*)[가-힣]{2,4}/g;
+
+function redactStudentIdentifiers(text) {
+  return text.replace(STUDENT_ID_RE, (m) => 'X'.repeat(m.length)).replace(STUDENT_NAME_RE, '$1XXX');
+}
+
+// 학기 헤더/소계 위치를 한 번만 스캔해 parseFullTranscriptText(AI 경로)와
+// parseFullTranscriptTextRuleBased(규칙 기반 경로) 둘 다에서 같은 방식으로 쓴다 — 두 경로가
+// "몇 학점이 맞는 답인지" 서로 다른 기준으로 대조하면 안 되므로 이 계산 자체를 공유한다.
+function computeSemesterSubtotals(text) {
   const semesterBoundaries = [];
   const semRe = new RegExp(SEMESTER_HEADER_RE.source, 'g');
   let semMatch;
@@ -241,22 +268,15 @@ async function parseFullTranscriptText(rawText) {
     declaredBySemester.set(`${sem.year}-${sem.semester}`, Number(subtotalMatch[1]));
   }
 
-  // 문서 맨 위 학생 개인정보(학과/학번/성명) 블록은 첫 학기 섹션 헤더보다 앞에 있다
-  // (FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT 주석 참고) — parseCourseListText가 이수과목확인
-  // 리스트 헤더 이전을 잘라내는 것과 동일한 이유로, AI에는 첫 학기 섹션부터만 보내서
-  // 애초에 이름·학번이 API 호출에 실리지 않게 한다. 소계 대조(위 declaredBySemester)는
-  // 원문 전체 기준 인덱스가 필요하므로 이 자르기는 AI로 보낼 사본에만 적용한다.
-  const firstSemesterIndex = semesterBoundaries[0]?.index;
-  const contentForAi = firstSemesterIndex != null ? text.slice(firstSemesterIndex) : text;
+  return { semesterBoundaries, declaredBySemester };
+}
 
-  const warnings = [];
-  let extracted = [];
-  try {
-    extracted = await extractFullTranscriptRows(contentForAi);
-  } catch (err) {
-    warnings.push('과목을 인식하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
-  }
-
+// AI(또는 규칙 기반)가 뽑아낸 항목 배열을 rows/warnings로 다듬는 마무리 단계 — 이름 정리,
+// MAX_NAME_LENGTH 방어, 학기별 소계 대조, 이수구분 매핑까지 두 파싱 경로가 완전히 동일한
+// 기준으로 검증받게 한다. leadingWarnings는 이 단계 이전에 이미 발생한 경고(예: AI 호출
+// 자체가 실패한 경우)를 맨 앞에 끼워 넣기 위한 것.
+function finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnings = []) {
+  const warnings = [...leadingWarnings];
   const rows = [];
   let droppedRows = 0;
   for (const item of extracted) {
@@ -297,11 +317,13 @@ async function parseFullTranscriptText(rawText) {
   // 바뀌므로 이 대조로는 못 잡는다 — 이수구분 코드가 2글자 그대로 옮기는 작업이라
   // 다른 필드보다 오류 가능성이 낮다고 보고, 최종적으로는 사용자 검토 단계(미리보기
   // 화면)가 이 부분의 마지막 안전망 역할을 한다.
+  let hasSubtotalMismatch = false;
   for (const [key, declaredValue] of declaredBySemester) {
     const extractedValue = rows
       .filter((r) => `${r.year}-${r.semester}` === key && !r.isFail)
       .reduce((sum, r) => sum + r.credits, 0);
     if (Math.abs(declaredValue - extractedValue) > 0.01) {
+      hasSubtotalMismatch = true;
       const [year, semesterCode] = key.split('-');
       const semesterLabel = SEMESTER_DISPLAY_LABELS[Number(semesterCode)] || `${semesterCode}학기`;
       warnings.push(
@@ -317,7 +339,158 @@ async function parseFullTranscriptText(rawText) {
     warnings.push(`이수구분을 자동으로 판별하지 못한 과목 ${unmapped.length}건이 있습니다. 직접 선택해주세요.`);
   }
 
-  return { rows, extractedTotalCredits, warnings };
+  // isClean: 규칙 기반 경로가 "이 결과를 그대로 신뢰해도 되는지" 판단하는 데만 쓴다(AI
+  // 경로는 이 값을 쓰지 않음) — 소계가 하나라도 안 맞거나, 이름이 비정상적으로 길어 버려진
+  // 행이 있거나, 애초에 한 줄도 못 뽑았으면 규칙 기반을 신뢰하지 않고 AI로 다시 시도한다.
+  const isClean = rows.length > 0 && droppedRows === 0 && !hasSubtotalMismatch;
+
+  return { rows, extractedTotalCredits, warnings, isClean };
+}
+
+async function parseFullTranscriptText(rawText) {
+  const text = rawText.replace(/\r/g, '');
+  const { semesterBoundaries, declaredBySemester } = computeSemesterSubtotals(text);
+
+  // 문서 맨 위 학생 개인정보(학과/학번/성명) 블록은 첫 학기 섹션 헤더보다 앞에 있다
+  // (FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT 주석 참고) — parseCourseListText가 이수과목확인
+  // 리스트 헤더 이전을 잘라내는 것과 동일한 이유로, AI에는 첫 학기 섹션부터만 보내서
+  // 애초에 이름·학번이 API 호출에 실리지 않게 한다. 소계 대조(위 declaredBySemester)는
+  // 원문 전체 기준 인덱스가 필요하므로 이 자르기는 AI로 보낼 사본에만 적용한다.
+  const firstSemesterIndex = semesterBoundaries[0]?.index;
+  const sliced = firstSemesterIndex != null ? text.slice(firstSemesterIndex) : text;
+  // 위치 기반으로 앞부분을 잘라내도 안심할 수 없는 경로(페이지 전체 선택해 붙여넣기 등)를
+  // 대비해, 어디에 있든 학번/이름 패턴이면 한 번 더 가린 뒤에만 API로 보낸다.
+  const contentForAi = redactStudentIdentifiers(sliced);
+
+  const leadingWarnings = [];
+  let extracted = [];
+  try {
+    extracted = await extractFullTranscriptRows(contentForAi);
+  } catch (err) {
+    leadingWarnings.push('과목을 인식하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
+  }
+
+  const { isClean, ...result } = finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnings);
+  return result;
+}
+
+// 붙여넣기 텍스트 전용 규칙 기반 1차 파서 — Claude API를 호출하지 않는다. 실제 붙여넣기
+// 샘플(2026-09 확인)이 "이수구분/학수번호/교과목명/학점/평점/등급" 6칸 + "YYYY 년 N 학기"
+// 헤더 + "취득학점/평균평점" 소계 2칸+숫자 2칸으로만 구성돼 있어 정규식으로도 안전하게
+// 처리할 수 있다고 판단했다. 다만 PDF 파싱을 정규식에서 AI로 옮긴 이유(기기마다 인쇄 레이아웃이
+// 미묘하게 달라 계속 깨졌던 문제, 파일 상단 주석 참고)가 재발하지 않도록, 아는 패턴 어디에도
+// 안 걸리는 내용이 나오면 즉시 포기하고 null을 반환한다 — 추측성 파싱을 하지 않고, 호출부가
+// AI 경로로 폴백하게 한다.
+//
+// 필드 구분자가 항상 탭(\t)인 건 아니다 — 같은 표를 복사해도 붙여넣는 대상(우리 textarea,
+// 다른 텍스트 입력창 등)에 따라 탭이 줄바꿈으로 바뀌어 들어오는 경우가 실사용으로 확인됐다
+// (2026-09, "이수구분\t학수번호\t..." 한 줄이 "이수구분"/"학수번호"/... 여러 줄로 쪼개짐).
+// 그래서 줄 단위가 아니라 \t와 \n을 전부 같은 구분자로 보고 토큰 스트림으로 납작하게 편 뒤,
+// 그 토큰 나열이 "6칸짜리 데이터 행/헤더" 또는 "4칸짜리 소계"인지를 앞에서부터 그리디하게
+// 소비하며 확인한다 — 탭 구분이든 줄바꿈 구분이든 같은 로직으로 처리된다.
+const FULL_TRANSCRIPT_SEMESTER_LINE_RE = /^(\d{4})\s*년\s*([12])\s*학기$/;
+const NUMBER_TOKEN_RE = /^\d+(?:\.\d+)?$/;
+const GRADE_TOKENS = new Set(['A+', 'A0', 'B+', 'B0', 'C+', 'C0', 'D+', 'D0', 'F', 'P', 'NP']);
+const CODE_TOKENS = new Set(KNOWN_CODES);
+
+function tryParseFullTranscriptLines(text) {
+  const tokens = text
+    .split(/[\t\n]/)
+    .map((t) => t.trim())
+    .filter((t) => t !== '');
+
+  const items = [];
+  let currentYear = null;
+  let currentSemester = null;
+  let sawSemesterHeader = false;
+  // inTable: 지금 "학기 헤더 ~ 그 학기 소계" 사이(진짜 과목 데이터 구간)에 있는지. 이 구간 밖은
+  // 제목("전체성적조회"), 학생정보(대학명/학과/학번/성명), "화면출력/돌아가기" 버튼처럼 전체
+  // 페이지를 그대로 선택해 복사했을 때 앞뒤로 섞여 들어오는 장식 텍스트일 수 있어(실사용 확인,
+  // 2026-09) 낯선 토큰이 나와도 무시하고 다음 학기 헤더를 기다린다. 반대로 이 구간 "안"에서
+  // 낯선 토큰이 나오면 진짜 과목 데이터가 깨진 것일 수 있으니 그때는 여전히 즉시 포기한다 —
+  // 관대함을 장식 텍스트 구간에만 국한해 오탐을 막는다.
+  let inTable = false;
+  let i = 0;
+
+  while (i < tokens.length) {
+    const token = tokens[i];
+
+    const semMatch = token.match(FULL_TRANSCRIPT_SEMESTER_LINE_RE);
+    if (semMatch) {
+      currentYear = Number(semMatch[1]);
+      currentSemester = RAW_SEMESTER_TO_CODE[Number(semMatch[2])];
+      sawSemesterHeader = true;
+      inTable = true;
+      i += 1;
+      continue;
+    }
+
+    // 표 헤더 6칸: 이수구분/학수번호/교과목명/학점/평점/(점수 또는 등급) — 그대로 건너뛴다.
+    if (
+      token === '이수구분' &&
+      tokens[i + 1] === '학수번호' &&
+      tokens[i + 2] === '교과목명' &&
+      tokens[i + 3] === '학점' &&
+      tokens[i + 4] === '평점'
+    ) {
+      i += 6;
+      continue;
+    }
+
+    // 소계 4칸: 취득학점/평균평점/숫자/숫자 — 이 학기 표는 여기서 끝, 다음 학기 헤더가 나올
+    // 때까지는 다시 장식 텍스트 관대 구간으로 돌아간다.
+    if (
+      token === '취득학점' &&
+      tokens[i + 1] === '평균평점' &&
+      NUMBER_TOKEN_RE.test(tokens[i + 2] || '') &&
+      NUMBER_TOKEN_RE.test(tokens[i + 3] || '')
+    ) {
+      i += 4;
+      inTable = false;
+      continue;
+    }
+
+    // 데이터 행 6칸: 이수구분코드/학수번호/교과목명/학점/평점/등급
+    if (CODE_TOKENS.has(token)) {
+      const [code, courseNo, name, credits, avg, grade] = tokens.slice(i, i + 6);
+      const shapeOk =
+        courseNo !== undefined &&
+        name !== undefined &&
+        NUMBER_TOKEN_RE.test(credits || '') &&
+        NUMBER_TOKEN_RE.test(avg || '') &&
+        GRADE_TOKENS.has(grade);
+      if (shapeOk && currentYear && currentSemester) {
+        items.push({ rawCategory: code, name, year: currentYear, semester: currentSemester, credits: Number(credits), letterGrade: grade });
+        i += 6;
+        continue;
+      }
+      // 표 구간 안인데 이수구분 코드로 시작하고도 뒤 구조가 안 맞으면 진짜 데이터가 깨진
+      // 것일 수 있으니 신뢰하지 않는다. 표 구간 밖이면(장식 텍스트가 우연히 코드 두 글자와
+      // 같을 가능성, 극히 드묾) 그냥 한 토큰만 무시하고 넘어간다.
+      if (inTable) return null;
+      i += 1;
+      continue;
+    }
+
+    if (inTable) return null; // 표 구간 안에서 낯선 토큰 — 신뢰할 수 없어 즉시 포기.
+    i += 1; // 표 구간 밖의 장식 텍스트 — 무시하고 다음 토큰으로.
+  }
+
+  if (!sawSemesterHeader || items.length === 0) return null;
+  return items;
+}
+
+// null이면 "규칙 기반으로 신뢰할 수 있게 못 읽었다"는 뜻 — 호출부가 parseFullTranscriptText(AI)로
+// 폴백해야 한다.
+function parseFullTranscriptTextRuleBased(rawText) {
+  const text = rawText.replace(/\r/g, '');
+  const { declaredBySemester } = computeSemesterSubtotals(text);
+
+  const items = tryParseFullTranscriptLines(text);
+  if (!items) return null;
+
+  const { isClean, ...result } = finalizeFullTranscriptRows(items, declaredBySemester);
+  return isClean ? result : null;
 }
 
 async function parseCourseListPdf(buffer) {
@@ -325,6 +498,21 @@ async function parseCourseListPdf(buffer) {
   try {
     const result = await parser.getText();
     const rawText = result.text;
+
+    if (hasNoHangulText(rawText)) {
+      return {
+        docType: null,
+        rows: [],
+        declaredTotalCredits: null,
+        extractedTotalCredits: null,
+        warnings: [
+          '이 PDF에서 한글 글자를 전혀 인식하지 못했어요. 기기나 브라우저에 따라 "전체성적조회"를 PDF로 ' +
+            '저장할 때 한글이 텍스트로 저장되지 않는 경우가 있어요. "텍스트 붙여넣기로 다시 시도하기"를 ' +
+            '이용해주세요.',
+        ],
+      };
+    }
+
     const docType = detectDocumentType(rawText);
 
     if (docType === 'full_transcript') {
@@ -349,4 +537,10 @@ async function parseCourseListPdf(buffer) {
   }
 }
 
-module.exports = { parseCourseListPdf, parseCourseListText, parseFullTranscriptText, detectDocumentType };
+module.exports = {
+  parseCourseListPdf,
+  parseCourseListText,
+  parseFullTranscriptText,
+  parseFullTranscriptTextRuleBased,
+  detectDocumentType,
+};
