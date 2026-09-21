@@ -34,6 +34,39 @@
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양필수",
+    "requiredCredits": 3,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생은 \"종교와원불교\"(3학점) 외 교양은 이수한 것으로 간주 (편입학에관한 시행규칙, 본교/원광보건대 졸업 편입생 제외). 68학점 전적대학 인정은 학과 조교 확인상 실제 취득학점과 무관하게 정액 적용됨",
+    "requiredCourses": ["종교와원불교"]
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "교양선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생은 \"종교와원불교\" 외 교양선택은 이수한 것으로 간주 (편입학에관한 시행규칙)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
+    "category": "일반선택",
+    "requiredCredits": 17,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "136(총 이수학점) − 68(전적대학 정액 인정) − 48(완화된 최소전공) − 3(종교와원불교) = 17. 편입생_교육과정.md 2-1절 산식, 68학점 정액 적용은 학과 조교 확인(2026-09-21)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "컴퓨터·소프트웨어공학과",
     "category": "전공",
     "requiredCredits": 48,
     "minAdmissionYear": null,
@@ -229,6 +262,39 @@
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
     "description": "편입생 완화된 최소전공 인정학점 (자연·공학·예체능계열, 학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "교양필수",
+    "requiredCredits": 3,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생은 \"종교와원불교\"(3학점) 외 교양은 이수한 것으로 간주 (편입학에관한 시행규칙, 본교/원광보건대 졸업 편입생 제외). 68학점 전적대학 인정은 학과 조교 확인상 실제 취득학점과 무관하게 정액 적용됨",
+    "requiredCourses": ["종교와원불교"]
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "교양선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생은 \"종교와원불교\" 외 교양선택은 이수한 것으로 간주 (편입학에관한 시행규칙)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학3계열",
+    "category": "일반선택",
+    "requiredCredits": 11,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "130(총 이수학점) − 68(전적대학 정액 인정) − 48(완화된 최소전공) − 3(종교와원불교) = 11. 68학점 정액 적용은 학과 조교 확인(2026-09-21)",
     "requiredCourses": []
   },
   {
