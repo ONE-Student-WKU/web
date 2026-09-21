@@ -35,6 +35,35 @@ function numOrNull(v) {
   return v === null || v === undefined ? null : Number(v);
 }
 
+// PDF 가져오기 학기당 한도 판정용 기간 키. 실제 개강일이 아니라 달력 기준 근사치로 계산한다
+// (3~8월=1학기, 9~12월=2학기, 1~2월=전년도 2학기) — 한도 리셋 용도로만 쓰이므로 개강일과
+// 며칠 어긋나도 무방하다.
+function getCurrentAcademicPeriod(date = new Date()) {
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  if (month >= 3 && month <= 8) return `${year}-1`;
+  if (month >= 9) return `${year}-2`;
+  return `${year - 1}-2`;
+}
+
+// PDF 파싱(pdfImportService)이 매번 Claude API를 호출해 비용이 들기 때문에 학기당 상한을 둔다.
+const PDF_IMPORT_LIMIT_PER_PERIOD = 5;
+
+async function countPdfImportsThisPeriod(studentId) {
+  const [rows] = await pool.query(
+    'SELECT COUNT(*) AS count FROM pdf_import_logs WHERE student_id = ? AND period = ?',
+    [studentId, getCurrentAcademicPeriod()]
+  );
+  return rows[0].count;
+}
+
+async function logPdfImport(studentId) {
+  await pool.query('INSERT INTO pdf_import_logs (student_id, period) VALUES (?, ?)', [
+    studentId,
+    getCurrentAcademicPeriod(),
+  ]);
+}
+
 // year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
 // 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
 // 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
@@ -485,4 +514,8 @@ module.exports = {
   getSummary,
   listSemesters,
   listRetakeEligibleCourses,
+  PDF_IMPORT_LIMIT_PER_PERIOD,
+  getCurrentAcademicPeriod,
+  countPdfImportsThisPeriod,
+  logPdfImport,
 };

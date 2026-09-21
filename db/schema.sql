@@ -598,6 +598,23 @@ CREATE TABLE IF NOT EXISTS student_activity (
 );
 
 -- ---------------------------------------------------------------------------
+-- 13. PDF 가져오기 사용 로그 (학기당 5회 한도 판정용)
+-- /api/my-courses/import/pdf가 pdfImportService(Claude API 호출)로 파싱할 때마다 한 행씩
+-- 남긴다 — 실제 학점 반영은 /import/confirm에서 별도로 하지만, 비용이 드는 지점은 파싱
+-- 단계라 여기서 카운트한다. period는 server/services/courseService.js의
+-- getCurrentAcademicPeriod()가 만드는 값('YYYY-1'/'YYYY-2', 3~8월=1학기·9~12월=2학기·
+-- 1~2월=전년도 2학기)과 반드시 같은 형식이어야 한다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pdf_import_logs (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  student_id  INT NOT NULL,
+  period      VARCHAR(10) NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
 -- 학과·트랙 마스터 초기 시드
 -- "컴퓨터·소프트웨어공학과"는 ~2025학번(136점 체계, 트랙 없음), "공학3계열"은
 -- 2026학번~(130점 체계, 아래 두 트랙 중 하나를 2학년 진급 시 선택)에 대응.

@@ -194,7 +194,21 @@ router.post('/import/pdf', pdfImportLimiter, pdfUpload.single('file'), async (re
       return res.status(400).json({ status: 400, code: 'REQUIRED_PDF_FILE', message: null, data: null });
     }
 
+    // 파싱(pdfImportService)이 매 호출 Claude API를 쓰므로, 실제로 비용이 드는 이 시점에서
+    // 학기당 한도를 확인한다 — 성공한 파싱만 카운트하므로 잘못된 파일 업로드로 재시도하는
+    // 것까지 한도를 깎지는 않는다.
+    const importCount = await courseService.countPdfImportsThisPeriod(req.session.userId);
+    if (importCount >= courseService.PDF_IMPORT_LIMIT_PER_PERIOD) {
+      return res.status(429).json({
+        status: 429,
+        code: 'PDF_IMPORT_LIMIT_EXCEEDED',
+        message: null,
+        data: { limit: courseService.PDF_IMPORT_LIMIT_PER_PERIOD },
+      });
+    }
+
     const result = await parseCourseListPdf(req.file.buffer);
+    await courseService.logPdfImport(req.session.userId);
     return res.status(200).json({ status: 200, code: 'PDF_IMPORT_PARSE_SUCCESS', message: null, data: result });
   } catch (err) {
     return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
