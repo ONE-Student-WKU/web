@@ -77,7 +77,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
       <ChatInput onSendMessage={sendMessage} disabled={loading} onFocusChange={handleInputFocusChange} />
       {!inputFocused && (
         <div className="chat-disclaimer">
-          본 답변은 비공식 참고용입니다. 정확한 사항은 웹정보서비스 또는 학사지원과(063-850-6788)에서 확인하세요.
+          본 답변은 비공식 참고용입니다. 정확한 사항은 웹정보서비스 또는 관련 부서에서 확인하세요.
         </div>
       )}
     </div>
