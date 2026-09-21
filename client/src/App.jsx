@@ -302,8 +302,10 @@ function App() {
             user={user}
             onDone={() => {
               setHighlightLeaveSemesters(false);
-              setUser((u) => ({ ...u, onboardingCompleted: true }));
-              setView('home');
+              // onboardingCompleted만 patch하면 방금 입력한 학과/학번/트랙 등은 user에 반영이
+              // 안 돼(Home/CourseManagement가 그 값들을 user prop에서 직접 읽으므로) — 서버에서
+              // 다시 fetch해서 완전히 최신 상태로 맞춘다.
+              loadUser().finally(() => setView('home'));
             }}
             onSkip={() => {
               setHighlightLeaveSemesters(false);

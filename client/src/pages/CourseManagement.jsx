@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  getMe,
   getMyCourses,
   getTimetable,
   getCourseSummary,
@@ -60,11 +59,11 @@ function semesterKey(year, semester) {
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // 학기별 데이터(myCourses/timetable)는 학기 탭마다 값이 다르므로 학기 키별로 따로 캐시한다.
-// sessionStorage 복원은 profile/summary/semesters/status/retakeEligible(스칼라 값)에만
+// sessionStorage 복원은 summary/semesters/status/retakeEligible(스칼라 값)에만
 // 적용한다 — semesterData는 Map이라 그대로 직렬화가 안 되고, 학기별 세부 데이터까지는
 // 최초 화면(요약 카드들)만큼 "즉시 안 보이면 눈에 띄는" 정보가 아니라 스코프에서 뺐다.
+// profile은 App.jsx가 이미 들고 있는 user prop을 그대로 쓰므로 여기서 별도로 캐싱하지 않는다.
 const courseMgmtCache = {
-  profile: readCache('courseMgmt_profile'),
   summary: readCache('courseMgmt_summary'),
   semesters: readCache('courseMgmt_semesters'),
   status: readCache('courseMgmt_status'),
@@ -80,13 +79,11 @@ function setCourseMgmtCache(key, value) {
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetCourseMgmtCache() {
-  courseMgmtCache.profile = null;
   courseMgmtCache.summary = null;
   courseMgmtCache.semesters = null;
   courseMgmtCache.status = null;
   courseMgmtCache.retakeEligible = null;
   courseMgmtCache.semesterData.clear();
-  clearCache('courseMgmt_profile');
   clearCache('courseMgmt_summary');
   clearCache('courseMgmt_semesters');
   clearCache('courseMgmt_status');
@@ -143,7 +140,6 @@ function formatSchedule(schedule) {
  */
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
-  const [profile, setProfile] = useState(courseMgmtCache.profile);
   const [summary, setSummary] = useState(courseMgmtCache.summary);
   const [status, setStatus] = useState(courseMgmtCache.status);
   const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
@@ -155,7 +151,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const initialSemesterCache = courseMgmtCache.semesterData.get(semesterKey(current.year, current.semester));
   const [myCourses, setMyCourses] = useState(initialSemesterCache?.myCourses || []);
   const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
-  const [pageLoading, setPageLoading] = useState(courseMgmtCache.profile === null && courseMgmtCache.summary === null);
+  const [pageLoading, setPageLoading] = useState(courseMgmtCache.summary === null);
   const [semesterLoading, setSemesterLoading] = useState(!initialSemesterCache);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -228,12 +224,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }, [searchResults]);
 
   useEffect(() => {
-    getMe()
-      .then((data) => {
-        setProfile(data);
-        setCourseMgmtCache('profile', data);
-      })
-      .catch(() => {});
     getCourseSummary()
       .then((data) => {
         setSummary(data);
@@ -311,8 +301,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const tabs = useMemo(() => {
     const actualCurrentTerm = getCurrentYearSemester();
-    const generated = profile?.admissionYear
-      ? generateSemesterRange(profile.admissionYear, actualCurrentTerm.year, actualCurrentTerm.semester)
+    const generated = user?.admissionYear
+      ? generateSemesterRange(user.admissionYear, actualCurrentTerm.year, actualCurrentTerm.semester)
       : [];
     // semesters(서버, 실제 수강 기록 있는 학기라 courseCount 포함)를 먼저 두어 겹치는 키에서
     // 우선하게 하고, generated(입학년도~현재 전체 범위, 휴학 학기 포함 빈 탭)로 나머지를 채운다.
@@ -326,7 +316,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       deduped.push(t);
     }
     return deduped.sort((a, b) => a.year - b.year || a.semester - b.semester);
-  }, [semesters, current, profile]);
+  }, [semesters, current, user]);
 
   // 학기 탭을 전부 가로 스크롤 한 줄로 늘어놓으면(입학년도~현재라 8개+) 피로도가 높아서,
   // 연도 탭(적은 개수, 스크롤 없이 다 보임) + 그 안에서 1/2학기 토글 + 인접 학기 이동
@@ -338,10 +328,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 현재 학번보다 이전 학기에 등록된 과목이 있으면(온보딩에서 학번을 바꾼 경우 등) 배너로
   // 알려서, 필요 없는 과목은 학생이 직접 판단해 지울 수 있게 한다(2026-08-17 결정).
   const outOfRangeYears = useMemo(() => {
-    if (!profile?.admissionYear) return [];
-    const yearSet = new Set(semesters.filter((s) => s.year < profile.admissionYear).map((s) => s.year));
+    if (!user?.admissionYear) return [];
+    const yearSet = new Set(semesters.filter((s) => s.year < user.admissionYear).map((s) => s.year));
     return [...yearSet].sort((a, b) => a - b);
-  }, [semesters, profile]);
+  }, [semesters, user]);
 
   const semestersInCurrentYear = useMemo(
     () => tabs.filter((t) => t.year === current.year).sort((a, b) => a.semester - b.semester),
