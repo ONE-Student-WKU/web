@@ -10,7 +10,10 @@ const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 
 // 교양필수+교양선택 합산 인정 상한. 초과분은 총 이수학점 계산에서 완전히 제외한다
 // (일반선택으로도 안 흘러감 — 교양을 아무리 많이 들어도 이 이상은 졸업요건에 안 잡힘).
+// 22학번부터 적용되는 상한이고, 편입생은 이 상한 자체가 적용되지 않는다(학칙시행규칙 제10조,
+// db/regulations/졸업/이수학점_총괄표.md 10번 항목).
 const LIBERAL_ARTS_CREDIT_CAP = 52;
+const LIBERAL_ARTS_CREDIT_CAP_START_YEAR = 2022;
 
 async function fetchApplicableRequirements(departmentId, admissionYear) {
   const [rows] = await pool.query(
@@ -34,6 +37,9 @@ function resolveEffectiveEnrollmentType(student) {
 }
 
 // 전과(3·4학년)/편입생은 전공필수+전공선택 대신 완화된 통합 "전공"(48학점) 행 하나로 대체된다.
+// 편입생은 추가로 교양필수/교양선택/일반선택도 override 행으로 대체된다(편입생_교육과정.md 참고) —
+// override 행의 category와 이름이 같은 일반 행만 걷어내고, "전공" override만 예외적으로
+// 전공필수+전공선택 두 카테고리를 동시에 대체한다(통합 행이라 이름이 다름).
 function selectRequirementRows(rows, effectiveEnrollmentType) {
   const generalRows = rows.filter((r) => r.enrollment_type === null);
   if (!effectiveEnrollmentType) return generalRows;
@@ -41,7 +47,13 @@ function selectRequirementRows(rows, effectiveEnrollmentType) {
   const overrideRows = rows.filter((r) => r.enrollment_type === effectiveEnrollmentType);
   if (overrideRows.length === 0) return generalRows;
 
-  return [...generalRows.filter((r) => r.category !== '전공필수' && r.category !== '전공선택'), ...overrideRows];
+  const overriddenCategories = new Set(overrideRows.map((r) => r.category));
+  if (overriddenCategories.has('전공')) {
+    overriddenCategories.add('전공필수');
+    overriddenCategories.add('전공선택');
+  }
+
+  return [...generalRows.filter((r) => !overriddenCategories.has(r.category)), ...overrideRows];
 }
 
 // 교양 이수기준은 학년(major_change_grade)이 아니라 전과 "시점"으로 갈린다 — 이 시점 이전
@@ -224,7 +236,9 @@ async function getGraduationStatus(studentId) {
   const liberalArtsRows = creditRows.filter((r) => r.category === '교양필수' || r.category === '교양선택');
   const liberalArtsRaw = liberalArtsRows.reduce((sum, r) => sum + (earnedByCategory[r.category] || 0), 0);
   const liberalArtsRequired = liberalArtsRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
-  const liberalArtsCredited = Math.min(liberalArtsRaw, LIBERAL_ARTS_CREDIT_CAP);
+  const liberalArtsCapApplies =
+    effectiveEnrollmentType !== 'TRANSFER_ADMISSION' && student.admission_year >= LIBERAL_ARTS_CREDIT_CAP_START_YEAR;
+  const liberalArtsCredited = liberalArtsCapApplies ? Math.min(liberalArtsRaw, LIBERAL_ARTS_CREDIT_CAP) : liberalArtsRaw;
 
   totalRequiredCredits += liberalArtsRequired;
   totalEarnedCredits += Math.min(liberalArtsCredited, liberalArtsRequired);
