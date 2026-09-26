@@ -586,6 +586,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     return 'PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.';
   };
 
+  // 텍스트 붙여넣기 경로 전용 — 한도는 PDF 경로와 공유하므로 그 문구는 그대로 쓰고, 나머지는
+  // PDF 파일 안내 대신 붙여넣은 내용 기준으로 안내한다.
+  const describePasteImportError = (err) => {
+    if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') return describePdfImportError(err);
+    if (err.code === 'REQUIRED_TEXT') return '붙여넣은 내용이 없어요. "전체성적조회" 화면의 표를 복사해 붙여넣어주세요.';
+    if (err.code === 'TEXT_TOO_LONG') return '붙여넣은 내용이 너무 길어요. "전체성적조회" 화면의 성적 표 부분만 복사해 붙여넣어주세요.';
+    if (err.code === 'TEXT_NOT_FULL_TRANSCRIPT') {
+      return '"2024 년 1 학기" 같은 학기 제목을 찾지 못했어요. 원광대 인트라넷 "전체성적조회" 화면에서 학기 제목까지 포함해 복사했는지 확인해주세요.';
+    }
+    return '붙여넣은 내용을 분석하지 못했어요. 원광대 인트라넷 "전체성적조회" 화면의 표를 복사한 내용이 맞는지 확인해주세요.';
+  };
+
   const handlePdfFileSelect = async (e) => {
     const file = e.target.files[0];
     e.target.value = ''; // 같은 파일을 다시 선택해도 onChange가 또 뜨도록.
@@ -657,7 +669,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       setPdfPasteMode(false);
       setPdfPasteText('');
     } catch (err) {
-      setError(describePdfImportError(err));
+      setError(describePasteImportError(err));
     } finally {
       setPdfLoading(false);
     }

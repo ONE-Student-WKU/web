@@ -46,22 +46,71 @@ function getCurrentAcademicPeriod(date = new Date()) {
   return `${year - 1}-2`;
 }
 
-// PDF 파싱(pdfImportService)이 매번 Claude API를 호출해 비용이 들기 때문에 학기당 상한을 둔다.
+// 가져오기 파싱이 Claude API를 호출하면 비용이 들기 때문에 학기당 상한을 둔다.
 const PDF_IMPORT_LIMIT_PER_PERIOD = 5;
 
-async function countPdfImportsThisPeriod(studentId) {
-  const [rows] = await pool.query(
-    'SELECT COUNT(*) AS count FROM pdf_import_logs WHERE student_id = ? AND period = ?',
-    [studentId, getCurrentAcademicPeriod()]
-  );
-  return rows[0].count;
+// 한도 확인과 기록을 한 트랜잭션으로 묶어 1회분을 "예약"한다 — 확인과 기록이 따로 놀면
+// 동시 요청(탭 2개 등)이 같은 개수를 읽고 둘 다 통과해 한도를 넘길 수 있다. 같은 학생의
+// students 행을 FOR UPDATE로 잠가 그 학생의 예약끼리만 줄을 세운다(다른 학생은 안 막힘).
+// Claude 호출(수십 초)은 이 트랜잭션 밖에서 하고, AI를 안 썼거나 실패했으면
+// releasePdfImport로 예약을 되돌린다. 한도 초과면 null.
+async function reservePdfImport(studentId) {
+  const period = getCurrentAcademicPeriod();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('SELECT id FROM students WHERE id = ? FOR UPDATE', [studentId]);
+    const [rows] = await conn.query(
+      'SELECT COUNT(*) AS count FROM pdf_import_logs WHERE student_id = ? AND period = ?',
+      [studentId, period]
+    );
+    if (rows[0].count >= PDF_IMPORT_LIMIT_PER_PERIOD) {
+      await conn.rollback();
+      return null;
+    }
+    const [result] = await conn.query('INSERT INTO pdf_import_logs (student_id, period) VALUES (?, ?)', [
+      studentId,
+      period,
+    ]);
+    await conn.commit();
+    return result.insertId;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
-async function logPdfImport(studentId) {
-  await pool.query('INSERT INTO pdf_import_logs (student_id, period) VALUES (?, ?)', [
-    studentId,
-    getCurrentAcademicPeriod(),
-  ]);
+async function releasePdfImport(reservationId) {
+  await pool.query('DELETE FROM pdf_import_logs WHERE id = ?', [reservationId]);
+}
+
+class PdfImportLimitExceededError extends Error {}
+
+// 가져오기 파싱을 학기당 한도와 엮어 실행한다 — parse에 넘기는 beforeAiCall은 파싱 서비스
+// (pdfImportService)가 Claude를 부르기 "직전에만" 호출하므로, AI 없이 끝나는 요청(한글 없는
+// PDF, 규칙 기반 성공)은 한도를 아예 건드리지 않는다. AI가 실패했거나(parse 결과의
+// aiSucceeded=false) 도중에 에러가 나면 예약을 되돌려, 실제로 AI 결과를 받은 시도만
+// 차감되게 한다. 한도 초과면 PdfImportLimitExceededError를 던진다.
+async function runWithPdfImportQuota(studentId, parse) {
+  let reservationId = null;
+  const beforeAiCall = async () => {
+    reservationId = await reservePdfImport(studentId);
+    if (reservationId === null) throw new PdfImportLimitExceededError();
+  };
+  // 되돌리기 실패는 사용자의 파싱 결과까지 버릴 이유가 아니다(최악이어도 한도 1회 손해).
+  const releaseReservation = () =>
+    releasePdfImport(reservationId).catch((err) => console.error('PDF import 예약 반환 실패:', err));
+
+  try {
+    const result = await parse(beforeAiCall);
+    if (reservationId !== null && !result.aiSucceeded) await releaseReservation();
+    return result;
+  } catch (err) {
+    if (reservationId !== null) await releaseReservation();
+    throw err;
+  }
 }
 
 // year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
@@ -516,6 +565,8 @@ module.exports = {
   listRetakeEligibleCourses,
   PDF_IMPORT_LIMIT_PER_PERIOD,
   getCurrentAcademicPeriod,
-  countPdfImportsThisPeriod,
-  logPdfImport,
+  reservePdfImport,
+  releasePdfImport,
+  runWithPdfImportQuota,
+  PdfImportLimitExceededError,
 };

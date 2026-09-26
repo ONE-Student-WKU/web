@@ -2308,6 +2308,17 @@ body {
   margin-bottom: 8px;
 }
 
+/* 한글 없는 PDF 안내처럼 경고가 두 버튼 사이에 끼는 경우 — 기본값대로면 위쪽은 0, 아래쪽은
+   경고 margin + 버튼 margin-top이 겹쳐 쏠려 보이므로, 위아래를 버튼 간격(14px)으로 맞춘다. */
+.auth-submit-btn + .courses-pdf-warnings {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.auth-submit-btn + .courses-pdf-warnings .courses-pdf-warning-item:last-child {
+  margin-bottom: 0;
+}
+
 .courses-import-method-toggle {
   display: flex;
   gap: 6px;

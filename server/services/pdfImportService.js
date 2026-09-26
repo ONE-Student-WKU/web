@@ -91,7 +91,22 @@ const SUBTOTAL_LABEL_RE = new RegExp(
 // 실제 표는 이 헤더 바로 뒤부터 시작한다.
 const SUMMARY_HEADER_RE = /구분[\t ]*교과목명[\t ]*년도\s*\/\s*학기[\t ]*학점[\t ]*(?:영역|개설학과\(전공\))[\t ]*비[\t ]*고/;
 
-async function parseCourseListText(rawText) {
+// ── AI 호출 한도 연동 ──────────────────────────────────────────────
+// 아래 파싱 함수들은 옵션으로 beforeAiCall(async)을 받아 Claude 호출 "직전에만" 부른다 —
+// 호출부(routes/myCourses.js)가 여기서 학기당 한도를 예약하게 해서, AI를 안 쓰고 끝나는
+// 경우(한글 없는 PDF, 규칙 기반 파싱 성공)엔 한도가 아예 건드려지지 않게 한다. beforeAiCall이
+// throw하면(한도 초과 등) AI를 부르지 않고 그대로 전파한다. 반환값의 aiSucceeded는 Claude
+// 호출이 에러 없이 끝났는지 — 호출부는 이게 false면 예약을 되돌린다(AI 실패는 한도 미차감).
+async function callAiWithHook(extract, content, beforeAiCall) {
+  if (beforeAiCall) await beforeAiCall();
+  try {
+    return { extracted: await extract(content), aiSucceeded: true };
+  } catch (err) {
+    return { extracted: [], aiSucceeded: false };
+  }
+}
+
+async function parseCourseListText(rawText, { beforeAiCall } = {}) {
   // 줄바꿈만 제거(이름 중간 개행 붕괴 방지 목적) — 모바일 인쇄본에서 과목명이 길어
   // 줄바꿈되면 AI에게도 한 과목이 두 줄로 쪼개져 보일 수 있어 이 전처리는 방식과
   // 무관하게 여전히 유효하다.
@@ -106,10 +121,8 @@ async function parseCourseListText(rawText) {
   }
 
   const warnings = [];
-  let extracted = [];
-  try {
-    extracted = await extractCourseListRows(blob);
-  } catch (err) {
+  const { extracted, aiSucceeded } = await callAiWithHook(extractCourseListRows, blob, beforeAiCall);
+  if (!aiSucceeded) {
     warnings.push('과목을 인식하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
   }
 
@@ -178,6 +191,7 @@ async function parseCourseListText(rawText) {
     declaredTotalCredits,
     extractedTotalCredits,
     warnings,
+    aiSucceeded,
   };
 }
 
@@ -199,7 +213,10 @@ const SEMESTER_DISPLAY_LABELS = { 1: '1학기', 2: '여름 계절학기', 3: '2�
 // 학기 소계("취득학점 평균평점" 다음 줄에 숫자 두 개, 예: "17.00 4.30") — 학기별 대조용.
 // 이 문서엔 전체 합계 표기가 따로 없어(학기 소계만 있음, 실제 PDF로 확인) 총합 대조
 // 대신 학기 단위로 대조한다 — 오히려 어느 학기에서 틀렸는지까지 짚어줄 수 있어 더 유용함.
-const SEMESTER_SUBTOTAL_RE = /취득학점[\t\n ]*평균평점[\t\n ]*(\d+(?:\.\d+)?)[\t ]*(\d+(?:\.\d+)?)/g;
+// 모든 구분자에 \n을 허용한다 — 붙여넣기에선 탭이 줄바꿈으로 바뀌어 두 숫자가 다른 줄로
+// 갈리기도 하는데(tryParseFullTranscriptLines 주석 참고), 여기서 못 잡으면 그 학기는 소계
+// 대조 없이 조용히 "깨끗함"으로 통과해버린다.
+const SEMESTER_SUBTOTAL_RE = /취득학점[\t\n ]*평균평점[\t\n ]*(\d+(?:\.\d+)?)[\t\n ]*(\d+(?:\.\d+)?)/g;
 
 // 문서 맨 앞의 실제 제목 텍스트("전체성적조회\t전체성적조회\n" — 실사용 PDF로 확인)로
 // 판별한다. 이 패턴에 안 걸리면 기존 이수과목확인리스트 경로로 그대로 처리해 회귀를 막는다.
@@ -228,8 +245,11 @@ function hasNoHangulText(rawText) {
 // 붙여넣을 수도 있어 위치를 더는 보장할 수 없다. 위치에 기대지 않고, 어디에 있든 학번/이름
 // 패턴이면 가리는 마지막 방어선이 필요하다. 학수번호(예: 003308, L00316)는 6자 이하라
 // 7자리 이상 연속 숫자만 가리는 이 기준에 걸리지 않는다(실사용 PDF로 학번 8자리 확인).
+// 이름 라벨은 실제 화면에서 "성 명"처럼 글자 사이가 띄어져 있고(실사용 붙여넣기 확인,
+// 2026-09), 라벨과 이름 사이 구분자도 탭뿐 아니라 줄바꿈·콜론으로 바뀔 수 있어 모두 허용한다.
+// 이름 길이는 상한을 두지 않는다 — 긴 이름의 뒷부분이 남지 않게.
 const STUDENT_ID_RE = /\d{7,}/g;
-const STUDENT_NAME_RE = /((?:성명|이름)[\t ]*)[가-힣]{2,4}/g;
+const STUDENT_NAME_RE = /((?:성\s*명|이\s*름)[\s:：]*)[가-힣]{2,}/g;
 
 function redactStudentIdentifiers(text) {
   return text.replace(STUDENT_ID_RE, (m) => 'X'.repeat(m.length)).replace(STUDENT_NAME_RE, '$1XXX');
@@ -347,7 +367,7 @@ function finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnin
   return { rows, extractedTotalCredits, warnings, isClean };
 }
 
-async function parseFullTranscriptText(rawText) {
+async function parseFullTranscriptText(rawText, { beforeAiCall } = {}) {
   const text = rawText.replace(/\r/g, '');
   const { semesterBoundaries, declaredBySemester } = computeSemesterSubtotals(text);
 
@@ -363,15 +383,21 @@ async function parseFullTranscriptText(rawText) {
   const contentForAi = redactStudentIdentifiers(sliced);
 
   const leadingWarnings = [];
-  let extracted = [];
-  try {
-    extracted = await extractFullTranscriptRows(contentForAi);
-  } catch (err) {
+  const { extracted, aiSucceeded } = await callAiWithHook(extractFullTranscriptRows, contentForAi, beforeAiCall);
+  if (!aiSucceeded) {
     leadingWarnings.push('과목을 인식하는 중 문제가 생겼어요. 잠시 후 다시 시도해주세요.');
   }
 
   const { isClean, ...result } = finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnings);
-  return result;
+  return { ...result, aiSucceeded };
+}
+
+// 붙여넣은 텍스트가 전체성적조회처럼 보이는지 — "YYYY 년 N 학기" 헤더가 하나도 없으면 AI에
+// 보내도 학기를 특정할 수 없어 쓸모 있는 결과가 안 나오고 한도만 쓴다(다른 문서, 예컨대
+// "YYYY/N" 표기를 쓰는 이수과목확인리스트를 붙여넣은 경우). PDF 경로는 제목으로 판별하지만
+// (detectDocumentType), 붙여넣기는 표 부분만 선택해 제목이 없을 수 있어 헤더로 판별한다.
+function looksLikeFullTranscriptText(text) {
+  return new RegExp(SEMESTER_HEADER_RE.source).test(text);
 }
 
 // 붙여넣기 텍스트 전용 규칙 기반 1차 파서 — Claude API를 호출하지 않는다. 실제 붙여넣기
@@ -459,7 +485,9 @@ function tryParseFullTranscriptLines(text) {
         NUMBER_TOKEN_RE.test(credits || '') &&
         NUMBER_TOKEN_RE.test(avg || '') &&
         GRADE_TOKENS.has(grade);
-      if (shapeOk && currentYear && currentSemester) {
+      // inTable이어야만 과목으로 받는다 — 마지막 소계 뒤에도 currentYear/currentSemester는
+      // 남아 있어서, 표 밖 장식 텍스트가 우연히 6칸 모양에 맞으면 허위 행이 될 수 있다.
+      if (shapeOk && inTable) {
         items.push({ rawCategory: code, name, year: currentYear, semester: currentSemester, credits: Number(credits), letterGrade: grade });
         i += 6;
         continue;
@@ -493,7 +521,7 @@ function parseFullTranscriptTextRuleBased(rawText) {
   return isClean ? result : null;
 }
 
-async function parseCourseListPdf(buffer) {
+async function parseCourseListPdf(buffer, { beforeAiCall } = {}) {
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
@@ -510,23 +538,25 @@ async function parseCourseListPdf(buffer) {
             '저장할 때 한글이 텍스트로 저장되지 않는 경우가 있어요. "텍스트 붙여넣기로 다시 시도하기"를 ' +
             '이용해주세요.',
         ],
+        aiSucceeded: false,
       };
     }
 
     const docType = detectDocumentType(rawText);
 
     if (docType === 'full_transcript') {
-      const { rows, warnings } = await parseFullTranscriptText(rawText);
+      const { rows, warnings, aiSucceeded } = await parseFullTranscriptText(rawText, { beforeAiCall });
       return {
         docType,
         rows,
         declaredTotalCredits: null,
         extractedTotalCredits: null,
         warnings,
+        aiSucceeded,
       };
     }
 
-    const courseListResult = await parseCourseListText(rawText);
+    const courseListResult = await parseCourseListText(rawText, { beforeAiCall });
     return {
       docType,
       ...courseListResult,
@@ -542,5 +572,7 @@ module.exports = {
   parseCourseListText,
   parseFullTranscriptText,
   parseFullTranscriptTextRuleBased,
+  looksLikeFullTranscriptText,
   detectDocumentType,
+  redactStudentIdentifiers,
 };

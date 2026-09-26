@@ -4,7 +4,12 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const courseService = require('../services/courseService');
-const { parseCourseListPdf, parseFullTranscriptText, parseFullTranscriptTextRuleBased } = require('../services/pdfImportService');
+const {
+  parseCourseListPdf,
+  parseFullTranscriptText,
+  parseFullTranscriptTextRuleBased,
+  looksLikeFullTranscriptText,
+} = require('../services/pdfImportService');
 
 // 붙여넣기로 들어오는 텍스트 길이 상한 — 전체성적조회 전체 학기를 복사해도 이보다 훨씬
 // 작다(실사용 샘플 기준 학기당 1~2천자 수준). 과도하게 긴 입력으로 Claude API 비용이
@@ -189,6 +194,15 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+const PDF_IMPORT_LIMIT_RESPONSE = {
+  status: 429,
+  code: 'PDF_IMPORT_LIMIT_EXCEEDED',
+  message: null,
+  data: { limit: courseService.PDF_IMPORT_LIMIT_PER_PERIOD },
+};
+
+const { runWithPdfImportQuota, PdfImportLimitExceededError } = courseService;
+
 // POST /api/my-courses/import/pdf
 // "이수과목확인리스트" 또는 "전체성적조회" PDF를 업로드 → 문서 제목 텍스트로 자동 판별해
 // 과목명/학점/이수구분/이수학기(+전체성적조회면 등급까지)를 파싱해 미리보기로 반환.
@@ -199,23 +213,12 @@ router.post('/import/pdf', pdfImportLimiter, pdfUpload.single('file'), async (re
       return res.status(400).json({ status: 400, code: 'REQUIRED_PDF_FILE', message: null, data: null });
     }
 
-    // 파싱(pdfImportService)이 매 호출 Claude API를 쓰므로, 실제로 비용이 드는 이 시점에서
-    // 학기당 한도를 확인한다 — 성공한 파싱만 카운트하므로 잘못된 파일 업로드로 재시도하는
-    // 것까지 한도를 깎지는 않는다.
-    const importCount = await courseService.countPdfImportsThisPeriod(req.session.userId);
-    if (importCount >= courseService.PDF_IMPORT_LIMIT_PER_PERIOD) {
-      return res.status(429).json({
-        status: 429,
-        code: 'PDF_IMPORT_LIMIT_EXCEEDED',
-        message: null,
-        data: { limit: courseService.PDF_IMPORT_LIMIT_PER_PERIOD },
-      });
-    }
-
-    const result = await parseCourseListPdf(req.file.buffer);
-    await courseService.logPdfImport(req.session.userId);
+    const { aiSucceeded, ...result } = await runWithPdfImportQuota(req.session.userId, (beforeAiCall) =>
+      parseCourseListPdf(req.file.buffer, { beforeAiCall })
+    );
     return res.status(200).json({ status: 200, code: 'PDF_IMPORT_PARSE_SUCCESS', message: null, data: result });
   } catch (err) {
+    if (err instanceof PdfImportLimitExceededError) return res.status(429).json(PDF_IMPORT_LIMIT_RESPONSE);
     return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
   }
 });
@@ -251,20 +254,19 @@ router.post('/import/text', pdfImportLimiter, async (req, res, next) => {
       result = ruleResult;
       parseMethod = 'rule';
     } else {
-      // /import/pdf와 동일한 이유(Claude API 호출 비용)로 같은 학기당 한도를 공유한다 — 규칙
-      // 기반으로 끝난 요청은 비용이 안 들었으니 이 한도 확인 자체를 건너뛴다(위 if 분기).
-      const importCount = await courseService.countPdfImportsThisPeriod(req.session.userId);
-      if (importCount >= courseService.PDF_IMPORT_LIMIT_PER_PERIOD) {
-        return res.status(429).json({
-          status: 429,
-          code: 'PDF_IMPORT_LIMIT_EXCEEDED',
-          message: null,
-          data: { limit: courseService.PDF_IMPORT_LIMIT_PER_PERIOD },
-        });
+      // 규칙 기반이 실패했더라도 학기 헤더조차 없는 텍스트(다른 문서 등)는 AI도 학기를 특정할
+      // 수 없어 한도만 쓰게 되므로, AI로 넘기기 전에 거절한다.
+      if (!looksLikeFullTranscriptText(text)) {
+        return res.status(400).json({ status: 400, code: 'TEXT_NOT_FULL_TRANSCRIPT', message: null, data: null });
       }
-      result = await parseFullTranscriptText(text);
-      await courseService.logPdfImport(req.session.userId);
-      parseMethod = 'ai';
+      // /import/pdf와 동일한 이유(Claude API 호출 비용)로 같은 학기당 한도를 공유한다 — 규칙
+      // 기반으로 끝난 요청은 비용이 안 들었으니 한도를 건드리지 않는다(위 if 분기).
+      result = await runWithPdfImportQuota(req.session.userId, (beforeAiCall) =>
+        parseFullTranscriptText(text, { beforeAiCall })
+      );
+      // AI 호출이 실패하면 한도가 되돌려지므로(runWithPdfImportQuota) "한도에 포함돼요" 안내가
+      // 틀리게 된다 — 그때는 parseMethod를 비워 안내를 숨긴다(실패 경고는 warnings로 따로 나감).
+      parseMethod = result.aiSucceeded ? 'ai' : null;
     }
 
     return res.status(200).json({
@@ -281,6 +283,7 @@ router.post('/import/text', pdfImportLimiter, async (req, res, next) => {
       },
     });
   } catch (err) {
+    if (err instanceof PdfImportLimitExceededError) return res.status(429).json(PDF_IMPORT_LIMIT_RESPONSE);
     return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
   }
 });
