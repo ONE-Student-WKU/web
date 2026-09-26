@@ -52,7 +52,10 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2. 2017~2018학번과 2019~2021학번 표가 별개지만 수치 동일하여 통합 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": ["건학이념", "대학생활"]
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -74,7 +77,10 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2022~2024학번 (2026학년도 교육과정 책자 Ⅲ장 학번별 교양표)",
-    "requiredCourses": ["건학이념", "대학생활"]
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -96,7 +102,10 @@
     "enrollmentType": null,
     "minCourseCount": null,
     "description": "건학이념3+대학생활2, 2025학번 단독 (2022~2024학번과 표가 분리되어 있고 총량도 다름)",
-    "requiredCourses": ["건학이념", "대학생활"]
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -118,7 +127,9 @@
     "enrollmentType": null,
     "minCourseCount": 1,
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": ["졸업(시험·작품)논문"]
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
   },
   {
     "departmentName": "컴퓨터·소프트웨어공학과",
@@ -163,7 +174,10 @@
     "minCourseCount": 2,
     "description": "기업연계프로젝트1,2 둘 다 필수 이수",
     "note": "화면 표시용 description은 짧게 줄임 — 상세 근거: 각각 3학년 2학기, 4학년 1학기에 순차 개설되는 연속 과목이라 통상 두 과목 모두 수강하지만 요건 자체는 1과목 이수로 충족됨(학사학위수여 Ⅲ장). 학칙 원문은 '캡스톤디자인(기업연계프로젝트)/종합설계'로 표기하나 '캡스톤디자인'은 같은 창의공과대학 소속 타 학과(게임콘텐츠학전공 등)의 과목명이라 이 학과엔 해당 없어 표시에서 뺌. seed.js가 description/requiredCourses 외 필드는 안 읽으므로 이 note는 DB에 안 들어감",
-    "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)"]
+    "requiredCourses": [
+      "기업연계프로젝트1(종합설계1)",
+      "기업연계프로젝트2(종합설계2)"
+    ]
   },
   {
     "departmentName": "공학3계열",
@@ -251,7 +265,9 @@
     "enrollmentType": null,
     "minCourseCount": 1,
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기, 신설 커리큘럼 원문 검증됨)",
-    "requiredCourses": ["졸업(시험·작품)논문"]
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
   },
   {
     "departmentName": "공학3계열",
@@ -263,6 +279,4890 @@
     "minCourseCount": 1,
     "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹 — \"나\"·\"다\"에 속하지 않는 모든 학과 기본값, 2020학번부터 적용)",
     "note": "2026학년도 교육과정 책자 '졸업인증제(2020학번부터)' 표를 사용자가 스크린샷으로 확인(2026-08-15). '나' 그룹(창의공과대학, 농식품융합대학, 반도체·디스플레이학부, 가족아동복지학과, 패션디자인산업학과, 뷰티디자인학부)에 '공과대학'이나 '공학3계열'이 없고, '가' 그룹이 정의상 '나'·'다' 제외 전체 학과(부)이므로 공학3계열은 '가' 그룹(전공현장실습/캡스톤디자인/사회봉사 3과목 중 1개)에 해당하는 것으로 판단. 구 컴퓨터·소프트웨어공학과(~2025학번, '나' 그룹, 기업연계프로젝트 2과목 중 1개)와는 다른 규칙이라 그대로 복사하면 안 됨. '캡스톤디자인' 항목은 트랙마다 실제 과목명이 다름 — 컴퓨터·소프트웨어공학전공은 기업연계프로젝트1(종합설계1)/기업연계프로젝트2(종합설계2), 게임콘텐츠학전공은 캡스톤디자인1/캡스톤디자인2(공학3계열_게임콘텐츠학전공_2026.md 확인). requiredCourses는 두 트랙 과목명을 합쳐 OR 매칭되게 함(트랙 컬럼이 curriculum_requirements 스키마에 없어 department 단위로만 구분 가능, 이렇게 합쳐도 학생이 실제 이수한 과목만 매칭되므로 안전). 전공현장실습·사회봉사는 courses.json에 아직 과목 자체가 시딩되어 있지 않아 매칭 대상에서 제외됨 — 이 경로로 요건을 충족한 학생은 현재 이 앱에서 오탐(미충족)으로 뜰 수 있음, 별도 확인/시딩 필요. seed.js가 description/requiredCourses 외 필드는 안 읽으므로 이 note는 DB에 안 들어감",
-    "requiredCourses": ["기업연계프로젝트1(종합설계1)", "기업연계프로젝트2(종합설계2)", "캡스톤디자인1", "캡스톤디자인2"]
+    "requiredCourses": [
+      "기업연계프로젝트1(종합설계1)",
+      "기업연계프로젝트2(종합설계2)",
+      "캡스톤디자인1",
+      "캡스톤디자인2"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공필수",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 18학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(18)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점, 2025학번 단독 (총 140학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "행정공공기관학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2025학번 단독, 전공계 66학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 75학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 136학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹 - 창의공과대학 등, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2025학번 단독, 전공계 69학점 중 기본전공+선택전공은 하나의 풀 - graduationService.js 기존 CSE 처리 방식과 동일하게 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점, 2025학번 단독 (총 130학점 충족용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "전공",
+    "requiredCredits": 159.5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 159.5학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 6학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(159.5학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 165.5학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
+  },
+  {
+    "departmentName": "의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "전공",
+    "requiredCredits": 59,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "치의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "전공",
+    "requiredCredits": 115,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 115학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 23학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(115학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 138학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "전공",
+    "requiredCredits": 53,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "한의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "전공",
+    "requiredCredits": 149,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 149학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 11학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(149학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 160학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "전공",
+    "requiredCredits": 177,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 177학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 56학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(177학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 233학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=25 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "일반선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 30학점 (총 232 - 전공177 - 교양25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "전공",
+    "requiredCredits": 95,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 95학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 35학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(95학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 130학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=25 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "일반선택",
+    "requiredCredits": 40,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 40학점 (총 160 - 전공95 - 교양25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "전공",
+    "requiredCredits": 94,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 94학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 31학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(94학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 125학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=25 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "일반선택",
+    "requiredCredits": 11,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 11학점 (총 130 - 전공94 - 교양25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "전공",
+    "requiredCredits": 89,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 89학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 29학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(89학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 118학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=23 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "일반선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 18학점 (총 130 - 전공89 - 교양23)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "전공",
+    "requiredCredits": 76,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 76학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 31학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(76학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 107학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=23 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "일반선택",
+    "requiredCredits": 31,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 31학점 (총 130 - 전공76 - 교양23)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "전공",
+    "requiredCredits": 39,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 39학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 33학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(39학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 72학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "일반선택",
+    "requiredCredits": 64,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 64학점 (총 140 - 전공39 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 105,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 105학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 12학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(105학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 117학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "일반선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 18학점 (총 160 - 전공105 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 24학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 73학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(24학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 97학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 ?과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "전공",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 9학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 0학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(9학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 9학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "전공",
+    "requiredCredits": 82,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(82학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
+    "requiredCourses": [],
+    "note": "실제 트랙별 전공 카탈로그 합계: 원예산업전공=85.0, 산림조경전공=84.0, 푸드테크전공=79.0, 생명환경전공=87.0, 생명과학전공=76.0"
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "일반선택",
+    "requiredCredits": 11,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 11학점 (총 130 - 전공82 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 87,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(87학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
+    "requiredCourses": [],
+    "note": "실제 트랙별 전공 카탈로그 합계: 패션디자인산업전공=84.0, 파인아트전공=87.0, 공예문화·주얼리디자인전공=90.0, 실내·산업디자인전공=81.0, 시각정보디자인전공=91.0"
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 130 - 전공87 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 90,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(90학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
+    "requiredCourses": [],
+    "note": "실제 트랙별 전공 카탈로그 합계: 중국어통번역전공=98.0, 국어국문학전공=90.0, 글로컬역사전공=90.0, 영어영문학전공=90.0, 문예창작전공=83.0, 미디어커뮤니케이션광고PR전공=90.0"
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "일반선택",
+    "requiredCredits": 3,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 3학점 (총 130 - 전공90 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
   }
 ]
