@@ -2308,6 +2308,61 @@ body {
   margin-bottom: 8px;
 }
 
+/* 한글 없는 PDF 안내처럼 경고가 두 버튼 사이에 끼는 경우 — 기본값대로면 위쪽은 0, 아래쪽은
+   경고 margin + 버튼 margin-top이 겹쳐 쏠려 보이므로, 위아래를 버튼 간격(14px)으로 맞춘다. */
+.auth-submit-btn + .courses-pdf-warnings {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.auth-submit-btn + .courses-pdf-warnings .courses-pdf-warning-item:last-child {
+  margin-bottom: 0;
+}
+
+.courses-import-method-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.courses-import-method-toggle button {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.courses-import-method-toggle button.active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-color: var(--color-accent-bg);
+}
+
+.courses-pdf-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.courses-pdf-paste-textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
 /* 학점 불일치 안내 — 확정을 막는 에러가 아니라 "확인해보라"는 참고용 신호라, danger(빨강)
    대신 warning(노랑) 톤으로 덜 심각해 보이게 한다. */
 .courses-pdf-warning-item {
