@@ -119,16 +119,28 @@ router.post('/messages', async (req, res, next) => {
     // "2022년에 들을 수 있었던 과목" 같은 특정 연도 개설과목 질문도 curriculum_courses(편성
     // 계획)와 별개로 course_offerings(실제 개설 이력)를 구조화 조회해야 한다 — RAG 임베딩에는
     // 애초에 이 테이블이 들어가 있지 않아 그런 질문에 챗봇이 회피 답변하는 문제가 있었다.
-    const [curriculumChunks, requirementChunks, offeringChunks] = await Promise.all([
+    // 연계·복합전공/마이크로디그리(linked_majors/micro_degrees)는 department_id에 안 묶이는
+    // 부가 전공 프로그램이라(어떤 학과 학생이든 추가 이수 가능) student 필터링 없이 메시지에
+    // 프로그램명이 언급되는지만 본다 - 위 세 조회와 같은 "구조화 조회" 방침.
+    const [curriculumChunks, requirementChunks, offeringChunks, linkedMajorChunks, microDegreeChunks] = await Promise.all([
       curriculumService.lookupFromMessage(message, student),
       curriculumService.lookupRequirementsFromMessage(`${message} ${normalizedSearchQuery}`, student),
       curriculumService.lookupOfferingsFromMessage(message, student),
+      curriculumService.lookupLinkedMajorsFromMessage(message),
+      curriculumService.lookupMicroDegreesFromMessage(message),
     ]);
 
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = [...curriculumChunks, ...requirementChunks, ...offeringChunks, ...previousCitedChunks];
+    const relevantChunks = [
+      ...curriculumChunks,
+      ...requirementChunks,
+      ...offeringChunks,
+      ...linkedMajorChunks,
+      ...microDegreeChunks,
+      ...previousCitedChunks,
+    ];
     for (const c of freshChunks) {
       if (!relevantChunks.some((m) => m.chunkId === c.chunkId)) relevantChunks.push(c);
     }

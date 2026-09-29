@@ -364,10 +364,127 @@ async function lookupOfferingsFromMessage(text, student) {
   return [...groups.values()].map(formatOfferingChunk);
 }
 
+// ---------------------------------------------------------------------------
+// 연계·복합전공 / 마이크로디그리 (linked_majors, micro_degrees)
+//
+// 위 curriculum_courses/curriculum_requirements와 달리 department_id에 안 묶이는
+// 부가 전공 프로그램이라(어떤 학과 학생이든 신청 가능) student 필터링이 없다 — 메시지에
+// 프로그램명이 언급되는지만 본다.
+//
+// 프로그램명이 "JST 농생명바이오학부 메디컬바이오전공"처럼 사업단 접두어가 붙어 있어
+// 학생은 보통 뒷부분("메디컬바이오전공")만 말한다. 접두어를 뗀 핵심명도 같이 후보로 둔다.
+// ---------------------------------------------------------------------------
+// 마지막 공백 구분 토큰(보통 "OOO전공"/"OOO마이크로디그리")만 후보로 추가한다. 앞의 사업단
+// 접두어를 전부 떼는 방식(예: "융합전공")은 남은 조각이 너무 짧고 흔해서 "스마트헬스케어SW
+// 융합전공" 같은 다른 프로그램명의 부분 문자열로 우연히 걸리는 오탐이 실측으로 확인됨 —
+// 최소 길이(5자)로 그런 일반적인 잔여 조각을 걸러낸다.
+//
+// 마지막 토큰이 "마이크로디그리"/"전공"처럼 카테고리 통칭어 그 자체인 경우(K-치유힐링
+// 공동체혁신 5개 마이크로디그리가 전부 "...마이크로디그리"로 끝남)도 구분력이 없어 같은
+// 방식으로 오탐이 남으므로, 그럴 땐 바로 앞 토큰까지 묶어서 후보로 삼는다.
+const MIN_CORE_NAME_LENGTH = 5;
+const GENERIC_SUFFIX_WORDS = new Set(['전공', '마이크로디그리', '분야', '트랙']);
+
+function coreProgramName(name) {
+  const tokens = name.trim().split(/\s+/);
+  let last = tokens[tokens.length - 1];
+  if (GENERIC_SUFFIX_WORDS.has(last) && tokens.length >= 2) {
+    last = `${tokens[tokens.length - 2]} ${last}`;
+  }
+  return last.length >= MIN_CORE_NAME_LENGTH ? last : null;
+}
+
+async function findProgramsByMessage(table, message) {
+  const [rows] = await pool.query(`SELECT id, name FROM ${table}`);
+  return rows.filter((r) => {
+    if (message.includes(r.name)) return true;
+    const core = coreProgramName(r.name);
+    return core ? message.includes(core) : false;
+  });
+}
+
+function summarizeProgramCourses(courseRows) {
+  const byCategory = new Map();
+  for (const c of courseRows) {
+    if (!byCategory.has(c.category)) byCategory.set(c.category, []);
+    byCategory.get(c.category).push(`${c.course_name}(${Number(c.credits)}학점)`);
+  }
+  return [...byCategory.entries()].map(([category, names]) => `${category}: ${names.join(', ')}`).join('\n');
+}
+
+async function lookupLinkedMajorsFromMessage(message) {
+  const matched = await findProgramsByMessage('linked_majors', message);
+  if (matched.length === 0) return [];
+
+  const chunks = [];
+  for (const program of matched) {
+    const [[meta]] = await pool.query(
+      `SELECT name, program_group, required_credits, minor_required_credits, lead_professor, participating_departments
+       FROM linked_majors WHERE id = ?`,
+      [program.id]
+    );
+    const [courseRows] = await pool.query(
+      `SELECT category, course_name, credits FROM linked_major_courses
+       WHERE linked_major_id = ? ORDER BY category, course_name`,
+      [program.id]
+    );
+    const professorLabel = meta.lead_professor ? `, 전공주임교수: ${meta.lead_professor}` : '';
+    const deptLabel = meta.participating_departments ? `, 참여학과: ${meta.participating_departments}` : '';
+    const minorLabel = meta.minor_required_credits != null
+      ? ` (연계·복합 부전공으로 이수 시 ${Number(meta.minor_required_credits)}학점 이상)`
+      : '';
+    const creditsLabel = meta.required_credits != null
+      ? `복수전공 이수 시 ${Number(meta.required_credits)}학점 이상${minorLabel}`
+      : '이수학점 정보 없음';
+
+    chunks.push({
+      chunkId: `linked-major-${program.id}`,
+      documentTitle: `연계·복합전공 — ${meta.name}`,
+      content:
+        `${meta.name}(연계·복합전공, 소속 학과 무관하게 복수전공/부전공으로 추가 이수 가능). ` +
+        `${creditsLabel}${professorLabel}${deptLabel}. 개설 과목:\n${summarizeProgramCourses(courseRows)}`,
+    });
+  }
+  return chunks;
+}
+
+async function lookupMicroDegreesFromMessage(message) {
+  const matched = await findProgramsByMessage('micro_degrees', message);
+  if (matched.length === 0) return [];
+
+  const chunks = [];
+  for (const program of matched) {
+    const [[meta]] = await pool.query(
+      `SELECT name, program_group, required_credits, lead_professor FROM micro_degrees WHERE id = ?`,
+      [program.id]
+    );
+    const [courseRows] = await pool.query(
+      `SELECT category, course_name, credits FROM micro_degree_courses
+       WHERE micro_degree_id = ? ORDER BY category, course_name`,
+      [program.id]
+    );
+    const professorLabel = meta.lead_professor ? `, 지도교수: ${meta.lead_professor}` : '';
+    const creditsLabel = meta.required_credits != null
+      ? `이수학점 ${Number(meta.required_credits)}학점`
+      : '이수학점 정보 없음(자세한 기준은 해당 사업단 문의)';
+
+    chunks.push({
+      chunkId: `micro-degree-${program.id}`,
+      documentTitle: `마이크로디그리 — ${meta.name}`,
+      content:
+        `${meta.name}(마이크로디그리, 소속 학과 무관하게 추가 이수 가능). ` +
+        `${creditsLabel}${professorLabel}. 개설 과목:\n${summarizeProgramCourses(courseRows)}`,
+    });
+  }
+  return chunks;
+}
+
 module.exports = {
   findCourses,
   extractGradeSemester,
   lookupFromMessage,
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
+  lookupLinkedMajorsFromMessage,
+  lookupMicroDegreesFromMessage,
 };
