@@ -5164,5 +5164,388 @@
       "캡스톤디자인",
       "사회봉사"
     ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "종교학개론",
+      "종교철학",
+      "종교사회학",
+      "종교심리학",
+      "종교사",
+      "종교와과학",
+      "종교와문화"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "국어교육론",
+      "국어학개론",
+      "국어사",
+      "국문학개론",
+      "문학교육론",
+      "소설교육론",
+      "의사소통교육론"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 13,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "수학교육론",
+      "복소해석학1",
+      "복소해석학2",
+      "해석학1",
+      "해석학2",
+      "선형대수1",
+      "선형대수2",
+      "현대대수학1",
+      "현대대수학2",
+      "미분기하학1",
+      "미분기하학2",
+      "위상수학1",
+      "위상수학2"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "상업교육론",
+      "상업교재연구및지도법",
+      "경제학원론",
+      "회계원리",
+      "경영학원론",
+      "무역학개론",
+      "회계정보처리론"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "역사교육론",
+      "역사학개론",
+      "한국대외교류사",
+      "한국고대사",
+      "동아시아중세사",
+      "서양근대사",
+      "한국현대사"
+    ]
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "평생교육론",
+      "교육과정",
+      "교육철학",
+      "교육심리",
+      "교육평가",
+      "교육사회학",
+      "교육행정",
+      "교육공학"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "가정교육론",
+      "영양학",
+      "식품과조리",
+      "의복재료와관리",
+      "주거학",
+      "가정경영",
+      "가족학",
+      "가정생활과복지"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "가정교육론",
+      "영양학",
+      "의복재료와관리",
+      "주거학",
+      "소비자학",
+      "가족학",
+      "가정생활과진로"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "시각장애학생교육",
+      "청각장애학생교육",
+      "지체장애학생교육",
+      "지적장애학생교육",
+      "정서행동장애학생교육",
+      "자폐성장애학생교육",
+      "의사소통장애학생교육",
+      "학습장애학생교육"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 10,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "멀티미디어영어교육론",
+      "영어학개론",
+      "영문학개론",
+      "영어문법지도법",
+      "영어회화1",
+      "영어회화2",
+      "영어회화3",
+      "영어쓰기지도법",
+      "영어읽기지도법",
+      "영어음성음운론"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "일본어교육론",
+      "일본어학개론",
+      "일본문학개론",
+      "일본어문법",
+      "일본어회화",
+      "일본어작문",
+      "일본어강독",
+      "일본문화"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "과학교육론",
+      "발생학",
+      "식물생리학",
+      "동물생리학",
+      "유전학",
+      "분자생물학",
+      "미생물학"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "한문학개론",
+      "한문문법",
+      "한문학사",
+      "경서강독",
+      "한문국역연습",
+      "한시선독",
+      "한문소설선독",
+      "역대산문선독"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "체육사및철학",
+      "스포츠사회학",
+      "운동생리학",
+      "운동역학",
+      "체육측정평가",
+      "건강교육",
+      "운동학습및심리"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "유아교육론",
+      "유아교육과정",
+      "유아언어교육",
+      "유아사회교육",
+      "유아수학교육",
+      "유아놀이지도",
+      "유아관찰및실습",
+      "부모교육"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 9,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "영양교육및상담실습",
+      "영양학1",
+      "영양학2",
+      "생애주기영양학",
+      "단체급식및실습",
+      "식품위생학",
+      "식사요법및실습",
+      "식품학1",
+      "식품학2"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 14,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "미용학개론",
+      "피부미용1",
+      "피부미용2",
+      "헤어미용1",
+      "헤어미용2",
+      "네일미용1",
+      "네일미용2",
+      "화장품학1",
+      "화장품학2",
+      "메이크업1",
+      "메이크업2",
+      "공중보건학",
+      "생리해부학",
+      "위생학"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 24,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "보건교육론",
+      "간호관리학1",
+      "간호관리학2",
+      "기본간호학1",
+      "기본간호학2",
+      "아동간호학1",
+      "아동간호학2",
+      "아동간호학실습",
+      "성인간호학1",
+      "성인간호학2",
+      "성인간호학3",
+      "성인간호학4",
+      "성인간호학실습1",
+      "성인간호학실습2",
+      "성인간호학실습3",
+      "정신간호학1",
+      "정신간호학2",
+      "정신간호학실습1",
+      "정신간호학실습2",
+      "지역사회간호학1",
+      "지역사회간호학2",
+      "지역사회간호학실습",
+      "모성간호학",
+      "여성간호학실습"
+    ]
   }
 ]

@@ -1,0 +1,1877 @@
+[
+  {
+    "name": "글로벌K-컬처 선도융합인재양성사업단 마이크로디그리",
+    "programGroup": "글로벌K-컬처사업단",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918001",
+        "courseName": "글로벌K-컬처101",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918003",
+        "courseName": "K-컬처와창의성",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918004",
+        "courseName": "글로벌문화산책",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918005",
+        "courseName": "세계속의K-컬처",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918006",
+        "courseName": "K-컬처산업입문",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918002",
+        "courseName": "문화예술과감각활용",
+        "credits": "2"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "촬영과조명기초",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "영화읽기와쓰기",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "창의적기획과이야기구성",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-콘텐츠와인문학",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "애니메이션프로덕션워크숍1",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "캐릭터디자인1",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "디지털포스트프로덕션",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "장편시나리오",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "영화편집실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "시나리오고급워크숍",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-컬처현장실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-컬처프로젝트(산업체연계형)",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-컬처프로젝트(지역사회체연계형)",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-컬처프로젝트(글로벌연계형)",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "크리에이터창의전략",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "생성형AI룰활용한콘텐츠기획",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "20세기소년소녀",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "하이브리드영상콘텐츠제작",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "영상제작을위한언리얼엔진",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "디지털애니메이션시네메틱",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "생성형AI를활용한캐릭터와컨셉아트개발",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "로컬콘텐츠기획을위한Memo&Demo",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "2D/3D디지털합성",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "인터렉션을위한언리얼엔진",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "파격적웹툰/애니메이션기획",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-음악/공연세미나",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "K-POP과문화",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "글로벌K-POP장르여행",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "눈으로듣는K-POP",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 반려동물 창업분야",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "캡스톤디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "반려동물과 창업",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "동물미용학 및 실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "특수동물의 이해",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "기초시각디자인2",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": null,
+        "courseName": "경영학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": null,
+        "courseName": "마케팅원론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": null,
+        "courseName": "인사관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": null,
+        "courseName": "재무관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "219831",
+        "courseName": "펫헬스테라피",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "220904",
+        "courseName": "반려동물과 창업",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320004",
+        "courseName": "동물복지 및 법규",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320002",
+        "courseName": "동물보건행동학 및 실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "282898",
+        "courseName": "컴퓨터그래픽2",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "169031",
+        "courseName": "벤처기업&창업론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169022",
+        "courseName": "캡스톤디자인(생산관리)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169009",
+        "courseName": "국제경영학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 반려동물 건강관리분야",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "치료도우미동물학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "동물질병학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "반려동물학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "의약품관리학 및 실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "동물재활간호학및 실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "동물약품학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": null,
+        "courseName": "반려동물본초학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "229013",
+        "courseName": "동물해부생리학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "229001",
+        "courseName": "반려동물학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320005",
+        "courseName": "실험기기학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320020",
+        "courseName": "동물보건영양학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "172007",
+        "courseName": "건강기능식품학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 노년안전분야",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "230002",
+        "courseName": "안전관리론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "143261",
+        "courseName": "재난관리론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "143009",
+        "courseName": "응급처치론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "교양선택",
+        "categoryRaw": "교양",
+        "courseCode": "002925",
+        "courseName": "생활과안전",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "159233",
+        "courseName": "노인보건학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "전필",
+        "courseCode": "231200",
+        "courseName": "응급구조학 개론",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "전필",
+        "courseCode": "231203",
+        "courseName": "생리학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "230018",
+        "courseName": "인간공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "230030",
+        "courseName": "위험성평가",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "전필",
+        "courseCode": "231201",
+        "courseName": "인체해부학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "전필",
+        "courseCode": "231205",
+        "courseName": "재난관리",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "JST 미래수송기기학부 스마트모빌리티SW",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918026",
+        "courseName": "디지털시스템설계(VHDL)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918027",
+        "courseName": "자료구조(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918028",
+        "courseName": "인공지능 기초(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918029",
+        "courseName": "미래모빌리티반도체공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "휴먼-머신 인터페이싱(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "클라우드컴퓨팅 개론 및 실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "스마트센서개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "임베디드 프로그래밍(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "자율주행차제어(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "지능형모빌리티 설계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "비전-모션제어(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "모빌리티 구동 제어 및 설계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "현장 실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "캡스톤 디자인 설계(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 미래수송기기학부 친환경미래모빌리티",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918022",
+        "courseName": "미래자동차개론(공통)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918023",
+        "courseName": "에너지저장시스템개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918024",
+        "courseName": "연료전지개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918025",
+        "courseName": "이차전지개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "미래차전기회로(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "친환경동력시스템(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "에너지변환공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "미래자동차충전시스템(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "xEV부품및장비(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "배터리냉각시스템해석실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "이차전지팩디자인실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "현장 실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "캡스톤 디자인 설계(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 미래수송기기학부 특수목적수송기기",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적 모빌리티 개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "농기계 수송기기 개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적 수송기기 유공압 제어(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적 수송기기 3차원 설계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "차량동역학개론(기초이론)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적 수송기기 용접 실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적 수송기기 구조학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "트랙터공학 및 실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "건설기계 운용실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수송기계동력공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "구조해석실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "특수목적수송기기 전장 실무(전동화)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "모빌리티 부품 모니터링(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "현장 실습(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "캡스톤 디자인 설계(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 수소에너지활용",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918040",
+        "courseName": "수소에너지개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수소연료전지 시스템전산해석(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수소활용및안전(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수소모빌리티(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 수소연료전지시스템",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918039",
+        "courseName": "전기화학공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "연료전지공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "촉매/분리막공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수소연료전지 부품설계(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 이차전지 소재및공정",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918035",
+        "courseName": "이차전지개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "리사이클링공학개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "이차전지소재_유기(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "이차전지소재_무기(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 이차전지 활용시스템",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918036",
+        "courseName": "배터리 분석 및 제어(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "배터리 모듈 및 픽셀계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "이차전지 설계/공정(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "배터리리사이클링공학(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 이차전지 기초",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918034",
+        "courseName": "신재생에너지(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "에너지재료(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "전기화학공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "촉매공학(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 재생에너지전력변환시스템",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918043",
+        "courseName": "반도체전자공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "에너지저장변환공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "스마트그리드(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "제로에너지시스템(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 태양광에너지",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918041",
+        "courseName": "신재생에너지개론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "태양전지소재(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "태양전지소자(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "차세대태양전지기술(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 풍력에너지",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "너셀부품설계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "풍력블레이드(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918042",
+        "courseName": "풍력지지구조(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "풍력발전기및제어(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 에너지신산업학부 수소생산저장",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918037",
+        "courseName": "수소열역학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "고분자복합소재(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "수소생산공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918038",
+        "courseName": "수소저장기술(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 디지털농업 융합",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 30,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918047",
+        "courseName": "종묘생산학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918048",
+        "courseName": "온실작물관리학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918049",
+        "courseName": "스마트팜공학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "분자육종학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "스마트팜창업설계(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "디지털영상처리(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "도시농업(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "식물공장생산학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "디지털환경제어(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "농생명빅데이터(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 디지털농업 실무",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "공정육모실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "작물관수관리실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "작물생육데이터분석실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "디지털육종실무(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 메디컬바이오 융합",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 54,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "기초바이오소재(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "생물공정학(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "소재효능평가(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "치유·힐링접근법(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "정신건강과 Digital Therapy(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "생활건강과 Digital Therapy(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "미식·영양기반 치유·힐링(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "생물안전성평가(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "자동화시스템(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "지능형로봇시스템(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "대상자 수요기반 치유·힐링(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "치유·힐링 매니지멘트(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 메디컬바이오 실무",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 21,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "웰라이프케어실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "HPLC실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "자연치유실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "라이프케어실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "바이오소재분석실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "해양바이오소재실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "힐링푸드테라피실무(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 푸드테크 융합",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 30,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918044",
+        "courseName": "푸드테크(식품공정학)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918045",
+        "courseName": "푸드테크(물류유통)(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918046",
+        "courseName": "푸드테크디지털마케팅(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "농생명인공지능(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "푸드테크안심·안전(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "식품안전관리(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "푸드테크품질향상방법론(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "자동화시스템(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "농생명빅데이터(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "지능형로봇시스템(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "JST 농생명바이오학부 푸드테크 실무",
+    "programGroup": "JST공유대학",
+    "requiredCredits": 15,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "이화학실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "미생물실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "HPLC실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "식품리사이클링실무(JST)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": null,
+        "courseName": "기기분석실무(JST)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "K-치유힐링 공동체혁신 가족교육 마이크로디그리",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": []
+  },
+  {
+    "name": "K-치유힐링 공동체혁신 조직산업 마이크로디그리",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": []
+  },
+  {
+    "name": "K-치유힐링 공동체혁신 도시지역 마이크로디그리",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": []
+  },
+  {
+    "name": "K-치유힐링 공동체혁신 문화세대 마이크로디그리",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": []
+  },
+  {
+    "name": "K-치유힐링 공동체혁신 융합 마이크로디그리",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": []
+  },
+  {
+    "name": "자바풀스택(Java full stack)",
+    "programGroup": "SW벤처인재양성사업단",
+    "requiredCredits": null,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917004",
+        "courseName": "고급자바프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917005",
+        "courseName": "실무웹클라이언트프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917006",
+        "courseName": "데이터베이스설계및활용",
+        "credits": "3"
+      },
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917007",
+        "courseName": "실무웹서버프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917008",
+        "courseName": "실무앱프로젝트(캡스톤디자인)",
+        "credits": "3"
+      },
+      {
+        "semester": null,
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "917009",
+        "courseName": "현장실습",
+        "credits": "2"
+      }
+    ]
+  }
+]

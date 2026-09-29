@@ -340,6 +340,62 @@ CREATE TABLE IF NOT EXISTS curriculum_courses (
 );
 
 -- ---------------------------------------------------------------------------
+-- 6.6. 연계·복합전공 / 마이크로디그리전공 (department_id에 안 묶이는 부가 전공 프로그램)
+--
+-- 정규 학과 커리큘럼(curriculum_courses)과 달리, 이 두 프로그램은 특정 학과 소속이
+-- 아니라 여러 학과가 공동 편성하며 어떤 학과 학생이든 복수전공/부전공(연계·복합전공)
+-- 또는 그 자체(마이크로디그리)로 추가 이수할 수 있다. department_id FK를 쓰지 않고
+-- 프로그램 단위 독립 테이블로 둔 이유.
+--
+-- minor_required_credits(연계·복합 부전공 21학점)는 프로그램마다 다르지 않고 전 프로그램
+-- 공통(2025_교육과정.pdf 71p "라. 연계·복합 부전공 이수학점은 자기전공 이외의 교과목으로
+-- 21학점 이상") - 행마다 반복 저장하지만 애플리케이션에서 하드코딩 상수로 둬도 무방함.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS linked_majors (
+  id                        INT AUTO_INCREMENT PRIMARY KEY,
+  name                      VARCHAR(100) NOT NULL,
+  program_group             VARCHAR(50),   -- 일반 / 글로벌K-컬처사업단 / JST공유대학 / K-치유힐링융합인재양성사업단
+  required_credits          DECIMAL(4,1),  -- 복수전공으로 이수 시 필요 학점(영역별 이수방법표 기준)
+  minor_required_credits    DECIMAL(4,1),  -- 연계·복합 부전공으로 이수 시 필요 학점(자기 전공 외 과목, 전 프로그램 공통 21)
+  lead_professor            VARCHAR(50),
+  participating_departments VARCHAR(255)   -- 참여학과 목록(자유 텍스트 나열, 구조화 안 함)
+);
+
+CREATE TABLE IF NOT EXISTS linked_major_courses (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  linked_major_id      INT NOT NULL,
+  semester             VARCHAR(5),
+  category             VARCHAR(20) NOT NULL,
+  course_code          VARCHAR(20),
+  course_name          VARCHAR(100) NOT NULL,
+  credits              DECIMAL(3,1),
+  offering_department  VARCHAR(50),  -- 주관학부(과)
+
+  FOREIGN KEY (linked_major_id) REFERENCES linked_majors(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS micro_degrees (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  name              VARCHAR(100) NOT NULL,
+  program_group     VARCHAR(50),   -- 지방대학활성화사업단 / JST공유대학 / K-치유힐링융합인재양성사업단 / 글로벌K-컬처선도융합인재양성사업단
+  required_credits  DECIMAL(4,1),
+  lead_professor    VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS micro_degree_courses (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  micro_degree_id      INT NOT NULL,
+  semester             VARCHAR(5),
+  category             VARCHAR(20) NOT NULL,
+  course_code          VARCHAR(20),
+  course_name          VARCHAR(100) NOT NULL,
+  credits              DECIMAL(3,1),
+  offering_department  VARCHAR(50),
+
+  FOREIGN KEY (micro_degree_id) REFERENCES micro_degrees(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
 -- 7. 학칙·규정 문서 (AI 챗봇 RAG 근거)
 --
 -- 하이브리드 소스 전략: db/regulations/*.md(주제별 정리 문서, 학생 질문 형태에 가까움)를
