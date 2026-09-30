@@ -33,7 +33,7 @@ router.post('/inbound', async (req, res, next) => {
       return res.status(200).json({ status: 200, code: 'PROXY_NOT_FOUND', message: null, data: null });
     }
 
-    await emailRelayService.forwardToRecipient({
+    await emailRelayService.relayInboundEmail({
       emailId: event.data.email_id,
       to: target.recipientEmail,
       from: target.senderProxyEmail,
