@@ -4133,189 +4133,6 @@
     ]
   },
   {
-    "departmentName": "의예과",
-    "category": "전공",
-    "requiredCredits": 56,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "의예과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "의예과",
-    "category": "교양선택",
-    "requiredCredits": 20,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "의학과",
-    "category": "전공",
-    "requiredCredits": 159.5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 159.5학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 6학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(159.5학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 165.5학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
-  },
-  {
-    "departmentName": "의학과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "치의예과",
-    "category": "전공",
-    "requiredCredits": 59,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "치의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "치의예과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "치의예과",
-    "category": "교양선택",
-    "requiredCredits": 20,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "치의학과",
-    "category": "전공",
-    "requiredCredits": 115,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 115학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 23학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(115학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 138학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
-  },
-  {
-    "departmentName": "치의학과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "한의예과",
-    "category": "전공",
-    "requiredCredits": 53,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "한의예과(예과) 전공기초+전공필수 카탈로그 합계, 본과 진급 전 진행률 체크용 (졸업논문/인증제는 본과에서 적용)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "한의예과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "한의예과",
-    "category": "교양선택",
-    "requiredCredits": 20,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "한의학과",
-    "category": "전공",
-    "requiredCredits": 149,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 149학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 11학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(149학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 160학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 160과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
-  },
-  {
-    "departmentName": "한의학과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
     "departmentName": "약학과",
     "category": "전공",
     "requiredCredits": 177,
@@ -4374,82 +4191,6 @@
     "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
     "requiredCourses": [
       "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "전공",
-    "requiredCredits": 95,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 95학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 35학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(95학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 130학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "교양선택",
-    "requiredCredits": 20,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=25 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "일반선택",
-    "requiredCredits": 40,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 40학점 (총 160 - 전공95 - 교양25)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "한약학과",
-    "category": "졸업인증제",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2020,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
-    "requiredCourses": [
-      "전공현장실습",
-      "캡스톤디자인",
-      "사회봉사"
     ]
   },
   {
@@ -4636,143 +4377,6 @@
     ]
   },
   {
-    "departmentName": "중등특수교육과",
-    "category": "전공",
-    "requiredCredits": 39,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 39학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 33학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(39학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 72학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
-  },
-  {
-    "departmentName": "중등특수교육과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "중등특수교육과",
-    "category": "교양선택",
-    "requiredCredits": 32,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "중등특수교육과",
-    "category": "일반선택",
-    "requiredCredits": 64,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 64학점 (총 140 - 전공39 - 교양37)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "중등특수교육과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "전공",
-    "requiredCredits": 105,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 105학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 12학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(105학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 117학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "교양선택",
-    "requiredCredits": 32,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "일반선택",
-    "requiredCredits": 18,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 18학점 (총 160 - 전공105 - 교양37)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "건축학과",
-    "category": "졸업인증제",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2020,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
-    "requiredCourses": [
-      "캡스톤디자인",
-      "기업연계프로젝트",
-      "종합설계"
-    ]
-  },
-  {
     "departmentName": "생명과학부",
     "category": "전공",
     "requiredCredits": 24,
@@ -4870,300 +4474,6 @@
     "minCourseCount": null,
     "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
     "requiredCourses": []
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "전공",
-    "requiredCredits": 82,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(82학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
-    "requiredCourses": [],
-    "note": "실제 트랙별 전공 카탈로그 합계: 원예산업전공=85.0, 산림조경전공=84.0, 푸드테크전공=79.0, 생명환경전공=87.0, 생명과학전공=76.0"
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "교양선택",
-    "requiredCredits": 32,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "일반선택",
-    "requiredCredits": 11,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 11학점 (총 130 - 전공82 - 교양37)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "전공",
-    "requiredCredits": 48,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "TRANSFER_ADMISSION",
-    "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "전공",
-    "requiredCredits": 48,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "MAJOR_CHANGE",
-    "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "농생명바이오계열",
-    "category": "졸업인증제",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2020,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
-    "requiredCourses": [
-      "캡스톤디자인",
-      "기업연계프로젝트",
-      "종합설계"
-    ]
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "전공",
-    "requiredCredits": 87,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(87학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
-    "requiredCourses": [],
-    "note": "실제 트랙별 전공 카탈로그 합계: 패션디자인산업전공=84.0, 파인아트전공=87.0, 공예문화·주얼리디자인전공=90.0, 실내·산업디자인전공=81.0, 시각정보디자인전공=91.0"
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "교양선택",
-    "requiredCredits": 32,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "일반선택",
-    "requiredCredits": 6,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 6학점 (총 130 - 전공87 - 교양37)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "전공",
-    "requiredCredits": 48,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "TRANSFER_ADMISSION",
-    "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "전공",
-    "requiredCredits": 48,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "MAJOR_CHANGE",
-    "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "디자인융합계열",
-    "category": "졸업인증제",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2020,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
-    "requiredCourses": [
-      "캡스톤디자인",
-      "기업연계프로젝트",
-      "종합설계"
-    ]
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "전공",
-    "requiredCredits": 90,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "광역모집 계열 - 트랙별 전공과목 카탈로그 합계의 평균(90학점)으로 근사, curriculum_requirements에 track_id가 없어 트랙별 구분 불가",
-    "requiredCourses": [],
-    "note": "실제 트랙별 전공 카탈로그 합계: 중국어통번역전공=98.0, 국어국문학전공=90.0, 글로컬역사전공=90.0, 영어영문학전공=90.0, 문예창작전공=83.0, 미디어커뮤니케이션광고PR전공=90.0"
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "교양필수",
-    "requiredCredits": 5,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
-    "requiredCourses": [
-      "건학이념",
-      "대학생활"
-    ]
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "교양선택",
-    "requiredCredits": 32,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "일반선택",
-    "requiredCredits": 3,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "자유선택 3학점 (총 130 - 전공90 - 교양37)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "졸업논문",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
-    "requiredCourses": [
-      "졸업(시험·작품)논문"
-    ]
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "전공",
-    "requiredCredits": 36,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "TRANSFER_ADMISSION",
-    "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "전공",
-    "requiredCredits": 36,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": "MAJOR_CHANGE",
-    "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
-    "requiredCourses": []
-  },
-  {
-    "departmentName": "창의문화융합계열",
-    "category": "졸업인증제",
-    "requiredCredits": 0,
-    "minAdmissionYear": 2020,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": 1,
-    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
-    "requiredCourses": [
-      "전공현장실습",
-      "캡스톤디자인",
-      "사회봉사"
-    ]
   },
   {
     "departmentName": "원불교학과",
@@ -5547,5 +4857,731 @@
       "모성간호학",
       "여성간호학실습"
     ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "전공",
+    "requiredCredits": 109,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 109학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 39학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(109학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 148학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=25 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "일반선택",
+    "requiredCredits": 26,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 26학점 (총 160 - 전공109 - 교양25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "전공",
+    "requiredCredits": 39,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 39학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 41학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(39학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 80학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "일반선택",
+    "requiredCredits": 64,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 64학점 (총 140 - 전공39 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 114,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공필수+전공기초 카탈로그 합계 114학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 12학점은 제외)",
+    "requiredCourses": [],
+    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(114학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 126학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "일반선택",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 9학점 (총 160 - 전공114 - 교양37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": [],
+    "note": "총괄표(2025_교육과정.pdf 12p) 본과 행은 교양 칸이 전부 빈칸이고 졸업총계 160만 표기됨. 카탈로그(전공필수+전공선택)가 이 값 이상이라 전체가 전공 풀로 성립. 치의학과는 누락 과목 복구 후 173학점, 한의학과 160학점, 의학과 165.5학점."
+  },
+  {
+    "departmentName": "의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": [],
+    "note": "총괄표(2025_교육과정.pdf 12p) 본과 행은 교양 칸이 전부 빈칸이고 졸업총계 160만 표기됨. 카탈로그(전공필수+전공선택)가 이 값 이상이라 전체가 전공 풀로 성립. 치의학과는 누락 과목 복구 후 173학점, 한의학과 160학점, 의학과 165.5학점."
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": [],
+    "note": "총괄표(2025_교육과정.pdf 12p) 본과 행은 교양 칸이 전부 빈칸이고 졸업총계 160만 표기됨. 카탈로그(전공필수+전공선택)가 이 값 이상이라 전체가 전공 풀로 성립. 치의학과는 누락 과목 복구 후 173학점, 한의학과 160학점, 의학과 165.5학점."
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 - 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": [],
+    "note": "이전엔 카탈로그 전공필수+기초 합계(의예과 56/치의예과 59/한의예과 53)로 근사했으나 총괄표 산식(80-25)으로 확정."
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 - 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": [],
+    "note": "이전엔 카탈로그 전공필수+기초 합계(의예과 56/치의예과 59/한의예과 53)로 근사했으나 총괄표 산식(80-25)으로 확정."
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 - 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": [],
+    "note": "이전엔 카탈로그 전공필수+기초 합계(의예과 56/치의예과 59/한의예과 53)로 근사했으나 총괄표 산식(80-25)으로 확정."
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "총괄표 liberalArtsTotal=25 기준 (전공+교양 합계가 졸업총계와 소폭 오차 있는 근사치)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "description": "광역모집 전공심화형(72학점) 기준: 기초12+심화15+응용9 이상 포함 = 36학점(전공필수 풀)",
+    "note": "2025_교육과정.pdf 18~19p \"광역단위-계열전공\" 이수유형 중 ②전공심화형만 지원(공학3계열과 동일한 스코프 결정). ①복수학위형(36+36)/③전공융합형(48+MD 24)은 제외. 기초/심화/응용 세부 최소학점은 student_courses에 이수구분(기초/심화/응용) 컬럼이 없어 검증하지 않고 curriculum_courses의 전공기초/전공심화/전공응용 구분으로 챗봇 안내만 함.",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "description": "전공심화형 전공계 72학점 중 기초/심화/응용 최소분(36) 이외 나머지 36학점",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "농생명바이오계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "description": "자유선택 21학점 (총 130 - 전공72 - 교양37, 총괄표 기준)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "description": "광역모집 전공심화형(72학점) 기준: 기초12+심화15+응용9 이상 포함 = 36학점(전공필수 풀)",
+    "note": "2025_교육과정.pdf 18~19p \"광역단위-계열전공\" 이수유형 중 ②전공심화형만 지원(공학3계열과 동일한 스코프 결정). ①복수학위형(36+36)/③전공융합형(48+MD 24)은 제외. 기초/심화/응용 세부 최소학점은 student_courses에 이수구분(기초/심화/응용) 컬럼이 없어 검증하지 않고 curriculum_courses의 전공기초/전공심화/전공응용 구분으로 챗봇 안내만 함.",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "description": "전공심화형 전공계 72학점 중 기초/심화/응용 최소분(36) 이외 나머지 36학점",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "description": "자유선택 21학점 (총 130 - 전공72 - 교양37, 총괄표 기준)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "description": "광역모집 전공심화형(72학점) 기준: 기초12+심화15+응용9 이상 포함 = 36학점(전공필수 풀)",
+    "note": "2025_교육과정.pdf 18~19p \"광역단위-계열전공\" 이수유형 중 ②전공심화형만 지원(공학3계열과 동일한 스코프 결정). ①복수학위형(36+36)/③전공융합형(48+MD 24)은 제외. 기초/심화/응용 세부 최소학점은 student_courses에 이수구분(기초/심화/응용) 컬럼이 없어 검증하지 않고 curriculum_courses의 전공기초/전공심화/전공응용 구분으로 챗봇 안내만 함.",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "description": "전공심화형 전공계 72학점 중 기초/심화/응용 최소분(36) 이외 나머지 36학점",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "description": "자유선택 21학점 (총 130 - 전공72 - 교양37, 총괄표 기준)",
+    "requiredCourses": []
   }
 ]
