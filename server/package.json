@@ -30,7 +30,8 @@
     "multer": "^2.2.0",
     "mysql2": "^3.10.1",
     "pdf-parse": "^2.4.5",
-    "resend": "^6.26.0"
+    "resend": "^6.26.0",
+    "sanitize-html": "2.17.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
