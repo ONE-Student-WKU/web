@@ -347,23 +347,23 @@
   {
     "departmentName": "원불교학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "원불교학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -455,23 +455,23 @@
   {
     "departmentName": "경영학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 51,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 51학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "경영학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 51,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 51학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -563,23 +563,23 @@
   {
     "departmentName": "회계세무학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "회계세무학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -671,23 +671,23 @@
   {
     "departmentName": "경제금융학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "경제금융학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -887,23 +887,23 @@
   {
     "departmentName": "국어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "국어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -980,23 +980,23 @@
   {
     "departmentName": "영어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "영어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1073,23 +1073,23 @@
   {
     "departmentName": "일어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "일어교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1166,23 +1166,23 @@
   {
     "departmentName": "한문교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "한문교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1259,23 +1259,23 @@
   {
     "departmentName": "역사교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "역사교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1352,23 +1352,23 @@
   {
     "departmentName": "교육학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "교육학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1445,23 +1445,23 @@
   {
     "departmentName": "유아교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "유아교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 50,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 50학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1538,23 +1538,23 @@
   {
     "departmentName": "가정교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "가정교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1631,23 +1631,23 @@
   {
     "departmentName": "체육교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "체육교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -1724,23 +1724,23 @@
   {
     "departmentName": "수학교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "수학교육과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 56,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 56학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -2465,23 +2465,23 @@
   {
     "departmentName": "행정공공기관학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "행정공공기관학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -2897,23 +2897,23 @@
   {
     "departmentName": "경찰행정학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "경찰행정학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -3005,23 +3005,23 @@
   {
     "departmentName": "소방행정학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "TRANSFER_ADMISSION",
     "minCourseCount": null,
-    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조)",
+    "description": "편입생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용).",
     "requiredCourses": []
   },
   {
     "departmentName": "소방행정학과",
     "category": "전공",
-    "requiredCredits": 48,
+    "requiredCredits": 36,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": "MAJOR_CHANGE",
     "minCourseCount": null,
-    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조). 1·2학년 전과는 일반 재학생과 동일 전액 이수 - graduationService.js의 major_change_grade>=3 분기 재사용",
+    "description": "3·4학년 전과생 최소전공 인정학점 36학점 (2025_교육과정.pdf 총괄표 \"최소전공 인정학점\" 열; 복수전공 이수자·편입생·3학년 전과생 적용). 1·2학년 전과는 일반 재학생과 동일 전액 이수",
     "requiredCourses": []
   },
   {
@@ -4937,14 +4937,14 @@
   {
     "departmentName": "중등특수교육과",
     "category": "전공",
-    "requiredCredits": 80,
+    "requiredCredits": 82,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공 80학점 이상 (총 140 - 교양37 - 일반선택23). 총괄표 원문: 특수42(기전15 포함)이상+표시과목+특수교육교육과정 9학점 이상",
+    "description": "전공 82학점 이상 (총괄표 산식: 특수42(기전15 포함)+표시과목31+특수교육교육과정 9)",
     "requiredCourses": [],
-    "note": "총괄표(2025_교육과정.pdf 12p) 중등특수교육과 행은 전공 칸이 세부 산식 문자열이라 총계에서 역산(140-37-23=80). 이전엔 카탈로그 전공필수+기초 합계 39로 근사했음"
+    "note": "총괄표 산식 합계 82 = 학칙시행규칙 제6조④2(중등특수교육과 주전공 인정학점 82). 다만 총괄표 일반선택 23과 교양 37을 더하면 142로 졸업총계 140과 2학점 어긋남 - PDF 자체 불일치라 학사지원과 확인 필요. 여기서는 졸업총계 140을 우선해 일반선택을 21로 둠"
   },
   {
     "departmentName": "중등특수교육과",
@@ -4974,12 +4974,12 @@
   {
     "departmentName": "중등특수교육과",
     "category": "일반선택",
-    "requiredCredits": 23,
+    "requiredCredits": 21,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 23학점 (총 140 - 전공80 - 교양37, 총괄표 기준)",
+    "description": "자유선택 21학점 = 총 140 - 전공82 - 교양37 (총괄표 인쇄값 23과 2학점 차이, 전공 행 note 참고)",
     "requiredCourses": []
   },
   {
