@@ -4937,14 +4937,14 @@
   {
     "departmentName": "중등특수교육과",
     "category": "전공",
-    "requiredCredits": 39,
+    "requiredCredits": 80,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 39학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 41학점은 제외)",
+    "description": "전공 80학점 이상 (총 140 - 교양37 - 일반선택23). 총괄표 원문: 특수42(기전15 포함)이상+표시과목+특수교육교육과정 9학점 이상",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(39학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 80학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표(2025_교육과정.pdf 12p) 중등특수교육과 행은 전공 칸이 세부 산식 문자열이라 총계에서 역산(140-37-23=80). 이전엔 카탈로그 전공필수+기초 합계 39로 근사했음"
   },
   {
     "departmentName": "중등특수교육과",
@@ -4974,12 +4974,12 @@
   {
     "departmentName": "중등특수교육과",
     "category": "일반선택",
-    "requiredCredits": 64,
+    "requiredCredits": 23,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 64학점 (총 140 - 전공39 - 교양37)",
+    "description": "자유선택 23학점 (총 140 - 전공80 - 교양37, 총괄표 기준)",
     "requiredCourses": []
   },
   {
