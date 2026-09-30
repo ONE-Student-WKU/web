@@ -394,13 +394,38 @@ function coreProgramName(name) {
   return last.length >= MIN_CORE_NAME_LENGTH ? last : null;
 }
 
+// 세부 과정이 붙은 프로그램("지방대활성화 반려동물 창업분야 창업기초 과정")과 사업단 접두어 뒤의
+// 주제어("JST 농생명바이오학부 메디컬바이오 융합" → "메디컬바이오")는 학생이 분야/주제 단위로 물을 때가
+// 많아, 전체 이름·핵심명 외에 이 키들도 후보로 둔다. 주제어 키는 이름이 구체적일 때만(최소 4자)
+// 쓰고, 마이크로디그리와 연계전공이 같은 주제어를 공유하면 둘 다 조회돼도 무방하다(둘 다 실제로 있는 과정).
+function programMatchKeys(name) {
+  const keys = new Set([name]);
+  const core = coreProgramName(name);
+  if (core) keys.add(core);
+
+  const tokens = name.trim().split(/\s+/);
+  // 세부 과정: "지방대활성화 <분야명> XXX 과정" → 분야명(접두어 제외)과 "XXX 과정"
+  const fieldIdx = tokens.findIndex((t) => t.endsWith('분야'));
+  if (tokens[tokens.length - 1] === '과정' && fieldIdx > 0) {
+    keys.add(tokens.slice(fieldIdx + 1).join(' '));
+    const field = tokens.slice(1, fieldIdx + 1).join(' '); // 예: "반려동물 창업분야"
+    keys.add(field);
+    keys.add(field.replace(/분야$/, ''));
+  }
+  // K-치유힐링: 5개 전공/5개 마이크로디그리가 사업단명으로 통칭되는 경우가 많다
+  if (tokens[0] === 'K-치유힐링') keys.add(tokens[0]);
+  // JST: "JST XX학부 주제어 [융합|실무|전공]" → 주제어
+  const collegeIdx = tokens.findIndex((t) => /학부$/.test(t));
+  if (tokens[0] === 'JST' && collegeIdx >= 0 && tokens[collegeIdx + 1]) {
+    const topic = tokens[collegeIdx + 1].replace(/전공$/, '');
+    if (topic.length >= 4) keys.add(topic);
+  }
+  return [...keys].filter((k) => k.length >= 4);
+}
+
 async function findProgramsByMessage(table, message) {
   const [rows] = await pool.query(`SELECT id, name FROM ${table}`);
-  return rows.filter((r) => {
-    if (message.includes(r.name)) return true;
-    const core = coreProgramName(r.name);
-    return core ? message.includes(core) : false;
-  });
+  return rows.filter((r) => programMatchKeys(r.name).some((k) => message.includes(k)));
 }
 
 function summarizeProgramCourses(courseRows) {
@@ -428,7 +453,7 @@ async function lookupLinkedMajorsFromMessage(message) {
        WHERE linked_major_id = ? ORDER BY category, course_name`,
       [program.id]
     );
-    const professorLabel = meta.lead_professor ? `, 전공주임교수: ${meta.lead_professor}` : '';
+    const professorLabel = meta.lead_professor ? `, 지도교수: ${meta.lead_professor}` : '';
     const deptLabel = meta.participating_departments ? `, 참여학과: ${meta.participating_departments}` : '';
     const minorLabel = meta.minor_required_credits != null
       ? ` (연계·복합 부전공으로 이수 시 ${Number(meta.minor_required_credits)}학점 이상)`

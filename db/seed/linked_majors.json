@@ -4,8 +4,8 @@
     "programGroup": "인문사회",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "인문대학 유럽문화학부 남유선",
+    "participatingDepartments": "유럽문화학부, 문예창작학과, 철학과, 행정·언론학부, 역사문화학과, 영어영문학과",
     "courses": [
       {
         "semester": "1, 2",
@@ -294,8 +294,8 @@
     "programGroup": "인문사회",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "인문대학 역사문화학과 유미나",
+    "participatingDepartments": "역사문화학과, 문화·인문콘텐츠전공, 건축학과",
     "courses": [
       {
         "semester": "1",
@@ -722,8 +722,8 @@
     "programGroup": "SW사업",
     "requiredCredits": 48,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "약학대학 한약학과 김윤경",
+    "participatingDepartments": "한의예과, 한약학과, 작업치료학과, 컴퓨터·소프트웨어공학과, 디지털콘텐츠공학과, 인공지능융합학과, 간호학과",
     "courses": [
       {
         "semester": "1,2",
@@ -1300,8 +1300,8 @@
     "programGroup": "SW사업",
     "requiredCredits": 48,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "농식품융합대학 원예산업학과 김호철",
+    "participatingDepartments": "원예산업학과, 식품생명공학과, 컴퓨터·소프트웨어공학과, 게임콘텐츠학과, 인공지능융합학과",
     "courses": [
       {
         "semester": "2",
@@ -1646,8 +1646,8 @@
     "programGroup": "SW사업",
     "requiredCredits": 48,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "경영대학 경영학과 정호일",
+    "participatingDepartments": "경영학과, 경제학부, 컴퓨터·소프트웨어공학과, 디지털콘텐츠공학과, 인공지능융합학과",
     "courses": [
       {
         "semester": "1",
@@ -1976,8 +1976,8 @@
     "programGroup": "SW사업",
     "requiredCredits": 48,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "창의공과대학 디지털콘텐츠공학과 원도연",
+    "participatingDepartments": "디지털콘텐츠공학과, 컴퓨터·소프트웨어공학과, 문예창작학과, 역사문화학과, 시각정보디자인학과, 인공지능융합학과",
     "courses": [
       {
         "semester": "1",
@@ -2410,8 +2410,8 @@
     "programGroup": "글로벌K-컬처사업단",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "김정배",
+    "participatingDepartments": "문예창작학과, 역사문화학과, 중국학과",
     "courses": [
       {
         "semester": "1,2",
@@ -2580,8 +2580,8 @@
     "programGroup": "글로벌K-컬처사업단",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "김정배",
+    "participatingDepartments": "문예창작학과, 역사문화학과, 중국학과",
     "courses": [
       {
         "semester": "1,2",
@@ -2758,8 +2758,8 @@
     "programGroup": "글로벌K-컬처사업단",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "김정배",
+    "participatingDepartments": "문예창작학과, 역사문화학과, 중국학과",
     "courses": [
       {
         "semester": "1,2",
@@ -2928,8 +2928,8 @@
     "programGroup": "글로벌K-컬처사업단",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "김정배",
+    "participatingDepartments": "문예창작학과, 역사문화학과, 중국학과",
     "courses": [
       {
         "semester": "1,2",
@@ -3106,8 +3106,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 39,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "기계공학부 이상욱",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3220,8 +3220,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 42,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "기계공학부 이상욱",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3342,8 +3342,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 45,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "기계공학부 이상욱",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3472,8 +3472,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "화학공학과 주용완",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3578,8 +3578,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "화학공학과 주용완",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3668,8 +3668,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 36,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "화학공학과 주용완",
+    "participatingDepartments": "화학공학과, 철도시스템공학부, 컴퓨터·소프트웨어공학과, 기계공학부, 전자공학과, 건설환경공학과",
     "courses": [
       {
         "semester": "1",
@@ -3758,8 +3758,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 42,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "원예산업학과 김호철",
+    "participatingDepartments": "컴퓨터·소프트웨어공학과, 게임콘텐츠학과, 전자공학과, 기계공학부, 원예산업학과",
     "courses": [
       {
         "semester": "1",
@@ -3880,8 +3880,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 45,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "식품생명공학과 이창주",
+    "participatingDepartments": "컴퓨터·소프트웨어공학과, 게임콘텐츠학과, 전자공학과, 기계공학부, 식품생명공학과, 생명환경학과",
     "courses": [
       {
         "semester": "1",
@@ -4018,8 +4018,8 @@
     "programGroup": "JST공유대학",
     "requiredCredits": 75,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "산림조경학과 김상욱, 화학공학과 곽소정",
+    "participatingDepartments": "컴퓨터·소프트웨어공학과, 게임콘텐츠학과, 전자공학과, 기계공학부, 한의예과, 생명과학부, 원예산업학과, 한약학과, 화학공학과, 산림조경학과, 간호학과, 작업치료학과, 의료상담학과, 스포츠과학부",
     "courses": [
       {
         "semester": "1",
@@ -4180,8 +4180,8 @@
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
+    "participatingDepartments": "행정·언론학부, 복지·보건학부, 자율전공학부, 반려동물산업학과, 원불교학과, 의료상담학과, 스포츠과학부, 게임콘텐츠학과",
     "courses": []
   },
   {
@@ -4189,8 +4189,8 @@
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
+    "participatingDepartments": "행정·언론학부, 복지·보건학부, 자율전공학부, 반려동물산업학과, 원불교학과, 의료상담학과, 스포츠과학부, 게임콘텐츠학과",
     "courses": [
       {
         "semester": "1,2",
@@ -4295,8 +4295,8 @@
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
+    "participatingDepartments": "행정·언론학부, 복지·보건학부, 자율전공학부, 반려동물산업학과, 원불교학과, 의료상담학과, 스포츠과학부, 게임콘텐츠학과",
     "courses": [
       {
         "semester": "1,2",
@@ -4417,8 +4417,8 @@
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
+    "participatingDepartments": "행정·언론학부, 복지·보건학부, 자율전공학부, 반려동물산업학과, 원불교학과, 의료상담학과, 스포츠과학부, 게임콘텐츠학과",
     "courses": []
   },
   {
@@ -4426,8 +4426,8 @@
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
     "minorRequiredCredits": 21,
-    "leadProfessor": null,
-    "participatingDepartments": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
+    "participatingDepartments": "행정·언론학부, 복지·보건학부, 자율전공학부, 반려동물산업학과, 원불교학과, 의료상담학과, 스포츠과학부, 게임콘텐츠학과",
     "courses": []
   },
   {

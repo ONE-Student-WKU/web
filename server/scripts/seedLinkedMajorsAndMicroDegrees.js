@@ -15,7 +15,18 @@ const microDegrees = require('../../db/seed/micro_degrees.json');
  * 이름 기준으로 기존 행을 지우고 다시 넣는 방식(INSERT IGNORE 대신)이라 재실행해도 안전하다.
  */
 
+// 이 테이블들은 이 스크립트/JSON이 유일한 원천이라, JSON에서 빠진(이름이 바뀌거나 쪼개진) 프로그램은
+// 이름 기준 재적재로는 지워지지 않으므로 별도로 정리한다. (예: 지방대활성화 분야 → 세부 과정 분리)
+async function deleteStale(table, names) {
+  const [rows] = await pool.query(`SELECT id, name FROM ${table}`);
+  const keep = new Set(names);
+  for (const row of rows) {
+    if (!keep.has(row.name)) await pool.query(`DELETE FROM ${table} WHERE id = ?`, [row.id]);
+  }
+}
+
 async function seedLinkedMajors() {
+  await deleteStale('linked_majors', linkedMajors.map((m) => m.name));
   let total = 0;
   for (const major of linkedMajors) {
     const [existing] = await pool.query('SELECT id FROM linked_majors WHERE name = ?', [major.name]);
@@ -50,6 +61,7 @@ async function seedLinkedMajors() {
 }
 
 async function seedMicroDegrees() {
+  await deleteStale('micro_degrees', microDegrees.map((m) => m.name));
   let total = 0;
   for (const md of microDegrees) {
     const [existing] = await pool.query('SELECT id FROM micro_degrees WHERE name = ?', [md.name]);

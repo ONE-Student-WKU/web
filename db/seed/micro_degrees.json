@@ -3,7 +3,7 @@
     "name": "글로벌K-컬처 선도융합인재양성사업단 마이크로디그리",
     "programGroup": "글로벌K-컬처사업단",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "김정배",
     "courses": [
       {
         "semester": "1,2",
@@ -288,90 +288,19 @@
     ]
   },
   {
-    "name": "지방대활성화 반려동물 창업분야",
+    "name": "지방대활성화 반려동물 창업분야 창업기초 과정",
     "programGroup": "지방대학활성화사업단",
-    "requiredCredits": null,
-    "leadProfessor": null,
+    "requiredCredits": 21,
+    "leadProfessor": "반려동물산업학과 이현아 학과장",
     "courses": [
       {
         "semester": "1",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "229025",
         "courseName": "캡스톤디자인",
-        "credits": "3"
-      },
-      {
-        "semester": "2",
-        "category": "전공선택",
-        "categoryRaw": "선전",
-        "courseCode": null,
-        "courseName": "반려동물과 창업",
-        "credits": "3"
-      },
-      {
-        "semester": "1",
-        "category": "전공선택",
-        "categoryRaw": "선전",
-        "courseCode": null,
-        "courseName": "동물미용학 및 실습",
-        "credits": "3"
-      },
-      {
-        "semester": "2",
-        "category": "전공선택",
-        "categoryRaw": "선전",
-        "courseCode": null,
-        "courseName": "특수동물의 이해",
-        "credits": "3"
-      },
-      {
-        "semester": "2",
-        "category": "전공선택",
-        "categoryRaw": "선전",
-        "courseCode": null,
-        "courseName": "기초시각디자인2",
-        "credits": "2"
-      },
-      {
-        "semester": "1",
-        "category": "전공필수",
-        "categoryRaw": "기전",
-        "courseCode": null,
-        "courseName": "경영학원론",
-        "credits": "3"
-      },
-      {
-        "semester": "2",
-        "category": "전공필수",
-        "categoryRaw": "기전",
-        "courseCode": null,
-        "courseName": "마케팅원론",
-        "credits": "3"
-      },
-      {
-        "semester": "1",
-        "category": "전공필수",
-        "categoryRaw": "기전",
-        "courseCode": null,
-        "courseName": "인사관리",
-        "credits": "3"
-      },
-      {
-        "semester": "1",
-        "category": "전공필수",
-        "categoryRaw": "기전",
-        "courseCode": null,
-        "courseName": "재무관리",
-        "credits": "3"
-      },
-      {
-        "semester": "2",
-        "category": "전공선택",
-        "categoryRaw": "선전",
-        "courseCode": "219831",
-        "courseName": "펫헬스테라피",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "2",
@@ -379,7 +308,97 @@
         "categoryRaw": "선전",
         "courseCode": "220904",
         "courseName": "반려동물과 창업",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320006",
+        "courseName": "동물미용학 및 실습",
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "320003",
+        "courseName": "특수동물의 이해",
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "282940",
+        "courseName": "기초시각디자인2",
+        "credits": "2",
+        "offeringDepartment": "시각정보디자인학과"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169001",
+        "courseName": "경영학원론",
+        "credits": "3",
+        "offeringDepartment": "경영학과"
+      },
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169005",
+        "courseName": "마케팅원론",
+        "credits": "3",
+        "offeringDepartment": "경영학과"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169023",
+        "courseName": "인사관리",
+        "credits": "3",
+        "offeringDepartment": "경영학과"
+      },
+      {
+        "semester": "1",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "169008",
+        "courseName": "재무관리",
+        "credits": "3",
+        "offeringDepartment": "경영학과"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 반려동물 창업분야 창업실무 과정",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": 18,
+    "leadProfessor": "반려동물산업학과 이현아 학과장",
+    "courses": [
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "219831",
+        "courseName": "펫헬스테라피",
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "220904",
+        "courseName": "반려동물과 창업",
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "2",
@@ -387,7 +406,8 @@
         "categoryRaw": "선전",
         "courseCode": "320004",
         "courseName": "동물복지 및 법규",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "1",
@@ -395,7 +415,8 @@
         "categoryRaw": "선전",
         "courseCode": "320002",
         "courseName": "동물보건행동학 및 실습",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "2",
@@ -403,7 +424,8 @@
         "categoryRaw": "기전",
         "courseCode": "282898",
         "courseName": "컴퓨터그래픽2",
-        "credits": "2"
+        "credits": "2",
+        "offeringDepartment": "시각정보디자인학과"
       },
       {
         "semester": "1",
@@ -411,7 +433,8 @@
         "categoryRaw": "선전",
         "courseCode": "169031",
         "courseName": "벤처기업&창업론",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "경영학과"
       },
       {
         "semester": "1",
@@ -419,7 +442,8 @@
         "categoryRaw": "기전",
         "courseCode": "169022",
         "courseName": "캡스톤디자인(생산관리)",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "경영학과"
       },
       {
         "semester": "2",
@@ -427,63 +451,70 @@
         "categoryRaw": "기전",
         "courseCode": "169009",
         "courseName": "국제경영학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "경영학과"
       }
     ]
   },
   {
-    "name": "지방대활성화 반려동물 건강관리분야",
+    "name": "지방대활성화 반려동물 건강관리분야 건강관리 과정",
     "programGroup": "지방대학활성화사업단",
-    "requiredCredits": null,
-    "leadProfessor": null,
+    "requiredCredits": 12,
+    "leadProfessor": "반려동물산업학과 이현아 학과장",
     "courses": [
       {
         "semester": "1",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "229001",
         "courseName": "치료도우미동물학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "2",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "229021",
         "courseName": "동물질병학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "1",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "320001",
         "courseName": "반려동물학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "2",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "320009",
         "courseName": "의약품관리학 및 실습",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "1",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "320020",
         "courseName": "동물재활간호학및 실습",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "1",
         "category": "전공선택",
         "categoryRaw": "선전",
-        "courseCode": null,
+        "courseCode": "173066",
         "courseName": "동물약품학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "약학과"
       },
       {
         "semester": "2",
@@ -491,15 +522,25 @@
         "categoryRaw": "선전",
         "courseCode": null,
         "courseName": "반려동물본초학",
-        "credits": "3"
-      },
+        "credits": "3",
+        "offeringDepartment": "한약학과"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 반려동물 건강관리분야 실무인재 과정",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": 12,
+    "leadProfessor": "반려동물산업학과 이현아 학과장",
+    "courses": [
       {
         "semester": "2",
         "category": "전공선택",
         "categoryRaw": "선전",
         "courseCode": "229013",
         "courseName": "동물해부생리학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "1",
@@ -507,7 +548,8 @@
         "categoryRaw": "선전",
         "courseCode": "229001",
         "courseName": "반려동물학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "반려동물산업학과"
       },
       {
         "semester": "2",
@@ -515,7 +557,8 @@
         "categoryRaw": "선전",
         "courseCode": "320005",
         "courseName": "실험기기학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "1",
@@ -523,7 +566,8 @@
         "categoryRaw": "선전",
         "courseCode": "320020",
         "courseName": "동물보건영양학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "동물보건학과"
       },
       {
         "semester": "2",
@@ -531,15 +575,16 @@
         "categoryRaw": "선전",
         "courseCode": "172007",
         "courseName": "건강기능식품학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "한약학과"
       }
     ]
   },
   {
-    "name": "지방대활성화 노년안전분야",
+    "name": "지방대활성화 노년안전분야 고령사회 위기관리 과정",
     "programGroup": "지방대학활성화사업단",
-    "requiredCredits": null,
-    "leadProfessor": null,
+    "requiredCredits": 14,
+    "leadProfessor": "안전보건학과 이종호 학과장",
     "courses": [
       {
         "semester": "2",
@@ -547,7 +592,8 @@
         "categoryRaw": "기전",
         "courseCode": "230002",
         "courseName": "안전관리론",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "안전보건학과"
       },
       {
         "semester": "2",
@@ -555,7 +601,8 @@
         "categoryRaw": "선전",
         "courseCode": "143261",
         "courseName": "재난관리론",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "소방행정학과"
       },
       {
         "semester": "2",
@@ -563,7 +610,8 @@
         "categoryRaw": "선전",
         "courseCode": "143009",
         "courseName": "응급처치론",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "소방행정학과"
       },
       {
         "semester": "1",
@@ -571,7 +619,8 @@
         "categoryRaw": "교양",
         "courseCode": "002925",
         "courseName": "생활과안전",
-        "credits": "2"
+        "credits": "2",
+        "offeringDepartment": "소방행정학과"
       },
       {
         "semester": "1",
@@ -579,7 +628,8 @@
         "categoryRaw": "선전",
         "courseCode": "159233",
         "courseName": "노인보건학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "복지보건학부"
       },
       {
         "semester": "1",
@@ -587,7 +637,8 @@
         "categoryRaw": "전필",
         "courseCode": "231200",
         "courseName": "응급구조학 개론",
-        "credits": "2"
+        "credits": "2",
+        "offeringDepartment": "응급구조학과"
       },
       {
         "semester": "2",
@@ -595,7 +646,25 @@
         "categoryRaw": "전필",
         "courseCode": "231203",
         "courseName": "생리학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "응급구조학과"
+      }
+    ]
+  },
+  {
+    "name": "지방대활성화 노년안전분야 노인생활안전 과정",
+    "programGroup": "지방대학활성화사업단",
+    "requiredCredits": 15,
+    "leadProfessor": "안전보건학과 이종호 학과장",
+    "courses": [
+      {
+        "semester": "2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "230002",
+        "courseName": "안전관리론",
+        "credits": "3",
+        "offeringDepartment": "안전보건학과"
       },
       {
         "semester": "1",
@@ -603,7 +672,8 @@
         "categoryRaw": "선전",
         "courseCode": "230018",
         "courseName": "인간공학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "안전보건학과"
       },
       {
         "semester": "1",
@@ -611,7 +681,26 @@
         "categoryRaw": "선전",
         "courseCode": "230030",
         "courseName": "위험성평가",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "안전보건학과"
+      },
+      {
+        "semester": "2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "143261",
+        "courseName": "재난관리론",
+        "credits": "3",
+        "offeringDepartment": "소방행정학과"
+      },
+      {
+        "semester": "1",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "159233",
+        "courseName": "노인보건학",
+        "credits": "3",
+        "offeringDepartment": "복지보건학부"
       },
       {
         "semester": "1",
@@ -619,7 +708,8 @@
         "categoryRaw": "전필",
         "courseCode": "231201",
         "courseName": "인체해부학",
-        "credits": "3"
+        "credits": "3",
+        "offeringDepartment": "응급구조학과"
       },
       {
         "semester": "2",
@@ -627,7 +717,8 @@
         "categoryRaw": "전필",
         "courseCode": "231205",
         "courseName": "재난관리",
-        "credits": "2"
+        "credits": "2",
+        "offeringDepartment": "응급구조학과"
       }
     ]
   },
@@ -635,7 +726,7 @@
     "name": "JST 미래수송기기학부 스마트모빌리티SW",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "기계공학부 이상욱",
     "courses": [
       {
         "semester": "1",
@@ -755,7 +846,7 @@
     "name": "JST 미래수송기기학부 친환경미래모빌리티",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "기계공학부 이상욱",
     "courses": [
       {
         "semester": "1",
@@ -867,7 +958,7 @@
     "name": "JST 미래수송기기학부 특수목적수송기기",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "기계공학부 이상욱",
     "courses": [
       {
         "semester": "1",
@@ -995,7 +1086,7 @@
     "name": "JST 에너지신산업학부 수소에너지활용",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1035,7 +1126,7 @@
     "name": "JST 에너지신산업학부 수소연료전지시스템",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1075,7 +1166,7 @@
     "name": "JST 에너지신산업학부 이차전지 소재및공정",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1115,7 +1206,7 @@
     "name": "JST 에너지신산업학부 이차전지 활용시스템",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1155,7 +1246,7 @@
     "name": "JST 에너지신산업학부 이차전지 기초",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1195,7 +1286,7 @@
     "name": "JST 에너지신산업학부 재생에너지전력변환시스템",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1235,7 +1326,7 @@
     "name": "JST 에너지신산업학부 태양광에너지",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1275,7 +1366,7 @@
     "name": "JST 에너지신산업학부 풍력에너지",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1315,7 +1406,7 @@
     "name": "JST 에너지신산업학부 수소생산저장",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "화학공학과 주용완",
     "courses": [
       {
         "semester": "1",
@@ -1355,7 +1446,7 @@
     "name": "JST 농생명바이오학부 디지털농업 융합",
     "programGroup": "JST공유대학",
     "requiredCredits": 30,
-    "leadProfessor": null,
+    "leadProfessor": "원예산업학과 김호철",
     "courses": [
       {
         "semester": "1",
@@ -1443,7 +1534,7 @@
     "name": "JST 농생명바이오학부 디지털농업 실무",
     "programGroup": "JST공유대학",
     "requiredCredits": 12,
-    "leadProfessor": null,
+    "leadProfessor": "원예산업학과 김호철",
     "courses": [
       {
         "semester": "1",
@@ -1483,7 +1574,7 @@
     "name": "JST 농생명바이오학부 메디컬바이오 융합",
     "programGroup": "JST공유대학",
     "requiredCredits": 54,
-    "leadProfessor": null,
+    "leadProfessor": "산림조경학과 김상욱, 화학공학과 곽소정",
     "courses": [
       {
         "semester": "1",
@@ -1587,7 +1678,7 @@
     "name": "JST 농생명바이오학부 메디컬바이오 실무",
     "programGroup": "JST공유대학",
     "requiredCredits": 21,
-    "leadProfessor": null,
+    "leadProfessor": "산림조경학과 김상욱, 화학공학과 곽소정",
     "courses": [
       {
         "semester": "2",
@@ -1651,7 +1742,7 @@
     "name": "JST 농생명바이오학부 푸드테크 융합",
     "programGroup": "JST공유대학",
     "requiredCredits": 30,
-    "leadProfessor": null,
+    "leadProfessor": "식품생명공학과 조인희",
     "courses": [
       {
         "semester": "1",
@@ -1739,7 +1830,7 @@
     "name": "JST 농생명바이오학부 푸드테크 실무",
     "programGroup": "JST공유대학",
     "requiredCredits": 15,
-    "leadProfessor": null,
+    "leadProfessor": "식품생명공학과 조인희",
     "courses": [
       {
         "semester": "2",
@@ -1787,42 +1878,42 @@
     "name": "K-치유힐링 공동체혁신 가족교육 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
     "courses": []
   },
   {
     "name": "K-치유힐링 공동체혁신 조직산업 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
     "courses": []
   },
   {
     "name": "K-치유힐링 공동체혁신 도시지역 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
     "courses": []
   },
   {
     "name": "K-치유힐링 공동체혁신 문화세대 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
     "courses": []
   },
   {
     "name": "K-치유힐링 공동체혁신 융합 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "복지ㆍ보건학부 김흥주",
     "courses": []
   },
   {
     "name": "자바풀스택(Java full stack)",
     "programGroup": "SW벤처인재양성사업단",
     "requiredCredits": null,
-    "leadProfessor": null,
+    "leadProfessor": "SW벤처인재양성사업단 복경수",
     "courses": [
       {
         "semester": null,
