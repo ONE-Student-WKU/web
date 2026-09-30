@@ -5,6 +5,15 @@
 #   seed:course-offerings / seed:curriculum / seed:regulations -- --force / seed:reference-data
 # (seed:reference-data는 seed.js가 export하는 seedDepartments/seedCurriculumRequirements만
 # 호출하는 wrapper — server/scripts/seedReferenceData.js 참고, 가짜 계정 함수는 export 안 됨)
+#
+# ⚠️ 미해결: server/scripts/seedCurriculum2025Departments.js(학과별 교육과정)와
+# server/scripts/seedLinkedMajorsAndMicroDegrees.js(연계·복합전공/마이크로디그리)는 위
+# Railway Start Command 목록에 없다 — npm script로도 등록 안 돼 있어(package.json에
+# seed:curriculum-2025/seed:linked-majors류 항목 자체가 없음) 이 워크플로우가 트리거돼도
+# 실행되지 않는다. 즉 지금은 이 두 스크립트가 만드는 데이터(학과별 교육과정 전체,
+# 연계·복합전공, 마이크로디그리)가 로컬에서만 시딩됐고 운영 DB엔 자동으로 안 들어감 —
+# Railway 대시보드에서 Start Command에 두 스크립트를 직접 추가하거나, 이 두 스크립트를
+# 실행하는 npm script를 만들어 위 4개 목록에 편입시켜야 함.
 name: DB Reseed (curriculum / regulations)
 
 on:
@@ -14,6 +23,8 @@ on:
       - 'db/regulations/**'
       - 'db/curriculum/**'
       - 'db/seed/curriculum_requirements.json'
+      - 'db/seed/linked_majors.json'
+      - 'db/seed/micro_degrees.json'
   # 검증 단계 임시 트리거 — 이 파일이 존재하는 어떤 브랜치에서든 Actions 탭에서 수동 실행 가능.
   # 검증이 끝난 뒤에도 지우지 않고 남겨둬도 안전하다(아래와 동일한 db-reseed 승인 게이트를 그대로 거침).
   workflow_dispatch:
