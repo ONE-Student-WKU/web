@@ -4550,6 +4550,25 @@
     "category": "교직기본이수",
     "requiredCredits": 0,
     "minAdmissionYear": null,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "역사교육론",
+      "역사학개론",
+      "한국사회경제사",
+      "한국고대사",
+      "동아시아중세사",
+      "서양근대사",
+      "한국현대사"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": 7,
@@ -11148,6 +11167,5877 @@
       "네일미용2",
       "화장품·임상평가학",
       "화장품제조실습"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공필수",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 18학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(18)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "역사문화학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "문예창작학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "회계세무학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공필수",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 24학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공선택",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(24)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "원예산업학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "산림조경학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "식품생명공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "생명환경학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "교육학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공선택",
+    "requiredCredits": 54,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "전공",
+    "requiredCredits": 82,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 82학점 (2024학번, 2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 32학점 (2024학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점 (총 140 − 전공 82 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "미술과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "미술과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미술과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "미술과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "금속·주얼리디자인학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "시각정보디자인학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "전공선택",
+    "requiredCredits": 47,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "실내·산업디자인학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "패션디자인산업학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "행정·언론학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2020,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "복지·보건학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가족아동복지학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰행정학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2024학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공선택",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 66학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "일반선택",
+    "requiredCredits": 25,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 25학점 (총 130 − 전공 66 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전기공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "철도시스템공학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "전자공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "게임콘텐츠학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "기계공학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "도시공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "화학공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 121,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 160 − 교양 39 = 전공 121학점 (2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 39 + 전공 121)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 66,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 66,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 75학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공선택",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 75학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 136 − 전공 75 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건설환경공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 이수 (2024학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 충족 (2024학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "일반선택",
+    "requiredCredits": 22,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 22학점 (총 130 − 전공 69 − 교양 39)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2024 총괄표·해설 16쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "전공",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 9학점 (2024학번, 2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 34학점 (2024학번, 총괄표 교양 39 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 0 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 0 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 0 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "전공",
+    "requiredCredits": 105,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 130 − 교양 25 = 전공 105학점 (2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 130 = 교양 25 + 전공 105)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "전공",
+    "requiredCredits": 117,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 140 − 교양 23 = 전공 117학점 (2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 18학점 (2024학번, 총괄표 교양 23 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 140 = 교양 23 + 전공 117)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "전공",
+    "requiredCredits": 107,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 130 − 교양 23 = 전공 107학점 (2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양선택",
+    "requiredCredits": 18,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 18학점 (2024학번, 총괄표 교양 23 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 130 = 교양 23 + 전공 107)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "전공",
+    "requiredCredits": 207,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공기초+전공필수+전공선택 207학점 (6년제, 해설 책자 16쪽 전공이수기준표)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 232 = 교양 25 + 전공 207)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "전공",
+    "requiredCredits": 135,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 160 − 교양 25 = 전공 135학점 (2024_교육과정.pdf 총괄표(책자 29~31쪽, PDF 뷰어 31~33쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2024학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기초·교양·소양 영역 선택 20학점 (2024학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 25 + 전공 135)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2024,
+    "maxAdmissionYear": 2024,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국어국문학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 9,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "국어교육론",
+      "국어학개론",
+      "국어문법론",
+      "국어사",
+      "국문학개론",
+      "국문학사",
+      "문학교육론",
+      "시가교육론",
+      "의사소통교육론"
+    ]
+  },
+  {
+    "departmentName": "영어영문학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "영어학개론",
+      "영문학개론",
+      "영어문법",
+      "실용영어",
+      "영어작문",
+      "영어음성음운론",
+      "영미문화"
+    ]
+  },
+  {
+    "departmentName": "중국학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 11,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "중국어학개론",
+      "중국문학개론",
+      "중국어문법",
+      "중국어회화1",
+      "중국어회화2",
+      "중국어작문1",
+      "중국어작문2",
+      "중국어강독1",
+      "중국어강독2",
+      "한문강독",
+      "중국어권문화"
+    ]
+  },
+  {
+    "departmentName": "미술과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 11,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "현대미술론",
+      "소묘",
+      "한국화1",
+      "한국화2",
+      "조소1",
+      "조소2",
+      "판화",
+      "표현기법",
+      "한국미술사",
+      "미술사1",
+      "미술사2"
     ]
   }
 ]
