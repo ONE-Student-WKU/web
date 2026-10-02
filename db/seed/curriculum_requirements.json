@@ -4135,14 +4135,14 @@
   {
     "departmentName": "약학과",
     "category": "전공",
-    "requiredCredits": 177,
+    "requiredCredits": 207,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 177학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 56학점은 제외)",
+    "description": "전공기초+전공필수+전공선택 207학점 (6년제, 2025_교육과정.pdf 20쪽 전공이수기준표)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(177학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 233학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "졸업총계 232 - 교양 25 = 207로도 일치. 약학과(2+4년제) 트랙은 별도 기준(160)이지만 요건 테이블이 학과 단위라 6년제 값만 반영"
   },
   {
     "departmentName": "약학과",
@@ -4172,12 +4172,12 @@
   {
     "departmentName": "약학과",
     "category": "일반선택",
-    "requiredCredits": 30,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 30학점 (총 232 - 전공177 - 교양25)",
+    "description": "6년제는 졸업총계 232 = 교양25 + 전공207이라 별도 일반선택 요건 없음",
     "requiredCourses": []
   },
   {
@@ -4375,18 +4375,6 @@
     "requiredCourses": [
       "졸업(시험·작품)논문"
     ]
-  },
-  {
-    "departmentName": "생명과학부",
-    "category": "전공",
-    "requiredCredits": 24,
-    "minAdmissionYear": 2025,
-    "maxAdmissionYear": 2025,
-    "enrollmentType": null,
-    "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 24학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 73학점은 제외)",
-    "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(24학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 97학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 총괄표에 이 학과의 교양(liberalArtsTotal) 값이 없어 교양/일반선택 행은 생성하지 않음(졸업총계 ?과 이 전공 요구학점 사이의 차액 출처 불명 - 학과 사무실 확인 필요, 현재는 전공 충족 여부만 진단 가능)."
   },
   {
     "departmentName": "생명과학부",
@@ -5260,26 +5248,27 @@
   {
     "departmentName": "농생명바이오계열",
     "category": "교양필수",
-    "requiredCredits": 5,
+    "requiredCredits": 9,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2025학번, 광역계열은 전공탐색과진로 4학점이 교양필수 - 2025_교육과정.pdf 총괄표·교양 이수기준표)",
     "requiredCourses": [
       "건학이념",
-      "대학생활"
+      "대학생활",
+      "전공탐색과진로"
     ]
   },
   {
     "departmentName": "농생명바이오계열",
     "category": "교양선택",
-    "requiredCredits": 32,
+    "requiredCredits": 28,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2025학번 (총 교양 37 - 교양필수 9)",
     "requiredCourses": []
   },
   {
@@ -5369,26 +5358,27 @@
   {
     "departmentName": "디자인융합계열",
     "category": "교양필수",
-    "requiredCredits": 5,
+    "requiredCredits": 9,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2025학번, 광역계열은 전공탐색과진로 4학점이 교양필수 - 2025_교육과정.pdf 총괄표·교양 이수기준표)",
     "requiredCourses": [
       "건학이념",
-      "대학생활"
+      "대학생활",
+      "전공탐색과진로"
     ]
   },
   {
     "departmentName": "디자인융합계열",
     "category": "교양선택",
-    "requiredCredits": 32,
+    "requiredCredits": 28,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2025학번 (총 교양 37 - 교양필수 9)",
     "requiredCourses": []
   },
   {
@@ -5478,26 +5468,27 @@
   {
     "departmentName": "창의문화융합계열",
     "category": "교양필수",
-    "requiredCredits": 5,
+    "requiredCredits": 9,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2025학번, 광역계열은 전공탐색과진로 4학점이 교양필수 - 2025_교육과정.pdf 총괄표·교양 이수기준표)",
     "requiredCourses": [
       "건학이념",
-      "대학생활"
+      "대학생활",
+      "전공탐색과진로"
     ]
   },
   {
     "departmentName": "창의문화융합계열",
     "category": "교양선택",
-    "requiredCredits": 32,
+    "requiredCredits": 28,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준",
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2025학번 (총 교양 37 - 교양필수 9)",
     "requiredCourses": []
   },
   {
@@ -5582,6 +5573,64 @@
     "category": "일반선택",
     "requiredCredits": 21,
     "description": "자유선택 21학점 (총 130 - 전공72 - 교양37, 총괄표 기준)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공필수",
+    "requiredCredits": 19,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 19학점 이상 (2025_교육과정.pdf 20쪽, 보건과학대학 생명과학부 기본전공19+선택전공 계 69)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "전공선택",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(19)과 합쳐 전공계 69학점 (2025학번 단독)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2025학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택 = 32, 2025학번 단독 (2025_학과별_이수학점_총괄표.json liberalArtsTotal=37 기준, CSE와 동일 산식)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "생명과학부",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2025,
+    "maxAdmissionYear": 2025,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 = 총 130(보건과학대학) - 전공69 - 교양37",
     "requiredCourses": []
   }
 ]
