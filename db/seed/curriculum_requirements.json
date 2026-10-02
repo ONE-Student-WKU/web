@@ -4550,7 +4550,7 @@
     "category": "교직기본이수",
     "requiredCredits": 0,
     "minAdmissionYear": null,
-    "maxAdmissionYear": null,
+    "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": 7,
     "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
@@ -4558,6 +4558,25 @@
       "역사교육론",
       "역사학개론",
       "한국대외교류사",
+      "한국고대사",
+      "동아시아중세사",
+      "서양근대사",
+      "한국현대사"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 7,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "역사교육론",
+      "역사학개론",
+      "한국사회경제사",
       "한국고대사",
       "동아시아중세사",
       "서양근대사",
@@ -4748,7 +4767,7 @@
     "category": "교직기본이수",
     "requiredCredits": 0,
     "minAdmissionYear": null,
-    "maxAdmissionYear": null,
+    "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": 8,
     "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
@@ -4761,6 +4780,26 @@
       "유아놀이지도",
       "유아관찰및실습",
       "부모교육"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 8,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "유아교육론",
+      "유아교육과정",
+      "유아언어교육",
+      "유아사회교육",
+      "유아수학교육",
+      "유아놀이지도",
+      "유아과학교육",
+      "영유아보육프로그램개발과평가"
     ]
   },
   {
@@ -5632,5 +5671,5483 @@
     "minCourseCount": null,
     "description": "자유선택 24학점 = 총 130(보건과학대학) - 전공69 - 교양37",
     "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "원불교학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 0 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 0 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "전공",
+    "requiredCredits": 55,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "예과 2년: 졸업총계 80학점 − 교양 25학점 = 전공 55학점 (본과 진급 전 진행률 체크용)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의예과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 80 = 교양 25 + 전공 55)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "전공",
+    "requiredCredits": 160,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "본과 4년: 교양·일반선택 없이 졸업총계 160학점 전부 전공(교양은 예과에서 이수)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 25 + 전공 160)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한의학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "전공",
+    "requiredCredits": 207,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공기초+전공필수+전공선택 207학점 (6년제, 해설 책자 20쪽 전공이수기준표)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 232 = 교양 25 + 전공 207)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "전공",
+    "requiredCredits": 135,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 160 − 교양 25 = 전공 135학점 (2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 160 = 교양 25 + 전공 135)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한약학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "전공",
+    "requiredCredits": 105,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "졸업총계 130 − 교양 25 = 전공 105학점 (2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "일반선택",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "별도 일반선택 요건 없음(졸업총계 130 = 교양 25 + 전공 105)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "간호학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 72학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 72학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점 (총 130 − 전공 72 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "응급구조학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "의료상담학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 69학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "전공선택",
+    "requiredCredits": 33,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 69학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 69학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "전공선택",
+    "requiredCredits": 33,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 69학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국제농업학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 69학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "전공선택",
+    "requiredCredits": 33,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 69학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "작업치료학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "임상병리학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "물리치료학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "방사선학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치기공학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "치위생학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "전공",
+    "requiredCredits": 69,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 69학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "교양선택",
+    "requiredCredits": 20,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 20 (2026학번, 총괄표 교양 25 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "일반선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 36학점 (총 130 − 전공 69 − 교양 25)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "안경광학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "언어재활학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "식품영양학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "보건행정학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "전공",
+    "requiredCredits": 51,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "사회복지학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "동물보건학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "안전보건학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "일반선택",
+    "requiredCredits": 24,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 24학점 (총 130 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 110학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공선택",
+    "requiredCredits": 89,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 110학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "일반선택",
+    "requiredCredits": 13,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 13학점 (총 160 − 전공 110 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 66,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "전공",
+    "requiredCredits": 66,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "건축학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 72학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 72학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점 (총 130 − 전공 72 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "공학1계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 72학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "전공선택",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 72학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점 (총 130 − 전공 72 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "공학2계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "캡스톤디자인(기업연계프로젝트)·종합설계 중 1과목 필수 이수 (졸업인증제 \"나\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "캡스톤디자인",
+      "기업연계프로젝트",
+      "종합설계"
+    ]
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경영계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "전공",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "국방기술학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 66학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 66학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "전공",
+    "requiredCredits": 42,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "군사학과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공필수",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "광역계열 전공심화형: 기초+심화+응용 최소 36학점(2026학번, 전공 66학점 중 필수 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공선택",
+    "requiredCredits": 30,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공심화형 전공계 66학점 중 위 36학점 이외 나머지 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양필수",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2+전공탐색과진로4 (2026학번, 광역계열은 전공탐색과진로 4학점이 교양필수)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활",
+      "전공탐색과진로"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "교양선택",
+    "requiredCredits": 28,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초(영역별 고정 16)+교양선택(4개 영역 중 3개 영역 이상에서 12) = 28, 2026학번 (총 교양 37 − 교양필수 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "일반선택",
+    "requiredCredits": 27,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 27학점 (총 130 − 전공 66 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "전공",
+    "requiredCredits": 36,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "국어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "영어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "일어교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "한문교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "역사교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "전공",
+    "requiredCredits": 50,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "유아교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "전공",
+    "requiredCredits": 82,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 82학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "일반선택",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 21학점 (총 140 − 전공 82 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "가정교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "수학교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공필수",
+    "requiredCredits": 21,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 21학점 이상 이수 (2026학번, 전공계 69학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공선택",
+    "requiredCredits": 48,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(21)과 합쳐 전공계 69학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "일반선택",
+    "requiredCredits": 34,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 34학점 (총 140 − 전공 69 − 교양 37)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "전공",
+    "requiredCredits": 56,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "체육교육과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "전공",
+    "requiredCredits": 9,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "전공 9학점 (2026학번, 2026_교육과정.pdf 총괄표(책자 10~13쪽, PDF 뷰어 11~14쪽))",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "자율전공학부",
+    "category": "교양선택",
+    "requiredCredits": 32,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 32 (2026학번, 총괄표 교양 37 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2026학번, 전공계 60학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 60학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "교양선택",
+    "requiredCredits": 4,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 4 (2026학번, 총괄표 교양 9 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 75 − 전공 60 − 교양 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "외식조리과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2026학번, 전공계 60학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 60학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "교양선택",
+    "requiredCredits": 4,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 4 (2026학번, 총괄표 교양 9 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 75 − 전공 60 − 교양 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2026학번, 전공계 60학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 60학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "교양선택",
+    "requiredCredits": 4,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 4 (2026학번, 총괄표 교양 9 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 75 − 전공 60 − 교양 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "호텔관광과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2026학번, 전공계 60학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 60학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "교양선택",
+    "requiredCredits": 4,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 4 (2026학번, 총괄표 교양 9 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 75 − 전공 60 − 교양 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "전공필수",
+    "requiredCredits": 15,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "기본전공 15학점 이상 이수 (2026학번, 전공계 60학점 중 기본전공+선택전공은 하나의 풀)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "전공선택",
+    "requiredCredits": 45,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "선택전공 - 기본전공(15)과 합쳐 전공계 60학점 충족 (2026학번)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "교양필수",
+    "requiredCredits": 5,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "건학이념3+대학생활2 (2026학번, 전 학과 공통)",
+    "requiredCourses": [
+      "건학이념",
+      "대학생활"
+    ]
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "교양선택",
+    "requiredCredits": 4,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "교양기초+교양선택 = 4 (2026학번, 총괄표 교양 9 − 교양필수 5)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "일반선택",
+    "requiredCredits": 6,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": null,
+    "description": "자유선택 6학점 (총 75 − 전공 60 − 교양 9)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "TRANSFER_ADMISSION",
+    "minCourseCount": null,
+    "description": "편입생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽)",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "전공",
+    "requiredCredits": 38,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": "MAJOR_CHANGE",
+    "minCourseCount": null,
+    "description": "3·4학년 전과생 완화된 최소전공 인정학점 (학칙시행규칙 제6조, 2026 총괄표·해설 20쪽). 1·2학년 전과는 일반 재학생과 동일",
+    "requiredCourses": []
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "졸업논문",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": 2026,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "졸업(시험·작품)논문 합격 필수 (P/F, 4학년 2학기)",
+    "requiredCourses": [
+      "졸업(시험·작품)논문"
+    ]
+  },
+  {
+    "departmentName": "부사관과",
+    "category": "졸업인증제",
+    "requiredCredits": 0,
+    "minAdmissionYear": 2026,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 1,
+    "description": "전공현장실습(단기/장기)·캡스톤디자인·사회봉사 중 1과목 필수 이수 (졸업인증제 \"가\" 그룹, 2020학번부터)",
+    "requiredCourses": [
+      "전공현장실습",
+      "캡스톤디자인",
+      "사회봉사"
+    ]
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "category": "교직기본이수",
+    "requiredCredits": 0,
+    "minAdmissionYear": null,
+    "maxAdmissionYear": null,
+    "enrollmentType": null,
+    "minCourseCount": 13,
+    "description": "교직과정 이수자 표시과목 기본이수과목 전부 이수 필수 (교직 이수자만 해당)",
+    "requiredCourses": [
+      "미용학개론",
+      "헤어미용1",
+      "헤어미용2",
+      "인체생리해부와화장품학",
+      "메이크업1",
+      "메이크업2",
+      "피부미용1",
+      "피부미용2",
+      "공중보건위생학",
+      "네일미용1",
+      "네일미용2",
+      "화장품·임상평가학",
+      "화장품제조실습"
+    ]
   }
 ]

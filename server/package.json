@@ -12,6 +12,7 @@
     "seed:course-offerings": "node scripts/seedCourseOfferings.js",
     "seed:curriculum": "node scripts/seedCurriculum.js",
     "seed:curriculum-2025": "node scripts/seedCurriculum2025Departments.js",
+    "seed:curriculum-2026": "node scripts/seedCurriculum2026Departments.js",
     "seed:linked-majors": "node scripts/seedLinkedMajorsAndMicroDegrees.js",
     "seed:regulations": "node scripts/seedRegulations.js",
     "scrape:timetable": "node scripts/scrapeTimetable.js"
