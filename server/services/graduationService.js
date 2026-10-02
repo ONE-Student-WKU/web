@@ -47,8 +47,8 @@ function selectRequirementRows(rows, effectiveEnrollmentType) {
 // 교양 이수기준은 학년(major_change_grade)이 아니라 전과 "시점"으로 갈린다 — 이 시점 이전
 // 전과자는 본인 학번(admission_year)과 무관하게 고정 학점을 적용해야 한다(db/schema.sql
 // students.major_change_year/semester 컬럼 주석 참고, 웹정보서비스 실사례로 확인됨).
-// "이전"의 정확한 경계(해당 학기 당일 전과자 포함 여부)는 학사지원과 공식 확인 전이라,
-// 일단 문언 그대로 엄격하게 "그 학기 자체는 미포함"으로 해석해뒀다 — 확인되면 조정 필요.
+// "이전"의 경계는 2022-2학기 자체를 포함하지 않는 것으로 확정됐다(2022-2학기 전과자는
+// 컷오프 이후로 취급). 현재 구현은 전과 시점(year/semester)만으로 판정한다.
 const MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF = { year: 2022, semester: 2 };
 const MAJOR_CHANGE_FIXED_LIBERAL_ARTS_CREDITS = { 교양필수: 5, 교양선택: 24 };
 
