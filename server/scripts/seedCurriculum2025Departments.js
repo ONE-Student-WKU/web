@@ -93,7 +93,7 @@ async function seedOne(key, rows) {
         row.category,
         row.courseCode,
         row.courseName,
-        null,
+        row.courseNameEn || null,
         Number(row.credits) || null,
         null,
       ]
