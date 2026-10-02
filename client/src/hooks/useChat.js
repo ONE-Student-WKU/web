@@ -71,10 +71,11 @@ function useChat() {
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (error) {
         console.error('Failed to send message:', error);
-        setMessages((prev) => [
-          ...prev,
-          { sender: 'assistant', text: '오류가 발생했어요. 잠시 후 다시 시도해주세요.', timestamp: new Date().toLocaleTimeString() },
-        ]);
+        const text =
+          error.code === 'CHAT_DAILY_LIMIT_EXCEEDED'
+            ? `오늘 채팅 한도(${error.data?.limit ?? 20}회)를 모두 사용했어요. 내일 다시 이용해주세요.`
+            : '오류가 발생했어요. 잠시 후 다시 시도해주세요.';
+        setMessages((prev) => [...prev, { sender: 'assistant', text, timestamp: new Date().toLocaleTimeString() }]);
       } finally {
         setLoading(false);
       }

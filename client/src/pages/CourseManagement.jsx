@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  getMe,
   getMyCourses,
   getTimetable,
   getCourseSummary,
@@ -13,6 +12,7 @@ import {
   deleteMyCourse,
   deleteAllMyCourses,
   importCoursesFromPdf,
+  importCoursesFromText,
   confirmImportedCourses,
 } from '../api/chatApi.js';
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck, IconAlertTriangle } from '../components/icons.jsx';
@@ -60,11 +60,11 @@ function semesterKey(year, semester) {
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // 학기별 데이터(myCourses/timetable)는 학기 탭마다 값이 다르므로 학기 키별로 따로 캐시한다.
-// sessionStorage 복원은 profile/summary/semesters/status/retakeEligible(스칼라 값)에만
+// sessionStorage 복원은 summary/semesters/status/retakeEligible(스칼라 값)에만
 // 적용한다 — semesterData는 Map이라 그대로 직렬화가 안 되고, 학기별 세부 데이터까지는
 // 최초 화면(요약 카드들)만큼 "즉시 안 보이면 눈에 띄는" 정보가 아니라 스코프에서 뺐다.
+// profile은 App.jsx가 이미 들고 있는 user prop을 그대로 쓰므로 여기서 별도로 캐싱하지 않는다.
 const courseMgmtCache = {
-  profile: readCache('courseMgmt_profile'),
   summary: readCache('courseMgmt_summary'),
   semesters: readCache('courseMgmt_semesters'),
   status: readCache('courseMgmt_status'),
@@ -80,13 +80,11 @@ function setCourseMgmtCache(key, value) {
 // Home.jsx의 resetHomeCache와 동일한 이유 — 로그아웃/계정 삭제 시 App.jsx가 호출.
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetCourseMgmtCache() {
-  courseMgmtCache.profile = null;
   courseMgmtCache.summary = null;
   courseMgmtCache.semesters = null;
   courseMgmtCache.status = null;
   courseMgmtCache.retakeEligible = null;
   courseMgmtCache.semesterData.clear();
-  clearCache('courseMgmt_profile');
   clearCache('courseMgmt_summary');
   clearCache('courseMgmt_semesters');
   clearCache('courseMgmt_status');
@@ -143,7 +141,6 @@ function formatSchedule(schedule) {
  */
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const [current, setCurrent] = useState(getCurrentYearSemester);
-  const [profile, setProfile] = useState(courseMgmtCache.profile);
   const [summary, setSummary] = useState(courseMgmtCache.summary);
   const [status, setStatus] = useState(courseMgmtCache.status);
   const [semesters, setSemesters] = useState(courseMgmtCache.semesters || []);
@@ -155,7 +152,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const initialSemesterCache = courseMgmtCache.semesterData.get(semesterKey(current.year, current.semester));
   const [myCourses, setMyCourses] = useState(initialSemesterCache?.myCourses || []);
   const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
-  const [pageLoading, setPageLoading] = useState(courseMgmtCache.profile === null && courseMgmtCache.summary === null);
+  const [pageLoading, setPageLoading] = useState(courseMgmtCache.summary === null);
   const [semesterLoading, setSemesterLoading] = useState(!initialSemesterCache);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -175,6 +172,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [pdfCreditsCheck, setPdfCreditsCheck] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfSubmitting, setPdfSubmitting] = useState(false);
+  // 아이폰에서 "전체성적조회"를 PDF로 저장하면 한글이 텍스트로 저장되지 않는 기기가 있어
+  // (실사용 확인, 2026-09) PDF 없이 화면 텍스트를 직접 복사해 붙여넣는 대체 경로를 제공한다.
+  const [pdfPasteMode, setPdfPasteMode] = useState(false);
+  const [pdfPasteText, setPdfPasteText] = useState('');
+  // 붙여넣기 결과가 Claude 없이 규칙 기반으로 처리됐는지(parseMethod: 'rule') 아니면 AI
+  // 폴백을 탔는지('ai') — PDF 업로드 경로에서는 항상 null(그 경로는 늘 AI만 쓰므로 굳이
+  // 구분해 보여줄 필요가 없음).
+  const [pdfParseMethod, setPdfParseMethod] = useState(null);
   // PDF 가져오기 탭에 들어올 때마다 안내 박스를 강조 — 이 탭 자체를 자주 누를 일이 없어서
   // (보통 학기 초에 한 번 몰아서 쓰고 끝) 한 번 보여준 뒤 숨기기보다는 매번 보여주는 쪽이 낫다.
   const [pdfHelpHighlightArmed, setPdfHelpHighlightArmed] = useState(false);
@@ -228,12 +233,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }, [searchResults]);
 
   useEffect(() => {
-    getMe()
-      .then((data) => {
-        setProfile(data);
-        setCourseMgmtCache('profile', data);
-      })
-      .catch(() => {});
     getCourseSummary()
       .then((data) => {
         setSummary(data);
@@ -251,7 +250,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setRetakeEligible(data);
         setCourseMgmtCache('retakeEligible', data);
       })
-      .catch(() => {});
+      .catch(() => { });
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
@@ -311,8 +310,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const tabs = useMemo(() => {
     const actualCurrentTerm = getCurrentYearSemester();
-    const generated = profile?.admissionYear
-      ? generateSemesterRange(profile.admissionYear, actualCurrentTerm.year, actualCurrentTerm.semester)
+    const generated = user?.admissionYear
+      ? generateSemesterRange(user.admissionYear, actualCurrentTerm.year, actualCurrentTerm.semester)
       : [];
     // semesters(서버, 실제 수강 기록 있는 학기라 courseCount 포함)를 먼저 두어 겹치는 키에서
     // 우선하게 하고, generated(입학년도~현재 전체 범위, 휴학 학기 포함 빈 탭)로 나머지를 채운다.
@@ -326,7 +325,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       deduped.push(t);
     }
     return deduped.sort((a, b) => a.year - b.year || a.semester - b.semester);
-  }, [semesters, current, profile]);
+  }, [semesters, current, user]);
 
   // 학기 탭을 전부 가로 스크롤 한 줄로 늘어놓으면(입학년도~현재라 8개+) 피로도가 높아서,
   // 연도 탭(적은 개수, 스크롤 없이 다 보임) + 그 안에서 1/2학기 토글 + 인접 학기 이동
@@ -338,10 +337,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 현재 학번보다 이전 학기에 등록된 과목이 있으면(온보딩에서 학번을 바꾼 경우 등) 배너로
   // 알려서, 필요 없는 과목은 학생이 직접 판단해 지울 수 있게 한다(2026-08-17 결정).
   const outOfRangeYears = useMemo(() => {
-    if (!profile?.admissionYear) return [];
-    const yearSet = new Set(semesters.filter((s) => s.year < profile.admissionYear).map((s) => s.year));
+    if (!user?.admissionYear) return [];
+    const yearSet = new Set(semesters.filter((s) => s.year < user.admissionYear).map((s) => s.year));
     return [...yearSet].sort((a, b) => a - b);
-  }, [semesters, profile]);
+  }, [semesters, user]);
 
   const semestersInCurrentYear = useMemo(
     () => tabs.filter((t) => t.year === current.year).sort((a, b) => a.semester - b.semester),
@@ -491,6 +490,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setPdfDocType(null);
     setPdfWarnings([]);
     setPdfCreditsCheck(null);
+    setPdfPasteMode(false);
+    setPdfPasteText('');
+    setPdfParseMethod(null);
   };
 
   // 과목을 하나 추가할 때마다 폼 전체가 닫혀서, 여러 과목을 연달아 등록하려면 매번 "과목 추가"
@@ -577,6 +579,25 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     setManualSchedule((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   const removeScheduleRow = (index) => setManualSchedule((prev) => prev.filter((_, i) => i !== index));
 
+  const describePdfImportError = (err) => {
+    if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') {
+      return `이번 학기 PDF 가져오기 한도(${err.data?.limit ?? 5}회)를 모두 사용했어요. 다음 학기에 다시 이용해주세요.`;
+    }
+    return 'PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.';
+  };
+
+  // 텍스트 붙여넣기 경로 전용 — 한도는 PDF 경로와 공유하므로 그 문구는 그대로 쓰고, 나머지는
+  // PDF 파일 안내 대신 붙여넣은 내용 기준으로 안내한다.
+  const describePasteImportError = (err) => {
+    if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') return describePdfImportError(err);
+    if (err.code === 'REQUIRED_TEXT') return '붙여넣은 내용이 없어요. "전체성적조회" 화면의 표를 복사해 붙여넣어주세요.';
+    if (err.code === 'TEXT_TOO_LONG') return '붙여넣은 내용이 너무 길어요. "전체성적조회" 화면의 성적 표 부분만 복사해 붙여넣어주세요.';
+    if (err.code === 'TEXT_NOT_FULL_TRANSCRIPT') {
+      return '"2024 년 1 학기" 같은 학기 제목을 찾지 못했어요. 원광대 인트라넷 "전체성적조회" 화면에서 학기 제목까지 포함해 복사했는지 확인해주세요.';
+    }
+    return '붙여넣은 내용을 분석하지 못했어요. 원광대 인트라넷 "전체성적조회" 화면의 표를 복사한 내용이 맞는지 확인해주세요.';
+  };
+
   const handlePdfFileSelect = async (e) => {
     const file = e.target.files[0];
     e.target.value = ''; // 같은 파일을 다시 선택해도 onChange가 또 뜨도록.
@@ -587,6 +608,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     try {
       const result = await importCoursesFromPdf(file);
       setPdfDocType(result.docType);
+      setPdfParseMethod(null); // PDF 경로는 항상 AI만 쓰므로 이전 붙여넣기 결과의 표시를 지운다.
       setPdfRows(
         result.rows.map((r, i) => ({
           tempId: i,
@@ -606,12 +628,48 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       );
       setPdfWarnings(result.warnings);
       setPdfCreditsCheck(
-        result.docType === 'full_transcript'
-          ? null
-          : { declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits }
+        result.docType === 'course_list'
+          ? { declared: result.declaredTotalCredits, extracted: result.extractedTotalCredits }
+          : null
       );
-    } catch {
-      setError('PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.');
+    } catch (err) {
+      setError(describePdfImportError(err));
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  // PDF 대신 "전체성적조회" 화면 텍스트를 직접 복사해 붙여넣는 경로 — 아이폰에서 그 문서를
+  // PDF로 저장하면 한글이 인식되지 않는 기기가 있어(실사용 확인, 2026-09) 대체 경로로
+  // 제공한다. 결과 형태는 PDF 경로와 동일해 아래 검토 화면을 그대로 재사용한다.
+  const handlePdfPasteSubmit = async () => {
+    if (!pdfPasteText.trim()) return;
+    setError(null);
+    setPdfLoading(true);
+    try {
+      const result = await importCoursesFromText(pdfPasteText);
+      setPdfDocType(result.docType);
+      setPdfRows(
+        result.rows.map((r, i) => ({
+          tempId: i,
+          include: true,
+          name: r.name,
+          credits: r.credits,
+          category: r.category || '',
+          year: r.year,
+          semester: r.semester,
+          isFail: r.isFail,
+          letterGrade: r.letterGrade || '',
+          wasOriginallyF: r.letterGrade === 'F',
+        }))
+      );
+      setPdfWarnings(result.warnings);
+      setPdfCreditsCheck(null);
+      setPdfParseMethod(result.parseMethod);
+      setPdfPasteMode(false);
+      setPdfPasteText('');
+    } catch (err) {
+      setError(describePasteImportError(err));
     } finally {
       setPdfLoading(false);
     }
@@ -931,14 +989,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </button>
                 <div className="courses-pdf-hint-wrap">
                   {showAddModeHint && (
-                    <span className="courses-pdf-hint-bubble">과목을 한 번에 채우려면?</span>
+                    <span className="courses-pdf-hint-bubble">PDF나 텍스트를 붙여넣을 수 있어요!</span>
                   )}
                   <button
                     className={addMode === 'pdf' ? 'active' : ''}
                     onClick={() => setAddMode('pdf')}
                     type="button"
                   >
-                    PDF 가져오기
+                    한 번에 가져오기
                   </button>
                 </div>
               </div>
@@ -957,6 +1015,49 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
                 {!pdfRows && (
                   <>
+                    {/* PDF 업로드와 텍스트 붙여넣기를 같은 무게의 선택지로 보여준다 — 붙여넣기가
+                        "PDF가 고장 났을 때만 쓰는 비상용"이 아니라, PDF 준비가 귀찮은 사람도 처음부터
+                        바로 고를 수 있는 방법이어야 해서다. 다만 붙여넣기는 전체성적조회 형식만
+                        지원하므로(parseFullTranscriptText 전용) 그 제약을 바로 옆에 명시한다. */}
+                    <div className="courses-import-method-toggle" role="tablist" aria-label="가져오기 방법">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={!pdfPasteMode}
+                        className={!pdfPasteMode ? 'active' : ''}
+                        onClick={() => setPdfPasteMode(false)}
+                      >
+                        PDF 업로드
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={pdfPasteMode}
+                        className={pdfPasteMode ? 'active' : ''}
+                        onClick={() => setPdfPasteMode(true)}
+                      >
+                        텍스트 붙여넣기
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {!pdfRows && !pdfPasteMode && (
+                  <>
+                    {/* 실패 조건을 기기·브라우저 단위로 정확히 짚을 수 없다(iOS Safari는 한글 누락,
+                        iOS Chrome은 스크롤 위치까지만 잘려 저장되는 등 실패 양상도 서로 다름, 실사용
+                        확인) — 특정 기기를 지목하는 대신 "전체성적조회는 PDF보다 붙여넣기가 더 안정적"
+                        이라는, 어떤 환경에서도 참인 문장으로 안내해 잘못된 안심을 주지 않는다. */}
+                    <div className="courses-pdf-warnings">
+                      <p className="courses-pdf-warning-item">
+                        <IconAlertTriangle size={14} />
+                        <span>
+                          전체성적조회는 PDF보다 위의 <strong>텍스트 붙여넣기</strong>가 더 안정적이에요. 기기나
+                          브라우저에 따라 PDF에 한글이 깨지거나 일부만 저장되는 경우가 있어요.
+                        </span>
+                      </p>
+                    </div>
+
                     <details
                       className={`courses-pdf-help${pdfHelpHighlightArmed ? ' settings-highlight' : ''}`}
                     >
@@ -1025,13 +1126,71 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   </>
                 )}
 
+                {!pdfRows && pdfPasteMode && (
+                  <div className="courses-pdf-paste">
+                    <p className="courses-manual-hint">
+                      <strong>전체성적조회</strong> 화면의 표를 길게 눌러 선택한 뒤 끝까지 드래그해서 복사하고,
+                      아래에 붙여넣어 주세요. 이수과목확인리스트는 PDF 업로드를 이용해주세요.
+                    </p>
+                    <textarea
+                      className="courses-pdf-paste-textarea"
+                      value={pdfPasteText}
+                      onChange={(e) => setPdfPasteText(e.target.value)}
+                      placeholder="여기를 길게 눌러 붙여넣기"
+                      rows={8}
+                      disabled={pdfLoading}
+                    />
+                    <button
+                      type="button"
+                      className="auth-submit-btn"
+                      onClick={handlePdfPasteSubmit}
+                      disabled={pdfLoading || !pdfPasteText.trim()}
+                    >
+                      {pdfLoading ? '분석 중...' : '붙여넣은 내용 분석하기'}
+                    </button>
+                  </div>
+                )}
+
                 {pdfRows && (
                   <>
-                    <p className="courses-manual-hint">
-                      {pdfDocType === 'full_transcript'
-                        ? '전체성적조회 문서예요 — 등급까지 인식했어요. 아래 목록에서 확인하고 등록해주세요.'
-                        : '이수과목확인리스트 문서예요 — 이 문서엔 등급이 없어서 등록 후 과목 목록에서 직접 입력해주세요.'}
-                    </p>
+                    {/* docType === null은 서버가 "PDF에서 한글을 전혀 못 읽었다"고 판단한 경우로
+                        pdfWarnings에 이미 원인 설명이 담겨 있다(아래 courses-pdf-warnings) — 여기서는
+                        그 원인을 읽은 사용자가 바로 다음 행동(붙여넣기로 전환)을 할 수 있게 버튼을
+                        하나 더 준다. PDF가 정상 처리된 경우(docType이 채워진 경우)엔 안 보인다. */}
+                    {pdfDocType === null && (
+                      <button
+                        type="button"
+                        className="auth-submit-btn"
+                        onClick={() => {
+                          setPdfRows(null);
+                          setPdfDocType(null);
+                          setPdfWarnings([]);
+                          setPdfCreditsCheck(null);
+                          setPdfPasteMode(true);
+                        }}
+                      >
+                        텍스트 붙여넣기로 다시 시도하기
+                      </button>
+                    )}
+
+                    {pdfDocType && (
+                      <p className="courses-manual-hint">
+                        {pdfDocType === 'full_transcript'
+                          ? '전체성적조회 문서예요 — 등급까지 인식했어요. 아래 목록에서 확인하고 등록해주세요.'
+                          : '이수과목확인리스트 문서예요 — 이 문서엔 등급이 없어서 등록 후 과목 목록에서 직접 입력해주세요.'}
+                      </p>
+                    )}
+
+                    {/* 붙여넣기 결과가 Claude 호출 없이(규칙 기반) 처리됐는지, 아니면 형식이
+                        예상과 달라 AI로 넘어갔는지 사용자가 확인할 수 있게 — 요청으로 추가.
+                        PDF 업로드 경로는 pdfParseMethod가 항상 null이라 여기 안 뜬다. */}
+                    {pdfParseMethod && (
+                      <p className="courses-manual-hint">
+                        {pdfParseMethod === 'rule'
+                          ? '규칙 기반으로 바로 처리했어요 — 이 시도는 AI 가져오기 한도(5회)에 포함되지 않아요.'
+                          : '형식이 예상과 달라 AI로 처리했어요 — 이 시도는 AI 가져오기 한도(5회)에 포함돼요.'}
+                      </p>
+                    )}
 
                     {pdfDocType === 'full_transcript' && pdfRows.some((r) => r.wasOriginallyF) && (
                       <div className="courses-pdf-pf-section">
@@ -1182,9 +1341,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                               <div className="courses-pdf-meta-field courses-pdf-meta-grade">
                                 <span className="courses-pdf-meta-label">등급</span>
                                 <span
-                                  className={`courses-pdf-grade-tag ${r.letterGrade === 'F' ? 'is-f' : ''} ${
-                                    r.letterGrade === 'NP' ? 'is-np' : ''
-                                  }`}
+                                  className={`courses-pdf-grade-tag ${r.letterGrade === 'F' ? 'is-f' : ''} ${r.letterGrade === 'NP' ? 'is-np' : ''
+                                    }`}
                                 >
                                   {r.letterGrade || '-'}
                                 </span>
