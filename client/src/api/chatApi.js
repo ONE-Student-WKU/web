@@ -108,6 +108,9 @@ export const importCoursesFromPdf = async (file) => {
   return body.data;
 };
 
+export const importCoursesFromText = (text) =>
+  apiRequest('/my-courses/import/text', { method: 'POST', body: JSON.stringify({ text }) });
+
 export const confirmImportedCourses = (rows) =>
   apiRequest('/my-courses/import/confirm', { method: 'POST', body: JSON.stringify({ rows }) });
 
