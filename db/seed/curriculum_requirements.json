@@ -4196,14 +4196,14 @@
   {
     "departmentName": "간호학과",
     "category": "전공",
-    "requiredCredits": 94,
+    "requiredCredits": 105,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 94학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 31학점은 제외)",
+    "description": "졸업총계 130 - 교양 25 = 전공 105학점 (2025_교육과정.pdf 총괄표: 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 기본전공·최소전공·주전공·자유선택 4열에 걸친 병합 셀)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(94학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 125학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표 전공 칸에 숫자가 없어 졸업총계에서 교양을 뺀 값으로 계산. 근거: 총괄표 숫자 행 39개 모두 교양+주전공+자유선택=졸업총계 성립, 치의예과·치의학과 페이지 주석 \"잔여학점은 전공선택에서 이수한다\", 병합 셀 구조(자유선택 열 없음). 이전에는 교육과정의 전공필수+전공기초 학점 합계로 근사했음"
   },
   {
     "departmentName": "간호학과",
@@ -4233,12 +4233,12 @@
   {
     "departmentName": "간호학과",
     "category": "일반선택",
-    "requiredCredits": 11,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 11학점 (총 130 - 전공94 - 교양25)",
+    "description": "자유선택 열이 \"교육과정에 따라 이수\" 병합 셀에 포함되어 별도 일반선택 요건 없음(졸업총계 = 교양 + 전공)",
     "requiredCourses": []
   },
   {
@@ -4257,14 +4257,14 @@
   {
     "departmentName": "작업치료학과",
     "category": "전공",
-    "requiredCredits": 89,
+    "requiredCredits": 107,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 89학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 29학점은 제외)",
+    "description": "졸업총계 130 - 교양 23 = 전공 107학점 (2025_교육과정.pdf 총괄표: 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 기본전공·최소전공·주전공·자유선택 4열에 걸친 병합 셀)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(89학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 118학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표 전공 칸에 숫자가 없어 졸업총계에서 교양을 뺀 값으로 계산. 근거: 총괄표 숫자 행 39개 모두 교양+주전공+자유선택=졸업총계 성립, 치의예과·치의학과 페이지 주석 \"잔여학점은 전공선택에서 이수한다\", 병합 셀 구조(자유선택 열 없음). 이전에는 교육과정의 전공필수+전공기초 학점 합계로 근사했음"
   },
   {
     "departmentName": "작업치료학과",
@@ -4294,12 +4294,12 @@
   {
     "departmentName": "작업치료학과",
     "category": "일반선택",
-    "requiredCredits": 18,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 18학점 (총 130 - 전공89 - 교양23)",
+    "description": "자유선택 열이 \"교육과정에 따라 이수\" 병합 셀에 포함되어 별도 일반선택 요건 없음(졸업총계 = 교양 + 전공)",
     "requiredCourses": []
   },
   {
@@ -4318,14 +4318,14 @@
   {
     "departmentName": "응급구조학과",
     "category": "전공",
-    "requiredCredits": 76,
+    "requiredCredits": 107,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 76학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 31학점은 제외)",
+    "description": "졸업총계 130 - 교양 23 = 전공 107학점 (2025_교육과정.pdf 총괄표: 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 기본전공·최소전공·주전공·자유선택 4열에 걸친 병합 셀)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(76학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 107학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표 전공 칸에 숫자가 없어 졸업총계에서 교양을 뺀 값으로 계산. 근거: 총괄표 숫자 행 39개 모두 교양+주전공+자유선택=졸업총계 성립, 치의예과·치의학과 페이지 주석 \"잔여학점은 전공선택에서 이수한다\", 병합 셀 구조(자유선택 열 없음). 이전에는 교육과정의 전공필수+전공기초 학점 합계로 근사했음"
   },
   {
     "departmentName": "응급구조학과",
@@ -4355,12 +4355,12 @@
   {
     "departmentName": "응급구조학과",
     "category": "일반선택",
-    "requiredCredits": 31,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 31학점 (총 130 - 전공76 - 교양23)",
+    "description": "자유선택 열이 \"교육과정에 따라 이수\" 병합 셀에 포함되어 별도 일반선택 요건 없음(졸업총계 = 교양 + 전공)",
     "requiredCourses": []
   },
   {
@@ -4849,14 +4849,14 @@
   {
     "departmentName": "한약학과",
     "category": "전공",
-    "requiredCredits": 109,
+    "requiredCredits": 135,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 109학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 39학점은 제외)",
+    "description": "졸업총계 160 - 교양 25 = 전공 135학점 (2025_교육과정.pdf 총괄표: 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 기본전공·최소전공·주전공·자유선택 4열에 걸친 병합 셀)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(109학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 148학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표 전공 칸에 숫자가 없어 졸업총계에서 교양을 뺀 값으로 계산. 근거: 총괄표 숫자 행 39개 모두 교양+주전공+자유선택=졸업총계 성립, 치의예과·치의학과 페이지 주석 \"잔여학점은 전공선택에서 이수한다\", 병합 셀 구조(자유선택 열 없음). 이전에는 교육과정의 전공필수+전공기초 학점 합계로 근사했음"
   },
   {
     "departmentName": "한약학과",
@@ -4886,12 +4886,12 @@
   {
     "departmentName": "한약학과",
     "category": "일반선택",
-    "requiredCredits": 26,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 26학점 (총 160 - 전공109 - 교양25)",
+    "description": "자유선택 열이 \"교육과정에 따라 이수\" 병합 셀에 포함되어 별도 일반선택 요건 없음(졸업총계 = 교양 + 전공)",
     "requiredCourses": []
   },
   {
@@ -4986,14 +4986,14 @@
   {
     "departmentName": "건축학과",
     "category": "전공",
-    "requiredCredits": 114,
+    "requiredCredits": 123,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "전공필수+전공기초 카탈로그 합계 114학점(총괄표에 숫자모델 없어 카탈로그로 근사, 선택과목 12학점은 제외)",
+    "description": "졸업총계 160 - 교양 37 = 전공 123학점 (2025_교육과정.pdf 총괄표: 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 기본전공·최소전공·주전공·자유선택 4열에 걸친 병합 셀)",
     "requiredCourses": [],
-    "note": "총괄표 \"교육과정 전공이수학점에 따라 이수\" 항목이라 basicMajor/majorTotal이 없어 curriculum_courses 카탈로그의 전공필수+전공기초 합계(114학점)를 최소 기준으로 근사. 카탈로그엔 전공선택 과목도 더 있으나(전체 126학점) 강제 이수까지 요구하면 과도하게 엄격해질 위험이 있어 필수분만 반영. 나머지는 일반선택으로 흡수."
+    "note": "총괄표 전공 칸에 숫자가 없어 졸업총계에서 교양을 뺀 값으로 계산. 근거: 총괄표 숫자 행 39개 모두 교양+주전공+자유선택=졸업총계 성립, 치의예과·치의학과 페이지 주석 \"잔여학점은 전공선택에서 이수한다\", 병합 셀 구조(자유선택 열 없음). 이전에는 교육과정의 전공필수+전공기초 학점 합계로 근사했음"
   },
   {
     "departmentName": "건축학과",
@@ -5023,12 +5023,12 @@
   {
     "departmentName": "건축학과",
     "category": "일반선택",
-    "requiredCredits": 9,
+    "requiredCredits": 0,
     "minAdmissionYear": 2025,
     "maxAdmissionYear": 2025,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "자유선택 9학점 (총 160 - 전공114 - 교양37)",
+    "description": "자유선택 열이 \"교육과정에 따라 이수\" 병합 셀에 포함되어 별도 일반선택 요건 없음(졸업총계 = 교양 + 전공)",
     "requiredCourses": []
   },
   {
