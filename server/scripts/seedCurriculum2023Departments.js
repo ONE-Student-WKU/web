@@ -3,21 +3,21 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const pool = require('../db');
 const { buildCourseKey } = require('../services/curriculumKeys');
-const rawData = require('../../db/curriculum/_source/2024_학과별_전공과목_원본.json');
+const rawData = require('../../db/curriculum/_source/2023_학과별_전공과목_원본.json');
 
 /**
- * server/scripts/seedCurriculum2024Departments.js
- * db/curriculum/_source/2024_학과별_전공과목_원본.json(2024학년도 교육과정 책자에서 학과·전공별
+ * server/scripts/seedCurriculum2023Departments.js
+ * db/curriculum/_source/2023_학과별_전공과목_원본.json(2023학년도 교육과정 책자에서 학과·전공별
  * "전공과목 이수" 표를 추출한 원본 데이터)을 curriculum_courses에 시딩한다.
  *
- * 2024학번 단독 스냅샷이라 min/max_admission_year를 2024로 한정한다(2025 스크립트와 동일한 방침).
+ * 2023학번 단독 스냅샷이라 min/max_admission_year를 2023으로 한정한다(2024·2025·2026 스크립트와 동일한 방침).
  * 컴퓨터·소프트웨어공학과는 db/curriculum/*.md를 읽는 seedCurriculum.js가 2017~2025학번을
  * 이미 관리하므로 이 JSON에 넣지 않는다.
  *
  * 키 규칙: "학과명" 또는 "계열(전공명)". 괄호 앞이 departments.name, 괄호 안이 tracks.name이다.
  * 예: "행정·언론학부(행정학전공)" → 학과 행정·언론학부, 트랙 행정학전공 / "약학과(2+4년제)" → 학과 약학과, 트랙 2+4년제.
  */
-const ADMISSION_YEAR = 2024;
+const ADMISSION_YEAR = 2023;
 
 function splitKey(key) {
   const m = key.match(/^(.+?)\((.+)\)$/);
@@ -88,7 +88,7 @@ async function run() {
     for (const [key, rows] of Object.entries(rawData)) {
       total += await seedOne(key, rows);
     }
-    console.log(`2024학년도 학과별 전공과목 시딩 완료: 총 ${total}개 행`);
+    console.log(`2023학년도 학과별 전공과목 시딩 완료: 총 ${total}개 행`);
   } catch (err) {
     console.error('시딩 실패:', err);
     process.exitCode = 1;

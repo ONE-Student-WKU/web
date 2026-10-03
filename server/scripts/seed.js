@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const pool = require('../db');
+const { buildRuleKey } = require('../services/curriculumKeys');
 
 const departments = require('../../db/seed/departments.json');
 const students = require('../../db/seed/students.json');
@@ -131,8 +132,8 @@ async function seedCurriculumRequirements() {
 
     const [result] = await pool.query(
       `INSERT INTO curriculum_requirements
-        (department_id, category, required_credits, description, min_admission_year, max_admission_year, enrollment_type, min_course_count)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (department_id, category, required_credits, description, min_admission_year, max_admission_year, enrollment_type, min_course_count, rule_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         departmentId,
         req.category,
@@ -142,6 +143,7 @@ async function seedCurriculumRequirements() {
         req.maxAdmissionYear ?? null,
         req.enrollmentType ?? null,
         req.minCourseCount ?? null,
+        buildRuleKey(req.departmentName, req.category, req.enrollmentType),
       ]
     );
 

@@ -7,6 +7,8 @@ const regulationService = require('../services/regulationService');
 const curriculumService = require('../services/curriculumService');
 const studentService = require('../services/studentService');
 const graduationService = require('../services/graduationService');
+const { resolveYearContext } = require('../services/yearContext');
+const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -98,52 +100,47 @@ router.post('/messages', async (req, res, next) => {
     const queryEmbedding = await embeddingClient.getEmbedding(normalizedSearchQuery, 'query');
     // 온보딩 전이거나 학과 정보가 없으면 getGraduationStatus가 ONBOARDING_REQUIRED로 던지는데,
     // 이건 챗봇 전체를 막을 이유가 아니라 "이수 현황을 아직 모른다"는 정보일 뿐이라 null로 흡수한다.
-    const [freshChunks, previousCitedChunks, student, graduationStatus] = await Promise.all([
-      regulationService.findRelevantChunks(queryEmbedding),
+    const [previousCitedChunks, student, graduationStatus, availableBookYears] = await Promise.all([
       regulationService.findChunksByIds(lastAssistantMessage?.citedChunkIds),
       studentService.findById(req.session.userId),
       graduationService.getGraduationStatus(req.session.userId).catch(() => null),
+      regulationService.getAvailableBookYears(),
     ]);
 
-    // 아래 세 조회는 서로 결과를 참조하지 않는 독립적인 읽기라 Promise.all로 동시에 실행한다.
-    //
-    // 교육과정(학년/학기별 과목 편성)은 RAG 유사도 검색이 아니라 curriculum_courses 조건
-    // 조회로 처리한다 — "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부
-    // 과목이 누락되는 문제가 반복 확인되어서다. 원문 메시지(재작성 전)로 감지해야
-    // 여러 턴에 걸친 검색어 재작성 과정에서 학년/학기가 뒤섞이는 문제를 피할 수 있다.
-    //
-    // 졸업인증제(기업연계프로젝트1/2 중 1과목 등)처럼 "N개 중 M개만 이수하면 충족"인 요건도
-    // curriculum_courses와 같은 이유로 구조화 조회한다 — 정규화된 검색어(normalizedSearchQuery)를
-    // 같이 넘겨서 "기연프" 같은 줄임말도 매칭되게 한다.
-    //
-    // "2022년에 들을 수 있었던 과목" 같은 특정 연도 개설과목 질문도 curriculum_courses(편성
-    // 계획)와 별개로 course_offerings(실제 개설 이력)를 구조화 조회해야 한다 — RAG 임베딩에는
-    // 애초에 이 테이블이 들어가 있지 않아 그런 질문에 챗봇이 회피 답변하는 문제가 있었다.
-    // 연계·복합전공/마이크로디그리(linked_majors/micro_degrees)는 department_id에 안 묶이는
-    // 부가 전공 프로그램이라(어떤 학과 학생이든 추가 이수 가능) student 필터링 없이 메시지에
-    // 프로그램명이 언급되는지만 본다 - 위 세 조회와 같은 "구조화 조회" 방침.
-    const [curriculumChunks, requirementChunks, offeringChunks, linkedMajorChunks, microDegreeChunks] = await Promise.all([
-      curriculumService.lookupFromMessage(message, student),
-      curriculumService.lookupRequirementsFromMessage(`${message} ${normalizedSearchQuery}`, student),
-      curriculumService.lookupOfferingsFromMessage(message, student),
-      curriculumService.lookupLinkedMajorsFromMessage(message),
-      curriculumService.lookupMicroDegreesFromMessage(message),
+    // 질문의 연도 해석은 여기서 한 번만 정하고 아래 모든 검색/조회가 같은 결과를 쓴다. 예전에는 조회 함수마다
+    // 연도를 따로 읽어서(첫 연도만 읽거나, 학번과 학년도를 구분 못 하거나, 메시지 학번을 무시하는 등) 같은
+    // 질문에서도 서로 다른 해의 자료가 섞였다(server/services/yearContext.js 참고).
+    // 원문 메시지(재작성 전)로 판단해야 여러 턴에 걸친 검색어 재작성에서 연도가 뒤섞이지 않는다.
+    const yearContext = resolveYearContext({
+      message,
+      previousUserMessage: lastUserMessage?.content ?? null,
+      profileCohort: student?.admission_year ?? null,
+      availableBookYears,
+    });
+
+    // 교육과정 구조화 조회(과목/요건/연도별 졸업요건/변경 이력)는 RAG 유사도 검색이 아니라 조건 조회로 처리한다 —
+    // "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부가 누락되고, 연도별 값은 유사도로 구분할 수 없다.
+    // RAG는 학칙 같은 비정형 문서만 대상이며, 교육과정 책자 문서는 질문에서 정한 책자 학년도(yearContext.bookYears)만 검색한다.
+    const isCompare = yearContext.mode === 'COMPARE';
+    const [freshChunks, structured] = await Promise.all([
+      regulationService.findRelevantChunks(queryEmbedding, {
+        bookYears: yearContext.bookYears,
+        topK: isCompare ? 7 : undefined,
+        perYearMin: isCompare ? 2 : 0,
+      }),
+      assembleStructuredChunks({
+        message,
+        searchText: `${message} ${normalizedSearchQuery}`,
+        student,
+        previousUserMessage: lastUserMessage?.content ?? null,
+        yearContext,
+      }),
     ]);
 
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = [
-      ...curriculumChunks,
-      ...requirementChunks,
-      ...offeringChunks,
-      ...linkedMajorChunks,
-      ...microDegreeChunks,
-      ...previousCitedChunks,
-    ];
-    for (const c of freshChunks) {
-      if (!relevantChunks.some((m) => m.chunkId === c.chunkId)) relevantChunks.push(c);
-    }
+    const relevantChunks = mergeChunks({ structured, previousCitedChunks, freshChunks, yearContext });
 
     if (relevantChunks.length === 0) {
       await regulationService.saveMessage(conversationId, { role: 'assistant', content: NOT_FOUND_MESSAGE });
@@ -157,7 +154,7 @@ router.post('/messages', async (req, res, next) => {
       });
     }
 
-    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus);
+    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext);
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,

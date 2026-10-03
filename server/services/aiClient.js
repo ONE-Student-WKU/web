@@ -48,7 +48,7 @@ function buildStudentProfileNote(student) {
   ].filter(Boolean);
 
   return `이 학생의 프로필 — ${parts.join(', ')}.
-근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
+근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
 "정확히 이 학번 기준 자료는 못 찾았다"고 분명히 밝혀라 — 다른 학번 기준을 이 학생에게 그대로 적용해 단정적으로 답하지 마라.`;
 }
@@ -87,10 +87,41 @@ ${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
   합계보다 작게 나올 수 있다 — 이는 정상이니 오류로 언급하지 마라.`;
 }
 
-function buildSystemPrompt(student, graduationStatus) {
-  const parts = [SYSTEM_PROMPT, buildStudentProfileNote(student), buildGraduationStatusNote(graduationStatus)].filter(
-    Boolean
+// 질문의 연도 해석(yearContext, server/services/yearContext.js)을 모델에게 알려준다. 학생의 "적용 규정"(입학학번으로
+// 정해짐)과 규정의 "변경 이력"(그 뒤 해에 바뀐 내용)을 섞지 않고, 서로 다른 해의 수치를 한 문장에 합치지 않게 한다.
+function buildYearContextNote(yearContext) {
+  if (!yearContext) return null;
+  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears } = yearContext;
+  const lines = [];
+
+  if (applicableCohort) {
+    lines.push(`이 질문에서 학생에게 적용되는 교육과정은 ${applicableCohort}학번 기준이다${cohortSource === 'message' ? '(질문에서 직접 말한 학번)' : '(프로필 학번)'}.`);
+    if (messageCohorts.length > 0 && profileCohort && messageCohorts[0] !== profileCohort) {
+      lines.push(`프로필 학번(${profileCohort}학번)과 질문의 학번(${messageCohorts[0]}학번)이 다르다. 질문의 학번을 기준으로 답하되, 아래 "실제 이수 현황" 수치는 프로필 학번 기준이라는 점을 구분하라.`);
+    }
+  }
+  if (mode === 'SPECIFIC_YEAR') lines.push(`질문은 ${askedYears[0]}학년도 교육과정 기준을 묻는다. ${askedYears[0]}학년도(학번) 자료만 사용하고 다른 해 자료를 섞지 마라.`);
+  if (mode === 'COMPARE') lines.push(`질문은 ${targetYears.join('학번·')}학번(학년도)을 비교하거나 적용 여부를 묻는다. 연도별로 나눠서(표나 목록) 각각의 값을 밝히고, 어느 해 값인지 숫자마다 표시하라.`);
+  if (mode === 'HISTORY') lines.push('질문은 규정·과목의 변경 이력을 묻는다. 근거 문서의 "변경 이력"을 시점(몇 학번부터)과 함께 설명하라.');
+  if (mode === 'DEFAULT') lines.push('질문에 학번·학년도가 없고 프로필에도 입학년도가 없다. 근거 문서에 여러 해가 있으면 어느 해 기준인지 밝히고, 학번을 알려주면 정확히 답할 수 있다고 안내하라.');
+
+  lines.push(
+    '연도 처리 원칙:\n' +
+      '- 학생에게 적용되는 규정은 입학학번으로 정해진다. 이후 해에 규정이 바뀌었어도 그 변경은 이 학번에 자동 적용되지 않는다 — "이후 변경" 항목은 이 학번에는 적용되지 않는다고 분명히 설명하라.\n' +
+      '- 근거 문서에 학번/학년도 표기가 있는 수치는 그 해 것이다. 서로 다른 해의 수치를 섞어 하나의 답으로 만들지 마라.\n' +
+      '- 근거에 해당 학번 자료가 "없음"이라고 되어 있으면 다른 해 값으로 추정해 단정하지 말고 자료가 없다고 밝혀라.\n' +
+      '- 변경 이유는 근거에 적혀 있을 때만 설명하고, 없으면 이유는 기록에 없다고 답하라. "(이름 일치로 추정)"이라고 표시된 학과 개편 관계는 추정임을 함께 밝혀라.'
   );
+  return lines.join('\n');
+}
+
+function buildSystemPrompt(student, graduationStatus, yearContext = null) {
+  const parts = [
+    SYSTEM_PROMPT,
+    buildStudentProfileNote(student),
+    buildYearContextNote(yearContext),
+    buildGraduationStatusNote(graduationStatus),
+  ].filter(Boolean);
   return parts.join('\n\n');
 }
 
@@ -137,9 +168,13 @@ async function rewriteSearchQuery(rawQuery) {
 
 // history: 이번 메시지 이전까지의 대화 이력 [{role, content}, ...] — "왜 그래?" 같은 후속
 // 질문이 직전 turn을 참고할 수 있도록 Anthropic Messages API의 멀티턴 형식으로 그대로 넘긴다.
-async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null) {
+async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null, yearContext = null) {
+  // 교육과정 책자 문서는 제목에 학년도가 없는 경우도 있어서(book_year 메타데이터) 라벨에 책자 학년도를 덧붙인다.
   const context = relevantChunks
-    .map((c, i) => `[문서 ${i + 1}] ${c.documentTitle}\n${c.content}`)
+    .map((c, i) => {
+      const yearLabel = c.bookYear && !String(c.documentTitle).includes(`${c.bookYear}학년도`) ? ` (${c.bookYear}학년도 책자)` : '';
+      return `[문서 ${i + 1}] ${c.documentTitle}${yearLabel}\n${c.content}`;
+    })
     .join('\n\n');
 
   const userContent = `근거 문서:\n${context}\n\n학생 질문: ${userMessage}`;
@@ -155,7 +190,7 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
-      system: buildSystemPrompt(student, graduationStatus),
+      system: buildSystemPrompt(student, graduationStatus, yearContext),
       messages,
     }),
     // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
@@ -368,6 +403,7 @@ async function extractFullTranscriptRows(rawText) {
 }
 
 module.exports = {
+  buildYearContextNote,
   getAIChatResponse,
   rewriteSearchQuery,
   getCareerFollowUp,

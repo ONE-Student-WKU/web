@@ -241,6 +241,111 @@ async function ensureCommunityStatusIndexes(connection) {
   }
 }
 
+// 교육과정 버전·변경이력 관리 도입용 guard — curriculum_requirements.rule_key / curriculum_courses.course_key와
+// 인덱스는 기존 운영 테이블에 CREATE TABLE IF NOT EXISTS로 반영되지 않으므로 직접 ALTER한다.
+// (department_lineage/course_lineage/curriculum_changes는 새 테이블이라 schema.sql만으로 생성됨)
+//
+// 백필은 "기존 데이터의 의미를 바꾸지 않고 키만 채우는" 작업이다. rule_key는 학과명+카테고리+입학유형만으로
+// 정해지므로 SQL로 전부 채울 수 있다. 이 SQL은 server/services/curriculumKeys.js의 buildRuleKey/
+// buildCourseKey 규칙을 그대로 옮긴 것이라 규칙이 바뀌면 두 곳을 같이 고쳐야 한다. 학수번호가 없는 과목의
+// course_key("N:정규화한 과목명")는 정규화(NFKC·공백/가운뎃점 제거)를 SQL로 똑같이 흉내 낼 수 없어 여기선 비워 두고,
+// 시드 스크립트(seed:curriculum-*)를 다시 돌리거나 변경이력 생성 스크립트가 같은 JS 함수로 채운다.
+async function ensureCurriculumVersioningColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND ((TABLE_NAME = 'curriculum_requirements' AND COLUMN_NAME = 'rule_key')
+         OR (TABLE_NAME = 'curriculum_courses' AND COLUMN_NAME = 'course_key'))`
+  );
+  const has = new Set(cols.map((c) => `${c.TABLE_NAME}.${c.COLUMN_NAME}`));
+
+  if (!has.has('curriculum_requirements.rule_key')) {
+    console.log('[db:migrate] curriculum_requirements.rule_key 컬럼 추가...');
+    await connection.query('ALTER TABLE curriculum_requirements ADD COLUMN rule_key VARCHAR(150) NULL');
+  }
+  if (!has.has('curriculum_courses.course_key')) {
+    console.log('[db:migrate] curriculum_courses.course_key 컬럼 추가...');
+    await connection.query('ALTER TABLE curriculum_courses ADD COLUMN course_key VARCHAR(120) NULL');
+  }
+
+  const [idx] = await connection.query(
+    `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND INDEX_NAME IN ('idx_curriculum_requirements_rule_key', 'idx_curriculum_courses_course_key',
+                          'idx_curriculum_courses_dept_track_year')`
+  );
+  const existingIdx = new Set(idx.map((r) => r.INDEX_NAME));
+  if (!existingIdx.has('idx_curriculum_requirements_rule_key')) {
+    await connection.query('ALTER TABLE curriculum_requirements ADD INDEX idx_curriculum_requirements_rule_key (rule_key)');
+  }
+  if (!existingIdx.has('idx_curriculum_courses_course_key')) {
+    await connection.query('ALTER TABLE curriculum_courses ADD INDEX idx_curriculum_courses_course_key (course_key)');
+  }
+  if (!existingIdx.has('idx_curriculum_courses_dept_track_year')) {
+    await connection.query(
+      'ALTER TABLE curriculum_courses ADD INDEX idx_curriculum_courses_dept_track_year (department_id, track_id, min_admission_year)'
+    );
+  }
+
+  const [ruleResult] = await connection.query(
+    `UPDATE curriculum_requirements cr
+     JOIN departments d ON d.id = cr.department_id
+     SET cr.rule_key = CONCAT(
+       d.name, '|',
+       CASE cr.category
+         WHEN '전공필수' THEN 'MAJOR_REQUIRED'
+         WHEN '전공선택' THEN 'MAJOR_ELECTIVE'
+         WHEN '전공' THEN 'MAJOR'
+         WHEN '교양필수' THEN 'LIBERAL_REQUIRED'
+         WHEN '교양선택' THEN 'LIBERAL_ELECTIVE'
+         WHEN '일반선택' THEN 'GENERAL_ELECTIVE'
+         WHEN '졸업논문' THEN 'THESIS'
+         WHEN '졸업인증제' THEN 'CERTIFICATION'
+         WHEN '교직기본이수' THEN 'TEACHING_BASIC'
+         ELSE CONCAT('OTHER:', cr.category)
+       END, '|',
+       IFNULL(cr.enrollment_type, 'GENERAL'))
+     WHERE cr.rule_key IS NULL`
+  );
+  const [courseResult] = await connection.query(
+    `UPDATE curriculum_courses
+     SET course_key = CONCAT('C:', UPPER(TRIM(course_code)))
+     WHERE course_key IS NULL AND course_code IS NOT NULL AND TRIM(course_code) <> ''`
+  );
+  if (ruleResult.affectedRows || courseResult.affectedRows) {
+    console.log(
+      `[db:migrate] 교육과정 키 백필: rule_key ${ruleResult.affectedRows}건, course_key(학수번호 있는 과목) ${courseResult.affectedRows}건`
+    );
+  }
+}
+
+// 규정 문서 학년도 메타데이터(book_year) 도입용 guard. 기존 문서는 제목의 "YYYY학년도"에서 채운다 — 시드 스크립트가
+// 같은 규칙(제목 → 파일명 접두)으로 새로 넣는 문서에도 값을 넣는다(server/scripts/seedRegulations.js detectBookYear).
+// 임베딩은 건드리지 않으므로 기존 청크에는 학년도 머리말이 없다(재임베딩은 seed:regulations -- --force).
+async function ensureRegulationBookYear(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'regulation_documents' AND COLUMN_NAME = 'book_year'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] regulation_documents.book_year 컬럼 추가...');
+    await connection.query('ALTER TABLE regulation_documents ADD COLUMN book_year INT NULL');
+  }
+  const [idx] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'regulation_documents' AND INDEX_NAME = 'idx_regulation_documents_book_year'`
+  );
+  if (idx.length === 0) {
+    await connection.query('ALTER TABLE regulation_documents ADD INDEX idx_regulation_documents_book_year (book_year)');
+  }
+  const [result] = await connection.query(
+    `UPDATE regulation_documents
+     SET book_year = CAST(REGEXP_SUBSTR(title, '[0-9]{4}(?=학년도)') AS UNSIGNED)
+     WHERE book_year IS NULL AND source_type = 'CURATED' AND title REGEXP '[0-9]{4}학년도'`
+  );
+  if (result.affectedRows) console.log(`[db:migrate] 규정 문서 book_year 백필: ${result.affectedRows}건`);
+}
+
 async function migrate() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
 
@@ -275,6 +380,8 @@ async function migrate() {
     await ensureApplicationRejectReasonColumn(connection);
     await ensureCommunityCategoryCapacityColumns(connection);
     await ensureCommunityStatusIndexes(connection);
+    await ensureCurriculumVersioningColumns(connection);
+    await ensureRegulationBookYear(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {
