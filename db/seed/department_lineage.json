@@ -1,5 +1,65 @@
 [
   {
+    "fromDepartment": "경영학부",
+    "fromTrack": null,
+    "toDepartment": "경영학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 경영학부가 2023 경영학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "역사문화학부",
+    "fromTrack": null,
+    "toDepartment": "역사문화학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 역사문화학부(사학·고고미술사학 세부전공)가 2023 역사문화학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "귀금속보석공예과",
+    "fromTrack": null,
+    "toDepartment": "금속·주얼리디자인학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 귀금속보석공예과가 2023 금속·주얼리디자인학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "디자인학부",
+    "fromTrack": null,
+    "toDepartment": "시각정보디자인학과",
+    "toTrack": null,
+    "relation": "SPLIT",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 디자인학부(시각정보디자인 세부전공)가 2023 시각정보디자인학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "디자인학부",
+    "fromTrack": null,
+    "toDepartment": "실내·산업디자인학과",
+    "toTrack": null,
+    "relation": "SPLIT",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 디자인학부(공간환경·산업디자인 세부전공)가 2023 실내·산업디자인학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "토목환경공학과",
+    "fromTrack": null,
+    "toDepartment": "건설환경공학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2023,
+    "source": "NAME_MATCH",
+    "note": "2022 토목환경공학과가 2023 건설환경공학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
     "fromDepartment": "기계공학과",
     "fromTrack": null,
     "toDepartment": "기계공학부",
