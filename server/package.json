@@ -18,6 +18,7 @@
     "seed:curriculum-2022": "node scripts/seedCurriculum2022Departments.js",
     "seed:curriculum-2021": "node scripts/seedCurriculum2021Departments.js",
     "seed:curriculum-2019": "node scripts/seedCurriculum2019Departments.js",
+    "seed:curriculum-2017": "node scripts/seedCurriculum2017Departments.js",
     "seed:linked-majors": "node scripts/seedLinkedMajorsAndMicroDegrees.js",
     "seed:lineage": "node scripts/seedLineage.js",
     "generate:curriculum-changes": "node scripts/generateCurriculumChanges.js",
