@@ -15,6 +15,8 @@
     "seed:curriculum-2026": "node scripts/seedCurriculum2026Departments.js",
     "seed:curriculum-2024": "node scripts/seedCurriculum2024Departments.js",
     "seed:linked-majors": "node scripts/seedLinkedMajorsAndMicroDegrees.js",
+    "seed:lineage": "node scripts/seedLineage.js",
+    "generate:curriculum-changes": "node scripts/generateCurriculumChanges.js",
     "seed:regulations": "node scripts/seedRegulations.js",
     "scrape:timetable": "node scripts/scrapeTimetable.js"
   },

@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const pool = require('../db');
+const { buildCourseKey } = require('../services/curriculumKeys');
 const rawData = require('../../db/curriculum/_source/2024_학과별_전공과목_원본.json');
 
 /**
@@ -59,8 +60,8 @@ async function seedOne(key, rows) {
     await pool.query(
       `INSERT INTO curriculum_courses
         (department_id, track_id, min_admission_year, max_admission_year, grade, semester,
-         category, course_code, course_name, course_name_en, credits, remarks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         category, course_code, course_name, course_name_en, credits, remarks, course_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         departmentId,
         trackId,
@@ -74,6 +75,7 @@ async function seedOne(key, rows) {
         row.courseNameEn || null,
         Number(row.credits) || null,
         null,
+        buildCourseKey(row.courseCode, row.courseName),
       ]
     );
   }

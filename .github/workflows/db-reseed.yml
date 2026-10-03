@@ -25,6 +25,8 @@ on:
       - 'db/seed/curriculum_requirements.json'
       - 'db/seed/linked_majors.json'
       - 'db/seed/micro_degrees.json'
+      - 'db/seed/department_lineage.json'
+      - 'db/seed/course_lineage.json'
   # 검증 단계 임시 트리거 — 이 파일이 존재하는 어떤 브랜치에서든 Actions 탭에서 수동 실행 가능.
   # 검증이 끝난 뒤에도 지우지 않고 남겨둬도 안전하다(아래와 동일한 db-reseed 승인 게이트를 그대로 거침).
   workflow_dispatch:

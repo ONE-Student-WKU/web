@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const fs = require('fs');
 const pool = require('../db');
+const { buildCourseKey } = require('../services/curriculumKeys');
 
 /**
  * server/scripts/seedCurriculum.js
@@ -203,8 +204,8 @@ async function seedFile(config) {
     await pool.query(
       `INSERT INTO curriculum_courses
         (department_id, track_id, min_admission_year, max_admission_year, grade, semester,
-         category, course_code, course_name, course_name_en, credits, remarks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         category, course_code, course_name, course_name_en, credits, remarks, course_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         departmentId,
         trackId,
@@ -218,6 +219,7 @@ async function seedFile(config) {
         row.courseNameEn,
         row.credits,
         row.remarks,
+        buildCourseKey(row.courseCode, row.courseName),
       ]
     );
   }

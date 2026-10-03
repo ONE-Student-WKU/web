@@ -28,6 +28,23 @@ const VERBATIM_DOCS = {
 };
 const VERBATIM_EFFECTIVE_DATE = '2026-06-26'; // db/regulations/_source/ 파일명의 개정일 기준(2026.06.26 최신본)
 
+// 교육과정 책자 학년도: 제목의 "YYYY학년도"가 우선이고, 없으면 파일명 접두("2024_...md")를 쓴다. 학칙·수강신청 안내처럼
+// 특정 해 책자가 아닌 현행 규정 문서는 null — 검색이 학번/학년도로 거르지 않는다(regulationService.selectChunksByYear).
+function detectBookYear(title, fileName) {
+  const fromTitle = title && title.match(/(\d{4})학년도/);
+  if (fromTitle) return Number(fromTitle[1]);
+  const fromFile = fileName && fileName.match(/^(\d{4})_/);
+  return fromFile ? Number(fromFile[1]) : null;
+}
+
+// 임베딩과 모델에 보이는 청크 본문 맨 앞에 책자 학년도를 박는다. H1 제목은 청크에서 빠지기 때문에, 이게 없으면
+// 해마다 소제목이 같은 청크들이 벡터상 구분되지 않는다.
+function withBookYearHeader(chunks, bookYear) {
+  if (!bookYear) return chunks;
+  const header = `[${bookYear}학년도 교육과정 책자] `;
+  return chunks.map((c) => (c.startsWith(header) ? c : header + c));
+}
+
 function listCuratedFiles() {
   const files = [];
   for (const entry of fs.readdirSync(REGULATIONS_ROOT, { withFileTypes: true })) {
@@ -126,7 +143,7 @@ function splitIntoBatches(chunks) {
   return batches;
 }
 
-async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, chunks }) {
+async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks }) {
   // 임베딩을 전부 성공시킨 뒤에야 DB에 쓴다 — 문서 행을 먼저 넣어두면, 배치 중간에 실패했을 때
   // 청크 없는 빈 문서만 남고 재실행 시 findExistingDocument가 "이미 있음"으로 건너뛰어버려서
   // 영영 재시도가 안 되는 문제가 생긴다.
@@ -139,8 +156,8 @@ async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl
   }
 
   const [result] = await pool.query(
-    'INSERT INTO regulation_documents (title, category, source_type, source_url, effective_date) VALUES (?, ?, ?, ?, ?)',
-    [title, category, sourceType, sourceUrl ?? null, effectiveDate ?? null]
+    'INSERT INTO regulation_documents (title, category, source_type, source_url, effective_date, book_year) VALUES (?, ?, ?, ?, ?, ?)',
+    [title, category, sourceType, sourceUrl ?? null, effectiveDate ?? null, bookYear ?? null]
   );
   const documentId = result.insertId;
 
@@ -153,7 +170,7 @@ async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl
   return chunks.length;
 }
 
-async function seedDocument({ title, category, sourceType, sourceUrl, effectiveDate, chunks }) {
+async function seedDocument({ title, category, sourceType, sourceUrl, effectiveDate, bookYear = null, chunks }) {
   if (chunks.length === 0) {
     console.warn(`[SKIP] ${title}: 청크가 비어있음`);
     return 0;
@@ -168,7 +185,7 @@ async function seedDocument({ title, category, sourceType, sourceUrl, effectiveD
     await pool.query('DELETE FROM regulation_documents WHERE id = ?', [existing.id]); // chunks는 CASCADE로 같이 삭제
   }
 
-  const count = await insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, chunks });
+  const count = await insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks });
   console.log(`[OK] ${title}: ${count}개 청크`);
   return count;
 }
@@ -178,13 +195,16 @@ async function seedCuratedDocs() {
   for (const { category, filePath } of listCuratedFiles()) {
     const content = fs.readFileSync(filePath, 'utf-8');
     const { title, sourceUrl, chunks } = chunkCuratedMarkdown(content);
+    const docTitle = title || path.basename(filePath, '.md');
+    const bookYear = detectBookYear(docTitle, path.basename(filePath));
     total += await seedDocument({
-      title: title || path.basename(filePath, '.md'),
+      title: docTitle,
       category,
       sourceType: 'CURATED',
       sourceUrl,
       effectiveDate: null,
-      chunks,
+      bookYear,
+      chunks: withBookYearHeader(chunks, bookYear),
     });
   }
   return total;

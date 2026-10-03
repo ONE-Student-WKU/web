@@ -296,8 +296,13 @@ CREATE TABLE IF NOT EXISTS curriculum_requirements (
   max_admission_year  INT,  -- NULL이면 상한 없음
   enrollment_type     ENUM('GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'),  -- NULL이면 전체 공통
   min_course_count    INT,  -- "이 중 최소 N개" 식 OR 조건 (졸업인증제 등). NULL이면 미적용
+  -- 학년도가 달라도 "같은 규정"이면 같은 값 — "학과|카테고리코드|입학유형(없으면 GENERAL)".
+  -- 같은 rule_key의 행들은 min/max_admission_year 범위가 겹치지 않는 시간순 버전들이다
+  -- (server/services/curriculumKeys.js buildRuleKey). 재시딩하면 id는 바뀌지만 이 값은 그대로.
+  rule_key            VARCHAR(150),
 
-  FOREIGN KEY (department_id) REFERENCES departments(id)
+  FOREIGN KEY (department_id) REFERENCES departments(id),
+  INDEX idx_curriculum_requirements_rule_key (rule_key)
 );
 
 CREATE TABLE IF NOT EXISTS curriculum_required_courses (
@@ -334,9 +339,113 @@ CREATE TABLE IF NOT EXISTS curriculum_courses (
   course_name_en      VARCHAR(150),
   credits             DECIMAL(3,1),
   remarks             VARCHAR(100),
+  -- 학년도가 달라도 "같은 과목"이면 같은 값 — 학수번호가 있으면 "C:학수번호", 없으면
+  -- "N:정규화한 과목명" (server/services/curriculumKeys.js buildCourseKey). 과목명·학점·구분이
+  -- 바뀌어도 학수번호가 같으면 같은 과목으로 이어진다.
+  course_key          VARCHAR(120),
 
   FOREIGN KEY (department_id) REFERENCES departments(id),
-  FOREIGN KEY (track_id) REFERENCES tracks(id)
+  FOREIGN KEY (track_id) REFERENCES tracks(id),
+  INDEX idx_curriculum_courses_course_key (course_key),
+  INDEX idx_curriculum_courses_dept_track_year (department_id, track_id, min_admission_year)
+);
+
+-- ---------------------------------------------------------------------------
+-- 6.55. 학과·과목 계보 (lineage) — 개편으로 이름/소속이 바뀐 대상의 "이전 → 이후" 관계
+--
+-- departments는 이름이 UNIQUE인 평면 마스터라 "2025 경영학과가 2026 경영계열 경영학전공이 됐다"는
+-- 관계를 담을 곳이 없었다. 학과(+선택적으로 세부전공) 단위의 이전→이후 간선(edge)만 저장한다.
+-- 이름이 그대로 이어지는 학과(예: 원불교학과)는 같은 department_id라 간선이 필요 없다.
+--
+-- relation: RENAME(이름변경) / REORG(개편: 다른 학과·계열의 전공으로 편입) / MERGE(통합: 여러 학과가
+--   한 곳으로) / SPLIT(분리: 한 곳이 여러 곳으로) / ABOLISH(폐지: to가 NULL) / REPLACE(대체)
+-- effective_year: "이후" 구조가 처음 적용되는 입학학번(예: 2026학번부터 경영계열 → 2026).
+-- source: DOC(교육과정 책자·학칙 문서에 명시) / NAME_MATCH(전공명이 학과명과 같아 이름으로 이은 것 — 추정) /
+--   MANUAL(사람이 확인해 입력). NAME_MATCH는 챗봇이 "추정"으로 안내해야 한다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS department_lineage (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  from_department_id INT NULL,   -- NULL이면 신설
+  from_track_id      INT NULL,
+  to_department_id   INT NULL,   -- NULL이면 폐지
+  to_track_id        INT NULL,
+  relation           ENUM('RENAME', 'REORG', 'MERGE', 'SPLIT', 'ABOLISH', 'REPLACE') NOT NULL,
+  effective_year     INT NOT NULL,
+  source             ENUM('DOC', 'NAME_MATCH', 'MANUAL') NOT NULL,
+  note               VARCHAR(255),
+
+  FOREIGN KEY (from_department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (from_track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  INDEX idx_department_lineage_from (from_department_id, effective_year),
+  INDEX idx_department_lineage_to (to_department_id, effective_year)
+);
+
+-- 과목 단위 계보. 이름만 바뀐 과목은 course_key(학수번호)가 같아서 간선이 필요 없고
+-- curriculum_changes의 course_name 변경으로 남는다. 키 자체가 달라진 경우만 여기에 둔다.
+--
+-- relation: RENAME(학수번호만 바뀜, 과목명 동일 — 자동 감지) / REPLACE(다른 과목으로 대체) /
+--   MERGE(여러 과목 → 하나) / SPLIT(하나 → 여러 과목) / ABOLISH(폐지: to가 NULL)
+-- department_id: 이 변경이 일어난 학과(없으면 전체). effective_year는 department_lineage와 같은 의미.
+CREATE TABLE IF NOT EXISTS course_lineage (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  from_course_key VARCHAR(120) NULL,   -- NULL이면 신설
+  to_course_key   VARCHAR(120) NULL,   -- NULL이면 폐지
+  from_name       VARCHAR(100),
+  to_name         VARCHAR(100),
+  department_id   INT NULL,
+  relation        ENUM('RENAME', 'REPLACE', 'MERGE', 'SPLIT', 'ABOLISH') NOT NULL,
+  effective_year  INT NOT NULL,
+  source          ENUM('AUTO', 'MANUAL') NOT NULL,
+  note            VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_lineage_from (from_course_key),
+  INDEX idx_course_lineage_to (to_course_key)
+);
+
+-- ---------------------------------------------------------------------------
+-- 6.56. 교육과정 변경 이력 — "무엇이 언제 바뀌었나"
+--
+-- 학년도별 스냅샷(curriculum_requirements/curriculum_courses)을 인접 학번 구간끼리 비교해서
+-- 만든다(server/scripts/generateCurriculumChanges.js, source=AUTO — 재실행하면 AUTO 행만 다시 만든다).
+-- from_year = 변경 전 값이 마지막으로 적용된 입학학번, to_year = 변경 후 값이 처음 적용된 입학학번.
+-- 연속된 학번이 아니어도 된다(예: 2019학번 이후 값이 같다가 2022에 바뀌면 from_year=2021, to_year=2022).
+--
+-- subject_type/subject_key:
+--   REQUIREMENT — rule_key (예: "경영학과|MAJOR_REQUIRED|GENERAL") 또는 합산 키
+--                 ("경영학과|GRAD_TOTAL|GENERAL" = 졸업학점 총계, MAJOR_TOTAL, LIBERAL_TOTAL)
+--   COURSE      — course_key (예: "C:169041")
+--   DEPARTMENT  — 학과 개편(department_lineage 한 건당 한 행)
+-- field: required_credits / course_name / credits / category / grade / semester / course_code /
+--   existence(ADDED·REMOVED) / structure(학과 개편)
+-- successor_*: 학과 개편을 건너 이어진 변경일 때 "이후" 쪽 학과(subject는 "이전" 쪽 학과 기준).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS curriculum_changes (
+  id                      INT AUTO_INCREMENT PRIMARY KEY,
+  subject_type            ENUM('REQUIREMENT', 'COURSE', 'DEPARTMENT') NOT NULL,
+  subject_key             VARCHAR(160) NOT NULL,
+  display_name            VARCHAR(150),
+  department_id           INT NULL,
+  track_id                INT NULL,
+  successor_department_id INT NULL,
+  successor_track_id      INT NULL,
+  from_year               INT NULL,   -- ADDED(신설)이면 NULL
+  to_year                 INT NULL,   -- REMOVED(폐지)이면 마지막으로 있던 학번 다음 해(처음 없어진 학번)
+  field                   VARCHAR(40) NOT NULL,
+  change_type             ENUM('CHANGED', 'ADDED', 'REMOVED') NOT NULL,
+  old_value               VARCHAR(255),
+  new_value               VARCHAR(255),
+  note                    VARCHAR(255),
+  source                  ENUM('AUTO', 'MANUAL') NOT NULL,
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  FOREIGN KEY (successor_department_id) REFERENCES departments(id) ON DELETE SET NULL,
+  FOREIGN KEY (successor_track_id) REFERENCES tracks(id) ON DELETE SET NULL,
+  INDEX idx_curriculum_changes_subject (subject_type, subject_key),
+  INDEX idx_curriculum_changes_dept_year (department_id, to_year)
 );
 
 -- ---------------------------------------------------------------------------
@@ -420,7 +529,12 @@ CREATE TABLE IF NOT EXISTS regulation_documents (
   category        VARCHAR(30),  -- 학칙 / 이수규정 등
   source_type     ENUM('CURATED', 'VERBATIM') NOT NULL,  -- 정리 문서 / 원문
   source_url      VARCHAR(500),
-  effective_date  DATE
+  effective_date  DATE,
+  -- 교육과정 책자 학년도(예: 2025_교육과정.pdf에서 만든 문서는 2025). 학칙·수강신청 안내처럼 특정 해의 책자가 아닌
+  -- "현행 규정" 문서는 NULL. 검색(regulationService.findRelevantChunks)이 질문의 학번/학년도에 맞는 책자만
+  -- 고르는 데 쓴다 — 해마다 소제목이 같은 문서가 쌓이면 서로 다른 해의 비슷한 청크가 섞이기 때문.
+  book_year       INT NULL,
+  INDEX idx_regulation_documents_book_year (book_year)
 );
 
 CREATE TABLE IF NOT EXISTS regulation_chunks (

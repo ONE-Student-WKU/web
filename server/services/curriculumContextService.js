@@ -1,0 +1,298 @@
+const pool = require('../db');
+const historyService = require('./curriculumHistoryService');
+const { DERIVED_RULE_CODES } = require('./curriculumKeys');
+
+/**
+ * server/services/curriculumContextService.js
+ * 챗봇 근거 청크 중 "연도에 따라 달라지는 교육과정 정보"를 만든다:
+ *  - 졸업요건: 질문의 학번/학년도(여러 개면 각각)별로 적용되는 요건
+ *  - 변경 이력: 규정·과목이 언제 어떻게 바뀌었는지, 그리고 이 학번에는 어느 값이 적용되는지
+ *  - 학과 개편 관계
+ * 청크마다 어느 학번/학년도 기준인지 제목과 본문에 명시해서 모델이 서로 다른 해를 섞지 않게 한다.
+ * 연도 판단은 yearContext.js, 변경 이력 데이터는 curriculumHistoryService.js(curriculum_changes 등)를 쓴다.
+ */
+
+const MAX_YEARS = 3;
+const MAX_COURSES = 3;
+const MAX_VERSION_LINES = 12;
+
+const RULE_LABEL = { GRAD_TOTAL: '졸업학점 총계', MAJOR_TOTAL: '전공 이수학점 합계', LIBERAL_TOTAL: '교양 이수학점 합계' };
+const SOURCE_LABEL = { NAME_MATCH: '이름 일치로 추정한 개편 관계', DOC: '교육과정 문서에 명시된 개편 관계', MANUAL: '확인된 개편 관계' };
+
+// ---------------------------------------------------------------------------
+// 학과 판정
+// ---------------------------------------------------------------------------
+
+// 메시지에 학과 이름이 있으면 그 학과(가장 긴 이름 우선), 없으면 프로필 학과.
+async function resolveDepartment(message, student) {
+  const [rows] = await pool.query('SELECT id, name FROM departments');
+  const mentioned = rows
+    .filter((d) => d.name.length >= 3 && message.includes(d.name))
+    .sort((a, b) => b.name.length - a.name.length)[0];
+  if (mentioned) return { id: mentioned.id, name: mentioned.name, source: 'message' };
+  if (student?.department_id) {
+    const own = rows.find((d) => d.id === student.department_id);
+    if (own) return { id: own.id, name: own.name, source: 'profile' };
+  }
+  return null;
+}
+
+async function creditRequirementRows(departmentId, year) {
+  const [rows] = await pool.query(
+    `SELECT category, required_credits, description, min_course_count, id
+     FROM curriculum_requirements
+     WHERE department_id = ? AND enrollment_type IS NULL
+       AND (min_admission_year IS NULL OR ? >= min_admission_year)
+       AND (max_admission_year IS NULL OR ? <= max_admission_year)`,
+    [departmentId, year, year]
+  );
+  return rows;
+}
+
+// 그 학번에 이 학과 요건이 없으면 학과 개편으로 이어지는 학과(이전·이후)에서 찾는다.
+async function departmentForYear(departmentId, year) {
+  const own = await creditRequirementRows(departmentId, year);
+  if (own.some((r) => r.min_course_count == null)) return { departmentId, rows: own, viaLineage: null };
+
+  const chain = await historyService.getDepartmentChain(departmentId);
+  for (const id of chain.departmentIds.filter((x) => x !== departmentId)) {
+    const rows = await creditRequirementRows(id, year);
+    if (rows.some((r) => r.min_course_count == null)) {
+      const edge = chain.edges.find((e) => e.fromDepartmentId === id || e.toDepartmentId === id || e.fromDepartmentId === departmentId || e.toDepartmentId === departmentId);
+      return { departmentId: id, rows, viaLineage: edge || true };
+    }
+  }
+  return { departmentId, rows: [], viaLineage: null };
+}
+
+async function dataCoverage(departmentId) {
+  const chain = await historyService.getDepartmentChain(departmentId);
+  const [[r]] = await pool.query(
+    `SELECT MIN(min_admission_year) AS lo, MAX(COALESCE(max_admission_year, min_admission_year)) AS hi
+     FROM curriculum_requirements
+     WHERE department_id IN (?) AND enrollment_type IS NULL AND min_course_count IS NULL
+       AND category IN ('전공필수', '전공선택', '전공', '교양필수', '교양선택', '일반선택')
+       AND (min_admission_year IS NOT NULL OR max_admission_year IS NOT NULL)`,
+    [chain.departmentIds]
+  );
+  return r;
+}
+
+async function deptName(id) {
+  const [[d]] = await pool.query('SELECT name FROM departments WHERE id = ?', [id]);
+  return d?.name || `학과#${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// 졸업요건 (학번/학년도별)
+// ---------------------------------------------------------------------------
+
+function formatRequirementLines(rows) {
+  const by = Object.fromEntries(rows.filter((r) => r.min_course_count == null).map((r) => [r.category, Number(r.required_credits)]));
+  const lines = [];
+  const liberal = (by.교양필수 ?? 0) + (by.교양선택 ?? 0);
+  if ('교양필수' in by || '교양선택' in by) {
+    lines.push(`교양: 교양필수 ${by.교양필수 ?? 0}학점 + 교양선택 ${by.교양선택 ?? 0}학점 = ${liberal}학점`);
+  }
+  const major = (by.전공필수 ?? 0) + (by.전공선택 ?? 0) + (by.전공 ?? 0);
+  if ('전공필수' in by || '전공선택' in by) {
+    lines.push(`전공: 전공필수(기본전공) ${by.전공필수 ?? 0}학점 이상 + 전공선택 ${by.전공선택 ?? 0}학점 = ${major}학점(하나의 풀)`);
+  } else if ('전공' in by) {
+    lines.push(`전공: ${by.전공}학점(전공필수·전공선택 구분 없이 합산 요건)`);
+  }
+  if ('일반선택' in by) lines.push(`일반선택: ${by.일반선택}학점`);
+  const total = liberal + major + (by.일반선택 ?? 0);
+  lines.push(`졸업학점 합계(교양+전공+일반선택): ${total}학점`);
+  for (const r of rows.filter((x) => x.min_course_count != null)) {
+    lines.push(`${r.category}: ${r.description}`);
+  }
+  return lines;
+}
+
+async function graduationRequirementChunk(department, year) {
+  const resolved = await departmentForYear(department.id, year);
+  const baseTitle = `${department.name} ${year}학번 졸업요건`;
+
+  if (resolved.rows.length === 0) {
+    const cov = await dataCoverage(department.id);
+    return {
+      chunkId: `graduation-${department.id}-${year}`,
+      documentTitle: `${baseTitle} (자료 없음)`,
+      content:
+        `${department.name}의 ${year}학번 졸업요건 자료는 이 시스템에 아직 입력되어 있지 않다.` +
+        (cov?.lo ? ` 현재 입력된 학번 범위는 ${cov.lo}~${cov.hi}학번이다.` : '') +
+        ` 입력되지 않은 학번의 요건을 다른 학번 기준으로 추정해서 단정하지 말고, 자료가 없다고 밝힌 뒤 학사지원과 확인을 안내하라.`,
+    };
+  }
+
+  const resolvedName = await deptName(resolved.departmentId);
+  const lines = formatRequirementLines(resolved.rows);
+  let lineageNote = '';
+  if (resolved.departmentId !== department.id) {
+    const src = resolved.viaLineage && resolved.viaLineage.source ? SOURCE_LABEL[resolved.viaLineage.source] : '학과 개편 관계';
+    lineageNote = `\n※ ${year}학번에는 ${department.name}이(가) 아니라 개편된 ${resolvedName}로 편성되어 있다(${src}).`;
+  }
+  return {
+    chunkId: `graduation-${department.id}-${year}`,
+    documentTitle: `${resolvedName} ${year}학번 졸업요건`,
+    content: `[${year}학번 적용 요건 — 일반 재학생 기준]\n${lines.join('\n')}${lineageNote}`,
+  };
+}
+
+async function lookupGraduationRequirements({ message, student, yearContext }) {
+  if (!yearContext.intents.requirement) return [];
+  const department = await resolveDepartment(message, student);
+  if (!department) return [];
+
+  let years = yearContext.targetYears.slice(0, MAX_YEARS);
+  if (years.length === 0 && yearContext.applicableCohort) years = [yearContext.applicableCohort];
+  if (years.length === 0) {
+    const cov = await dataCoverage(department.id);
+    if (cov?.hi) years = [cov.hi];
+  }
+  const chunks = [];
+  for (const year of years) chunks.push(await graduationRequirementChunk(department, year));
+  return chunks;
+}
+
+// ---------------------------------------------------------------------------
+// 변경 이력
+// ---------------------------------------------------------------------------
+
+function describeChange(c) {
+  const unit = c.field === 'required_credits' ? '학점' : '';
+  const base =
+    c.changeType === 'ADDED' ? `${c.toYear}학번부터 신설(${c.newValue}${unit})`
+      : c.changeType === 'REMOVED' ? `${c.toYear}학번부터 없음(마지막으로 있던 학번 ${c.fromYear})`
+        : `${c.toYear}학번부터 ${c.oldValue}${unit} → ${c.newValue}${unit} (변경 전 마지막 학번 ${c.fromYear})`;
+  return c.note ? `${base} — ${c.note}` : base;
+}
+
+async function ruleHistoryChunk(department, code, cohort) {
+  const r = await historyService.describeRuleForCohort({ departmentId: department.id, category: code, admissionYear: cohort });
+  if (!r) return null;
+  const label = RULE_LABEL[code] || code;
+  const lines = [];
+  lines.push(
+    r.applied
+      ? `${cohort}학번에 적용되는 ${label}: ${r.applied.requiredCredits}학점 — 이것이 이 학번의 적용 규정이다.`
+      : `${cohort}학번의 ${label} 자료는 입력되어 있지 않다.`
+  );
+  const field = (list) => list.filter((c) => c.field === 'required_credits' || c.changeType !== 'CHANGED');
+  const earlier = field(r.earlierChanges);
+  const later = field(r.laterChanges);
+  lines.push(earlier.length ? `이 학번 이전의 변경:\n${earlier.map((c) => `- ${describeChange(c)}`).join('\n')}` : '이 학번 이전에 기록된 변경: 없음');
+  lines.push(
+    later.length
+      ? `이 학번 이후의 변경(이 학번에는 적용되지 않는다 — 규정이 바뀌어도 ${cohort}학번의 적용 규정은 위 값 그대로):\n${later.map((c) => `- ${describeChange(c)}`).join('\n')}`
+      : '이 학번 이후에 기록된 변경: 없음'
+  );
+  return {
+    chunkId: `history-rule-${department.id}-${code}-${cohort}`,
+    documentTitle: `${department.name} ${label} 변경 이력 (${cohort}학번 기준)`,
+    content: lines.join('\n'),
+  };
+}
+
+function ruleCodesFor(message, yearContext) {
+  const codes = ['GRAD_TOTAL'];
+  const wantsAll = yearContext.mode === 'COMPARE';
+  if (wantsAll || /전공/.test(message)) codes.push('MAJOR_TOTAL');
+  if (wantsAll || /교양/.test(message)) codes.push('LIBERAL_TOTAL');
+  return codes.filter((c) => DERIVED_RULE_CODES[c]);
+}
+
+// 메시지(+직전 질문)에 나온 과목명 — 긴 이름 우선, 다른 과목명의 일부인 짧은 이름은 버린다.
+async function mentionedCourseNames(text, departmentId) {
+  const [all] = await pool.query(
+    departmentId
+      ? 'SELECT DISTINCT course_name FROM curriculum_courses WHERE department_id = ?'
+      : 'SELECT DISTINCT course_name FROM curriculum_courses',
+    departmentId ? [departmentId] : []
+  );
+  const picked = [];
+  for (const name of all.map((r) => r.course_name).filter((n) => n.length >= 3 && text.includes(n)).sort((a, b) => b.length - a.length)) {
+    if (!picked.some((p) => p.includes(name))) picked.push(name);
+  }
+  return picked.slice(0, MAX_COURSES);
+}
+
+function versionLine(v) {
+  const years = v.minAdmissionYear === v.maxAdmissionYear ? `${v.minAdmissionYear}학번` : `${v.minAdmissionYear ?? ''}~${v.maxAdmissionYear ?? ''}학번`;
+  const where = `${v.departmentName}${v.trackName ? `(${v.trackName})` : ''}`;
+  return `- ${years} ${where}: ${v.category}, ${v.grade}학년 ${v.semester}학기, ${v.credits ?? '?'}학점${v.courseCode ? `, 학수번호 ${v.courseCode}` : ''}`;
+}
+
+async function courseHistoryChunks(courseName, department, cohort) {
+  let histories = await historyService.findCourseHistory({ courseName, exact: true, departmentId: department?.id });
+  if (histories.length === 0 && department) histories = await historyService.findCourseHistory({ courseName, exact: true });
+  const chunks = [];
+  for (const h of histories) {
+    const lines = [`과목 "${courseName}" (과목 식별자 ${h.courseKey}) — 연도별 편성:`];
+    lines.push(...h.versions.slice(0, MAX_VERSION_LINES).map(versionLine));
+    if (h.versions.length > MAX_VERSION_LINES) lines.push(`- (이하 ${h.versions.length - MAX_VERSION_LINES}건 생략)`);
+
+    if (cohort) {
+      const applied = h.versions.find((v) => (v.minAdmissionYear == null || v.minAdmissionYear <= cohort) && (v.maxAdmissionYear == null || v.maxAdmissionYear >= cohort));
+      lines.push(applied ? `${cohort}학번에 적용되는 편성: ${applied.category}, ${applied.grade}학년 ${applied.semester}학기, ${applied.credits ?? '?'}학점.` : `${cohort}학번 자료에는 이 과목이 편성되어 있지 않다.`);
+    }
+    const changes = h.changes;
+    if (changes.length) lines.push(`변경 이력:\n${changes.map((c) => `- ${c.field === 'existence' ? '' : `[${c.field}] `}${describeChange(c)}`).join('\n')}`);
+    else lines.push('변경 이력: 기록된 변경 없음');
+    if (h.removed) {
+      lines.push(`폐지 여부: ${h.lastSeenYear}학번 자료까지 편성되어 있고 그 이후 학번 자료에는 없다(폐지이거나 학과 개편으로 다른 과목·학과로 옮겨졌을 수 있어 단정하지 말 것).`);
+    }
+    for (const l of h.lineage) {
+      lines.push(`계보: ${l.fromName ?? '(없음)'}(${l.fromCourseKey ?? '-'}) → ${l.toName ?? '(없음)'}(${l.toCourseKey ?? '-'}) ${l.effectiveYear}학번부터, ${l.relation}${l.source === 'AUTO' ? ' (자동 감지)' : ''}`);
+    }
+    lines.push('※ 변경 이유는 이 자료에 기록되어 있지 않다. 이유가 근거에 없으면 모른다고 답하라.');
+    chunks.push({ chunkId: `history-course-${h.courseKey}-${cohort ?? 'x'}`, documentTitle: `${courseName} 연도별 편성·변경 이력`, content: lines.join('\n') });
+  }
+  return chunks;
+}
+
+async function departmentLineageChunk(department) {
+  const chain = await historyService.getDepartmentChain(department.id);
+  if (chain.edges.length === 0) return null;
+  const lines = chain.edges.map((e) => {
+    const from = `${e.fromDepartmentName}${e.fromTrackId ? `(트랙#${e.fromTrackId})` : ''}`;
+    return `- ${e.effectiveYear}학번부터: ${from} → ${e.toDepartmentName} [${e.relation}, ${SOURCE_LABEL[e.source] || e.source}]${e.note ? ` ${e.note}` : ''}`;
+  });
+  return { chunkId: `history-dept-${department.id}`, documentTitle: `${department.name} 학과 개편 이력`, content: lines.join('\n') };
+}
+
+async function lookupChangeHistory({ message, contextText, student, yearContext }) {
+  const wantsHistory = yearContext.intents.history || yearContext.mode === 'COMPARE';
+  if (!wantsHistory) return [];
+
+  const department = await resolveDepartment(message, student);
+  const cohort = yearContext.applicableCohort;
+  const chunks = [];
+
+  const courseNames = await mentionedCourseNames(`${message}\n${contextText || ''}`, department?.id);
+  for (const name of courseNames) chunks.push(...(await courseHistoryChunks(name, department, cohort)));
+
+  // 과목이 특정되면 과목 이력이 답이고, 아니면(졸업학점/전공/교양 등) 규정 이력을 만든다. 연도 비교 질문은 연도별
+  // 졸업요건 청크가 이미 각 해 값을 주므로, 변경 이력을 묻는 표현("언제 바뀌었어")이 있을 때만 규정 이력을 더한다.
+  if (department && yearContext.intents.history && (courseNames.length === 0 || yearContext.intents.requirement)) {
+    const baseCohort = cohort ?? yearContext.latestBookYear;
+    if (baseCohort) {
+      for (const code of ruleCodesFor(message, yearContext)) {
+        const chunk = await ruleHistoryChunk(department, code, baseCohort);
+        if (chunk) chunks.push(chunk);
+      }
+    }
+  }
+  if (department) {
+    const lineage = await departmentLineageChunk(department);
+    if (lineage) chunks.push(lineage);
+  }
+  return chunks;
+}
+
+module.exports = {
+  resolveDepartment,
+  lookupGraduationRequirements,
+  lookupChangeHistory,
+  mentionedCourseNames,
+};
