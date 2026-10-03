@@ -1,5 +1,45 @@
 [
   {
+    "fromDepartment": "기계공학과",
+    "fromTrack": null,
+    "toDepartment": "기계공학부",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2024,
+    "source": "NAME_MATCH",
+    "note": "2023 기계공학과가 2024 기계공학부(기계공학·모빌리티 두 전공 표)로 이어진 것으로 보임. 2023의 스마트자동차공학과·기계설계공학과가 어디로 이어졌는지는 책자에서 확인하지 못함. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "도시공학부",
+    "fromTrack": "경관문화공학전공",
+    "toDepartment": "도시공학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2024,
+    "source": "NAME_MATCH",
+    "note": "2023 도시공학부(도시계획설계·경관문화공학 세부전공)가 2024 도시공학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "도시공학부",
+    "fromTrack": "도시계획설계전공",
+    "toDepartment": "도시공학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2024,
+    "source": "NAME_MATCH",
+    "note": "2023 도시공학부(도시계획설계·경관문화공학 세부전공)가 2024 도시공학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "도시공학부",
+    "fromTrack": null,
+    "toDepartment": "도시공학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2024,
+    "source": "NAME_MATCH",
+    "note": "2023 도시공학부(도시계획설계·경관문화공학 세부전공)가 2024 도시공학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
     "fromDepartment": "원예산업학과",
     "fromTrack": null,
     "toDepartment": "농생명바이오계열",

@@ -101,7 +101,7 @@ test('"2020학년도와 2026학년도의 졸업요건 차이는?": 두 해를 �
   const biz = STUDENTS()[3][1];
   const bizAnswer = await ask(biz, '2020학년도와 2026학년도의 졸업요건 차이는 뭐야?');
   assert.match(bizAnswer.structured.graduation[0].documentTitle, /자료 없음/);
-  assert.match(bizAnswer.structured.graduation[0].content, /입력된 학번 범위는 2024~2026학번/);
+  assert.match(bizAnswer.structured.graduation[0].content, /입력된 학번 범위는 2023~2026학번/);
   assert.match(bizAnswer.structured.graduation[1].content, /130학점/);
   assert.match(bizAnswer.structured.graduation[1].content, /\[2026학번 적용 요건/);
 });
