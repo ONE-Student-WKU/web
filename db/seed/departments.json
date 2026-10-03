@@ -117,5 +117,11 @@
   { "name": "빅데이터·금융통계학부", "tracks": [] },
   { "name": "반도체·디스플레이학부", "tracks": [] },
   { "name": "화학과", "tracks": [] },
-  { "name": "토목환경공학과", "tracks": [] }
+  { "name": "토목환경공학과", "tracks": [] },
+  { "name": "응용수학부", "tracks": [] },
+  { "name": "바이오나노화학부", "tracks": [] },
+  { "name": "음악과", "tracks": [] },
+  { "name": "SW융합학과", "tracks": [] },
+  { "name": "국제통상학부", "tracks": [] },
+  { "name": "생물환경화학과", "tracks": [] }
 ]
