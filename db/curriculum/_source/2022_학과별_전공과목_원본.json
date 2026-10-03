@@ -25384,7 +25384,7 @@
       "courseCode": "349221",
       "courseName": "일반화학2",
       "credits": "3",
-      "courseNameEn": "General chemistry2"
+      "courseNameEn": "General Chemistry 2"
     },
     {
       "grade": "1",
@@ -25404,7 +25404,7 @@
       "courseCode": "349148",
       "courseName": "유기화학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Organic Chemistry"
     },
     {
       "grade": "2",
@@ -25414,7 +25414,7 @@
       "courseCode": "349151",
       "courseName": "물리화학1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Physical Chemistry 1"
     },
     {
       "grade": "2",
@@ -25424,7 +25424,7 @@
       "courseCode": "349152",
       "courseName": "물리화학실험1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Physical Chemistry Lab. 1"
     },
     {
       "grade": "2",
@@ -25434,7 +25434,7 @@
       "courseCode": "349157",
       "courseName": "분석화학1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Analytical Chemistry 1"
     },
     {
       "grade": "2",
@@ -25444,7 +25444,7 @@
       "courseCode": "349204",
       "courseName": "습식분석실험1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Wet Analytical Chemistry Lab. 1"
     },
     {
       "grade": "2",
@@ -25454,7 +25454,7 @@
       "courseCode": "349214",
       "courseName": "배위화학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Coordination Chemistry"
     },
     {
       "grade": "2",
@@ -25464,7 +25464,7 @@
       "courseCode": "349160",
       "courseName": "나노화학전산및실습",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Computer simulation and Lab for Nano Chemistry"
     },
     {
       "grade": "2",
@@ -25474,7 +25474,7 @@
       "courseCode": "349223",
       "courseName": "고등일반화학1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Advanced General Chemistry1"
     },
     {
       "grade": "2",
@@ -25484,7 +25484,7 @@
       "courseCode": "349224",
       "courseName": "고등과학개론1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Introduction of Advanced Science1"
     },
     {
       "grade": "2",
@@ -25774,7 +25774,7 @@
       "courseCode": "349217",
       "courseName": "고체 및 유기금속화학",
       "credits": "1",
-      "courseNameEn": "Solid-State and Organometallic Chemistry"
+      "courseNameEn": "Solid-State  and Organometallic Chemistry"
     }
   ],
   "생명과학부": [
