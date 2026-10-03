@@ -1,5 +1,45 @@
 [
   {
+    "fromDepartment": "생물환경화학과",
+    "fromTrack": null,
+    "toDepartment": "생명환경학과",
+    "toTrack": null,
+    "relation": "RENAME",
+    "effectiveYear": 2022,
+    "source": "NAME_MATCH",
+    "note": "2021 농식품융합대학 생물환경화학과가 2022 생명환경학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "국제통상학부",
+    "fromTrack": null,
+    "toDepartment": "무역학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2022,
+    "source": "NAME_MATCH",
+    "note": "2021 경영대학 국제통상학부가 2022 무역학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "바이오나노화학부",
+    "fromTrack": null,
+    "toDepartment": "화학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2022,
+    "source": "NAME_MATCH",
+    "note": "2021 자연과학대학 바이오나노화학부가 2022 화학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
+    "fromDepartment": "SW융합학과",
+    "fromTrack": null,
+    "toDepartment": "인공지능융합학과",
+    "toTrack": null,
+    "relation": "REORG",
+    "effectiveYear": 2022,
+    "source": "NAME_MATCH",
+    "note": "2021 SW융합학과와 2022 인공지능융합학과는 총괄표 비고(SW연계·복합전공 필수 이수)와 졸업학점 구조(136, 전공 54)가 같아 이어진 것으로 보임(이름은 다름). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+  },
+  {
     "fromDepartment": "경영학부",
     "fromTrack": null,
     "toDepartment": "경영학과",
