@@ -6989,7 +6989,7 @@
       "category": "전공필수",
       "courseCode": "181013",
       "courseName": "학술답사1",
-      "credits": "0",
+      "credits": "P",
       "courseNameEn": "Academic Exploration 1"
     },
     {
@@ -7109,7 +7109,7 @@
       "category": "전공필수",
       "courseCode": "181014",
       "courseName": "학술답사2",
-      "credits": "0",
+      "credits": "P",
       "courseNameEn": "Academic Exploration 2"
     },
     {
@@ -8965,7 +8965,7 @@
       "category": "전공선택",
       "courseCode": "184170",
       "courseName": "서원답사3",
-      "credits": "0",
+      "credits": "P",
       "courseNameEn": "Survey of So-Won(Historic Site)3"
     },
     {
@@ -14564,7 +14564,7 @@
       "courseCode": "219813",
       "courseName": "캡스톤디자인",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Capstone Design"
     },
     {
       "grade": "4",
@@ -18293,7 +18293,7 @@
       "category": "전공필수",
       "courseCode": "232398",
       "courseName": "기초종합시험",
-      "credits": "0",
+      "credits": "P",
       "courseNameEn": "Comprehensive Basic Course Examination"
     },
     {
@@ -35220,7 +35220,7 @@
       "courseCode": "362252",
       "courseName": "도시건축경관론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Urban Architectural Landscape"
     },
     {
       "grade": "3",
@@ -35360,7 +35360,7 @@
       "courseCode": "362257",
       "courseName": "도시재생계획론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Urban Real Estate Management"
     },
     {
       "grade": "4",
@@ -35370,7 +35370,7 @@
       "courseCode": "362258",
       "courseName": "부동산관리론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Urban Landscape Design"
     },
     {
       "grade": "4",
@@ -35440,7 +35440,7 @@
       "courseCode": "362263",
       "courseName": "산학옴니버스강좌(도시)",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Comprehensive Practice for Urban Planning & Design"
     }
   ],
   "도시공학부(경관문화공학전공)": [
@@ -35882,7 +35882,7 @@
       "courseCode": "362276",
       "courseName": "경관재료공학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Advanced Landscape Material Study"
     },
     {
       "grade": "3",
@@ -35922,7 +35922,7 @@
       "courseCode": "362279",
       "courseName": "대지및생태경관공학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Site & Ecological Landscape Engineering"
     },
     {
       "grade": "4",
@@ -35942,7 +35942,7 @@
       "courseCode": "362281",
       "courseName": "가로경관및야경계획",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Street Landscape & Nightscape Planning"
     },
     {
       "grade": "4",
@@ -35992,7 +35992,7 @@
       "courseCode": "362231",
       "courseName": "산학옴니버스강좌(경관)",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Landscape Field Project Lab."
     },
     {
       "grade": "4",
@@ -36012,7 +36012,7 @@
       "courseCode": "362284",
       "courseName": "경관문화공학종합계획",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Comprehensive Planning for Cultural Landscape Engineering"
     },
     {
       "grade": "4",
@@ -38130,7 +38130,7 @@
       "courseCode": "264315",
       "courseName": "가족복지론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Family Welfare Studies"
     },
     {
       "grade": "1",
@@ -38140,7 +38140,7 @@
       "courseCode": "264308",
       "courseName": "보육학개론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Foundations of Child Educare"
     },
     {
       "grade": "1",
@@ -38150,7 +38150,7 @@
       "courseCode": "264817",
       "courseName": "아동권리와복지",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Children’s Right and Welfare"
     },
     {
       "grade": "2",
@@ -38210,7 +38210,7 @@
       "courseCode": "264361",
       "courseName": "소비자학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Consumer Studies"
     },
     {
       "grade": "2",
@@ -38220,7 +38220,7 @@
       "courseCode": "264809",
       "courseName": "보육교사론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Childcare Teacher"
     },
     {
       "grade": "2",
@@ -38230,7 +38230,7 @@
       "courseCode": "264818",
       "courseName": "아동관찰및행동연구",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Observation & Behavior Study for children"
     },
     {
       "grade": "2",
@@ -38240,7 +38240,7 @@
       "courseCode": "264378",
       "courseName": "아동안전관리",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Safety Education for Young Children"
     },
     {
       "grade": "2",
@@ -38530,7 +38530,7 @@
       "courseCode": "264360",
       "courseName": "건강가정현장실습",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Resident Enabling & Empowering Families"
     },
     {
       "grade": "4",
@@ -38540,7 +38540,7 @@
       "courseCode": "264318",
       "courseName": "소비자교육",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Consumer Education"
     },
     {
       "grade": "4",
@@ -38550,7 +38550,7 @@
       "courseCode": "264810",
       "courseName": "보육실습",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Child Educare Field Work"
     },
     {
       "grade": "4",
@@ -38560,7 +38560,7 @@
       "courseCode": "264314",
       "courseName": "영유아프로그램개발과평가",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Infant-toddler program Development & Education"
     },
     {
       "grade": "4",
@@ -38570,7 +38570,7 @@
       "courseCode": "264812",
       "courseName": "캡스톤디자인2",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Capstone Design 2"
     },
     {
       "grade": "4",
@@ -38772,7 +38772,7 @@
       "courseCode": "167107",
       "courseName": "무역실무",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Trade Practices"
     },
     {
       "grade": "2",
@@ -38792,7 +38792,7 @@
       "courseCode": "167180",
       "courseName": "글로벌경영론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Global Management"
     },
     {
       "grade": "2",
@@ -38802,7 +38802,7 @@
       "courseCode": "167229",
       "courseName": "시장경제의이해",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Understanding of the market economy"
     },
     {
       "grade": "2",
@@ -38842,7 +38842,7 @@
       "courseCode": "167112",
       "courseName": "국제무역론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "International Trade"
     },
     {
       "grade": "2",
@@ -38852,7 +38852,7 @@
       "courseCode": "167245",
       "courseName": "무역결제론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "International Trade Settlement"
     },
     {
       "grade": "2",
@@ -38912,7 +38912,7 @@
       "courseCode": "167137",
       "courseName": "경제통합론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Economic Integration"
     },
     {
       "grade": "3",
@@ -38922,7 +38922,7 @@
       "courseCode": "167132",
       "courseName": "국제수지론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Balance of International Payments"
     },
     {
       "grade": "3",
@@ -38932,7 +38932,7 @@
       "courseCode": "167146",
       "courseName": "중국무역론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Foreign Trade of China"
     },
     {
       "grade": "3",
@@ -38942,7 +38942,7 @@
       "courseCode": "167233",
       "courseName": "국제통상계약실무",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Contracts Practices of International Trade"
     },
     {
       "grade": "3",
@@ -38952,7 +38952,7 @@
       "courseCode": "167859",
       "courseName": "무역영어",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Business English"
     },
     {
       "grade": "3",
@@ -39414,7 +39414,7 @@
       "courseCode": "282622",
       "courseName": "다이아몬드감정실습",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Practical Diamond grading"
     },
     {
       "grade": "2",
@@ -39424,7 +39424,7 @@
       "courseCode": "282970",
       "courseName": "귀금속세공기초2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Jewelry Making 2"
     },
     {
       "grade": "2",
@@ -39434,7 +39434,7 @@
       "courseCode": "282777",
       "courseName": "장신구재료및기법2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Alternative Materials for Jewelry Fabrication 2"
     },
     {
       "grade": "2",
@@ -39444,7 +39444,7 @@
       "courseCode": "282754",
       "courseName": "보석팬시가공",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Gemstone lapidary-fancy cutting"
     },
     {
       "grade": "2",
@@ -39454,7 +39454,7 @@
       "courseCode": "282968",
       "courseName": "주얼리일러스트디자인2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Jewelry illustration Design 2"
     },
     {
       "grade": "2",
@@ -39464,7 +39464,7 @@
       "courseCode": "282746",
       "courseName": "공예통론2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Introduction to Metal Craft & Jewelry 2"
     },
     {
       "grade": "3",
@@ -39614,7 +39614,7 @@
       "courseCode": "282974",
       "courseName": "산업장신구CAD2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Commercial Jewelry CAD 2"
     },
     {
       "grade": "3",
@@ -43014,7 +43014,7 @@
       "courseCode": "349201",
       "courseName": "생물질분석",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Biomaterial analysis"
     },
     {
       "grade": "2",
@@ -43074,7 +43074,7 @@
       "courseCode": "349153",
       "courseName": "물리화학2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Physical Chemistry 2"
     },
     {
       "grade": "2",
@@ -43084,7 +43084,7 @@
       "courseCode": "349154",
       "courseName": "물리화학실험2",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Physical Chemistry Lab. 2"
     },
     {
       "grade": "2",
@@ -43094,7 +43094,7 @@
       "courseCode": "349161",
       "courseName": "분석화학2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Analytical chemistry 2"
     },
     {
       "grade": "2",
@@ -43114,7 +43114,7 @@
       "courseCode": "349114",
       "courseName": "물리화학특강",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Topics in Physical Chemistry"
     },
     {
       "grade": "3",
@@ -43304,7 +43304,7 @@
       "courseCode": "349169",
       "courseName": "화학분광학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Spectroscopy in Chemistry"
     },
     {
       "grade": "3",
@@ -43384,7 +43384,7 @@
       "courseCode": "349133",
       "courseName": "화학논리및논술",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Logic and Essay of Chemistry"
     },
     {
       "grade": "4",
@@ -43404,7 +43404,7 @@
       "courseCode": "349173",
       "courseName": "캡스톤디자인",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Capstone Design"
     },
     {
       "grade": "4",
@@ -43414,7 +43414,7 @@
       "courseCode": "349174",
       "courseName": "정밀유기화학공업",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Fine Chemical Industry"
     },
     {
       "grade": "4",
@@ -43646,7 +43646,7 @@
       "courseCode": "340403",
       "courseName": "응용수학1",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Applied Mathematics 1"
     },
     {
       "grade": "2",
@@ -43656,7 +43656,7 @@
       "courseCode": "340405",
       "courseName": "재료화학개론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Intro. Materials Chemistry"
     },
     {
       "grade": "2",
@@ -43666,7 +43666,7 @@
       "courseCode": "340406",
       "courseName": "반도체공학개론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Intro. to Semiconductor Technology"
     },
     {
       "grade": "2",
@@ -43676,7 +43676,7 @@
       "courseCode": "340436",
       "courseName": "기초전자공학및실험1",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Basic Electronics & Lab. 1"
     },
     {
       "grade": "2",
@@ -43686,7 +43686,7 @@
       "courseCode": "340464",
       "courseName": "컴퓨터활용",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Computer and Application"
     },
     {
       "grade": "2",
@@ -43706,7 +43706,7 @@
       "courseCode": "340408",
       "courseName": "기초광학및실험",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Basic Optics & Lab."
     },
     {
       "grade": "2",
@@ -43716,7 +43716,7 @@
       "courseCode": "340410",
       "courseName": "응용수학2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Applied Mathematics 2"
     },
     {
       "grade": "2",
@@ -43726,7 +43726,7 @@
       "courseCode": "340412",
       "courseName": "디스플레이공학개론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Intro. to Display Technology"
     },
     {
       "grade": "2",
@@ -43736,7 +43736,7 @@
       "courseCode": "340411",
       "courseName": "기초전자공학및실험2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Basic Electronics & Lab. 2"
     },
     {
       "grade": "2",
@@ -44248,7 +44248,7 @@
       "courseCode": "265230",
       "courseName": "헤어미용2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Beauty Hair 2"
     },
     {
       "grade": "2",
@@ -44348,7 +44348,7 @@
       "courseCode": "265001",
       "courseName": "공중보건학",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Public health"
     },
     {
       "grade": "2",
@@ -44358,7 +44358,7 @@
       "courseCode": "265247",
       "courseName": "메이크업2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Make-up 2"
     },
     {
       "grade": "2",
@@ -44368,7 +44368,7 @@
       "courseCode": "265256",
       "courseName": "피부미용2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Asthetic 2"
     },
     {
       "grade": "2",
@@ -44378,7 +44378,7 @@
       "courseCode": "265175",
       "courseName": "네일미용1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Nail Ar1"
     },
     {
       "grade": "2",
@@ -44388,7 +44388,7 @@
       "courseCode": "265257",
       "courseName": "두피및모발관리",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Scalp and Hair Care"
     },
     {
       "grade": "3",
@@ -44558,7 +44558,7 @@
       "courseCode": "265207",
       "courseName": "응용헤어미용2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Practical Hair Design 2"
     },
     {
       "grade": "3",
@@ -44568,7 +44568,7 @@
       "courseCode": "265225",
       "courseName": "네일미용2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Nail Art2"
     },
     {
       "grade": "3",
@@ -44578,7 +44578,7 @@
       "courseCode": "265227",
       "courseName": "미용교재연구지도법",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Cosmetology Education Teaching and Learning of Education"
     },
     {
       "grade": "3",
@@ -44588,7 +44588,7 @@
       "courseCode": "265262",
       "courseName": "반사요법",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Reflaxology"
     },
     {
       "grade": "3",
@@ -44598,7 +44598,7 @@
       "courseCode": "265264",
       "courseName": "업스타일",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Up Style Hair"
     },
     {
       "grade": "3",
@@ -44608,7 +44608,7 @@
       "courseCode": "265267",
       "courseName": "한국형피부미용",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Korean Skincare"
     },
     {
       "grade": "3",
@@ -45010,7 +45010,7 @@
       "courseCode": "346272",
       "courseName": "선형대수학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Linear Algebra"
     },
     {
       "grade": "2",
@@ -45030,7 +45030,7 @@
       "courseCode": "346271",
       "courseName": "통계패키지1",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Statistical Package 1"
     },
     {
       "grade": "2",
@@ -45522,7 +45522,7 @@
       "courseCode": "341242",
       "courseName": "생명과학의최신동향",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Recent trend of Bioscience"
     },
     {
       "grade": "2",
@@ -45562,7 +45562,7 @@
       "courseCode": "341146",
       "courseName": "세포생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Cell Biology"
     },
     {
       "grade": "2",
@@ -45572,7 +45572,7 @@
       "courseCode": "341148",
       "courseName": "미생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Microbiology"
     },
     {
       "grade": "2",
@@ -45582,7 +45582,7 @@
       "courseCode": "341162",
       "courseName": "유기화학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Organic Chemistry"
     },
     {
       "grade": "2",
@@ -45592,7 +45592,7 @@
       "courseCode": "341001",
       "courseName": "세포생물학실험",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Cell Biology Lab."
     },
     {
       "grade": "2",
@@ -45602,7 +45602,7 @@
       "courseCode": "341002",
       "courseName": "미생물학실험",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Microbiology Lab"
     },
     {
       "grade": "2",
@@ -45612,7 +45612,7 @@
       "courseCode": "341003",
       "courseName": "해양생물학실험",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Marine Biology Lab"
     },
     {
       "grade": "2",
@@ -45622,7 +45622,7 @@
       "courseCode": "341175",
       "courseName": "해양생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Marine Biology"
     },
     {
       "grade": "2",
@@ -45782,7 +45782,7 @@
       "courseCode": "341155",
       "courseName": "동물생리학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Animal Physiology"
     },
     {
       "grade": "3",
@@ -45792,7 +45792,7 @@
       "courseCode": "341160",
       "courseName": "면역학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Immunology"
     },
     {
       "grade": "3",
@@ -45802,7 +45802,7 @@
       "courseCode": "341185",
       "courseName": "분자생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Molecular Biology"
     },
     {
       "grade": "3",
@@ -45812,7 +45812,7 @@
       "courseCode": "341006",
       "courseName": "분자생물학실험",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Molecular Biology Lab."
     },
     {
       "grade": "3",
@@ -45822,7 +45822,7 @@
       "courseCode": "341161",
       "courseName": "환경생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Environmental Biology"
     },
     {
       "grade": "3",
@@ -45832,7 +45832,7 @@
       "courseCode": "341193",
       "courseName": "생물교과교육론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Biology Education of Subject-matters"
     },
     {
       "grade": "3",
@@ -45882,7 +45882,7 @@
       "courseCode": "341156",
       "courseName": "식물생리학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Plant Physiology"
     },
     {
       "grade": "3",
@@ -45892,7 +45892,7 @@
       "courseCode": "341159",
       "courseName": "생명공학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Biotechnology"
     },
     {
       "grade": "3",
@@ -45902,7 +45902,7 @@
       "courseCode": "341167",
       "courseName": "신경생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Neurobiology"
     },
     {
       "grade": "3",
@@ -45912,7 +45912,7 @@
       "courseCode": "341181",
       "courseName": "과학교육론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Foundations of Scientific Education"
     },
     {
       "grade": "3",
@@ -45922,7 +45922,7 @@
       "courseCode": "341182",
       "courseName": "생태학및실험",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Ecology and Lap"
     },
     {
       "grade": "3",
@@ -45932,7 +45932,7 @@
       "courseCode": "341194",
       "courseName": "생물교재연구.지도법",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Biology Teaching and Learning of Education"
     },
     {
       "grade": "3",
@@ -45942,7 +45942,7 @@
       "courseCode": "341207",
       "courseName": "캡스톤디자인",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Capstone Design"
     },
     {
       "grade": "3",
@@ -45972,7 +45972,7 @@
       "courseCode": "341246",
       "courseName": "식물생리학실험",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Plant Physiology Lab"
     },
     {
       "grade": "4",
@@ -46234,7 +46234,7 @@
       "courseCode": "218045",
       "courseName": "생명환경과학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Life Environmental Science"
     },
     {
       "grade": "1",
@@ -46244,7 +46244,7 @@
       "courseCode": "218530",
       "courseName": "일반화학2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "General Chemistry 2"
     },
     {
       "grade": "1",
@@ -46254,7 +46254,7 @@
       "courseCode": "218531",
       "courseName": "일반생물학2",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "General Biology 2"
     },
     {
       "grade": "2",
@@ -46294,7 +46294,7 @@
       "courseCode": "218005",
       "courseName": "분석화학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Analytical Chemistry"
     },
     {
       "grade": "2",
@@ -46304,7 +46304,7 @@
       "courseCode": "218500",
       "courseName": "기초미생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Foundation in Microbiology"
     },
     {
       "grade": "2",
@@ -46314,7 +46314,7 @@
       "courseCode": "218502",
       "courseName": "기초유기화학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Introduction to Organic Chemistry"
     },
     {
       "grade": "2",
@@ -47388,7 +47388,7 @@
       "courseCode": "348036",
       "courseName": "뉴스포츠1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "New Sports 1"
     },
     {
       "grade": "1",
@@ -47398,7 +47398,7 @@
       "courseCode": "348037",
       "courseName": "배드민턴(기초)1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Badminton(primary) 1"
     },
     {
       "grade": "1",
@@ -47408,7 +47408,7 @@
       "courseCode": "348038",
       "courseName": "팀스포츠1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Team Sports 1"
     },
     {
       "grade": "1",
@@ -47418,7 +47418,7 @@
       "courseCode": "348039",
       "courseName": "전문무도실기1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Martial arts Major Practice 1"
     },
     {
       "grade": "1",
@@ -47428,7 +47428,7 @@
       "courseCode": "348040",
       "courseName": "전공집중실기1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Intensive Major Practice 1"
     },
     {
       "grade": "1",
@@ -47438,7 +47438,7 @@
       "courseCode": "348230",
       "courseName": "수영(기초)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Swimming(Primary)"
     },
     {
       "grade": "1",
@@ -47448,7 +47448,7 @@
       "courseCode": "348231",
       "courseName": "테니스(기초)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Tennis(Primary)"
     },
     {
       "grade": "1",
@@ -47458,7 +47458,7 @@
       "courseCode": "348357",
       "courseName": "육상",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Track & Field"
     },
     {
       "grade": "1",
@@ -47468,7 +47468,7 @@
       "courseCode": "348427",
       "courseName": "산악훈련",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Mountaineering Training"
     },
     {
       "grade": "1",
@@ -47648,7 +47648,7 @@
       "courseCode": "348665",
       "courseName": "수영(중급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Swimming(intermediate)"
     },
     {
       "grade": "2",
@@ -47658,7 +47658,7 @@
       "courseCode": "348732",
       "courseName": "수중재활운동(Basic)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Aquatic Rehabilitation(Basic)"
     },
     {
       "grade": "2",
@@ -47668,7 +47668,7 @@
       "courseCode": "348766",
       "courseName": "레저스포츠",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Leisure Sports"
     },
     {
       "grade": "2",
@@ -47678,7 +47678,7 @@
       "courseCode": "348767",
       "courseName": "뉴스포츠3",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "New Sports 3"
     },
     {
       "grade": "2",
@@ -47688,7 +47688,7 @@
       "courseCode": "348768",
       "courseName": "배드민턴(중급)1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Badminton(Secondary) 2"
     },
     {
       "grade": "2",
@@ -47698,7 +47698,7 @@
       "courseCode": "348769",
       "courseName": "팀스포츠3",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Team Sports 3"
     },
     {
       "grade": "2",
@@ -47708,7 +47708,7 @@
       "courseCode": "348770",
       "courseName": "테니스(중급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Tennis(Secondary)"
     },
     {
       "grade": "2",
@@ -47718,7 +47718,7 @@
       "courseCode": "348771",
       "courseName": "전문무도실기3",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Martial arts Major Practice 1"
     },
     {
       "grade": "2",
@@ -47728,7 +47728,7 @@
       "courseCode": "348772",
       "courseName": "전공집중실기3",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Intensive Major Practice 1"
     },
     {
       "grade": "2",
@@ -47738,7 +47738,7 @@
       "courseCode": "348376",
       "courseName": "특수체육론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Adapted Physical Education"
     },
     {
       "grade": "2",
@@ -47748,7 +47748,7 @@
       "courseCode": "348379",
       "courseName": "스포츠영어1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Sports English1"
     },
     {
       "grade": "2",
@@ -47758,7 +47758,7 @@
       "courseCode": "348395",
       "courseName": "스포츠산업론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Sports Industry"
     },
     {
       "grade": "2",
@@ -47768,7 +47768,7 @@
       "courseCode": "348450",
       "courseName": "노인체육론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Silver Sports"
     },
     {
       "grade": "2",
@@ -47778,7 +47778,7 @@
       "courseCode": "348762",
       "courseName": "스포츠윤리",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Sports Ethics"
     },
     {
       "grade": "2",
@@ -47788,7 +47788,7 @@
       "courseCode": "348763",
       "courseName": "트레이닝론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Training Theory"
     },
     {
       "grade": "2",
@@ -47798,7 +47798,7 @@
       "courseCode": "348764",
       "courseName": "유아체육론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Physical Eduaction of Young Children"
     },
     {
       "grade": "2",
@@ -47808,7 +47808,7 @@
       "courseCode": "348765",
       "courseName": "운동기능해부학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Exercise Functional anatomy"
     },
     {
       "grade": "2",
@@ -47838,7 +47838,7 @@
       "courseCode": "348741",
       "courseName": "수중재활운동(Watsu)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Aquatic Rehabilitation(Watsu)"
     },
     {
       "grade": "2",
@@ -47848,7 +47848,7 @@
       "courseCode": "348780",
       "courseName": "스키(중급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Sking(Secondary)"
     },
     {
       "grade": "2",
@@ -47858,7 +47858,7 @@
       "courseCode": "348781",
       "courseName": "뉴스포츠4",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "New Sports 4"
     },
     {
       "grade": "2",
@@ -47868,7 +47868,7 @@
       "courseCode": "348782",
       "courseName": "배드민턴(중급)2",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Badminton(Secondary) 2"
     },
     {
       "grade": "2",
@@ -47878,7 +47878,7 @@
       "courseCode": "348783",
       "courseName": "팀스포츠4",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Team Sports 4"
     },
     {
       "grade": "2",
@@ -47888,7 +47888,7 @@
       "courseCode": "348784",
       "courseName": "개인스포츠(중급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Personal Sports(Secondary)"
     },
     {
       "grade": "2",
@@ -47898,7 +47898,7 @@
       "courseCode": "348785",
       "courseName": "헬스&휘트니스(중급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "health & fitness(Secondary)"
     },
     {
       "grade": "2",
@@ -48018,7 +48018,7 @@
       "courseCode": "348796",
       "courseName": "수중재활운동(ATRI)",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Aquatic Rehabilitation (ATRI)"
     },
     {
       "grade": "3",
@@ -48028,7 +48028,7 @@
       "courseCode": "348797",
       "courseName": "수영(고급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Swimming(Advanced)"
     },
     {
       "grade": "3",
@@ -48038,7 +48038,7 @@
       "courseCode": "348798",
       "courseName": "유소년야영활동및지도",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Instruction of Youth Camping Activities(Scout)"
     },
     {
       "grade": "3",
@@ -48048,7 +48048,7 @@
       "courseCode": "348799",
       "courseName": "뉴스포츠5",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "New Sports 5"
     },
     {
       "grade": "3",
@@ -48058,7 +48058,7 @@
       "courseCode": "348800",
       "courseName": "배드민턴(고급)1",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Badminton(Advanced) 1"
     },
     {
       "grade": "3",
@@ -48068,7 +48068,7 @@
       "courseCode": "348801",
       "courseName": "팀스포츠5",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Team Sports 5"
     },
     {
       "grade": "3",
@@ -48078,7 +48078,7 @@
       "courseCode": "348802",
       "courseName": "테니스(고급)",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Tennis(Advanced)"
     },
     {
       "grade": "3",
@@ -48088,7 +48088,7 @@
       "courseCode": "348803",
       "courseName": "전문무도실기5",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Martial arts Major Practice 5"
     },
     {
       "grade": "3",
@@ -48098,7 +48098,7 @@
       "courseCode": "348804",
       "courseName": "전공집중실기5",
       "credits": "1",
-      "courseNameEn": null
+      "courseNameEn": "Intensive Major Practice 5"
     },
     {
       "grade": "3",
@@ -48108,7 +48108,7 @@
       "courseCode": "348388",
       "courseName": "스포츠심리학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Sports Psychology"
     },
     {
       "grade": "3",
@@ -48118,7 +48118,7 @@
       "courseCode": "348788",
       "courseName": "운동상해",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Sports Injury"
     },
     {
       "grade": "3",
@@ -48128,7 +48128,7 @@
       "courseCode": "348789",
       "courseName": "장애인체육프로그램개발및운영",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Development and operation of physical education program for the disabled"
     },
     {
       "grade": "3",
@@ -48138,7 +48138,7 @@
       "courseCode": "348790",
       "courseName": "스포츠재활마사지",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Sports Rehabilitation Massage"
     },
     {
       "grade": "3",
@@ -48148,7 +48148,7 @@
       "courseCode": "348791",
       "courseName": "노인스포츠지도",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Instruction of Senior Sports Activity"
     },
     {
       "grade": "3",
@@ -48158,7 +48158,7 @@
       "courseCode": "348792",
       "courseName": "유소년스포츠지도",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Instruction of Youth Sports Activity"
     },
     {
       "grade": "3",
@@ -48168,7 +48168,7 @@
       "courseCode": "348793",
       "courseName": "건강체력평가",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Health Fitness Assessment"
     },
     {
       "grade": "3",
@@ -48178,7 +48178,7 @@
       "courseCode": "348794",
       "courseName": "스포츠마케팅론",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Sports Marketing"
     },
     {
       "grade": "3",
@@ -48188,7 +48188,7 @@
       "courseCode": "348795",
       "courseName": "스포츠창업론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Sports founded"
     },
     {
       "grade": "3",
@@ -48388,7 +48388,7 @@
       "courseCode": "348825",
       "courseName": "수중운동PROTOCOL",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Aquatic exercise PROTOCOL"
     },
     {
       "grade": "4",
@@ -48398,7 +48398,7 @@
       "courseCode": "348034",
       "courseName": "운동기술분석",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Analysis of Sports Skill"
     },
     {
       "grade": "4",
@@ -48408,7 +48408,7 @@
       "courseCode": "348821",
       "courseName": "체육행정",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Physical Activity Adminstration"
     },
     {
       "grade": "4",
@@ -48418,7 +48418,7 @@
       "courseCode": "348822",
       "courseName": "노인체육프로그램개발및운영",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Development and operation of elder sports program"
     },
     {
       "grade": "4",
@@ -48428,7 +48428,7 @@
       "courseCode": "348823",
       "courseName": "운동부하검사",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Exercise Test"
     },
     {
       "grade": "4",
@@ -48438,7 +48438,7 @@
       "courseCode": "348824",
       "courseName": "스포츠에이전트론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Sports Agent"
     },
     {
       "grade": "4",
@@ -48468,7 +48468,7 @@
       "courseCode": "348263",
       "courseName": "운동처방",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Exercise Prescription"
     },
     {
       "grade": "4",
@@ -48478,7 +48478,7 @@
       "courseCode": "348826",
       "courseName": "학교체육프로그램개발및운영",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Development and operation of school physical education program"
     },
     {
       "grade": "4",
@@ -48488,7 +48488,7 @@
       "courseCode": "348827",
       "courseName": "스포츠미디어론",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Theory of Sports Media"
     }
   ],
   "식품영양학과": [
@@ -48570,7 +48570,7 @@
       "courseCode": "264233",
       "courseName": "식생활과문화",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Global Food Culture"
     },
     {
       "grade": "1",
@@ -48630,7 +48630,7 @@
       "courseCode": "264382",
       "courseName": "식품영양학의이해",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Understanding Foods & Nutrition"
     },
     {
       "grade": "1",
@@ -48640,7 +48640,7 @@
       "courseCode": "264600",
       "courseName": "조리원리및실습",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Cooking Principles and Laboratory"
     },
     {
       "grade": "2",
@@ -48680,7 +48680,7 @@
       "courseCode": "264215",
       "courseName": "영양학1",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "NutritionⅠ"
     },
     {
       "grade": "2",
@@ -48690,7 +48690,7 @@
       "courseCode": "264216",
       "courseName": "영양생리학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Nutritional Physiology"
     },
     {
       "grade": "2",
@@ -48700,7 +48700,7 @@
       "courseCode": "264366",
       "courseName": "식품학1",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Food Science 1"
     },
     {
       "grade": "2",
@@ -48710,7 +48710,7 @@
       "courseCode": "264222",
       "courseName": "조리과학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Cooking and Science"
     },
     {
       "grade": "2",
@@ -48760,7 +48760,7 @@
       "courseCode": "264220",
       "courseName": "영양학2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "NutritionⅡ"
     },
     {
       "grade": "2",
@@ -48770,7 +48770,7 @@
       "courseCode": "264367",
       "courseName": "식품학2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Food Science 2"
     },
     {
       "grade": "2",
@@ -48780,7 +48780,7 @@
       "courseCode": "264383",
       "courseName": "식품미생물학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Food Microbiology"
     },
     {
       "grade": "2",
@@ -48790,7 +48790,7 @@
       "courseCode": "264226",
       "courseName": "생애주기영양학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Nutrition Throughout the Life Cycle"
     },
     {
       "grade": "2",
@@ -48800,7 +48800,7 @@
       "courseCode": "264603",
       "courseName": "식품분석및실험",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Food Analysis and Laboratory"
     },
     {
       "grade": "2",
@@ -48810,7 +48810,7 @@
       "courseCode": "264824",
       "courseName": "영양화학및실험",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Nutritional chemistry laboratory"
     },
     {
       "grade": "3",
@@ -48930,7 +48930,7 @@
       "courseCode": "264330",
       "courseName": "영양생화학2",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Nutritional BiochemistryⅡ"
     },
     {
       "grade": "3",
@@ -48950,7 +48950,7 @@
       "courseCode": "264365",
       "courseName": "식품위생학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Food Safety"
     },
     {
       "grade": "3",
@@ -49974,7 +49974,7 @@
       "courseCode": "346217",
       "courseName": "미적분학및연습1",
       "credits": "2",
-      "courseNameEn": null
+      "courseNameEn": "Calculus & Recitation1"
     },
     {
       "grade": "1",
@@ -50646,7 +50646,7 @@
       "courseCode": "252085",
       "courseName": "아동발달",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Child Development"
     },
     {
       "grade": "1",
@@ -50656,7 +50656,7 @@
       "courseCode": "252094",
       "courseName": "해부학",
       "credits": "3",
-      "courseNameEn": null
+      "courseNameEn": "Anatomy"
     },
     {
       "grade": "1",
