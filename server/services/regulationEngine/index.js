@@ -35,4 +35,18 @@ async function resolveRegulation(rawInput, opts = {}) {
   return { ...result, department: data.department || null, confidenceLabel: CONFIDENCE_LABEL_KO[result.confidence] };
 }
 
-module.exports = { resolveRegulation, inputFromStudentRow, todayKst, CONFIDENCE };
+/**
+ * 파트 2: 적용범위 판단(시행규칙 제5조·제13조①~④·제14조·제15조, 학칙 [별표 4]·부칙) + 졸업요건 + 변경 이력 + 데이터 등급을 한 번에.
+ * 판단은 순수 함수 resolveApplicableRules(applicability.js), 여기는 DB 로더만 붙인다. 입력 오류도 예외 대신 결과 객체로 돌려준다.
+ * @param {object} rawInput  applicability.js resolveApplicableRules 주석 참고
+ * @param {object} [opts]  { loadData(ctx), today, withRequirements }
+ */
+async function resolveApplicableRulesForStudent(rawInput, opts = {}) {
+  const { resolveApplicableRules } = require('./applicability');
+  const { ctx } = normalizeInput(rawInput, { today: opts.today });
+  if (!ctx) return resolveApplicableRules(rawInput, null, { today: opts.today }); // 입력 오류 결과를 같은 모양으로
+  const loadData = opts.loadData || ((c) => require('./dbProvider').loadApplicabilityData(c, { withRequirements: opts.withRequirements !== false }));
+  return resolveApplicableRules(rawInput, await loadData(ctx), { today: opts.today });
+}
+
+module.exports = { resolveRegulation, resolveApplicableRulesForStudent, inputFromStudentRow, todayKst, CONFIDENCE };

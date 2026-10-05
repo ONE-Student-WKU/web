@@ -46,6 +46,32 @@ const FLAG_CATALOG = {
   COHORT_TRANSITION_ADDENDUM_NOT_HELD: [L.INFO, '학번별 경과조치의 근거인 종전(2025-08-29자) 학칙 부칙은 시스템에 없어요. 학번별 학점 기준은 해당 학년도 교육과정 책자 값을 사용했어요.'],
   TRANSFER_LIBERAL_DEEMED_MET: [L.ESTIMATED, '3·4학년 편입생은 "종교와 원불교"를 제외한 영역별 교양 이수기준을 충족한 것으로 봐요(시행규칙 제10조 제2항). 결과의 교양 학점은 일반 재학생 기준 참고값이에요.'],
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM: [L.INFO, '4학년 편입생의 최소전공 인정학점은 학과와 무관하게 21학점이에요(교원양성과정 이수 편입생은 별도 기준).'],
+
+  // --- 적용범위 판단(파트 2: resolveApplicableRules) ---
+  APPLICABILITY_ESTIMATED: [L.ESTIMATED, '이 규정은 재량 규정("할 수 있다")이거나 해석이 갈려, 실제 적용 여부는 학과·학사지원과 확인이 필요해요.'],
+  CURRICULUM_PROMULGATION_DATE_ASSUMED: [L.ESTIMATED, '교육과정 개편의 공포일 자료가 없어 그 학년도 시작일(3월 1일)부터 적용된다고 가정했어요. 기준일이 개편 학년도 1학기라 결과가 달라질 수 있어요.'],
+  CATEGORY_NATURE_UNKNOWN: [L.ESTIMATED, '전공기초·전공심화·전공응용 같은 이수구분이 필수/선택 중 어디에 해당하는지 원문에 정의가 없어, 이 과목들에는 제13조②③을 판단하지 않았어요.'],
+  TRANSITION_GRADE_BASIS_AMBIGUOUS: [L.ESTIMATED, '제13조③의 "재학 중인 학년"을 개편 시점 학년으로 볼지 기준일 학년으로 볼지에 따라 이수 여부가 갈리는 과목이 있어요(기본: 개편 시점 학년, 다른 해석은 대안으로 표시).'],
+  GRADE_FROM_ADMISSION_YEAR: [L.ESTIMATED, '학년을 입학년도로 계산했어요(휴학·유급·조기졸업은 반영하지 않았어요).'],
+  NEW_REQUIRED_COURSE_NOT_COVERED: [L.ESTIMATED, '입학 후 새로 생긴 필수과목은 제13조②③에 직접 규정이 없어(①은 신 교육과정을 전 학년에 적용) 이수해야 하는지 학과 확인이 필요해요.'],
+  CATEGORY_YEAR_BOOK_ASSUMED: [L.ESTIMATED, '"수강신청한 학년도의 이수구분"을 그 학년도 교육과정(그 해 입학생 교육과정표)의 이수구분으로 봤어요.'],
+  DEPARTMENT_REORG_CHANGE: [L.ESTIMATED, '학과 개편으로 생긴 과목 변경이 포함돼 있어요. 개편 때 기존 교육과정을 최대 4년 유지할 수 있어(시행규칙 제14조②) 실제 적용은 학과 운영에 따라 달라요.'],
+  LINEAGE_NAME_MATCH: [L.ESTIMATED, '학과 개편 전후 연결이 이름 일치로 추정한 것이에요(책자·학칙에 명시된 연결이 아님).'],
+  DEPARTMENT_IS_SUCCESSOR_OF_COHORT: [L.ESTIMATED, '입력한 학과는 입학 이후 개편으로 생긴 학과예요. 졸업요건은 입학 당시 학과 기준이에요(시행규칙 제5조) — 입학 당시 학과로 다시 조회하는 게 정확해요.'],
+  EQUIVALENCE_LIST_NOT_HELD: [L.ESTIMATED, '동일과목 지정 목록(시행규칙 제15조) 자료가 없어, 바뀐 과목이 동일과목으로 인정되는지 확인할 수 없어요.'],
+  SCHEDULE4_PRE_AMENDMENT_NOT_HELD: [L.ESTIMATED, '2026년 8월 이전에 졸업하면 개정 전 학칙 [별표 4]가 적용되는데, 개정 전 표는 시스템에 없어요.'],
+  PRIOR_ADDENDUM_NOT_HELD: [L.NO_DATA, '종전(2025.08.29.자) 학칙 부칙의 경과조치 원문이 시스템에 없어 내용을 확인할 수 없어요.'],
+  MAJOR_CHANGE_TARGET_NOT_ALLOWED_FOR_COHORT: [L.ESTIMATED, '이 학과로의 전과는 2026년 3월 1일 입학생부터 허용돼요(시행규칙 부칙 2026.02.05. 제2조). 입력한 학번·입학유형을 확인해 주세요.'],
+  OFFERED_GRADE_FROM_NEAREST_SNAPSHOT: [L.ESTIMATED, '변경 후 교육과정에서 이 과목을 찾지 못해(학수번호 변경 등) 가장 가까운 학년도 편성표의 개설 학년을 썼어요.'],
+  OFFERED_GRADE_UNKNOWN: [L.INSUFFICIENT, '변경 후 교육과정에서 이 과목의 개설 학년을 찾지 못해 제13조③ 면제 여부를 판단하지 못했어요.'],
+
+  // --- 데이터 검수 등급(DATA_AUDIT §4) ---
+  HISTORY_NOT_VERIFIED: [L.INSUFFICIENT, '이 구간의 교육과정 자료가 검수 등급 C(미검증·오염 의심)라 "변경 없음"을 확인할 수 없어요 — 기록 없음(검증 안 됨).'],
+  COURSE_DATA_GRADE_C: [L.INSUFFICIENT, '과목 판단에 쓴 교육과정 자료가 검수 등급 C(미검증·오염 의심)예요. 학과 확인이 필요해요.'],
+  COURSE_DATA_GRADE_B: [L.ESTIMATED, '과목 판단에 쓴 교육과정 자료가 검수 등급 B(부분 검증)라 추정이에요.'],
+  REQUIREMENT_DATA_GRADE_C: [L.INSUFFICIENT, '이 학번의 졸업요건 자료가 검수 등급 C(미검증)예요. 학과 확인이 필요해요.'],
+  REQUIREMENT_DATA_GRADE_B: [L.ESTIMATED, '이 학번의 졸업요건 자료가 검수 등급 B(부분 검증)라 추정이에요.'],
+  DATA_PENDING_HOLD: [L.ESTIMATED, '이 학과·학번 자료에 판단 보류 항목(이슈 #260, DATA_AUDIT)이 있어 값이 바뀔 수 있어요.'],
 };
 
 function makeFlag(code, extra = {}) {
@@ -54,7 +80,7 @@ function makeFlag(code, extra = {}) {
   return { code, level: entry[0], message: entry[1], ...extra };
 }
 
-/** 플래그 목록 → 가장 나쁜 level에 해당하는 신뢰도. 플래그가 없거나 INFO뿐이면 확정. */
+/** 플래그 목록 → 가장 나쁜 level에 해당하는 신뢰도. 플래그가 없거나 INFO뿐이면 확정. (level 이름 = 신뢰도 이름, INSUFFICIENT 포함) */
 function confidenceFromFlags(flags) {
   let worst = CONFIDENCE.CONFIRMED;
   for (const f of flags) {

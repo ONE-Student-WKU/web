@@ -8,13 +8,15 @@
  * 존재하는지 기계적으로 검사한다 — "규정 내용을 만들어내지 않는다"를 사람의 주의가 아니라 테스트로 지킨다.
  */
 
-// 신뢰도: 확정 / 추정 / 자료없음. 숫자가 클수록 나쁘다(여러 근거를 합칠 때 가장 나쁜 쪽을 따른다).
-const CONFIDENCE = Object.freeze({ CONFIRMED: 'CONFIRMED', ESTIMATED: 'ESTIMATED', NO_DATA: 'NO_DATA' });
-const CONFIDENCE_RANK = Object.freeze({ CONFIRMED: 0, ESTIMATED: 1, NO_DATA: 2 });
-const CONFIDENCE_LABEL_KO = Object.freeze({ CONFIRMED: '확정', ESTIMATED: '추정', NO_DATA: '자료없음' });
+// 신뢰도: 확정 / 추정 / 자료 불충분 / 자료없음. 숫자가 클수록 나쁘다(여러 근거를 합칠 때 가장 나쁜 쪽을 따른다).
+// INSUFFICIENT(파트 2 추가): 자료는 있지만 검수 등급 C(미검증·오염 의심)라 값을 그대로 믿으면 안 되는 경우.
+// "자료없음"과 나눈 이유 — 값을 보여주되 "확인 필요"로 표시할 수 있어야 하고, 아예 없는 것과는 안내 문구가 달라서.
+const CONFIDENCE = Object.freeze({ CONFIRMED: 'CONFIRMED', ESTIMATED: 'ESTIMATED', INSUFFICIENT: 'INSUFFICIENT', NO_DATA: 'NO_DATA' });
+const CONFIDENCE_RANK = Object.freeze({ CONFIRMED: 0, ESTIMATED: 1, INSUFFICIENT: 2, NO_DATA: 3 });
+const CONFIDENCE_LABEL_KO = Object.freeze({ CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분(확인 필요)', NO_DATA: '자료없음' });
 
-// 플래그 level: 신뢰도를 낮추는 ESTIMATED/NO_DATA, 낮추지 않고 알리기만 하는 INFO.
-const FLAG_LEVEL = Object.freeze({ INFO: 'INFO', ESTIMATED: 'ESTIMATED', NO_DATA: 'NO_DATA' });
+// 플래그 level: 신뢰도를 낮추는 ESTIMATED/INSUFFICIENT/NO_DATA, 낮추지 않고 알리기만 하는 INFO.
+const FLAG_LEVEL = Object.freeze({ INFO: 'INFO', ESTIMATED: 'ESTIMATED', INSUFFICIENT: 'INSUFFICIENT', NO_DATA: 'NO_DATA' });
 
 const ENROLLMENT_TYPES = Object.freeze(['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE']);
 

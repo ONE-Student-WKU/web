@@ -164,3 +164,27 @@
   - 관계 추출은 패턴 매칭(`source=PARSED`): "제N조에도 불구하고" → OVERRIDES, "[별표 N]" → DELEGATES_TO, "「다른 규정」 제N조" → 다른 문서, "…법/령 제N조" → 외부(`to_ref`만), 개정 표시 날짜와 같은 날짜의 부칙 → AMENDS. 판단에 쓰는 관계는 `applicability.json`에 사람이 MANUAL로 적는다.
 - **대안**: HWP 원본(`*.hwp`, `*.hwpx`)을 파싱 — 레포에 있지만 바이너리 파서 의존성이 늘고 txt와 내용이 같아 이득이 없다.
 - **되돌리는 법**: `npm run seed:regulation-articles`를 쓰지 않으면 영향 없음. 테이블 비우기: `DELETE FROM regulation_applicability; DELETE FROM regulation_relations; DELETE FROM regulation_articles; UPDATE regulation_versions SET supersedes_version_id=NULL; DELETE FROM regulation_versions;`
+
+## D-27 [P2] 데이터 검수 등급은 DB 컬럼이 아니라 코드 설정(`dataQuality.js`), 신뢰도 단계 `INSUFFICIENT` 추가
+- **결정**: DATA_AUDIT §4 등급표(학년도 × 영역)와 §2-3 판단 보류 목록을 `server/services/regulationEngine/dataQuality.js`에 그대로 옮겼다. A → 확정, B → 추정, C → **자료 불충분(확인 필요)** = 새 단계 `INSUFFICIENT`(순위: 확정 < 추정 < 자료 불충분 < 자료없음). 테스트가 DATA_AUDIT.md 표를 읽어 코드 값과 같은지 검사한다(문서만 고치고 코드를 잊는 것 방지).
+- **대안**: (a) `curriculum_requirements`/`curriculum_courses`에 `data_grade` 컬럼 — 등급은 행이 아니라 "학년도 × 영역" 단위라 같은 값이 수천 행에 반복되고, 재시딩 크론이 행을 다시 만들 때마다 등급도 다시 넣어야 한다. (b) C를 기존 `NO_DATA`로 — 값이 있는데 "자료없음"이라고 하면 안내 문구가 틀리고, 값을 보여주며 확인을 권하는 경우와 구분할 수 없다.
+- **판단 보류의 반영 범위**: 학과명으로 특정되는 항목만 해당 학과·학년도의 값을 "추정"으로 낮춘다. 학수번호 단위 보류(N-3 등)는 과목 판단에서만 쓰지 않고 목록으로 남겼다(학과 전체를 낮추면 정밀도를 가장).
+- **되돌리는 법**: `INSUFFICIENT`를 쓰는 곳은 `flags.js`의 4개 플래그(HISTORY_NOT_VERIFIED, COURSE_DATA_GRADE_C, REQUIREMENT_DATA_GRADE_C, OFFERED_GRADE_UNKNOWN)뿐 — level을 `NO_DATA`로 바꾸고 constants의 항목을 지우면 이전 3단계로 돌아간다.
+
+## D-28 [P2] `resolveApplicableRules`의 해석 선택(전부 가정으로 플래그를 남김)
+- **조문 단위 판본 판단**: 파트 1은 기준일이 보유 판본 사이(2026-03-01~06-25)면 모든 조문에 "중간 판본" 경고를 냈다. 이제는 그 조문에 기준일보다 늦은 `<개정>` 표시가 없으면 기준일 당시 문구 = 현행 문구로 본다(예: 시행규칙 제5조는 개정 표시 없음 → 2026-05-01에도 확정). 전제: 개정된 조문에는 표시가 빠짐없이 붙는다는 규정집 관행. 보유 판본 시행 전 기준일은 여전히 `TEXT_VERSION_NOT_HELD`.
+- **부칙의 존재 시점**: `부칙(2026.04.10.)` 조문은 그 날짜 전 기준일에는 "아직 없던 부칙"으로 해당 없음.
+- **개편 공포일**: 교육과정 개편 공포일 자료가 없어 "그 학년도 책자 = 그 학년도 3월 1일부터 시행"으로 가정. 결과가 달라질 수 있는 구간(개편 학년도 1학기)에서만 `CURRICULUM_PROMULGATION_DATE_ASSUMED`(추정).
+- **필수/선택의 정의**: 제13조②③의 "필수과목/선택과목"은 전공필수·교양필수 / 전공선택·교양선택·일반선택만. 2026 광역계열의 전공기초·전공심화·전공응용은 원문에 정의가 없어 ②③을 판단하지 않고 `CATEGORY_NATURE_UNKNOWN`(추정)으로 남긴다(면제라고 단정하면 학생이 필요한 과목을 안 들을 위험).
+- **제13조③ "재학 중인 학년" — 두 해석 모두 지원**: 기본은 개편 시점의 학년(`AT_REVISION`: 개편된 해에 이미 그 학년을 지났으면 들을 기회가 없다는 취지로 읽음), 대안은 기준일의 학년(`AT_AS_OF`). 결과가 갈리는 과목은 `alternatives`와 `TRANSITION_GRADE_BASIS_AMBIGUOUS`. 입력 `policy.transitionGradeBasis`로 바꿀 수 있다. **로컬 실데이터에서 실제로 갈리는 과목이 있다**(원예산업학과 2023학번) → 학사지원과 확인 질문에 추가.
+- **학년 계산**: 입학년도 기준(개편 학년도 − 입학년도 + 1). 휴학·유급 미반영 → 항상 `GRADE_FROM_ADMISSION_YEAR`(추정).
+- **신설 필수과목**: 입학 후 새로 생긴 필수과목은 제13조②③ 어디에도 해당하지 않는다(①만 보면 이수 대상). 단정하지 않고 `NEW_REQUIRED_COURSE_NOT_COVERED`(추정, 학과 확인).
+- **학과 개편으로 생긴 과목 변경**: `curriculum_changes.note`가 "학과 개편(…)"인 변경은 제14조②(기존 교육과정 최대 4년 유지 가능) 때문에 실제 적용이 학과 운영에 달렸다 → `DEPARTMENT_REORG_CHANGE`(추정).
+- **C등급 구간이 섞인 과목 목록**: 찾은 변경이 있어도 C 구간의 변경이 기록에서 빠졌을 수 있으므로 ②③④ 결과 전체를 자료 불충분으로(`HISTORY_NOT_VERIFIED`). 이력 표시는 C 구간에서 "변경 없음" 대신 "기록 없음(검증 안 됨)".
+- **개설 학년을 못 찾을 때**: 개편으로 학수번호가 바뀌면 to_year 편성표에서 과목을 못 찾는다 → 가장 가까운 학년도 편성표의 학년을 쓰고 `OFFERED_GRADE_FROM_NEAREST_SNAPSHOT`(추정). 그것도 없으면 `OFFERED_GRADE_UNKNOWN`(자료 불충분).
+- **되돌리는 법**: 각 해석은 `applicability.js`의 해당 HANDLERS 항목 한 곳에 있다. 기본 해석만 바꾸려면 `transitionGradeBasis` 기본값(`'AT_REVISION'`)을 바꾼다.
+
+## D-29 [P2] 졸업요건 값에는 칸별 신뢰도를 붙이되 규칙 전체 신뢰도는 총괄표 등급으로
+- **결정**: `resolveApplicableRules`가 파트 1 `evaluate()`를 그대로 호출하고(코드 수정 없음 → 패리티 테스트 영향 없음) 결과에 `categories[].confidence`를 덧붙인다. 교양필수/교양선택은 분할 미검증이라 항상 추정, 졸업논문·인증제 행과 `requiredCourses`도 추정. REQUIREMENTS 규칙 전체 신뢰도는 총괄표 등급(전 연도 A) + 판단 보류만 반영한다.
+- **대안**: 교양 분할 미검증을 규칙 전체에 반영 — 모든 학생의 졸업요건이 "추정"이 돼서, 총학점·전공학점처럼 실제로 검수된 값까지 확인 필요로 보이게 된다.
+- **되돌리는 법**: `applicability.js` `annotateRequirements` 제거.
