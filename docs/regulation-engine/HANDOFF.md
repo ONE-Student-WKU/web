@@ -6,9 +6,9 @@
 
 ## 0. 최신 갱신 (2026-10-05, 데이터 검수 세션) — 먼저 읽을 것
 
-**번호 체계 주의**: 이 문서의 아래 1~6절은 이전 세션(= "엔진 코어 파트")이 쓴 것이고, 이번 세션은 다른 지침("파트 1/3: 현황 확인·리스크 레지스터·교육과정 데이터 검수")을 받았다. 두 세션 모두 같은 브랜치/PR(#273)에 쌓였다(DECISIONS D-16). **엔진 코드는 이번에 바꾸지 않았다.**
+**번호 체계 주의**: 이 문서의 아래 1~6절은 이전 세션(= "엔진 코어 파트")이 쓴 것이고, 이번 세션은 다른 지침("파트 1/3: 현황 확인·리스크 레지스터·교육과정 데이터 검수")을 받았다. 두 세션 모두 같은 브랜치/PR(#273)에 쌓였다가 이후 세 PR로 분리됐다(DECISIONS D-16). **엔진 코드는 이번에 바꾸지 않았다.**
 
-이번 세션 산출물: [ANALYSIS](ANALYSIS.md)(현황 재확인·정정) · [RISKS](RISKS.md)(리스크 15개) · [DATA_AUDIT](DATA_AUDIT.md)(연도별 검수 현황·오류 건수·신뢰도 등급·문의 목록) · `scripts/audit/`(재실행 가능한 검수 도구 + `data/summary2018·2020.json`) · 데이터 정정 8행(커밋 `bdc8b10`, `2d983b5`) · `server/test/auditTools.test.js`.
+이번 세션 산출물: [ANALYSIS](ANALYSIS.md)(현황 재확인·정정) · [RISKS](RISKS.md)(리스크 15개) · [DATA_AUDIT](DATA_AUDIT.md)(연도별 검수 현황·오류 건수·신뢰도 등급·문의 목록) · `scripts/audit/`(재실행 가능한 검수 도구 + `data/summary2018·2020.json`) · 데이터 정정 8행(커밋 `ac3e86d`, `bb0108c`) · `server/test/auditTools.test.js`.
 
 ### 파트 2·3 권고안 (순서와 범위)
 
@@ -27,7 +27,7 @@
 3. 온보딩 보강: 편입 학년, 소속변경 여부, 전과 시점 필수화(스키마 변경 → `check-schema-idempotent`).
 4. 데이터 후속: **컴소공 전공과목 학년도별 분리**(RISKS R-13, #272 선례), 2020 미확인 후보 13건 이미지 확인(DATA_AUDIT §6), N-1·N-2 보충, 규정 판본 구조(학교에서 2025-08-29자 학칙·구판본을 받으면 `regulation_versions` 설계).
 
-**PR 정리 권고**: PR #273에 엔진 + 검수 도구 + 데이터 정정 + 문서가 모두 들어 있다. 리뷰가 쉽도록 머지 전에 ① 엔진·테스트·문서 ② 검수 도구·문서 ③ 데이터 정정 2커밋으로 나누는 것을 권한다. **③은 `db/curriculum/**` 변경이라 main 승격 시 재시딩 워크플로 트리거 대상**이므로 승격 시점을 따로 정할 것(RISKS R-04). 되돌리기는 각 커밋 revert.
+**PR 구성(분리 완료)**: 세 PR로 나눴다 — **A 엔진**(`feature/regulation-engine-engine`: 테스트 기준선 복구 + 엔진 코어 + 설계·결정·감사 문서, base develop), **B 검수 도구·문서**(`feature/regulation-engine-audit-tools`: `scripts/audit`, ANALYSIS·RISKS·DATA_AUDIT, 도구 테스트; A 위에 쌓은 스택 PR이라 **A가 머지되면 base를 develop으로 바꾼다**), **C 데이터 정정**(`feature/regulation-engine-data-fix`: 2020·2021 JSON 8행, base develop, 독립). 이전 단일 PR #273은 이 셋으로 대체되어 닫았다. **C는 `db/curriculum/**` 변경이라 main 승격 시 재시딩 워크플로 트리거 대상**이므로 승격 시점을 따로 정할 것(RISKS R-04). 되돌리기는 PR 단위 revert.
 
 **로컬 환경 갱신(다른 PC/CI)**: 2020·2021 JSON이 바뀌었으므로 `npm run seed:curriculum-2020 --workspace=server`, `…-2021`, `generate:curriculum-changes`를 다시 실행해야 `scripts/audit/dbVsJson.js`가 일치로 나온다.
 
