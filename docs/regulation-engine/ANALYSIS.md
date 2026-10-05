@@ -8,9 +8,9 @@
 |---|---|---|---|
 | 1 | `curriculum_requirements`/`curriculum_courses`가 `min/max_admission_year`, `enrollment_type`, `rule_key`, `course_key`를 가진다 | ✅ | `db/schema.sql:288`(요건), 6.5절(과목). 같은 `rule_key` 행들은 학번 범위가 겹치지 않는 시간순 버전(`curriculumKeys.js` 주석) |
 | 2 | `curriculum_changes`의 `from_year/to_year`는 입학학번이며 공포일이 아니다 | ✅ | `db/schema.sql:409~436` 주석: "from_year = 변경 전 값이 마지막으로 적용된 입학학번, to_year = 변경 후 값이 처음 적용된 입학학번". **함의**: 이 표는 "어느 학번부터 값이 달라졌나"만 답한다. "개정이 언제(공포일/학기) 재학생에게 효력이 생겼나"는 이 표로 답할 수 없다 — 시행규칙 제13조 판단에 필요한 날짜 축이 없다 |
-| 3 | `curriculumContextService.js` ~187행 고정 문구가 시행규칙 제5조·제13조①~④와 충돌한다 | ✅ **확인** | `server/services/curriculumContextService.js:187`: "이 학번 이후의 변경(**이 학번에는 적용되지 않는다** — 규정이 바뀌어도 ${cohort}학번의 적용 규정은 위 값 그대로)". 시행규칙 제13조①은 "개편된 신 교육과정은 개정 공포일로부터 **전 학년에 적용 및 시행**"이고 ②③④는 필수→선택/폐설 면제, 선택→필수 저학년 면제, 이수구분은 수강신청 당시 기준이다(`db/regulations/_source/원광대학교_학칙시행규칙_전문.txt` 제5조·제13조). 즉 이 문구는 "항상 적용 안 된다"고 **단정**하는데 원문은 조건부다. 그 문구가 LLM 근거에 들어가므로 챗봇이 틀린 단정을 반복할 수 있다. 이 브랜치의 엔진은 이 상황을 `CURRICULUM_REVISION_AFTER_COHORT`(INFO, 시행규칙 제13조 근거)로 다루지만 챗봇 문구는 아직 안 바뀜 — HANDOFF 파트 2 항목 |
+| 3 | `curriculumContextService.js` ~187행 고정 문구가 시행규칙 제5조·제13조①~④와 충돌한다 | ✅ **확인** | `server/services/curriculumContextService.js:187`: "이 학번 이후의 변경(**이 학번에는 적용되지 않는다** — 규정이 바뀌어도 ${cohort}학번의 적용 규정은 위 값 그대로)". 시행규칙 제13조①은 "개편된 신 교육과정은 개정 공포일로부터 **전 학년에 적용 및 시행**"이고 ②③④는 필수→선택/폐설 면제, 선택→필수 저학년 면제, 이수구분은 수강신청 당시 기준이다(`db/regulations/_source/원광대학교_학칙시행규칙_전문.txt` 제5조·제13조). 즉 이 문구는 "항상 적용 안 된다"고 **단정**하는데 원문은 조건부다. 그 문구가 LLM 근거에 들어가므로 챗봇이 틀린 단정을 반복할 수 있다. 이 브랜치의 엔진은 이 상황을 `CURRICULUM_REVISION_AFTER_COHORT`(INFO, 시행규칙 제13조 근거)로 다루지만 챗봇 문구는 당시 안 바뀜 → 파트 2 첫 커밋 `b28920a`에서 조건부 문구로 정정됨 |
 | 4 | 학칙·시행규칙·수업관리규정은 최신본 1건뿐, 버전/조문/개정일/적용범위/문서 간 관계 저장 구조가 없다 | ✅ | 원문은 `db/regulations/_source/*.txt` 3개(학칙 2026.06.26, 시행규칙 2026.06.26, 수업관리규정 2026.04.10). `regulation_documents`에는 `effective_date`(단일 DATE)와 `book_year`뿐이다(`db/schema.sql:526`). `seedRegulations.js:29`의 `VERBATIM_EFFECTIVE_DATE = '2026-06-26'`을 학칙·시행규칙·수업관리규정 **세 문서 모두에** 적용한다(수업관리규정의 실제 최신 개정은 2026-04-10 — 상수 한 개로는 표현 불가) |
-| 5 | 적용 규정을 계산하는 함수가 없다 | ⚠ **정정** | develop에는 없다. 그러나 이 브랜치(PR #273)에는 엔진 코어 `server/services/regulationEngine/`가 이미 있다(이전 세션 산출물 — 아래 §4). 다만 **어디서도 호출되지 않는다**. 파트 2에서 연결해야 한다 |
+| 5 | 적용 규정을 계산하는 함수가 없다 | ⚠ **정정** | develop에는 없다. 그러나 이 브랜치(PR #273)에는 엔진 코어 `server/services/regulationEngine/`가 이미 있다(이전 세션 산출물 — 아래 §4). 다만 **어디서도 호출되지 않는다**. 파트 2에서 연결해야 한다 *(2026-10-05 갱신: 파트 3에서 챗봇·졸업진단에 연결됨)* |
 | 6 | 학칙류는 RAG 유사도 검색뿐이다 | ✅ | `regulationService.findRelevantChunks`(`regulationService.js:~66`)는 코사인 유사도 + `MIN_SIMILARITY = 0.4`(14행) + 책자 학년도 필터(`selectChunksByYear`, 81행). 학칙은 `book_year = NULL`이라 모든 질문에서 유사도만으로 경쟁한다. 조문 번호·개정일·적용 범위로 찾는 경로가 없다 |
 | 7 | `graduationService.js`의 전과생 로직은 하드코딩이다 | ✅ | `LIBERAL_ARTS_CREDIT_CAP = 52`(13행), `MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF = {2022, 2}`(52행), `resolveEffectiveEnrollmentType`(29행), `applyMajorChangeLiberalArtsOverride`(66행), `applyMajorChangeGeneralElectiveOverride`(81행). 상수·조문 근거가 코드 주석에만 있고 데이터로 분리돼 있지 않다 |
 | 8 | 재사용 가능: `yearContext.js`, `curriculumHistoryService.js`, `curriculumContextService.js`, `department_lineage`, `course_lineage` | ✅ | `yearContext.resolveYearContext`(74행)는 질문에서 학번/학년도를 가려내는 순수 함수(모드 COHORT/SPECIFIC_YEAR/COMPARE/HISTORY/DEFAULT). `curriculumHistoryService.describeRuleForCohort`는 엔진 `dbProvider`가 이미 재사용 중. 단 `yearContext`는 **입학유형·전과 시점·기준일을 전혀 모른다**(학번만) |
@@ -32,7 +32,7 @@
                               └▶ db/seed/curriculum_requirements.json ──seed.js──▶ curriculum_requirements
 curriculum_* ──generateCurriculumChanges──▶ curriculum_changes(AUTO, 학번 단위)
 students(학번·학과·입학유형·전과정보) + curriculum_requirements ──graduationService──▶ 졸업진단(챗봇·화면)
-students + curriculum_* + curriculum_changes ──(이 브랜치) regulationEngine──▶ 적용 규정+근거+신뢰도 (미연결)
+students + curriculum_* + curriculum_changes ──(이 브랜치) regulationEngine──▶ 적용 규정+근거+신뢰도 (파트 3에서 챗봇·졸업진단에 연결됨)
 ```
 
 가장 약한 고리: **전사 단계(책자 → JSON/seed)**. 이 단계의 정확성은 코드로 보장되지 않고, 이번 검수(DATA_AUDIT.md)가 처음으로 책자와 기계 대조를 했다.

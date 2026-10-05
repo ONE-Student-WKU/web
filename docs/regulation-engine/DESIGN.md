@@ -3,7 +3,7 @@
 > 한 줄 요약: **과거 학번 문서를 "찾아주는" 시스템이 아니라, 특정 학생에게 지금 실제로 적용되는 규정을 "판단"하는 시스템.**
 
 - 입력: 입학년도 · 입학유형(`GENERAL` / `TRANSFER_ADMISSION` / `MAJOR_CHANGE`) · 학과 · 기준일 (+ 전과 시점·학년, 편입 학년 같은 보조 정보)
-- 출력: 적용 규정(규칙별 값) + 근거(조문/책자/사례) + 변경 이력 + **신뢰도(확정 / 추정 / 자료없음)** + 플래그(어떤 가정을 했는지)
+- 출력: 적용 규정(규칙별 값) + 근거(조문/책자/사례) + 변경 이력 + **신뢰도(확정 / 추정 / 자료 불충분(확인 필요) / 자료없음)** + 플래그(어떤 가정을 했는지)
 - 코드: `server/services/regulationEngine/` · 상태·진행: [HANDOFF.md](HANDOFF.md) · 결정 이력: [DECISIONS.md](DECISIONS.md) · 규정 사실 감사: [RULE_AUDIT.md](RULE_AUDIT.md)
 
 ## 1. 왜 이런 구조인가 (핵심 3가지)
@@ -39,8 +39,8 @@ raw input ──normalizeInput──▶ ctx ──(loadData: DB 읽기 전용)�
 {
   input: { admissionYear, enrollmentType, departmentId, asOfDate, asOfTerm, majorChange, transfer, ... },
   department: { id, name } | null,
-  confidence: 'CONFIRMED' | 'ESTIMATED' | 'NO_DATA',   // critical 규칙 중 가장 나쁜 것
-  confidenceLabel: '확정' | '추정' | '자료없음',
+  confidence: 'CONFIRMED' | 'ESTIMATED' | 'INSUFFICIENT' | 'NO_DATA',   // critical 규칙 중 가장 나쁜 것(INSUFFICIENT는 파트 2 추가)
+  confidenceLabel: '확정' | '추정' | '자료 불충분(확인 필요)' | '자료없음',
   rules: [{
     id: 'REQUIREMENTS' | 'MAJOR_MINIMUM' | 'LIBERAL_ARTS_BASIS' | 'LIBERAL_ARTS_CAP' | 'CURRICULUM_REVISIONS',
     critical: boolean, confidence, value,
@@ -70,7 +70,7 @@ raw input ──normalizeInput──▶ ctx ──(loadData: DB 읽기 전용)�
 - **새 학번 자료**: 시드(`db/seed/curriculum_requirements.json`)만 추가하면 된다. 단, 열린 범위(`max=NULL`) 행은 시스템 최신 학번(`latestDataYear`)까지만 유효하다.
 - **새 규칙/가정**: `flags.js` 카탈로그에 코드·level·한국어 문구를 먼저 등록 → `decisions.js`에서 `makeFlag` → 근거는 `constants.js` `CITATIONS`에 quote와 함께 등록. 미등록 코드·근거 키는 실행 시점과 테스트(소스 스캔) 양쪽에서 실패한다.
 - **규정 개정(새 원문)**: `TEXT_SOURCES`의 판본 날짜를 갱신하고 `citations` 테스트를 돌린다 — quote가 바뀐 조문은 여기서 걸린다.
-- **`graduationService.js`와의 관계**: Part 1에서는 건드리지 않았다. 같은 규칙이 두 곳에 있으므로 `regulationEngine.parity.test.js`가 일치를 보장한다. Part 2에서 `graduationService`가 엔진을 쓰도록 교체한다(HANDOFF 참고).
+- **`graduationService.js`와의 관계**: Part 1에서는 건드리지 않았고 두 곳의 일치를 `regulationEngine.parity.test.js`가 보장했다. **파트 3(D-32)에서 `graduationService`가 엔진 결과(`resolveRequirementsForStudent`)로 요건 행·교양 상한을 받도록 교체**돼 규칙은 엔진 한 곳에만 있다. 패리티 테스트는 이제 "엔진 결과 → 진단 행 변환이 값을 잃지 않는지"를 본다.
 
 ## 6. 파트 2 추가: 적용범위 판단 (`resolveApplicableRules`)
 

@@ -104,7 +104,7 @@ const result = await resolveApplicableRulesForStudent({
 1. **스키마**: `db/migrate.js`가 운영에서 언제 실행되는지 레포에 없다(Railway 설정). 새 테이블 6개는 `CREATE TABLE IF NOT EXISTS`라 migrate를 한 번 돌리면 생긴다.
 2. **시드**: `npm run seed:regulation-articles --workspace server`는 Railway 재시딩 크론 목록(course-offerings/curriculum/regulations/reference-data)에 **없다**. 운영 DB에 적용범위 행이 없으면 `rules: []`가 되고 과목 경과조치 판단이 통째로 빠진다 → 파트 3에서 크론 Start Command에 추가하거나 일회성 실행(승인 필요). 원천 `db/regulation-engine/`은 재시딩 워크플로 경로 필터 밖이라 수정해도 자동 재시딩되지 않는다(의도, D-24).
 3. **로컬 테스트 전제**: §5의 시드 + `npm run seed:regulation-articles --workspace server`. 안 하면 `regulationEngine.applicabilityDb.test.js` 첫 테스트가 "seed:regulation-articles를 다시 실행" 메시지로 실패한다.
-4. `LATER_CHANGE_NOTICE`(첫 커밋)는 임시 문구다. 파트 3에서 챗봇 컨텍스트를 엔진 결과(`rules`의 제13조 항목)로 바꾸면 지운다.
+4. `LATER_CHANGE_NOTICE`(첫 커밋)는 파트 3에서 **지우지 않기로 했다**(D-31): 판단 청크가 없는 경로(학과를 모르는 변경 이력 질문 등)에서도 "이후 변경은 적용 안 된다" 단정이 되살아나지 않게 `curriculumContextService.js`에 남겨 둔다.
 
 ### P2-3. 사용자 확인이 필요한 해석(결과가 갈림 — 구조는 둘 다 지원, 기본값만 정함)
 - **제13조③ "재학 중인 학년"**: 개편 시점 학년(기본) vs 기준일 학년. 로컬 데이터에서 실제로 갈리는 과목 있음(원예산업학과 2023학번). → 학사지원과 질문.
@@ -118,7 +118,7 @@ const result = await resolveApplicableRulesForStudent({
 
 이번 세션 산출물: [ANALYSIS](ANALYSIS.md)(현황 재확인·정정) · [RISKS](RISKS.md)(리스크 15개) · [DATA_AUDIT](DATA_AUDIT.md)(연도별 검수 현황·오류 건수·신뢰도 등급·문의 목록) · `scripts/audit/`(재실행 가능한 검수 도구 + `data/summary2018·2020.json`) · 데이터 정정 8행(커밋 `ac3e86d`, `bb0108c`) · `server/test/auditTools.test.js`.
 
-### 파트 2·3 권고안 (순서와 범위)
+### 파트 2·3 권고안 (순서와 범위) — ✅ 파트 2·3에서 대부분 구현됨(2026-10-05 갱신). 아래는 당시 계획이며 현재 상태는 P3절·FINAL_REVIEW를 볼 것
 
 순서 원칙: **데이터 신뢰 → 엔진 연결 → 소비자(챗봇·화면) 교체 → UX**. 앞 단계가 안 끝나면 뒤 단계가 틀린 숫자를 더 그럴듯하게 만든다(RISKS R-05).
 
@@ -158,6 +158,8 @@ const result = await resolveApplicableRulesForStudent({
 
 **미완료/의도적으로 안 한 것**: API 엔드포인트, 챗봇 연동, UI, `graduationService` 교체, 소속변경 모델, 편입 학년·소속변경 온보딩 입력, 이수(earned) 판단, 자기계발심층상담 등 (아래 3절).
 
+> 2026-10-05 현재: 챗봇 연동·`graduationService` 교체는 파트 3에서 완료, 졸업요건 화면의 신뢰도 표시는 보정 라운드 A에서 완료. **여전히 미완료**: API 엔드포인트, 소속변경 모델, 편입 학년·소속변경 온보딩 입력, 이수(earned) 판단 일부.
+
 ## 2. 사용법
 
 ```js
@@ -166,7 +168,7 @@ const { resolveRegulation, inputFromStudentRow } = require('./services/regulatio
 // 학생 DB 행(students) → 엔진 입력 (편입 학년은 컬럼이 없어 비워둠 → 가정 플래그)
 const result = await resolveRegulation(inputFromStudentRow(student, { asOfDate: '2026-10-05' }));
 
-result.confidence;                         // 'CONFIRMED' | 'ESTIMATED' | 'NO_DATA'
+result.confidence;                         // 'CONFIRMED' | 'ESTIMATED' | 'INSUFFICIENT'(파트 2 추가) | 'NO_DATA'
 result.rules.find(r => r.id === 'REQUIREMENTS').value;   // { categories, totalRequiredCredits, certifications, adjustments }
 result.flags.map(f => f.message);          // 사용자에게 보여줄 한국어 사유(가정/불확실성)
 ```
@@ -176,7 +178,7 @@ result.flags.map(f => f.message);          // 사용자에게 보여줄 한국�
 - 데이터 소스 교체: `resolveRegulation(input, { loadData })`.
 - `rules[].alternatives`: 해석이 갈리는 규칙(교양 29 컷오프, 교양 상한)의 다른 해석 결과. UI/챗봇은 신뢰도가 `ESTIMATED`일 때 **단정하지 말고 flags 문구와 alternatives를 함께 안내**해야 한다.
 
-## 3. 다음 파트 제안 (우선순위 순)
+## 3. 다음 파트 제안 (우선순위 순) — ⚠ 파트 1 종료 시점의 제안(2026-10-05 갱신: 1·3은 파트 3에서 완료, 5 중 졸업요건 화면 배지는 보정 라운드 A에서 완료, 2·4·6과 관리자 화면은 미완료)
 
 1. **`graduationService`를 엔진으로 교체** — `getGraduationStatus`의 요건 행 조립(`fetchApplicableRequirements`~`applyMajorChange*`)을 `resolveRegulation(...).rules.REQUIREMENTS`로 대체하고 중복 코드를 삭제. 이때 `regulationEngine.parity.test.js`는 필요 없어지지만 "의도된 차이" 테스트(B-1)는 새 동작 기준으로 갱신. **교체 전에 B-2(교양 상한)·B-3(편입 총량)·B-4(자료 없는 학번 0학점) 처리 방침을 정할 것** — 사용자에게 보이는 숫자가 바뀐다.
 2. **API**: 예) `GET /api/me/regulation?asOf=YYYY-MM-DD` → 로그인 학생의 `inputFromStudentRow` 결과. 신뢰도/플래그/근거를 그대로 내려주고, 서버 쪽에서 해석을 가공하지 않는다.
@@ -191,7 +193,7 @@ result.flags.map(f => f.message);          // 사용자에게 보여줄 한국�
 - 새 근거는 `constants.js` `CITATIONS`에 **원문 quote와 함께** 등록 — 원문이 없는 근거는 `ref`가 있는 CASE/BOOKLET 종류로만(테스트가 강제).
 - 열린 범위(`max=NULL`) 행은 `latestDataYear` 이후로 외삽하지 않는다. 새 학년도 시드를 넣으면 자동으로 `latestDataYear`가 올라간다.
 - 새 파일을 `db/regulations/**`, `db/curriculum/**`, `db/seed/**`(워크플로 필터에 걸리는 경로)에 추가하면 main 푸시 시 **운영 재시딩 워크플로가 트리거**된다. Part 1은 해당 경로에 아무 파일도 추가하지 않았다(`check-db-reseed-paths` 통과). 문서는 `docs/`에 두었다.
-- `db/schema.sql`은 건드리지 않았다. 스키마를 바꾸면 `check-schema-idempotent` 대상.
+- (Part 1 당시) `db/schema.sql`은 건드리지 않았다. **파트 2에서 7.5절에 새 테이블 6개를 `CREATE TABLE IF NOT EXISTS`로 추가했다**(D-24) — 스키마를 바꾸면 `check-schema-idempotent` 대상.
 
 ## 5. 로컬 테스트 환경 만들기 (develop에서도 `npm test`는 이 전제가 필요하다)
 
@@ -218,7 +220,7 @@ process.chdir('<repo>/server');
 require('<repo>/server/scripts/seedRegulations.js');
 ```
 
-CI/운영에서 같은 테스트가 어떻게 통과하는지(어떤 시드 상태를 가정하는지)는 이번에 확인하지 못했다(워크플로에는 테스트 실행 단계가 없음 — `vercel-deploy.yml`, `db-reseed*.yml`만 확인).
+CI: 보정 라운드 A에서 `.github/workflows/test.yml`이 추가돼 PR마다 서버(임시 MySQL 컨테이너 + `scripts/ci/prepare-test-db.sh`)와 클라이언트(vitest) 테스트를 돈다(D-40). 로컬에서 같은 절차를 시험하려면 `bash scripts/ci/prepare-test-db.sh`(빈 DB 전제 — 가짜 학생 계정을 만들므로 운영 DB 금지). 루트 `npm test`는 클라이언트 vitest도 실행하므로 로컬에서 `npm install`로 devDependencies가 설치돼 있어야 한다.
 
 ## 6. 남은 리스크 · 내가(사용자가) 확인해야 할 외부 정보
 
