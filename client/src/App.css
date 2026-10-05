@@ -3111,3 +3111,28 @@ select.onb-select {
   font-size: 0.8125rem;
   cursor: pointer;
 }
+
+/* 마감된 글 표시(당근마켓식) — 제목 앞 "마감" 접두어 + 행 전체를 흐리게. 읽을 수는 있어야 해서 opacity만 낮춘다. */
+.community-closed-prefix {
+  flex-shrink: 0;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.community-post-list-item-closed .community-post-list-title,
+.community-post-list-item-closed .courses-list-item-meta {
+  opacity: 0.55;
+}
+
+/* 내가 쓴 글 목록에서 검토 대기 중인 신청이 달린 글을 눈에 띄게 한다. */
+.community-row-pending {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-warning);
+}

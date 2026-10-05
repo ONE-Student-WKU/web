@@ -55,6 +55,19 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// 글 작성·수정·신청이 막히는 경고성 제재(post_apply) 안내 배너 — 목록 상단, 글 상세, 글쓰기/수정 폼에서
+// 같은 문구를 쓰도록 한 곳에 둔다(수정만 안내가 없던 문제, 서버는 PATCH /:id에도 같은 제재를 건다).
+function SanctionBanner({ sanction }) {
+  return (
+    <div className="community-sanction-banner">
+      <IconAlertTriangle size={16} />
+      <p>
+        {sanction.endsAt ? <b>{formatDate(sanction.endsAt)}까지</b> : <b>영구히</b>} 글 작성·수정·신청이 제한돼요 · 사유: {sanction.reason}
+      </p>
+    </div>
+  );
+}
+
 /**
  * Community Page
  * 커뮤니티(스터디/프로젝트 모집) 게시판 — 2단계(글쓰기+목록/상세) + 3단계(신청+수락/반려+
@@ -305,8 +318,14 @@ function Community({
       setSelectedPost(null);
       setTab('mine');
       await refreshLists();
-    } catch {
-      setError(editingPostId ? '수정하지 못했어요. 잠시 후 다시 시도해주세요.' : '글을 올리지 못했어요. 잠시 후 다시 시도해주세요.');
+    } catch (err) {
+      // 제재가 걸린 뒤 이 화면을 열어둔 경우(또는 getMySanction이 실패했던 경우)에도 안내가 나오게 서버 응답으로 채운다.
+      if (err.code === 'SANCTIONED') {
+        setSanction(err.data);
+        setError(editingPostId ? '글 수정이 제한된 계정이에요.' : '글 작성이 제한된 계정이에요.');
+      } else {
+        setError(editingPostId ? '수정하지 못했어요. 잠시 후 다시 시도해주세요.' : '글을 올리지 못했어요. 잠시 후 다시 시도해주세요.');
+      }
     } finally {
       setWriteSubmitting(false);
     }
@@ -467,7 +486,10 @@ function Community({
       <div className="community-detail">
         {error && <p className="home-error">{error}</p>}
         <div className="community-detail-title-row">
-          <h2 className="community-detail-title">{post.contentHidden ? '재승인 대기 중' : post.title}</h2>
+          <h2 className="community-detail-title">
+            {post.closedAt && <span className="community-closed-prefix">마감</span>}
+            {post.contentHidden ? '재승인 대기 중' : post.title}
+          </h2>
           {!post.isMine && (
             <div className="community-detail-title-actions">
               <button type="button" className="community-title-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
@@ -527,16 +549,19 @@ function Community({
                 )}
               </>
             )}
+            {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
             <div className="community-owner-actions">
-              <button type="button" className="community-outline-btn" onClick={() => startEdit(post)}>
-                수정
+              <button type="button" className="community-outline-btn" onClick={() => startEdit(post)} disabled={sanction?.scope === 'post_apply'}>
+                {sanction?.scope === 'post_apply' ? '수정 (제한됨)' : '수정'}
               </button>
               <button type="button" className="community-outline-btn community-danger" onClick={() => handleDelete(post)} disabled={deleteSubmitting}>
                 {deleteSubmitting ? '삭제 중...' : '삭제'}
               </button>
             </div>
 
-            <p className="community-section-label">신청자 {applicants.length}명</p>
+            <p className="community-section-label">
+              「{post.title}」에 온 신청자 {applicants.length}명
+            </p>
             {applicantsLoading ? (
               <p className="courses-manual-hint">불러오는 중...</p>
             ) : applicants.length === 0 ? (
@@ -551,7 +576,9 @@ function Community({
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
                     </div>
                     <p className="community-applicant-msg">{a.message}</p>
-                    <div className="community-applicant-date">{formatDate(a.createdAt)}</div>
+                    <div className="community-applicant-date">
+                      {formatDate(a.createdAt)} · 「{post.title}」
+                    </div>
                     {a.status === 'pending' && (
                       <>
                         <textarea
@@ -701,6 +728,8 @@ function Community({
 
   const renderWriteForm = () => (
     <form className="courses-manual-fields community-write-form" onSubmit={handleWriteSubmit}>
+      {error && <p className="home-error">{error}</p>}
+      {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
       <p className="courses-manual-hint">
         {editingPostId
           ? '수정하면 다시 관리자 승인을 받아야 목록에 노출돼요.'
@@ -799,14 +828,7 @@ function Community({
           <>
             {error && <p className="home-error">{error}</p>}
 
-            {sanction?.scope === 'post_apply' && (
-              <div className="community-sanction-banner">
-                <IconAlertTriangle size={16} />
-                <p>
-                  {sanction.endsAt ? <b>{formatDate(sanction.endsAt)}까지</b> : <b>영구히</b>} 글 작성·신청이 제한돼요 · 사유: {sanction.reason}
-                </p>
-              </div>
-            )}
+            {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
 
             <div className="courses-year-tabs">
               <button type="button" className={`courses-year-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
@@ -832,11 +854,16 @@ function Community({
               ) : (
                 <div className="community-post-list">
                   {posts.map((p) => (
-                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                    <button
+                      key={p.id}
+                      className={`community-post-list-item ${p.closedAt ? 'community-post-list-item-closed' : ''}`}
+                      onClick={() => openPost(p.id)}
+                      disabled={detailLoading}
+                    >
                       <span className="community-post-list-row">
+                        {p.closedAt && <span className="community-closed-prefix">마감</span>}
                         <span className="community-post-list-title">{p.title}</span>
                         <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
-                        {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
                         {p.author} · {formatDate(p.createdAt)}
@@ -854,17 +881,27 @@ function Community({
               ) : (
                 <div className="community-post-list">
                   {myPosts.map((p) => (
-                    <button key={p.id} className="community-post-list-item" onClick={() => openPost(p.id)} disabled={detailLoading}>
+                    <button
+                      key={p.id}
+                      className={`community-post-list-item ${p.closedAt ? 'community-post-list-item-closed' : ''}`}
+                      onClick={() => openPost(p.id)}
+                      disabled={detailLoading}
+                    >
                       <span className="community-post-list-row">
+                        {p.closedAt && <span className="community-closed-prefix">마감</span>}
                         <span className="community-post-list-title">{p.title}</span>
                         <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
                         <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
-                        {p.closedAt && <span className="community-badge community-badge-closed">마감</span>}
                       </span>
                       <span className="courses-list-item-meta">
                         {formatDate(p.createdAt)}
                         {p.capacity && ` · 모집인원 ${p.capacity}명`}
+                        {/* 서버가 아직 이 필드를 안 내려주는 배포 순서(프론트 먼저)에서는 undefined라 아무것도 안 보인다. */}
+                        {p.applicationCount > 0 && ` · 받은 신청 ${p.applicationCount}건`}
                       </span>
+                      {p.pendingApplicationCount > 0 && (
+                        <span className="community-row-pending">검토 대기 신청 {p.pendingApplicationCount}건</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -876,8 +913,14 @@ function Community({
             ) : (
               <div className="community-post-list">
                 {myApplications.map((a) => (
-                  <button key={a.id} className="community-post-list-item" onClick={() => openPost(a.postId)} disabled={detailLoading}>
+                  <button
+                    key={a.id}
+                    className={`community-post-list-item ${a.postClosedAt ? 'community-post-list-item-closed' : ''}`}
+                    onClick={() => openPost(a.postId)}
+                    disabled={detailLoading}
+                  >
                     <span className="community-post-list-row">
+                      {a.postClosedAt && <span className="community-closed-prefix">마감</span>}
                       <span className="community-post-list-title">{a.postTitle}</span>
                       <span className={`community-badge community-badge-${a.postCategory}`}>{CATEGORY_LABEL[a.postCategory]}</span>
                       <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
