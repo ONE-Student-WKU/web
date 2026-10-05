@@ -126,3 +126,52 @@ test('이어받은 학년도는 askedYears에는 있지만 explicitAskedYears에
   assert.deepEqual(c.askedYears, [2025]);
   assert.deepEqual(c.explicitAskedYears, []);
 });
+
+// --- 기준일(asOfDate, 파트 2) ---
+const { extractAsOfDate } = require('../services/yearContext');
+
+// 기존 5개 모드의 대표 질문 — 기준일을 더해도 mode/targetYears/bookYears 등 기존 필드는 그대로여야 한다(회귀 방지).
+const MODE_CASES = [
+  ['COHORT', '졸업요건이 뭐야?', { profileCohort: 2021 }, [2021]],
+  ['SPECIFIC_YEAR', '2024학년도 졸업요건 알려줘', { profileCohort: 2021 }, [2024]],
+  ['COMPARE', '2020학년도와 2026학년도의 졸업요건이 어떻게 달라?', {}, [2020, 2026]],
+  ['HISTORY', '졸업학점이 언제 바뀌었어?', { profileCohort: 2021 }, [2021]],
+  ['DEFAULT', '도서관 위치 알려줘', {}, []],
+];
+const LEGACY_FIELDS = ['mode', 'askedYears', 'explicitAskedYears', 'messageCohorts', 'profileCohort', 'applicableCohort', 'cohortSource', 'targetYears', 'bookYears', 'latestBookYear', 'intents', 'inheritedFromPrevious'];
+const pick = (o) => Object.fromEntries(LEGACY_FIELDS.map((k) => [k, o[k]]));
+
+test('회귀: 기존 5개 모드(COHORT/SPECIFIC_YEAR/COMPARE/HISTORY/DEFAULT)는 기준일 입력과 무관하게 같은 결과', () => {
+  for (const [mode, message, extra, targetYears] of MODE_CASES) {
+    const plain = ctx(message, extra);
+    assert.equal(plain.mode, mode, message);
+    assert.deepEqual(plain.targetYears, targetYears, message);
+    for (const asOf of [{ asOfDate: '2019-03-02' }, { today: '2030-12-31' }, { asOfDate: 'not-a-date', today: '2026-10-05' }]) {
+      assert.deepEqual(pick(ctx(message, { ...extra, ...asOf })), pick(plain), `${mode}: ${JSON.stringify(asOf)}`);
+    }
+  }
+});
+
+test('기준일: 질문의 날짜 > 호출자 지정 > 직전 질문(후속 질문일 때) > 오늘', () => {
+  const fromMessage = ctx('2026년 3월 1일 기준 졸업요건', { asOfDate: '2025-01-01', today: '2026-10-05' });
+  assert.deepEqual([fromMessage.asOfDate, fromMessage.asOfSource], ['2026-03-01', 'message']);
+  const fromCaller = ctx('졸업요건 알려줘', { asOfDate: '2025-09-01', today: '2026-10-05' });
+  assert.deepEqual([fromCaller.asOfDate, fromCaller.asOfSource, fromCaller.asOfTerm], ['2025-09-01', 'caller', { year: 2025, semester: 2 }]);
+  const followUp = ctx('그럼 전공은?', { previousUserMessage: '2025.9.1 기준 졸업요건', today: '2026-10-05' });
+  assert.deepEqual([followUp.asOfDate, followUp.asOfSource], ['2025-09-01', 'previous']);
+  const unrelated = ctx('점심 메뉴 추천해줘', { previousUserMessage: '2025.9.1 기준 졸업요건', today: '2026-10-05' });
+  assert.deepEqual([unrelated.asOfDate, unrelated.asOfSource], ['2026-10-05', 'today']);
+  // 1~2월은 전년도 2학기(학칙 제22조)
+  assert.deepEqual(ctx('졸업요건', { today: '2026-02-10' }).asOfTerm, { year: 2025, semester: 2 });
+});
+
+test('기준일 추출: 연·월·일이 다 있는 실제 날짜만(학년도·없는 날짜는 아님), 날짜가 있어도 학년도 모드 판정은 기존대로', () => {
+  assert.equal(extractAsOfDate('2026-03-01부터'), '2026-03-01');
+  assert.equal(extractAsOfDate('2025.9.1 기준'), '2025-09-01');
+  assert.equal(extractAsOfDate('2026-02-30'), null);
+  assert.equal(extractAsOfDate('2024학년도 졸업요건'), null);
+  assert.equal(extractAsOfDate('2024년 졸업요건'), null);
+  // "2024년 3월 1일"의 "2024년"은 기존처럼 학년도로도 읽힌다(SPECIFIC_YEAR) — 모드 판정은 바꾸지 않았다.
+  const r = ctx('2024년 3월 1일 기준 졸업요건 알려줘', { profileCohort: 2022, today: '2026-10-05' });
+  assert.deepEqual([r.mode, r.targetYears, r.asOfDate], ['SPECIFIC_YEAR', [2024], '2024-03-01']);
+});

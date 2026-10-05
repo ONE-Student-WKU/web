@@ -25,6 +25,7 @@
     "seed:lineage": "node scripts/seedLineage.js",
     "generate:curriculum-changes": "node scripts/generateCurriculumChanges.js",
     "seed:regulations": "node scripts/seedRegulations.js",
+    "seed:regulation-articles": "node scripts/seedRegulationArticles.js",
     "scrape:timetable": "node scripts/scrapeTimetable.js"
   },
   "dependencies": {

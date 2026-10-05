@@ -1,8 +1,65 @@
 # HANDOFF — 다음 파트가 알아야 할 것
 
-마지막 갱신: **데이터 검수 세션 종료 (2026-10-05)** · 이전: Part 1(엔진 코어) 종료 · 브랜치 `feature/regulation-engine-core` (develop 기준, PR 미머지) · 이전 파트 없음(Part 1이 첫 파트)
+마지막 갱신: **파트 2/3 종료 (2026-10-05, 브랜치 `feature/regulation-engine-rules`)** — 아래 P2절부터 읽을 것 · 이전: 데이터 검수 세션, Part 1(엔진 코어) — 둘 다 develop 머지 완료(#274·#275·#276)
 
 > 다음 파트는 **이 브랜치 위에서** 이어서 작업한다(Part 1 PR이 develop에 머지되기 전이라면). 먼저 [DESIGN.md](DESIGN.md) → [DECISIONS.md](DECISIONS.md) → [RULE_AUDIT.md](RULE_AUDIT.md) 순으로 읽을 것.
+
+## P2. 파트 2/3 종료 (2026-10-05, 규정 판단 엔진: 충돌 제거·스키마·시드·판단 함수) — 가장 먼저 읽을 것
+
+브랜치 `feature/regulation-engine-rules`(develop d709532 기준). 커밋 순서 = 작업 순서:
+
+| 커밋 | 내용 | 결정 |
+|---|---|---|
+| `b28920a` | 챗봇 컨텍스트의 "이후 변경은 이 학번에 적용되지 않는다" 단정 → 경과조치 조건부 + 시행규칙 제5·13·118조 인용(`curriculumContextService.LATER_CHANGE_NOTICE`, aiClient 시스템 프롬프트) | — |
+| `a9db341` | 신규 테이블 6개(`regulation_versions/articles/applicability/relations`, `course_equivalences`, `course_category_overrides`) | D-24, D-25 |
+| `c03d5a2` | 조문 파서·시드(`articleParser.js`, `regulationSeed.js`, `npm run seed:regulation-articles`), 적용범위 원천 `db/regulation-engine/applicability.json` | D-26 |
+| `7d40e07` | 순수 판단 함수 `resolveApplicableRules` + DB 로더 + 데이터 등급(`dataQuality.js`, 신뢰도 `INSUFFICIENT`) | D-27~D-29 |
+| `e6e680a` | `yearContext`에 기준일(`asOfDate/asOfSource/asOfTerm`) | D-30 |
+
+**챗봇·졸업진단에는 아직 연결하지 않았다**(파트 3 범위). 기존 동작이 바뀐 곳은 첫 커밋(문구)뿐이다.
+
+### P2-1. 파트 3가 쓸 인터페이스
+
+```js
+const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('../services/regulationEngine');
+const { resolveYearContext } = require('../services/yearContext');
+
+const yc = resolveYearContext({ message, previousUserMessage, profileCohort, availableBookYears });
+const result = await resolveApplicableRulesForStudent({
+  ...inputFromStudentRow(student),          // admissionYear, enrollmentType, departmentId, trackId, majorChange
+  asOfDate: yc.asOfDate,                     // 생략하면 오늘(KST)
+  policy: { transitionGradeBasis: 'AT_REVISION' }, // 제13조③ 해석. 'AT_AS_OF'도 가능(D-28)
+}, { withRequirements: true });              // false면 파트 1 졸업요건 계산 생략(빠름)
+```
+
+- 테스트·배치에서는 순수 함수 `require('../services/regulationEngine/applicability').resolveApplicableRules(input, data)`를 쓰고 `data`는 `dbProvider.loadApplicabilityData(ctx)` 모양(파일 머리 주석)으로 만든다.
+- 입력 오류도 예외 없이 `{ confidence: 'NO_DATA', flags: [INVALID_INPUT] }`로 온다.
+
+**결과 형태**
+
+| 필드 | 뜻 | 파트 3 사용법 |
+|---|---|---|
+| `confidence` / `confidenceLabel` | 전체 신뢰도: `CONFIRMED` 확정 · `ESTIMATED` 추정 · `INSUFFICIENT` 자료 불충분(확인 필요) · `NO_DATA` 자료없음 | 답변 톤 결정. 확정 외에는 단정 금지 + `flags[].message`로 사유, INSUFFICIENT·NO_DATA는 학과/학사지원과(063-850-5228) 안내 |
+| `rules[]` | 적용범위 규칙별 판단: `ruleCode`, `scope`(COHORT_ONLY/ALL_ENROLLED/TRANSITIONAL), `status`(APPLIES/NOT_APPLICABLE/CONDITIONAL/UNKNOWN), `reason`, `effect`, `basis.articleRef`·`paragraph`·`versionLabel`·`lastAmendedOn`, `details`, `alternatives`, `flags`, `critical` | `status !== 'NOT_APPLICABLE'`만 보여준다. 근거 인용은 `basis.articleRef`로 `regulation_articles.body`를 조회해 원문 그대로 |
+| `rules[].details` (제13조②③④) | `exempt[]`/`unclassified[]`/`courses[]`/`newRequired[]` — 과목별 `courseName`, `toYear`, `exempt`(true/false/null), `confidence`, `flags`, ③은 `alternatives`(다른 해석의 결과) | 수백 개일 수 있다 → 요약(개수)만 기본으로, 특정 과목 질문일 때 해당 항목만. `exempt: null`은 "모름"이지 "아니오"가 아님 |
+| `history.years[]` | 입학 후 학년도별 `{ requirements, courses }: { count, status, label }` | **`label`을 그대로 쓸 것** — C 등급 구간은 `기록 없음(검증 안 됨)`이지 "변경 없음"이 아니다 |
+| `requirements` | 파트 1 `evaluate()` 결과 + 칸별 `confidence`(교양필수/교양선택 분할 = 추정, 졸업논문·인증제 = 추정) | 졸업진단 교체 시 이 값을 쓰고 칸별 배지 표시 |
+| `dataQuality` | 졸업요건·전공과목 등급(A/B/C), 걸린 판단 보류 id, 미검증 학년도 | 디버그·관리자 화면 |
+| `flags[]` | 적용되는 규칙의 플래그 모음(code·level·message) | 사용자 문구는 `message` 그대로(카탈로그: `flags.js`) |
+
+**`categoryAtRegistration({ courseKey, year, semester }, changes, overrides)`**(applicability.js export): 제13조④ — 학생이 그 과목을 들은 학년도·학기의 이수구분. 졸업진단에서 수강 이력 과목을 분류할 때 쓴다.
+
+### P2-2. 운영 반영 전제(파트 3에서 승인받고 할 일 — 이번 파트는 하지 않음)
+1. **스키마**: `db/migrate.js`가 운영에서 언제 실행되는지 레포에 없다(Railway 설정). 새 테이블 6개는 `CREATE TABLE IF NOT EXISTS`라 migrate를 한 번 돌리면 생긴다.
+2. **시드**: `npm run seed:regulation-articles --workspace server`는 Railway 재시딩 크론 목록(course-offerings/curriculum/regulations/reference-data)에 **없다**. 운영 DB에 적용범위 행이 없으면 `rules: []`가 되고 과목 경과조치 판단이 통째로 빠진다 → 파트 3에서 크론 Start Command에 추가하거나 일회성 실행(승인 필요). 원천 `db/regulation-engine/`은 재시딩 워크플로 경로 필터 밖이라 수정해도 자동 재시딩되지 않는다(의도, D-24).
+3. **로컬 테스트 전제**: §5의 시드 + `npm run seed:regulation-articles --workspace server`. 안 하면 `regulationEngine.applicabilityDb.test.js` 첫 테스트가 "seed:regulation-articles를 다시 실행" 메시지로 실패한다.
+4. `LATER_CHANGE_NOTICE`(첫 커밋)는 임시 문구다. 파트 3에서 챗봇 컨텍스트를 엔진 결과(`rules`의 제13조 항목)로 바꾸면 지운다.
+
+### P2-3. 사용자 확인이 필요한 해석(결과가 갈림 — 구조는 둘 다 지원, 기본값만 정함)
+- **제13조③ "재학 중인 학년"**: 개편 시점 학년(기본) vs 기준일 학년. 로컬 데이터에서 실제로 갈리는 과목 있음(원예산업학과 2023학번). → 학사지원과 질문.
+- **신설 필수과목**: 입학 후 새로 생긴 필수과목을 재학생이 들어야 하는지 제13조에 규정 없음(①만 보면 이수). 지금은 "확인 필요".
+- **전공기초·전공심화·전공응용**(2026 광역계열 등): 필수/선택 중 무엇인지 원문 정의 없음 → 제13조②③ 판단 안 함.
+- **학칙 [별표 4] 개정 전 표**: 2026년 8월 이전 졸업자(2013~2024학번)에게 적용되는 개정 전 값 미보유.
 
 ## 0. 최신 갱신 (2026-10-05, 데이터 검수 세션) — 먼저 읽을 것
 

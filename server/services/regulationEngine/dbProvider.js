@@ -105,4 +105,98 @@ async function loadData(ctx, { withHistory = true } = {}) {
   };
 }
 
-module.exports = { loadData, loadRequirementRows };
+// --- 파트 2: resolveApplicableRules용 data (applicability.js 주석의 data 형식) ---
+
+async function loadApplicabilityRules() {
+  const [rows] = await pool.query(
+    `SELECT a.*, ar.article_key, ar.section, ar.last_amended_on, v.version_label, v.doc_code
+     FROM regulation_applicability a
+     LEFT JOIN regulation_articles ar ON ar.id = a.article_id
+     LEFT JOIN regulation_versions v ON v.id = ar.version_id
+     ORDER BY a.id`
+  );
+  const iso = (d) => (d == null ? null : d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+  return rows.map((r) => ({
+    ruleCode: r.rule_code,
+    articleRef: r.article_ref,
+    paragraph: r.paragraph,
+    scope: r.scope,
+    appliesFrom: iso(r.applies_from),
+    minAdmissionYear: r.min_admission_year,
+    maxAdmissionYear: r.max_admission_year,
+    enrollmentType: r.enrollment_type,
+    conditionCode: r.condition_code,
+    conditionParams: typeof r.condition_params === 'string' ? JSON.parse(r.condition_params) : r.condition_params,
+    effect: r.effect,
+    confidence: r.confidence,
+    critical: r.critical === 1,
+    note: r.note,
+    article: r.article_key ? { docCode: r.doc_code, articleKey: r.article_key, section: r.section, lastAmendedOn: iso(r.last_amended_on), versionLabel: r.version_label } : null,
+  }));
+}
+
+// 제13조③ 판단용: 변경 후(to_year) 교육과정에서 그 과목이 개설된 학년. 같은 학번에 여러 행(트랙·학기)이면 가장 낮은 학년.
+async function attachOfferedGrades(changes, departmentIds) {
+  const keys = [...new Set(changes.filter((c) => c.field === 'category').map((c) => c.subjectKey))];
+  if (keys.length === 0) return changes;
+  const [rows] = await pool.query(
+    'SELECT course_key, grade, min_admission_year, max_admission_year FROM curriculum_courses WHERE department_id IN (?) AND course_key IN (?)',
+    [departmentIds, keys]
+  );
+  return changes.map((c) => {
+    if (c.field !== 'category') return c;
+    const own = rows.filter((r) => r.course_key === c.subjectKey);
+    const exact = own.filter((r) => (r.min_admission_year == null || r.min_admission_year <= c.toYear) && (r.max_admission_year == null || r.max_admission_year >= c.toYear));
+    if (exact.length) return { ...c, offeredGrade: Math.min(...exact.map((r) => r.grade)), offeredGradeSource: 'EXACT' };
+    // 개편으로 학수번호(course_key)가 바뀌면 to_year 편성표에서 못 찾는다. 학년도가 가장 가까운 편성표의 학년을 쓰되 추정으로 표시한다.
+    if (own.length === 0) return c;
+    const dist = (r) => Math.abs((r.max_admission_year ?? r.min_admission_year ?? c.toYear) - c.toYear);
+    const best = Math.min(...own.map(dist));
+    return { ...c, offeredGrade: Math.min(...own.filter((r) => dist(r) === best).map((r) => r.grade)), offeredGradeSource: 'NEAREST_SNAPSHOT' };
+  });
+}
+
+function mapChangeRow(r) {
+  return {
+    subjectKey: r.subject_key, displayName: r.display_name, departmentId: r.department_id, trackId: r.track_id,
+    fromYear: r.from_year, toYear: r.to_year, field: r.field, changeType: r.change_type,
+    oldValue: r.old_value, newValue: r.new_value, note: r.note, offeredGrade: null,
+  };
+}
+
+/**
+ * resolveApplicableRules(input, data)의 data. 읽기 전용.
+ * withRequirements=false면 파트 1 졸업요건 계산(loadData)을 건너뛴다.
+ */
+async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
+  const department = await loadDepartment(ctx);
+  const [rules, latestDataYear] = await Promise.all([loadApplicabilityRules(), loadLatestDataYear()]);
+  if (!department) return { department: null, rules, latestDataYear, courseChanges: [], requirementChanges: [], lineage: [], equivalences: [], categoryOverrides: [], requirements: null };
+
+  const chain = await getDepartmentChain(department.id);
+  const ids = chain.departmentIds;
+  const [courseRows] = await pool.query(
+    "SELECT * FROM curriculum_changes WHERE subject_type = 'COURSE' AND department_id IN (?) AND to_year > ?",
+    [ids, ctx.admissionYear]
+  );
+  const [reqRows] = await pool.query(
+    "SELECT * FROM curriculum_changes WHERE subject_type = 'REQUIREMENT' AND department_id IN (?) AND to_year > ?",
+    [ids, ctx.admissionYear]
+  );
+  const [equivalences] = await pool.query('SELECT * FROM course_equivalences WHERE department_id IS NULL OR department_id IN (?)', [ids]);
+  const [overrides] = await pool.query('SELECT * FROM course_category_overrides WHERE department_id IS NULL OR department_id IN (?)', [ids]);
+
+  return {
+    department,
+    rules,
+    latestDataYear,
+    courseChanges: await attachOfferedGrades(courseRows.map(mapChangeRow), ids),
+    requirementChanges: reqRows.map(mapChangeRow),
+    lineage: chain.edges,
+    equivalences: equivalences.map((e) => ({ departmentId: e.department_id, fromCourseKey: e.from_course_key, toCourseKey: e.to_course_key, designatedYear: e.designated_year, basisArticleRef: e.basis_article_ref, source: e.source, note: e.note })),
+    categoryOverrides: overrides.map((o) => ({ departmentId: o.department_id, courseKey: o.course_key, academicYear: o.academic_year, semester: o.semester, category: o.category, basisArticleRef: o.basis_article_ref, source: o.source, note: o.note })),
+    requirements: withRequirements ? await loadData(ctx) : null,
+  };
+}
+
+module.exports = { loadData, loadRequirementRows, loadApplicabilityData };

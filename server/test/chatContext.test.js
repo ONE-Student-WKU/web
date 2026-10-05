@@ -114,7 +114,10 @@ test('변경 이력 "졸업학점이 언제 바뀌었어?": 학생 적용 규정
   const rule = structured.history.find((c) => c.chunkId.startsWith('history-rule-') && /졸업학점 총계/.test(c.documentTitle));
   assert.ok(rule);
   assert.match(rule.content, /2018학번에 적용되는 졸업학점 총계: 136학점/);
-  assert.match(rule.content, /이 학번에는 적용되지 않는다/);
+  // 이후 변경을 "적용되지 않는다"고 단정하지 않고, 경과조치 조건과 학칙시행규칙 제13조를 인용한다.
+  assert.doesNotMatch(rule.content, /이 학번에는 적용되지 않는다/);
+  assert.match(rule.content, /경과조치에 따라 달라질 수 있어 단정할 수 없다/);
+  assert.match(rule.content, /제13조\(①개편된 신 교육과정은 개정 공포일로부터 전 학년에 적용/);
   assert.match(rule.content, /2026학번부터 136학점 → 130학점/);
   assert.ok(structured.history.some((c) => c.chunkId.startsWith('history-dept-')), '학과 개편 이력도 같이');
 });

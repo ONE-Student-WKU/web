@@ -6,7 +6,7 @@ const { DERIVED_RULE_CODES } = require('./curriculumKeys');
  * server/services/curriculumContextService.js
  * 챗봇 근거 청크 중 "연도에 따라 달라지는 교육과정 정보"를 만든다:
  *  - 졸업요건: 질문의 학번/학년도(여러 개면 각각)별로 적용되는 요건
- *  - 변경 이력: 규정·과목이 언제 어떻게 바뀌었는지, 그리고 이 학번에는 어느 값이 적용되는지
+ *  - 변경 이력: 규정·과목이 언제 어떻게 바뀌었는지, 이 학번의 기준표 값, 그리고 이후 변경의 적용 여부는 경과조치(시행규칙 제13조)에 따름
  *  - 학과 개편 관계
  * 청크마다 어느 학번/학년도 기준인지 제목과 본문에 명시해서 모델이 서로 다른 해를 섞지 않게 한다.
  * 연도 판단은 yearContext.js, 변경 이력 데이터는 curriculumHistoryService.js(curriculum_changes 등)를 쓴다.
@@ -168,6 +168,17 @@ function describeChange(c) {
   return c.note ? `${base} — ${c.note}` : base;
 }
 
+// 학번 이후 변경이 이 학생에게 적용되는지는 "항상 아니다"가 아니다. 학칙시행규칙 제5조는 입학 당시 기준을 원칙으로 하되
+// 개편 시 제2절 경과조치를 따르게 하고, 제13조①은 신 교육과정을 공포일부터 전 학년에 적용한다(②~④는 과목 단위 예외).
+// 그래서 근거 문서에는 단정 대신 조건과 조문을 그대로 적는다 — LLM이 "적용 안 됨"을 단정하지 않게 하기 위함.
+// 조문 내용은 db/regulations/_source/원광대학교_학칙시행규칙_전문.txt 제5조·제13조·제118조를 요약한 것이다.
+const LATER_CHANGE_NOTICE =
+  '학번별 이수기준표에 따른 이 학번의 값은 위와 같다. 아래 이후 변경이 이 학번에도 적용되는지는 경과조치에 따라 달라질 수 있어 단정할 수 없다 — ' +
+  '학칙시행규칙 제5조(교육과정은 입학 당시의 기준에 따라 이수하되 재학 중 개편되면 제2절 경과조치를 따름), ' +
+  '제13조(①개편된 신 교육과정은 개정 공포일로부터 전 학년에 적용 ②필수과목이 선택과목으로 바뀌거나 폐설되면 이수하지 않아도 됨 ' +
+  '③선택과목이 필수과목으로 바뀌었을 때 재학 중인 학년보다 저학년에 개설된 경우 이수하지 않아도 됨 ④이수구분이 바뀐 과목은 수강신청한 학년도·학기의 이수구분을 따름), ' +
+  '제118조(졸업 이수학점의 학번별 경과조치는 학칙 부칙을 따름 — 해당 종전 부칙 원문은 확인되지 않음). 확정이 필요하면 학과 또는 학사지원과 확인이 필요하다';
+
 async function ruleHistoryChunk(department, code, cohort) {
   const r = await historyService.describeRuleForCohort({ departmentId: department.id, category: code, admissionYear: cohort });
   if (!r) return null;
@@ -184,7 +195,7 @@ async function ruleHistoryChunk(department, code, cohort) {
   lines.push(earlier.length ? `이 학번 이전의 변경:\n${earlier.map((c) => `- ${describeChange(c)}`).join('\n')}` : '이 학번 이전에 기록된 변경: 없음');
   lines.push(
     later.length
-      ? `이 학번 이후의 변경(이 학번에는 적용되지 않는다 — 규정이 바뀌어도 ${cohort}학번의 적용 규정은 위 값 그대로):\n${later.map((c) => `- ${describeChange(c)}`).join('\n')}`
+      ? `이 학번 이후의 변경(${LATER_CHANGE_NOTICE}):\n${later.map((c) => `- ${describeChange(c)}`).join('\n')}`
       : '이 학번 이후에 기록된 변경: 없음'
   );
   return {
@@ -295,4 +306,5 @@ module.exports = {
   lookupGraduationRequirements,
   lookupChangeHistory,
   mentionedCourseNames,
+  LATER_CHANGE_NOTICE,
 };

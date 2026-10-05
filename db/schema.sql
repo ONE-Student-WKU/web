@@ -548,6 +548,145 @@ CREATE TABLE IF NOT EXISTS regulation_chunks (
 );
 
 -- ---------------------------------------------------------------------------
+-- 7.5. 규정 판단 엔진 — 조문·판본·적용범위 (server/services/regulationEngine)
+--
+-- 위 regulation_documents/chunks는 "검색용" 저장소(RAG)라 문서를 청크로 쪼개 임베딩만 갖고, 매 재시딩(--force)마다
+-- 통째로 지워졌다 다시 만들어진다. 여기 테이블들은 "판단용" — 어떤 조문이 언제부터 누구에게 적용되는지를 행으로 둔다.
+-- 둘을 섞지 않은 이유는 docs/regulation-engine/DECISIONS.md D-24(재시딩 주기·키가 다르고, 섞으면 한쪽 재시딩이 다른 쪽을 지움).
+--
+-- 시드: server/scripts/seedRegulationArticles.js (npm run seed:regulation-articles). 원문 txt + db/regulation-engine/*.json을
+-- 읽어 이 테이블들만 지우고 다시 넣는다(멱등). 레포에는 현행 원문만 있으므로 과거 판본 행은 text_held=0, 날짜는 원문에서
+-- 직접 읽은 것만 채우고 모르면 NULL + date_confidence='UNKNOWN'이다(규정 내용을 만들어내지 않기 위함).
+-- ---------------------------------------------------------------------------
+
+-- 규정 판본. "학칙 2026-06-26 개정본"처럼 문서(doc_code) × 판본(version_label) 한 건당 한 행.
+-- supersedes_version_id: 이 판본이 대체한 직전 판본(원문 부칙으로 확인될 때만). 공포일과 시행일을 따로 두는 이유는
+-- 시행규칙(2026.02.05. 공포 → 2026.03.01. 시행)처럼 둘이 다른 경우가 있고, 경과조치 판단은 시행일 기준이기 때문.
+CREATE TABLE IF NOT EXISTS regulation_versions (
+  id                    INT AUTO_INCREMENT PRIMARY KEY,
+  doc_code              VARCHAR(40) NOT NULL,   -- ACADEMIC_REGULATIONS / ENFORCEMENT_RULES / CLASS_MANAGEMENT
+  title                 VARCHAR(150) NOT NULL,
+  version_label         VARCHAR(40) NOT NULL,   -- 부칙 날짜 그대로(예: '2026.06.26.')
+  promulgated_on        DATE NULL,
+  effective_from        DATE NULL,
+  effective_to          DATE NULL,              -- 다음 판본 시행 전날. 현행이면 NULL
+  supersedes_version_id INT NULL,
+  text_held             TINYINT(1) NOT NULL DEFAULT 0,  -- 1 = 이 판본 본문을 레포에 보유(현행 최종본만 1)
+  source_file           VARCHAR(255),
+  date_confidence       ENUM('CONFIRMED', 'ESTIMATED', 'UNKNOWN') NOT NULL,
+  note                  VARCHAR(255),
+
+  FOREIGN KEY (supersedes_version_id) REFERENCES regulation_versions(id) ON DELETE SET NULL,
+  CONSTRAINT uq_regulation_versions UNIQUE (doc_code, version_label)
+);
+
+-- 조문 단위 본문. article_key는 판본 안에서 유일한 사람이 읽을 수 있는 키:
+--   본문 조문 '제13조', 부칙 조문 '부칙(2026.04.10.)제2조', 별표 하위표 '별표4-3'.
+-- amendment_markers: 조문 안의 <개정 YYYY. M. D.>/<신설 ...> 표시를 파싱한 배열([{kind, dates:[...]}, ...]).
+-- 표시는 "그 날 이 조문이 바뀌었다"만 알려주고 이전 문구는 알려주지 않으므로, 이전 문구가 필요하면 UNKNOWN으로 다룬다.
+CREATE TABLE IF NOT EXISTS regulation_articles (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  version_id        INT NOT NULL,
+  article_key       VARCHAR(60) NOT NULL,
+  article_no        INT NULL,                -- 본문·부칙 조문 번호(별표는 NULL)
+  section           ENUM('BODY', 'ADDENDUM', 'SCHEDULE') NOT NULL,
+  title             VARCHAR(200),
+  chapter           VARCHAR(100),            -- '제2장 교육과정' 같은 소속 장(본문만)
+  body              MEDIUMTEXT NOT NULL,
+  amendment_markers JSON,
+  last_amended_on   DATE NULL,               -- markers 중 가장 늦은 날짜(없으면 NULL — "개정 없음"이 아니라 "표시 없음")
+  ord               INT NOT NULL,            -- 원문 등장 순서
+
+  FOREIGN KEY (version_id) REFERENCES regulation_versions(id) ON DELETE CASCADE,
+  CONSTRAINT uq_regulation_articles UNIQUE (version_id, article_key)
+);
+
+-- 적용범위. "이 규칙이 누구에게, 언제부터 적용되나"를 조문과 분리해 데이터로 둔다.
+-- scope:
+--   COHORT_ONLY  — 특정 학번 범위에만(예: 학칙 [별표 4]의 학번별 졸업학점표, 학칙시행규칙 제5조 "입학 당시의 기준")
+--   ALL_ENROLLED — 시행일 이후 재학생 전원(예: 제13조① 개편된 신 교육과정은 전 학년 적용)
+--   TRANSITIONAL — 경과조치: 조건부로 위 둘 사이를 조정(예: 제13조②~④, 부칙의 "졸업자부터")
+-- curriculum_requirements의 min/max_admission_year와 역할이 다르다: 그쪽은 "그 학번 책자에 적힌 값"(스냅샷),
+-- 여기는 "개정이 이미 입학한 학번에 소급되는지"(소급·경과조치). DECISIONS.md D-25.
+-- condition_code/params: 판단 함수(resolveApplicableRules)가 해석하는 조건 이름과 인자. 새 코드는 함수에 구현이 있어야 한다.
+CREATE TABLE IF NOT EXISTS regulation_applicability (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  rule_code          VARCHAR(80) NOT NULL,
+  article_id         INT NULL,               -- 시드가 article_ref로 찾아 채운다(못 찾으면 NULL로 두고 경고)
+  article_ref        VARCHAR(120) NOT NULL,  -- 'ENFORCEMENT_RULES:제13조' 형식
+  paragraph          VARCHAR(20),            -- '①' 등. 조 전체면 NULL
+  scope              ENUM('COHORT_ONLY', 'ALL_ENROLLED', 'TRANSITIONAL') NOT NULL,
+  applies_from       DATE NULL,              -- 이 규칙이 효력을 갖는 날(모르면 NULL)
+  min_admission_year INT NULL,
+  max_admission_year INT NULL,
+  enrollment_type    ENUM('GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE') NULL,  -- NULL이면 전체
+  condition_code     VARCHAR(60),
+  condition_params   JSON,
+  effect             VARCHAR(255) NOT NULL,  -- 사람이 읽는 효과 요약(원문 인용이 아니라 요약)
+  confidence         ENUM('CONFIRMED', 'ESTIMATED', 'UNKNOWN') NOT NULL,
+  -- 0이면 결과에 보여주되 전체 신뢰도 계산에서 뺀다(예: 원문을 보유하지 않은 종전 부칙 — 모든 2025학번 이전을
+  -- "자료없음"으로 만들지 않고, 학번별 값은 책자 행으로 판단했다는 안내만 남기기 위함).
+  critical           TINYINT(1) NOT NULL DEFAULT 1,
+  note               VARCHAR(255),
+
+  FOREIGN KEY (article_id) REFERENCES regulation_articles(id) ON DELETE SET NULL,
+  CONSTRAINT uq_regulation_applicability_rule UNIQUE (rule_code)
+);
+
+-- 문서·조문 사이 관계. REFERS(단순 참조 "제N조에 따른다") / DELEGATES_TO(위임: 학칙 → 시행규칙·별표) /
+-- OVERRIDES(특칙이 일반 규정을 덮음) / AMENDS(부칙·개정이 다른 조문을 바꿈).
+-- to_article_id로 못 잇는 대상(보유하지 않은 종전 부칙, 다른 규정집)은 to_ref 문자열로만 남긴다.
+CREATE TABLE IF NOT EXISTS regulation_relations (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  from_article_id INT NOT NULL,
+  relation        ENUM('REFERS', 'DELEGATES_TO', 'OVERRIDES', 'AMENDS') NOT NULL,
+  to_article_id   INT NULL,
+  to_ref          VARCHAR(160),
+  source          ENUM('PARSED', 'MANUAL') NOT NULL,
+  note            VARCHAR(255),
+
+  FOREIGN KEY (from_article_id) REFERENCES regulation_articles(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_article_id) REFERENCES regulation_articles(id) ON DELETE CASCADE,
+  INDEX idx_regulation_relations_from (from_article_id),
+  INDEX idx_regulation_relations_to (to_article_id)
+);
+
+-- 동일과목 지정(학칙시행규칙 제15조). course_lineage(자동 추정한 학수번호 변경)와 분리한 이유: 동일과목은 "학교가 지정한
+-- 사실"이라 출처가 문서여야 하고, 자동 추정과 섞이면 추정이 공식 지정처럼 보인다(D-24). 지금은 지정 목록 자료가 없어 비어 있다.
+CREATE TABLE IF NOT EXISTS course_equivalences (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  department_id     INT NULL,
+  from_course_key   VARCHAR(120) NOT NULL,
+  to_course_key     VARCHAR(120) NOT NULL,
+  designated_year   INT NULL,
+  basis_article_ref VARCHAR(120) NOT NULL DEFAULT 'ENFORCEMENT_RULES:제15조',
+  source            ENUM('DOC', 'MANUAL') NOT NULL,
+  note              VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_equivalences_from (from_course_key),
+  INDEX idx_course_equivalences_to (to_course_key)
+);
+
+-- 이수구분 override(학칙시행규칙 제13조④: 이수구분이 바뀐 과목은 "수강신청한 학년도·학기"의 이수구분을 따른다).
+-- 교육과정 스냅샷(curriculum_courses)은 학번 기준이라 "그 과목을 들은 학기의 이수구분"을 직접 표현하지 못해 따로 둔다.
+-- 학과가 개별 공지한 예외만 넣는 용도(자동 생성 금지). 지금은 비어 있고, 기본 판단은 curriculum_changes의 category 변경 + 수강 학기로 한다.
+CREATE TABLE IF NOT EXISTS course_category_overrides (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  department_id     INT NULL,
+  course_key        VARCHAR(120) NOT NULL,
+  academic_year     INT NOT NULL,
+  semester          TINYINT NULL,           -- NULL이면 그 학년도 전체
+  category          VARCHAR(30) NOT NULL,
+  basis_article_ref VARCHAR(120) NOT NULL DEFAULT 'ENFORCEMENT_RULES:제13조④',
+  source            ENUM('DOC', 'MANUAL') NOT NULL,
+  note              VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_category_overrides_course (course_key, academic_year)
+);
+
+-- ---------------------------------------------------------------------------
 -- 8. 챗봇 대화
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chat_conversations (

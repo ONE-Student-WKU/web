@@ -71,3 +71,25 @@ raw input ──normalizeInput──▶ ctx ──(loadData: DB 읽기 전용)�
 - **새 규칙/가정**: `flags.js` 카탈로그에 코드·level·한국어 문구를 먼저 등록 → `decisions.js`에서 `makeFlag` → 근거는 `constants.js` `CITATIONS`에 quote와 함께 등록. 미등록 코드·근거 키는 실행 시점과 테스트(소스 스캔) 양쪽에서 실패한다.
 - **규정 개정(새 원문)**: `TEXT_SOURCES`의 판본 날짜를 갱신하고 `citations` 테스트를 돌린다 — quote가 바뀐 조문은 여기서 걸린다.
 - **`graduationService.js`와의 관계**: Part 1에서는 건드리지 않았다. 같은 규칙이 두 곳에 있으므로 `regulationEngine.parity.test.js`가 일치를 보장한다. Part 2에서 `graduationService`가 엔진을 쓰도록 교체한다(HANDOFF 참고).
+
+## 6. 파트 2 추가: 적용범위 판단 (`resolveApplicableRules`)
+
+파트 1이 "이 학번의 졸업요건 값"을 계산했다면, 파트 2는 그 위에 "어느 **조문**이 이 학생에게 기준일에 적용되나"를 얹는다.
+
+```
+원문 txt ──articleParser──▶ 조문·개정 표시·부칙(판본)
+                              │  + db/regulation-engine/applicability.json(사람이 쓴 적용범위, 인용문은 테스트가 원문 대조)
+                              ▼
+                     regulationSeed (순수) ──seed:regulation-articles──▶ regulation_* 테이블
+                                                                            │
+curriculum_changes · department_lineage · curriculum_requirements ──────────┤ dbProvider.loadApplicabilityData (읽기 전용)
+                                                                            ▼
+                      resolveApplicableRules(input, data)  ← 순수 함수, dataQuality(검수 등급) 반영
+                        ├─ rules[]: 조문별 status(APPLIES/NOT_APPLICABLE/CONDITIONAL/UNKNOWN) + 근거 + 과목 목록
+                        ├─ history: 학년도별 "변경 있음 / 변경 없음 / 기록 없음(검증 안 됨)"
+                        └─ requirements: 파트 1 evaluate() + 칸별 신뢰도
+```
+
+**두 개의 "연도 범위"를 섞지 않는다**(D-25): `curriculum_requirements`의 학번 범위는 "그 학번 책자에 적힌 값"(스냅샷, 제5조), `regulation_applicability.scope`는 "개정이 이미 입학한 학생에게도 미치나"(소급·경과조치, 제13조).
+
+**신뢰도 4단계**: 확정 < 추정 < 자료 불충분(확인 필요) < 자료없음. 검수 등급 C 구간의 판단은 자료 불충분, 그 구간에서 변경이 안 보이는 것은 "기록 없음(검증 안 됨)"(D-27). 조문 판본은 조문별 개정 표시로 판단한다 — 기준일 뒤에 개정 표시가 없는 조문은 기준일 당시에도 같은 문구(D-28).
