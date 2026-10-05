@@ -65,6 +65,8 @@ const FLAG_CATALOG = {
   OFFERED_GRADE_FROM_NEAREST_SNAPSHOT: [L.ESTIMATED, '변경 후 교육과정에서 이 과목을 찾지 못해(학수번호 변경 등) 가장 가까운 학년도 편성표의 개설 학년을 썼어요.'],
   SCHEDULE4_CREDIT_MISMATCH: [L.ESTIMATED, '학칙 [별표 4]에 적힌 졸업학점과 교육과정 책자 기준 졸업학점이 서로 달라요. 어느 쪽이 이 학생에게 적용되는지 확인되지 않았어요(학칙은 2026.04.10. 개정, 2026년 8월 졸업자부터 적용) — 학과 또는 학사지원과 확인이 필요해요.'],
   APPLICABILITY_DATA_MISSING: [L.NO_DATA, '조문 적용범위 자료가 시스템에 없어 경과조치·적용범위를 판단하지 못했어요(관리자: seed:regulation-articles 실행 필요).'],
+  REGISTRATION_CATEGORY_APPLIED: [L.ESTIMATED, '일부 과목의 이수구분을 수강한 학년도 기준으로 다시 봤어요(시행규칙 제13조④). 과목을 이름으로 찾고 그 해 입학생 교육과정표의 구분을 썼기 때문에 추정이에요 — 아래 과목은 입력한 구분과 달라 학점을 옮겨 계산했어요.'],
+  REGISTRATION_CATEGORY_NOT_COMPARABLE: [L.INFO, '일부 과목은 수강한 학년도 교육과정에서 전공기초·전공심화 같은 구분으로 적혀 있어요. 이런 구분이 필수/선택 중 무엇인지 정해지지 않아 입력한 이수구분 그대로 합산했어요.'],
   OFFERED_GRADE_UNKNOWN: [L.INSUFFICIENT, '변경 후 교육과정에서 이 과목의 개설 학년을 찾지 못해 제13조③ 면제 여부를 판단하지 못했어요.'],
 
   // --- 데이터 검수 등급(DATA_AUDIT §4) ---

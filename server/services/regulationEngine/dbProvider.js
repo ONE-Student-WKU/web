@@ -2,6 +2,7 @@ const pool = require('../../db');
 const { getDepartmentChain, describeRuleForCohort } = require('../curriculumHistoryService');
 const { hasCoreRowsForYear } = require('./evaluate');
 const { summarizeVersions } = require('./textVersion');
+const { resolveOfferedGrade, lineageCandidateKeys } = require('./offeredGrade');
 const { dbDateToIso } = require('./context');
 
 /**
@@ -181,24 +182,44 @@ async function loadApplicabilityRules() {
 }
 
 // 제13조③ 판단용: 변경 후(to_year) 교육과정에서 그 과목이 개설된 학년. 같은 학번에 여러 행(트랙·학기)이면 가장 낮은 학년.
+// 학수번호가 바뀐 과목은 course_lineage로 이어서 찾고, 계보도 없을 때만 가장 가까운 편성표로 근사한다(offeredGrade.js, D-45).
 async function attachOfferedGrades(changes, departmentIds) {
-  const keys = [...new Set(changes.filter((c) => c.field === 'category').map((c) => c.subjectKey))];
-  if (keys.length === 0) return changes;
+  const catChanges = changes.filter((c) => c.field === 'category');
+  if (catChanges.length === 0) return changes;
+  // 이 학과 계열(+전체 적용) 계보. 학과당 수십~수백 행이라 한 번에 읽고 JS에서 이어 따라간다.
+  const [lineage] = await pool.query(
+    'SELECT from_course_key, to_course_key, relation, effective_year, department_id FROM course_lineage WHERE department_id IN (?) OR department_id IS NULL',
+    [departmentIds]
+  );
+  const keys = new Set();
+  for (const c of catChanges) {
+    keys.add(c.subjectKey);
+    for (const k of lineageCandidateKeys(c.subjectKey, c.toYear, lineage, departmentIds)) keys.add(k);
+  }
   const [rows] = await pool.query(
     'SELECT course_key, grade, min_admission_year, max_admission_year FROM curriculum_courses WHERE department_id IN (?) AND course_key IN (?)',
-    [departmentIds, keys]
+    [departmentIds, [...keys]]
   );
-  return changes.map((c) => {
-    if (c.field !== 'category') return c;
-    const own = rows.filter((r) => r.course_key === c.subjectKey);
-    const exact = own.filter((r) => (r.min_admission_year == null || r.min_admission_year <= c.toYear) && (r.max_admission_year == null || r.max_admission_year >= c.toYear));
-    if (exact.length) return { ...c, offeredGrade: Math.min(...exact.map((r) => r.grade)), offeredGradeSource: 'EXACT' };
-    // 개편으로 학수번호(course_key)가 바뀌면 to_year 편성표에서 못 찾는다. 학년도가 가장 가까운 편성표의 학년을 쓰되 추정으로 표시한다.
-    if (own.length === 0) return c;
-    const dist = (r) => Math.abs((r.max_admission_year ?? r.min_admission_year ?? c.toYear) - c.toYear);
-    const best = Math.min(...own.map(dist));
-    return { ...c, offeredGrade: Math.min(...own.filter((r) => dist(r) === best).map((r) => r.grade)), offeredGradeSource: 'NEAREST_SNAPSHOT' };
-  });
+  return changes.map((c) => (c.field !== 'category' ? c : { ...c, ...resolveOfferedGrade(c, rows, lineage, departmentIds) }));
+}
+
+/**
+ * 졸업진단용(제13조④): 학과 계열(개편 전후 학과 id들)의 이수구분 변경 전체 + 학교가 공지한 이수구분 override.
+ * 엔진의 courseChanges와 달리 입학 이후로 자르지 않는다 — "수강 학년도의 이수구분"은 입학 전 변경부터 이어서 봐야 한다.
+ */
+async function loadCategoryChanges(departmentIds) {
+  const [changeRows] = await pool.query(
+    "SELECT * FROM curriculum_changes WHERE subject_type = 'COURSE' AND field = 'category' AND department_id IN (?)",
+    [departmentIds]
+  );
+  const [overrideRows] = await pool.query(
+    'SELECT course_key, academic_year, semester, category, basis_article_ref FROM course_category_overrides WHERE department_id IN (?) OR department_id IS NULL',
+    [departmentIds]
+  );
+  return {
+    changes: changeRows.map(mapChangeRow),
+    overrides: overrideRows.map((o) => ({ courseKey: o.course_key, academicYear: o.academic_year, semester: o.semester, category: o.category, basisArticleRef: o.basis_article_ref })),
+  };
 }
 
 function mapChangeRow(r) {
@@ -246,4 +267,4 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   };
 }
 
-module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear, loadTextVersions, loadRelations };
+module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear, loadTextVersions, loadRelations, attachOfferedGrades, loadCategoryChanges };
