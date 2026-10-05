@@ -257,6 +257,8 @@ async function getGraduationStatus(studentId) {
       flags: (regulation.flags || []).map((f) => ({ code: f.code, level: f.level, message: f.message })),
       liberalArtsCap: { applied: liberalArtsCap, engineValue: capRule && capRule.value ? capRule.value.cap : null },
       totalDefinitive: !(regulation.flags || []).some((f) => f.code === 'TRANSFER_TOTAL_UNRESOLVED'),
+      // 학칙 [별표 4] 졸업학점과 책자 졸업학점이 다를 때 두 값(어느 쪽이 맞는지는 학교 확인 전이라 판단하지 않음). 같거나 대조 불가면 null.
+      schedule4: requirementsRule && requirementsRule.value ? requirementsRule.value.schedule4 : null,
     },
   };
 }

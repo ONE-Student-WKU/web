@@ -1,6 +1,6 @@
 const pool = require('../db');
 const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./regulationEngine');
-const { resolveDepartment } = require('./curriculumContextService');
+const { resolveDepartment, schedule4Line } = require('./curriculumContextService');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 
 /**
@@ -75,9 +75,13 @@ function requirementLine(requirements) {
   const rule = requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   if (!rule) return null;
   if (!rule.value) return `졸업요건 값: 이 학과·학번 자료 없음(신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}) — 다른 학번 값으로 대신 답하지 마라.`;
-  const split = rule.value.categories.filter((c) => c.confidence !== rule.value.totalConfidence).map((c) => c.category);
-  return `졸업요건 값: 총 ${rule.value.totalRequiredCredits ?? '(편입생 — 총량 미확정)'}학점, 신뢰도 ${CONFIDENCE_LABEL[rule.confidence]}` +
+  // 합계만 검수되고 칸별 분할은 검수 안 된 카테고리(교양필수·교양선택) — confidenceNote가 달린 칸. 총량 신뢰도와 비교하면
+  // [별표 4] 불일치처럼 총량만 낮아지는 경우에 엉뚱한 카테고리가 나열된다.
+  const split = rule.value.categories.filter((c) => c.confidenceNote).map((c) => c.category);
+  const line = `졸업요건 값: 총 ${rule.value.totalRequiredCredits ?? '(편입생 — 총량 미확정)'}학점, 신뢰도 ${CONFIDENCE_LABEL[rule.confidence]}` +
     (split.length ? ` (${split.join('·')} 분할은 합계만 검수돼 추정)` : '');
+  return rule.value.schedule4 ? `${line}
+${schedule4Line(rule.value.schedule4)}` : line;
 }
 
 function historyLine(history) {
@@ -175,7 +179,9 @@ async function resolveJudgmentSubject({ message, student, yearContext }) {
     const chain = await getDepartmentChain(student.department_id);
     if (chain.departmentIds.includes(department.id)) department = (await resolveDepartment('', student)) || department;
   }
-  const isProfile = department.source === 'profile' && yearContext.cohortSource === 'profile';
+  // "20학번인데 …"처럼 본인 학번·학과를 질문에서 말해도, 프로필과 같은 학번·학과면 본인 질문이다 — 출처(message/profile)가 아니라
+  // 값으로 비교한다. 예전에는 출처가 message면 가정(일반 재학생)으로 바뀌어 전과·편입 정보가 사라졌다(F-3).
+  const isProfile = Boolean(student && student.department_id != null && student.department_id === department.id && student.admission_year === cohort);
   const base = isProfile && student ? inputFromStudentRow(student) : { enrollmentType: 'GENERAL' };
   return {
     input: { ...base, admissionYear: cohort, departmentId: department.id, asOfDate: yearContext.asOfDate },

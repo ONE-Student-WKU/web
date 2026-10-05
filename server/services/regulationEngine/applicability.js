@@ -4,6 +4,7 @@ const { normalizeInput } = require('./context');
 const { checkEligibility } = require('./decisions');
 const { evaluate } = require('./evaluate');
 const dq = require('./dataQuality');
+const { checkSchedule4Credits } = require('./schedule4');
 
 /**
  * server/services/regulationEngine/applicability.js
@@ -394,7 +395,20 @@ function historyStatus(count, grades) {
 
 // --- 졸업요건(파트 1 evaluate) 결과에 데이터 등급을 입힌다 ---
 
-function annotateRequirements(ctx, result, deptName) {
+/**
+ * 학칙 [별표 4] 졸업학점 vs 책자 졸업학점 대조(schedule4.js). 학과가 표에 직접 적혀 있고 값이 다를 때만 불일치를 돌려준다.
+ * rows: 그 학과의 요건 행(dbProvider.loadRequirementRows 모양). 입학유형과 무관하게 일반 재학생 책자 총량으로 비교한다.
+ */
+function schedule4Mismatch(ctx, deptName, rows) {
+  const check = checkSchedule4Credits({ departmentName: deptName, admissionYear: ctx.admissionYear, rows });
+  return check && !check.match ? check : null;
+}
+
+// 졸업학점 표를 "적용"한다고 말하는 규칙들 — 학칙 [별표 4] 학번별 표 4개와 그 표를 가리키는 시행규칙 제118조.
+const isSchedule4Rule = (row) => row.conditionCode === 'GRAD_CREDITS_SCHEDULE4' || /^ACAD_SCHED4_/.test(row.ruleCode);
+
+function annotateRequirements(ctx, result, deptName, data = null) {
+  const sched4 = schedule4Mismatch(ctx, deptName, data && data.rows);
   const { grade } = dq.dataGrade('REQUIREMENTS', ctx.admissionYear, deptName);
   const base = dq.gradeConfidence(grade);
   const holds = dq.pendingHoldsFor(ctx.admissionYear, deptName, 'REQUIREMENTS');
@@ -405,12 +419,14 @@ function annotateRequirements(ctx, result, deptName) {
 
   const rules = result.rules.map((rule) => {
     if (rule.id === 'REQUIREMENTS' && rule.value) {
-      const flags = dedupeFlags([...rule.flags, ...gradeFlags, ...holdFlag(holds)]);
+      const flags = dedupeFlags([...rule.flags, ...gradeFlags, ...holdFlag(holds), ...(sched4 ? [makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] : [])]);
       const unverified = dq.UNVERIFIED_REQUIREMENT_PARTS;
       const value = {
         ...rule.value,
         dataGrade: { area: 'REQUIREMENTS', year: ctx.admissionYear, grade },
-        totalConfidence: fieldBase,
+        // 학칙 [별표 4]와 값이 다르면 둘 다 싣는다(어느 쪽이 맞는지는 판단하지 않음). 같거나 대조 불가면 null.
+        schedule4: sched4,
+        totalConfidence: sched4 ? worstConfidence([fieldBase, CONFIDENCE.ESTIMATED]) : fieldBase,
         categories: rule.value.categories.map((c) => {
           const split = unverified.categories.includes(c.category);
           return {
@@ -482,18 +498,23 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
     unverifiedYears: department ? unverifiedCourseYears(ctx, deptName, lastYear) : [],
   };
 
+  const sched4 = d.requirements && department ? schedule4Mismatch(ctx, deptName, d.requirements.rows) : null;
   const rules = (d.rules || []).map((row) => {
     const handler = HANDLERS[row.conditionCode];
     if (!handler) throw new Error(`구현되지 않은 적용 조건: ${row.conditionCode} (${row.ruleCode})`);
     const since = row.article ? addendumDate(row.article.articleKey) : null;
-    const result = since && ctx.asOfDate < since
+    const result0 = since && ctx.asOfDate < since
       ? { status: 'NOT_APPLICABLE', reason: `기준일(${ctx.asOfDate})에는 아직 없던 부칙(${since})` }
       : handler({ ...h, row });
+    // [별표 4]를 적용한다는 규칙에는 책자 값과 다르다는 사실을 함께 붙여, "확정"이라 말하지 않게 한다.
+    const result = sched4 && isSchedule4Rule(row) && result0.status !== 'NOT_APPLICABLE'
+      ? { ...result0, flags: [...(result0.flags || []), makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] }
+      : result0;
     return buildRule(row, result, h);
   });
 
   let requirements = null;
-  if (d.requirements) requirements = annotateRequirements(ctx, evaluate(ctx, d.requirements), deptName);
+  if (d.requirements) requirements = annotateRequirements(ctx, evaluate(ctx, d.requirements), deptName, d.requirements);
 
   const counted = rules.filter((r) => r.critical && r.status !== 'NOT_APPLICABLE').map((r) => r.confidence);
   if (requirements) counted.push(requirements.confidence);

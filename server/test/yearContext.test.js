@@ -165,13 +165,39 @@ test('기준일: 질문의 날짜 > 호출자 지정 > 직전 질문(후속 질�
   assert.deepEqual(ctx('졸업요건', { today: '2026-02-10' }).asOfTerm, { year: 2025, semester: 2 });
 });
 
-test('기준일 추출: 연·월·일이 다 있는 실제 날짜만(학년도·없는 날짜는 아님), 날짜가 있어도 학년도 모드 판정은 기존대로', () => {
+test('기준일 추출: 연·월·일이 다 있는 실제 날짜만(학년도·없는 날짜는 아님)', () => {
   assert.equal(extractAsOfDate('2026-03-01부터'), '2026-03-01');
   assert.equal(extractAsOfDate('2025.9.1 기준'), '2025-09-01');
   assert.equal(extractAsOfDate('2026-02-30'), null);
   assert.equal(extractAsOfDate('2024학년도 졸업요건'), null);
   assert.equal(extractAsOfDate('2024년 졸업요건'), null);
-  // "2024년 3월 1일"의 "2024년"은 기존처럼 학년도로도 읽힌다(SPECIFIC_YEAR) — 모드 판정은 바꾸지 않았다.
+});
+
+// --- 보정 라운드 A 2-5(F-6, D-38): 월·일이 붙은 날짜의 연도는 학년도가 아니라 기준일이다 ---
+
+test('날짜 질문: "2024년 3월 1일 기준 …"은 SPECIFIC_YEAR(2024학년도)가 아니라 내 학번(COHORT) + 기준일 — 예전 동작(D-30)에서 의도적으로 바뀐 기대값', () => {
   const r = ctx('2024년 3월 1일 기준 졸업요건 알려줘', { profileCohort: 2022, today: '2026-10-05' });
-  assert.deepEqual([r.mode, r.targetYears, r.asOfDate], ['SPECIFIC_YEAR', [2024], '2024-03-01']);
+  assert.deepEqual([r.mode, r.targetYears, r.askedYears, r.asOfDate, r.asOfSource], ['COHORT', [2022], [], '2024-03-01', 'message']);
+});
+
+test('날짜 질문: 2022학번이 "2025년 9월 1일 기준으로 내 졸업요건이 뭐였어?" → 2022학번 + 기준일(2025학번 요건을 붙이지 않는다)', () => {
+  const r = ctx('2025년 9월 1일 기준으로 내 졸업요건이 뭐였어?', { profileCohort: 2022, today: '2026-10-05' });
+  const plain = ctx('내 졸업요건이 뭐였어?', { profileCohort: 2022, today: '2026-10-05' });
+  assert.deepEqual([r.mode, r.targetYears, r.asOfDate], ['COHORT', [2022], '2025-09-01']);
+  assert.deepEqual(r.bookYears, plain.bookYears, '날짜가 있어도 책자 학년도는 날짜 없는 같은 질문과 같다');
+  const dotted = ctx('2025.9.1 기준 졸업요건', { profileCohort: 2022, today: '2026-10-05' });
+  assert.deepEqual([dotted.mode, dotted.targetYears, dotted.asOfDate], ['COHORT', [2022], '2025-09-01']);
+});
+
+test('날짜와 학년도가 함께 있으면 학년도는 그대로 읽는다 / 월만 있는 "2025년 9월"은 날짜가 아니라 학년도(기존)', () => {
+  const both = ctx('2025년 9월 1일 기준으로 2026학년도 졸업요건이 뭐야?', { profileCohort: 2022, today: '2026-10-05' });
+  assert.deepEqual([both.askedYears, both.asOfDate], [[2026], '2025-09-01']);
+  assert.deepEqual(extractAskedYears('2025년 9월 졸업요건'), [2025]);
+  assert.deepEqual(extractAskedYears('2024년 졸업요건과 2025년 3월 1일부터'), [2024]);
+  assert.deepEqual(extractAskedYears('2026-03-01 이후 2026학년도'), [2026]);
+});
+
+test('날짜 질문의 후속 질문은 날짜를 이어받되 학년도로는 읽지 않는다', () => {
+  const r = ctx('그럼 전공은?', { profileCohort: 2022, previousUserMessage: '2025년 9월 1일 기준 졸업요건', today: '2026-10-05' });
+  assert.deepEqual([r.askedYears, r.asOfDate, r.asOfSource], [[], '2025-09-01', 'previous']);
 });

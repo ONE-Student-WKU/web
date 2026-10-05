@@ -60,7 +60,7 @@ async function resolveRequirementsForStudent(rawInput, opts = {}) {
   if (!ctx) return invalidResult(errors);
   const loadData = opts.loadData || ((c) => require('./dbProvider').loadData(c, { withHistory: false }));
   const data = await loadData(ctx);
-  const annotated = annotateRequirements(ctx, evaluate(ctx, data), data.department ? data.department.name : null);
+  const annotated = annotateRequirements(ctx, evaluate(ctx, data), data.department ? data.department.name : null, data);
   return { ...annotated, department: data.department || null, confidenceLabel: CONFIDENCE_LABEL_KO[annotated.confidence] };
 }
 

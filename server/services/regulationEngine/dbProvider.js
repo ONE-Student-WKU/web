@@ -199,4 +199,4 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   };
 }
 
-module.exports = { loadData, loadRequirementRows, loadApplicabilityData };
+module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear };

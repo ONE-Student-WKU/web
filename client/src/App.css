@@ -764,6 +764,48 @@ body {
   line-height: 1.6;
 }
 
+/* 졸업요건 근거 신뢰도(확정/추정/자료 불충분/자료 없음) — 작게. 색은 상태 토큰을 그대로 쓴다. */
+.grad-trust-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: middle;
+  color: var(--color-text-muted);
+}
+
+.grad-trust-badge.ok {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.grad-trust-badge.warn {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.grad-trust-badge.none {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.grad-trust-tag {
+  margin-left: 4px;
+  font-size: 0.75rem;
+  color: var(--color-warning);
+}
+
+.grad-trust-reason {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 .grad-overflow-note {
   margin: 6px 0 0;
   font-size: 0.75rem;

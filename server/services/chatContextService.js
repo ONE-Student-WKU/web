@@ -20,12 +20,12 @@ const regulationContext = require('./regulationContextService');
 // regulationJudgment: routes/chat.js가 RAG 검색 전에 미리 구한 판단(lookupRegulationJudgment 결과). 넘기지 않으면 여기서 구한다
 // (테스트·다른 호출자 호환).
 async function assembleStructuredChunks({ message, searchText, student, previousUserMessage, yearContext, regulationJudgment }) {
-  const judgmentPromise = regulationJudgment !== undefined
-    ? Promise.resolve(regulationJudgment)
-    : regulationContext.lookupRegulationJudgment({ message, student, yearContext });
-  const [judgment, graduation, history, curriculum, requirement, offering, linkedMajor, microDegree] = await Promise.all([
-    judgmentPromise,
-    curriculumContext.lookupGraduationRequirements({ message, student, yearContext }),
+  // 판단을 먼저 구한다 — 졸업요건 청크가 같은 판단 결과(입학유형 반영, 자료 없음 판정)의 값을 쓰기 때문이다(보정 라운드 A, D-35).
+  const judgment = regulationJudgment !== undefined
+    ? regulationJudgment
+    : await regulationContext.lookupRegulationJudgment({ message, student, yearContext });
+  const [graduation, history, curriculum, requirement, offering, linkedMajor, microDegree] = await Promise.all([
+    curriculumContext.lookupGraduationRequirements({ message, student, yearContext, judgment: judgment ? judgment.judgment : null }),
     curriculumContext.lookupChangeHistory({ message, contextText: previousUserMessage, student, yearContext }),
     curriculumService.lookupFromMessage(message, student, yearContext),
     curriculumService.lookupRequirementsFromMessage(searchText || message, student, yearContext),
