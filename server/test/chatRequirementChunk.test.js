@@ -94,3 +94,36 @@ test('일반 재학생은 예전과 같은 숫자·형식(회귀)', async () => 
   assert.match(g.content, /졸업학점 합계\(교양\+전공\+일반선택\): 136학점/);
   assert.equal(g.documentTitle, '컴퓨터·소프트웨어공학과 2020학번 졸업요건');
 });
+
+// --- 2-4: 본인 학번을 질문에서 말해도 입학유형을 유지(F-3, D-37) ---
+
+test('전과생이 "22학번인데"라고 본인 학번을 말해도 프로필 취급 — 전과생 판단·가정 문구 없음', async () => {
+  const student = row('컴퓨터·소프트웨어공학과', 2022, 'MAJOR_CHANGE', { grade: 3, year: 2024, semester: 2 });
+  const { structured, merged } = await ask(student, '22학번인데 졸업요건이 뭐야?');
+  assert.equal(structured.judgment.input.enrollmentType, 'MAJOR_CHANGE');
+  assert.doesNotMatch(merged[0].content, /일반 재학생으로 가정/);
+  assert.match(merged[0].content, /전과생 기준/);
+  assert.match(gradChunk(merged).content, /전공: 48학점/);
+});
+
+test('프로필과 다른 학번을 말하면 일반 재학생 가정 + 가정임을 밝힌다(기존 동작)', async () => {
+  const student = row('컴퓨터·소프트웨어공학과', 2022, 'MAJOR_CHANGE', { grade: 3, year: 2024, semester: 2 });
+  const { structured, merged } = await ask(student, '21학번은 졸업요건이 뭐야?');
+  assert.equal(structured.judgment.input.enrollmentType, 'GENERAL');
+  assert.equal(structured.judgment.input.admissionYear, 2021);
+  assert.match(merged[0].content, /일반 재학생으로 가정/);
+});
+
+test('프로필과 같은 학번이라도 다른 학과를 말하면 가정(그 학과 일반 재학생)', async () => {
+  const student = row('컴퓨터·소프트웨어공학과', 2022, 'TRANSFER_ADMISSION');
+  const { structured, merged } = await ask(student, '22학번 간호학과 졸업요건이 뭐야?');
+  assert.equal(structured.judgment.department.name, '간호학과');
+  assert.equal(structured.judgment.input.enrollmentType, 'GENERAL');
+  assert.match(merged[0].content, /일반 재학생으로 가정/);
+});
+
+test('온보딩 전 학생(프로필 값 없음)은 가정으로 처리하되 학번·학과를 말하면 판단은 한다', async () => {
+  const { structured, merged } = await ask({ department_id: null, admission_year: null, enrollment_type: null }, '20학번 컴퓨터·소프트웨어공학과 졸업요건이 뭐야?');
+  assert.equal(structured.judgment.input.admissionYear, 2020);
+  assert.match(merged[0].content, /일반 재학생으로 가정/);
+});

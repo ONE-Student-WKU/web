@@ -37,9 +37,15 @@ function unique(list) {
   return [...new Set(list)];
 }
 
+// "2025년 9월 1일 기준으로…"의 "2025년"은 학년도가 아니라 날짜의 일부다. 학년도를 읽기 전에 월·일까지 있는 날짜를 지운다 —
+// 지우지 않으면 날짜 질문이 "2025학년도 책자 질문"으로 해석돼 다른 학번 자료가 붙었다(F-6, 보정 라운드 A 2-5). 월만 있는 "2025년 9월"은
+// 날짜로 보지 않고 기존처럼 학년도로 읽는다.
+const AS_OF_DATE_GLOBAL_RE = new RegExp(AS_OF_DATE_RE.source, 'g');
+
 function extractAskedYears(text) {
   if (!text) return [];
-  return unique([...String(text).matchAll(ASKED_YEAR_RE)].map((m) => Number(m[1])));
+  const withoutDates = String(text).replace(AS_OF_DATE_GLOBAL_RE, ' ');
+  return unique([...withoutDates.matchAll(ASKED_YEAR_RE)].map((m) => Number(m[1])));
 }
 
 function extractCohorts(text) {

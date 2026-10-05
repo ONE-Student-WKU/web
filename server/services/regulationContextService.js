@@ -179,7 +179,9 @@ async function resolveJudgmentSubject({ message, student, yearContext }) {
     const chain = await getDepartmentChain(student.department_id);
     if (chain.departmentIds.includes(department.id)) department = (await resolveDepartment('', student)) || department;
   }
-  const isProfile = department.source === 'profile' && yearContext.cohortSource === 'profile';
+  // "20학번인데 …"처럼 본인 학번·학과를 질문에서 말해도, 프로필과 같은 학번·학과면 본인 질문이다 — 출처(message/profile)가 아니라
+  // 값으로 비교한다. 예전에는 출처가 message면 가정(일반 재학생)으로 바뀌어 전과·편입 정보가 사라졌다(F-3).
+  const isProfile = Boolean(student && student.department_id != null && student.department_id === department.id && student.admission_year === cohort);
   const base = isProfile && student ? inputFromStudentRow(student) : { enrollmentType: 'GENERAL' };
   return {
     input: { ...base, admissionYear: cohort, departmentId: department.id, asOfDate: yearContext.asOfDate },
