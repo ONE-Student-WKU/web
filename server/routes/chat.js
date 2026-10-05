@@ -9,6 +9,7 @@ const studentService = require('../services/studentService');
 const graduationService = require('../services/graduationService');
 const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
+const { lookupRegulationJudgment } = require('../services/regulationContextService');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -118,6 +119,11 @@ router.post('/messages', async (req, res, next) => {
       availableBookYears,
     });
 
+    // 규정 판단(이 학생에게 기준일에 적용되는 규정·신뢰도)은 RAG 검색보다 먼저 정한다 — 판단 결과가 최우선 근거이고,
+    // RAG가 같은 조문 원문을 또 가져오면 mergeChunks가 빼야 하므로 판단이 먼저 있어야 한다(chatContextService 주석, DECISIONS D-31).
+    // 실패하면 null(챗봇은 계속 동작, 판단 근거만 빠짐).
+    const regulationJudgment = await lookupRegulationJudgment({ message, student, yearContext });
+
     // 교육과정 구조화 조회(과목/요건/연도별 졸업요건/변경 이력)는 RAG 유사도 검색이 아니라 조건 조회로 처리한다 —
     // "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부가 누락되고, 연도별 값은 유사도로 구분할 수 없다.
     // RAG는 학칙 같은 비정형 문서만 대상이며, 교육과정 책자 문서는 질문에서 정한 책자 학년도(yearContext.bookYears)만 검색한다.
@@ -134,6 +140,7 @@ router.post('/messages', async (req, res, next) => {
         student,
         previousUserMessage: lastUserMessage?.content ?? null,
         yearContext,
+        regulationJudgment,
       }),
     ]);
 

@@ -63,6 +63,7 @@ const FLAG_CATALOG = {
   PRIOR_ADDENDUM_NOT_HELD: [L.NO_DATA, '종전(2025.08.29.자) 학칙 부칙의 경과조치 원문이 시스템에 없어 내용을 확인할 수 없어요.'],
   MAJOR_CHANGE_TARGET_NOT_ALLOWED_FOR_COHORT: [L.ESTIMATED, '이 학과로의 전과는 2026년 3월 1일 입학생부터 허용돼요(시행규칙 부칙 2026.02.05. 제2조). 입력한 학번·입학유형을 확인해 주세요.'],
   OFFERED_GRADE_FROM_NEAREST_SNAPSHOT: [L.ESTIMATED, '변경 후 교육과정에서 이 과목을 찾지 못해(학수번호 변경 등) 가장 가까운 학년도 편성표의 개설 학년을 썼어요.'],
+  APPLICABILITY_DATA_MISSING: [L.NO_DATA, '조문 적용범위 자료가 시스템에 없어 경과조치·적용범위를 판단하지 못했어요(관리자: seed:regulation-articles 실행 필요).'],
   OFFERED_GRADE_UNKNOWN: [L.INSUFFICIENT, '변경 후 교육과정에서 이 과목의 개설 학년을 찾지 못해 제13조③ 면제 여부를 판단하지 못했어요.'],
 
   // --- 데이터 검수 등급(DATA_AUDIT §4) ---

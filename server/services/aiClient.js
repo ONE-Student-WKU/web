@@ -115,9 +115,20 @@ function buildYearContextNote(yearContext) {
   return lines.join('\n');
 }
 
+// 근거끼리 충돌할 때의 우선순위(DECISIONS D-31). 근거 문서 목록도 이 순서로 정렬돼 들어간다(chatContextService.mergeChunks).
+// 규정 판단 결과를 1순위로 두는 이유: 학칙 조문 RAG 청크는 "그 조문이 이 학생에게 적용되는지"를 말해주지 않는데, 판단 결과는
+// 학번·입학유형·기준일·데이터 검수 등급을 반영해 코드로 계산한 값이기 때문이다.
+const EVIDENCE_PRIORITY_NOTE = `근거 우선순위(근거 문서끼리 내용이 다를 때):
+1. "적용 규정 판단" 문서 — 이 학생에게 기준일에 적용되는 규정과 신뢰도. 그 안의 "답변 지침"을 반드시 따르라(신뢰도가 확정이 아니면 단정 금지, 확인 안내).
+2. 학번별 졸업요건·변경 이력·교육과정 조회 문서(학번/학년도가 제목에 있는 문서)
+3. 학칙·학칙시행규칙 원문 조문
+4. 그 밖의 정리 문서와 교육과정 책자
+아래 순위 문서가 위 순위 문서와 다르면 위 순위를 따르고, 자료 사이에 차이가 있다고 밝혀라. 어느 문서에도 없는 내용은 만들지 마라.`;
+
 function buildSystemPrompt(student, graduationStatus, yearContext = null) {
   const parts = [
     SYSTEM_PROMPT,
+    EVIDENCE_PRIORITY_NOTE,
     buildStudentProfileNote(student),
     buildYearContextNote(yearContext),
     buildGraduationStatusNote(graduationStatus),
@@ -404,6 +415,7 @@ async function extractFullTranscriptRows(rawText) {
 
 module.exports = {
   buildYearContextNote,
+  buildSystemPrompt,
   getAIChatResponse,
   rewriteSearchQuery,
   getCareerFollowUp,
