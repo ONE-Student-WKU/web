@@ -624,6 +624,7 @@ grid(3,150개 조합) 전후: 총 요구학점·카테고리 학점이 바뀐 �
 | `scripts/ci/check-schema-idempotent.js --base origin/develop --head HEAD` | OK (schema.sql 변경 없음) |
 | `scripts/ci/check-db-reseed-paths.js --base origin/develop --head HEAD` | OK (새 파일 0개 — `db/regulation-engine/schedule1_colleges.json`은 재시딩 경로 밖) |
 | 스냅샷 전후 비교 | grid 변경 0건, 시나리오 15개는 `chunkTitles`만 변경(§10-4) |
+| GitHub Actions `test.yml` (PR #281) | ✅ **성공** — run `37332647998`(2026-10-05 15:25Z, 헤드 `2f64606`): 서버 job(임시 MySQL 8.4 + 시드 → `# tests 336 / pass 336 / fail 0`, 약 2분) + 클라이언트 job(Test Files 4 · 30개 통과). 같은 PR의 `DB Reseed Guard`·`Vercel CI/CD Pipeline`도 성공. Linux·Node 22 환경에서도 로컬과 같은 결과 |
 
 로컬에서 `npm run seed:regulation-articles --workspace server`를 다시 돌렸다(로컬 DB만 — 적용범위 17→23, 관계 178→177행). 운영 DB·재시딩 워크플로·main에는 아무것도 하지 않았다.
 
