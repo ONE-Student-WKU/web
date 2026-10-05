@@ -39438,7 +39438,7 @@
       "categoryRaw": "선전",
       "category": "전공선택",
       "courseCode": "369329",
-      "courseName": "유공압밀실습",
+      "courseName": "유공압및실습",
       "credits": "3",
       "courseNameEn": "Hydraulics and practice"
     },
@@ -39458,7 +39458,7 @@
       "categoryRaw": "선전",
       "category": "전공선택",
       "courseCode": "369350",
-      "courseName": "자동차제어계측및설계",
+      "courseName": "자동차제어계측및실습",
       "credits": "3",
       "courseNameEn": "Automotive Control System Design"
     },
@@ -40512,7 +40512,7 @@
       "categoryRaw": "기전",
       "category": "전공필수",
       "courseCode": "351045",
-      "courseName": "건축법규실습",
+      "courseName": "건축법규및실습",
       "credits": "2",
       "courseNameEn": "Building Code"
     },
@@ -43764,7 +43764,7 @@
       "categoryRaw": "선전",
       "category": "전공선택",
       "courseCode": "149286",
-      "courseName": "매스컴효과론",
+      "courseName": "매스컴효과",
       "credits": "3",
       "courseNameEn": "Effects of Mass Communication"
     },
