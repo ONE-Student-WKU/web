@@ -123,15 +123,34 @@ function evidenceConflicts(judgment) {
   }];
 }
 
-/** 조문 관계 요약 → 판단 청크에 넣을 줄(최대 MAX_PATH_LINES). 중요도 순: 특칙 → 위임·참조 경로 → 끊긴 연결 → 개정 이력. */
+/**
+ * 조문 관계 요약 → 판단 청크에 넣을 줄(최대 MAX_PATH_LINES). 표시 순서: 특칙 → 위임·참조 경로 → 끊긴 연결 → 개정 이력.
+ * 줄 수가 넘치면 경로 줄만 줄인다 — 특칙·끊긴 연결·개정 이력은 적고 "추정으로만 말할 것" 같은 단서를 담고 있어 먼저 확보한다.
+ * 같은 출발 조문에서 더 긴 경로의 앞부분일 뿐인 경로(예: [별표 4] 와 [별표 4] → 학번 구간 ③)는 한 줄로 합친다.
+ */
 function relationLines(evidence) {
-  const out = [];
-  for (const o of evidence.overrides) out.push(`- 특칙 우선: ${refLabel(o.special)}이(가) ${refLabel(o.general)}보다 우선한다(둘이 다르면 앞의 조문을 따른다).`);
-  for (const p of evidence.paths) for (const s of p.steps) out.push(`- ${p.rootLabel} → ${s.text}`);
-  for (const b of evidence.broken) out.push(`- 끊긴 연결: ${b.rootLabel}이(가) 가리키는 "${b.toText}"은(는) 원문을 보유하지 않아 확인하지 못했다(추정으로만 말할 것).`);
-  const am = evidence.amendments;
-  if (am.length) out.push(`- 개정 이력: ${am.map((a) => `${a.targetLabel} ← ${a.label}${a.date ? `(${a.date})` : ''}`).join(', ')}`);
-  return out.slice(0, MAX_PATH_LINES);
+  const overrides = evidence.overrides.map((o) => `- 특칙 우선: [${refLabel(o.special)}]가 [${refLabel(o.general)}]보다 우선한다(둘이 다르면 앞의 조문을 따른다).`);
+  const broken = evidence.broken.map((b) => `- 끊긴 연결: ${b.rootLabel} → "${b.toText}" (연결 대상 원문을 보유하지 않아 확인하지 못함 — 추정으로만 말할 것)`);
+  // 개정 이력: 핵심 규정의 조문만, 조문마다 최근 2건(날짜순 마지막) + 나머지 건수 — 수업관리규정처럼 부칙이 수십 개인 문서가 줄을 덮지 않게.
+  const byTarget = new Map();
+  for (const a of evidence.amendments.filter((x) => x.critical)) {
+    if (!byTarget.has(a.target)) byTarget.set(a.target, { label: a.targetLabel, list: [] });
+    byTarget.get(a.target).list.push(a);
+  }
+  const amendments = byTarget.size ? [`- 개정 이력: ${[...byTarget.values()].slice(0, 3).map(({ label, list }) => {
+    const shown = list.slice(-2).map((a) => `${a.label}${a.date ? `(${a.date})` : ''}`).join(', ');
+    return `${label} ← ${shown}${list.length > 2 ? ` 외 ${list.length - 2}건` : ''}`;
+  }).join(' / ')}`] : [];
+  const pathLines = [];
+  for (const p of evidence.paths) {
+    const texts = p.steps.map((st) => st.text);
+    for (const t of texts) {
+      if (texts.some((o) => o !== t && o.startsWith(`${t} →`))) continue; // 더 긴 경로의 앞부분
+      pathLines.push(`- ${p.rootLabel} → ${t}`);
+    }
+  }
+  const budget = Math.max(3, MAX_PATH_LINES - overrides.length - broken.length - amendments.length);
+  return [...overrides, ...pathLines.slice(0, budget), ...broken, ...amendments].slice(0, MAX_PATH_LINES + 2);
 }
 
 /**
@@ -174,7 +193,7 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
   const conflicts = evidenceConflicts(judgment);
   if (conflicts.length) {
     lines.push('근거가 서로 다른 항목(답할 때 두 쪽을 모두 밝힐 것):');
-    for (const c of conflicts) lines.push(`- ${c.topic}: ${c.sources.map((x) => `${x.source}는 "${x.statement}"`).join(', ')}. ${c.guide}`);
+    for (const c of conflicts) lines.push(`- ${c.topic}: ${c.sources.map((x) => `${x.source} — "${x.statement}"`).join(' / ')}. ${c.guide}`);
   }
 
   const caveats = [...new Map((judgment.flags || []).filter((f) => f.level !== 'INFO').map((f) => [f.code, f.message])).values()];

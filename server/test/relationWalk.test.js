@@ -162,3 +162,19 @@ test('참고 규정(수업관리규정, critical=false)은 원문 청크 자리�
   assert.ok(!chunks.some((c) => /^regulation-article-CLASS_MANAGEMENT/.test(c.chunkId)), '수업관리규정 원문 청크가 판단 근거 자리를 차지한다');
   assert.match(chunks[0].content, /수업관리규정 제5조/, '판단 줄에는 수업관리규정 참고 규정이 남는다');
 });
+
+test('근거 경로 줄: 경로가 많아도 끊긴 연결·개정 이력·특칙은 잘리지 않고, 개정 이력은 조문당 최근 2건으로 줄여 한 줄이다', async () => {
+  const r = await resolveApplicableRulesForStudent(csInput);
+  const chunk = formatJudgmentChunks(r, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2022, enrollmentType: 'GENERAL', hypothetical: false }, {})[0];
+  const section = chunk.content.split('근거 경로(조문 관계')[1].split('\n').slice(1);
+  const lines = [];
+  for (const l of section) { if (!l.startsWith('- ')) break; lines.push(l); }
+  assert.ok(lines.length <= 12, `경로 줄이 너무 많다: ${lines.length}`);
+  assert.ok(lines.some((l) => l.startsWith('- 특칙 우선: [학칙시행규칙 제13조]가 [학칙시행규칙 제5조]보다')), '특칙 줄');
+  assert.ok(lines.some((l) => l.startsWith('- 끊긴 연결:')), '끊긴 연결 줄이 잘렸다');
+  const am = lines.filter((l) => l.startsWith('- 개정 이력:'));
+  assert.equal(am.length, 1);
+  assert.ok(am[0].length < 400, `개정 이력 줄이 너무 길다(${am[0].length}자)`);
+  assert.ok(!/수업관리규정 .* ←/.test(am[0]), '참고 규정(수업관리규정)의 부칙은 개정 이력 줄에서 뺀다');
+  assert.ok(!/ACADEMIC_REGULATIONS|ENFORCEMENT_RULES/.test(lines.join('\n')), '문서 코드가 사용자 문구에 그대로 노출됐다');
+});

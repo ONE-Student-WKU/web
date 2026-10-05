@@ -164,7 +164,7 @@ test('근거 충돌: 2021학번 이하 — 상한 없음(추정) vs 시행규칙
   const chunk = formatJudgmentChunks(j, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2021, enrollmentType: 'GENERAL', hypothetical: false })[0];
   assert.deepEqual(chunk.conflicts, c);
   assert.match(chunk.content, /근거가 서로 다른 항목\(답할 때 두 쪽을 모두 밝힐 것\)/);
-  assert.match(chunk.content, /교양 인정 상한\(2021학번 이하\).*교육과정 해설 문서\(RAG 청크\)는 "2021학번까지는 제한이 없고.*52학점.*단정하지 말고 두 근거를 모두 밝혀라/s);
+  assert.match(chunk.content, /교양 인정 상한\(2021학번 이하\): 교육과정 해설 문서\(RAG 청크\) — "2021학번까지는 제한이 없고.*52학점.*단정하지 말고 두 근거를 모두 밝혀라/s);
 });
 
 test('근거 충돌: 2022학번 이상은 두 근거가 일치(52)해서 충돌 항목이 없다', async () => {
