@@ -17,6 +17,7 @@
     "seed:curriculum-2023": "node scripts/seedCurriculum2023Departments.js",
     "seed:curriculum-2022": "node scripts/seedCurriculum2022Departments.js",
     "seed:curriculum-2021": "node scripts/seedCurriculum2021Departments.js",
+    "seed:curriculum-2020": "node scripts/seedCurriculum2020Departments.js",
     "seed:curriculum-2019": "node scripts/seedCurriculum2019Departments.js",
     "seed:curriculum-2018": "node scripts/seedCurriculum2018Departments.js",
     "seed:curriculum-2017": "node scripts/seedCurriculum2017Departments.js",
