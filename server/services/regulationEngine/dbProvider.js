@@ -1,6 +1,8 @@
 const pool = require('../../db');
 const { getDepartmentChain, describeRuleForCohort } = require('../curriculumHistoryService');
 const { hasCoreRowsForYear } = require('./evaluate');
+const { summarizeVersions } = require('./textVersion');
+const { dbDateToIso } = require('./context');
 
 /**
  * server/services/regulationEngine/dbProvider.js
@@ -75,6 +77,30 @@ async function loadLatestDataYear() {
   return row.y || null;
 }
 
+/**
+ * 기준일 판본 판단(textVersion.js)에 필요한 규정 판본·조문 정보. 읽기 전용.
+ *  - summary: 문서별 { floor, latest, effectiveByPromulgation } — regulation_versions의 시행일과 대체관계에서
+ *  - articles: 'DOC:조문키' → { lastAmendedOn } — 보유한 본문(textHeld) 조문의 개정 표시 날짜
+ * 테이블이 비어 있으면(시드 전) summary·articles가 비어 판단은 상수(TEXT_SOURCES)와 보수적 처리로 대체된다.
+ */
+async function loadTextVersions() {
+  const [versions] = await pool.query(
+    'SELECT id, doc_code, version_label, promulgated_on, effective_from, supersedes_version_id, text_held FROM regulation_versions'
+  );
+  const [articles] = await pool.query(
+    'SELECT v.doc_code, a.article_key, a.last_amended_on FROM regulation_articles a JOIN regulation_versions v ON v.id = a.version_id WHERE v.text_held = 1'
+  );
+  const rows = versions.map((r) => ({
+    id: r.id, docCode: r.doc_code, versionLabel: r.version_label, promulgatedOn: dbDateToIso(r.promulgated_on), effectiveFrom: dbDateToIso(r.effective_from),
+    supersedesVersionId: r.supersedes_version_id, textHeld: r.text_held === 1,
+  }));
+  return {
+    versions: rows,
+    summary: summarizeVersions(rows),
+    articles: Object.fromEntries(articles.map((r) => [`${r.doc_code}:${r.article_key}`, { lastAmendedOn: dbDateToIso(r.last_amended_on) }])),
+  };
+}
+
 async function loadHistory(departmentId, admissionYear) {
   const history = {};
   for (const category of DERIVED_HISTORY_CODES) {
@@ -91,7 +117,8 @@ async function loadHistory(departmentId, admissionYear) {
 async function loadData(ctx, { withHistory = true } = {}) {
   const department = await loadDepartment(ctx);
   const latestDataYear = await loadLatestDataYear();
-  if (!department) return { department: null, rows: [], latestDataYear, candidates: [], history: null };
+  const textVersions = await loadTextVersions();
+  if (!department) return { department: null, rows: [], latestDataYear, candidates: [], history: null, textVersions };
 
   const rows = await loadRequirementRows(department.id);
   const beyondLatest = ctx.admissionYear > latestDataYear;
@@ -102,6 +129,7 @@ async function loadData(ctx, { withHistory = true } = {}) {
     latestDataYear,
     candidates: hasRows || beyondLatest ? [] : await loadCandidates(department.id, ctx.admissionYear),
     history: hasRows && withHistory ? await loadHistory(department.id, ctx.admissionYear) : null,
+    textVersions,
   };
 }
 
@@ -115,7 +143,7 @@ async function loadApplicabilityRules() {
      LEFT JOIN regulation_versions v ON v.id = ar.version_id
      ORDER BY a.id`
   );
-  const iso = (d) => (d == null ? null : d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+  const iso = dbDateToIso;
   return rows.map((r) => ({
     ruleCode: r.rule_code,
     articleRef: r.article_ref,
@@ -170,8 +198,8 @@ function mapChangeRow(r) {
  */
 async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   const department = await loadDepartment(ctx);
-  const [rules, latestDataYear] = await Promise.all([loadApplicabilityRules(), loadLatestDataYear()]);
-  if (!department) return { department: null, rules, latestDataYear, courseChanges: [], requirementChanges: [], lineage: [], equivalences: [], categoryOverrides: [], requirements: null };
+  const [rules, latestDataYear, textVersions] = await Promise.all([loadApplicabilityRules(), loadLatestDataYear(), loadTextVersions()]);
+  if (!department) return { department: null, rules, latestDataYear, textVersions, courseChanges: [], requirementChanges: [], lineage: [], equivalences: [], categoryOverrides: [], requirements: null };
 
   const chain = await getDepartmentChain(department.id);
   const ids = chain.departmentIds;
@@ -190,6 +218,7 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
     department,
     rules,
     latestDataYear,
+    textVersions,
     courseChanges: await attachOfferedGrades(courseRows.map(mapChangeRow), ids),
     requirementChanges: reqRows.map(mapChangeRow),
     lineage: chain.edges,
@@ -199,4 +228,4 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   };
 }
 
-module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear };
+module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear, loadTextVersions };

@@ -2,6 +2,7 @@ const pool = require('../db');
 const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./regulationEngine');
 const { resolveDepartment, schedule4Line } = require('./curriculumContextService');
 const { getDepartmentChain } = require('./curriculumHistoryService');
+const { dbDateToIso } = require('./regulationEngine/context');
 
 /**
  * server/services/regulationContextService.js
@@ -161,7 +162,7 @@ async function loadArticles(refs) {
      WHERE v.text_held = 1 AND a.section <> 'SCHEDULE' AND (v.doc_code, a.article_key) IN (?)`,
     [pairs]
   );
-  const iso = (d) => (d == null ? null : d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+  const iso = dbDateToIso;
   return Object.fromEntries(rows.map((r) => [`${r.doc_code}:${r.article_key}`, { title: r.title, body: r.body, versionLabel: r.version_label, lastAmendedOn: iso(r.last_amended_on) }]));
 }
 

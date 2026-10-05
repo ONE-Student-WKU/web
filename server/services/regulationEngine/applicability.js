@@ -1,10 +1,11 @@
-const { CONFIDENCE, CONFIDENCE_LABEL_KO, TEXT_SOURCES } = require('./constants');
+const { CONFIDENCE, CONFIDENCE_LABEL_KO } = require('./constants');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const { normalizeInput } = require('./context');
 const { checkEligibility } = require('./decisions');
 const { evaluate } = require('./evaluate');
 const dq = require('./dataQuality');
 const { checkSchedule4Credits } = require('./schedule4');
+const { articleTextFlags } = require('./textVersion');
 
 /**
  * server/services/regulationEngine/applicability.js
@@ -52,7 +53,6 @@ function parseExistenceValue(v) {
   return m ? { category: m[1], grade: Number(m[2]) } : { category: v.split(/\s+/)[0], grade: null };
 }
 
-const docOf = (articleRef) => String(articleRef).split(':')[0];
 const inCohort = (row, year) => (row.minAdmissionYear == null || year >= row.minAdmissionYear) && (row.maxAdmissionYear == null || year <= row.maxAdmissionYear);
 const enrollmentMatches = (row, type) => row.enrollmentType == null || row.enrollmentType === type;
 
@@ -63,18 +63,12 @@ function addendumDate(articleKey) {
 }
 
 /**
- * 조문 판본 점검. 파트 1 checkTextVersion은 문서 전체 기준이었는데, 여기는 조문의 개정 표시를 본다:
- * 기준일이 보유 판본 시행 이후이고 그 조문에 기준일보다 늦은 개정 표시가 없으면, 기준일 당시 조문 = 현행 조문이다.
- * (개정 표시가 빠짐없이 붙는다는 원문 관행을 전제 — DECISIONS D-28.)
+ * 적용범위 규칙 하나의 판본 플래그 — 졸업요건 규칙과 같은 함수(textVersion.articleTextFlags)를 쓴다(D-42). rule.article.lastAmendedOn은
+ * regulation_articles의 개정 표시(null = 표시 없음), 조문 행을 못 찾았으면(rule.article 없음) 모름(undefined)이라 보수적으로 처리된다.
  */
-function textFlagsForArticle(asOfDate, rule) {
-  const src = TEXT_SOURCES[docOf(rule.articleRef)];
-  if (!src) return [];
-  if (asOfDate < src.firstHeldEffective) return [makeFlag('TEXT_VERSION_NOT_HELD', { heldFrom: src.firstHeldEffective })];
-  const last = rule.article && rule.article.lastAmendedOn;
-  if (last && asOfDate < last) return [makeFlag('TEXT_INTERMEDIATE_VERSION', { heldVersion: last })];
-  if (asOfDate > src.latestHeldEffective) return [makeFlag('TEXT_SNAPSHOT_MAY_BE_OLDER', { heldVersion: src.latestHeldEffective })];
-  return [];
+function textFlagsForArticle(asOfDate, rule, textVersions) {
+  const [docCode, articleKey] = String(rule.articleRef).split(':');
+  return articleTextFlags({ asOfDate, docCode, articleKey, lastAmendedOn: rule.article ? rule.article.lastAmendedOn ?? null : undefined, textVersions });
 }
 
 // --- 과목 변경 준비 ---
@@ -342,7 +336,7 @@ function worstItemFlags(items) {
 function buildRule(row, result, h) {
   const flags = [...(result.flags || [])];
   if (row.confidence === 'ESTIMATED' && result.status !== 'NOT_APPLICABLE') flags.push(makeFlag('APPLICABILITY_ESTIMATED', { note: row.note }));
-  if (result.status !== 'NOT_APPLICABLE') flags.push(...textFlagsForArticle(h.ctx.asOfDate, row));
+  if (result.status !== 'NOT_APPLICABLE') flags.push(...textFlagsForArticle(h.ctx.asOfDate, row, h.textVersions));
   const all = dedupeFlags(flags);
   const confidence = confidenceFromFlags(all);
   return {
@@ -492,7 +486,7 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
   if (reorgEdges.some((e) => e.toDepartmentId === department.id && e.effectiveYear > ctx.admissionYear)) topFlags.push(makeFlag('DEPARTMENT_IS_SUCCESSOR_OF_COHORT'));
 
   const h = {
-    ctx, data: { ...d, rules: d.rules || [] }, deptName, asOfYear, gradeBasis, chainDepartmentIds, reorgEdges,
+    ctx, data: { ...d, rules: d.rules || [] }, textVersions: d.textVersions || (d.requirements && d.requirements.textVersions) || undefined, deptName, asOfYear, gradeBasis, chainDepartmentIds, reorgEdges,
     effective: prepared.filter((c) => c.toYear <= asOfYear),
     upcoming: prepared.filter((c) => c.toYear > asOfYear),
     unverifiedYears: department ? unverifiedCourseYears(ctx, deptName, lastYear) : [],

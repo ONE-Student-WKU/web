@@ -71,71 +71,85 @@ const TEXT_SOURCES = Object.freeze({
 const CITATIONS = Object.freeze({
   ENF_ART5_COHORT_BASIS: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제5조',
+    articleRef: 'ENFORCEMENT_RULES:제5조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '교육과정은 입학 당시의 기준에 따라 이수하되',
   },
   ENF_ART6_1_MIN_MAJOR: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제6조 제1항 제4호',
+    articleRef: 'ENFORCEMENT_RULES:제6조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '자연계열, 공학계열 및 예·체능계열: 48학점',
   },
   ENF_ART6_3_TRANSFER_4TH: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제6조 제3항',
+    articleRef: 'ENFORCEMENT_RULES:제6조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '4학년 편입 학생의 최소전공 인정학점은 21학점으로 한다',
   },
   ENF_ART8_1_RELAXATION: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제8조 제1항',
+    articleRef: 'ENFORCEMENT_RULES:제8조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '전과(부)생(학사과정의 1학년, 2학년 전과 제외), 편입학생(2학년 편입학 제외), 복수전공 이수학생은 전공 교육과정 이수 시 최소전공 인정학점 이상을 이수하여야 한다',
   },
   ENF_ART8_2_EXCLUDED: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제8조 제2항',
+    articleRef: 'ENFORCEMENT_RULES:제8조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '학사과정의 1·2학년 전과(부)생, 학사과정의 2학년 편입학생의 경우 제1항의 기준을 적용하지 않는다',
   },
   ENF_ART10_1_LIBERAL_CAP: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제10조 제1항',
+    articleRef: 'ENFORCEMENT_RULES:제10조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '교양 교과목 이수학점이 52학점을 초과하는 경우 초과된 학점에 대하여는 졸업학점으로 인정하지 아니한다',
   },
   ENF_ART10_2_TRANSFER_LIBERAL: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제10조 제2항',
+    articleRef: 'ENFORCEMENT_RULES:제10조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '편입학생(1·2학년 편입학 제외)은 “종교와 원불교”를 제외한 영역별 교양 이수기준을 충족한 것으로 본다',
   },
   ENF_ART13_TRANSITION: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제13조',
+    articleRef: 'ENFORCEMENT_RULES:제13조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '교육과정의 개편으로 필수과목이 선택과목으로 변경되었거나 폐설된 경우 이수하지 않아도 된다',
   },
   ENF_ART116_MAJOR_CHANGE: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제116조 제1항',
+    articleRef: 'ENFORCEMENT_RULES:제116조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '전과(부)생의 교육과정 이수는 본 시행규칙 제8조 및 제10조에 따른다',
   },
   ENF_ART118_COHORT_TRANSITION: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제118조 제1항 제2호',
+    articleRef: 'ENFORCEMENT_RULES:제118조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '학번별 경과조치는 「원광대학교 학칙」의 부칙을 따른다',
   },
   ACAD_ART22_SEMESTER: {
     kind: 'ARTICLE', doc: '학칙', article: '제22조',
+    articleRef: 'ACADEMIC_REGULATIONS:제22조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
     quote: '제1학기: 3월 1일부터 8월 31일까지',
   },
   ACAD_ART36_2_TRANSFER_GRADE: {
     kind: 'ARTICLE', doc: '학칙', article: '제36조 제2항',
+    articleRef: 'ACADEMIC_REGULATIONS:제36조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
     quote: '정원내편입학 학년은 3학년(의학과, 치의학과, 한의학과는 1학년)을 원칙으로 하며',
   },
   ACAD_ADDENDUM_2026_02_05_ART3: {
     kind: 'ARTICLE', doc: '학칙 부칙(2026.02.05.)', article: '제3조',
+    articleRef: 'ACADEMIC_REGULATIONS:부칙(2026.02.05.)제3조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
     quote: '종전 2025년 8월 29일자 학칙의 부칙에 정한 경과조치를 적용한다',
   },
   ACAD_ADDENDUM_2026_04_10_ART2_REORG_2027: {
     kind: 'ARTICLE', doc: '학칙 부칙(2026.04.10.)', article: '제2조 제1항',
+    articleRef: 'ACADEMIC_REGULATIONS:부칙(2026.04.10.)제2조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
     quote: '[별표 1] 학과(부), 전공 및 광역계열 입학정원(2027학년도 이후)은 2027년 3월 1일 입학자부터 적용한다',
   },
