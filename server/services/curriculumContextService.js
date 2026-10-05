@@ -230,13 +230,45 @@ async function lookupGraduationRequirements({ message, student, yearContext, jud
 // 변경 이력
 // ---------------------------------------------------------------------------
 
-function describeChange(c) {
+function describeChange(c, caveat = '') {
   const unit = c.field === 'required_credits' ? '학점' : '';
   const base =
     c.changeType === 'ADDED' ? `${c.toYear}학번부터 신설(${c.newValue}${unit})`
       : c.changeType === 'REMOVED' ? `${c.toYear}학번부터 없음(마지막으로 있던 학번 ${c.fromYear})`
         : `${c.toYear}학번부터 ${c.oldValue}${unit} → ${c.newValue}${unit} (변경 전 마지막 학번 ${c.fromYear})`;
-  return c.note ? `${base} — ${c.note}` : base;
+  return `${c.note ? `${base} — ${c.note}` : base}${caveat}`;
+}
+
+// ---------------------------------------------------------------------------
+// 변경 이력의 데이터 신뢰도 (보정 라운드 A, DECISIONS D-36)
+//
+// 변경 이력은 학년도별 스냅샷을 비교해 만든 것이라, 비교한 해의 자료가 틀렸으면 "없던 변경"이 생기고(N-6: 책자 산술 불일치를 시드가
+// 잔여값으로 보정해 생긴 가짜 변경), 검증 안 된 해(등급 C)의 "변경 없음"은 확인된 사실이 아니다. 판단 함수는 이미 이를 반영하는데
+// 이 청크만 등급을 무시하고 있었다(F-5). dataQuality의 같은 등급표·판단 보류 목록을 쓴다 — 두 경로의 판정이 어긋나지 않게.
+// ---------------------------------------------------------------------------
+
+/** 요건 변경 하나에 붙일 단서(없으면 ''). dqModule은 테스트에서 가짜 등급표를 주입하는 용도. */
+function requirementChangeCaveat(change, departmentName, dqModule = dq) {
+  const years = [change.fromYear, change.toYear].filter((y) => y != null);
+  const holds = years.flatMap((y) => dqModule.pendingHoldsFor(y, departmentName, 'REQUIREMENTS'));
+  const grades = years.map((y) => dqModule.dataGrade('REQUIREMENTS', y, departmentName).grade);
+  const parts = [];
+  if (holds.length) {
+    parts.push(`확인 필요 — 이 변경에 걸린 학번의 자료가 판단 보류 항목이다(${[...new Set(holds.map((h) => h.note))].join('; ')}). 실제 개정이 아니라 자료 보정 때문에 생긴 변경일 수 있다`);
+  }
+  if (grades.some((g) => g == null || g === 'C')) parts.push('이 학번의 요건 자료는 검증되지 않았다');
+  else if (grades.includes('B')) parts.push('이 학번의 요건 자료는 부분 검증(B등급)이다');
+  return parts.length ? ` ⚠ ${parts.join('; ')}` : '';
+}
+
+/** (area, from~to 학년도) 중 그 해 또는 앞해 자료가 검증 안 된(C·없음) 학년도 목록. "변경 없음" 판정이 가능한지 보는 데 쓴다. */
+function unverifiedYearsIn(area, from, to, departmentName, dqModule = dq) {
+  const out = [];
+  for (let y = from; y <= to; y++) {
+    const grades = [y - 1, y].map((yy) => dqModule.dataGrade(area, yy, departmentName).grade);
+    if (grades.some((g) => g == null || g === 'C')) out.push(y);
+  }
+  return out;
 }
 
 // 학번 이후 변경이 이 학생에게 적용되는지는 "항상 아니다"가 아니다. 학칙시행규칙 제5조는 입학 당시 기준을 원칙으로 하되
@@ -255,19 +287,30 @@ async function ruleHistoryChunk(department, code, cohort) {
   if (!r) return null;
   const label = RULE_LABEL[code] || code;
   const lines = [];
+  // 이 학번 값 자체가 판단 보류 항목이면(예: 2024 사범대 자유선택 32 vs 34) 값에도 단서를 붙인다.
+  const ownHolds = dq.pendingHoldsFor(cohort, department.name, 'REQUIREMENTS');
+  const ownCaveat = ownHolds.length ? ` ⚠ 확인 필요 — 이 학번의 자료가 판단 보류 항목이다(${[...new Set(ownHolds.map((h) => h.note))].join('; ')}).` : '';
   lines.push(
     r.applied
-      ? `${cohort}학번에 적용되는 ${label}: ${r.applied.requiredCredits}학점 — 이것이 이 학번의 적용 규정이다.`
+      ? `${cohort}학번에 적용되는 ${label}: ${r.applied.requiredCredits}학점 — 이것이 이 학번의 적용 규정이다.${ownCaveat}`
       : `${cohort}학번의 ${label} 자료는 입력되어 있지 않다.`
   );
   const field = (list) => list.filter((c) => c.field === 'required_credits' || c.changeType !== 'CHANGED');
   const earlier = field(r.earlierChanges);
   const later = field(r.laterChanges);
-  lines.push(earlier.length ? `이 학번 이전의 변경:\n${earlier.map((c) => `- ${describeChange(c)}`).join('\n')}` : '이 학번 이전에 기록된 변경: 없음');
+  const latest = await loadLatestDataYear();
+  // "변경 없음"은 비교한 해의 자료가 검증됐을 때만 말할 수 있다 — 검증 안 된 학년도가 끼면 "기록 없음(검증 안 됨)".
+  const noChange = (from, to, text) => {
+    const bad = from <= to ? unverifiedYearsIn('REQUIREMENTS', from, to, department.name) : [];
+    return bad.length ? `${text.replace(/: 없음$/, '')}: 기록 없음(검증 안 됨 — ${bad.join('·')}학년도 요건 자료가 검증되지 않아 "변경 없음"을 확인할 수 없다)` : text;
+  };
+  lines.push(earlier.length
+    ? `이 학번 이전의 변경:\n${earlier.map((c) => `- ${describeChange(c, requirementChangeCaveat(c, department.name))}`).join('\n')}`
+    : noChange(2018, cohort, '이 학번 이전에 기록된 변경: 없음'));
   lines.push(
     later.length
-      ? `이 학번 이후의 변경(${LATER_CHANGE_NOTICE}):\n${later.map((c) => `- ${describeChange(c)}`).join('\n')}`
-      : '이 학번 이후에 기록된 변경: 없음'
+      ? `이 학번 이후의 변경(${LATER_CHANGE_NOTICE}):\n${later.map((c) => `- ${describeChange(c, requirementChangeCaveat(c, department.name))}`).join('\n')}`
+      : noChange(cohort + 1, latest ?? cohort, '이 학번 이후에 기록된 변경: 없음')
   );
   return {
     chunkId: `history-rule-${department.id}-${code}-${cohort}`,
@@ -319,7 +362,13 @@ async function courseHistoryChunks(courseName, department, cohort) {
       lines.push(applied ? `${cohort}학번에 적용되는 편성: ${applied.category}, ${applied.grade}학년 ${applied.semester}학기, ${applied.credits ?? '?'}학점.` : `${cohort}학번 자료에는 이 과목이 편성되어 있지 않다.`);
     }
     const changes = h.changes;
-    if (changes.length) lines.push(`변경 이력:\n${changes.map((c) => `- ${c.field === 'existence' ? '' : `[${c.field}] `}${describeChange(c)}`).join('\n')}`);
+    // 과목 자료 검수 등급(전공과목 2017·2018·2020, 컴소공 2017~2019·2021·2022 = C). 검증 안 된 해가 낀 구간의 "변경 없음"은 확인된 사실이 아니고,
+    // 그 해의 변경은 자료 오류일 수 있다(판단 함수와 같은 등급표, D-36).
+    const years = [...h.versions.flatMap((v) => [v.minAdmissionYear, v.maxAdmissionYear]), ...changes.flatMap((c) => [c.fromYear, c.toYear])].filter((y) => y != null);
+    const bad = years.length ? unverifiedYearsIn('MAJOR_COURSES', Math.min(...years) + 1, Math.max(...years), department?.name) : [];
+    const courseCaveat = (c) => ([c.fromYear, c.toYear].some((y) => bad.includes(y) || bad.includes(y + 1)) ? ' ⚠ 이 학년도의 과목 자료는 검증되지 않아 자료 오류일 수 있다' : '');
+    if (changes.length) lines.push(`변경 이력:\n${changes.map((c) => `- ${c.field === 'existence' ? '' : `[${c.field}] `}${describeChange(c, courseCaveat(c))}`).join('\n')}`);
+    else if (bad.length) lines.push(`변경 이력: 기록 없음(검증 안 됨 — ${bad.join('·')}학년도 과목 자료가 검증되지 않아 "변경 없음"을 확인할 수 없다)`);
     else lines.push('변경 이력: 기록된 변경 없음');
     if (h.removed) {
       lines.push(`폐지 여부: ${h.lastSeenYear}학번 자료까지 편성되어 있고 그 이후 학번 자료에는 없다(폐지이거나 학과 개편으로 다른 과목·학과로 옮겨졌을 수 있어 단정하지 말 것).`);
@@ -379,4 +428,6 @@ module.exports = {
   mentionedCourseNames,
   LATER_CHANGE_NOTICE,
   schedule4Line,
+  requirementChangeCaveat,
+  unverifiedYearsIn,
 };
