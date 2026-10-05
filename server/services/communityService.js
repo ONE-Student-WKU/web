@@ -518,6 +518,8 @@ async function listReportsForAdmin(status) {
       // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
       // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
       reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
+      // 관리자 화면이 대상자 요약(GET /api/admin/community/students/:id/summary)을 열 때 쓰는 id. 구버전 신고·탈퇴한 대상자는 null.
+      reportedStudentId: row.reported_student_id,
       targetTitle: row.target_title,
       targetBody: row.target_body,
       targetExists: targetPostId !== null,

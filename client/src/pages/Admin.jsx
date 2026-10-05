@@ -12,8 +12,10 @@ import {
   getAdminInquiries,
   resolveAdminInquiry,
   getAdminStats,
+  getReportedStudentSummary,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
+import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers, IconBan, IconAlertTriangle } from '../components/icons.jsx';
 
 function formatDate(dateStr) {
@@ -28,6 +30,12 @@ const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료'
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
 const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
+const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions'];
+// 제재 사유 입력란의 기본값. 신고자가 쓴 신고 사유를 그대로 채우면 그 말이 제재받는 사용자에게 "제재 사유"로 전달된다
+// (사용자 화면의 제재 안내가 이 사유를 보여줌) — 신고자의 주장·비난·개인정보가 섞일 수 있고, 관리자가 확인한 사실도 아니다.
+// 그래서 중립 고정 문구를 기본으로 두고 관리자가 필요하면 구체적으로 고쳐 쓴다. 신고 사유는 이 화면에서 참고용으로만 보인다.
+const DEFAULT_SANCTION_REASON = '커뮤니티 운영 정책 위반';
+const SANCTION_STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
 const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리' };
 // 제재 팝업의 기간 선택지(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질
 // 수 있어 프리셋으로 제한한다. permanent는 ends_at을 NULL로 저장(영구정지).
@@ -69,7 +77,16 @@ const SANCTION_SCOPE_BADGE_LABEL = { post_apply: '경고성', full: '전면 정�
  * - onOpenPost: function(postId) — 신고함 카드를 눌렀을 때 그 글의 커뮤니티 상세로 이동.
  */
 function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenInquiry, onOpenPost }) {
-  const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'approval' | 'reports' | 'inquiries' | 'sanctions'
+  // 새로고침해도 보던 하위 화면(문의함 등)에 머문다 — App.jsx가 관리자 화면 자체를 복원하고, 이 값이 그 안의 탭을 복원한다.
+  // 화면을 떠날 때(언마운트)는 지워서, 나중에 관리자 화면에 다시 들어오면 대시보드부터 시작한다(새로고침은 언마운트 정리가 안 돈다).
+  const [adminView, setAdminView] = useState(() => {
+    const saved = readCache('admin_view');
+    return ADMIN_VIEWS.includes(saved) ? saved : 'dashboard';
+  }); // 'dashboard' | 'approval' | 'reports' | 'inquiries' | 'sanctions'
+  useEffect(() => {
+    writeCache('admin_view', adminView);
+  }, [adminView]);
+  useEffect(() => () => clearCache('admin_view'), []);
 
   // App.jsx의 view 히스토리 관리와 같은 이유·같은 방식 — adminView 전환은 App.jsx 입장에서
   // view가 그대로 'admin'이라 히스토리에 전혀 안 쌓여서, 신고함/문의함 등 하위 화면에 있을 때
@@ -126,6 +143,12 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [sanctionDuration, setSanctionDuration] = useState('7d');
   const [sanctionReason, setSanctionReason] = useState('');
   const [sanctionSubmitting, setSanctionSubmitting] = useState(false);
+
+  // 신고 대상자 요약 팝업 — report를 들고 있으면 열림. 읽기 전용(제재·삭제 같은 조치는 이 팝업에서 하지 않는다).
+  const [studentSummaryReport, setStudentSummaryReport] = useState(null);
+  const [studentSummary, setStudentSummary] = useState(null);
+  const [studentSummaryLoading, setStudentSummaryLoading] = useState(false);
+  const [studentSummaryError, setStudentSummaryError] = useState(null);
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -277,8 +300,21 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     setSanctionTargetReport(report);
     setSanctionScope('post_apply');
     setSanctionDuration('7d');
-    setSanctionReason(report.reason);
+    setSanctionReason(DEFAULT_SANCTION_REASON);
   };
+
+  const openStudentSummary = (report) => {
+    setStudentSummaryReport(report);
+    setStudentSummary(null);
+    setStudentSummaryError(null);
+    setStudentSummaryLoading(true);
+    getReportedStudentSummary(report.reportedStudentId)
+      .then(setStudentSummary)
+      .catch(() => setStudentSummaryError('대상자 정보를 불러오지 못했어요. 이미 탈퇴한 계정일 수 있어요.'))
+      .finally(() => setStudentSummaryLoading(false));
+  };
+
+  const closeStudentSummary = () => setStudentSummaryReport(null);
 
   const closeSanctionModal = () => setSanctionTargetReport(null);
 
@@ -501,8 +537,16 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                       신고자 {r.reporter} · {formatDate(r.createdAt)}
                     </p>
                     {r.reportedStudent && (
-                      <p className="community-detail-meta">
-                        신고 대상 · <b>{r.reportedStudent}</b>
+                      <p className="community-detail-meta" onClick={(e) => e.stopPropagation()}>
+                        신고 대상 ·{' '}
+                        {/* 서버가 reportedStudentId를 아직 안 내려주는 배포 순서(프론트 먼저)에서는 예전처럼 이름만 보인다. */}
+                        {r.reportedStudentId ? (
+                          <button type="button" className="admin-student-link" onClick={() => openStudentSummary(r)}>
+                            {r.reportedStudent}
+                          </button>
+                        ) : (
+                          <b>{r.reportedStudent}</b>
+                        )}
                       </p>
                     )}
                     {r.targetType === 'application' && (
@@ -620,6 +664,60 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
         ) : null}
       </div>
 
+      {studentSummaryReport && (
+        <div className="career-confirm-overlay" onClick={closeStudentSummary}>
+          <div className="career-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="admin-post-title">신고 대상자 정보</p>
+            {studentSummaryLoading ? (
+              <p className="courses-manual-hint">불러오는 중...</p>
+            ) : studentSummaryError ? (
+              <p className="home-error">{studentSummaryError}</p>
+            ) : studentSummary ? (
+              <>
+                <p className="community-detail-meta">
+                  <b>{studentSummary.nickname}</b> · {studentSummary.department || '학과 미등록'}
+                  {studentSummary.admissionYear ? ` · ${studentSummary.admissionYear}학년도 입학` : ''}
+                </p>
+                <p className="community-detail-meta">
+                  가입 {formatDate(studentSummary.joinedAt)} · 작성한 글 {studentSummary.postCount}개 · 낸 신청 {studentSummary.applicationCount}건
+                </p>
+                <p className="community-detail-body">
+                  <b>신고 접수</b> · 총 {studentSummary.reportsReceived.total}건 (대기 {studentSummary.reportsReceived.pending}건 · 처리완료{' '}
+                  {studentSummary.reportsReceived.resolved}건)
+                </p>
+                <p className="community-section-label">제재 이력 ({studentSummary.sanctions.length}건)</p>
+                {studentSummary.sanctions.length === 0 ? (
+                  <p className="courses-manual-hint">제재 이력이 없어요.</p>
+                ) : (
+                  <div className="admin-post-list">
+                    {studentSummary.sanctions.map((s) => (
+                      <div className="admin-post-card" key={s.id}>
+                        <p className="admin-post-title">
+                          {SANCTION_SCOPE_BADGE_LABEL[s.scope] || s.scope}
+                          <span className={`community-badge ${s.state === 'active' ? 'community-badge-rejected' : 'community-badge-closed'}`}>
+                            {SANCTION_STATE_LABEL[s.state]}
+                          </span>
+                        </p>
+                        <p className="community-detail-meta">
+                          {formatDate(s.startsAt)} ~ {s.endsAt ? formatDate(s.endsAt) : '영구정지'}
+                          {s.liftedAt && ` · ${formatDate(s.liftedAt)} 해제`}
+                        </p>
+                        <p className="community-detail-body">
+                          <b>사유</b> · {s.reason}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : null}
+            <button type="button" className="community-outline-btn" onClick={closeStudentSummary}>
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
       {sanctionTargetReport && (
         <div className="career-confirm-overlay" onClick={closeSanctionModal}>
           <form
@@ -640,6 +738,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               <IconAlertTriangle size={16} />
               <span>제재를 확정하면 신고된 글/신청도 함께 삭제되며, 되돌릴 수 없어요.</span>
             </div>
+
+            <p className="community-detail-body">
+              <b>신고 사유(참고용)</b> · {sanctionTargetReport.reason}
+            </p>
+            <p className="courses-manual-hint">신고 사유는 제재받는 사용자에게 전달되지 않아요. 아래 "제재 사유"만 사용자에게 보여요.</p>
 
             <p className="community-section-label">범위</p>
             <div className="admin-sub-tabs" style={{ flexWrap: 'wrap' }}>
@@ -670,7 +773,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
             </div>
 
             <div className="auth-field">
-              <label>제재 사유</label>
+              <label>제재 사유 (사용자에게 보여요)</label>
               <textarea rows={2} value={sanctionReason} onChange={(e) => setSanctionReason(e.target.value)} required />
             </div>
 

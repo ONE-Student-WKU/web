@@ -16,6 +16,7 @@ import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
 import { getMe, logout } from './api/chatApi.js';
+import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 
 // 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
 // null — 탭바는 보이되 아무 탭도 강조되지 않는다.
@@ -66,6 +67,10 @@ function App() {
     if (path === '/terms') return 'terms';
     const params = new URLSearchParams(window.location.search);
     if (params.get('reauth') || params.get('authError')) return 'profile';
+    // 새로고침하면 React 상태(view)가 사라져 항상 홈으로 돌아가는데, 새 문의·신고를 확인하려고 새로고침하는
+    // 관리자가 많다 — 관리자 화면에 있었다면 sessionStorage에 남겨둔 표시로 그 화면에서 시작한다. 이 값은
+    // "관리자였다"는 힌트일 뿐이라 로그인 확인 후 role을 다시 검사한다(loadUser, 아래 렌더 가드).
+    if (readCache('app_view') === 'admin') return 'admin';
     return 'home';
   });
 
@@ -99,8 +104,13 @@ function App() {
         // /privacy, /terms로 직접 들어온 로그인 상태 사용자, 그리고 재인증(reauth)/에러
         // 쿼리로 Profile로 돌아온 경우는 그대로 그 화면을 보여준다 — 그 외에는 기존과 동일하게
         // 온보딩 완료 여부로 시작 화면을 정한다.
+        // 'admin'은 서버가 알려준 role이 admin일 때만 유지한다(sessionStorage 값만 믿지 않음) — 관리자가 아니면 홈으로.
         setView((v) =>
-          v === 'privacy' || v === 'terms' || v === 'profile' ? v : data.onboardingCompleted ? 'home' : 'onboarding'
+          v === 'privacy' || v === 'terms' || v === 'profile' || (v === 'admin' && data.role === 'admin')
+            ? v
+            : data.onboardingCompleted
+              ? 'home'
+              : 'onboarding'
         );
       })
       .catch(() => {});
@@ -132,6 +142,14 @@ function App() {
       vv.removeEventListener('scroll', syncViewportHeight);
     };
   }, []);
+
+  // 관리자 화면에 있는 동안만 표시를 남기고, 다른 화면으로 가면(로그아웃 포함 — handleLogout이 view를 home으로 돌림) 지운다.
+  // 로그인 확인이 끝난 뒤에만 쓴다 — 확인 전에 지우면 새로고침 직후 초기값 'admin'이 사라진다.
+  useEffect(() => {
+    if (!authChecked) return;
+    if (view === 'admin') writeCache('app_view', 'admin');
+    else clearCache('app_view');
+  }, [view, authChecked]);
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
@@ -321,7 +339,7 @@ function App() {
             onAccountDeleted={handleAccountDeleted}
             justReauthenticated={justReauthenticated}
           />
-        ) : view === 'admin' ? (
+        ) : view === 'admin' && user.role === 'admin' ? (
           <Admin
             user={user}
             onLogout={handleLogout}

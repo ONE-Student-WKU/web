@@ -3111,3 +3111,15 @@ select.onb-select {
   font-size: 0.8125rem;
   cursor: pointer;
 }
+
+/* 관리자 신고함에서 신고 대상자 이름을 눌러 요약을 여는 링크형 버튼. */
+.admin-student-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
