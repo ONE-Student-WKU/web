@@ -189,7 +189,8 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
   }];
 
   // 근거 조문 원문: 적용·조건부·판단 불가인 규칙의 조문(본문·부칙만 — 별표는 표라서 원문이 길고 깨져 있어 제목만 위에서 인용).
-  const refs = [...new Set(active.map((r) => r.basis.articleRef))].filter((ref) => articles[ref]).slice(0, MAX_ARTICLE_CHUNKS);
+  // 수업관리규정(참고 규정, D-47)은 판단 줄로만 싣는다 — 졸업·경과조치 질문에서 원문 청크 자리를 차지하지 않게. 수업 운영 질문이면 RAG가 본문을 가져온다.
+  const refs = [...new Set(active.filter((r) => !r.basis.articleRef.startsWith('CLASS_MANAGEMENT:')).map((r) => r.basis.articleRef))].filter((ref) => articles[ref]).slice(0, MAX_ARTICLE_CHUNKS);
   for (const ref of refs) {
     const a = articles[ref];
     const [doc, key] = ref.split(':');
@@ -275,7 +276,7 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
     // withRequirements: 졸업요건 값의 판단 보류(#260)·자료 없음까지 신뢰도에 넣는다. 빼면 요건 쪽 보류가 있는 학과도
     // 적용범위만 보고 "확정"이 나와 챗봇이 단정한다(평가 세트 E16·E19·E29가 잡은 문제, D-33).
     const judgment = await resolveApplicableRulesForStudent(subject.input, { withRequirements: true });
-    const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE').map((r) => r.basis.articleRef))];
+    const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE' && !r.basis.articleRef.startsWith('CLASS_MANAGEMENT:')).map((r) => r.basis.articleRef))];
     const related = relatedArticleCandidates(summarizeEvidence(judgment.rules), refs, MAX_RELATED_CHUNKS * 3).map((c) => c.ref);
     const articles = await loadArticles([...new Set([...refs, ...related])]);
     return { judgment, subject, chunks: formatJudgmentChunks(judgment, subject, articles) };

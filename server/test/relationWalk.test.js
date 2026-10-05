@@ -148,3 +148,17 @@ test('챗봇 판단 청크: 근거 경로 줄 + 관련 조문 청크(최대 2개
   assert.ok(related.length <= 2);
   assert.ok(related.every((c) => c.content.length <= 800 + 10 && c.articleKey && c.ragDocumentTitle));
 });
+
+test('참고 규정(수업관리규정, critical=false)은 원문 청크 자리와 관련 조문 후보를 차지하지 않고, 경로 줄은 핵심 규정 뒤로 간다', async () => {
+  const r = await resolveApplicableRulesForStudent(csInput);
+  const s = summarizeEvidence(r.rules);
+  const firstNonCritical = s.paths.findIndex((p) => !p.critical);
+  assert.ok(firstNonCritical === -1 || s.paths.slice(firstNonCritical).every((p) => !p.critical), '핵심 경로가 참고 경로 뒤에 섞여 있다');
+  const cand = relatedArticleCandidates(s, r.rules.filter((x) => x.status !== 'NOT_APPLICABLE').map((x) => x.basis.articleRef), 10);
+  assert.ok(!cand.some((c) => /^ENFORCEMENT_RULES:제14조$/.test(c.ref) && /수업관리규정/.test(c.how)), '수업관리규정 제13조에서 온 관련 조문이 후보에 있다');
+  const keys = ['ENFORCEMENT_RULES:제118조', 'CLASS_MANAGEMENT:제2조', 'CLASS_MANAGEMENT:제5조', 'CLASS_MANAGEMENT:제6조', 'CLASS_MANAGEMENT:제13조'];
+  const articles = Object.fromEntries(keys.map((k) => [k, { title: k, body: '본문', versionLabel: 'v', lastAmendedOn: null }]));
+  const chunks = formatJudgmentChunks(r, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2022, enrollmentType: 'GENERAL', hypothetical: false }, articles);
+  assert.ok(!chunks.some((c) => /^regulation-article-CLASS_MANAGEMENT/.test(c.chunkId)), '수업관리규정 원문 청크가 판단 근거 자리를 차지한다');
+  assert.match(chunks[0].content, /수업관리규정 제5조/, '판단 줄에는 수업관리규정 참고 규정이 남는다');
+});

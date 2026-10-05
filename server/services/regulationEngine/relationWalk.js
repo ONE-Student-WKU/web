@@ -131,7 +131,7 @@ function pathText(path) {
  * 여러 규칙의 evidence(walkRelations 결과)를 한 번에 요약한다 — 챗봇 근거·진단 화면이 같은 모양을 쓰도록.
  * 같은 조문에 규칙이 여럿(제13조 ①~④)이어도 조문 기준으로 한 번만 센다.
  * @param {Array<{ status: string, basis: {articleRef: string}, evidence: object|null }>} rules resolveApplicableRules의 rules
- * @returns {{ paths: [{root, rootLabel, steps: [{ref, label, text, relation, depth}]}], overrides: [{special, general}], amendments: [{ref, label, date, target, targetLabel}], broken: [{root, rootLabel, relation, toText}] }}
+ * @returns {{ paths: [{root, rootLabel, critical, steps: [{ref, label, text, relation, depth}]}] (critical 먼저), overrides: [{special, general, critical}], amendments: [{ref, label, date, target, targetLabel}], broken: [{root, rootLabel, relation, toText}] }}
  */
 function summarizeEvidence(rules) {
   const seenRoot = new Set();
@@ -145,14 +145,17 @@ function summarizeEvidence(rules) {
     if (seenRoot.has(root)) continue;
     seenRoot.add(root);
     const rootLabel = refLabel(root);
+    const critical = r.critical !== false;
     if (r.evidence.reached.length) {
-      paths.push({ root, rootLabel, steps: r.evidence.reached.map((n) => ({ ref: n.ref, label: refLabel(n.ref), text: pathText(n.path), relation: n.path[n.path.length - 1].relation, depth: n.depth })) });
+      paths.push({ root, rootLabel, critical, steps: r.evidence.reached.map((n) => ({ ref: n.ref, label: refLabel(n.ref), text: pathText(n.path), relation: n.path[n.path.length - 1].relation, depth: n.depth })) });
     }
-    for (const e of r.evidence.overrides) overrides.set(`${root}>${e.to}`, { special: root, general: e.to });
-    for (const e of r.evidence.overriddenBy) overrides.set(`${e.from}>${root}`, { special: e.from, general: root });
+    for (const e of r.evidence.overrides) overrides.set(`${root}>${e.to}`, { special: root, general: e.to, critical });
+    for (const e of r.evidence.overriddenBy) overrides.set(`${e.from}>${root}`, { special: e.from, general: root, critical });
     for (const e of r.evidence.amendments) amendments.set(`${e.from}>${root}`, { ref: e.from, label: refLabel(e.from), date: e.date, target: root, targetLabel: rootLabel });
     for (const e of r.evidence.unresolved) broken.set(`${root}|${e.toText}`, { root, rootLabel, relation: e.relation, toText: e.toText });
   }
+  // 참고 규정(critical=false, 예: 수업관리규정)의 경로는 뒤로 — 챗봇 줄·관련 조문 상한이 핵심 규정의 경로를 밀어내지 않게 한다.
+  paths.sort((a, b) => Number(b.critical) - Number(a.critical));
   return {
     paths,
     overrides: [...overrides.values()],
@@ -164,7 +167,7 @@ function summarizeEvidence(rules) {
 const RELATED_PRIORITY = { OVERRIDES: 0, DELEGATES_TO: 1, REFERS: 2 };
 
 /**
- * 챗봇 근거로 원문까지 붙일 "관련 조문" 후보 — 적용 조문 자체와 별표(표 원문은 길고 깨져 제목만 인용)는 뺀다.
+ * 챗봇 근거로 원문까지 붙일 "관련 조문" 후보 — 적용 조문 자체와 별표(표 원문은 길고 깨져 제목만 인용)는 뺀다. 참고 규정(critical=false)에서 출발한 경로는 쓰지 않는다.
  * 우선순위: 특칙 상대(덮는/덮이는 조문) > 위임 > 참조. 같은 조문은 가장 높은 우선순위 하나로 합친다.
  * @returns {Array<{ref, label, how, priority}>} 우선순위 순
  */
@@ -178,10 +181,12 @@ function relatedArticleCandidates(summary, appliedRefs, limit) {
     if (!cur || priority < cur.priority) best.set(ref, { ref, label: refLabel(ref), how, priority });
   };
   for (const o of summary.overrides) {
+    if (!o.critical) continue;
     if (applied.has(o.special) && !applied.has(o.general)) consider(o.general, 'OVERRIDES', `${refLabel(o.special)}이(가) 우선하는 일반 조문`);
     if (applied.has(o.general) && !applied.has(o.special)) consider(o.special, 'OVERRIDES', `${refLabel(o.general)}보다 우선하는 특칙`);
   }
   for (const p of summary.paths) {
+    if (!p.critical) continue;
     for (const s of p.steps) consider(s.ref, s.relation, `${p.rootLabel}에서 ${s.text}`);
   }
   return [...best.values()].sort((a, b) => a.priority - b.priority || a.ref.localeCompare(b.ref)).slice(0, limit);
