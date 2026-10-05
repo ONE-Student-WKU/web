@@ -97,6 +97,32 @@ function historyLine(history) {
   return `학년도별 교육과정 변경 기록(입학 이후): ${parts.join(' / ')}`;
 }
 
+/**
+ * 근거끼리 말이 다른 항목(R-06 잔여, 보정 라운드 B의 B-28). 챗봇은 RAG 문서(교육과정 해설)와 판단 결과를 함께 받는데, 해설 문서에는
+ * "교양제한학점: 2021학번까지는 제한이 없고 2022학번부터 52학점"이라고만 있고, 시행규칙 제10조①은 학번 구분 없이 52학점 초과분을 인정하지 않는다.
+ * 졸업진단은 둘 중 엄격한 52를 쓴다(D-32). 우선순위 규칙만으로는 모델이 이 불일치를 모르고 해설 문장을 그대로 단정할 수 있어, 판단 청크에
+ * 충돌 사실을 명시하고(`conflicts` 메타데이터 + 본문 줄) 어느 쪽도 단정하지 않게 한다. 해설 문서(db/regulations/교육과정)는 고치지 않는다(재시딩 트리거).
+ * @returns {Array<{ id, topic, engineValue, diagnosisValue, sources: Array<{ source, statement }>, guide }>}
+ */
+function evidenceConflicts(judgment) {
+  const capRule = judgment.requirements && (judgment.requirements.rules || []).find((r) => r.id === 'LIBERAL_ARTS_CAP');
+  if (!capRule || !capRule.value || capRule.value.cap != null) return [];
+  const literal = (capRule.alternatives || []).map((a) => a.cap).filter((c) => c != null);
+  if (!literal.length) return [];
+  const diagnosisValue = Math.min(...literal);
+  return [{
+    id: 'LIBERAL_CAP_PRE_2022',
+    topic: '교양 인정 상한(2021학번 이하)',
+    engineValue: capRule.value.cap,
+    diagnosisValue,
+    sources: [
+      { source: '교육과정 해설 문서(RAG 청크)', statement: '2021학번까지는 제한이 없고 2022학번부터 52학점' },
+      { source: '학칙시행규칙 제10조 제1항', statement: `학번 구분 없이 ${diagnosisValue}학점 초과분 불인정` },
+    ],
+    guide: `졸업진단은 더 엄격한 ${diagnosisValue}학점을 적용한다. 어느 쪽이 맞는지는 학교 확인 전이므로 단정하지 말고 두 근거를 모두 밝혀라.`,
+  }];
+}
+
 /** 조문 관계 요약 → 판단 청크에 넣을 줄(최대 MAX_PATH_LINES). 중요도 순: 특칙 → 위임·참조 경로 → 끊긴 연결 → 개정 이력. */
 function relationLines(evidence) {
   const out = [];
@@ -145,6 +171,12 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
   const pathLines = relationLines(evidence);
   if (pathLines.length) lines.push('근거 경로(조문 관계 — 어떤 조문이 어떤 관계로 어디를 가리키는지):', ...pathLines);
 
+  const conflicts = evidenceConflicts(judgment);
+  if (conflicts.length) {
+    lines.push('근거가 서로 다른 항목(답할 때 두 쪽을 모두 밝힐 것):');
+    for (const c of conflicts) lines.push(`- ${c.topic}: ${c.sources.map((x) => `${x.source}는 "${x.statement}"`).join(', ')}. ${c.guide}`);
+  }
+
   const caveats = [...new Map((judgment.flags || []).filter((f) => f.level !== 'INFO').map((f) => [f.code, f.message])).values()];
   if (caveats.length) lines.push('확인 필요 사항:', ...caveats.slice(0, 8).map((m) => `- ${m}`));
 
@@ -153,6 +185,7 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
     documentTitle: `${departmentName} ${cohort}학번 적용 규정 판단 (신뢰도: ${label})`,
     content: lines.join('\n'),
     confidence: judgment.confidence,
+    conflicts,
   }];
 
   // 근거 조문 원문: 적용·조건부·판단 불가인 규칙의 조문(본문·부칙만 — 별표는 표라서 원문이 길고 깨져 있어 제목만 위에서 인용).
@@ -252,4 +285,4 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
   }
 }
 
-module.exports = { lookupRegulationJudgment, formatJudgmentChunks, resolveJudgmentSubject, REGULATION_QUESTION_RE, ANSWER_GUIDE };
+module.exports = { lookupRegulationJudgment, formatJudgmentChunks, evidenceConflicts, resolveJudgmentSubject, REGULATION_QUESTION_RE, ANSWER_GUIDE };

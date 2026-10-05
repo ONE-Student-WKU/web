@@ -150,3 +150,35 @@ test('DB: 질문에 다른 학번이 나오면 그 학번·일반 재학생 가�
   assert.equal(s.judgment.input.enrollmentType, 'GENERAL');
   assert.match(s.regulation[0].content, /일반 재학생으로 가정/);
 });
+
+// ─── 보정 라운드 B(B-28, D-48): RAG 해설 문서와 진단의 교양 상한 충돌을 근거 메타데이터로 드러낸다 ───
+
+test('근거 충돌: 2021학번 이하 — 상한 없음(추정) vs 시행규칙 52, 판단 청크에 충돌 줄 + conflicts 메타데이터(진단은 52)', async () => {
+  const { resolveApplicableRulesForStudent } = require('../services/regulationEngine');
+  const { evidenceConflicts } = require('../services/regulationContextService');
+  const j = await resolveApplicableRulesForStudent({ admissionYear: 2021, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: '2026-10-05' });
+  const c = evidenceConflicts(j);
+  assert.equal(c.length, 1);
+  assert.deepEqual([c[0].id, c[0].engineValue, c[0].diagnosisValue], ['LIBERAL_CAP_PRE_2022', null, 52]);
+  assert.deepEqual(c[0].sources.map((s) => s.source), ['교육과정 해설 문서(RAG 청크)', '학칙시행규칙 제10조 제1항']);
+  const chunk = formatJudgmentChunks(j, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2021, enrollmentType: 'GENERAL', hypothetical: false })[0];
+  assert.deepEqual(chunk.conflicts, c);
+  assert.match(chunk.content, /근거가 서로 다른 항목\(답할 때 두 쪽을 모두 밝힐 것\)/);
+  assert.match(chunk.content, /교양 인정 상한\(2021학번 이하\).*교육과정 해설 문서\(RAG 청크\)는 "2021학번까지는 제한이 없고.*52학점.*단정하지 말고 두 근거를 모두 밝혀라/s);
+});
+
+test('근거 충돌: 2022학번 이상은 두 근거가 일치(52)해서 충돌 항목이 없다', async () => {
+  const { resolveApplicableRulesForStudent } = require('../services/regulationEngine');
+  const { evidenceConflicts } = require('../services/regulationContextService');
+  const j = await resolveApplicableRulesForStudent({ admissionYear: 2022, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: '2026-10-05' });
+  assert.deepEqual(evidenceConflicts(j), []);
+  const chunk = formatJudgmentChunks(j, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2022, enrollmentType: 'GENERAL', hypothetical: false })[0];
+  assert.deepEqual(chunk.conflicts, []);
+  assert.doesNotMatch(chunk.content, /근거가 서로 다른 항목/);
+});
+
+test('근거 충돌: 요건 자료가 없으면(requirements 없음) 충돌을 만들지 않는다', () => {
+  const { evidenceConflicts } = require('../services/regulationContextService');
+  assert.deepEqual(evidenceConflicts({ requirements: null }), []);
+  assert.deepEqual(evidenceConflicts({ requirements: { rules: [] } }), []);
+});

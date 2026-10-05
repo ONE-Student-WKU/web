@@ -9,6 +9,7 @@ const studentService = require('../services/studentService');
 const graduationService = require('../services/graduationService');
 const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
+const { guardAnswer } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
 
 /**
@@ -161,7 +162,9 @@ router.post('/messages', async (req, res, next) => {
       });
     }
 
-    const answer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext);
+    const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext);
+    // 신뢰도가 확정이 아닌데 단서(추정·확인 필요 등)가 하나도 없는 답변에는 안내문을 덧붙인다(answerGuard.js, D-49).
+    const answer = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment).answer;
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,
