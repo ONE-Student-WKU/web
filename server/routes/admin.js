@@ -5,6 +5,7 @@ const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
+const reportedStudentService = require('../services/reportedStudentService');
 const pool = require('../db');
 
 /**
@@ -100,6 +101,24 @@ router.post('/community/reports/:id/resolve', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/community/students/:id/summary — 신고함에서 신고 대상자를 눌렀을 때 보는 요약(읽기 전용).
+// 실제 이메일·학번 전체 등은 내려주지 않는다(reportedStudentService 주석). requireAdmin은 위 router.use에서 이미 통과.
+router.get('/community/students/:id/summary', async (req, res, next) => {
+  try {
+    const studentId = Number(req.params.id);
+    if (!Number.isInteger(studentId) || studentId <= 0) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    const summary = await reportedStudentService.getReportedStudentSummary(studentId);
+    if (!summary) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'ADMIN_REPORTED_STUDENT_SUMMARY', message: null, data: summary });
   } catch (err) {
     next(err);
   }
