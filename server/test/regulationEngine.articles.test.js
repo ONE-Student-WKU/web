@@ -81,6 +81,15 @@ test('extractRelations: 특칙(에도 불구하고)·별표 위임·다른 문�
   assert.deepEqual(extractRelations('제2조(경과조치) 제109조에 따른 전과는', 'ENFORCEMENT_RULES', '부칙(2026.02.05.)제2조').map((x) => x.toKey), ['제109조']);
 });
 
+test('extractRelations: 「」 없이 이름이 붙은 "학칙시행규칙 제14조"는 그 문서 조문(깨진 문자열 아님), "학칙 제24조"는 시행규칙 조문으로 오인하지 않는다 (D-47)', () => {
+  const r13 = extractRelations('제13조(집중수업) 교과 운영상 필요할 경우 학칙시행규칙 제14조에 따른 학점 당 수업시간을 준수하여 운영할 수 있다.', 'CLASS_MANAGEMENT', '제13조');
+  assert.deepEqual(r13.map((r) => [r.relation, r.toDoc, r.toKey, r.toRef]), [['REFERS', 'ENFORCEMENT_RULES', '제14조', null]]);
+  const r33 = extractRelations('제33조(공결) 다만, 공결기간에는 학칙 제24조의 휴업일을 포함한다.', 'ENFORCEMENT_RULES', '제33조');
+  assert.deepEqual(r33.map((r) => [r.toDoc, r.toKey]), [['ACADEMIC_REGULATIONS', '제24조']], '시행규칙 제24조(수강가능학점 예외)가 아니라 학칙 제24조');
+  const self = extractRelations('제5조(가) 이 학칙 제7조에 따른다.', 'ACADEMIC_REGULATIONS', '제5조');
+  assert.deepEqual(self.map((r) => [r.toDoc, r.toKey]), [['ACADEMIC_REGULATIONS', '제7조']], '"이 학칙 제N조"는 자기 문서');
+});
+
 test('시드: 경고 0건 — 적용범위·관계의 인용문이 모두 실제 조문 본문에 있다', () => {
   assert.deepEqual(seed.warnings, []);
   const byRef = new Map(seed.articles.map((a) => [`${a.docCode}:${a.articleKey}`, a]));

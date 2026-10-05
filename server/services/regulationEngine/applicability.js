@@ -312,6 +312,18 @@ const HANDLERS = {
     status: 'APPLIES', reason: '2026.02.05. 전부개정 전 입학 학번 — 종전 부칙의 경과조치 대상', flags: [makeFlag('PRIOR_ADDENDUM_NOT_HELD')],
   },
 
+  // 수업관리규정(보정 라운드 B, D-47): 제2조가 "대학원을 제외한 각 대학의 수업관리"에 적용한다고 정한다. 이 시스템의 학생은 모두 학부생이라
+  // 입학 학번·유형과 무관하게 해당한다(그래서 한정 조건 없이 APPLIES). 학번·학과별로 갈리는 내용이 아니라 critical=false 참고 규정이다.
+  UNDERGRADUATE_CLASS_RULE: (h) => cohortRule(h) || { status: 'APPLIES', reason: '학부(대학원 제외) 수업에 적용되는 수업관리 기준' },
+
+  // 삭제된 조문: 삭제일 이후면 해당 없음. 그 전에는 조문이 있었을 텐데 삭제 전 원문이 없어 내용을 모르므로 UNKNOWN(없다고도, 있다고 단정도 하지 않는다).
+  // 개정(삭제) 표시일이 기준일보다 늦으면 buildRule이 중간 판본 플래그(TEXT_INTERMEDIATE_VERSION)를 함께 붙인다.
+  ARTICLE_DELETED: (h) => {
+    const deletedOn = h.row.conditionParams && h.row.conditionParams.deletedOn;
+    if (deletedOn && h.ctx.asOfDate >= deletedOn) return { status: 'NOT_APPLICABLE', reason: `${deletedOn}에 삭제된 조문` };
+    return { status: 'UNKNOWN', reason: `${deletedOn}에 삭제된 조문 — 기준일에는 있었지만 삭제 전 원문은 보유하지 않음` };
+  },
+
   MAJOR_CHANGE_TARGET: (h) => {
     const { ctx, row, deptName } = h;
     const targets = (row.conditionParams && row.conditionParams.departments) || [];
