@@ -207,3 +207,23 @@
 - **대안**: (a) 시스템 프롬프트에만 판단을 요약 — 테스트로 검증할 수 없고 근거 인용(citedChunks)에도 안 남는다. (b) RAG 결과를 판단과 대조해 모순 문장을 지움 — 문장 단위 모순 판정은 또 다른 추측이 된다.
 - **되돌리는 법**: `routes/chat.js`의 `lookupRegulationJudgment` 호출과 인자 한 줄을 지우면, `assembleStructuredChunks`가 스스로 판단을 구한다. 판단을 아예 빼려면 `chatContextService`의 `judgmentPromise`를 `null`로 바꾼다. 우선순위 문구는 `aiClient.EVIDENCE_PRIORITY_NOTE`.
 - **남겨 둔 것**: `curriculumContextService.LATER_CHANGE_NOTICE`(파트 2 첫 커밋)는 지우지 않았다. 판단 청크가 없는 경로(학과를 모르는 변경 이력 질문 등)에서도 단정 금지가 유지되도록 하기 위해서다.
+
+## D-32 [P3] 졸업진단(graduationService)을 엔진 결과로 이전 — 동작이 바뀐 지점 목록
+- **결정**: `getGraduationStatus`가 요건 행과 교양 인정 상한을 `resolveRequirementsForStudent`(엔진 evaluate + 데이터 등급)에서 받는다. 이 파일에 있던 하드코딩 분기 — `LIBERAL_ARTS_CREDIT_CAP=52`, `MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF={2022,2}`, 29학점 고정값, `resolveEffectiveEnrollmentType`(3·4학년 전과 판정), `selectRequirementRows`, `applyMajorChange*Override`, `fetchApplicableRequirements`, `fetchRequiredCourseNames` — 는 지웠다(엔진에 같은 규칙이 이미 있고, 남겨 두면 두 곳이 어긋난다). 이수 내역 집계·전공 풀·일반선택 흡수·졸업논문 P/F 판정은 그대로다.
+- **응답 변경**: 기존 필드(`totalRequiredCredits/totalEarnedCredits/categories/certifications`)는 모양 그대로, `regulation: { confidence, confidenceLabel, flags[], liberalArtsCap: { applied, engineValue }, totalDefinitive }`를 **추가**했다. 클라이언트는 아직 이 필드를 쓰지 않는다(파트 3 범위 밖 — 확인 지점은 HANDOFF).
+- **교양 인정 상한의 선택**: 엔진은 2021학번 이하에 "상한 없음(추정)" + 대안 52를 낸다. 진단은 **더 엄격한 52**를 쓴다 — 학점을 덜 인정하는 쪽은 틀려도 "졸업 가능"을 잘못 알려 주지 않는다(보수적 기본값). 숫자는 예전과 같고, 대신 `LIBERAL_CAP_PRE_2022_SINGLE_SOURCE`(추정)가 붙는다.
+- **동작이 바뀐 지점**(전 학과 126개 × 2016~2027학번 × 입학유형 8가지 = 9,828개 조합을 연결 전·후로 돌려 비교, 로컬 시드, 이수 내역 없는 학생):
+
+  | # | 대상 | 이전 | 이후 | 건수 | 이유 |
+  |---|---|---|---|---|---|
+  | 1 | **1·2학년 전과 + 전과 시점이 2022-2학기 이전** | 교양만 29로 바꾸고 일반선택은 그대로 → 총 요구학점이 학과에 따라 **늘거나 줄었다**(예: 컴소공 2021학번 142) | 일반선택이 차이를 흡수해 **총량 = 같은 학번 일반 재학생**(컴소공 136) | 317 (총량 증가 168건 +2~+12, 감소 149건 −2~−9) | D-07: 완화·고정은 "최소 기준"이지 총량 변경이 아니다. 예전 코드는 재배분을 3·4학년 전과에만 적용했다 |
+  | 2 | **그 학번에 학과 요건 자료가 없는 조합**(학과가 없던 해, 2016학번 이하, 2027학번) | 학번 제한 없는 졸업인증제 행만, 또는 전과·편입 "전공 48" 행만 보이고 총량 0 또는 48 | 요건 0개 + `regulation.confidence = NO_DATA`(`NO_CURRICULUM_ROWS`/`COHORT_BEYOND_LATEST_DATA`/`ADMISSION_YEAR_UNSUPPORTED`) | 1,313 (그중 카테고리가 있던 47건: 전공 48만 있던 46건 + 공학3계열 2027 일반·전과 130→0) | 자료 없는 학번을 다른 범위의 행으로 채우지 않는다(B-4). 온보딩이 학과별 학번 범위를 제한해 화면에서는 대부분 나올 수 없는 조합 |
+  | 3 | 편입생 | 총 요구학점 = 카테고리 합 | **같음** + `totalDefinitive=false`, 추정 | 0(숫자 변화 없음) | B-3: 숫자는 화면 호환을 위해 유지, 확정 아님만 표시 |
+  | 4 | 2017~2021학번 교양 52 초과 이수 | 52까지만 인정 | **같음** + 추정 플래그 | 0 | 위 "교양 인정 상한의 선택" |
+  | 5 | 전과 시점·학년 미입력, 3·4학년 전과(완화 행 없음) | 조용히 가정 | **같은 숫자** + 가정 플래그(추정) | 0 | B-5·B-6 |
+  | 6 | 카테고리 순서 | DB 행 순서 | 엔진 순서(교양필수·교양선택·전공필수·전공선택·전공·…·일반선택) | 0(9,828건 중 순서만 바뀐 경우 없음) | — |
+
+  나머지 8,198건은 카테고리·학점·졸업논문/인증제·총량이 완전히 같다.
+- **바뀐 기존 테스트**: `regulationEngine.parity.test.js` — (a) 머리말: "두 구현의 일치" → "엔진 결과 → 진단 행 변환이 값을 잃지 않는지"로 의미가 바뀜(이제 구현이 하나라서), (b) 의도된 차이 테스트의 legacy 단언 `142 → 136`(#1). 다른 기존 테스트는 바꾸지 않았다.
+- **대안**: graduationService에 하드코딩을 남기고 엔진 결과와 비교만 — 같은 규칙 두 벌이 계속 남는다(R-03). 엔진 값으로 "상한 없음"을 그대로 적용 — 2017~2021학번 학생에게 학점을 더 인정해 졸업 가능으로 잘못 안내할 위험.
+- **되돌리는 법**: 이 커밋을 revert(graduationService.js·parity 테스트·새 테스트). 엔진 쪽 변경(resolveRequirementsForStudent)은 남아도 무해.

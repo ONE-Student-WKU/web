@@ -7,15 +7,16 @@ const { loadData } = require('../services/regulationEngine/dbProvider');
 
 /**
  * server/test/regulationEngine.parity.test.js
- * 규정 판단 엔진(졸업요건 행 선택·완화·재배분)이 기존 graduationService와 같은 숫자를 내는지 검증한다.
- * 왜 필요한가: 같은 규칙을 두 곳에 구현해 뒀으므로(이번 파트에서는 graduationService를 건드리지 않음) 한쪽만 고쳐지면
- * 조용히 어긋난다. 이 테스트가 어긋남을 잡는다 — Part 2에서 graduationService가 엔진을 쓰도록 바꾸면 이 테스트는 필요 없어진다.
+ * 졸업진단(graduationService)이 보여주는 요건이 규정 판단 엔진의 판단과 같은지 검증한다.
+ *
+ * 파트 3에서 바뀐 의미: 예전에는 같은 규칙이 graduationService와 엔진 두 곳에 따로 구현돼 있어 "두 구현의 숫자가 같은가"를
+ * 봤다. 이제 graduationService는 엔진 결과를 받아 이수 현황만 계산하므로(DECISIONS D-32), 이 테스트는 그 **연결부**(엔진
+ * 결과 → 진단 행 변환: 카테고리·졸업논문/인증제·총량)가 값을 잃거나 바꾸지 않는지를 전 학과·학번·입학유형에서 확인한다.
+ * 연결 전후 실제 숫자 차이(1·2학년 전과 컷오프 이전 등)는 D-32 표에 기록했다.
  * 전제: 시드 데이터(departments, curriculum_requirements). DB에 임시 학생 1명을 만들고 끝나면 지운다.
  *
- * 같은 숫자가 나오리라 기대하지 않는 영역(엔진이 의도적으로 다르게 계산)은 비교에서 뺀다:
- *  - 편입생 총 요구학점(엔진은 단정하지 않고 null)
- *  - 교양 인정 상한(엔진은 2021학번 이하 상한 없음 + 추정, graduationService는 전 학번 52 — earned 계산 쪽이라 요건 행과 무관)
- *  - 1·2학년 전과 + 컷오프 이전(엔진만 일반선택 재배분) — rules.test.js가 따로 검증
+ * 편입생 총 요구학점은 비교하지 않는다: 엔진은 단정하지 않고 null, 진단은 화면 호환을 위해 카테고리 합을 보여주되
+ * regulation.totalDefinitive=false로 "확정 아님"을 표시한다.
  */
 
 const ASOF = '2026-10-05';
@@ -100,16 +101,16 @@ test('패리티: 편입생(편입 학년 미입력 = 3학년 가정) — 총 요
   }
 });
 
-test('의도된 차이: 1·2학년 전과 + 컷오프 이전 — graduationService는 총량이 부풀고, 엔진은 일반선택을 재배분해 136을 보존한다', async () => {
+test('파트 3 동작 변경: 1·2학년 전과 + 컷오프 이전 — 졸업진단도 일반선택을 재배분해 136을 보존한다(예전 142)', async () => {
   // 2021학번(교양 23)이 2022-1학기(컷오프 이전)에 2학년으로 전과: 전공 완화 없음(75), 교양은 29 고정(+6).
-  // graduationService는 재배분을 3·4학년 전과에만 적용해서 총 요구학점이 75+29+38=142가 된다.
-  // 엔진은 "완화/고정으로 바뀐 만큼을 일반선택이 흡수한다"는 원리를 전과생 전체에 적용해 136이다(DECISIONS.md D-07).
-  // Part 2에서 graduationService를 엔진으로 교체하면 이 단언 중 legacy 쪽이 바뀌는 게 정상이다.
+  // 예전 graduationService는 재배분을 3·4학년 전과에만 적용해서 총 요구학점이 75+29+38=142였다.
+  // 엔진은 "완화/고정으로 바뀐 만큼을 일반선택이 흡수한다"는 원리를 전과생 전체에 적용해 136이다(D-07). 파트 3에서 진단이
+  // 엔진을 쓰게 되면서 이 단언의 legacy 쪽이 142 → 136으로 바뀌었다(D-32).
   const d = departments.find((x) => x.name === '컴퓨터·소프트웨어공학과');
   const mc = { grade: 2, year: 2022, semester: 1 };
   await setStudent({ departmentId: d.id, admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', mc });
   const legacy = await getGraduationStatus(studentId);
   const engine = await resolveRegulation({ admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', departmentId: d.id, asOfDate: ASOF, majorChange: mc }, { loadData: engineLoader });
-  assert.equal(legacy.totalRequiredCredits, 142);
+  assert.equal(legacy.totalRequiredCredits, 136);
   assert.equal(engine.rules.find((r) => r.id === 'REQUIREMENTS').value.totalRequiredCredits, 136);
 });

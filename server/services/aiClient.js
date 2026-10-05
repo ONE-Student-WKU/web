@@ -68,6 +68,20 @@ function buildGraduationStatusNote(graduationStatus) {
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
 
+  // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.
+  const regulation = graduationStatus.regulation;
+  if (regulation && regulation.confidence === 'NO_DATA') {
+    return `이 학생의 학과·학번 졸업요건 자료가 시스템에 없다(이수 현황 진단 불가). "몇 학점 남았는지"를 다른 학번 기준으로 추정해 답하지 말고, 자료가 없다고 밝힌 뒤 학사지원과(063-850-5228) 확인을 안내하라.`;
+  }
+  const caveats = [];
+  if (regulation && regulation.confidence !== 'CONFIRMED') {
+    const reasons = regulation.flags.filter((f) => f.level !== 'INFO').map((f) => `  - ${f.message}`);
+    caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유:\n${reasons.join('\n')}`);
+  }
+  if (regulation && regulation.totalDefinitive === false) {
+    caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다. 카테고리별 기준 위주로 설명하라.');
+  }
+
   return `이 학생의 실제 이수 현황(학생이 과목 관리 화면에 직접 등록한 데이터 기준) — 근거
 문서보다 이 데이터를 우선해서 "몇 학점 남았는지", "뭐가 부족한지" 같은 질문에 구체적인 숫자로
 답하라. 이 데이터에 없는 내용(등록금, 수강신청 절차 등)에만 근거 문서를 사용하라.
@@ -84,7 +98,7 @@ ${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
 - 일반선택은 학생이 따로 챙겨 들어야 하는 항목이 아니다 — 전공 초과 이수분이나 다른 이수
   과목으로 자동으로 채워진다. "일반선택 OO학점을 더 들어야 한다"고 안내하지 마라.
 - 위 학점 수치는 상한이 적용된 값이라(예: 교양은 52학점까지만 인정) 학생이 실제로 들은 학점
-  합계보다 작게 나올 수 있다 — 이는 정상이니 오류로 언급하지 마라.`;
+  합계보다 작게 나올 수 있다 — 이는 정상이니 오류로 언급하지 마라.${caveats.length ? `\n${caveats.join('\n')}` : ''}`;
 }
 
 // 질문의 연도 해석(yearContext, server/services/yearContext.js)을 모델에게 알려준다. 학생의 "적용 규정"(입학학번으로

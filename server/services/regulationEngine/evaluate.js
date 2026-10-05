@@ -44,8 +44,8 @@ function hasCoreRowsForYear(rows, year) {
 const sum = (rows) => rows.reduce((s, r) => s + Number(r.requiredCredits), 0);
 
 /**
- * 졸업요건 행 선택 + 갈래별 조정. graduationService의 selectRequirementRows → applyMajorChangeLiberalArtsOverride →
- * applyMajorChangeGeneralElectiveOverride 와 같은 계산이다(패리티 테스트가 두 구현의 일치를 검증한다).
+ * 졸업요건 행 선택 + 갈래별 조정. 파트 3 이전 graduationService의 selectRequirementRows → applyMajorChangeLiberalArtsOverride →
+ * applyMajorChangeGeneralElectiveOverride를 옮긴 것이다(지금은 졸업진단이 이 결과를 그대로 쓴다, D-32).
  * 차이 하나: 일반선택 재배분(완화로 비는 만큼 일반선택이 흡수)을 "3·4학년 전과"만이 아니라 전과생 전체에 적용한다
  * — 교양 29학점 고정만 적용되는 1·2학년 전과에서도 총량 보존 원리가 같기 때문(DECISIONS.md 참고).
  */

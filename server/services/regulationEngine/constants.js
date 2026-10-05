@@ -24,11 +24,11 @@ const ENROLLMENT_TYPES = Object.freeze(['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_
 const MIN_SUPPORTED_ADMISSION_YEAR = 2017;
 
 // 전과생 교양 고정학점 컷오프(전과 시점이 2022학년도 2학기 "이전"이면 교양필수 5 + 교양선택 24 = 29 고정).
-// graduationService.js의 MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF/FIXED와 같은 값이다(패리티 테스트가 어긋남을 잡는다).
+// 파트 3부터 졸업진단(graduationService)도 이 값을 엔진을 통해 쓴다(예전 graduationService의 하드코딩 상수를 대체, D-32).
 const LIBERAL_ARTS_CUTOFF = Object.freeze({ year: 2022, semester: 2 });
 const LIBERAL_ARTS_FIXED_CREDITS = Object.freeze({ 교양필수: 5, 교양선택: 24 });
 
-// 교양 인정 상한(교양필수+교양선택 합산). graduationService.LIBERAL_ARTS_CREDIT_CAP과 같은 값.
+// 교양 인정 상한(교양필수+교양선택 합산). 졸업진단은 이 값을 엔진 결과(LIBERAL_ARTS_CAP)로 받는다(D-32).
 const LIBERAL_ARTS_CREDIT_CAP = 52;
 // 책자(2026 교육과정 해설 5절): "2021학번까지는 제한이 없고, 2022학번부터는 52학점".
 const LIBERAL_ARTS_CAP_FIRST_COHORT = 2022;
