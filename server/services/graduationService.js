@@ -1,6 +1,7 @@
 const pool = require('../db');
 const studentService = require('./studentService');
 const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
+const { resolveRequirementsForStudent, inputFromStudentRow } = require('./regulationEngine');
 
 /**
  * server/services/graduationService.js
@@ -8,102 +9,28 @@ const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
  * 조합해 카테고리별 이수 현황 및 졸업논문/졸업인증제 같은 P/F 요건 충족 여부를 계산한다.
  */
 
-// 교양필수+교양선택 합산 인정 상한. 초과분은 총 이수학점 계산에서 완전히 제외한다
-// (일반선택으로도 안 흘러감 — 교양을 아무리 많이 들어도 이 이상은 졸업요건에 안 잡힘).
-const LIBERAL_ARTS_CREDIT_CAP = 52;
+// 졸업요건 행(학과·학번·입학유형별 카테고리 학점, 전과·편입 완화, 전과 교양 29학점 컷오프, 일반선택 재배분)과 교양 인정 상한은
+// 규정 판단 엔진(server/services/regulationEngine)이 정한다 — 예전에는 이 파일에 하드코딩 분기(2022-2학기 컷오프 상수,
+// 3·4학년 전과 판정, 52학점 상한)로 있었는데, 같은 규칙이 엔진에도 있어 두 곳이 어긋날 위험이 있었다(파트 3, DECISIONS D-32).
+// 이 파일은 이제 "요건 행 + 학생 이수 내역 → 이수 현황" 계산만 맡는다.
 
-async function fetchApplicableRequirements(departmentId, admissionYear) {
-  const [rows] = await pool.query(
-    `SELECT id, category, required_credits, description, enrollment_type, min_course_count
-     FROM curriculum_requirements
-     WHERE department_id = ?
-       AND (min_admission_year IS NULL OR ? >= min_admission_year)
-       AND (max_admission_year IS NULL OR ? <= max_admission_year)`,
-    [departmentId, admissionYear, admissionYear]
-  );
-  return rows;
+// 엔진 결과(REQUIREMENTS 규칙 값) → 아래 계산이 쓰는 행 모양. 자료가 없으면(NO_DATA) 빈 배열 — 다른 학번 값으로 채우지 않는다.
+function requirementRowsFromJudgment(requirementsRule) {
+  if (!requirementsRule || !requirementsRule.value) return [];
+  const { categories, certifications } = requirementsRule.value;
+  return [
+    ...categories.map((c) => ({ category: c.category, required_credits: c.requiredCredits, description: c.description, min_course_count: null, requiredCourses: c.requiredCourses || [] })),
+    ...certifications.map((c) => ({ category: c.category, required_credits: 0, description: c.description, min_course_count: c.minCourseCount, requiredCourses: c.requiredCourses || [] })),
+  ];
 }
 
-// 1·2학년 전과는 일반 재학생과 동일한(완화 없는) 요건을 적용받는다 — 3·4학년 전과만
-// 학칙시행규칙 제6조의 완화된 최소전공 48학점 대상 (db/seed/curriculum_requirements.json 설명 참고).
-function resolveEffectiveEnrollmentType(student) {
-  if (student.enrollment_type === 'MAJOR_CHANGE' && (student.major_change_grade == null || student.major_change_grade < 3)) {
-    return null;
-  }
-  return student.enrollment_type;
-}
-
-// 전과(3·4학년)/편입생은 전공필수+전공선택 대신 완화된 통합 "전공"(48학점) 행 하나로 대체된다.
-function selectRequirementRows(rows, effectiveEnrollmentType) {
-  const generalRows = rows.filter((r) => r.enrollment_type === null);
-  if (!effectiveEnrollmentType) return generalRows;
-
-  const overrideRows = rows.filter((r) => r.enrollment_type === effectiveEnrollmentType);
-  if (overrideRows.length === 0) return generalRows;
-
-  return [...generalRows.filter((r) => r.category !== '전공필수' && r.category !== '전공선택'), ...overrideRows];
-}
-
-// 교양 이수기준은 학년(major_change_grade)이 아니라 전과 "시점"으로 갈린다 — 이 시점 이전
-// 전과자는 본인 학번(admission_year)과 무관하게 고정 학점을 적용해야 한다(db/schema.sql
-// students.major_change_year/semester 컬럼 주석 참고, 웹정보서비스 실사례로 확인됨).
-// "이전"의 경계는 2022-2학기 자체를 포함하지 않는 것으로 확정됐다(2022-2학기 전과자는
-// 컷오프 이후로 취급). 현재 구현은 전과 시점(year/semester)만으로 판정한다.
-const MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF = { year: 2022, semester: 2 };
-const MAJOR_CHANGE_FIXED_LIBERAL_ARTS_CREDITS = { 교양필수: 5, 교양선택: 24 };
-
-function isBeforeMajorChangeLiberalArtsCutoff(student) {
-  if (student.enrollment_type !== 'MAJOR_CHANGE') return false;
-  if (student.major_change_year == null || student.major_change_semester == null) return false;
-
-  const { year, semester } = MAJOR_CHANGE_LIBERAL_ARTS_CUTOFF;
-  if (student.major_change_year !== year) return student.major_change_year < year;
-  return student.major_change_semester < semester;
-}
-
-// 컷오프 이전 전과생만 교양필수/교양선택 필요학점을 고정값으로 덮어쓴다. 그 외 학생(일반
-// 재학생, 편입생, 컷오프 이후 전과생)은 그대로 통과해 기존 학번 기준 로직이 유지된다.
-function applyMajorChangeLiberalArtsOverride(rows, student) {
-  if (!isBeforeMajorChangeLiberalArtsCutoff(student)) return rows;
-  return rows.map((row) => {
-    const fixedCredits = MAJOR_CHANGE_FIXED_LIBERAL_ARTS_CREDITS[row.category];
-    return fixedCredits === undefined ? row : { ...row, required_credits: fixedCredits };
-  });
-}
-
-// 전과(3·4학년)는 전공을 75→48로, 컷오프 이전이면 교양도 고정값(29)으로 완화받는다.
-// 이 완화는 "졸업에 필요한 총 학점 자체가 줄어든다"는 뜻이 아니라 "전공·교양 최소 기준만
-// 채우면 나머지는 어느 카테고리로 채워도 된다"는 뜻이라, 완화로 비는 만큼을 일반선택이
-// 흡수해서 총 요구학점(전공+교양+일반선택 합)이 일반 재학생과 똑같이 유지돼야 한다.
-// 이걸 안 해주면(2026-09-07 발견) 총 요구학점이 109~115학점으로(실제 136보다 21~27학점
-// 적게) 계산되는 버그가 생긴다 — 일반 재학생 기준 총량(같은 학번의 전공+교양+일반선택
-// 원래 값 합)을 구해서, 전공·교양이 줄어든 만큼만 일반선택에 더 얹어준다.
-function applyMajorChangeGeneralElectiveOverride(rows, allRows, effectiveEnrollmentType) {
-  if (effectiveEnrollmentType !== 'MAJOR_CHANGE') return rows;
-
-  const generalRows = allRows.filter((r) => r.enrollment_type === null);
-  const totalDegreeCredits = generalRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
-
-  const majorRequired = rows
-    .filter((r) => r.category === '전공필수' || r.category === '전공선택' || r.category === '전공')
-    .reduce((sum, r) => sum + Number(r.required_credits), 0);
-  const liberalArtsRequired = rows
-    .filter((r) => r.category === '교양필수' || r.category === '교양선택')
-    .reduce((sum, r) => sum + Number(r.required_credits), 0);
-
-  const adjustedGeneralElective = totalDegreeCredits - majorRequired - liberalArtsRequired;
-
-  return rows.map((row) =>
-    row.category === '일반선택' ? { ...row, required_credits: adjustedGeneralElective } : row
-  );
-}
-
-async function fetchRequiredCourseNames(requirementId) {
-  const [rows] = await pool.query(
-    'SELECT course_name FROM curriculum_required_courses WHERE requirement_id = ?',
-    [requirementId]
-  );
-  return rows.map((r) => r.course_name);
+// 교양 인정 상한. 엔진은 2021학번 이하에 대해 근거가 갈려(책자: 상한 없음 / 시행규칙 제10조①: 52) "상한 없음(추정)"과
+// 대안 52를 함께 낸다. 졸업진단은 그중 더 엄격한(작은) 값을 쓴다 — 학점을 덜 인정하는 쪽은 틀려도 "졸업 가능"을 잘못
+// 알려주는 사고로 이어지지 않기 때문이다(보수적 선택, D-32). null이면 상한 없음.
+function liberalArtsCapForDiagnosis(capRule) {
+  if (!capRule || !capRule.value) return null;
+  const caps = [capRule.value.cap, ...(capRule.alternatives || []).map((a) => a.cap)].filter((c) => c != null);
+  return caps.length ? Math.min(...caps) : null;
 }
 
 async function fetchEarnedCreditsByCategory(studentId) {
@@ -198,13 +125,12 @@ async function getGraduationStatus(studentId) {
     throw err;
   }
 
-  const allRows = await fetchApplicableRequirements(student.department_id, student.admission_year);
-  const effectiveEnrollmentType = resolveEffectiveEnrollmentType(student);
-  const requirementRows = applyMajorChangeGeneralElectiveOverride(
-    applyMajorChangeLiberalArtsOverride(selectRequirementRows(allRows, effectiveEnrollmentType), student),
-    allRows,
-    effectiveEnrollmentType
-  );
+  // 기준일 = 오늘(KST). 학생 행(학과·학번·입학유형·전과 학년/시점)을 그대로 엔진 입력으로 쓴다.
+  const regulation = await resolveRequirementsForStudent(inputFromStudentRow(student));
+  const requirementsRule = (regulation.rules || []).find((r) => r.id === 'REQUIREMENTS');
+  const capRule = (regulation.rules || []).find((r) => r.id === 'LIBERAL_ARTS_CAP');
+  const requirementRows = requirementRowsFromJudgment(requirementsRule);
+  const liberalArtsCap = liberalArtsCapForDiagnosis(capRule);
 
   // min_course_count가 있는 행은 졸업논문/졸업인증제처럼 "학점"이 아닌 "과목 이름 매칭"으로
   // 충족 여부를 판정하는 P/F 요건이라 학점 합산 로직에서 분리한다.
@@ -218,13 +144,13 @@ async function getGraduationStatus(studentId) {
   let generalElectiveOverflow = earnedByCategory['일반선택'] || 0;
   const categories = [];
 
-  // 교양필수+교양선택은 합산해서 52학점 상한을 적용한 뒤 총계에 한 번만 반영한다.
+  // 교양필수+교양선택은 합산해서 인정 상한(liberalArtsCap, 보통 52학점)을 적용한 뒤 총계에 한 번만 반영한다.
   // 카테고리별 표시(categories 배열)에는 상한 적용 전 원본 학점을 그대로 내려줘서
   // 화면에서 "실제로 몇 학점 들었는지"는 정확히 보이게 하고, 총계만 학칙대로 계산한다.
   const liberalArtsRows = creditRows.filter((r) => r.category === '교양필수' || r.category === '교양선택');
   const liberalArtsRaw = liberalArtsRows.reduce((sum, r) => sum + (earnedByCategory[r.category] || 0), 0);
   const liberalArtsRequired = liberalArtsRows.reduce((sum, r) => sum + Number(r.required_credits), 0);
-  const liberalArtsCredited = Math.min(liberalArtsRaw, LIBERAL_ARTS_CREDIT_CAP);
+  const liberalArtsCredited = liberalArtsCap == null ? liberalArtsRaw : Math.min(liberalArtsRaw, liberalArtsCap);
 
   totalRequiredCredits += liberalArtsRequired;
   totalEarnedCredits += Math.min(liberalArtsCredited, liberalArtsRequired);
@@ -234,7 +160,7 @@ async function getGraduationStatus(studentId) {
       category: row.category,
       requiredCredits: Number(row.required_credits),
       earnedCredits: earnedByCategory[row.category] || 0,
-      requiredCourses: await fetchRequiredCourseNames(row.id),
+      requiredCourses: row.requiredCourses,
     });
   }
 
@@ -267,7 +193,7 @@ async function getGraduationStatus(studentId) {
         category: row.category,
         requiredCredits: Number(row.required_credits),
         earnedCredits: getMajorRowEarnedRaw(row),
-        requiredCourses: await fetchRequiredCourseNames(row.id),
+        requiredCourses: row.requiredCourses,
       });
     }
   }
@@ -286,7 +212,7 @@ async function getGraduationStatus(studentId) {
       category: row.category,
       requiredCredits: required,
       earnedCredits: earnedRaw,
-      requiredCourses: await fetchRequiredCourseNames(row.id),
+      requiredCourses: row.requiredCourses,
     });
   }
 
@@ -300,13 +226,13 @@ async function getGraduationStatus(studentId) {
       category: '일반선택',
       requiredCredits: required,
       earnedCredits: credited,
-      requiredCourses: await fetchRequiredCourseNames(generalElectiveRow.id),
+      requiredCourses: generalElectiveRow.requiredCourses,
     });
   }
 
   const certifications = [];
   for (const row of certificationRows) {
-    const requiredCourses = await fetchRequiredCourseNames(row.id);
+    const { requiredCourses } = row;
     const matched = await fetchMatchedCourseNames(studentId, requiredCourses, {
       requirePass: row.category === '졸업논문',
     });
@@ -318,7 +244,21 @@ async function getGraduationStatus(studentId) {
     });
   }
 
-  return { totalRequiredCredits, totalEarnedCredits, categories, certifications };
+  // regulation: 이 진단의 근거 신뢰도와 사유(엔진 플래그). 화면·챗봇이 "확정/추정/자료없음"을 표시하는 데 쓴다.
+  // 기존 필드(totalRequiredCredits/totalEarnedCredits/categories/certifications)는 모양이 그대로라 기존 화면은 영향이 없다.
+  return {
+    totalRequiredCredits,
+    totalEarnedCredits,
+    categories,
+    certifications,
+    regulation: {
+      confidence: regulation.confidence,
+      confidenceLabel: regulation.confidenceLabel,
+      flags: (regulation.flags || []).map((f) => ({ code: f.code, level: f.level, message: f.message })),
+      liberalArtsCap: { applied: liberalArtsCap, engineValue: capRule && capRule.value ? capRule.value.cap : null },
+      totalDefinitive: !(regulation.flags || []).some((f) => f.code === 'TRANSFER_TOTAL_UNRESOLVED'),
+    },
+  };
 }
 
 module.exports = { getGraduationStatus };

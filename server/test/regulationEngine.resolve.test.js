@@ -303,3 +303,10 @@ test('dataQuality 등급표가 DATA_AUDIT.md §4 표와 같다(문서와 코드�
     assert.equal(dq.DATA_GRADES.RAG[year], gradeIn(cells[4]), `${year} RAG`);
   }
 });
+
+test('적용범위 행이 하나도 없으면(운영 DB 미시딩 등) "해당 없음"이 아니라 자료없음(R-16 가드)', () => {
+  const res = resolveApplicableRules(input(), base({ rules: [] }));
+  assert.deepEqual(res.rules, []);
+  assert.ok(res.flags.some((f) => f.code === 'APPLICABILITY_DATA_MISSING'));
+  assert.equal(res.confidence, 'NO_DATA');
+});

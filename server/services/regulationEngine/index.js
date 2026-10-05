@@ -49,4 +49,19 @@ async function resolveApplicableRulesForStudent(rawInput, opts = {}) {
   return resolveApplicableRules(rawInput, await loadData(ctx), { today: opts.today });
 }
 
-module.exports = { resolveRegulation, resolveApplicableRulesForStudent, inputFromStudentRow, todayKst, CONFIDENCE };
+/**
+ * 파트 3: 졸업진단(graduationService)용 — 졸업요건 값(파트 1 evaluate) + 데이터 검수 등급(칸별 신뢰도)만.
+ * 졸업진단은 화면 진입·챗봇 질문마다 불리므로, 과목 변경 이력·적용범위 조회(resolveApplicableRulesForStudent)는 하지 않는다.
+ * 예외 대신 결과 객체(입력 오류 = NO_DATA)를 돌려주는 건 resolveRegulation과 같다.
+ */
+async function resolveRequirementsForStudent(rawInput, opts = {}) {
+  const { annotateRequirements } = require('./applicability');
+  const { ctx, errors } = normalizeInput(rawInput, { today: opts.today });
+  if (!ctx) return invalidResult(errors);
+  const loadData = opts.loadData || ((c) => require('./dbProvider').loadData(c, { withHistory: false }));
+  const data = await loadData(ctx);
+  const annotated = annotateRequirements(ctx, evaluate(ctx, data), data.department ? data.department.name : null);
+  return { ...annotated, department: data.department || null, confidenceLabel: CONFIDENCE_LABEL_KO[annotated.confidence] };
+}
+
+module.exports = { resolveRegulation, resolveApplicableRulesForStudent, resolveRequirementsForStudent, inputFromStudentRow, todayKst, CONFIDENCE };

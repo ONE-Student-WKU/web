@@ -93,3 +93,18 @@ curriculum_changes · department_lineage · curriculum_requirements ────
 **두 개의 "연도 범위"를 섞지 않는다**(D-25): `curriculum_requirements`의 학번 범위는 "그 학번 책자에 적힌 값"(스냅샷, 제5조), `regulation_applicability.scope`는 "개정이 이미 입학한 학생에게도 미치나"(소급·경과조치, 제13조).
 
 **신뢰도 4단계**: 확정 < 추정 < 자료 불충분(확인 필요) < 자료없음. 검수 등급 C 구간의 판단은 자료 불충분, 그 구간에서 변경이 안 보이는 것은 "기록 없음(검증 안 됨)"(D-27). 조문 판본은 조문별 개정 표시로 판단한다 — 기준일 뒤에 개정 표시가 없는 조문은 기준일 당시에도 같은 문구(D-28).
+
+## 7. 파트 3 추가: 소비자 연결
+
+```
+질문 ─ yearContext(학번·학년도·기준일) ─┬─ regulationContextService.lookupRegulationJudgment   ← RAG보다 먼저
+                                         │     resolveApplicableRulesForStudent(요건 포함) → 판단 청크 + 조문 원문 청크
+                                         ├─ RAG 검색 + 구조화 조회(assembleStructuredChunks)
+                                         └─ mergeChunks: ① 판단 ② 구조화 ③ 직전 턴 ④ RAG(같은 조문 원문 제외)
+                                               → aiClient: 근거 우선순위 + 신뢰도별 답변 지침
+
+졸업진단 graduationService ─ resolveRequirementsForStudent(evaluate + 데이터 등급) → 요건 행·교양 상한 → 이수 현황 + regulation
+```
+
+- 판단은 코드가, 설명은 모델이: 모델은 "이 조문이 이 학생에게 적용되나"를 추측하지 않고, 엔진이 정한 결과·신뢰도를 설명한다.
+- 신뢰도 문구는 청크 본문에 들어간다 → AI 없이 테스트 가능(평가 세트, EVAL_SET.md).

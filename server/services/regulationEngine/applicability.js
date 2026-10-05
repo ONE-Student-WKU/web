@@ -461,6 +461,9 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
   const lastYear = latest == null ? asOfYear : Math.min(asOfYear, latest);
 
   const topFlags = [...checkEligibility(ctx)];
+  // 적용범위 행이 하나도 없으면(운영 DB에 seed:regulation-articles를 안 돌린 경우 등) rules가 빈 배열이 되는데,
+  // 그대로 두면 "적용되는 경과조치 없음"처럼 보인다. 판단을 못 한 것이므로 자료없음으로 올린다(RISKS R-16).
+  if ((d.rules || []).length === 0) topFlags.push(makeFlag('APPLICABILITY_DATA_MISSING'));
   if (!department) topFlags.push(makeFlag('DEPARTMENT_NOT_FOUND'));
   else if (latest != null && ctx.admissionYear > latest) topFlags.push(makeFlag('COHORT_BEYOND_LATEST_DATA', { latestDataYear: latest }));
 
@@ -515,4 +518,4 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
   };
 }
 
-module.exports = { resolveApplicableRules, categoryAtRegistration, HANDLERS, nature, parseExistenceValue };
+module.exports = { resolveApplicableRules, annotateRequirements, categoryAtRegistration, HANDLERS, nature, parseExistenceValue };

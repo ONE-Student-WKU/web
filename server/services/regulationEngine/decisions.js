@@ -103,7 +103,7 @@ function decideMajorRelaxation(ctx) {
   return { mode: 'RELAXED', relaxedRows: true, overrideMajorCredits: null, flags, basis, transferGrade: grade };
 }
 
-/** 학기 (year, semester)가 컷오프(2022-2) "이전"인가. 2022-2학기 자체는 이전이 아니다(graduationService와 같은 경계). */
+/** 학기 (year, semester)가 컷오프(2022-2) "이전"인가. 2022-2학기 자체는 이전이 아니다(파트 3 이전 graduationService와 같은 경계). */
 function isBeforeLiberalArtsCutoff({ year, semester }) {
   if (year !== LIBERAL_ARTS_CUTOFF.year) return year < LIBERAL_ARTS_CUTOFF.year;
   return semester < LIBERAL_ARTS_CUTOFF.semester;
@@ -168,7 +168,7 @@ function decideLiberalArtsBasis(ctx, triggerOverride) {
 
 /**
  * 교양 인정 상한. 책자는 학번으로 갈라 "2021학번까지 제한 없음, 2022학번부터 52학점"이라 하고, 시행규칙 제10조①은
- * 학번 구분 없이 52학점 초과분 불인정이라 한다(현재 graduationService는 전 학번에 52를 적용). 두 근거가 어긋나는
+ * 학번 구분 없이 52학점 초과분 불인정이라 한다(졸업진단은 둘 중 엄격한 52를 적용 — D-32). 두 근거가 어긋나는
  * 2021학번 이하는 보수적으로 "추정"으로 두고, 시행규칙 문언대로의 값(52)을 alternatives에 함께 낸다.
  */
 function decideLiberalArtsCap(ctx) {
