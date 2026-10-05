@@ -38534,16 +38534,6 @@
       "categoryRaw": "선전",
       "category": "전공선택",
       "courseCode": "377025",
-      "courseName": "Reverse Capstone3 (택1)",
-      "credits": "3",
-      "courseNameEn": null
-    },
-    {
-      "grade": "3",
-      "semester": "2",
-      "categoryRaw": "선전",
-      "category": "전공선택",
-      "courseCode": "369308",
       "courseName": "제어시스템설계",
       "credits": "3",
       "courseNameEn": null
@@ -38553,7 +38543,7 @@
       "semester": "2",
       "categoryRaw": "선전",
       "category": "전공선택",
-      "courseCode": "369309",
+      "courseCode": "369308",
       "courseName": "유체에너지시스템응용설계",
       "credits": "3",
       "courseNameEn": null
@@ -38563,8 +38553,18 @@
       "semester": "2",
       "categoryRaw": "선전",
       "category": "전공선택",
+      "courseCode": "369309",
+      "courseName": "유한요소해석및실습",
+      "credits": "3",
+      "courseNameEn": null
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
       "courseCode": "369305",
-      "courseName": "유한요소해석및실습열전달",
+      "courseName": "열전달",
       "credits": "3",
       "courseNameEn": null
     },
