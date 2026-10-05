@@ -1,8 +1,39 @@
 # HANDOFF — 다음 파트가 알아야 할 것
 
-마지막 갱신: **Part 1 종료 (2026-10-05)** · 브랜치 `feature/regulation-engine-core` (develop 기준, PR 미머지) · 이전 파트 없음(Part 1이 첫 파트)
+마지막 갱신: **데이터 검수 세션 종료 (2026-10-05)** · 이전: Part 1(엔진 코어) 종료 · 브랜치 `feature/regulation-engine-core` (develop 기준, PR 미머지) · 이전 파트 없음(Part 1이 첫 파트)
 
 > 다음 파트는 **이 브랜치 위에서** 이어서 작업한다(Part 1 PR이 develop에 머지되기 전이라면). 먼저 [DESIGN.md](DESIGN.md) → [DECISIONS.md](DECISIONS.md) → [RULE_AUDIT.md](RULE_AUDIT.md) 순으로 읽을 것.
+
+## 0. 최신 갱신 (2026-10-05, 데이터 검수 세션) — 먼저 읽을 것
+
+**번호 체계 주의**: 이 문서의 아래 1~6절은 이전 세션(= "엔진 코어 파트")이 쓴 것이고, 이번 세션은 다른 지침("파트 1/3: 현황 확인·리스크 레지스터·교육과정 데이터 검수")을 받았다. 두 세션 모두 같은 브랜치/PR(#273)에 쌓였다가 이후 세 PR로 분리됐다(DECISIONS D-16). **엔진 코드는 이번에 바꾸지 않았다.**
+
+이번 세션 산출물: [ANALYSIS](ANALYSIS.md)(현황 재확인·정정) · [RISKS](RISKS.md)(리스크 15개) · [DATA_AUDIT](DATA_AUDIT.md)(연도별 검수 현황·오류 건수·신뢰도 등급·문의 목록) · `scripts/audit/`(재실행 가능한 검수 도구 + `data/summary2018·2020.json`) · 데이터 정정 8행(커밋 `ac3e86d`, `bb0108c`) · `server/test/auditTools.test.js`.
+
+### 파트 2·3 권고안 (순서와 범위)
+
+순서 원칙: **데이터 신뢰 → 엔진 연결 → 소비자(챗봇·화면) 교체 → UX**. 앞 단계가 안 끝나면 뒤 단계가 틀린 숫자를 더 그럴듯하게 만든다(RISKS R-05).
+
+**파트 2 — 판단 함수를 실제 경로에 연결 (코드)**
+1. **선결 결정(사용자)**: ① 교양 52학점 상한을 2021학번 이하에 적용할지(RULE_AUDIT B-2·D-09), ② 편입생 총 요구학점을 `null`로 둘지(B-3), ③ 자료 없는 학번 처리(B-4), ④ 2024 사범대 자유선택 32/34(DATA_AUDIT N-6). 이 숫자들이 바뀌면 학생에게 보이는 졸업진단이 바뀐다.
+2. **데이터 신뢰도 등급을 엔진 입력으로**: DATA_AUDIT §4 표를 `server/services/regulationEngine/dataGrades.js` 상수로 옮기고, C 등급 연도·영역(전공과목 2017·2018·2020, 컴소공 2017~2022)에서는 과목 단위 판단 플래그를 `ESTIMATED`로 낮춘다. 졸업요건 총괄표 수치는 A지만 **교양 분할·졸업논문/인증제 행·requiredCourses는 검증 안 됨** — 이 값에는 A를 주지 말 것.
+3. **`graduationService`를 엔진으로 교체**(본 문서 §3 항목 1). 패리티 테스트를 안전망으로 쓰고, 교체 PR에서 "의도된 차이" 테스트를 새 동작 기준으로 갱신.
+4. **`curriculumContextService.js:187`의 고정 문구 정정**(ANALYSIS §1 #3): "이 학번에는 적용되지 않는다"를 조건부로(시행규칙 제13조 근거) 바꾸고, 변경 이력 청크를 엔진 결과(`CURRICULUM_REVISIONS`)로 생성.
+5. API: `GET /api/me/regulation?asOf=` (본 문서 §3 항목 2).
+
+**파트 3 — 소비자와 UX, 남은 데이터**
+1. 챗봇: 엔진 결과를 1순위 근거로, RAG 학칙 조문은 인용용으로(RISKS R-06). 신뢰도가 `ESTIMATED/NO_DATA`면 단정 금지 지시 + 응답 후처리 가드(R-05).
+2. 화면: 신뢰도 배지·사유(flags)·대안 해석(alternatives).
+3. 온보딩 보강: 편입 학년, 소속변경 여부, 전과 시점 필수화(스키마 변경 → `check-schema-idempotent`).
+4. 데이터 후속: **컴소공 전공과목 학년도별 분리**(RISKS R-13, #272 선례), 2020 미확인 후보 13건 이미지 확인(DATA_AUDIT §6), N-1·N-2 보충, 규정 판본 구조(학교에서 2025-08-29자 학칙·구판본을 받으면 `regulation_versions` 설계).
+
+**PR 구성(분리 완료)**: 세 PR로 나눴다 — **A 엔진**(`feature/regulation-engine-engine`: 테스트 기준선 복구 + 엔진 코어 + 설계·결정·감사 문서, base develop), **B 검수 도구·문서**(`feature/regulation-engine-audit-tools`: `scripts/audit`, ANALYSIS·RISKS·DATA_AUDIT, 도구 테스트; A 위에 쌓은 스택 PR이라 **A가 머지되면 base를 develop으로 바꾼다**), **C 데이터 정정**(`feature/regulation-engine-data-fix`: 2020·2021 JSON 8행, base develop, 독립). 이전 단일 PR #273은 이 셋으로 대체되어 닫았다. **C는 `db/curriculum/**` 변경이라 main 승격 시 재시딩 워크플로 트리거 대상**이므로 승격 시점을 따로 정할 것(RISKS R-04). 되돌리기는 PR 단위 revert.
+
+**로컬 환경 갱신(다른 PC/CI)**: 2020·2021 JSON이 바뀌었으므로 `npm run seed:curriculum-2020 --workspace=server`, `…-2021`, `generate:curriculum-changes`를 다시 실행해야 `scripts/audit/dbVsJson.js`가 일치로 나온다.
+
+**사용자가 확인해야 할 외부 정보**: DATA_AUDIT §8(교육과정 원본 데이터 제공 가능 여부 포함) + RULE_AUDIT D절 7개.
+
+---
 
 ## 1. Part 1에서 끝난 것
 
