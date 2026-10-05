@@ -56,8 +56,8 @@ const studentRow = (s) => ({
   major_change_semester: s.input.majorChange ? s.input.majorChange.semester : null,
 });
 
-test('평가 세트 구성: 20~30개, 판단 보류(#260)·C등급 구간·자료 없음 포함, EVAL_SET.md에 전부 기록', () => {
-  assert.ok(SCENARIOS.length >= 20 && SCENARIOS.length <= 30, `${SCENARIOS.length}개`);
+test('평가 세트 구성: 20~35개, 판단 보류(#260)·C등급 구간·자료 없음 포함, EVAL_SET.md에 전부 기록', () => {
+  assert.ok(SCENARIOS.length >= 20 && SCENARIOS.length <= 35, `${SCENARIOS.length}개`);
   assert.equal(new Set(SCENARIOS.map((s) => s.id)).size, SCENARIOS.length, 'id 중복');
   assert.ok(SCENARIOS.filter((s) => (s.expected.flags || []).includes('DATA_PENDING_HOLD')).length >= 8, '판단 보류 시나리오');
   assert.ok(SCENARIOS.filter((s) => s.expected.confidence === 'INSUFFICIENT').length >= 4, 'C등급(자료 불충분) 시나리오');
@@ -134,6 +134,7 @@ for (const s of SCENARIOS) {
       if (g.total !== undefined) assert.equal(status.totalRequiredCredits, g.total, `${s.id}: 총 요구학점`);
       if (g.confidence) assert.equal(status.regulation.confidence, g.confidence, `${s.id}: 진단 신뢰도 (${status.regulation.flags.map((f) => f.code).join(',')})`);
       if (g.holdFlag) assert.ok(status.regulation.flags.some((f) => f.code === 'DATA_PENDING_HOLD'), `${s.id}: 판단 보류 플래그`);
+      if (g.schedule4) assert.deepEqual([status.regulation.schedule4.schedule4Credits, status.regulation.schedule4.bookCredits], g.schedule4, `${s.id}: [별표 4] 대조`);
       if (g.totalDefinitive !== undefined) assert.equal(status.regulation.totalDefinitive, g.totalDefinitive);
       if (g.liberalCapApplied !== undefined) assert.equal(status.regulation.liberalArtsCap.applied, g.liberalCapApplied);
       if (status.regulation.confidence !== 'CONFIRMED') {

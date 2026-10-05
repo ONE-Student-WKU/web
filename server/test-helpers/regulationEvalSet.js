@@ -206,6 +206,29 @@ const SCENARIOS = [
     why: '부칙(2026.02.05.) 제2조: 2026.3.1. 입학생부터 — 2024학번의 이 학과 전과 기록은 입력 오류이거나 다른 경로(학교 확인)',
   },
 
+  // --- 학칙 [별표 4] 졸업학점 ↔ 책자 불일치(보정 라운드 A, D-34) — 숫자는 그대로, 신뢰도만 추정 + 두 값 표시 ---
+  {
+    id: 'E31', title: '간호학과 2023학번 — 학칙 [별표 4] ③은 130학점, 책자는 140학점',
+    input: { department: '간호학과', admissionYear: 2023, enrollmentType: 'GENERAL' },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['SCHEDULE4_CREDIT_MISMATCH'], rules: { ACAD_SCHED4_3_2013_2024: 'APPLIES' }, ruleFlags: { ACAD_SCHED4_3_2013_2024: ['SCHEDULE4_CREDIT_MISMATCH'] } },
+    question: '졸업하려면 몇 학점이야?', graduation: { total: 140, confidence: 'ESTIMATED', schedule4: [130, 140] },
+    why: 'FINAL_REVIEW F-1: 원본 HWPX [별표 4] ③ 130학점 칸에 간호학과, 책자 총괄표 140. 어느 쪽이 맞는지는 학교 확인(숫자는 바꾸지 않음)',
+  },
+  {
+    id: 'E32', title: '작업치료학과 2022학번 — [별표 4] ③ 130 vs 책자 140',
+    input: { department: '작업치료학과', admissionYear: 2022, enrollmentType: 'GENERAL' },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['SCHEDULE4_CREDIT_MISMATCH'] },
+    graduation: { total: 140, confidence: 'ESTIMATED', schedule4: [130, 140] },
+    why: '[별표 4] ③ 130학점 칸에 작업치료학과(2017~2024학번 책자는 140). 2025학번부터는 책자도 130으로 일치',
+  },
+  {
+    id: 'E33', title: '약학과 2022학번 — [별표 4] ③ 232(6년제) vs 책자 240',
+    input: { department: '약학과', admissionYear: 2022, enrollmentType: 'GENERAL' },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['SCHEDULE4_CREDIT_MISMATCH'] },
+    question: '약학과 졸업학점 몇이야?', graduation: { total: 240, confidence: 'ESTIMATED', schedule4: [232, 240] },
+    why: '[별표 4] ③ 약학과(6년제) 232학점, 2022 책자 240(2023학번부터 232로 일치)',
+  },
+
   // --- 자료 없음 ---
   {
     id: 'E27', title: '공학3계열 2027학번 — 최신 자료(2026) 이후 학번',
