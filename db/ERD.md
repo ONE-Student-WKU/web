@@ -94,6 +94,7 @@ erDiagram
         string condition_code
         json condition_params
         enum confidence
+        bool critical "0이면 전체 신뢰도에서 제외"
     }
 
     regulation_relations {

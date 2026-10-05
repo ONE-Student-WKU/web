@@ -624,6 +624,9 @@ CREATE TABLE IF NOT EXISTS regulation_applicability (
   condition_params   JSON,
   effect             VARCHAR(255) NOT NULL,  -- 사람이 읽는 효과 요약(원문 인용이 아니라 요약)
   confidence         ENUM('CONFIRMED', 'ESTIMATED', 'UNKNOWN') NOT NULL,
+  -- 0이면 결과에 보여주되 전체 신뢰도 계산에서 뺀다(예: 원문을 보유하지 않은 종전 부칙 — 모든 2025학번 이전을
+  -- "자료없음"으로 만들지 않고, 학번별 값은 책자 행으로 판단했다는 안내만 남기기 위함).
+  critical           TINYINT(1) NOT NULL DEFAULT 1,
   note               VARCHAR(255),
 
   FOREIGN KEY (article_id) REFERENCES regulation_articles(id) ON DELETE SET NULL,

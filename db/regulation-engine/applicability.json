@@ -1,0 +1,258 @@
+{
+  "_comment": [
+    "규정 판단 엔진의 적용범위·관계 원천 데이터(사람이 원문을 읽고 작성, source=MANUAL). 시드: npm run seed:regulation-articles --workspace server.",
+    "모든 rules[].quote / relations[].quote는 해당 조문 본문에 실제로 있는 문장이어야 한다 — regulationEngine.articles.test.js가 원문 파서 결과에서 찾는다.",
+    "effect는 원문 인용이 아니라 요약이다. 원문에 없는 해석은 confidence=ESTIMATED + note에 가정으로 적는다.",
+    "이 디렉터리는 db-reseed 워크플로 경로 필터(db/regulations/**, db/curriculum/**, db/seed/*.json 일부) 밖이라 수정해도 운영 재시딩을 트리거하지 않는다(DECISIONS D-24)."
+  ],
+  "documents": [
+    { "docCode": "ACADEMIC_REGULATIONS", "title": "원광대학교 학칙", "file": "db/regulations/_source/원광대학교_학칙_전문.txt" },
+    { "docCode": "ENFORCEMENT_RULES", "title": "원광대학교 학칙시행규칙", "file": "db/regulations/_source/원광대학교_학칙시행규칙_전문.txt" },
+    { "docCode": "CLASS_MANAGEMENT", "title": "원광대학교 수업관리규정", "file": "db/regulations/_source/원광대학교_수업관리규정_전문.txt" }
+  ],
+  "knownVersions": [
+    {
+      "docCode": "ACADEMIC_REGULATIONS",
+      "versionLabel": "2025.08.29.",
+      "promulgatedOn": "2025-08-29",
+      "effectiveFrom": null,
+      "dateConfidence": "UNKNOWN",
+      "quoteArticle": "부칙(2026.02.05.)제3조",
+      "quote": "종전 2025년 8월 29일자 학칙의 부칙에 정한 경과조치를 적용한다",
+      "note": "학칙 부칙(2026.02.05.) 제3조가 가리키는 종전 학칙. 본문·시행일 미보유, 2026.02.05. 전부개정 직전 판본인지 미확인"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "ENF5_CURRICULUM_AT_ADMISSION",
+      "articleRef": "ENFORCEMENT_RULES:제5조",
+      "paragraph": null,
+      "quote": "교육과정은 입학 당시의 기준에 따라 이수하되 재학 중 교육과정이 개편된 경우",
+      "scope": "COHORT_ONLY",
+      "conditionCode": "CURRICULUM_SNAPSHOT_AT_ADMISSION",
+      "effect": "교육과정은 입학 당시(입학 학번 책자)의 기준으로 이수한다. 재학 중 개편되면 제2절(제13조~제16조) 경과조치를 따른다",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ENF13_1_NEW_CURRICULUM_ALL_GRADES",
+      "articleRef": "ENFORCEMENT_RULES:제13조",
+      "paragraph": "①",
+      "quote": "개편된 신 교육과정은 개정 공포일로부터 전 학년에 적용 및 시행한다",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "CURRICULUM_REVISED_AFTER_ADMISSION",
+      "effect": "입학 후 교육과정이 개편되면 개편된 신 교육과정이 재학생 전 학년에 적용된다(과목 단위 예외는 ②~④)",
+      "confidence": "CONFIRMED",
+      "note": "교육과정 개편의 '공포일'은 보유하지 않아 해당 학년도 책자의 학년도 시작일(3월 1일)로 가정한다(플래그 CURRICULUM_PROMULGATION_DATE_ASSUMED)"
+    },
+    {
+      "ruleCode": "ENF13_2_REQUIRED_TO_ELECTIVE_OR_ABOLISHED",
+      "articleRef": "ENFORCEMENT_RULES:제13조",
+      "paragraph": "②",
+      "quote": "필수과목이 선택과목으로 변경되었거나 폐설된 경우 이수하지 않아도 된다",
+      "scope": "TRANSITIONAL",
+      "conditionCode": "REQUIRED_BECAME_ELECTIVE_OR_ABOLISHED",
+      "effect": "입학 당시 필수였던 과목이 선택으로 바뀌었거나 폐설되면 이수하지 않아도 된다",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE",
+      "articleRef": "ENFORCEMENT_RULES:제13조",
+      "paragraph": "③",
+      "quote": "선택과목이 필수과목으로 변경되었을 때, 재학 중인 학년보다 저학년에 개설된 경우 이수하지 않아도 된다",
+      "scope": "TRANSITIONAL",
+      "conditionCode": "ELECTIVE_BECAME_REQUIRED",
+      "conditionParams": { "defaultGradeBasis": "AT_REVISION", "alternativeGradeBasis": "AT_AS_OF" },
+      "effect": "선택과목이 필수로 바뀌었을 때, 그 과목이 학생의 재학 학년보다 낮은 학년에 개설돼 있으면 이수하지 않아도 된다(같거나 높은 학년이면 이수해야 한다)",
+      "confidence": "ESTIMATED",
+      "note": "'재학 중인 학년'을 개편 시점의 학년(기본)으로 볼지 기준일의 학년으로 볼지 원문에 없다 — 두 해석을 모두 계산하고 결과가 갈리면 대안으로 표시. 학년은 입학년도로 계산(휴학·유급 미반영)"
+    },
+    {
+      "ruleCode": "ENF13_4_CATEGORY_AT_REGISTRATION",
+      "articleRef": "ENFORCEMENT_RULES:제13조",
+      "paragraph": "④",
+      "quote": "교과목의 이수구분이 변경된 경우, 수강신청한 학년도 및 학기의 이수구분에 따른다",
+      "scope": "TRANSITIONAL",
+      "conditionCode": "CATEGORY_CHANGED",
+      "effect": "이수구분이 바뀐 과목은 그 과목을 수강신청한 학년도·학기의 이수구분으로 인정된다",
+      "confidence": "CONFIRMED",
+      "note": "'수강 학년도의 이수구분'을 그 학년도 책자(그 학년도 입학생 교육과정)의 이수구분으로 본다 — 제13조①(신 교육과정 전 학년 적용)에 따른 해석, 플래그 CATEGORY_YEAR_BOOK_ASSUMED"
+    },
+    {
+      "ruleCode": "ENF14_1_REORG_EQUIVALENT_COURSES",
+      "articleRef": "ENFORCEMENT_RULES:제14조",
+      "paragraph": "①",
+      "quote": "입학 당시의 학과(부)가 분리되거나 통합된 경우, 제15조에 따른 동일과목을 이수할 시 전공 이수학점으로 인정할 수 있다",
+      "scope": "TRANSITIONAL",
+      "conditionCode": "DEPARTMENT_REORGANIZED",
+      "effect": "입학 당시 학과가 분리·통합되면 동일과목(제15조) 이수를 전공 이수학점으로 인정할 수 있다(재량 — '할 수 있다')",
+      "confidence": "ESTIMATED",
+      "note": "'인정할 수 있다'는 재량 규정이라 실제 인정 여부는 학과 결정 — 확정할 수 없다"
+    },
+    {
+      "ruleCode": "ENF14_2_REORG_KEEP_OLD_CURRICULUM",
+      "articleRef": "ENFORCEMENT_RULES:제14조",
+      "paragraph": "②",
+      "quote": "학사과정은 4년 이내, 전문학사과정은 2년 이내의 기간 동안 기존의 교육과정을 편성할 수 있다",
+      "scope": "TRANSITIONAL",
+      "conditionCode": "DEPARTMENT_REORGANIZED",
+      "effect": "학제 개편 시 학사과정은 4년 이내 기존 교육과정을 편성할 수 있다(재량)",
+      "confidence": "ESTIMATED",
+      "note": "기존 교육과정을 실제로 몇 년 유지했는지는 학과별 운영 자료가 없어 알 수 없다"
+    },
+    {
+      "ruleCode": "ENF15_EQUIVALENT_COURSE_DESIGNATION",
+      "articleRef": "ENFORCEMENT_RULES:제15조",
+      "paragraph": null,
+      "quote": "특정 교과목을 동일과목으로 지정 또는 변경할 수 있다",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "EQUIVALENCE_DESIGNATED",
+      "effect": "교육과정 개편·학제개편 시 학교가 특정 교과목을 동일과목으로 지정할 수 있다",
+      "confidence": "CONFIRMED",
+      "note": "동일과목 지정 목록 자료가 없다(course_equivalences 비어 있음). course_lineage의 자동 추정(학수번호 변경)은 지정이 아니므로 쓰지 않는다"
+    },
+    {
+      "ruleCode": "ENF118_GRAD_CREDITS_BY_COHORT",
+      "articleRef": "ENFORCEMENT_RULES:제118조",
+      "paragraph": "①2",
+      "quote": "학번별 경과조치는 「원광대학교 학칙」의 부칙을 따른다",
+      "scope": "COHORT_ONLY",
+      "conditionCode": "GRAD_CREDITS_SCHEDULE4",
+      "effect": "졸업 이수학점은 학칙 [별표 4]에 따르고, 학번별 경과조치는 학칙 부칙을 따른다",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ACAD_SCHED4_1_FROM_2026",
+      "articleRef": "ACADEMIC_REGULATIONS:별표4-1",
+      "paragraph": null,
+      "quote": "2026학년도 입학생 이후",
+      "scope": "COHORT_ONLY",
+      "minAdmissionYear": 2026,
+      "conditionCode": "COHORT_RANGE",
+      "effect": "졸업학점별 대학·이수학점·수료인정학점 표(2026학년도 입학생 이후)",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ACAD_SCHED4_2_2025",
+      "articleRef": "ACADEMIC_REGULATIONS:별표4-2",
+      "paragraph": null,
+      "quote": "2025학년도 입학생",
+      "scope": "COHORT_ONLY",
+      "minAdmissionYear": 2025,
+      "maxAdmissionYear": 2025,
+      "conditionCode": "COHORT_RANGE",
+      "effect": "졸업학점별 대학·이수학점·수료인정학점 표(2025학년도 입학생)",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ACAD_SCHED4_3_2013_2024",
+      "articleRef": "ACADEMIC_REGULATIONS:별표4-3",
+      "paragraph": null,
+      "quote": "2013학년도 ~ 2024학년도 입학생",
+      "scope": "COHORT_ONLY",
+      "minAdmissionYear": 2013,
+      "maxAdmissionYear": 2024,
+      "conditionCode": "COHORT_RANGE",
+      "effect": "졸업학점별 대학·이수학점·수료인정학점 표(2013~2024학년도 입학생) — 2026.04.10.·2026.06.26. 개정 표시 있음",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ACAD_SCHED4_4_UNTIL_2012",
+      "articleRef": "ACADEMIC_REGULATIONS:별표4-4",
+      "paragraph": null,
+      "quote": "~2012학년도 입학생",
+      "scope": "COHORT_ONLY",
+      "maxAdmissionYear": 2012,
+      "conditionCode": "COHORT_RANGE",
+      "effect": "졸업학점별 대학·이수학점·수료인정학점 표(~2012학년도 입학생)",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ACAD_ADD_20260410_SCHED4_BY_GRADUATION",
+      "articleRef": "ACADEMIC_REGULATIONS:부칙(2026.04.10.)제2조",
+      "paragraph": "②",
+      "quote": "이 학칙 [별표 4]의 개정사항은 2026년 8월 졸업자부터 적용한다",
+      "scope": "TRANSITIONAL",
+      "minAdmissionYear": 2013,
+      "maxAdmissionYear": 2024,
+      "appliesFrom": "2026-08-01",
+      "conditionCode": "GRADUATING_ON_OR_AFTER",
+      "conditionParams": { "graduationFrom": "2026-08", "amendedArticle": "별표4-3" },
+      "effect": "학칙 [별표 4]의 2026.04.10. 개정사항은 2026년 8월 졸업자부터 적용한다(그 전 졸업자는 개정 전 표)",
+      "confidence": "CONFIRMED",
+      "note": "개정 표시는 [별표 4] ③(2013~2024학년도 입학생 표)에만 있어 그 학번 범위로 한정했다. 개정 전 표의 값은 보유하지 않는다"
+    },
+    {
+      "ruleCode": "ACAD_ADD_20260205_PRIOR_ADDENDUM",
+      "articleRef": "ACADEMIC_REGULATIONS:부칙(2026.02.05.)제3조",
+      "paragraph": null,
+      "quote": "종전 2025년 8월 29일자 학칙의 부칙에 정한 경과조치를 적용한다",
+      "scope": "TRANSITIONAL",
+      "maxAdmissionYear": 2025,
+      "conditionCode": "PRIOR_ADDENDUM_NOT_HELD",
+      "effect": "전부개정(2026.02.05.)과 관련한 경과조치는 종전 2025.08.29.자 학칙 부칙을 따른다 — 그 부칙 원문은 보유하지 않음",
+      "confidence": "UNKNOWN",
+      "critical": false,
+      "note": "학번별 졸업학점은 해당 학년도 교육과정 책자 값을 쓴다(파트 1 엔진과 같은 판단). 종전 부칙에 다른 경과조치가 있으면 달라질 수 있다"
+    },
+    {
+      "ruleCode": "ACAD_ADD_20260410_SCHED1_FROM_2027",
+      "articleRef": "ACADEMIC_REGULATIONS:부칙(2026.04.10.)제2조",
+      "paragraph": "①",
+      "quote": "2027년 3월 1일 입학자부터 적용한다",
+      "scope": "COHORT_ONLY",
+      "minAdmissionYear": 2027,
+      "conditionCode": "COHORT_RANGE",
+      "effect": "[별표 1] 학과(부)·전공·광역계열 입학정원(2027학년도 이후) 구조는 2027년 3월 1일 입학자부터 적용한다",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "ENF_ADD_20260205_MAJOR_CHANGE_OT_EMT",
+      "articleRef": "ENFORCEMENT_RULES:부칙(2026.02.05.)제2조",
+      "paragraph": null,
+      "quote": "제109조에 따른 작업치료학과, 응급구조학과로의 전과는 2026년 3월 1일 입학생부터 적용한다",
+      "scope": "COHORT_ONLY",
+      "minAdmissionYear": 2026,
+      "enrollmentType": "MAJOR_CHANGE",
+      "conditionCode": "MAJOR_CHANGE_TARGET",
+      "conditionParams": { "departments": ["작업치료학과", "응급구조학과"] },
+      "effect": "작업치료학과·응급구조학과로의 전과(시행규칙 제109조)는 2026년 3월 1일 입학생부터 적용한다",
+      "confidence": "CONFIRMED"
+    }
+  ],
+  "relations": [
+    {
+      "from": "ENFORCEMENT_RULES:제118조",
+      "relation": "DELEGATES_TO",
+      "toRef": "ACADEMIC_REGULATIONS:부칙",
+      "quote": "학번별 경과조치는 「원광대학교 학칙」의 부칙을 따른다",
+      "note": "학번별 경과조치 → 학칙 부칙(특정 부칙 조문을 지정하지 않음)"
+    },
+    {
+      "from": "ACADEMIC_REGULATIONS:부칙(2026.02.05.)제3조",
+      "relation": "REFERS",
+      "toRef": "원광대학교 학칙 부칙(2025.08.29.) — 원문 미보유",
+      "quote": "종전 2025년 8월 29일자 학칙의 부칙에 정한 경과조치를 적용한다"
+    },
+    {
+      "from": "ACADEMIC_REGULATIONS:부칙(2026.04.10.)제2조",
+      "relation": "AMENDS",
+      "to": "ACADEMIC_REGULATIONS:별표4-3",
+      "quote": "이 학칙 [별표 4]의 개정사항은 2026년 8월 졸업자부터 적용한다",
+      "note": "부칙 문구는 [별표 4] 전체를 말하지만 2026.04.10. 개정 표시는 ③(2013~2024학년도 입학생 표)에만 있다"
+    },
+    {
+      "from": "ENFORCEMENT_RULES:제5조",
+      "relation": "DELEGATES_TO",
+      "to": "ENFORCEMENT_RULES:제13조",
+      "quote": "제2절 교육과정 개편에 따른 경과조치",
+      "note": "제5조가 가리키는 '제2절'은 제13조~제16조"
+    },
+    {
+      "from": "ENFORCEMENT_RULES:제13조",
+      "relation": "OVERRIDES",
+      "to": "ENFORCEMENT_RULES:제5조",
+      "quote": "개편된 신 교육과정은 개정 공포일로부터 전 학년에 적용 및 시행한다",
+      "note": "재학 중 개편 시 '입학 당시 기준'(제5조)보다 경과조치가 우선(제5조 단서가 스스로 위임)"
+    }
+  ]
+}
