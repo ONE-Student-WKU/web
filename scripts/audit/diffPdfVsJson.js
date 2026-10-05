@@ -177,7 +177,11 @@ function main() {
   const outIdx = args.indexOf('--out');
 
   const extracted = JSON.parse(fs.readFileSync(rowsFile, 'utf8'));
-  const pdfRows = extracted.rows.filter((r) => r.majorTable);
+  // --exclude-pages 347-348,410-411: JSON 범위 밖 학과(컴소공 md 기반 표 등)의 쪽. 비교 대상에서 뺀다.
+  const exI = args.indexOf('--exclude-pages');
+  const excluded = exI === -1 ? [] : args[exI + 1].split(',').map((r) => r.split('-').map(Number)).map(([a, b]) => [a, b ?? a]);
+  const isExcluded = (page) => excluded.some(([a, b]) => page >= a && page <= b);
+  const pdfRows = extracted.rows.filter((r) => r.majorTable && !isExcluded(r.page));
   const jsonRows = loadJsonRows(year);
   const issueIdx = args.indexOf('--issue');
   const known = issueIdx === -1 ? new Set() : knownCodesFromIssue(fs.readFileSync(args[issueIdx + 1], 'utf8'), year);
@@ -208,6 +212,28 @@ function main() {
     console.log(` ${f.type.padEnd(14)} [${f.department || ''}] ${p}  ||  ${j}`);
   }
   if (outIdx !== -1) fs.writeFileSync(args[outIdx + 1], JSON.stringify(report, null, 1));
+  const mdIdx = args.indexOf('--md');
+  if (mdIdx !== -1) fs.writeFileSync(args[mdIdx + 1], toMarkdown(year, report));
+}
+
+// 사람이 읽는 보고서. 이슈 #260에 이미 있는 항목(knownIn260)은 따로 모아 "새 발견"과 섞이지 않게 한다.
+function toMarkdown(year, r) {
+  const fmtP = (f) => (f.pdf ? `p.${f.pdf.page} ${f.pdf.grade}-${f.pdf.semester} ${f.pdf.category} ${f.pdf.code || '(없음)'} ${f.pdf.name} ${f.pdf.credits}` : '');
+  const fmtJ = (f) => (f.json ? `${f.json.department || f.department} ${f.json.grade}-${f.json.semester} ${f.json.category} ${f.json.code || '(없음)'} ${f.json.name} ${f.json.credits}` : '');
+  const row = (f) => `| ${f.type} | ${fmtP(f)} | ${fmtJ(f)} |`;
+  const head = '| 유형 | 책자(PDF 재추출) | 시드 JSON |\n|---|---|---|';
+  // 융합전공(융전/JST 마이크로디그리) 표는 연계·복합전공 안내용이라 학과 전공과목 시드 범위 밖이다.
+  const strong = r.findings.filter((f) => !f.knownIn260 && !(f.pdf && /^(융전|웅전)/.test(f.pdf.category)) && (['CREDITS', 'CATEGORY', 'NAME', 'CREDITS+NAME', 'NAME+CATEGORY', 'CODE'].some((t) => f.type.startsWith(t)) || (f.type === 'JSON_ONLY' && f.json.code && !f.codeAnywhereInPdf) || (f.type === 'PDF_ONLY' && f.pdf.code && !f.codeAnywhereInJson)));
+  const known = r.findings.filter((f) => f.knownIn260);
+  const out = [];
+  out.push(`# ${year}학년도 전공과목: 책자 PDF 재추출 ↔ JSON 자동 대조 결과`, '');
+  out.push('> `scripts/audit/extractPdfCourseRows.mjs` + `diffPdfVsJson.js`로 만든 **오류 후보** 목록이다. 확정 오류가 아니다 — PDF 추출이 표를 잘못 읽은 경우도 섞여 있다. 수정은 하지 않았고(지침 C5) PDF 쪽으로 확인된 것만 별도 커밋으로 고쳤다. 쪽수는 PDF 뷰어 쪽이다.', '');
+  out.push(`- PDF 전공표 행 ${r.pdfRows} / JSON ${r.jsonRows}행 / 완전 일치 ${r.matched} (${((r.matched / r.jsonRows) * 100).toFixed(1)}%)`);
+  out.push('- 불일치 분류: ' + JSON.stringify(r.byType));
+  out.push(`- 이슈 #260 같은 학년도 섹션에 이미 언급된 학수번호 관련 불일치: ${r.knownIn260}건(아래 "이미 알려진 항목")`, '');
+  out.push(`## 새로 확인할 후보 (${strong.length}건)`, '', head, ...strong.map(row), '');
+  out.push(`## 이슈 #260에 이미 언급된 항목 (${known.length}건)`, '', '<details><summary>펼치기</summary>', '', head, ...known.map(row), '', '</details>', '');
+  return out.join(String.fromCharCode(10));
 }
 
 if (require.main === module) main();
