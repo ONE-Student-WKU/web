@@ -6,6 +6,7 @@ const { evaluate } = require('./evaluate');
 const dq = require('./dataQuality');
 const { checkSchedule4Credits } = require('./schedule4');
 const { articleTextFlags } = require('./textVersion');
+const { buildRelationIndex, walkRelations } = require('./relationWalk');
 
 /**
  * server/services/regulationEngine/applicability.js
@@ -333,7 +334,7 @@ function worstItemFlags(items) {
   return [...codes].map((c) => makeFlag(c));
 }
 
-function buildRule(row, result, h) {
+function buildRule(row, result, h, evidence = null) {
   const flags = [...(result.flags || [])];
   if (row.confidence === 'ESTIMATED' && result.status !== 'NOT_APPLICABLE') flags.push(makeFlag('APPLICABILITY_ESTIMATED', { note: row.note }));
   if (result.status !== 'NOT_APPLICABLE') flags.push(...textFlagsForArticle(h.ctx.asOfDate, row, h.textVersions));
@@ -357,6 +358,8 @@ function buildRule(row, result, h) {
     },
     details: result.details || null,
     alternatives: result.alternatives || [],
+    // 이 조문에서 조문 관계(위임·참조·특칙·개정)를 따라간 경로 — "왜 이 조문들이 근거인가"(relationWalk.js, D-43). 관계 자료가 없으면 null.
+    evidence,
     flags: all,
   };
 }
@@ -493,7 +496,8 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
   };
 
   const sched4 = d.requirements && department ? schedule4Mismatch(ctx, deptName, d.requirements.rows) : null;
-  const rules = (d.rules || []).map((row) => {
+  // 1단계: 규칙마다 적용 여부 판단. 2단계: 적용되는 조문에서 조문 관계를 따라가 근거 경로를 붙인다(별표 하위 표 선택에 "적용되는 조문" 집합이 필요해 두 단계).
+  const judged = (d.rules || []).map((row) => {
     const handler = HANDLERS[row.conditionCode];
     if (!handler) throw new Error(`구현되지 않은 적용 조건: ${row.conditionCode} (${row.ruleCode})`);
     const since = row.article ? addendumDate(row.article.articleKey) : null;
@@ -504,8 +508,11 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
     const result = sched4 && isSchedule4Rule(row) && result0.status !== 'NOT_APPLICABLE'
       ? { ...result0, flags: [...(result0.flags || []), makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] }
       : result0;
-    return buildRule(row, result, h);
+    return { row, result };
   });
+  const relationIndex = d.relations && d.relations.length ? buildRelationIndex(d.relations) : null;
+  const appliedRefs = new Set(judged.filter((j) => j.result.status !== 'NOT_APPLICABLE').map((j) => j.row.articleRef));
+  const rules = judged.map(({ row, result }) => buildRule(row, result, h, relationIndex && result.status !== 'NOT_APPLICABLE' ? walkRelations(row.articleRef, relationIndex, { appliedRefs }) : null));
 
   let requirements = null;
   if (d.requirements) requirements = annotateRequirements(ctx, evaluate(ctx, d.requirements), deptName, d.requirements);

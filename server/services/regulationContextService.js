@@ -3,6 +3,7 @@ const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./reg
 const { resolveDepartment, schedule4Line } = require('./curriculumContextService');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 const { dbDateToIso } = require('./regulationEngine/context');
+const { summarizeEvidence, relatedArticleCandidates, refLabel } = require('./regulationEngine/relationWalk');
 
 /**
  * server/services/regulationContextService.js
@@ -29,6 +30,11 @@ const CONFIDENCE_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIEN
 const MAX_COURSE_NAMES = 5;
 const MAX_ARTICLE_CHUNKS = 4;
 const MAX_ARTICLE_CHARS = 1200;
+// 조문 관계(보정 라운드 B, D-43)로 따라간 "관련 조문" 원문 — 적용 조문 원문(최대 4개)에 더해 최대 2개, 한 개당 800자.
+// 적용 조문이 근거의 중심이라 관련 조문은 부가 근거로 작게 잡는다. 근거 경로 줄은 판단 청크 안에 최대 MAX_PATH_LINES줄.
+const MAX_RELATED_CHUNKS = 2;
+const MAX_RELATED_CHARS = 800;
+const MAX_PATH_LINES = 10;
 
 // 신뢰도별 답변 지침 — 확정이 아니면 단정 금지를 명시한다(평가 세트가 이 문구를 검사한다).
 // 전체 신뢰도는 "가장 낮은 항목" 기준이라, 지침은 항목별로 적용하게 쓴다 — 예: 과목 자료가 C등급이라 전체가 "자료 불충분"이어도
@@ -91,6 +97,17 @@ function historyLine(history) {
   return `학년도별 교육과정 변경 기록(입학 이후): ${parts.join(' / ')}`;
 }
 
+/** 조문 관계 요약 → 판단 청크에 넣을 줄(최대 MAX_PATH_LINES). 중요도 순: 특칙 → 위임·참조 경로 → 끊긴 연결 → 개정 이력. */
+function relationLines(evidence) {
+  const out = [];
+  for (const o of evidence.overrides) out.push(`- 특칙 우선: ${refLabel(o.special)}이(가) ${refLabel(o.general)}보다 우선한다(둘이 다르면 앞의 조문을 따른다).`);
+  for (const p of evidence.paths) for (const s of p.steps) out.push(`- ${p.rootLabel} → ${s.text}`);
+  for (const b of evidence.broken) out.push(`- 끊긴 연결: ${b.rootLabel}이(가) 가리키는 "${b.toText}"은(는) 원문을 보유하지 않아 확인하지 못했다(추정으로만 말할 것).`);
+  const am = evidence.amendments;
+  if (am.length) out.push(`- 개정 이력: ${am.map((a) => `${a.targetLabel} ← ${a.label}${a.date ? `(${a.date})` : ''}`).join(', ')}`);
+  return out.slice(0, MAX_PATH_LINES);
+}
+
 /**
  * 판단 결과 → 근거 청크 [판단 요약, 근거 조문들]. articles: { 'DOC:키': { title, body, versionLabel } } (없으면 조문 청크 생략).
  * subject: { departmentName, cohort, enrollmentType, hypothetical } — hypothetical이면 질문 속 학번·학과(일반 재학생 가정).
@@ -124,6 +141,10 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
     lines.push('※ "기록 없음(검증 안 됨)"인 학년도는 변경이 없었다는 뜻이 아니다 — 그 해 자료가 검증되지 않았다. "변경 없다"고 답하지 마라.');
   }
 
+  const evidence = summarizeEvidence(judgment.rules);
+  const pathLines = relationLines(evidence);
+  if (pathLines.length) lines.push('근거 경로(조문 관계 — 어떤 조문이 어떤 관계로 어디를 가리키는지):', ...pathLines);
+
   const caveats = [...new Map((judgment.flags || []).filter((f) => f.level !== 'INFO').map((f) => [f.code, f.message])).values()];
   if (caveats.length) lines.push('확인 필요 사항:', ...caveats.slice(0, 8).map((m) => `- ${m}`));
 
@@ -147,6 +168,21 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
       articleRef: ref,
       articleKey: key,
       // RAG(seedRegulations)가 같은 원문을 넣을 때 쓰는 문서 제목 — chatContextService.mergeChunks가 중복 조문을 빼는 데 쓴다.
+      ragDocumentTitle: `원광대학교 ${DOC_LABEL[doc] || doc} 전문`,
+    });
+  }
+  // 관련 조문(특칙 상대 > 위임 > 참조) 원문. 적용 조문 청크 뒤에 붙고, RAG가 같은 조문을 가져오면 mergeChunks가 중복을 뺀다.
+  const related = relatedArticleCandidates(evidence, active.map((r) => r.basis.articleRef), MAX_RELATED_CHUNKS * 3).filter((c) => articles[c.ref]).slice(0, MAX_RELATED_CHUNKS);
+  for (const c of related) {
+    const a = articles[c.ref];
+    const [doc, key] = c.ref.split(':');
+    const body = a.body.length > MAX_RELATED_CHARS ? `${a.body.slice(0, MAX_RELATED_CHARS)}…(이하 생략)` : a.body;
+    chunks.push({
+      chunkId: `regulation-article-${c.ref}`,
+      documentTitle: `${DOC_LABEL[doc] || doc} ${key} 원문 (관련 조문: ${c.how}; 현행 ${a.versionLabel} 개정본)`,
+      content: body,
+      articleRef: c.ref,
+      articleKey: key,
       ragDocumentTitle: `원광대학교 ${DOC_LABEL[doc] || doc} 전문`,
     });
   }
@@ -207,7 +243,8 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
     // 적용범위만 보고 "확정"이 나와 챗봇이 단정한다(평가 세트 E16·E19·E29가 잡은 문제, D-33).
     const judgment = await resolveApplicableRulesForStudent(subject.input, { withRequirements: true });
     const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE').map((r) => r.basis.articleRef))];
-    const articles = await loadArticles(refs);
+    const related = relatedArticleCandidates(summarizeEvidence(judgment.rules), refs, MAX_RELATED_CHUNKS * 3).map((c) => c.ref);
+    const articles = await loadArticles([...new Set([...refs, ...related])]);
     return { judgment, subject, chunks: formatJudgmentChunks(judgment, subject, articles) };
   } catch (err) {
     console.error('[regulationContext] 규정 판단 실패:', err.message);

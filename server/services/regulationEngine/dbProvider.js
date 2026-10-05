@@ -101,6 +101,23 @@ async function loadTextVersions() {
   };
 }
 
+/**
+ * 조문 관계(regulation_relations) 전체 — 178행이라 매번 읽어도 가볍다. 조문으로 못 이은 대상(to_article_id NULL)은 to_ref 문자열만 있다.
+ * 반환 행 모양은 relationWalk.buildRelationIndex가 받는 것: { relation, fromRef, toRef|null, toText|null, source, note }.
+ */
+async function loadRelations() {
+  const [rows] = await pool.query(
+    `SELECT r.relation, r.source, r.note, r.to_ref,
+            CONCAT(fv.doc_code, ':', fa.article_key) AS from_ref, CONCAT(tv.doc_code, ':', ta.article_key) AS to_article_ref
+     FROM regulation_relations r
+     JOIN regulation_articles fa ON fa.id = r.from_article_id
+     JOIN regulation_versions fv ON fv.id = fa.version_id
+     LEFT JOIN regulation_articles ta ON ta.id = r.to_article_id
+     LEFT JOIN regulation_versions tv ON tv.id = ta.version_id`
+  );
+  return rows.map((r) => ({ relation: r.relation, fromRef: r.from_ref, toRef: r.to_article_ref || null, toText: r.to_article_ref ? null : r.to_ref, source: r.source, note: r.note }));
+}
+
 async function loadHistory(departmentId, admissionYear) {
   const history = {};
   for (const category of DERIVED_HISTORY_CODES) {
@@ -198,8 +215,8 @@ function mapChangeRow(r) {
  */
 async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   const department = await loadDepartment(ctx);
-  const [rules, latestDataYear, textVersions] = await Promise.all([loadApplicabilityRules(), loadLatestDataYear(), loadTextVersions()]);
-  if (!department) return { department: null, rules, latestDataYear, textVersions, courseChanges: [], requirementChanges: [], lineage: [], equivalences: [], categoryOverrides: [], requirements: null };
+  const [rules, latestDataYear, textVersions, relations] = await Promise.all([loadApplicabilityRules(), loadLatestDataYear(), loadTextVersions(), loadRelations()]);
+  if (!department) return { department: null, rules, latestDataYear, textVersions, relations, courseChanges: [], requirementChanges: [], lineage: [], equivalences: [], categoryOverrides: [], requirements: null };
 
   const chain = await getDepartmentChain(department.id);
   const ids = chain.departmentIds;
@@ -219,6 +236,7 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
     rules,
     latestDataYear,
     textVersions,
+    relations,
     courseChanges: await attachOfferedGrades(courseRows.map(mapChangeRow), ids),
     requirementChanges: reqRows.map(mapChangeRow),
     lineage: chain.edges,
@@ -228,4 +246,4 @@ async function loadApplicabilityData(ctx, { withRequirements = true } = {}) {
   };
 }
 
-module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear, loadTextVersions };
+module.exports = { loadData, loadRequirementRows, loadApplicabilityData, loadLatestDataYear, loadTextVersions, loadRelations };
