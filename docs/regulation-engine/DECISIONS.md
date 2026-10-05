@@ -292,3 +292,18 @@
 - **설계**: 판단 로직은 컴포넌트가 아니라 순수 함수 `describeRequirementTrust`(`utils/graduation.js`)에 둔다 — 화면 문구 규칙을 vitest로 검증하고 컴포넌트는 표시만 한다.
 - **검증 한계**: Google OAuth 로그인이 필요해 브라우저로 실제 화면을 보지 못했다. 컴포넌트 테스트(API mock 5개 + 유틸 6개), eslint, `vite build`로 대신했다. 색상·여백은 실제 화면 확인이 필요하다.
 - **되돌리는 법**: `GraduationStatus.jsx`의 `trust` 관련 4곳과 `App.css`의 `.grad-trust-*` 블록 제거(서버 응답은 그대로 호환).
+
+## D-40 [보정 A] CI에 테스트 단계 추가: 임시 MySQL 컨테이너 + 시드 + 전체 테스트 (B-29, R-12)
+- **상황**: 워크플로 3개(`db-reseed-guard`, `db-reseed`, `vercel-deploy`)에 테스트 단계가 없어 서버 테스트가 로컬에서만 돌았다. develop에서 17건이 실패하던 것도(D-14) 아무도 몰랐다.
+- **설계 비교**:
+  | 방안 | 장점 | 단점 |
+  |---|---|---|
+  | ① DB 없이 도는 순수 테스트만 CI에 연결 | 가장 단순, 시드 불필요 | 서버 테스트 266개 중 DB를 읽는 것(챗봇 근거 조립, 졸업진단, 평가 세트, 판단 DB 로더 등 핵심 회귀)이 빠진다. 이번 보정이 고친 곳이 대부분 DB 경로라 안전망이 못 된다 |
+  | ② job 안에 MySQL 서비스 컨테이너를 띄워 시드 후 전체 실행 | 로컬과 같은 전체 테스트가 돈다 | 시드가 오래 걸린다(로컬 약 4분), 규정 임베딩에 Voyage 키가 필요한 문제 |
+  채택: **② + 임베딩만 결정적 가짜로 대체**(`scripts/ci/seed-regulations-stub.js`). 서버 테스트는 임베딩·AI 호출을 mock하고 "청크가 DB에 있다"는 사실만 쓰므로(예: `chat.route.yearContext.test`) 같은 시드 스크립트를 그대로 쓰고 벡터만 바꾼다.
+- **시크릿**: 없다. DB는 job 안의 임시 컨테이너(비밀번호는 워크플로에 적힌 테스트용 값), Voyage·Anthropic·Railway·Vercel 키 미사용. 운영 DB·재시딩·배포와 무관한 **새 파일 `.github/workflows/test.yml` 하나**만 추가했다(기존 워크플로 미수정). 두 스크립트(`prepare-test-db.sh`, `seed-regulations-stub.js`) 모두 `DB_HOST`가 localhost/127.0.0.1이 아니면 실행을 거부한다.
+- **구성**: `client` job(vitest, DB 없음) / `server` job(`mysql:8.4` 서비스 → `scripts/ci/prepare-test-db.sh` → `npm test --workspace=server`). 정적 체크 2개(`check-schema-idempotent`, `check-db-reseed-paths`)는 `db-reseed-guard.yml`이 이미 돌린다.
+- **시험에서 발견한 것(전부 절차에 반영)**: ① `db/schema.sql`이 `CREATE DATABASE wku_ai_chat; USE wku_ai_chat;`를 고정해 `migrate.js`가 `DB_NAME`과 무관하게 `wku_ai_chat`에 적용된다 → 서비스 DB 이름을 `wku_ai_chat`으로 맞췄다. ② 일부 테스트(`courseService.ownership`, `pdfImportQuota`)가 `student_id=1·2` 기본 시드 학생을 전제로 한다 → `seed.js` 전체를 쓰되(가짜 계정은 이 임시 DB에만 존재) **테스트보다 먼저** 실행한다(자동 증가 ID가 1·2가 되도록). ③ `seed:reference-data`만으로는 학생이 없어 7개 테스트가 FK 오류로 실패했다.
+- **검증**: 빈 DB(`schema.sql` 사본으로 별도 DB 생성)에서 이 절차를 처음부터 실행 → 서버 테스트 **266/266 통과**(시드 약 4분). 클라이언트 vitest 25/25. **GitHub Actions 환경(ubuntu, MySQL 8.4 컨테이너, Node 22) 자체는 PR을 올려야 처음 돈다** — 로컬은 Windows(`lower_case_table_names=1`, CRLF)라 Linux에서만 드러나는 차이는 이번에 확인하지 못했다(PR 체크 결과로 확인, 보고서에 결과 기재).
+- **한계**: 가짜 임베딩이라 RAG 검색 품질·유사도 임계값 테스트는 못 한다(원래 mock 테스트뿐). 시드가 느리다(약 4분) — 캐시·부분 시드는 하지 않았다. 필수 체크(branch protection)로 지정하는 것은 저장소 설정이라 이번 범위 밖.
+- **되돌리는 법**: `.github/workflows/test.yml`과 `scripts/ci/{prepare-test-db.sh,seed-regulations-stub.js}` 삭제(다른 파일에 의존 없음).
