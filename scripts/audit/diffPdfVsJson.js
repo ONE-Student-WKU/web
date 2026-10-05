@@ -34,6 +34,15 @@ function knownCodesFromIssue(text, year) {
 }
 
 const norm = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, '');
+// 과목명 비교용 정제: 한글 과목명 뒤에 영문 과목명이 붙어 추출되는 표(영문 열이 따로 없는 공학인증 학과 표 등)에서 영문 꼬리를 뗀다.
+// 한글이 먼저 나온 뒤 영문 6자 이상이 이어지면 거기서 자른다(Java와객체지향…, 웹(HTML5)프로그래밍처럼 짧은 영문은 건드리지 않는다).
+function nameCore(raw) {
+  const s = norm(raw);
+  const m = /[가-힣].*?([A-Za-z]{6,})/.exec(s);
+  if (!m) return s;
+  const cutAt = s.indexOf(m[1], m.index);
+  return s.slice(0, cutAt).replace(/[(\[,&-]+$/, '');
+}
 const normCredit = (c) => {
   if (c == null || c === '') return '';
   const n = Number(c);
@@ -47,7 +56,7 @@ function toTuple(r) {
     semester: String(r.semester ?? ''),
     category: norm(r.categoryRaw),
     credits: normCredit(r.credits),
-    name: norm(r.courseName),
+    name: nameCore(r.courseName),
   };
 }
 const keyOf = (t) => [t.code, t.grade, t.semester, t.category, t.credits, t.name].join('|');
@@ -85,25 +94,29 @@ function diffGroup(pdfRows, jsonRows) {
   const jsonLeft = [...jsonByKey.values()].flat();
 
   // 같은 학수번호끼리 짝지어 어떤 필드가 다른지 분류한다.
+  // 학수번호가 없는 행(영역별자유선택, 2025 광역계열 표 등)끼리는 번호로 짝지을 수 없으니 과목명으로 짝짓는다.
+  const pairKey = (r) => r.code || `N:${r.name}`;
   const jsonByCode = new Map();
   for (const r of jsonLeft) {
-    if (!jsonByCode.has(r.code)) jsonByCode.set(r.code, []);
-    jsonByCode.get(r.code).push(r);
+    if (!jsonByCode.has(pairKey(r))) jsonByCode.set(pairKey(r), []);
+    jsonByCode.get(pairKey(r)).push(r);
   }
   const findings = [];
   for (const p of pdfLeft) {
-    const cands = jsonByCode.get(p.code) || [];
+    const cands = jsonByCode.get(pairKey(p)) || [];
     let idx = cands.findIndex((c) => c.grade === p.grade && c.semester === p.semester);
     if (idx === -1) idx = cands.findIndex((c) => c.name === p.name);
     if (idx === -1 && cands.length > 0) idx = 0;
     if (idx === -1) { findings.push({ type: 'PDF_ONLY', pdf: p }); continue; }
     const [j] = cands.splice(idx, 1);
     const kinds = [];
-    if (p.credits !== j.credits) kinds.push('CREDITS');
+    // PDF에서 학점을 못 읽은 행(학점이 다른 줄에 찍힌 표 등)은 추출 한계라 비교에서 뺀다.
+    if (p.credits !== '' && p.credits !== j.credits) kinds.push('CREDITS');
     if (p.name !== j.name) kinds.push('NAME');
     if (p.category !== j.category) kinds.push('CATEGORY');
     if (p.grade !== j.grade || p.semester !== j.semester) kinds.push('TERM');
-    findings.push({ type: kinds.join('+') || 'OTHER', pdf: p, json: j });
+    if (kinds.length === 0) { matched++; continue; }
+    findings.push({ type: kinds.join('+'), pdf: p, json: j });
   }
   for (const rest of jsonByCode.values()) for (const j of rest) findings.push({ type: 'JSON_ONLY', json: j });
 
