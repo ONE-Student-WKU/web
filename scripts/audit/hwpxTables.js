@@ -9,7 +9,7 @@
  *
  * 사용법:
  *   node scripts/audit/hwpxTables.js            # [별표 4] 표를 읽어 요약 출력
- *   node scripts/audit/hwpxTables.js --write    # db/regulation-engine/schedule4_credits.json 갱신
+ *   node scripts/audit/hwpxTables.js --write    # db/regulation-engine/schedule4_credits.json + schedule1_colleges.json 갱신
  */
 'use strict';
 
@@ -20,6 +20,7 @@ const zlib = require('node:zlib');
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const HWPX_PATH = path.join(REPO_ROOT, 'db', 'regulations', '_source', '원광대학교_학칙_20260626.hwpx');
 const OUT_PATH = path.join(REPO_ROOT, 'db', 'regulation-engine', 'schedule4_credits.json');
+const COLLEGES_OUT_PATH = path.join(REPO_ROOT, 'db', 'regulation-engine', 'schedule1_colleges.json');
 const SCHEDULE4_TITLE_RE = /졸업학점별 대학, 이수학점 및 수료인정학점\(([^)]*)\)/;
 
 // --- zip 읽기(중앙 디렉터리) ---------------------------------------------------
@@ -166,12 +167,76 @@ function extractSchedule4(hwpxPath = HWPX_PATH) {
   };
 }
 
+// --- [별표 1] 해석: 대학(광역계열) → 모집단위·학과 소속 ----------------------------------
+
+const cellName = (c) => c.text.join('').replace(/\s+/g, '');
+const covers = (cell, row) => cell.row <= row && row < cell.row + cell.rowSpan;
+
+/** 한 칸의 문단들 → 이름 목록. 문단마다 하나, 앞의 '-'(계열 아래 세부 전공 표시)와 공백 제거. */
+const namesOfCell = (c) => c.text.map((t) => t.replace(/^-/, '').replace(/\s+/g, '')).filter((t) => t && t !== '-');
+
+/** 열 위치(col)에 있는 칸들 중 그 행(row)을 덮는 칸. 병합 칸은 첫 행에만 적혀 있어 rowSpan으로 덮는 행을 계산한다. */
+function cellCovering(cells, col, row) {
+  return cells.find((c) => c.col === col && covers(c, row)) || null;
+}
+
+/**
+ * [별표 1](학과·전공 및 광역계열 입학정원) 표 → "대학(또는 광역계열) → 소속 학과·모집단위 이름들".
+ * 병합 칸 구조(행·열 위치와 rowSpan)로 읽는다: 대학 칸이 덮는 행 안에 있는 학과 칸이 그 대학 소속이다 — 변환 텍스트로 추측하지 않는다.
+ *  - GLOCAL(2026·2027학년도 이후 표): 대학=열 1, 모집단위=열 3~4(계열 칸이 2칸을 차지하면 열 4).
+ *  - YEARS(2025 이전 표): 2025학년도 = 대학 열 0, 학과(부)·전공 열 2 / 2024학년도 = 대학 열 4, 학과 열 6. 2023·2022학년도 칸에는 대학 열이 없어 읽지 않는다.
+ */
+function readColleges(table, spec) {
+  const cells = table.rows.flat();
+  const maxRow = Math.max(...cells.map((c) => c.row + c.rowSpan));
+  const byCollege = new Map();
+  for (let r = 2; r < maxRow; r++) {
+    const college = cellCovering(cells, spec.collegeCol, r);
+    if (!college) continue;
+    const collegeName = cellName(college);
+    if (!collegeName) continue;
+    const unitCells = cells.filter((c) => spec.unitCols.includes(c.col) && c.row === r);
+    for (const u of unitCells) {
+      const names = namesOfCell(u);
+      if (!names.length) continue;
+      if (!byCollege.has(collegeName)) byCollege.set(collegeName, new Set());
+      for (const n of names) if (n !== '소계') byCollege.get(collegeName).add(n);
+    }
+  }
+  return [...byCollege.entries()].map(([college, units]) => ({ college, units: [...units] }));
+}
+
+/** 원본 HWPX → [별표 1] 학번별 대학 소속(2027 이후·2026·2025·2024). 머리글이 기대와 다르면 던진다(조용히 잘못 읽는 것보다 낫다). */
+function extractSchedule1Colleges(hwpxPath = HWPX_PATH) {
+  const xml = readZipEntry(fs.readFileSync(hwpxPath), 'Contents/section0.xml').toString('utf8');
+  const { tables } = parseTables(xml);
+  const header = (t) => t.rows.slice(0, 2).flat().map((c) => c.text.join('')).join('|');
+  const top = tables.filter((t) => t.depth === 0 && t.rows.length > 10 && /대학/.test(header(t)) && /(입학정원)/.test(header(t)));
+  if (top.length !== 3) throw new Error(`[별표 1] 표 3개를 기대했는데 ${top.length}개예요(HWPX 구조가 바뀜?)`);
+  const [t2027, t2026, tOld] = top;
+  if (!/2027/.test(header(t2027)) || !/2026/.test(header(t2026)) || !/2025학년도/.test(header(tOld)) || !/2024학년도/.test(header(tOld))) throw new Error('[별표 1] 표 머리글의 학년도가 기대와 달라요');
+  const glocal = { collegeCol: 1, unitCols: [3, 4] };
+  const out = [
+    { cohort: { min: 2027, max: null }, source: '[별표 1] 입학정원(2027학년도 이후)', colleges: readColleges(t2027, glocal) },
+    { cohort: { min: 2026, max: 2026 }, source: '[별표 1] 입학정원(2026학년도 이후)', colleges: readColleges(t2026, glocal) },
+    { cohort: { min: 2025, max: 2025 }, source: '[별표 1] 입학정원(2025학년도 이전) 2025학년도 칸', colleges: readColleges(tOld, { collegeCol: 0, unitCols: [2] }) },
+    { cohort: { min: 2024, max: 2024 }, source: '[별표 1] 입학정원(2025학년도 이전) 2024학년도 칸', colleges: readColleges(tOld, { collegeCol: 4, unitCols: [6] }) },
+  ];
+  return {
+    source: path.relative(REPO_ROOT, hwpxPath).replace(/\\/g, '/'),
+    note: '학칙 [별표 1]에서 "대학(광역계열) 칸이 덮는 행 안의 학과·모집단위"를 병합 칸 구조로 읽어 옮김. 2023학년도 이전은 [별표 1]에 대학 열이 없어 포함하지 않는다(그 학번은 학과→대학을 알 수 없다). 이 파일은 scripts/audit/hwpxTables.js가 만든다 — 손으로 고치지 말 것.',
+    tables: out,
+  };
+}
+
 if (require.main === module) {
   const result = extractSchedule4();
   if (process.argv.includes('--write')) {
     fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
     fs.writeFileSync(OUT_PATH, `${JSON.stringify(result, null, 2)}\n`);
     console.log(`저장: ${path.relative(REPO_ROOT, OUT_PATH)}`);
+    fs.writeFileSync(COLLEGES_OUT_PATH, `${JSON.stringify(extractSchedule1Colleges(), null, 2)}\n`);
+    console.log(`저장: ${path.relative(REPO_ROOT, COLLEGES_OUT_PATH)}`);
   }
   for (const t of result.tables) {
     console.log(`\n[별표 4] ${t.title} — 학번 ${t.cohort.min ?? ''}~${t.cohort.max ?? ''}`);
@@ -179,4 +244,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { readZipEntry, parseTables, extractSchedule4, readSchedule4Table, entriesFromCell, cohortRangeFromTitle, HWPX_PATH, OUT_PATH };
+module.exports = { readZipEntry, parseTables, extractSchedule4, extractSchedule1Colleges, COLLEGES_OUT_PATH, readSchedule4Table, entriesFromCell, cohortRangeFromTitle, HWPX_PATH, OUT_PATH };
