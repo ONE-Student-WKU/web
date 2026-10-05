@@ -272,6 +272,13 @@ function extractRelations(body, selfDoc, selfKey) {
       continue;
     }
     const before = body.slice(Math.max(0, m.index - 8), m.index);
+    // 「」 없이 문서 이름이 바로 붙은 "학칙시행규칙 제14조"(수업관리규정 제13조)는 그 문서의 조문이다 — 아니면 앞 글자("…규칙")를 보고 외부 규정으로 오인해
+    // "필요할 경우 학칙시행규칙 제14조" 같은 깨진 문자열로만 남는다(보정 라운드 B, D-47). "본/이 ○○ 제N조"는 자기 문서라 아래에서 처리한다.
+    const bare = /(?:^|[^가-힣])(학칙시행규칙|학칙)\s*$/.exec(body.slice(Math.max(0, m.index - 14), m.index));
+    if (bare && !/(?:본|이)\s*(?:학칙시행규칙|학칙)\s*$/.test(body.slice(Math.max(0, m.index - 16), m.index))) {
+      push({ relation, toDoc: bare[1] === '학칙시행규칙' ? 'ENFORCEMENT_RULES' : 'ACADEMIC_REGULATIONS', toKey: key, toRef: null });
+      continue;
+    }
     // "본 시행규칙 제6조", "이 학칙 제5조"는 자기 문서다. 그 밖에 "…법 제N조", "…규칙 제N조"는 외부 법령·규정.
     if (!/(?:본|이)\s*(?:시행규칙|학칙|규정)\s*$/.test(before) && /(법|령|규칙|규정)\s*$/.test(before)) {
       push({ relation, toDoc: null, toKey: null, toRef: `${body.slice(Math.max(0, m.index - 15), m.index).trim()} ${key}` });

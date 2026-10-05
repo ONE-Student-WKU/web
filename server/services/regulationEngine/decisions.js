@@ -4,7 +4,6 @@ const {
   LIBERAL_ARTS_CAP_FIRST_COHORT,
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM,
   DEFAULT_TRANSFER_GRADE,
-  TEXT_SOURCES,
   CITATIONS,
 } = require('./constants');
 const { makeFlag } = require('./flags');
@@ -189,15 +188,6 @@ function decideLiberalArtsCap(ctx) {
   return { cap, flags, basis, alternatives };
 }
 
-/** 기준일 대비 보유 원문 판본 점검. 조문(ARTICLE)에 기대는 판단에만 이 플래그를 붙인다. */
-function checkTextVersion(asOfDate) {
-  const src = TEXT_SOURCES.ENFORCEMENT_RULES; // 학칙(2026-02-05~)보다 늦은 시행규칙(2026-03-01~)이 더 좁은 쪽이다
-  if (asOfDate < src.firstHeldEffective) return [makeFlag('TEXT_VERSION_NOT_HELD', { heldFrom: src.firstHeldEffective })];
-  if (asOfDate < src.latestHeldEffective) return [makeFlag('TEXT_INTERMEDIATE_VERSION', { heldVersion: src.latestHeldEffective })];
-  if (asOfDate > src.latestHeldEffective) return [makeFlag('TEXT_SNAPSHOT_MAY_BE_OLDER', { heldVersion: src.latestHeldEffective })];
-  return [];
-}
-
 /** basis 키 목록 → 직렬화 가능한 근거 객체(미등록 키는 즉시 에러 — 오타로 근거가 사라지는 걸 막는다). */
 function resolveBasis(keys) {
   return [...new Set(keys)].map((k) => {
@@ -208,19 +198,12 @@ function resolveBasis(keys) {
   });
 }
 
-/** basis 중 조문(ARTICLE)이 하나라도 있으면 true — 판본 점검 대상. */
-function dependsOnArticleText(keys) {
-  return keys.some((k) => CITATIONS[k] && CITATIONS[k].kind === 'ARTICLE');
-}
-
 module.exports = {
   checkEligibility,
   decideMajorRelaxation,
   decideLiberalArtsBasis,
   decideLiberalArtsCap,
-  checkTextVersion,
   isBeforeLiberalArtsCutoff,
   impliedMajorChangeGrade,
   resolveBasis,
-  dependsOnArticleText,
 };

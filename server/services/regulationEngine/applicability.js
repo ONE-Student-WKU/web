@@ -1,10 +1,12 @@
-const { CONFIDENCE, CONFIDENCE_LABEL_KO, TEXT_SOURCES } = require('./constants');
+const { CONFIDENCE, CONFIDENCE_LABEL_KO } = require('./constants');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const { normalizeInput } = require('./context');
 const { checkEligibility } = require('./decisions');
 const { evaluate } = require('./evaluate');
 const dq = require('./dataQuality');
 const { checkSchedule4Credits } = require('./schedule4');
+const { articleTextFlags } = require('./textVersion');
+const { buildRelationIndex, walkRelations } = require('./relationWalk');
 
 /**
  * server/services/regulationEngine/applicability.js
@@ -52,7 +54,6 @@ function parseExistenceValue(v) {
   return m ? { category: m[1], grade: Number(m[2]) } : { category: v.split(/\s+/)[0], grade: null };
 }
 
-const docOf = (articleRef) => String(articleRef).split(':')[0];
 const inCohort = (row, year) => (row.minAdmissionYear == null || year >= row.minAdmissionYear) && (row.maxAdmissionYear == null || year <= row.maxAdmissionYear);
 const enrollmentMatches = (row, type) => row.enrollmentType == null || row.enrollmentType === type;
 
@@ -63,18 +64,12 @@ function addendumDate(articleKey) {
 }
 
 /**
- * 조문 판본 점검. 파트 1 checkTextVersion은 문서 전체 기준이었는데, 여기는 조문의 개정 표시를 본다:
- * 기준일이 보유 판본 시행 이후이고 그 조문에 기준일보다 늦은 개정 표시가 없으면, 기준일 당시 조문 = 현행 조문이다.
- * (개정 표시가 빠짐없이 붙는다는 원문 관행을 전제 — DECISIONS D-28.)
+ * 적용범위 규칙 하나의 판본 플래그 — 졸업요건 규칙과 같은 함수(textVersion.articleTextFlags)를 쓴다(D-42). rule.article.lastAmendedOn은
+ * regulation_articles의 개정 표시(null = 표시 없음), 조문 행을 못 찾았으면(rule.article 없음) 모름(undefined)이라 보수적으로 처리된다.
  */
-function textFlagsForArticle(asOfDate, rule) {
-  const src = TEXT_SOURCES[docOf(rule.articleRef)];
-  if (!src) return [];
-  if (asOfDate < src.firstHeldEffective) return [makeFlag('TEXT_VERSION_NOT_HELD', { heldFrom: src.firstHeldEffective })];
-  const last = rule.article && rule.article.lastAmendedOn;
-  if (last && asOfDate < last) return [makeFlag('TEXT_INTERMEDIATE_VERSION', { heldVersion: last })];
-  if (asOfDate > src.latestHeldEffective) return [makeFlag('TEXT_SNAPSHOT_MAY_BE_OLDER', { heldVersion: src.latestHeldEffective })];
-  return [];
+function textFlagsForArticle(asOfDate, rule, textVersions) {
+  const [docCode, articleKey] = String(rule.articleRef).split(':');
+  return articleTextFlags({ asOfDate, docCode, articleKey, lastAmendedOn: rule.article ? rule.article.lastAmendedOn ?? null : undefined, textVersions });
 }
 
 // --- 과목 변경 준비 ---
@@ -317,6 +312,18 @@ const HANDLERS = {
     status: 'APPLIES', reason: '2026.02.05. 전부개정 전 입학 학번 — 종전 부칙의 경과조치 대상', flags: [makeFlag('PRIOR_ADDENDUM_NOT_HELD')],
   },
 
+  // 수업관리규정(보정 라운드 B, D-47): 제2조가 "대학원을 제외한 각 대학의 수업관리"에 적용한다고 정한다. 이 시스템의 학생은 모두 학부생이라
+  // 입학 학번·유형과 무관하게 해당한다(그래서 한정 조건 없이 APPLIES). 학번·학과별로 갈리는 내용이 아니라 critical=false 참고 규정이다.
+  UNDERGRADUATE_CLASS_RULE: (h) => cohortRule(h) || { status: 'APPLIES', reason: '학부(대학원 제외) 수업에 적용되는 수업관리 기준' },
+
+  // 삭제된 조문: 삭제일 이후면 해당 없음. 그 전에는 조문이 있었을 텐데 삭제 전 원문이 없어 내용을 모르므로 UNKNOWN(없다고도, 있다고 단정도 하지 않는다).
+  // 개정(삭제) 표시일이 기준일보다 늦으면 buildRule이 중간 판본 플래그(TEXT_INTERMEDIATE_VERSION)를 함께 붙인다.
+  ARTICLE_DELETED: (h) => {
+    const deletedOn = h.row.conditionParams && h.row.conditionParams.deletedOn;
+    if (deletedOn && h.ctx.asOfDate >= deletedOn) return { status: 'NOT_APPLICABLE', reason: `${deletedOn}에 삭제된 조문` };
+    return { status: 'UNKNOWN', reason: `${deletedOn}에 삭제된 조문 — 기준일에는 있었지만 삭제 전 원문은 보유하지 않음` };
+  },
+
   MAJOR_CHANGE_TARGET: (h) => {
     const { ctx, row, deptName } = h;
     const targets = (row.conditionParams && row.conditionParams.departments) || [];
@@ -339,10 +346,10 @@ function worstItemFlags(items) {
   return [...codes].map((c) => makeFlag(c));
 }
 
-function buildRule(row, result, h) {
+function buildRule(row, result, h, evidence = null) {
   const flags = [...(result.flags || [])];
   if (row.confidence === 'ESTIMATED' && result.status !== 'NOT_APPLICABLE') flags.push(makeFlag('APPLICABILITY_ESTIMATED', { note: row.note }));
-  if (result.status !== 'NOT_APPLICABLE') flags.push(...textFlagsForArticle(h.ctx.asOfDate, row));
+  if (result.status !== 'NOT_APPLICABLE') flags.push(...textFlagsForArticle(h.ctx.asOfDate, row, h.textVersions));
   const all = dedupeFlags(flags);
   const confidence = confidenceFromFlags(all);
   return {
@@ -363,6 +370,8 @@ function buildRule(row, result, h) {
     },
     details: result.details || null,
     alternatives: result.alternatives || [],
+    // 이 조문에서 조문 관계(위임·참조·특칙·개정)를 따라간 경로 — "왜 이 조문들이 근거인가"(relationWalk.js, D-43). 관계 자료가 없으면 null.
+    evidence,
     flags: all,
   };
 }
@@ -492,14 +501,15 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
   if (reorgEdges.some((e) => e.toDepartmentId === department.id && e.effectiveYear > ctx.admissionYear)) topFlags.push(makeFlag('DEPARTMENT_IS_SUCCESSOR_OF_COHORT'));
 
   const h = {
-    ctx, data: { ...d, rules: d.rules || [] }, deptName, asOfYear, gradeBasis, chainDepartmentIds, reorgEdges,
+    ctx, data: { ...d, rules: d.rules || [] }, textVersions: d.textVersions || (d.requirements && d.requirements.textVersions) || undefined, deptName, asOfYear, gradeBasis, chainDepartmentIds, reorgEdges,
     effective: prepared.filter((c) => c.toYear <= asOfYear),
     upcoming: prepared.filter((c) => c.toYear > asOfYear),
     unverifiedYears: department ? unverifiedCourseYears(ctx, deptName, lastYear) : [],
   };
 
   const sched4 = d.requirements && department ? schedule4Mismatch(ctx, deptName, d.requirements.rows) : null;
-  const rules = (d.rules || []).map((row) => {
+  // 1단계: 규칙마다 적용 여부 판단. 2단계: 적용되는 조문에서 조문 관계를 따라가 근거 경로를 붙인다(별표 하위 표 선택에 "적용되는 조문" 집합이 필요해 두 단계).
+  const judged = (d.rules || []).map((row) => {
     const handler = HANDLERS[row.conditionCode];
     if (!handler) throw new Error(`구현되지 않은 적용 조건: ${row.conditionCode} (${row.ruleCode})`);
     const since = row.article ? addendumDate(row.article.articleKey) : null;
@@ -510,8 +520,11 @@ function resolveApplicableRules(rawInput, data, opts = {}) {
     const result = sched4 && isSchedule4Rule(row) && result0.status !== 'NOT_APPLICABLE'
       ? { ...result0, flags: [...(result0.flags || []), makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] }
       : result0;
-    return buildRule(row, result, h);
+    return { row, result };
   });
+  const relationIndex = d.relations && d.relations.length ? buildRelationIndex(d.relations) : null;
+  const appliedRefs = new Set(judged.filter((j) => j.result.status !== 'NOT_APPLICABLE').map((j) => j.row.articleRef));
+  const rules = judged.map(({ row, result }) => buildRule(row, result, h, relationIndex && result.status !== 'NOT_APPLICABLE' ? walkRelations(row.articleRef, relationIndex, { appliedRefs }) : null));
 
   let requirements = null;
   if (d.requirements) requirements = annotateRequirements(ctx, evaluate(ctx, d.requirements), deptName, d.requirements);

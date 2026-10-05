@@ -363,6 +363,11 @@ async function migrate() {
   });
 
   try {
+    // schema.sql이 "CREATE DATABASE IF NOT EXISTS wku_ai_chat; USE wku_ai_chat;"로 DB 이름을 고정하고 있어, DB_NAME이 다른 값이면
+    // 아래 스키마와 guard들은 DB_NAME이 아니라 wku_ai_chat에 적용된다(DECISIONS D-50). 동작은 바꾸지 않고 경고만 남긴다.
+    if (process.env.DB_NAME && process.env.DB_NAME !== 'wku_ai_chat') {
+      console.warn(`[db:migrate] 경고: DB_NAME=${process.env.DB_NAME}이지만 db/schema.sql은 wku_ai_chat 데이터베이스를 고정으로 사용해 그쪽에 적용됩니다.`);
+    }
     console.log('[db:migrate] schema.sql 적용 시작...');
     // schema.sql 전체(CREATE DATABASE/USE 포함, 전부 IF NOT EXISTS)를 그대로 실행.
     // 몇 번을 실행해도 안전(멱등) — 이미 존재하는 테이블은 건드리지 않고 새 테이블만 생성한다.

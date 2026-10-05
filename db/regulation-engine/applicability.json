@@ -217,6 +217,74 @@
       "conditionParams": { "departments": ["작업치료학과", "응급구조학과"] },
       "effect": "작업치료학과·응급구조학과로의 전과(시행규칙 제109조)는 2026년 3월 1일 입학생부터 적용한다",
       "confidence": "CONFIRMED"
+    },
+    {
+      "ruleCode": "CMR2_SCOPE_UNDERGRADUATE",
+      "articleRef": "CLASS_MANAGEMENT:제2조",
+      "paragraph": null,
+      "quote": "대학원을 제외한 각 대학의 수업관리에 적용한다",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "UNDERGRADUATE_CLASS_RULE",
+      "effect": "수업관리규정은 대학원을 제외한 각 대학(학부)의 수업관리에 적용된다 — 학부 재학생은 입학 학번·유형과 무관하게 대상",
+      "confidence": "CONFIRMED",
+      "critical": false
+    },
+    {
+      "ruleCode": "CMR5_SECTION_SPLIT_STANDARD",
+      "articleRef": "CLASS_MANAGEMENT:제5조",
+      "paragraph": "①",
+      "quote": "이론강좌는 60명, 실험・실습・실기 강좌는 40명 기준으로 한다",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "UNDERGRADUATE_CLASS_RULE",
+      "effect": "학습반 분반 기준: 이론강좌 60명, 실험·실습·실기 강좌 40명(강의실 규모 등으로 교무처장 승인을 거쳐 조정 가능, 제5조②)",
+      "confidence": "CONFIRMED",
+      "critical": false
+    },
+    {
+      "ruleCode": "CMR6_CLOSURE_STANDARD",
+      "articleRef": "CLASS_MANAGEMENT:제6조",
+      "paragraph": "①",
+      "quote": "교양 교과목 : 수강인원 25명 미만",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "UNDERGRADUATE_CLASS_RULE",
+      "effect": "학습반 폐강 기준(수강신청 변경기간 이후 처리): 교양 25명 미만, 전공은 해당 학년 재학생 수에 따른 기준(제6조①)",
+      "confidence": "CONFIRMED",
+      "critical": false
+    },
+    {
+      "ruleCode": "CMR13_INTENSIVE_COURSE_HOURS",
+      "articleRef": "CLASS_MANAGEMENT:제13조",
+      "paragraph": null,
+      "quote": "학칙시행규칙 제14조에 따른 학점 당 수업시간을 준수하여",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "UNDERGRADUATE_CLASS_RULE",
+      "effect": "집중수업은 학칙시행규칙 제14조의 학점당 수업시간을 지켜 운영한다 — 수업관리규정이 시행규칙을 가리키는 연결",
+      "confidence": "CONFIRMED",
+      "critical": false
+    },
+    {
+      "ruleCode": "CMR14_ORAL_LANGUAGE_CLASS_DELETED",
+      "articleRef": "CLASS_MANAGEMENT:제14조",
+      "paragraph": null,
+      "quote": "원어수업",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "ARTICLE_DELETED",
+      "conditionParams": { "deletedOn": "2022-02-25" },
+      "effect": "제14조(원어수업)는 2022.02.25. 삭제됐다 — 삭제 전에는 조문이 있었으나 그 원문은 보유하지 않는다",
+      "confidence": "CONFIRMED",
+      "critical": false
+    },
+    {
+      "ruleCode": "CMR15_REMOTE_CLASS_DELETED",
+      "articleRef": "CLASS_MANAGEMENT:제15조",
+      "paragraph": null,
+      "quote": "삭제 <2024. 8. 23.>",
+      "scope": "ALL_ENROLLED",
+      "conditionCode": "ARTICLE_DELETED",
+      "conditionParams": { "deletedOn": "2024-08-23" },
+      "effect": "제15조(원격수업)는 2024.08.23. 삭제됐다 — 삭제 전에는 조문이 있었으나 그 원문은 보유하지 않는다",
+      "confidence": "CONFIRMED",
+      "critical": false
     }
   ],
   "relations": [

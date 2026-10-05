@@ -2,6 +2,11 @@ const pool = require('../db');
 const studentService = require('./studentService');
 const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 const { resolveRequirementsForStudent, inputFromStudentRow } = require('./regulationEngine');
+const { classifyByRegistration, applyAdjustments } = require('./regulationEngine/registrationCategory');
+const { makeFlag, confidenceFromFlags, worstConfidence } = require('./regulationEngine/flags');
+const { CONFIDENCE_LABEL_KO } = require('./regulationEngine/constants');
+const { loadCategoryChanges } = require('./regulationEngine/dbProvider');
+const { getDepartmentChain } = require('./curriculumHistoryService');
 
 /**
  * server/services/graduationService.js
@@ -33,14 +38,14 @@ function liberalArtsCapForDiagnosis(capRule) {
   return caps.length ? Math.min(...caps) : null;
 }
 
-async function fetchEarnedCreditsByCategory(studentId) {
+async function fetchCountedCourses(studentId) {
   // 성적 미입력(진행 중) 과목도 포함한다. letter_grade NOT IN (...)은 NULL에 대해
   // NULL(=false)로 평가되므로 IS NULL을 명시적으로 같이 걸어야 성적 미입력 행이 안 빠진다.
   //
   // 재수강으로 대체된 이전 학기 기록(courseService.getSupersededCourseIds — 같은 과목명 중
   // 최신 학기 것만 남김)도 여기서 같이 제외해야 카테고리별 이수학점이 중복 집계되지 않는다.
   const supersededIds = await getSupersededCourseIds(studentId);
-  let sql = `SELECT category, SUM(credits) AS credits
+  let sql = `SELECT id, name, category, credits, year, semester
      FROM student_courses
      WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))`;
   const params = [studentId, FAILING_GRADES];
@@ -48,11 +53,13 @@ async function fetchEarnedCreditsByCategory(studentId) {
     sql += ' AND id NOT IN (?)';
     params.push([...supersededIds]);
   }
-  sql += ' GROUP BY category';
-
   const [rows] = await pool.query(sql, params);
+  return rows;
+}
+
+function sumByCategory(rows) {
   const map = {};
-  for (const row of rows) map[row.category] = Number(row.credits);
+  for (const row of rows) map[row.category] = (map[row.category] || 0) + Number(row.credits);
   return map;
 }
 
@@ -137,7 +144,16 @@ async function getGraduationStatus(studentId) {
   const creditRows = requirementRows.filter((r) => r.min_course_count === null);
   const certificationRows = requirementRows.filter((r) => r.min_course_count !== null);
 
-  const earnedByCategory = await fetchEarnedCreditsByCategory(studentId);
+  // 제13조④(수강 학년도 기준 이수구분)로 다시 본 과목은 학점을 옮겨 합산한다(registrationCategory.js, D-46). 옮긴 과목은 결과에 그대로 싣는다.
+  const countedCourses = await fetchCountedCourses(studentId);
+  const { changes: categoryChanges, overrides: categoryOverrides } = await loadCategoryChanges((await getDepartmentChain(student.department_id)).departmentIds);
+  const registration = classifyByRegistration(countedCourses, categoryChanges, categoryOverrides);
+  const earnedByCategory = applyAdjustments(sumByCategory(countedCourses), registration.adjusted);
+  const registrationFlags = [
+    ...(registration.adjusted.length ? [makeFlag('REGISTRATION_CATEGORY_APPLIED')] : []),
+    ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
+  ];
+  const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(registrationFlags)]);
 
   let totalRequiredCredits = 0;
   let totalEarnedCredits = 0;
@@ -252,9 +268,11 @@ async function getGraduationStatus(studentId) {
     categories,
     certifications,
     regulation: {
-      confidence: regulation.confidence,
-      confidenceLabel: regulation.confidenceLabel,
-      flags: (regulation.flags || []).map((f) => ({ code: f.code, level: f.level, message: f.message })),
+      confidence,
+      confidenceLabel: confidence === regulation.confidence ? regulation.confidenceLabel : CONFIDENCE_LABEL_KO[confidence],
+      flags: [...(regulation.flags || []), ...registrationFlags].map((f) => ({ code: f.code, level: f.level, message: f.message })),
+      // 제13조④: 입력한 이수구분과 수강 학년도 기준 이수구분이 달라 학점을 옮긴 과목(adjusted)과, 필수/선택 해석이 없어 옮기지 않은 과목(unresolved).
+      registrationCategory: { adjusted: registration.adjusted, unresolved: registration.unresolved },
       liberalArtsCap: { applied: liberalArtsCap, engineValue: capRule && capRule.value ? capRule.value.cap : null },
       totalDefinitive: !(regulation.flags || []).some((f) => f.code === 'TRANSFER_TOTAL_UNRESOLVED'),
       // 학칙 [별표 4] 졸업학점과 책자 졸업학점이 다를 때 두 값(어느 쪽이 맞는지는 학교 확인 전이라 판단하지 않음). 같거나 대조 불가면 null.

@@ -5,10 +5,9 @@ const {
   decideMajorRelaxation,
   decideLiberalArtsBasis,
   decideLiberalArtsCap,
-  checkTextVersion,
   resolveBasis,
-  dependsOnArticleText,
 } = require('./decisions');
+const { basisTextFlags } = require('./textVersion');
 
 /**
  * server/services/regulationEngine/evaluate.js
@@ -120,7 +119,8 @@ const NOT_DETERMINED_BASIS = [];
 
 function evaluate(ctx, data) {
   const eligibilityFlags = checkEligibility(ctx);
-  const textFlags = checkTextVersion(ctx.asOfDate);
+  // 조문별 판본 판단(textVersion.js, D-42): 근거로 쓴 조문마다 기준일 당시 문구를 갖고 있는지 본다. data.textVersions는 DB 판본·조문 정보(없으면 상수로 대체).
+  const textFlagsFor = (basisKeys) => basisTextFlags(ctx.asOfDate, basisKeys, data && data.textVersions);
 
   // 판단 자체가 불가능한 입력(미지원 학번·입학 전 기준일 등)이면 규칙 값을 만들지 않는다.
   if (eligibilityFlags.some((f) => f.level === 'NO_DATA')) {
@@ -184,17 +184,17 @@ function evaluate(ctx, data) {
     reqBasis.push('ENF_ART118_COHORT_TRANSITION', 'ACAD_ADDENDUM_2026_02_05_ART3');
     reqFlags.push(makeFlag('COHORT_TRANSITION_ADDENDUM_NOT_HELD'));
   }
-  if (dependsOnArticleText(reqBasis)) reqFlags.push(...textFlags);
+  reqFlags.push(...textFlagsFor(reqBasis));
 
   const relaxBasis = relaxation.basis;
   const relaxFlags = [...eligibilityFlags, ...relaxation.flags, ...dataFlags.filter((f) => f.code === 'NO_CURRICULUM_ROWS' || f.code === 'DEPARTMENT_NOT_FOUND')];
-  if (dependsOnArticleText(relaxBasis)) relaxFlags.push(...textFlags);
+  relaxFlags.push(...textFlagsFor(relaxBasis));
   if (requirementsValue && requirementsValue.adjustments.length === 0 && relaxation.relaxedRows) relaxFlags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
 
   const libFlags = [...eligibilityFlags, ...liberal.flags];
-  if (dependsOnArticleText(liberal.basis)) libFlags.push(...textFlags);
+  libFlags.push(...textFlagsFor(liberal.basis));
   const capFlags = [...eligibilityFlags, ...cap.flags];
-  if (dependsOnArticleText(cap.basis)) capFlags.push(...textFlags);
+  capFlags.push(...textFlagsFor(cap.basis));
 
   const liberalRows = requirementsValue ? requirementsValue.categories.filter((c) => LIBERAL_CATEGORIES.includes(c.category)) : [];
 

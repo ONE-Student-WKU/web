@@ -19,6 +19,7 @@ let studentId;
 let conversationId;
 let captured;
 let embeddingToReturn;
+let aiAnswer = '테스트 답변';
 let ragChunk; // book_year가 있는 실제 RAG 청크 하나(해당 청크의 임베딩을 질문 임베딩으로 돌려주면 유사도 1.0)
 
 before(async () => {
@@ -43,7 +44,7 @@ before(async () => {
   mock.method(aiClient, 'rewriteSearchQuery', async (q) => q);
   mock.method(aiClient, 'getAIChatResponse', async (message, chunks, history, student, graduationStatus, yearContext) => {
     captured = { chunks, student, yearContext };
-    return '테스트 답변';
+    return aiAnswer;
   });
 
   const app = express();
@@ -83,11 +84,24 @@ test('"내 졸업요건이 뭐야?"(2018학번): 프로필 학번 기준 한 해
   embeddingToReturn = new Array(512).fill(0);
   const { status, body } = await post('내 졸업요건이 뭐야?');
   assert.equal(status, 200);
-  assert.equal(body.data.content, '테스트 답변');
+  // 2018학번 컴소공은 판단 신뢰도가 확정이 아니고 mock 답변에 단서 표현이 없어서, 응답 후처리 가드(D-49)가 안내문을 덧붙인다 — 본문은 그대로.
+  assert.ok(body.data.content.startsWith('테스트 답변\n\n※ '), body.data.content);
+  assert.match(body.data.content, /학사지원과\(063-850-5228\)/);
   assert.equal(captured.yearContext.mode, 'COHORT');
   assert.equal(captured.yearContext.applicableCohort, 2018);
   assert.ok(titles().some((t) => /2018학번 졸업요건/.test(t)));
   assert.ok(!titles().some((t) => /(2019|2024|2025|2026)학번 졸업요건/.test(t)), `다른 해가 섞임: ${titles().join(' / ')}`);
+});
+
+test('응답 후처리 가드: 이미 "추정·확인 필요"를 밝힌 답변에는 안내문을 덧붙이지 않는다', async () => {
+  embeddingToReturn = new Array(512).fill(0);
+  aiAnswer = '이 내용은 추정이에요. 학과에 확인해 주세요.';
+  try {
+    const { body } = await post('내 졸업요건이 뭐야?');
+    assert.equal(body.data.content, '이 내용은 추정이에요. 학과에 확인해 주세요.');
+  } finally {
+    aiAnswer = '테스트 답변';
+  }
 });
 
 test('연도 비교 질문: 두 해의 졸업요건을 각각 넣고 AI에는 COMPARE 해석이 전달된다', async () => {

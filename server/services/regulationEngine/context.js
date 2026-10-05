@@ -126,4 +126,15 @@ function normalizeInput(raw, { today } = {}) {
   };
 }
 
-module.exports = { isValidIsoDate, todayKst, academicTermOf, termIndex, inputFromStudentRow, normalizeInput };
+/**
+ * DB의 DATE 컬럼 값 → 'YYYY-MM-DD'. mysql2는 DATE를 "서버 로컬 시간 자정"의 Date로 주는데, toISOString()은 UTC 기준이라
+ * 한국 시간대(UTC+9)에서는 하루 앞(2026-06-26 → 2026-06-25)으로 밀린다 — UTC인 서버(CI·Railway)에서는 우연히 맞아서 로컬에서만 드러났다.
+ * 판본 시행일·개정일은 하루 차이가 판단을 바꾸므로(기준일이 시행일 당일인가) 로컬 연·월·일을 그대로 쓴다.
+ */
+function dbDateToIso(d) {
+  if (d == null) return null;
+  if (d instanceof Date) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return String(d).slice(0, 10);
+}
+
+module.exports = { isValidIsoDate, dbDateToIso, todayKst, academicTermOf, termIndex, inputFromStudentRow, normalizeInput };

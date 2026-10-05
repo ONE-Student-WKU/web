@@ -2,6 +2,8 @@ const pool = require('../db');
 const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./regulationEngine');
 const { resolveDepartment, schedule4Line } = require('./curriculumContextService');
 const { getDepartmentChain } = require('./curriculumHistoryService');
+const { dbDateToIso } = require('./regulationEngine/context');
+const { summarizeEvidence, relatedArticleCandidates, refLabel } = require('./regulationEngine/relationWalk');
 
 /**
  * server/services/regulationContextService.js
@@ -28,6 +30,11 @@ const CONFIDENCE_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIEN
 const MAX_COURSE_NAMES = 5;
 const MAX_ARTICLE_CHUNKS = 4;
 const MAX_ARTICLE_CHARS = 1200;
+// 조문 관계(보정 라운드 B, D-43)로 따라간 "관련 조문" 원문 — 적용 조문 원문(최대 4개)에 더해 최대 2개, 한 개당 800자.
+// 적용 조문이 근거의 중심이라 관련 조문은 부가 근거로 작게 잡는다. 근거 경로 줄은 판단 청크 안에 최대 MAX_PATH_LINES줄.
+const MAX_RELATED_CHUNKS = 2;
+const MAX_RELATED_CHARS = 800;
+const MAX_PATH_LINES = 10;
 
 // 신뢰도별 답변 지침 — 확정이 아니면 단정 금지를 명시한다(평가 세트가 이 문구를 검사한다).
 // 전체 신뢰도는 "가장 낮은 항목" 기준이라, 지침은 항목별로 적용하게 쓴다 — 예: 과목 자료가 C등급이라 전체가 "자료 불충분"이어도
@@ -91,6 +98,62 @@ function historyLine(history) {
 }
 
 /**
+ * 근거끼리 말이 다른 항목(R-06 잔여, 보정 라운드 B의 B-28). 챗봇은 RAG 문서(교육과정 해설)와 판단 결과를 함께 받는데, 해설 문서에는
+ * "교양제한학점: 2021학번까지는 제한이 없고 2022학번부터 52학점"이라고만 있고, 시행규칙 제10조①은 학번 구분 없이 52학점 초과분을 인정하지 않는다.
+ * 졸업진단은 둘 중 엄격한 52를 쓴다(D-32). 우선순위 규칙만으로는 모델이 이 불일치를 모르고 해설 문장을 그대로 단정할 수 있어, 판단 청크에
+ * 충돌 사실을 명시하고(`conflicts` 메타데이터 + 본문 줄) 어느 쪽도 단정하지 않게 한다. 해설 문서(db/regulations/교육과정)는 고치지 않는다(재시딩 트리거).
+ * @returns {Array<{ id, topic, engineValue, diagnosisValue, sources: Array<{ source, statement }>, guide }>}
+ */
+function evidenceConflicts(judgment) {
+  const capRule = judgment.requirements && (judgment.requirements.rules || []).find((r) => r.id === 'LIBERAL_ARTS_CAP');
+  if (!capRule || !capRule.value || capRule.value.cap != null) return [];
+  const literal = (capRule.alternatives || []).map((a) => a.cap).filter((c) => c != null);
+  if (!literal.length) return [];
+  const diagnosisValue = Math.min(...literal);
+  return [{
+    id: 'LIBERAL_CAP_PRE_2022',
+    topic: '교양 인정 상한(2021학번 이하)',
+    engineValue: capRule.value.cap,
+    diagnosisValue,
+    sources: [
+      { source: '교육과정 해설 문서(RAG 청크)', statement: '2021학번까지는 제한이 없고 2022학번부터 52학점' },
+      { source: '학칙시행규칙 제10조 제1항', statement: `학번 구분 없이 ${diagnosisValue}학점 초과분 불인정` },
+    ],
+    guide: `졸업진단은 더 엄격한 ${diagnosisValue}학점을 적용한다. 어느 쪽이 맞는지는 학교 확인 전이므로 단정하지 말고 두 근거를 모두 밝혀라.`,
+  }];
+}
+
+/**
+ * 조문 관계 요약 → 판단 청크에 넣을 줄(최대 MAX_PATH_LINES). 표시 순서: 특칙 → 위임·참조 경로 → 끊긴 연결 → 개정 이력.
+ * 줄 수가 넘치면 경로 줄만 줄인다 — 특칙·끊긴 연결·개정 이력은 적고 "추정으로만 말할 것" 같은 단서를 담고 있어 먼저 확보한다.
+ * 같은 출발 조문에서 더 긴 경로의 앞부분일 뿐인 경로(예: [별표 4] 와 [별표 4] → 학번 구간 ③)는 한 줄로 합친다.
+ */
+function relationLines(evidence) {
+  const overrides = evidence.overrides.map((o) => `- 특칙 우선: [${refLabel(o.special)}]가 [${refLabel(o.general)}]보다 우선한다(둘이 다르면 앞의 조문을 따른다).`);
+  const broken = evidence.broken.map((b) => `- 끊긴 연결: ${b.rootLabel} → "${b.toText}" (연결 대상 원문을 보유하지 않아 확인하지 못함 — 추정으로만 말할 것)`);
+  // 개정 이력: 핵심 규정의 조문만, 조문마다 최근 2건(날짜순 마지막) + 나머지 건수 — 수업관리규정처럼 부칙이 수십 개인 문서가 줄을 덮지 않게.
+  const byTarget = new Map();
+  for (const a of evidence.amendments.filter((x) => x.critical)) {
+    if (!byTarget.has(a.target)) byTarget.set(a.target, { label: a.targetLabel, list: [] });
+    byTarget.get(a.target).list.push(a);
+  }
+  const amendments = byTarget.size ? [`- 개정 이력: ${[...byTarget.values()].slice(0, 3).map(({ label, list }) => {
+    const shown = list.slice(-2).map((a) => `${a.label}${a.date ? `(${a.date})` : ''}`).join(', ');
+    return `${label} ← ${shown}${list.length > 2 ? ` 외 ${list.length - 2}건` : ''}`;
+  }).join(' / ')}`] : [];
+  const pathLines = [];
+  for (const p of evidence.paths) {
+    const texts = p.steps.map((st) => st.text);
+    for (const t of texts) {
+      if (texts.some((o) => o !== t && o.startsWith(`${t} →`))) continue; // 더 긴 경로의 앞부분
+      pathLines.push(`- ${p.rootLabel} → ${t}`);
+    }
+  }
+  const budget = Math.max(3, MAX_PATH_LINES - overrides.length - broken.length - amendments.length);
+  return [...overrides, ...pathLines.slice(0, budget), ...broken, ...amendments].slice(0, MAX_PATH_LINES + 2);
+}
+
+/**
  * 판단 결과 → 근거 청크 [판단 요약, 근거 조문들]. articles: { 'DOC:키': { title, body, versionLabel } } (없으면 조문 청크 생략).
  * subject: { departmentName, cohort, enrollmentType, hypothetical } — hypothetical이면 질문 속 학번·학과(일반 재학생 가정).
  */
@@ -123,6 +186,16 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
     lines.push('※ "기록 없음(검증 안 됨)"인 학년도는 변경이 없었다는 뜻이 아니다 — 그 해 자료가 검증되지 않았다. "변경 없다"고 답하지 마라.');
   }
 
+  const evidence = summarizeEvidence(judgment.rules);
+  const pathLines = relationLines(evidence);
+  if (pathLines.length) lines.push('근거 경로(조문 관계 — 어떤 조문이 어떤 관계로 어디를 가리키는지):', ...pathLines);
+
+  const conflicts = evidenceConflicts(judgment);
+  if (conflicts.length) {
+    lines.push('근거가 서로 다른 항목(답할 때 두 쪽을 모두 밝힐 것):');
+    for (const c of conflicts) lines.push(`- ${c.topic}: ${c.sources.map((x) => `${x.source} — "${x.statement}"`).join(' / ')}. ${c.guide}`);
+  }
+
   const caveats = [...new Map((judgment.flags || []).filter((f) => f.level !== 'INFO').map((f) => [f.code, f.message])).values()];
   if (caveats.length) lines.push('확인 필요 사항:', ...caveats.slice(0, 8).map((m) => `- ${m}`));
 
@@ -131,10 +204,12 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
     documentTitle: `${departmentName} ${cohort}학번 적용 규정 판단 (신뢰도: ${label})`,
     content: lines.join('\n'),
     confidence: judgment.confidence,
+    conflicts,
   }];
 
   // 근거 조문 원문: 적용·조건부·판단 불가인 규칙의 조문(본문·부칙만 — 별표는 표라서 원문이 길고 깨져 있어 제목만 위에서 인용).
-  const refs = [...new Set(active.map((r) => r.basis.articleRef))].filter((ref) => articles[ref]).slice(0, MAX_ARTICLE_CHUNKS);
+  // 수업관리규정(참고 규정, D-47)은 판단 줄로만 싣는다 — 졸업·경과조치 질문에서 원문 청크 자리를 차지하지 않게. 수업 운영 질문이면 RAG가 본문을 가져온다.
+  const refs = [...new Set(active.filter((r) => !r.basis.articleRef.startsWith('CLASS_MANAGEMENT:')).map((r) => r.basis.articleRef))].filter((ref) => articles[ref]).slice(0, MAX_ARTICLE_CHUNKS);
   for (const ref of refs) {
     const a = articles[ref];
     const [doc, key] = ref.split(':');
@@ -146,6 +221,21 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
       articleRef: ref,
       articleKey: key,
       // RAG(seedRegulations)가 같은 원문을 넣을 때 쓰는 문서 제목 — chatContextService.mergeChunks가 중복 조문을 빼는 데 쓴다.
+      ragDocumentTitle: `원광대학교 ${DOC_LABEL[doc] || doc} 전문`,
+    });
+  }
+  // 관련 조문(특칙 상대 > 위임 > 참조) 원문. 적용 조문 청크 뒤에 붙고, RAG가 같은 조문을 가져오면 mergeChunks가 중복을 뺀다.
+  const related = relatedArticleCandidates(evidence, active.map((r) => r.basis.articleRef), MAX_RELATED_CHUNKS * 3).filter((c) => articles[c.ref]).slice(0, MAX_RELATED_CHUNKS);
+  for (const c of related) {
+    const a = articles[c.ref];
+    const [doc, key] = c.ref.split(':');
+    const body = a.body.length > MAX_RELATED_CHARS ? `${a.body.slice(0, MAX_RELATED_CHARS)}…(이하 생략)` : a.body;
+    chunks.push({
+      chunkId: `regulation-article-${c.ref}`,
+      documentTitle: `${DOC_LABEL[doc] || doc} ${key} 원문 (관련 조문: ${c.how}; 현행 ${a.versionLabel} 개정본)`,
+      content: body,
+      articleRef: c.ref,
+      articleKey: key,
       ragDocumentTitle: `원광대학교 ${DOC_LABEL[doc] || doc} 전문`,
     });
   }
@@ -161,7 +251,7 @@ async function loadArticles(refs) {
      WHERE v.text_held = 1 AND a.section <> 'SCHEDULE' AND (v.doc_code, a.article_key) IN (?)`,
     [pairs]
   );
-  const iso = (d) => (d == null ? null : d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+  const iso = dbDateToIso;
   return Object.fromEntries(rows.map((r) => [`${r.doc_code}:${r.article_key}`, { title: r.title, body: r.body, versionLabel: r.version_label, lastAmendedOn: iso(r.last_amended_on) }]));
 }
 
@@ -205,8 +295,9 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
     // withRequirements: 졸업요건 값의 판단 보류(#260)·자료 없음까지 신뢰도에 넣는다. 빼면 요건 쪽 보류가 있는 학과도
     // 적용범위만 보고 "확정"이 나와 챗봇이 단정한다(평가 세트 E16·E19·E29가 잡은 문제, D-33).
     const judgment = await resolveApplicableRulesForStudent(subject.input, { withRequirements: true });
-    const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE').map((r) => r.basis.articleRef))];
-    const articles = await loadArticles(refs);
+    const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE' && !r.basis.articleRef.startsWith('CLASS_MANAGEMENT:')).map((r) => r.basis.articleRef))];
+    const related = relatedArticleCandidates(summarizeEvidence(judgment.rules), refs, MAX_RELATED_CHUNKS * 3).map((c) => c.ref);
+    const articles = await loadArticles([...new Set([...refs, ...related])]);
     return { judgment, subject, chunks: formatJudgmentChunks(judgment, subject, articles) };
   } catch (err) {
     console.error('[regulationContext] 규정 판단 실패:', err.message);
@@ -214,4 +305,4 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
   }
 }
 
-module.exports = { lookupRegulationJudgment, formatJudgmentChunks, resolveJudgmentSubject, REGULATION_QUESTION_RE, ANSWER_GUIDE };
+module.exports = { lookupRegulationJudgment, formatJudgmentChunks, evidenceConflicts, resolveJudgmentSubject, REGULATION_QUESTION_RE, ANSWER_GUIDE };

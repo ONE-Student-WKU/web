@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const pool = require('../db');
-const { extractSchedule4, OUT_PATH, parseTables, cohortRangeFromTitle, entriesFromCell } = require('../../scripts/audit/hwpxTables');
-const { findSchedule4Entry, generalTotalCredits, checkSchedule4Credits, loadSchedule4 } = require('../services/regulationEngine/schedule4');
+const { extractSchedule4, extractSchedule1Colleges, COLLEGES_OUT_PATH, OUT_PATH, parseTables, cohortRangeFromTitle, entriesFromCell } = require('../../scripts/audit/hwpxTables');
+const { findSchedule4Entry, generalTotalCredits, checkSchedule4Credits, loadSchedule4, loadSchedule1Colleges, collegeOf } = require('../services/regulationEngine/schedule4');
 const { resolveApplicableRules } = require('../services/regulationEngine/applicability');
 const { getGraduationStatus } = require('../services/graduationService');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
@@ -56,6 +56,49 @@ test('HWPX 원본: ④(~2012학번)에서 간호학과는 140학점 칸 — 학�
 
 test('커밋된 schedule4_credits.json이 원본 HWPX 추출 결과와 같다(원천이 바뀌면 hwpxTables.js --write로 갱신)', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(OUT_PATH, 'utf8')), JSON.parse(JSON.stringify(extractSchedule4())));
+});
+
+test('커밋된 schedule1_colleges.json이 원본 HWPX 추출 결과와 같다(병합 칸 구조로 읽은 대학→학과 소속)', () => {
+  assert.deepEqual(JSON.parse(fs.readFileSync(COLLEGES_OUT_PATH, 'utf8')), JSON.parse(JSON.stringify(extractSchedule1Colleges())));
+});
+
+test('[별표 1] 교차 확인: 대학 이름과 소속 학과 이름이 학칙 전문 txt의 [별표 1] 본문에 있다(추출이 엉뚱한 칸을 읽지 않았는지)', () => {
+  const txt = fs.readFileSync(path.resolve(__dirname, '..', '..', 'db', 'regulations', '_source', '원광대학교_학칙_전문.txt'), 'utf8').replace(/\s+/g, '');
+  const checkable = (n) => !/[<>*]/.test(n);
+  for (const t of loadSchedule1Colleges().tables) {
+    for (const c of t.colleges) {
+      assert.ok(c.units.length > 0, `${t.source}: ${c.college} 소속 없음`);
+      for (const n of [c.college, ...c.units].filter(checkable)) assert.ok(txt.includes(n.replace(/\s+/g, '')), `${t.source}: "${n}"이(가) 학칙 전문에 없음`);
+    }
+  }
+});
+
+test('[별표 1] 읽기 구조 확인: 2026 표에서 공학3계열은 공과대학, 컴소공(2024·2025)은 창의공과대학, 2023 이하는 자료 없음', () => {
+  const colleges = loadSchedule1Colleges();
+  assert.equal(collegeOf(colleges, '공학3계열', 2026).college, '공과대학');
+  assert.equal(collegeOf(colleges, '컴퓨터·소프트웨어공학과', 2024).college, '창의공과대학');
+  assert.equal(collegeOf(colleges, '컴퓨터·소프트웨어공학과', 2025).college, '창의공과대학');
+  assert.equal(collegeOf(colleges, '컴퓨터·소프트웨어공학과', 2023), null, '2023학번 이하는 [별표 1]에 대학 열이 없다');
+  const dup = { tables: [{ cohort: { min: 2024, max: 2024 }, source: 'x', colleges: [{ college: 'A대학', units: ['가학과'] }, { college: 'B대학', units: ['가학과'] }] }] };
+  assert.equal(collegeOf(dup, '가학과', 2024), null, '두 대학에 같은 이름이면 어느 쪽인지 알 수 없다');
+});
+
+test('대학 단위 대조(D-44): [별표 1]로 소속 대학이 확인되는 학번만, 그 밖은 null(추측 금지)', () => {
+  const s = loadSchedule4();
+  const colleges = loadSchedule1Colleges();
+  const e = findSchedule4Entry(s, '컴퓨터·소프트웨어공학과', 2024, colleges);
+  assert.deepEqual([e.credits, e.kind], [136, 'UNIT_VIA_SCHEDULE1']);
+  assert.match(e.entryName, /창의공과대학.*컴퓨터·소프트웨어공학과/);
+  assert.equal(findSchedule4Entry(s, '국어교육과', 2026, colleges).credits, 140, '사범대학');
+  assert.equal(findSchedule4Entry(s, '국어교육과', 2023, colleges), null, '2023학번 이하는 대학 소속을 알 수 없어 대조 불가');
+  assert.equal(findSchedule4Entry(s, '컴퓨터·소프트웨어공학과', 2024, null), null, '[별표 1] 자료가 없으면 대학 단위 대조는 빠진다');
+  assert.equal(findSchedule4Entry(s, '동물보건학과', 2024, colleges), null, '보건과학대학은 2024학번 [별표 4] 표에 항목이 없어 대조 불가');
+  // 학과가 직접 적힌 항목은 그대로(대학 경로를 타지 않는다)
+  assert.equal(findSchedule4Entry(s, '간호학과', 2024, colleges).kind, 'DEPARTMENT');
+  const same = checkSchedule4Credits({ departmentName: '컴퓨터·소프트웨어공학과', admissionYear: 2024, rows: [row('전공', 136)], schedule: s });
+  assert.equal(same.match, true);
+  const diff = checkSchedule4Credits({ departmentName: '컴퓨터·소프트웨어공학과', admissionYear: 2024, rows: [row('전공', 130)], schedule: s });
+  assert.deepEqual([diff.match, diff.schedule4Credits, diff.bookCredits], [false, 136, 130]);
 });
 
 test('원문 txt 교차 확인: JSON의 항목 이름이 파서가 만든 [별표 4-n] 조문 본문에 모두 있다', () => {
