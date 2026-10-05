@@ -48,6 +48,13 @@ test('경영학과 2020학번: 그 학과명으로는 자료가 없다 → 자�
   assert.equal(candidate.lineageSource, 'NAME_MATCH');
 });
 
+test('공학3계열 2027학번: 열린 범위 행이 있어도 2027 개편 전이라 자료없음(외삽 금지)', async () => {
+  const r = await resolveRegulation({ admissionYear: 2027, enrollmentType: 'GENERAL', departmentName: '공학3계열', asOfDate: '2027-04-01' });
+  assert.equal(r.confidence, 'NO_DATA');
+  assert.ok(rule(r, 'REQUIREMENTS').flags.some((f) => f.code === 'COHORT_BEYOND_LATEST_DATA'));
+  assert.equal(rule(r, 'REQUIREMENTS').value, null);
+});
+
 test('없는 학과명 / 학과 id', async () => {
   const byName = await resolveRegulation({ admissionYear: 2022, enrollmentType: 'GENERAL', departmentName: '없는학과', asOfDate: ASOF });
   assert.equal(byName.confidence, 'NO_DATA');

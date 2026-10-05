@@ -67,6 +67,14 @@ async function loadCandidates(departmentId, admissionYear) {
   return candidates;
 }
 
+// 시스템이 가진 가장 최신 학번/학년도: 행의 (유한한) 하한·상한 중 최댓값. 열린 상한(NULL)은 무시한다.
+async function loadLatestDataYear() {
+  const [[row]] = await pool.query(
+    'SELECT MAX(GREATEST(COALESCE(min_admission_year, 0), COALESCE(max_admission_year, 0))) AS y FROM curriculum_requirements'
+  );
+  return row.y || null;
+}
+
 async function loadHistory(departmentId, admissionYear) {
   const history = {};
   for (const category of DERIVED_HISTORY_CODES) {
@@ -82,14 +90,17 @@ async function loadHistory(departmentId, admissionYear) {
  */
 async function loadData(ctx, { withHistory = true } = {}) {
   const department = await loadDepartment(ctx);
-  if (!department) return { department: null, rows: [], candidates: [], history: null };
+  const latestDataYear = await loadLatestDataYear();
+  if (!department) return { department: null, rows: [], latestDataYear, candidates: [], history: null };
 
   const rows = await loadRequirementRows(department.id);
-  const hasRows = hasCoreRowsForYear(rows, ctx.admissionYear);
+  const beyondLatest = ctx.admissionYear > latestDataYear;
+  const hasRows = hasCoreRowsForYear(rows, ctx.admissionYear) && !beyondLatest;
   return {
     department,
     rows,
-    candidates: hasRows ? [] : await loadCandidates(department.id, ctx.admissionYear),
+    latestDataYear,
+    candidates: hasRows || beyondLatest ? [] : await loadCandidates(department.id, ctx.admissionYear),
     history: hasRows && withHistory ? await loadHistory(department.id, ctx.admissionYear) : null,
   };
 }

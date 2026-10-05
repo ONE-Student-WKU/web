@@ -21,6 +21,7 @@ const {
  *  - rows: curriculum_requirements 행(그 학과 전체, 학번 필터 전)을 camelCase로 —
  *      { id, category, requiredCredits(Number), description, enrollmentType|null, minCourseCount|null,
  *        minAdmissionYear|null, maxAdmissionYear|null, requiredCourses: string[] }
+ *  - latestDataYear: 시스템이 가진 가장 최신 학번/학년도(없으면 null) — 열린 범위 행의 외삽 방지용
  *  - candidates: 이 학번 자료를 가진 "개편 전후 관계 학과" 목록(NO_DATA일 때 안내용) — [{ departmentName, ... }]
  *  - history: { GRAD_TOTAL|MAJOR_TOTAL|LIBERAL_TOTAL: { earlierChanges, laterChanges } } | null
  */
@@ -152,7 +153,11 @@ function evaluate(ctx, data) {
   const department = data.department || null;
   const yearRows = department ? (data.rows || []).filter((r) => rowAppliesToYear(r, ctx.admissionYear)) : [];
   if (!department) dataFlags.push(makeFlag('DEPARTMENT_NOT_FOUND'));
-  else if (!hasCoreRowsForYear(yearRows, ctx.admissionYear)) dataFlags.push(makeFlag('NO_CURRICULUM_ROWS', { candidates: data.candidates || [] }));
+  // 상한이 열린 행(max=NULL)은 "그 이후 개편이 확인될 때까지 유효"라는 뜻이지 미래 학번에 대한 확인이 아니다. 시스템이 아는
+  // 가장 최신 학년도보다 뒤의 학번에는 외삽하지 않는다.
+  else if (data.latestDataYear != null && ctx.admissionYear > data.latestDataYear) {
+    dataFlags.push(makeFlag('COHORT_BEYOND_LATEST_DATA', { latestDataYear: data.latestDataYear }));
+  } else if (!hasCoreRowsForYear(yearRows, ctx.admissionYear)) dataFlags.push(makeFlag('NO_CURRICULUM_ROWS', { candidates: data.candidates || [] }));
 
   const reqFlags = [...eligibilityFlags, ...dataFlags, ...relaxation.flags, ...liberal.flags];
   if (dataFlags.length === 0) {
@@ -174,6 +179,7 @@ function evaluate(ctx, data) {
   }
 
   const reqBasis = ['BOOKLET_ROWS', ...relaxation.basis, ...liberal.basis];
+  if (dataFlags.some((f) => f.code === 'COHORT_BEYOND_LATEST_DATA')) reqBasis.push('ACAD_ADDENDUM_2026_04_10_ART2_REORG_2027');
   if (ctx.admissionYear < 2026) {
     reqBasis.push('ENF_ART118_COHORT_TRANSITION', 'ACAD_ADDENDUM_2026_02_05_ART3');
     reqFlags.push(makeFlag('COHORT_TRANSITION_ADDENDUM_NOT_HELD'));

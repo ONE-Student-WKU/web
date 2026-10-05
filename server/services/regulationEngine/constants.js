@@ -132,6 +132,11 @@ const CITATIONS = Object.freeze({
     file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
     quote: '종전 2025년 8월 29일자 학칙의 부칙에 정한 경과조치를 적용한다',
   },
+  ACAD_ADDENDUM_2026_04_10_ART2_REORG_2027: {
+    kind: 'ARTICLE', doc: '학칙 부칙(2026.04.10.)', article: '제2조 제1항',
+    file: TEXT_SOURCES.ACADEMIC_REGULATIONS.file,
+    quote: '[별표 1] 학과(부), 전공 및 광역계열 입학정원(2027학년도 이후)은 2027년 3월 1일 입학자부터 적용한다',
+  },
   BOOKLET_2026_LIBERAL_CAP: {
     kind: 'BOOKLET', doc: '2026학년도 교육과정 책자(해설)', article: '30쪽 교양 이수학점 상한',
     file: 'db/regulations/교육과정/2026_교육과정_해설.md',

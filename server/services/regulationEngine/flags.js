@@ -29,6 +29,7 @@ const FLAG_CATALOG = {
   RESTRUCTURING_DATE_MISSING: [L.NO_DATA, '"학사구조조정 시점" 해석으로 판단하려면 구조조정 시점(연도·학기)이 필요한데 입력되지 않았어요.'],
 
   // --- 데이터 ---
+  COHORT_BEYOND_LATEST_DATA: [L.NO_DATA, '시스템이 보유한 최신 교육과정 자료(학년도) 이후의 학번이에요. 열린 범위의 행을 미래 학번에 그대로 적용하지 않았어요(2027학번부터 학과·계열 개편 예정 — 학칙 부칙 2026.04.10.).'],
   NO_CURRICULUM_ROWS: [L.NO_DATA, '이 학과·학번의 졸업요건 자료가 시스템에 없어요. 다른 학번이나 학과 자료로 대신 추정하지 않았어요.'],
   MAJOR_RELAXATION_ROW_MISSING: [L.ESTIMATED, '전공 최소학점 완화 기준이 이 학과·학번 자료에 없어, 일반 재학생 기준으로 계산했어요.'],
 

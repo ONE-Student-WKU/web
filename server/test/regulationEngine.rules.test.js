@@ -175,6 +175,17 @@ test('학번 자료가 없으면 다른 해로 추정하지 않고 자료없음 
   assert.deepEqual(rule(r, 'REQUIREMENTS').flags.find((f) => f.code === 'NO_CURRICULUM_ROWS').candidates, candidates);
 });
 
+test('열린 범위 행(max=NULL)은 시스템이 아는 최신 학번 이후로 외삽하지 않는다', async () => {
+  const openEnded = ROWS.map((r) => (r.maxAdmissionYear >= 2024 ? { ...r, maxAdmissionYear: null } : r));
+  const within = await resolve({ admissionYear: 2026, enrollmentType: 'GENERAL' }, { rows: openEnded, latestDataYear: 2026 });
+  assert.equal(rule(within, 'REQUIREMENTS').value.totalRequiredCredits, 136);
+  const beyond = await resolve({ admissionYear: 2027, enrollmentType: 'GENERAL', asOfDate: '2027-04-01' }, { rows: openEnded, latestDataYear: 2026 });
+  assert.equal(beyond.confidence, 'NO_DATA');
+  assert.equal(rule(beyond, 'REQUIREMENTS').value, null);
+  assert.ok(codes(beyond, 'REQUIREMENTS').includes('COHORT_BEYOND_LATEST_DATA'));
+  assert.ok(rule(beyond, 'REQUIREMENTS').basis.some((b) => b.key === 'ACAD_ADDENDUM_2026_04_10_ART2_REORG_2027'));
+});
+
 test('학과를 못 찾으면 자료없음', async () => {
   const r = await resolve({ admissionYear: 2022, enrollmentType: 'GENERAL' }, { department: null });
   assert.equal(r.confidence, 'NO_DATA');
