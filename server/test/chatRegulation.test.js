@@ -111,7 +111,8 @@ test('시스템 프롬프트에 근거 우선순위 규칙이 들어간다', () 
 
 test('규정 질문 판별: 졸업·이수·경과조치 질문만 판단 청크 대상', () => {
   for (const q of ['졸업하려면 몇 학점?', '전공필수가 바뀌면 안 들어도 돼?', '학칙 경과조치 알려줘', '편입생 기준']) assert.ok(REGULATION_QUESTION_RE.test(q), q);
-  for (const q of ['도서관 위치 알려줘', '학식 메뉴 뭐야']) assert.ok(!REGULATION_QUESTION_RE.test(q), q);
+  for (const q of ['도서관 위치 알려줘', '학식 메뉴 뭐야', '비밀번호 변경 어떻게 해?']) assert.ok(!REGULATION_QUESTION_RE.test(q), q);
+  assert.ok(REGULATION_QUESTION_RE.test('학과가 바뀌면 전공과목은 어떻게 인정돼?'));
 });
 
 // --- DB(로컬 시드 + seed:regulation-articles) ---

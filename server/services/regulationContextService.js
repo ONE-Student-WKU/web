@@ -1,6 +1,7 @@
 const pool = require('../db');
 const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./regulationEngine');
 const { resolveDepartment } = require('./curriculumContextService');
+const { getDepartmentChain } = require('./curriculumHistoryService');
 
 /**
  * server/services/regulationContextService.js
@@ -17,12 +18,13 @@ const { resolveDepartment } = require('./curriculumContextService');
 
 // 규정·학사 판단이 필요한 질문일 때만 판단 청크를 넣는다. 아무 질문에나 넣으면 "관련 규정 없음" 안내(NOT_FOUND)가
 // 사라지고 무관한 질문에도 규정 문단이 붙는다.
-const REGULATION_QUESTION_RE = /경과조치|적용|이수|필수|선택|폐지|폐설|없어졌|전과|편입|개편|학칙|규정|졸업|면제|들어야|안\s*들어도|학점|요건|기준/;
+const REGULATION_QUESTION_RE = /경과조치|적용|이수|필수|선택|폐지|폐설|없어졌|전과|편입|개편|학칙|규정|졸업|면제|들어야|안\s*들어도|학점|요건|기준|인정|바뀌|바뀐/;
 
 const DOC_LABEL = { ENFORCEMENT_RULES: '학칙시행규칙', ACADEMIC_REGULATIONS: '학칙', CLASS_MANAGEMENT: '수업관리규정' };
 const ENROLLMENT_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 const STATUS_LABEL = { APPLIES: '적용', CONDITIONAL: '조건부', UNKNOWN: '판단 불가(자료 부족)' };
 const ACADEMIC_OFFICE = '학사지원과(063-850-5228)';
+const CONFIDENCE_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분(확인 필요)', NO_DATA: '자료없음' };
 const MAX_COURSE_NAMES = 5;
 const MAX_ARTICLE_CHUNKS = 4;
 const MAX_ARTICLE_CHARS = 1200;
@@ -67,6 +69,17 @@ function courseTransitionLines(rules) {
   return lines;
 }
 
+/** 졸업요건 값(파트 1 evaluate + 데이터 등급)의 신뢰도 한 줄. 숫자 자체는 학번별 졸업요건 청크에 있다. */
+function requirementLine(requirements) {
+  if (!requirements) return null;
+  const rule = requirements.rules.find((r) => r.id === 'REQUIREMENTS');
+  if (!rule) return null;
+  if (!rule.value) return `졸업요건 값: 이 학과·학번 자료 없음(신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}) — 다른 학번 값으로 대신 답하지 마라.`;
+  const split = rule.value.categories.filter((c) => c.confidence !== rule.value.totalConfidence).map((c) => c.category);
+  return `졸업요건 값: 총 ${rule.value.totalRequiredCredits ?? '(편입생 — 총량 미확정)'}학점, 신뢰도 ${CONFIDENCE_LABEL[rule.confidence]}` +
+    (split.length ? ` (${split.join('·')} 분할은 합계만 검수돼 추정)` : '');
+}
+
 function historyLine(history) {
   if (!history || history.years.length === 0) return null;
   const parts = history.years.map((y) => `${y.year}학년도 과목 ${y.courses.label}${y.courses.count ? `(${y.courses.count}건)` : ''}${y.inEffect ? '' : '(기준일 이후)'}`);
@@ -96,6 +109,8 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
       lines.push(`- [${STATUS_LABEL[r.status] || r.status}] ${articleLabel(r)}: ${r.effect} — ${r.reason} (신뢰도: ${r.confidenceLabel}${r.critical ? '' : ', 참고'})`);
     }
   }
+  const req = requirementLine(judgment.requirements);
+  if (req) lines.push(req);
   const transitions = courseTransitionLines(active);
   if (transitions.length) lines.push('과목 경과조치(학칙시행규칙 제13조):', ...transitions);
   const hist = historyLine(judgment.history);
@@ -151,9 +166,15 @@ async function loadArticles(refs) {
  * 아니면 학생 프로필. 학번이나 학과를 알 수 없으면 null — 판단하지 않는다(엉뚱한 학생 기준으로 단정하지 않게).
  */
 async function resolveJudgmentSubject({ message, student, yearContext }) {
-  const department = await resolveDepartment(message, student);
+  let department = await resolveDepartment(message, student);
   const cohort = yearContext.applicableCohort;
   if (!department || !cohort) return null;
+  // "학과가 공학3계열로 바뀌면 내 과목은?"처럼 본인 학과의 개편 전후 학과를 언급한 질문은 본인 기준으로 판단한다.
+  // 언급된 학과를 그대로 쓰면 "공학3계열 2022학번"처럼 존재하지 않는 조합을 판단하게 된다(평가 세트 E25).
+  if (department.source === 'message' && student && student.department_id && department.id !== student.department_id) {
+    const chain = await getDepartmentChain(student.department_id);
+    if (chain.departmentIds.includes(department.id)) department = (await resolveDepartment('', student)) || department;
+  }
   const isProfile = department.source === 'profile' && yearContext.cohortSource === 'profile';
   const base = isProfile && student ? inputFromStudentRow(student) : { enrollmentType: 'GENERAL' };
   return {
@@ -175,7 +196,9 @@ async function lookupRegulationJudgment({ message, student, yearContext }) {
   try {
     const subject = await resolveJudgmentSubject({ message, student, yearContext });
     if (!subject) return null;
-    const judgment = await resolveApplicableRulesForStudent(subject.input, { withRequirements: false });
+    // withRequirements: 졸업요건 값의 판단 보류(#260)·자료 없음까지 신뢰도에 넣는다. 빼면 요건 쪽 보류가 있는 학과도
+    // 적용범위만 보고 "확정"이 나와 챗봇이 단정한다(평가 세트 E16·E19·E29가 잡은 문제, D-33).
+    const judgment = await resolveApplicableRulesForStudent(subject.input, { withRequirements: true });
     const refs = [...new Set((judgment.rules || []).filter((r) => r.status !== 'NOT_APPLICABLE').map((r) => r.basis.articleRef))];
     const articles = await loadArticles(refs);
     return { judgment, subject, chunks: formatJudgmentChunks(judgment, subject, articles) };
