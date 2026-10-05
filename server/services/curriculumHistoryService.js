@@ -136,7 +136,7 @@ async function getRuleVersions({ departmentId, category, enrollmentType = null }
 /**
  * 학생에게 적용되는 규정 vs 그 규정의 변경 이력.
  *  - applied: admissionYear가 속한 버전(현재 적용 규정). 없으면 null(그 학번 자료가 아직 없음).
- *  - laterChanges: 이 학번 이후(to_year > admissionYear)에 생긴 변경 — "이 학번에는 적용되지 않는다"는 설명용.
+ *  - laterChanges: 이 학번 이후(to_year > admissionYear)에 생긴 변경 — 학번별 기준표 값과 구분해 보여주는 용도(이 학번에 적용되는지는 경과조치, 시행규칙 제13조에 따라 달라진다).
  *  - earlierChanges: 이 학번 이전에 있었던 변경 — 이 규정이 어떻게 지금 값이 됐는지 설명용.
  * 합산 코드(GRAD_TOTAL 등)도 지원한다(변경 이력으로 같은 정보를 만든다).
  */
