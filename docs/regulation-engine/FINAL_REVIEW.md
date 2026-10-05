@@ -149,7 +149,7 @@
 
 ## 3. 코드 수준 해결 여부 (B)
 
-> **보정 라운드 A(2026-10-05) 이후 판정은 각 행 끝의 "→ 보정 라운드 A" 표시와 문서 맨 아래 §9를 볼 것.** 아래 집계(11/24/6/18)는 점검 시점 기준이다.
+> **보정 라운드 A(2026-10-05) 이후 판정은 각 행 끝의 "→ 보정 라운드 A" 표시와 문서 맨 아래 §9를, 보정 라운드 B 이후는 "→ 보정 라운드 B" 표시와 §10을 볼 것.** 아래 집계(11/24/6/18)는 점검 시점 기준이다.
 
 판정:
 - **① 코드로 해결됨**: 코드와 테스트가 증명한다.
@@ -185,17 +185,17 @@
 | B-15 | 챗봇 졸업요건 청크가 **입학유형을 반영 안 함** (HANDOFF §3-3) | [실행] S4a 3학년 전과생: 청크 "일반 재학생 기준 전공 75", 진단 노트 "전공 48" — 근거끼리 숫자가 다름(청크에 "일반 재학생 기준" 표기는 있음) **→ 보정 라운드 A**: **해결(①)** — 같은 학과·학번이면 청크가 판단의 요건 값(입학유형별)을 씀, `[테스트] 3학년 전과생: 청크가 진단과 같은 숫자…`, `[테스트] 편입생: …`, [실행] S4a 전공 48·합계 136, S4b 합계 확정 불가, D-35 |
 | B-16 | **본인 학번을 말하면 "가정" 판단으로 바뀜** (F-3) | `regulationContextService.js:178` `isProfile`이 `cohortSource === 'profile'`일 때만 참. [실행] S1 "20학번인데…"(프로필도 2020) → "질문에 나온 학번·학과 기준이며 입학유형은 일반 재학생으로 가정". 전과·편입생이 자기 학번을 말하면 입학유형이 빠진다 **→ 보정 라운드 A**: **해결(①)** — `regulationContextService.js` `isProfile`을 값 비교로, `[테스트] 전과생이 "22학번인데"…` 외 3개, [실행] S1·X6, D-37 |
 | B-17 | **과거 날짜 질문 → 다른 학번 청크** (D-30, F-6) | [실행] 2022학번이 "2025년 9월 1일 기준으로 내 졸업요건이 뭐였어?" → `mode: SPECIFIC_YEAR, targetYears: [2025]`. 판단은 2022학번(기준일 2025-09-01), 졸업요건 청크는 2025학번 **→ 보정 라운드 A**: **해결(①)** — `yearContext.js` `extractAskedYears`가 날짜를 지운 뒤 학년도를 읽음, `[테스트] 날짜 질문: …` 3개, [실행] X5 `SPECIFIC_YEAR[2025]`→`COHORT[2022]`, D-38 |
-| B-18 | **학칙 [별표 4] 학점 값을 구조화·대조하지 않음** (F-1의 코드 측) | `applicability.js:178 GRAD_CREDITS_SCHEDULE4`는 "어느 표인지"만 고르고 숫자는 안 읽음. 별표는 `regulationContextService.js:151`에서 원문 청크로도 제외(`section <> 'SCHEDULE'`) **→ 보정 라운드 A**: **부분 해결(②로 유지)** — `schedule4.js`가 [별표 4]에 **학과명이 직접 적힌 항목**만 책자 총량과 자동 대조(`SCHEDULE4_CREDIT_MISMATCH`). 대학 단위 항목(사범대학·창의공과대학 등)은 소속 자료가 없어 미대조 — 라운드 B 후보. D-34 |
-| B-19 | **`regulation_relations`가 런타임에서 쓰이지 않음** (F-7) | [실행] grep: 비테스트 사용처는 `seedRegulationArticles.js`(쓰기)뿐. 관계 178행(REFERS 104·AMENDS 46·DELEGATES_TO 20·OVERRIDES 8)이 있으나 판단·챗봇이 따라가지 않음 |
-| B-20 | `regulation_versions` 시행일·대체관계를 판단에 안 씀 | 판본 판단은 상수 `constants.js:48 TEXT_SOURCES` + `applicability.js:69`. `regulation_versions`는 버전 라벨 조인에만 쓰임(`dbProvider.js:110`, `regulationContextService.js:151`) |
-| B-21 | 기준일 판본 판단이 **이원화**(문서 단위 vs 조문 단위) | 파트 1 `decisions.js:193 checkTextVersion`(문서 단위), 파트 2 `applicability.js:69`(조문 단위). [실행] 간호학과 2026 @2026-03-15: 적용 조문 규칙은 모두 확정인데 전체 "추정" — 원인은 요건 규칙(REQUIREMENTS·MAJOR_MINIMUM·LIBERAL_ARTS_CAP)에 붙은 문서 단위 `TEXT_INTERMEDIATE_VERSION` |
-| B-22 | 엔진이 **과목 계보(`course_lineage`)를 안 씀** → 개설 학년 근사 | `dbProvider.js:139 attachOfferedGrades`가 학수번호 불일치 시 가장 가까운 학년도 편성표를 씀(`OFFERED_GRADE_FROM_NEAREST_SNAPSHOT`). `course_lineage`는 `curriculumHistoryService.js:221`(챗봇 과목 이력)에서만 사용 |
-| B-23 | 제13조④ **수강 학기 이수구분**을 진단이 안 씀 | `applicability.js:142 categoryAtRegistration`은 export만 되고 런타임 호출 없음([실행] grep). 진단은 학생이 입력한 이수구분을 그대로 합산 |
-| B-24 | **수업관리규정** 적용범위 없음 | 조문 48행 저장([실행] DB), 적용범위 규칙 0개(`applicability.json`), 런타임은 RAG 본문뿐 |
+| B-18 | **학칙 [별표 4] 학점 값을 구조화·대조하지 않음** (F-1의 코드 측) | `applicability.js:178 GRAD_CREDITS_SCHEDULE4`는 "어느 표인지"만 고르고 숫자는 안 읽음. 별표는 `regulationContextService.js:151`에서 원문 청크로도 제외(`section <> 'SCHEDULE'`) **→ 보정 라운드 A**: **부분 해결(②로 유지)** — `schedule4.js`가 [별표 4]에 **학과명이 직접 적힌 항목**만 책자 총량과 자동 대조(`SCHEDULE4_CREDIT_MISMATCH`). 대학 단위 항목(사범대학·창의공과대학 등)은 소속 자료가 없어 미대조 — 라운드 B 후보. D-34 **→ 보정 라운드 B**: **부분 해결 유지(②)** — 대학 단위 항목을 [별표 1]로 소속 대학이 확인되는 2024·2025·2026학번까지 확장(학과 126개 중 44·37·45개 새로 대조, 불일치 0건). 2023학번 이하는 [별표 1]에 대학 열이 없어 "대조 불가" 유지(D-44). |
+| B-19 | **`regulation_relations`가 런타임에서 쓰이지 않음** (F-7) | [실행] grep: 비테스트 사용처는 `seedRegulationArticles.js`(쓰기)뿐. 관계 178행(REFERS 104·AMENDS 46·DELEGATES_TO 20·OVERRIDES 8)이 있으나 판단·챗봇이 따라가지 않음 **→ 보정 라운드 B**: **해결(①)** — `relationWalk.js`가 위임 깊이2·참조 깊이1·특칙 양방향·개정 이력·별표 하위 표를 따라 `rules[].evidence`에 경로를 남기고 챗봇 판단 청크에 "근거 경로"로 실음. `applicability.js:527`, `regulationContextService.js:127·209`, 테스트 `relationWalk.test.js`(D-43). |
+| B-20 | `regulation_versions` 시행일·대체관계를 판단에 안 씀 | 판본 판단은 상수 `constants.js:48 TEXT_SOURCES` + `applicability.js:69`. `regulation_versions`는 버전 라벨 조인에만 쓰임(`dbProvider.js:110`, `regulationContextService.js:151`) **→ 보정 라운드 B**: **해결(①)** — `regulation_versions` 시행일·대체관계(사슬)를 `textVersion.summarizeVersions`가 판단에 사용, DB 값과 상수 일치 테스트(D-42). |
+| B-21 | 기준일 판본 판단이 **이원화**(문서 단위 vs 조문 단위) | 파트 1 `decisions.js:193 checkTextVersion`(문서 단위), 파트 2 `applicability.js:69`(조문 단위). [실행] 간호학과 2026 @2026-03-15: 적용 조문 규칙은 모두 확정인데 전체 "추정" — 원인은 요건 규칙(REQUIREMENTS·MAJOR_MINIMUM·LIBERAL_ARTS_CAP)에 붙은 문서 단위 `TEXT_INTERMEDIATE_VERSION` **→ 보정 라운드 B**: **해결(①)** — 판본 판단을 조문 단위 `articleTextFlags` 하나로 일원화(`textVersion.js:74`). 간호학과 2026 @2026-03-15 모순 해소(D-42). 함께 DATE 하루 밀림 버그 수정. |
+| B-22 | 엔진이 **과목 계보(`course_lineage`)를 안 씀** → 개설 학년 근사 | `dbProvider.js:139 attachOfferedGrades`가 학수번호 불일치 시 가장 가까운 학년도 편성표를 씀(`OFFERED_GRADE_FROM_NEAREST_SNAPSHOT`). `course_lineage`는 `curriculumHistoryService.js:221`(챗봇 과목 이력)에서만 사용 **→ 보정 라운드 B**: **해결(①)** — `offeredGrade.js`가 `course_lineage`로 to_year 편성표에서 정확히 찾음(`dbProvider.js:203`). 이전 근사 106건 중 91건 정확 확인, 9건 개설 학년 값이 바뀜(D-45 표). 계보 없는 15건만 근사 + 추정 표시 유지. |
+| B-23 | 제13조④ **수강 학기 이수구분**을 진단이 안 씀 | `applicability.js:142 categoryAtRegistration`은 export만 되고 런타임 호출 없음([실행] grep). 진단은 학생이 입력한 이수구분을 그대로 합산 **→ 보정 라운드 B**: **해결(①, 추정 표시)** — `graduationService.js:150`가 `registrationCategory.classifyByRegistration`(→`categoryAtRegistration`)로 수강 학년도 이수구분을 반영. 필수/선택 사이만 학점 이동, 전공기초 등은 알리기만. 로컬 실데이터 학생(id 7)은 이동 0건·숫자 불변(D-46). |
+| B-24 | **수업관리규정** 적용범위 없음 | 조문 48행 저장([실행] DB), 적용범위 규칙 0개(`applicability.json`), 런타임은 RAG 본문뿐 **→ 보정 라운드 B**: **해결(①)** — 조문 본문으로 확인되는 6개 규칙(제2·5·6·13조, 삭제된 제14·15조)을 `applicability.json`에 추가(전부 참고 규정). 문서 사이 참조 파서 오류(수업관리규정 제13조→시행규칙 제14조가 깨진 문자열)와 오연결 1건(시행규칙 제33조→제24조) 수정(D-47). 나머지 조문은 교원·시설·행정 사항이라 규칙 대상 아님. |
 | B-25 | 편입 학년·소속변경 **입력 컬럼 없음** (R-10, A-5, B-6) | `db/schema.sql` students에 해당 컬럼 없음([실행] grep). 엔진은 3학년 가정(`TRANSFER_GRADE_ASSUMED`) |
 | B-26 | 화면: 총 요구학점 0이면 진행률 **0/0(NaN)** | `client/src/pages/GraduationStatus.jsx:56~57`. 파트 3 이후 자료없음이 0으로 나오는 조합이 늘었다(D-32 #2) **→ 보정 라운드 A**: **해결(①)** — `GraduationStatus.jsx` 자료 없음 안내, `[테스트] GraduationStatus.test.jsx` "자료 없음: 0/0·NaN 대신…", D-39 |
-| B-27 | AI 응답 **후처리 가드** 없음 (R-05 잔여) | 지시는 근거에만 있음. 응답 문장을 검사하는 코드 없음(`routes/chat.js:164` 이후 바로 저장) |
-| B-28 | RAG 해설 문서와 진단의 **충돌**: "2021학번까지 교양 제한 없음" vs 진단 52 적용 (R-06 잔여) | `db/regulations/교육과정/2024~2026_교육과정_해설.md`(278·192·267행) vs `graduationService.js:30`. 우선순위 규칙으로만 처리 |
+| B-27 | AI 응답 **후처리 가드** 없음 (R-05 잔여) | 지시는 근거에만 있음. 응답 문장을 검사하는 코드 없음(`routes/chat.js:164` 이후 바로 저장) **→ 보정 라운드 B**: **해결(①)** — `answerGuard.guardAnswer`가 확정이 아닌 판단인데 단서 표현이 하나도 없는 답변에만 안내문을 덧붙임(`routes/chat.js:167`). 설계 4안 비교는 D-49. **실제 AI 응답으로는 검증하지 못함**(mock 단위·라우트 테스트). |
+| B-28 | RAG 해설 문서와 진단의 **충돌**: "2021학번까지 교양 제한 없음" vs 진단 52 적용 (R-06 잔여) | `db/regulations/교육과정/2024~2026_교육과정_해설.md`(278·192·267행) vs `graduationService.js:30`. 우선순위 규칙으로만 처리 **→ 보정 라운드 B**: **해결(①)** — 판단 청크에 충돌 줄 + `conflicts` 메타데이터(진단 52 적용, 해설 문서·시행규칙 근거 병기) 추가(`regulationContextService.js:107`). 해설 문서는 수정하지 않음(D-48). |
 | B-29 | **CI에 테스트 단계 없음** (R-12) | §2-1 **→ 보정 라운드 A**: **해결(①)** — `.github/workflows/test.yml`(새 파일, 시크릿 없음), [실행] PR #280 Actions run `37304239788` 성공: 서버 `# tests 266 / pass 266 / fail 0`, 클라이언트 30개, D-40. 필수 체크(branch protection) 지정은 저장소 설정이라 범위 밖 |
 | B-30 | 컴소공 전공과목 **학년도별 분리** (R-13, N-8) | 파트 2·3에서 `db/curriculum` 변경 없음([실행] git log). 엔진은 컴소공 C 구간을 자료 불충분으로 표시만 함 |
 | B-31 | 데이터 보충·검수: N-2 학수번호, N-5 전과·편입 행, N-7 2020 이미지 11건, DATA_AUDIT §6 미검수 | 문서 주장. 이번에 데이터 변경 커밋 없음([실행] git log) |
@@ -257,30 +257,30 @@
 | R2 | 교육과정 책자 과목표 → 학번별 과목 편성 | 전사 | ✅ | `curriculum_courses` ← `seed:curriculum-YYYY` |
 | R3 | 학번 스냅샷 ↔ 스냅샷 → 변경 이력 | 비교 생성 | ✅ | `curriculum_changes`(AUTO), `dbProvider.js:171` |
 | R4 | 학과 개편 → 판단·이력 | 계보 | ✅ | `department_lineage` → `getDepartmentChain` → `applicability.js:278` |
-| R5 | 과목 계보 → 판단 | 계보 | ❌ | 엔진 미사용(B-22). 챗봇 과목 이력 청크에서만 사용(`curriculumHistoryService.js:221`) |
+| R5 | 과목 계보 → 판단 | 계보 | ✅ | 엔진 미사용(B-22). 챗봇 과목 이력 청크에서만 사용(`curriculumHistoryService.js:221`) **→ 보정 라운드 B**: `dbProvider.js:186 attachOfferedGrades` → `offeredGrade.js resolveOfferedGrade`가 `course_lineage`로 개설 학년을 찾는다. 테스트 `offeredGrade.test.js`(B-22, D-45) |
 | R6 | 시행규칙 제5조 → 제2절(제13조) | 위임 | ✅ | `applicability.json` `ENF5_CURRICULUM_AT_ADMISSION`, MANUAL 관계 행 |
 | R7 | 제13조②③④ → 과목 변경 이력 | 적용 | ✅ | `applicability.js:194·:221·:264` |
 | R8 | 제14조 → 학과 개편 | 적용 | ✅ | `applicability.js:278` |
 | R9 | 제15조 → 동일과목 지정 목록 | 적용 | ❌ | `course_equivalences` 0행[실행] |
-| R10 | 제13조④ → 학생 수강 내역의 이수구분 | 적용 | ❌ | `categoryAtRegistration` 미호출(B-23) |
+| R10 | 제13조④ → 학생 수강 내역의 이수구분 | 적용 | ✅ | `categoryAtRegistration` 미호출(B-23) **→ 보정 라운드 B**: `graduationService.js:150` → `registrationCategory.classifyByRegistration` → `categoryAtRegistration`. 추정 표시, 필수/선택 사이만 이동. 테스트 `registrationCategory.test.js`(B-23, D-46) |
 | R11 | 학칙 제69·71조 → [별표 4] | 위임 | ✅ | PARSED `DELEGATES_TO`(`[테스트] 시드 관계: 학칙 제71조 → [별표 4] 위임…`) + 학번별 표 선택 규칙 |
 | R12 | 시행규칙 제118조① → 학칙 [별표 4] | 위임 | ✅ | `ENF118_GRAD_CREDITS_BY_COHORT`, `applicability.js:178` |
 | R13 | [별표 4] 학번별 표 → 학생 학번 | 범위 선택 | ✅ | `ACAD_SCHED4_1~4`, `[테스트] 학칙 [별표 4]: 학번별 표 선택…` |
-| R14 | **[별표 4] 학점 값 ↔ 책자 총괄표 학점** | 정합 | ❌ | 숫자 대조 없음(B-18) → **실제 불일치 발견(F-1)** |
-| R15 | 시행규칙 제118조 → 학칙 부칙(학번별 경과조치) | 위임 | 🟡 | MANUAL 관계의 `to_ref` 문자열만(어느 부칙인지 특정 안 됨)[실행] |
-| R16 | 학칙 부칙(2026.02.05.) 제3조 → 종전 2025.08.29. 부칙 | 위임 | ❌ | 원문 미보유. `to_ref`만[실행] |
+| R14 | **[별표 4] 학점 값 ↔ 책자 총괄표 학점** | 정합 | 🟡 | 숫자 대조 없음(B-18) → **실제 불일치 발견(F-1)** **→ 보정 라운드 B**: 보정 라운드 A에서 학과명 항목, B에서 [별표 1]로 소속 대학이 확인되는 2024~2026학번 대학 단위 항목까지 대조(`schedule4.js:55`). 2023학번 이하는 대조 불가(D-44) |
+| R15 | 시행규칙 제118조 → 학칙 부칙(학번별 경과조치) | 위임 | 🟡 | MANUAL 관계의 `to_ref` 문자열만(어느 부칙인지 특정 안 됨)[실행] **→ 보정 라운드 B**: 판단 청크에 "끊긴 연결: 제118조 → 학칙 부칙(어느 부칙인지 특정 안 됨)"으로 드러남(`relationWalk.js` unresolved). 연결 자체는 여전히 특정 불가 |
+| R16 | 학칙 부칙(2026.02.05.) 제3조 → 종전 2025.08.29. 부칙 | 위임 | ❌ | 원문 미보유. `to_ref`만[실행] **→ 보정 라운드 B**: 끊긴 연결로 판단 청크에 드러나고 "추정으로만 말할 것"이 붙는다(`regulationContextService.js:127`). 종전 부칙 원문이 없어 이을 수 없음 |
 | R17 | 부칙(2026.04.10.) 제2조② → [별표 4] ③ 개정 | 개정 | ✅ | `GRADUATING_ON_OR_AFTER`(`applicability.js:301`), AMENDS 관계 |
 | R18 | 부칙(2026.04.10.) 제2조① → [별표 1](2027) | 범위 | ✅ | `ACAD_ADD_20260410_SCHED1_FROM_2027` |
 | R19 | [별표 1] 학과 구조 ↔ 학과 개편 계보 | 정합 | ❌ | 대조 코드 없음(B-32) |
 | R20 | 개정 표시 `<개정 …>` → 조문 판본(최근 개정일) | 개정 | ✅ | `articleParser.js:48`, `applicability.js:69` |
-| R21 | 판본 → 이전 판본(대체관계) | 대체 | 🟡 | 2026 판본끼리만 저장, 판단이 읽지 않음(B-20). 2026 이전은 없음 |
-| R22 | 조문 ↔ 조문 참조·특칙(REFERS 104·OVERRIDES 8 등) | 참조 | 🟡 | 전체 178행 저장[실행], 판단·챗봇이 따라가지 않음(B-19). 답에는 RAG 본문으로만 나타남 |
-| R23 | 수업관리규정 → 학칙·시행규칙 | 참조 | 🟡 | RAG 본문만(B-24) |
+| R21 | 판본 → 이전 판본(대체관계) | 대체 | ✅ | 2026 판본끼리만 저장, 판단이 읽지 않음(B-20). 2026 이전은 없음 **→ 보정 라운드 B**: `textVersion.summarizeVersions`가 대체관계 사슬로 판본 시작일을 구해 판단에 사용(`textVersion.js:32·74`, `dbProvider.js:87`). 이전 판본 본문이 없는 구간은 계속 추정(B-20, D-42) |
+| R22 | 조문 ↔ 조문 참조·특칙(REFERS 104·OVERRIDES 8 등) | 참조 | ✅ | 전체 178행 저장[실행], 판단·챗봇이 따라가지 않음(B-19). 답에는 RAG 본문으로만 나타남 **→ 보정 라운드 B**: `applicability.js:527 walkRelations` → `rules[].evidence`, 챗봇 `regulationContextService.js:127·209`. 테스트 `relationWalk.test.js`(B-19, D-43) |
+| R23 | 수업관리규정 → 학칙·시행규칙 | 참조 | ✅ | RAG 본문만(B-24) **→ 보정 라운드 B**: `CMR13_INTENSIVE_COURSE_HOURS` 규칙 + 파서 보정으로 수업관리규정 제13조 → 시행규칙 제14조가 연결됨(`articleParser.js:277`), `regulationEngine.classManagement.test.js`(B-24, D-47) |
 | R24 | 정리 문서(CURATED) → 원문 조문 | 해설 | 🟡 | RAG 본문만 |
 | R25 | 교육과정 해설(책자 RAG) → 학번 | 범위 | 🟡 | `book_year` 필터(`regulationService.js:59`)뿐 |
 | R26 | 전과 안내 문서 → 시행규칙 제107~117조 | 참조 | 🟡 | 문서가 옛 조문 번호 인용(RULE_AUDIT A-10) |
 
-**집계: ✅ 13 · 🟡 7 · ❌ 6 (총 26)**
+**집계(점검 시점): ✅ 13 · 🟡 7 · ❌ 6 (총 26)** → **보정 라운드 B 이후: ✅ 18 · 🟡 5 · ❌ 3 (총 26)** (§10-3)
 
 ### 4-2. 시나리오 추적
 
@@ -538,3 +538,107 @@ grid(3,150개 조합) 전후: 총 요구학점·카테고리 학점이 바뀐 �
 - 졸업요건 **화면을 실제 브라우저로** 확인하지 못했다(Google 로그인 필요) — 컴포넌트 테스트·eslint·vite build로 대신. 색·여백은 실물 확인이 필요하다.
 - 실제 AI 답변 문장(근거·지시까지만).
 - 운영 DB(migrate의 DB 이름 포함), [별표 4] 불일치의 원인(학칙 개정인지 책자 오류인지).
+
+## 10. 보정 라운드 B 변경 기록 (2026-10-06)
+
+"저장은 돼 있는데 판단이 안 읽던 것"을 판단 경로에 연결했다. 브랜치 `feature/regulation-engine-structure-b`(보정 라운드 A 브랜치 위, PR은 머지하지 않음). 결정 기록: DECISIONS D-42~D-50.
+
+### 10-1. 커밋
+
+| 커밋 | 내용 | 결정 |
+|---|---|---|
+| `cc08a0e` | 1-1: 판본 판단을 조문 단위 한 함수로 일원화, DB 판본(시행일·대체관계) 사용, DATE 하루 밀림 수정 (B-20·B-21·F-8) | D-42 |
+| `ebabb3c` | 1-2: 조문 관계(위임·참조·특칙·개정)를 따라가 근거 경로로 남김 (B-19·F-7) | D-43 |
+| `8c49f61` | 1-3: [별표 4] 대조를 [별표 1]로 소속이 확인되는 2024~2026학번까지 확장 | D-44 |
+| `35e670c` | 1-4: B-22 과목 계보로 개설 학년, B-23 졸업진단에 제13조④ | D-45·D-46 |
+| `85077b7` | 1-4: B-24 수업관리규정 6규칙 + 문서 사이 참조 파서 보정 | D-47 |
+| `e4aa943` | 1-4: B-28 근거 충돌 메타데이터, B-27 응답 가드, `migrate.js` DB 이름 경고 | D-48~D-50 |
+| `1ee9f75` `8de2d58` | 스냅샷·실제 출력 확인 후 보정: 참고 규정이 원문 청크 자리 차지하지 않게, 근거 경로 줄 배분 | D-43·D-47 보충 |
+
+### 10-2. 판정 변경과 새 집계
+
+| 항목 | 이전 | 이후 | 비고 |
+|---|---|---|---|
+| B-19 관계 런타임 미사용 | ② | **①** | D-43 |
+| B-20 판본 시행일·대체관계 미사용 | ② | **①** | D-42 |
+| B-21 판본 판단 이원화 | ② | **①** | D-42 |
+| B-22 과목 계보 미사용 | ② | **①** | D-45 (계보 없는 15건은 근사 유지) |
+| B-23 제13조④ 미반영 | ② | **①**(추정 표시) | D-46 |
+| B-24 수업관리규정 적용범위 | ② | **①** | D-47 |
+| B-27 응답 후처리 가드 | ② | **①** | D-49 (실제 AI 응답으로는 미검증) |
+| B-28 RAG 해설 vs 진단 충돌 | ② | **①** | D-48 |
+| B-18 [별표 4] 대조 | ②(부분) | ②(**부분 유지, 범위 확대**) | D-44: 2024~2026학번 대학 단위 항목 대조, 2023학번 이하 대조 불가 |
+
+**새 집계: 해결 31 / 해결 가능하나 미해결 7(B-18 부분·B-25·B-30·B-31·B-32·B-33·B-35) / 사람 결정 필요 3 / 학교 확인 필요 18** (합계 59). **학교 확인 필요 항목(§3 ④)의 판단 결과는 바꾸지 않았다**(필요한 곳은 "추정/확인 필요" 표시만 강화).
+
+### 10-3. 관계 지도 변화 (§4-1)
+
+| 지표 | 점검 시점 | 보정 라운드 B 이후 |
+|---|---|---|
+| ✅ | 13 | **18** |
+| 🟡 | 7 | **5** |
+| ❌ | 6 | **3** |
+
+❌/🟡였던 13개 중 **5개가 ✅**(R5·R10·R21·R22·R23), **1개가 ❌→🟡**(R14, 라운드 A 시작 + B 확장). 남은 ❌ 3개(R9 동일과목 목록, R16 종전 부칙, R19 [별표 1]↔학과 계보)와 🟡 5개(R14·R15·R24·R25·R26)는 학교 자료·원문 부재 또는 범위 밖(§10-5).
+
+| 연결 | 호출 경로 | 테스트 |
+|---|---|---|
+| R5 과목 계보 → 판단 | `dbProvider.js:186 attachOfferedGrades` → `offeredGrade.js resolveOfferedGrade`(`:203`) | `offeredGrade.test.js`(10개) |
+| R10 제13조④ → 수강 이수구분 | `graduationService.js:150` → `registrationCategory.js classifyByRegistration` → `applicability.js categoryAtRegistration` | `registrationCategory.test.js`(10개) |
+| R21 판본 → 이전 판본 | `dbProvider.js:87 loadTextVersions` → `textVersion.js:32 summarizeVersions` → `:74 articleTextFlags` → `applicability.js:352`, `evaluate.js:123` | `textVersion.test.js`(12개) |
+| R22 조문 ↔ 조문 | `applicability.js:527 walkRelations` → `relationWalk.js` → `rules[].evidence` → `regulationContextService.js:127 relationLines`·`:209` 관련 조문 청크 | `relationWalk.test.js`(17개) |
+| R23 수업관리규정 → 학칙·시행규칙 | `applicability.json CMR13_INTENSIVE_COURSE_HOURS` + `articleParser.js:277` → 관계 `CLASS_MANAGEMENT:제13조 → ENFORCEMENT_RULES:제14조` | `regulationEngine.classManagement.test.js`(6개), `regulationEngine.articles.test.js` |
+
+### 10-4. 시나리오 재추적 (§4-2 S1~S6c, X1~X3 + 스냅샷 X4~X6)
+
+`scripts/audit/regulationSnapshot.js`로 보정 라운드 B 시작 전 스냅샷과 지금을 비교했다(grid 3,150개 + 시나리오 15개).
+
+- **grid(졸업진단 총 요구학점·카테고리 학점·졸업논문·인증제 수·신뢰도·플래그): 변경 0건.** 졸업진단 숫자는 바뀌지 않았다.
+- **시나리오 15개 중 15개가 달라졌는데 바뀐 필드는 전부 `chunkTitles`(근거 청크 목록) 하나**다. 요건 줄·이력 줄·판단 신뢰도는 그대로. 늘어난 청크: 관련 조문 원문 2개(대부분 "학칙시행규칙 제118조에서 참조한 학칙 제25조·시행규칙 제12조", S5·S6c는 "제5조보다 우선하는 특칙 제13조"와 학칙 제25조).
+- 이 스냅샷은 청크 **제목**만 비교하므로 판단 청크 본문에 새로 들어간 "근거 경로" 줄, 수업관리규정 참고 4줄, 교양 상한 충돌 줄은 비교 대상이 아니다 — 아래 trace로 따로 확인했다.
+
+| 시나리오 | 신뢰도(변화 없음) | 근거 경로(출발 조문 수 / 도달 단계 / 특칙 / 끊긴 연결) | 비고 |
+|---|---|---|---|
+| S1·S2·S3 컴소공 2020 | 자료 불충분 | 7 / 14 / 1 / 2 | 제118조 → [별표 4] → [별표 4] ③(학번 구간) 포함, 제13조↔제5조 특칙, 2021학번 이하라 교양 상한 충돌 줄 포함 |
+| S4a·X6 전과생, S4b 편입생 | 자료 불충분·추정 | 7 / 14 / 1 / 2 | |
+| S5 공학3계열 2026 | 확정 | 4 / 8 / 1 / 1 | 끊긴 연결 "학칙 부칙(어느 부칙인지 특정 불가)" 한 건은 정보로만 남음(확정 유지) |
+| S6a·S6c 자료 없는 학과·학번 | 자료없음 | 7 / 14 · 5 / 11 | 경로는 보이나 값은 계속 "(자료 없음)" |
+| S6b·X4 간호학과 2017, X1 간호학과 2023 | 자료 불충분·추정 | 6 / 13 / 1 / 2 | |
+| X2·X3 국어교육과 2023 | 추정 | 6 / 13 / 1 / 2 | |
+
+### 10-5. 사용자에게 보이는 변화
+
+1. **졸업진단의 숫자·신뢰도: 변화 없음**(grid 0건, 로컬 수강 데이터 학생 id 7도 이수학점 96 불변). 단, 제13조④로 필수/선택 사이를 옮기는 경로(D-46)는 단위·DB 테스트로만 확인했고 운영 학생 데이터로는 못 봤다. 전공기초·전공심화로 바뀐 과목은 옮기지 않고 INFO 플래그만 붙는다.
+2. **제13조③ 면제 판단에 쓰는 개설 학년 9건이 바뀜**(D-45 표): 건축학과 BIM통합설계2 3→4학년, 군사학과 군사영어 2→1, 군대윤리 2→3, 기계공학과 전산기계제도 2→1, 도시공학부 도시개발론 4→3, 응급구조학과 재난관리 1→4, 공중보건학 2→1, 전문기도관리 3→2, 작업치료학과 작업치료와지역사회참여 4→2. 정확한 계보 확인의 결과이며 의도한 변화다.
+3. **챗봇 판단 청크**: "근거 경로" 최대 약 12줄(특칙·위임·참조 경로·끊긴 연결·개정 이력), 관련 조문 원문 청크 최대 2개(각 800자), 수업관리규정 참고 4줄, 2021학번 이하 교양 상한 충돌 줄 + `conflicts` 메타데이터.
+4. **챗봇 응답**: 신뢰도가 확정이 아닌데 "추정·확인 필요·학사지원과" 같은 단서가 없는 답변 끝에 안내문이 덧붙는다(본문은 그대로). 컴소공 2017~2022학번 등 판단 신뢰도가 확정이 아닌 학생의 규정 질문 상당수가 대상이다.
+5. **[별표 4] 대조 범위 확대**: 2024·2025·2026학번 학과 44·37·45개가 새로 대조됐고 전부 일치 → 새 경고 없음.
+6. 간호학과 2026 @2026-03-15처럼 기준일이 "조문이 개정되지 않은 구간"인 질의는 전체 "추정"에서 해당 조문 기준 "확정"으로 바뀜(D-42, 판단 모순 해소).
+
+### 10-6. 검증 결과
+
+| 명령 | 결과 |
+|---|---|
+| `npm test` (서버, 로컬 DB) | 서버 `# tests 336 · pass 336 · fail 0` (라운드 A 266 + 라운드 B 70) |
+| `npm test` (클라이언트 vitest) | Test Files 4 · Tests 30 · 전부 통과 |
+| `scripts/ci/check-schema-idempotent.js --base origin/develop --head HEAD` | OK (schema.sql 변경 없음) |
+| `scripts/ci/check-db-reseed-paths.js --base origin/develop --head HEAD` | OK (새 파일 0개 — `db/regulation-engine/schedule1_colleges.json`은 재시딩 경로 밖) |
+| 스냅샷 전후 비교 | grid 변경 0건, 시나리오 15개는 `chunkTitles`만 변경(§10-4) |
+
+로컬에서 `npm run seed:regulation-articles --workspace server`를 다시 돌렸다(로컬 DB만 — 적용범위 17→23, 관계 178→177행). 운영 DB·재시딩 워크플로·main에는 아무것도 하지 않았다.
+
+### 10-7. 새로 발견한 문제
+
+1. **파서 오연결**: 시행규칙 제33조(공결)의 "학칙 제24조의 휴업일"이 시행규칙 제24조(수강가능학점 예외)로 잘못 연결돼 있었다. 수업관리규정 제13조의 "학칙시행규칙 제14조"는 깨진 문자열로 저장돼 있었다. 둘 다 수정(D-47).
+2. **판정 첫 구현이 스냅샷에서 잡힌 문제 2건**: 수업관리규정 참고 규칙이 졸업 질문의 원문 청크 4자리를 차지했고, 근거 경로 줄이 10줄을 다 써서 끊긴 연결·개정 이력이 잘렸다. 실제 출력을 보고 고쳤다(D-43·D-47 보충).
+3. **응답 가드는 판단 신뢰도가 "자료 불충분/추정"인 질문이 많은 학과·학번에서 안내문을 자주 붙인다** — 의도한 동작이지만 학생 체감 확인이 필요하다(D-49).
+4. `curriculum_changes`의 학년도 축이 입학학번이라 제13조④의 "수강 학년도 이수구분"은 "그 해 입학생 교육과정표의 구분"으로 근사한다(추정 표시, D-46).
+5. 챗봇이 쓰는 같은 이름의 과목이 학수번호 둘 이상이면 제13조④ 반영에서 건너뛴다(오매칭 방지) — 그만큼 적용 범위가 좁다.
+6. **`db/migrate.js`는 `DB_NAME`을 무시하고 `wku_ai_chat`에 적용**하는 문제는 운영 설정을 확인할 수 없어 고치지 않고 경고만 추가했다(D-50).
+
+### 10-8. 확인하지 못한 것
+
+- 실제 AI 답변 문장(근거·지시·후처리 가드까지만 mock으로 확인).
+- 운영 DB(`DB_NAME` 설정 포함), 운영 학생 수강 데이터로 제13조④ 이동 결과.
+- 챗봇·졸업요건 **화면을 실제 브라우저로** 확인(Google 로그인 필요).
+- 학교 확인 필요 항목 18개(판단은 그대로).
