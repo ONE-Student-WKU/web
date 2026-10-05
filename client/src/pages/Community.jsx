@@ -433,6 +433,7 @@ function Community({
       setReportFormOpen(false);
     } catch (err) {
       if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 글이에요.');
+      else if (err.code === 'CANNOT_REPORT_OWN') setError('내가 쓴 글은 신고할 수 없어요.');
       else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setReportSubmitting(false);
@@ -455,6 +456,7 @@ function Community({
       setApplicantReportOpenId(null);
     } catch (err) {
       if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 신청이에요.');
+      else if (err.code === 'CANNOT_REPORT_OWN') setError('내 신청은 신고할 수 없어요.');
       else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setApplicantReportSubmittingId(null);
