@@ -132,3 +132,24 @@
 - 컴소공 2017~2022학번 전공과목이 2026 기준 md라는 점(#260 [2020] 2에 이미 기록) — 이번에 일치율만 측정했고 분리 작업은 하지 않았다.
 - 시드 `curriculum_requirements.json`에 SW융합학과·인공지능융합학과 전과/편입 최소전공 행이 없는 점(DATA_AUDIT N-5) — 데이터 수정 없이 기록만.
 - 2020 JSON의 영문 과목명 중 "다른 연도 같은 학수번호"로 보충한 값(PR #271 커밋 메시지) — 규정 판단에 영향이 없어 검수 제외.
+
+## D-24 [P2] 조문·판본·적용범위는 기존 테이블 확장이 아니라 신규 테이블 6개로 둔다
+- **결정**: `regulation_versions` / `regulation_articles` / `regulation_applicability` / `regulation_relations` / `course_equivalences` / `course_category_overrides`를 `db/schema.sql` 7.5절에 `CREATE TABLE IF NOT EXISTS`로 추가. 기존 테이블에는 ALTER 없음(→ `db/migrate.js` 변경 불필요, 기존 데이터·시드 영향 없음).
+- **대안 비교**:
+  | 대안 | 장점 | 탈락 이유 |
+  |---|---|---|
+  | `regulation_documents`에 시행일·판본 컬럼 추가, 청크를 조문으로 간주 | 테이블 수 증가 없음 | Railway 재시딩 크론이 `seed:regulations --force`로 이 테이블을 **통째로 지우고 다시 만든다** → 적용범위·관계 행이 매번 날아가거나 id가 바뀐다. 청크는 정리 문서(`###` 단위)와 원문이 섞여 있어 "조문 = 행"이 성립하지 않는다 |
+  | `course_lineage`에 동일과목(제15조) 저장(relation 값 추가) | 과목 계보가 한곳에 | 지금 1,853행 전부 `source=AUTO`(학수번호만 바뀐 이름 일치 추정). 학교가 **지정한** 동일과목과 섞이면 추정이 공식 지정처럼 보인다 |
+  | `curriculum_changes`에 이수구분 override 저장 | 이미 category 변경 행이 있음 | 그 테이블은 "학번 스냅샷 간 차이"(from_year/to_year = 입학학번)라 `generate:curriculum-changes`가 AUTO 행을 재생성한다. 제13조④는 "수강신청한 학년도·학기" 축이라 축 자체가 다르다 |
+  | 적용범위를 JSON 설정 파일에만 두고 DB 없이 | 단순 | 지침이 스키마로 요구했고, 파트 3(챗봇·관리자)이 조회·수정할 경로가 필요 — 대신 **원천은 레포 JSON(`db/regulation-engine/applicability.json`)**, DB는 그 시드 결과로 둔다(두 방식의 절충) |
+- **근거**: 판단용 데이터는 검색용(RAG) 데이터와 재시딩 주기·키가 다르다. 섞으면 한쪽 재시딩이 다른 쪽을 지운다.
+- **시드 경로**: 새 원천 파일은 `db/regulation-engine/` 아래에 둔다. `db/seed/` 아래 새 파일은 `check-db-reseed-paths`가 막고(재시딩 워크플로 경로 필터에 없음), `db/regulations/**` 아래는 경로 필터에 걸려 **운영 재시딩을 트리거**한다 — 이번 파트는 운영 재시딩 금지라 둘 다 피했다. 운영 반영 방법은 HANDOFF(파트 3)에 적는다.
+- **되돌리는 법**: schema.sql 7.5절 블록 삭제 + 로컬에서 `DROP TABLE course_category_overrides, course_equivalences, regulation_relations, regulation_applicability, regulation_articles, regulation_versions;`(FK 순서). 다른 테이블이 이들을 참조하지 않는다.
+
+## D-25 [P2] 학번 범위(curriculum_requirements) = 스냅샷, 적용범위(regulation_applicability) = 소급·경과조치
+- **결정**: 두 개념을 섞지 않는다.
+  - `curriculum_requirements.min/max_admission_year`: "그 학번의 교육과정 책자에 적힌 값이 무엇인가"(학년도별 스냅샷). 학칙시행규칙 제5조("입학 당시의 기준")가 이 행을 고르는 근거다.
+  - `regulation_applicability.scope`: "개정이 이미 입학한 학번에게도 적용되는가". 제13조①(신 교육과정 전 학년 적용) = `ALL_ENROLLED`, 제13조②~④ = `TRANSITIONAL`(조건부 면제·수강 학기 기준), 학칙 [별표 4] 학번별 표 = `COHORT_ONLY`.
+- **예**: 2022학번의 졸업학점은 스냅샷(2022 책자 행)으로 정해지고, 2024년에 어떤 전공필수가 선택으로 바뀌면 그 과목은 제13조②(TRANSITIONAL)에 따라 2022학번도 이수하지 않아도 된다 — 앞의 것은 행 선택, 뒤의 것은 적용범위 판단.
+- **후속 과제(하지 않음)**: 학년도별 행이 같은 값으로 반복 저장되는 중복(예: 2019~2025 같은 값 7행)을 "변경 기반 저장"으로 바꾸는 리팩터링은 범위 밖. 지금 구조에서 `curriculum_changes`가 이미 차이를 뽑아주므로 판단에는 지장이 없다.
+- **되돌리는 법**: 문서상 구분이라 코드 되돌림 없음.
