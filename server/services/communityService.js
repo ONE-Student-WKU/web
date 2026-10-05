@@ -112,12 +112,17 @@ async function listApprovedPosts() {
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
 // 목록에 안 뜨니 이게 없으면 글을 썼는지 확인할 방법이 없다.
+// 글이 여러 개면 "어느 글에 신청이 왔는지"를 목록에서 바로 알아볼 수 있어야 해서, 글마다 받은
+// 신청 수(전체/대기중)를 같이 내려준다 — 상세를 하나씩 열어보지 않아도 새 신청이 달린 글을
+// 찾을 수 있다. 신청 테이블을 읽기만 하는 상관 서브쿼리라 스키마·기존 필드는 그대로다.
 async function listMyPosts(studentId) {
   const [rows] = await pool.query(
-    `SELECT id, title, body, category, capacity, status, closed_at, created_at
-     FROM community_posts
-     WHERE author_id = ?
-     ORDER BY created_at DESC`,
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at,
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id) AS application_count,
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id AND a.status = 'pending') AS pending_application_count
+     FROM community_posts p
+     WHERE p.author_id = ?
+     ORDER BY p.created_at DESC`,
     [studentId]
   );
   return rows.map((row) => ({
@@ -129,6 +134,8 @@ async function listMyPosts(studentId) {
     status: row.status,
     closedAt: row.closed_at,
     createdAt: row.created_at,
+    applicationCount: Number(row.application_count),
+    pendingApplicationCount: Number(row.pending_application_count),
   }));
 }
 
