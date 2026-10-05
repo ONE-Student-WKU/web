@@ -1,6 +1,8 @@
 const pool = require('../db');
 const historyService = require('./curriculumHistoryService');
 const { DERIVED_RULE_CODES } = require('./curriculumKeys');
+const dq = require('./regulationEngine/dataQuality');
+const { loadLatestDataYear } = require('./regulationEngine/dbProvider');
 
 /**
  * server/services/curriculumContextService.js
@@ -18,6 +20,20 @@ const MAX_VERSION_LINES = 12;
 
 const RULE_LABEL = { GRAD_TOTAL: '졸업학점 총계', MAJOR_TOTAL: '전공 이수학점 합계', LIBERAL_TOTAL: '교양 이수학점 합계' };
 const SOURCE_LABEL = { NAME_MATCH: '이름 일치로 추정한 개편 관계', DOC: '교육과정 문서에 명시된 개편 관계', MANUAL: '확인된 개편 관계' };
+const ACADEMIC_OFFICE = '학사지원과(063-850-5228)';
+const ENROLLMENT_HEADER = {
+  GENERAL: '일반 재학생 기준',
+  MAJOR_CHANGE: '전과생 기준 — 전과 학년·시점에 따른 완화·고정 반영',
+  TRANSFER_ADMISSION: '편입생 기준 — 편입 학년 가정, 총량 미확정',
+};
+const CONFIDENCE_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분(확인 필요)', NO_DATA: '자료없음' };
+
+/** 학칙 [별표 4]와 책자의 졸업학점이 다를 때의 안내 — 두 값을 모두 밝히고 어느 한쪽을 단정하지 않게 한다(DECISIONS D-34). */
+function schedule4Line(s) {
+  const table = s.tableTitle.replace(/^졸업학점별 대학, 이수학점 및 수료인정학점/, '').replace(/<[^>]*>/g, '');
+  return `※ 졸업학점이 서로 다른 두 자료에 있다: 학칙 [별표 4] ${table}은 ${s.entryName} ${s.schedule4Credits}학점 이상, 교육과정 책자 기준은 ${s.bookCredits}학점이다. ` +
+    `어느 쪽이 이 학생에게 적용되는지 확인되지 않았다(학칙은 2026.04.10. 개정이고 2026년 8월 졸업자부터 적용). 한쪽이 맞다고 단정하지 말고 두 값을 모두 밝힌 뒤 학과 또는 ${ACADEMIC_OFFICE} 확인을 안내하라.`;
+}
 
 // ---------------------------------------------------------------------------
 // 학과 판정
@@ -109,21 +125,76 @@ function formatRequirementLines(rows) {
   return lines;
 }
 
-async function graduationRequirementChunk(department, year) {
-  const resolved = await departmentForYear(department.id, year);
-  const baseTitle = `${department.name} ${year}학번 졸업요건`;
+// 자료 없음 청크. extraNote: 왜 없는지(2027 개편 등) 한 줄.
+async function noRequirementChunk(department, year, extraNote = '') {
+  const cov = await dataCoverage(department.id);
+  return {
+    chunkId: `graduation-${department.id}-${year}`,
+    documentTitle: `${department.name} ${year}학번 졸업요건 (자료 없음)`,
+    content:
+      `${department.name}의 ${year}학번 졸업요건 자료는 이 시스템에 아직 입력되어 있지 않다.` +
+      (cov?.lo ? ` 현재 입력된 학번 범위는 ${cov.lo}~${cov.hi}학번이다.` : '') +
+      (extraNote ? ` ${extraNote}` : '') +
+      ` 입력되지 않은 학번의 요건을 다른 학번·다른 학과 기준으로 추정해서 단정하지 말고, 자료가 없다고 밝힌 뒤 ${ACADEMIC_OFFICE} 확인을 안내하라.`,
+  };
+}
 
-  if (resolved.rows.length === 0) {
-    const cov = await dataCoverage(department.id);
-    return {
-      chunkId: `graduation-${department.id}-${year}`,
-      documentTitle: `${baseTitle} (자료 없음)`,
-      content:
-        `${department.name}의 ${year}학번 졸업요건 자료는 이 시스템에 아직 입력되어 있지 않다.` +
-        (cov?.lo ? ` 현재 입력된 학번 범위는 ${cov.lo}~${cov.hi}학번이다.` : '') +
-        ` 입력되지 않은 학번의 요건을 다른 학번 기준으로 추정해서 단정하지 말고, 자료가 없다고 밝힌 뒤 학사지원과 확인을 안내하라.`,
-    };
+/**
+ * 규정 판단 엔진이 이 학생(같은 학과·같은 학번)에 대해 이미 판단했으면 그 결과를 졸업요건 청크의 값으로 쓴다.
+ * 왜 엔진 결과인가: 예전 청크는 요건 행을 직접 읽어 "일반 재학생" 숫자만 냈다. 그래서 같은 답 안에서 진단(전과생 전공 48)·판단과 숫자가
+ * 갈렸고(F-4), 자료 없는 학번(2027)에는 이전 값을 그대로 내보냈다(F-2). 판단과 같은 계산에서 나온 값만 보여 주면 근거끼리 어긋나지 않는다.
+ */
+function judgmentFor(judgment, department, year) {
+  if (!judgment || !judgment.requirements || !judgment.department || !judgment.input) return null;
+  return judgment.department.id === department.id && judgment.input.admissionYear === year ? judgment : null;
+}
+
+function engineRequirementChunk(department, year, judgment) {
+  const rule = judgment.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
+  const enrollmentType = judgment.input.enrollmentType;
+  const rows = [
+    ...rule.value.categories.map((c) => ({ category: c.category, required_credits: c.requiredCredits, min_course_count: null })),
+    ...rule.value.certifications.map((c) => ({ category: c.category, description: c.description, required_credits: 0, min_course_count: c.minCourseCount })),
+  ];
+  let lines = formatRequirementLines(rows);
+  if (enrollmentType === 'TRANSFER_ADMISSION') {
+    // 편입생은 전적대학 인정학점 때문에 총량을 단정할 수 없다(엔진 totalRequiredCredits = null) — 카테고리 합을 "합계"로 내지 않는다.
+    lines = lines.filter((l) => !l.startsWith('졸업학점 합계'));
+    lines.push('졸업학점 합계: 편입생은 전적대학 인정학점에 따라 달라 확정할 수 없다(위 카테고리별 기준은 참고값).');
   }
+  if (rule.confidence !== 'CONFIRMED') {
+    const reasons = (rule.flags || []).filter((f) => f.level !== 'INFO').slice(0, 3).map((f) => f.message);
+    lines.push(`※ 이 요건 값의 신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}${reasons.length ? ` — ${reasons.join(' / ')}` : ''}`);
+  }
+  if (rule.value.schedule4) lines.push(schedule4Line(rule.value.schedule4));
+  const suffix = enrollmentType === 'GENERAL' ? '' : enrollmentType === 'MAJOR_CHANGE' ? ' (전과생 기준)' : ' (편입생 기준)';
+  return {
+    chunkId: `graduation-${department.id}-${year}`,
+    documentTitle: `${department.name} ${year}학번 졸업요건${suffix}`,
+    content: `[${year}학번 적용 요건 — ${ENROLLMENT_HEADER[enrollmentType] || ENROLLMENT_HEADER.GENERAL}]\n${lines.join('\n')}`,
+  };
+}
+
+async function graduationRequirementChunk(department, year, judgment = null) {
+  const own = judgmentFor(judgment, department, year);
+  if (own) {
+    const rule = own.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
+    if (rule && rule.value) return engineRequirementChunk(department, year, own);
+    // 엔진이 "이 학과·학번 요건 자료 없음"으로 판단했다 — 열린 범위 행이나 개편 전후 학과 값으로 대신 채우지 않는다.
+    const codes = new Set((rule ? rule.flags : []).map((f) => f.code));
+    return noRequirementChunk(department, year, codes.has('COHORT_BEYOND_LATEST_DATA')
+      ? `${year}학번부터는 학과·계열 개편이 예정되어 있어(학칙 부칙 2026.04.10. 제2조①) 이전 학번의 값을 대신 쓸 수 없다.`
+      : '');
+  }
+
+  // 판단이 없는 학번(학년도 질문, 연도 비교의 다른 해 등)은 "그 해 교육과정" 질문이라 요건 행을 직접 읽는다. 개편으로 다른 학과로 이어진
+  // 해는 그 사실을 밝혀 보여 주되(기존 동작), 자료 범위 밖 학번(2027~)은 열린 범위 행으로 외삽하지 않는다(F-2).
+  const latest = await loadLatestDataYear();
+  if (latest != null && year > latest) {
+    return noRequirementChunk(department, year, `${year}학번부터는 학과·계열 개편이 예정되어 있어(학칙 부칙 2026.04.10. 제2조①) 이전 학번의 값을 대신 쓸 수 없다.`);
+  }
+  const resolved = await departmentForYear(department.id, year);
+  if (resolved.rows.length === 0) return noRequirementChunk(department, year);
 
   const resolvedName = await deptName(resolved.departmentId);
   const lines = formatRequirementLines(resolved.rows);
@@ -139,7 +210,7 @@ async function graduationRequirementChunk(department, year) {
   };
 }
 
-async function lookupGraduationRequirements({ message, student, yearContext }) {
+async function lookupGraduationRequirements({ message, student, yearContext, judgment = null }) {
   if (!yearContext.intents.requirement) return [];
   const department = await resolveDepartment(message, student);
   if (!department) return [];
@@ -151,7 +222,7 @@ async function lookupGraduationRequirements({ message, student, yearContext }) {
     if (cov?.hi) years = [cov.hi];
   }
   const chunks = [];
-  for (const year of years) chunks.push(await graduationRequirementChunk(department, year));
+  for (const year of years) chunks.push(await graduationRequirementChunk(department, year, judgment));
   return chunks;
 }
 
@@ -307,4 +378,5 @@ module.exports = {
   lookupChangeHistory,
   mentionedCourseNames,
   LATER_CHANGE_NOTICE,
+  schedule4Line,
 };

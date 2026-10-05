@@ -1,6 +1,6 @@
 const pool = require('../db');
 const { resolveApplicableRulesForStudent, inputFromStudentRow } = require('./regulationEngine');
-const { resolveDepartment } = require('./curriculumContextService');
+const { resolveDepartment, schedule4Line } = require('./curriculumContextService');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 
 /**
@@ -69,19 +69,15 @@ function courseTransitionLines(rules) {
   return lines;
 }
 
-/** 학칙 [별표 4]와 책자의 졸업학점이 다를 때의 안내 — 두 값을 모두 밝히고 어느 한쪽을 단정하지 않게 한다. */
-function schedule4Line(s) {
-  return `※ 졸업학점이 서로 다른 두 자료에 있다: 학칙 [별표 4] ${s.tableTitle.replace(/^졸업학점별 대학, 이수학점 및 수료인정학점/, '').replace(/<[^>]*>/g, '')}은 ${s.entryName} ${s.schedule4Credits}학점 이상, 교육과정 책자 기준은 ${s.bookCredits}학점이다. ` +
-    `어느 쪽이 이 학생에게 적용되는지 확인되지 않았다(학칙은 2026.04.10. 개정이고 2026년 8월 졸업자부터 적용). 한쪽이 맞다고 단정하지 말고 두 값을 모두 밝힌 뒤 학과 또는 ${ACADEMIC_OFFICE} 확인을 안내하라.`;
-}
-
 /** 졸업요건 값(파트 1 evaluate + 데이터 등급)의 신뢰도 한 줄. 숫자 자체는 학번별 졸업요건 청크에 있다. */
 function requirementLine(requirements) {
   if (!requirements) return null;
   const rule = requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   if (!rule) return null;
   if (!rule.value) return `졸업요건 값: 이 학과·학번 자료 없음(신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}) — 다른 학번 값으로 대신 답하지 마라.`;
-  const split = rule.value.categories.filter((c) => c.confidence !== rule.value.totalConfidence).map((c) => c.category);
+  // 합계만 검수되고 칸별 분할은 검수 안 된 카테고리(교양필수·교양선택) — confidenceNote가 달린 칸. 총량 신뢰도와 비교하면
+  // [별표 4] 불일치처럼 총량만 낮아지는 경우에 엉뚱한 카테고리가 나열된다.
+  const split = rule.value.categories.filter((c) => c.confidenceNote).map((c) => c.category);
   const line = `졸업요건 값: 총 ${rule.value.totalRequiredCredits ?? '(편입생 — 총량 미확정)'}학점, 신뢰도 ${CONFIDENCE_LABEL[rule.confidence]}` +
     (split.length ? ` (${split.join('·')} 분할은 합계만 검수돼 추정)` : '');
   return rule.value.schedule4 ? `${line}
