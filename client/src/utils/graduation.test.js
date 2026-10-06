@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust } from './graduation.js';
 
 describe('mergeMajorCategories', () => {
   it('전공필수/전공선택을 합쳐서 초과 이수분이 서로 상쇄되게 한다', () => {
@@ -102,5 +102,54 @@ describe('formatShortfallSentence', () => {
 
   it('빈 배열이면 null을 반환한다', () => {
     expect(formatShortfallSentence([])).toBeNull();
+  });
+});
+
+describe('describeRequirementTrust', () => {
+  const base = { totalRequiredCredits: 140, totalEarnedCredits: 10, categories: [], certifications: [] };
+
+  it('확정: 배지만 보이고 사유·추정 표시는 없다', () => {
+    const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
+    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false });
+  });
+
+  it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {
+    const t = describeRequirementTrust({
+      ...base,
+      regulation: {
+        confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: true, schedule4: null,
+        flags: [{ code: 'A', level: 'INFO', message: '정보' }, { code: 'B', level: 'ESTIMATED', message: '추정 사유' }, { code: 'C', level: 'INSUFFICIENT', message: '자료 불충분 사유' }],
+      },
+    });
+    expect(t.badge).toEqual({ label: '추정', level: 'warn' });
+    expect(t.reason).toBe('자료 불충분 사유');
+    expect(t.totalEstimated).toBe(true);
+  });
+
+  it('학칙 [별표 4] 불일치: 두 값을 사유로 보여 준다(어느 쪽이 맞다고 말하지 않음)', () => {
+    const t = describeRequirementTrust({
+      ...base,
+      regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: true, flags: [{ code: 'SCHEDULE4_CREDIT_MISMATCH', level: 'ESTIMATED', message: '일반 문구' }], schedule4: { schedule4Credits: 130, bookCredits: 140 } },
+    });
+    expect(t.reason).toBe('학칙 [별표 4]는 130학점, 교육과정 책자는 140학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.');
+  });
+
+  it('편입생 총량 미확정(totalDefinitive=false)은 총량 추정 표기', () => {
+    const t = describeRequirementTrust({ ...base, regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: false, flags: [], schedule4: null } });
+    expect(t.totalEstimated).toBe(true);
+  });
+
+  it('자료 없음: 총 요구학점 0이면 noData(0/0 대신 안내), 배지는 자료 없음', () => {
+    const t = describeRequirementTrust({ ...base, totalRequiredCredits: 0, categories: [], regulation: { confidence: 'NO_DATA', confidenceLabel: '자료없음', totalDefinitive: true, flags: [{ code: 'NO_CURRICULUM_ROWS', level: 'NO_DATA', message: '자료가 없어요' }], schedule4: null } });
+    expect(t.noData).toBe(true);
+    expect(t.badge).toEqual({ label: '자료없음', level: 'none' });
+    expect(t.reason).toBe('자료가 없어요');
+    expect(t.totalEstimated).toBe(false);
+  });
+
+  it('예전 응답(regulation 없음)도 그대로 동작: 배지·사유 없음, 총량 0이면 noData', () => {
+    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
+    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
   });
 });

@@ -1,0 +1,636 @@
+{
+  "source": "db/regulations/_source/원광대학교_학칙_20260626.hwpx",
+  "note": "학칙 [별표 4] 졸업학점별 대학·이수학점 표에서 졸업학점 칸(이상)별 소속 항목만 옮김. 항목 kind: DEPARTMENT(학과) / UNIT(대학·계열·학부 — 학과 소속 자료가 없어 대조하지 않음) / PRECOURSE(예과, 80학점). 이 파일은 scripts/audit/hwpxTables.js가 만든다 — 손으로 고치지 말 것.",
+  "tables": [
+    {
+      "cohort": {
+        "min": 2026,
+        "max": null
+      },
+      "title": "졸업학점별 대학, 이수학점 및 수료인정학점(2026학년도 입학생 이후)",
+      "tiers": [
+        {
+          "credits": 75,
+          "entries": [
+            {
+              "name": "외식조리과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "미용피부관리과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "호텔관광과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "웰니스케어과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "부사관과",
+              "kind": "DEPARTMENT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 120,
+          "entries": []
+        },
+        {
+          "credits": 130,
+          "entries": [
+            {
+              "name": "교학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "간호대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "의생명융합대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "농생명융합대학",
+              "kind": "UNIT",
+              "note": "학사학위과정"
+            },
+            {
+              "name": "보건의료대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "라이프케어대학",
+              "kind": "UNIT",
+              "note": "학사학위과정"
+            },
+            {
+              "name": "라이프디자인대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "공과대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "경상대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "공공인재대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "인문대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 140,
+          "entries": [
+            {
+              "name": "사범대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 160,
+          "entries": [
+            {
+              "name": "한약학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "한의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "치의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "한의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "치의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "건축학과",
+              "kind": "DEPARTMENT",
+              "note": "5년제"
+            }
+          ]
+        },
+        {
+          "credits": 232,
+          "entries": [
+            {
+              "name": "약학과",
+              "kind": "DEPARTMENT",
+              "note": "6년제"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cohort": {
+        "min": 2025,
+        "max": 2025
+      },
+      "title": "졸업학점별 대학, 이수학점 및 수료인정학점(2025학년도 입학생)",
+      "tiers": [
+        {
+          "credits": 120,
+          "entries": []
+        },
+        {
+          "credits": 130,
+          "entries": [
+            {
+              "name": "교학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "창의문화융합계열",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "경영대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "농생명·바이오계열",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "보건과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "디자인융합계열",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "사회과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "간호학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "응급구조학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "국방기술학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "작업치료학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 136,
+          "entries": [
+            {
+              "name": "창의공과대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 140,
+          "entries": [
+            {
+              "name": "사범대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 160,
+          "entries": [
+            {
+              "name": "약학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "한의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "치의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "한의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "치의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "건축학과",
+              "kind": "DEPARTMENT",
+              "note": "5년제"
+            }
+          ]
+        },
+        {
+          "credits": 232,
+          "entries": [
+            {
+              "name": "약학과",
+              "kind": "DEPARTMENT",
+              "note": "6년제"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cohort": {
+        "min": 2013,
+        "max": 2024
+      },
+      "title": "졸업학점별 대학, 이수학점 및 수료인정학점(2013학년도 ~ 2024학년도 입학생)<개정 2026. 4. 10., 2026. 6. 26.>",
+      "tiers": [
+        {
+          "credits": 120,
+          "entries": [
+            {
+              "name": "봉황인재학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 130,
+          "entries": [
+            {
+              "name": "교학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "인문대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "경영대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "농식품융합대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "조형예술디자인대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "자연과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "사회과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "간호학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "응급구조학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "국방기술학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "작업치료학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 136,
+          "entries": [
+            {
+              "name": "창의공과대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 140,
+          "entries": [
+            {
+              "name": "사범대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 160,
+          "entries": [
+            {
+              "name": "약학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "한의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "치의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "한의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "치의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "건축학과",
+              "kind": "DEPARTMENT",
+              "note": "5년제"
+            }
+          ]
+        },
+        {
+          "credits": 232,
+          "entries": [
+            {
+              "name": "약학과",
+              "kind": "DEPARTMENT",
+              "note": "6년제"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cohort": {
+        "min": null,
+        "max": 2012
+      },
+      "title": "졸업학점별 대학, 이수학점 및 수료인정학점(~2012학년도 입학생)",
+      "tiers": [
+        {
+          "credits": 120,
+          "entries": []
+        },
+        {
+          "credits": 130,
+          "entries": [
+            {
+              "name": "미술대학",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 140,
+          "entries": [
+            {
+              "name": "교학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "인문대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "경상대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "생명자원과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "사범대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "자연과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "생활과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "사회과학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "공과대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "군사학부",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "경찰행정학부",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "소방행정학부",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "간호학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "인문사회자율전공학부",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "자연과학자율전공학부",
+              "kind": "UNIT",
+              "note": null
+            }
+          ]
+        },
+        {
+          "credits": 160,
+          "entries": [
+            {
+              "name": "약학대학",
+              "kind": "UNIT",
+              "note": null
+            },
+            {
+              "name": "한의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "치의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "의학과",
+              "kind": "DEPARTMENT",
+              "note": null
+            },
+            {
+              "name": "한의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "치의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "의예과",
+              "kind": "PRECOURSE",
+              "note": "80학점 이상",
+              "credits": 80
+            },
+            {
+              "name": "건축학과",
+              "kind": "DEPARTMENT",
+              "note": "5년제"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

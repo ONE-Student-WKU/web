@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, describeRequirementTrust } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
@@ -52,8 +52,11 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       .finally(() => setLoading(false));
   }, []);
 
+  // 요건 자료가 없으면 총 요구학점이 0이라 0으로 나누면 NaN%가 됐다 — 이 경우는 아래에서 "진단할 수 없어요" 안내로 대신한다.
+  // trust는 서버(규정 판단 엔진)가 내려준 근거 신뢰도·사유를 화면용으로 정리한 것(utils/graduation.js).
+  const trust = status ? describeRequirementTrust(status) : null;
   const remaining = status ? Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits) : 0;
-  const progressPercent = status
+  const progressPercent = status && status.totalRequiredCredits > 0
     ? Math.min(100, Math.round((status.totalEarnedCredits / status.totalRequiredCredits) * 100))
     : 0;
   const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications) : [];
@@ -100,7 +103,17 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           </>
         )}
 
-        {status && status.totalEarnedCredits === 0 && (
+        {status && trust.noData && (
+          <section className="home-card grad-empty-notice">
+            <p className="grad-empty-notice-text">
+              이 학과·학번의 졸업요건 자료가 아직 없어서 진단할 수 없어요. 학과 또는 학사지원과에 확인해주세요.
+            </p>
+            {trust.badge && <span className={`grad-trust-badge ${trust.badge.level}`}>{trust.badge.label}</span>}
+            {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
+          </section>
+        )}
+
+        {status && !trust.noData && status.totalEarnedCredits === 0 && (
           <section className="home-card grad-empty-notice">
             <p className="grad-empty-notice-text">
               아직 등록된 과목이 없어서 정확한 진단이 어려워요. 과목 관리에서 수강 이력을 먼저 채워주세요.
@@ -111,14 +124,19 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           </section>
         )}
 
-        {status && (
+        {status && !trust.noData && (
           <>
             <section className="home-card">
-              <p className="home-card-label">전체 이수학점</p>
+              <p className="home-card-label">
+                전체 이수학점
+                {trust.badge && <span className={`grad-trust-badge ${trust.badge.level}`}>{trust.badge.label}</span>}
+              </p>
               <div className="home-credit-value">
                 <span className="home-credit-number">{status.totalEarnedCredits}</span>
                 <span className="home-credit-total"> / {status.totalRequiredCredits}학점</span>
+                {trust.totalEstimated && <span className="grad-trust-tag">(추정)</span>}
               </div>
+              {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"

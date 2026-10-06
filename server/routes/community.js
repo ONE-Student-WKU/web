@@ -49,7 +49,8 @@ async function handleReport(req, res, next, targetType) {
 
     const result = await communityService.createReport(req.session.userId, targetType, req.params.id, reason);
     if (!result.ok) {
-      const status = result.reason === 'DUPLICATE_REPORT' ? 409 : 404;
+      // 중복 → 409, 자기 글/신청 신고 → 400(CANNOT_APPLY_OWN_POST와 같은 결), 그 밖(대상 없음) → 404
+      const status = result.reason === 'DUPLICATE_REPORT' ? 409 : result.reason === 'CANNOT_REPORT_OWN' ? 400 : 404;
       return res.status(status).json({ status, code: result.reason, message: null, data: null });
     }
     res.status(201).json({ status: 201, code: 'COMMUNITY_REPORT_CREATED', message: null, data: { id: result.id } });

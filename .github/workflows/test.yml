@@ -1,0 +1,77 @@
+# 테스트 CI — PR에서 서버·클라이언트 테스트를 자동으로 돌린다.
+#
+# 왜 생겼나: 지금까지 워크플로에는 테스트 단계가 없어서(db-reseed-guard는 정적 체크, vercel-deploy는 빌드·배포) 서버 테스트 수백 개가
+# 로컬에서만 돌았다. 일부 테스트는 시드된 DB를 읽어서 develop에서 17건이 실패하던 것도 아무도 몰랐다(DECISIONS D-14, RISKS R-12).
+#
+# 안전: 이 워크플로는 시크릿을 쓰지 않는다. DB는 job 안의 임시 MySQL 서비스 컨테이너(비밀번호도 이 파일에 적힌 테스트용 값)이고
+# 운영 DB·Railway·재시딩 워크플로·배포와 아무 관계가 없다. 규정 임베딩(Voyage API 키가 필요한 부분)은 결정적 가짜 벡터로 대체한다
+# (scripts/ci/seed-regulations-stub.js). 기존 워크플로(vercel-deploy.yml, db-reseed*.yml)는 건드리지 않았다.
+name: Tests (server + client)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    name: 클라이언트 테스트 (vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test --workspace=client
+
+  server:
+    name: 서버 테스트 (임시 MySQL + 시드)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          # db/schema.sql이 데이터베이스 이름을 wku_ai_chat으로 고정하고 있어 서비스 DB도 같은 이름으로 만든다.
+          MYSQL_DATABASE: wku_ai_chat
+          MYSQL_ROOT_PASSWORD: ci-test-only-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-test-only-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ci-test-only-password
+      DB_NAME: wku_ai_chat
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # 빈 DB를 서버 테스트가 전제하는 상태로 만든다(스키마 → 시드 → 계보·변경 이력 → 규정 청크(가짜 임베딩) → 규정 조문).
+      - name: 테스트 DB 준비
+        run: bash scripts/ci/prepare-test-db.sh
+
+      - name: 서버 테스트
+        run: npm test --workspace=server

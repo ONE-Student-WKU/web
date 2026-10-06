@@ -7,282 +7,418 @@
     "courses": [
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918001",
         "courseName": "글로벌K-컬처101",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918003",
         "courseName": "K-컬처와창의성",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918004",
         "courseName": "글로벌문화산책",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918005",
         "courseName": "세계속의K-컬처",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918006",
         "courseName": "K-컬처산업입문",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": "918002",
         "courseName": "문화예술과감각활용",
         "credits": "2"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "촬영과조명기초",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "영화읽기와쓰기",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "창의적기획과이야기구성",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-콘텐츠와인문학",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "애니메이션프로덕션워크숍1",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "캐릭터디자인1",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "디지털포스트프로덕션",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "장편시나리오",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "영화편집실습",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "시나리오고급워크숍",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-컬처현장실습",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-컬처프로젝트(산업체연계형)",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-컬처프로젝트(지역사회체연계형)",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-컬처프로젝트(글로벌연계형)",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "크리에이터창의전략",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "생성형AI룰활용한콘텐츠기획",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "20세기소년소녀",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "하이브리드영상콘텐츠제작",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "영상제작을위한언리얼엔진",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "디지털애니메이션시네메틱",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "생성형AI를활용한캐릭터와컨셉아트개발",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "로컬콘텐츠기획을위한Memo&Demo",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "2D/3D디지털합성",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "인터렉션을위한언리얼엔진",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "파격적웹툰/애니메이션기획",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-음악/공연세미나",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "K-POP과문화",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "글로벌K-POP장르여행",
         "credits": "3"
       },
       {
         "semester": "1,2",
-        "category": "전공선택",
         "categoryRaw": "융전",
+        "category": "전공선택",
         "courseCode": null,
         "courseName": "눈으로듣는K-POP",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "K-POP과저작권",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "사운드디자인그래픽스",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "생성형AI를활용한음악제작",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "K-POP작사와스토리텔링",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "K-POP악기여행",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "K-콘텐츠BGM/효과음제작실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "영상문학의감상과이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "장르문학의감상과이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "문학의스토리텔링과문화콘텐츠",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "유럽문화사",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "문학과K-컬처세미나",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "웹소설의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "탐험조선왕조실록",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "동서문화교류사",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "스토리스케이핑과K-문학",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "K-컬처의역사와캐릭터읽기",
+        "credits": "3"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": null,
+        "courseName": "스토리텔링워크숍",
         "credits": "3"
       }
     ]
@@ -1877,37 +2013,1554 @@
   {
     "name": "K-치유힐링 공동체혁신 가족교육 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
-    "requiredCredits": null,
+    "requiredCredits": 12,
     "leadProfessor": "복지ㆍ보건학부 김흥주",
-    "courses": []
+    "courses": [
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918077",
+        "courseName": "CI-50융합인재로드맵",
+        "credits": "2",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918079",
+        "courseName": "게임으로 배우는 정치",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918078",
+        "courseName": "문학으로 바라본 현대사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918080",
+        "courseName": "안전관리의 이해",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918134",
+        "courseName": "현대 가족의 위기 지원",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918675",
+        "courseName": "복지국가론",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918650",
+        "courseName": "웰니스 치유정책: 행복한 공동체 만들기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918676",
+        "courseName": "웰니스 신체활동 건강관리",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918135",
+        "courseName": "댕댕이와 냥냥이를 부탁해",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918145",
+        "courseName": "한국사회의 젠더와 발전",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918677",
+        "courseName": "미디어 & 디지털 리터러시 교육",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918131",
+        "courseName": "K-치유 현장실습",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918640",
+        "courseName": "댕댕이와 힐링하기!",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918639",
+        "courseName": "365일 생활속의 건강의학",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918143",
+        "courseName": "테크놀로지와 심리상담",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918645",
+        "courseName": "지역사회가족, 교육 공동체 회복을 위한 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918678",
+        "courseName": "지역사회 문제해결을 위한 상담 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918679",
+        "courseName": "K-치유 보듬체 투어 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918680",
+        "courseName": "가상현실 기술을 활용한 차유",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918681",
+        "courseName": "건강가정지원 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918723",
+        "courseName": "AI시대의 심리상담",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      }
+    ]
   },
   {
     "name": "K-치유힐링 공동체혁신 조직산업 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
-    "requiredCredits": null,
+    "requiredCredits": 12,
     "leadProfessor": "복지ㆍ보건학부 김흥주",
-    "courses": []
+    "courses": [
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918077",
+        "courseName": "CI-50융합인재로드맵",
+        "credits": "2",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918079",
+        "courseName": "게임으로 배우는 정치",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918078",
+        "courseName": "문학으로 바라본 현대사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918080",
+        "courseName": "안전관리의 이해",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918635",
+        "courseName": "기업가정신과 사회적 책임",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918636",
+        "courseName": "백세시대 99-88 생활과 보험",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918138",
+        "courseName": "비즈니스 혁신 생태계의 미래",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918648",
+        "courseName": "스마트 성장과 지역 공동체",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918722",
+        "courseName": "AI 미래 사회와 글로벌 협력 생태계",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918144",
+        "courseName": "데이터 문해력",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918642",
+        "courseName": "디벨로프먼트 세계적 형성과 한국의경험",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918638",
+        "courseName": "한일지역문화와 문화콘텐츠",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918644",
+        "courseName": "사회문제 해결을 위한 기업커뮤니케이션",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918643",
+        "courseName": "비영리조직과 소셜임팩트",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918682",
+        "courseName": "AI와 정책",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918685",
+        "courseName": "한일지역문화와 문화산업콘텐츠기획",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918684",
+        "courseName": "기술(AI/ICT)발전에 따른 4차산업혁명 및 돌봄 정책/실천 개발",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918686",
+        "courseName": "노동과 한국의 발전",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      }
+    ]
   },
   {
     "name": "K-치유힐링 공동체혁신 도시지역 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
-    "requiredCredits": null,
+    "requiredCredits": 12,
     "leadProfessor": "복지ㆍ보건학부 김흥주",
-    "courses": []
+    "courses": [
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918077",
+        "courseName": "CI-50융합인재로드맵",
+        "credits": "2",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918079",
+        "courseName": "게임으로 배우는 정치",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918078",
+        "courseName": "문학으로 바라본 현대사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918080",
+        "courseName": "안전관리의 이해",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918634",
+        "courseName": "화재의 예방 및 대응",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918141",
+        "courseName": "지역공동체의 행복과 삶의 질",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918689",
+        "courseName": "케어복지론",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918647",
+        "courseName": "질병과 치료로 본 서양의 역사",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918136",
+        "courseName": "데이터로 도시 분석하기",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918692",
+        "courseName": "지역사회와 공공정책 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918693",
+        "courseName": "AI와 부동산(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918646",
+        "courseName": "공공갈등 해결의 융합적 접근(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918142",
+        "courseName": "커뮤니티 음악의 이해와 실체",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918687",
+        "courseName": "4대사회위기대응과지속가능한생태계교육",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918688",
+        "courseName": "통합적 사례관리지원을 위한 연구방법",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918690",
+        "courseName": "글로벌 공동체와 개발협력",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918691",
+        "courseName": "데이터사이언스와 사회정의",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918694",
+        "courseName": "상생의 공동체를 위한 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      }
+    ]
   },
   {
     "name": "K-치유힐링 공동체혁신 문화세대 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
-    "requiredCredits": null,
+    "requiredCredits": 12,
     "leadProfessor": "복지ㆍ보건학부 김흥주",
-    "courses": []
+    "courses": [
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918077",
+        "courseName": "CI-50융합인재로드맵",
+        "credits": "2",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918079",
+        "courseName": "게임으로 배우는 정치",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918078",
+        "courseName": "문학으로 바라본 현대사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918080",
+        "courseName": "안전관리의 이해",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918132",
+        "courseName": "공공인문학연습",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918137",
+        "courseName": "디지털 휴먼 상호작용의 이해",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918637",
+        "courseName": "디지털융합역량과 AI 시대 언어학습",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918140",
+        "courseName": "나는 왜 불안할까 불안의 뇌과학",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918698",
+        "courseName": "문화다양성과 인권",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918699",
+        "courseName": "음악 속의 사회적 메세지",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918701",
+        "courseName": "소셜 네트워크 분석",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918139",
+        "courseName": "사회공동체와 움직임치료(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918649",
+        "courseName": "건강한 생태계 실현을 위한 영미문화의 이해",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918721",
+        "courseName": "게임놀이문화와 회복탄력성",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918720",
+        "courseName": "경제발전과 사회변화",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918695",
+        "courseName": "뉴미디어와 사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918696",
+        "courseName": "다문화 시대 건강한 생태계 실현을 위한 문화교육",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918697",
+        "courseName": "상생과 치유의 인문카페",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918700",
+        "courseName": "정치와 리더십",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918702",
+        "courseName": "사회구조변화와 한일문화트렌드",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918703",
+        "courseName": "인공지능과 불평등",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918704",
+        "courseName": "영어로 배우는 생활철학",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918705",
+        "courseName": "놀이문화와 성장마인드셋(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      }
+    ]
   },
   {
     "name": "K-치유힐링 공동체혁신 융합 마이크로디그리",
     "programGroup": "K-치유힐링사업단",
-    "requiredCredits": null,
+    "requiredCredits": 12,
     "leadProfessor": "복지ㆍ보건학부 김흥주",
-    "courses": []
+    "courses": [
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918077",
+        "courseName": "CI-50융합인재로드맵",
+        "credits": "2",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918079",
+        "courseName": "게임으로 배우는 정치",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918078",
+        "courseName": "문학으로 바라본 현대사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918080",
+        "courseName": "안전관리의 이해",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918134",
+        "courseName": "현대 가족의 위기 지원",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918675",
+        "courseName": "복지국가론",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918650",
+        "courseName": "웰니스 치유정책: 행복한 공동체 만들기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918676",
+        "courseName": "웰니스 신체활동 건강관리",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918135",
+        "courseName": "댕댕이와 냥냥이를 부탁해",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918145",
+        "courseName": "한국사회의 젠더와 발전",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918677",
+        "courseName": "미디어 & 디지털 리터러시 교육",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918131",
+        "courseName": "K-치유 현장실습",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918640",
+        "courseName": "댕댕이와 힐링하기!",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918639",
+        "courseName": "365일 생활속의 건강의학",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918143",
+        "courseName": "테크놀로지와 심리상담",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918645",
+        "courseName": "지역사회가족, 교육 공동체 회복을 위한 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918678",
+        "courseName": "지역사회 문제해결을 위한 상담 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918679",
+        "courseName": "K-치유 보듬체 투어 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918680",
+        "courseName": "가상현실 기술을 활용한 차유",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918681",
+        "courseName": "건강가정지원 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918723",
+        "courseName": "AI시대의 심리상담",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918635",
+        "courseName": "기업가정신과 사회적 책임",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918636",
+        "courseName": "백세시대 99-88 생활과 보험",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918138",
+        "courseName": "비즈니스 혁신 생태계의 미래",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918648",
+        "courseName": "스마트 성장과 지역 공동체",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918722",
+        "courseName": "AI 미래 사회와 글로벌 협력 생태계",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918144",
+        "courseName": "데이터 문해력",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918642",
+        "courseName": "디벨로프먼트 세계적 형성과 한국의경험",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918638",
+        "courseName": "한일지역문화와 문화콘텐츠",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918644",
+        "courseName": "사회문제 해결을 위한 기업커뮤니케이션",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918643",
+        "courseName": "비영리조직과 소셜임팩트",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918682",
+        "courseName": "AI와 정책",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918685",
+        "courseName": "한일지역문화와 문화산업콘텐츠기획",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918684",
+        "courseName": "기술(AI/ICT)발전에 따른 4차산업혁명 및 돌봄 정책/실천 개발",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918686",
+        "courseName": "노동과 한국의 발전",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918634",
+        "courseName": "화재의 예방 및 대응",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918141",
+        "courseName": "지역공동체의 행복과 삶의 질",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918689",
+        "courseName": "케어복지론",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918647",
+        "courseName": "질병과 치료로 본 서양의 역사",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918136",
+        "courseName": "데이터로 도시 분석하기",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918692",
+        "courseName": "지역사회와 공공정책 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918693",
+        "courseName": "AI와 부동산(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918646",
+        "courseName": "공공갈등 해결의 융합적 접근(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918142",
+        "courseName": "커뮤니티 음악의 이해와 실체",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918687",
+        "courseName": "4대사회위기대응과지속가능한생태계교육",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918688",
+        "courseName": "통합적 사례관리지원을 위한 연구방법",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918690",
+        "courseName": "글로벌 공동체와 개발협력",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918691",
+        "courseName": "데이터사이언스와 사회정의",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918694",
+        "courseName": "상생의 공동체를 위한 리빙랩",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918132",
+        "courseName": "공공인문학연습",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918137",
+        "courseName": "디지털 휴먼 상호작용의 이해",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918637",
+        "courseName": "디지털융합역량과 AI 시대 언어학습",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918140",
+        "courseName": "나는 왜 불안할까 불안의 뇌과학",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918698",
+        "courseName": "문화다양성과 인권",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918699",
+        "courseName": "음악 속의 사회적 메세지",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918701",
+        "courseName": "소셜 네트워크 분석",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918139",
+        "courseName": "사회공동체와 움직임치료(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918649",
+        "courseName": "건강한 생태계 실현을 위한 영미문화의 이해",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918721",
+        "courseName": "게임놀이문화와 회복탄력성",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918720",
+        "courseName": "경제발전과 사회변화",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918695",
+        "courseName": "뉴미디어와 사회",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918696",
+        "courseName": "다문화 시대 건강한 생태계 실현을 위한 문화교육",
+        "credits": "3",
+        "offeringDepartment": "상명대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918697",
+        "courseName": "상생과 치유의 인문카페",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918700",
+        "courseName": "정치와 리더십",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918702",
+        "courseName": "사회구조변화와 한일문화트렌드",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918703",
+        "courseName": "인공지능과 불평등",
+        "credits": "3",
+        "offeringDepartment": "서강대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918704",
+        "courseName": "영어로 배우는 생활철학",
+        "credits": "3",
+        "offeringDepartment": "단국대학교"
+      },
+      {
+        "semester": "1,2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918705",
+        "courseName": "놀이문화와 성장마인드셋(캡스톤디자인)",
+        "credits": "3",
+        "offeringDepartment": "대전대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918665",
+        "courseName": "실감미디어콘텐츠개발",
+        "credits": "3",
+        "offeringDepartment": "광운대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918666",
+        "courseName": "메타버스, 너 때는 말이야!",
+        "credits": "3",
+        "offeringDepartment": "광운대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918667",
+        "courseName": "인터랙티브데이터시각화",
+        "credits": "3",
+        "offeringDepartment": "광운대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918668",
+        "courseName": "차별, 불공정 사회와 법의 기능",
+        "credits": "3",
+        "offeringDepartment": "광운대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918669",
+        "courseName": "빅데이터와 정부혁신",
+        "credits": "3",
+        "offeringDepartment": "국민대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918670",
+        "courseName": "소통과공감의말하기기술",
+        "credits": "3",
+        "offeringDepartment": "영남대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918671",
+        "courseName": "글로벌상생을위한AI활용",
+        "credits": "3",
+        "offeringDepartment": "영남대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918672",
+        "courseName": "AI로보는한국사",
+        "credits": "3",
+        "offeringDepartment": "호남대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918673",
+        "courseName": "지역사회와사회통합",
+        "credits": "3",
+        "offeringDepartment": "호남대학교"
+      },
+      {
+        "semester": "2",
+        "categoryRaw": "융전",
+        "category": "전공선택",
+        "courseCode": "918674",
+        "courseName": "인간과환경",
+        "credits": "3",
+        "offeringDepartment": "호남대학교"
+      }
+    ]
   },
   {
     "name": "자바풀스택(Java full stack)",
@@ -1962,6 +3615,191 @@
         "courseCode": "917009",
         "courseName": "현장실습",
         "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "K-치유힐링 케어복지과정",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": 12,
+    "leadProfessor": "복지보건학부 임주원",
+    "courses": [
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918641",
+        "courseName": "K-치유현장실습",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918689",
+        "courseName": "케어복지론",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "159147",
+        "courseName": "사회복지실천기술론",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      }
+    ]
+  },
+  {
+    "name": "K-치유힐링 반려동물관리교육",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": 12,
+    "leadProfessor": "반려동물산업학과 강원국",
+    "courses": [
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918135",
+        "courseName": "댕댕이와 냥냥이를 부탁해",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918640",
+        "courseName": "댕댕이와 힐링하기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "320004",
+        "courseName": "동물복지 및 법규",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      }
+    ]
+  },
+  {
+    "name": "K-치유힐링 K-웰니스 큐레이터",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": 12,
+    "leadProfessor": "스포츠과학부 백재근",
+    "courses": [
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918082",
+        "courseName": "여행과 치유: 여행으로 행복해지기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918676",
+        "courseName": "웰니스 신체활동 건강관리",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "348806",
+        "courseName": "스포츠지도론",
+        "credits": "2",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "348036",
+        "courseName": "뉴스포츠1",
+        "credits": "1",
+        "offeringDepartment": "원광대학교"
+      }
+    ]
+  },
+  {
+    "name": "K-치유힐링 치유힐링정책과정",
+    "programGroup": "K-치유힐링사업단",
+    "requiredCredits": 12,
+    "leadProfessor": "행정언론학부 이동기",
+    "courses": [
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918081",
+        "courseName": "마음치유, 잃어버린 나를 찾는 길",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "융전",
+        "courseCode": "918650",
+        "courseName": "웰니스 치유정책: 행복한 공동체 만들기",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공필수",
+        "categoryRaw": "기전",
+        "courseCode": "149332",
+        "courseName": "공공조직과 심리멘탈관리",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
+      },
+      {
+        "semester": "1,2",
+        "category": "전공선택",
+        "categoryRaw": "선전",
+        "courseCode": "149324",
+        "courseName": "관광정책론",
+        "credits": "3",
+        "offeringDepartment": "원광대학교"
       }
     ]
   }

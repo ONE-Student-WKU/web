@@ -108,6 +108,9 @@ export const importCoursesFromPdf = async (file) => {
   return body.data;
 };
 
+export const importCoursesFromText = (text) =>
+  apiRequest('/my-courses/import/text', { method: 'POST', body: JSON.stringify({ text }) });
+
 export const confirmImportedCourses = (rows) =>
   apiRequest('/my-courses/import/confirm', { method: 'POST', body: JSON.stringify({ rows }) });
 
@@ -189,6 +192,9 @@ export const resolveAdminReport = (id) => apiRequest(`/admin/community/reports/$
 
 export const sanctionReport = (id, { scope, duration, reason }) =>
   apiRequest(`/admin/community/reports/${id}/sanction`, { method: 'POST', body: JSON.stringify({ scope, duration, reason }) });
+
+// 신고 대상자 요약(읽기 전용, 관리자 전용). 서버가 아직 이 엔드포인트가 없는 배포 순서면 404 → 화면이 에러 안내만 보여준다.
+export const getReportedStudentSummary = (studentId) => apiRequest(`/admin/community/students/${studentId}/summary`);
 
 export const getAdminSanctions = () => apiRequest('/admin/sanctions');
 

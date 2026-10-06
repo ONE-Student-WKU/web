@@ -1,0 +1,1738 @@
+[
+  {
+    "departmentName": "원불교학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 36,
+    "minMajorRaw": "36",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "의예과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 80,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "의학과",
+    "liberalArtsTotal": null,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 160,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": null,
+        "대학생활": null,
+        "전공탐색과진로": null
+      },
+      "교양기초": {
+        "생명도덕문화평화": null,
+        "AI와디지털": null,
+        "논리와표현": null,
+        "글로벌의사소통": null,
+        "과학과기술": null
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "치의예과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 80,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "치의학과",
+    "liberalArtsTotal": null,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 160,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": null,
+        "대학생활": null,
+        "전공탐색과진로": null
+      },
+      "교양기초": {
+        "생명도덕문화평화": null,
+        "AI와디지털": null,
+        "논리와표현": null,
+        "글로벌의사소통": null,
+        "과학과기술": null
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "한의예과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 80,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "한의학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 160,
+    "note": "교양 25로 인쇄(의학과·치의학과 본과 행은 교양 공란)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "약학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 232,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "한약학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 160,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "간호학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "교육과정 전공이수학점에 따라 이수",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "의생명공학계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "72(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 33,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 33으로 인쇄 — 졸업총계 130 − 교양 37 − 전공 72 = 21과 불일치",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "응급구조학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 69,
+    "minMajorRaw": "69",
+    "majorTotal": 69,
+    "generalElective": 36,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "의료상담학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 36,
+    "minMajorRaw": "36",
+    "majorTotal": 66,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "그린바이오계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "69(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 21로 인쇄 — 전공심화형 69 기준 130 − 37 − 69 = 24와 불일치(융합형 72 기준 21)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "스마트농업계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "69(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 21로 인쇄 — 전공심화형 69 기준 24와 불일치(융합형 72 기준 21)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "국제농업학부(외국인전용)",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "푸드테크계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "69(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 21로 인쇄 — 전공심화형 69 기준 24와 불일치(융합형 72 기준 21)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "작업치료학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129로 졸업총계 130과 1학점 차이",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "임상병리학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "물리치료학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "방사선학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "치기공학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "치위생학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "안경광학과",
+    "liberalArtsTotal": 25,
+    "basicMajor": null,
+    "basicMajorRaw": "전공필수 포함하여 69학점",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 35,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "전공 69 + 교양 25 + 자유선택 35 = 129 (졸업총계 130과 1학점 차이)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4학점"
+    }
+  },
+  {
+    "departmentName": "언어재활학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "식품영양학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "보건행정학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 36,
+    "minMajorRaw": "36",
+    "majorTotal": 66,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "사회복지학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 51,
+    "minMajorRaw": "51",
+    "majorTotal": 66,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "스포츠과학부",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 66,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "동물보건학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "반려동물산업학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "안전보건학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "뷰티디자인학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 69,
+    "generalElective": 24,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "디자인융합계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 21로 인쇄 — 전공심화형 66 기준 27과 불일치(융합형 72 기준 21)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "건축학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 66,
+    "minMajorRaw": "66",
+    "majorTotal": 110,
+    "generalElective": 13,
+    "thesis": "P/F",
+    "graduationTotal": 160,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "공학1계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "72(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "공학2계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "72(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "공학3계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "72(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "경영계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "경제금융·회계세무계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "경찰·공공행정계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "소방행정·방재계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "국방기술학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 48,
+    "minMajorRaw": "48",
+    "majorTotal": 66,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "주전공 66 + 자유선택 21 + 교양 37 = 124로 졸업총계 130과 불일치(2025는 69/24)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "군사학과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 42,
+    "minMajorRaw": "42",
+    "majorTotal": 66,
+    "generalElective": 27,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "창의문화융합계열",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "66(전공심화형)72(전공융합형/복수전공형)",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 21,
+    "thesis": "P/F",
+    "graduationTotal": 130,
+    "note": "자유선택 21로 인쇄 — 전공심화형 66 기준 27과 불일치(융합형 72 기준 21)",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 4
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 12학점"
+    }
+  },
+  {
+    "departmentName": "국어교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "영어교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "일어교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "한문교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "역사교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "유아교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 50,
+    "minMajorRaw": "50",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "중등특수교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": null,
+    "basicMajorRaw": "특수42(기전15포함)이상+표시과목31+특수교육교육과정9학점이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": 23,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "전공 82(해설 책자 21쪽)와 자유선택 23(+교양 37 = 142 ≠ 140)이 서로 맞지 않음",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "가정교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 56,
+    "minMajorRaw": "56",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "수학교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 56,
+    "minMajorRaw": "56",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "체육교육과",
+    "liberalArtsTotal": 37,
+    "basicMajor": 21,
+    "basicMajorRaw": "21이상",
+    "minMajor": 56,
+    "minMajorRaw": "56",
+    "majorTotal": 69,
+    "generalElective": 34,
+    "thesis": "P/F",
+    "graduationTotal": 140,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "자율전공학부",
+    "liberalArtsTotal": 37,
+    "basicMajor": 9,
+    "basicMajorRaw": "9",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": null,
+    "generalElective": null,
+    "thesis": null,
+    "graduationTotal": null,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 4,
+        "AI와디지털": 3,
+        "논리와표현": 3,
+        "글로벌의사소통": 3,
+        "과학과기술": 3
+      },
+      "교양선택": "4개 영역 중 3개영역이상에서 16학점"
+    }
+  },
+  {
+    "departmentName": "외식조리과",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 2,
+        "AI와디지털": 0,
+        "논리와표현": 0,
+        "글로벌의사소통": 2,
+        "과학과기술": 0
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "미용피부관리과",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 2,
+        "AI와디지털": 0,
+        "논리와표현": 0,
+        "글로벌의사소통": 2,
+        "과학과기술": 0
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "호텔관광과",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 2,
+        "AI와디지털": 0,
+        "논리와표현": 0,
+        "글로벌의사소통": 2,
+        "과학과기술": 0
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "웰니스케어과",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 2,
+        "AI와디지털": 0,
+        "논리와표현": 0,
+        "글로벌의사소통": 2,
+        "과학과기술": 0
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "웰니스케어과(외국인)",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": null
+      },
+      "교양기초": {
+        "생명도덕문화평화": null,
+        "AI와디지털": null,
+        "논리와표현": null,
+        "글로벌의사소통": null,
+        "과학과기술": null
+      },
+      "교양선택": null
+    }
+  },
+  {
+    "departmentName": "부사관과",
+    "liberalArtsTotal": 9,
+    "basicMajor": 15,
+    "basicMajorRaw": "15이상",
+    "minMajor": null,
+    "minMajorRaw": null,
+    "majorTotal": 60,
+    "generalElective": 6,
+    "thesis": "P/F",
+    "graduationTotal": 75,
+    "note": "",
+    "liberalArtsDetail": {
+      "교양필수": {
+        "건학이념": 3,
+        "대학생활": 2,
+        "전공탐색과진로": 0
+      },
+      "교양기초": {
+        "생명도덕문화평화": 2,
+        "AI와디지털": 0,
+        "논리와표현": 0,
+        "글로벌의사소통": 2,
+        "과학과기술": 0
+      },
+      "교양선택": null
+    }
+  }
+]

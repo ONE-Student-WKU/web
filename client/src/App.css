@@ -764,6 +764,48 @@ body {
   line-height: 1.6;
 }
 
+/* 졸업요건 근거 신뢰도(확정/추정/자료 불충분/자료 없음) — 작게. 색은 상태 토큰을 그대로 쓴다. */
+.grad-trust-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: middle;
+  color: var(--color-text-muted);
+}
+
+.grad-trust-badge.ok {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.grad-trust-badge.warn {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.grad-trust-badge.none {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.grad-trust-tag {
+  margin-left: 4px;
+  font-size: 0.75rem;
+  color: var(--color-warning);
+}
+
+.grad-trust-reason {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 .grad-overflow-note {
   margin: 6px 0 0;
   font-size: 0.75rem;
@@ -2028,6 +2070,18 @@ body {
 /* 관리자 페이지(이슈 #164 4단계) — community-act-btn/community-outline-btn/
    community-detail-meta/body 등은 위 커뮤니티 스타일을 그대로 재사용한다. */
 
+/* 관리자 신고함에서 신고 대상자 이름을 눌러 요약을 여는 링크형 버튼. */
+.admin-student-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .admin-sub-tabs {
   display: flex;
   gap: 6px;
@@ -2306,6 +2360,61 @@ body {
 
 .courses-pdf-warnings {
   margin-bottom: 8px;
+}
+
+/* 한글 없는 PDF 안내처럼 경고가 두 버튼 사이에 끼는 경우 — 기본값대로면 위쪽은 0, 아래쪽은
+   경고 margin + 버튼 margin-top이 겹쳐 쏠려 보이므로, 위아래를 버튼 간격(14px)으로 맞춘다. */
+.auth-submit-btn + .courses-pdf-warnings {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.auth-submit-btn + .courses-pdf-warnings .courses-pdf-warning-item:last-child {
+  margin-bottom: 0;
+}
+
+.courses-import-method-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.courses-import-method-toggle button {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.courses-import-method-toggle button.active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-color: var(--color-accent-bg);
+}
+
+.courses-pdf-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.courses-pdf-paste-textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
 }
 
 /* 학점 불일치 안내 — 확정을 막는 에러가 아니라 "확인해보라"는 참고용 신호라, danger(빨강)
@@ -3013,4 +3122,29 @@ select.onb-select {
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
   cursor: pointer;
+}
+
+/* 마감된 글 표시(당근마켓식) — 제목 앞 "마감" 접두어 + 행 전체를 흐리게. 읽을 수는 있어야 해서 opacity만 낮춘다. */
+.community-closed-prefix {
+  flex-shrink: 0;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.community-post-list-item-closed .community-post-list-title,
+.community-post-list-item-closed .courses-list-item-meta {
+  opacity: 0.55;
+}
+
+/* 내가 쓴 글 목록에서 검토 대기 중인 신청이 달린 글을 눈에 띄게 한다. */
+.community-row-pending {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-warning);
 }

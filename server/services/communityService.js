@@ -112,12 +112,17 @@ async function listApprovedPosts() {
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
 // 목록에 안 뜨니 이게 없으면 글을 썼는지 확인할 방법이 없다.
+// 글이 여러 개면 "어느 글에 신청이 왔는지"를 목록에서 바로 알아볼 수 있어야 해서, 글마다 받은
+// 신청 수(전체/대기중)를 같이 내려준다 — 상세를 하나씩 열어보지 않아도 새 신청이 달린 글을
+// 찾을 수 있다. 신청 테이블을 읽기만 하는 상관 서브쿼리라 스키마·기존 필드는 그대로다.
 async function listMyPosts(studentId) {
   const [rows] = await pool.query(
-    `SELECT id, title, body, category, capacity, status, closed_at, created_at
-     FROM community_posts
-     WHERE author_id = ?
-     ORDER BY created_at DESC`,
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at,
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id) AS application_count,
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id AND a.status = 'pending') AS pending_application_count
+     FROM community_posts p
+     WHERE p.author_id = ?
+     ORDER BY p.created_at DESC`,
     [studentId]
   );
   return rows.map((row) => ({
@@ -129,6 +134,8 @@ async function listMyPosts(studentId) {
     status: row.status,
     closedAt: row.closed_at,
     createdAt: row.created_at,
+    applicationCount: Number(row.application_count),
+    pendingApplicationCount: Number(row.pending_application_count),
   }));
 }
 
@@ -421,8 +428,8 @@ async function isApplicationOwnedByPostAuthor(applicationId, authorId) {
 }
 
 // 신고 생성(#187). target_type은 'post' | 'application' — DB에 다형 FK를 걸 수 없어서
-// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 대기중 상태로
-// 중복 신고하는 것은 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
+// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 다시 신고하는 것은
+// (처리 상태와 무관하게) 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
 //
 // 접수 시점에 신고 대상(작성자/신청자 id)과 내용(제목/본문 또는 메시지)을 스냅샷으로 같이
 // 저장한다(#201) — 나중에 제재 조치로 원본이 삭제돼도 "누구를, 무엇 때문에" 신고했는지
@@ -452,18 +459,42 @@ async function createReport(reporterId, targetType, targetId, reason) {
     targetBody = rows[0].message;
   }
 
-  const [existing] = await pool.query(
-    "SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'pending' LIMIT 1",
-    [reporterId, targetType, targetId]
-  );
-  if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_REPORT' };
+  // 자기 글/자기 신청은 신고할 수 없다. 화면은 버튼을 숨기지만(Community.jsx) 그건 막은 게 아니다 —
+  // API를 직접 호출하면 스스로를 신고해 신고함을 어지럽히거나 제재 대상이 될 수 있어 서버가 거부한다.
+  if (reportedStudentId === reporterId) return { ok: false, reason: 'CANNOT_REPORT_OWN' };
 
-  const [result] = await pool.query(
-    `INSERT INTO community_reports (reporter_id, target_type, target_id, reported_student_id, target_title, target_body, reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [reporterId, targetType, targetId, reportedStudentId, targetTitle, targetBody, reason]
-  );
-  return { ok: true, id: result.insertId };
+  // 같은 신고자가 같은 대상을 한 번 신고했다면 처리 상태(대기/처리완료)와 상관없이 중복이다.
+  // "대기중인 것만" 중복으로 보면 처리 후 같은 사람이 다시 신고할 수 있고, 확인과 INSERT 사이가 비어 있어서
+  // 더블 클릭 같은 동시 요청 둘이 확인을 둘 다 통과할 수 있었다. 그래서 확인+INSERT를 한 트랜잭션에 넣고,
+  // 신고자 학생 행을 FOR UPDATE로 잠가 같은 신고자의 요청을 한 줄로 세운다(courseService.reservePdfImport와 같은 방식).
+  // 나중 요청은 앞 요청이 커밋될 때까지 잠금에서 기다렸다가, 그 뒤에 읽는 목록에서 앞 요청의 행을 보게 된다.
+  // DB 유니크 인덱스는 쓰지 않는다 — 운영에 이미 중복 행이 있으면 인덱스 생성이 실패해 배포가 깨질 수 있다.
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('SELECT id FROM students WHERE id = ? FOR UPDATE', [reporterId]);
+    const [existing] = await conn.query(
+      'SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? LIMIT 1',
+      [reporterId, targetType, targetId]
+    );
+    if (existing.length > 0) {
+      await conn.rollback();
+      return { ok: false, reason: 'DUPLICATE_REPORT' };
+    }
+
+    const [result] = await conn.query(
+      `INSERT INTO community_reports (reporter_id, target_type, target_id, reported_student_id, target_title, target_body, reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [reporterId, targetType, targetId, reportedStudentId, targetTitle, targetBody, reason]
+    );
+    await conn.commit();
+    return { ok: true, id: result.insertId };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 관리자가 제재를 적용할 때 대상(reportedStudentId)과 실제 삭제 대상(targetType/targetId)을
@@ -518,6 +549,8 @@ async function listReportsForAdmin(status) {
       // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
       // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
       reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
+      // 관리자 화면이 대상자 요약(GET /api/admin/community/students/:id/summary)을 열 때 쓰는 id. 구버전 신고·탈퇴한 대상자는 null.
+      reportedStudentId: row.reported_student_id,
       targetTitle: row.target_title,
       targetBody: row.target_body,
       targetExists: targetPostId !== null,

@@ -36,7 +36,7 @@ async function getAllChunkRows() {
   if (chunkCache.rows && Date.now() < chunkCache.expiresAt) return chunkCache.rows;
 
   const [rows] = await pool.query(
-    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title
+    `SELECT rc.id, rc.content, rc.embedding, rd.title AS document_title, rd.book_year
      FROM regulation_chunks rc
      JOIN regulation_documents rd ON rd.id = rc.document_id`
   );
@@ -51,20 +51,63 @@ async function getAllChunkRows() {
 // curriculum_courses 정형 테이블(curriculumService.lookupFromMessage)로 옮겼다. 그 근거로
 // 과목명/학년·학기를 정규식으로 강제 포함시키던 로직도 같이 필요 없어져 제거함 — RAG는
 // 이제 학칙처럼 진짜 비정형 프로즈 문서만 대상으로 하므로 순수 유사도 검색으로 충분하다.
-async function findRelevantChunks(queryEmbedding) {
+//
+// 연도 처리: 교육과정 책자 문서(book_year가 있는 문서)는 해마다 소제목이 같아서 유사도만으로 뽑으면 서로 다른
+// 해의 비슷한 청크가 top-K를 채운다(예: 2024·2025·2026 해설의 같은 소제목 3개). 그래서 질문에서 정한 책자
+// 학년도(options.bookYears)의 청크만 남기고, book_year가 없는 현행 규정 문서(학칙 등)는 그대로 경쟁시킨다.
+// bookYears를 안 주면(옛 호출) 가장 최신 책자 하나만 쓴다 — 연도가 섞이는 것보다 낫다.
+async function findRelevantChunks(queryEmbedding, options = {}) {
   const rows = await getAllChunkRows();
 
   const scored = rows.map((row) => ({
     chunkId: row.id,
     documentTitle: row.document_title,
+    bookYear: row.book_year ?? null,
     content: row.content,
     score: cosineSimilarity(queryEmbedding, row.embedding),
   }));
 
-  return scored
-    .filter((c) => c.score >= MIN_SIMILARITY)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, TOP_K);
+  const availableYears = [...new Set(rows.map((r) => r.book_year).filter((y) => y != null))];
+  const bookYears = options.bookYears && options.bookYears.length ? options.bookYears : availableYears.length ? [Math.max(...availableYears)] : [];
+  return selectChunksByYear(scored, { bookYears, topK: options.topK || TOP_K, perYearMin: options.perYearMin || 0 });
+}
+
+/**
+ * 점수가 매겨진 청크에서 질문의 책자 학년도에 맞는 것만 골라 top-K를 만든다(순수 함수).
+ *  - bookYear가 null인 청크(현행 규정)는 항상 후보.
+ *  - bookYear가 있는 청크는 bookYears에 포함된 것만 후보.
+ *  - perYearMin: 여러 해를 비교할 때 각 해에서 최소 몇 개는 반드시 넣을지(그 해 청크가 MIN_SIMILARITY 이상일 때만).
+ */
+function selectChunksByYear(scored, { bookYears, topK = TOP_K, perYearMin = 0 }) {
+  const allowed = new Set(bookYears);
+  const candidates = scored
+    .filter((c) => c.score >= MIN_SIMILARITY && (c.bookYear == null || allowed.has(c.bookYear)))
+    .sort((a, b) => b.score - a.score);
+
+  const picked = [];
+  const pickedIds = new Set();
+  if (perYearMin > 0 && bookYears.length > 1) {
+    for (const year of bookYears) {
+      for (const c of candidates.filter((x) => x.bookYear === year).slice(0, perYearMin)) {
+        picked.push(c);
+        pickedIds.add(c.chunkId);
+      }
+    }
+  }
+  for (const c of candidates) {
+    if (picked.length >= topK) break;
+    if (!pickedIds.has(c.chunkId)) {
+      picked.push(c);
+      pickedIds.add(c.chunkId);
+    }
+  }
+  return picked.sort((a, b) => b.score - a.score).slice(0, Math.max(topK, perYearMin * bookYears.length));
+}
+
+// RAG에 들어 있는 교육과정 책자 학년도 목록(캐시된 청크에서 계산 — 추가 쿼리 없음).
+async function getAvailableBookYears() {
+  const rows = await getAllChunkRows();
+  return [...new Set(rows.map((r) => r.book_year).filter((y) => y != null))].sort((a, b) => a - b);
 }
 
 // 직전 turn이 인용했던 청크를 이번 turn 근거에도 유지하기 위한 조회. "방금 답변 출처 알려줘"
@@ -73,13 +116,13 @@ async function findRelevantChunks(queryEmbedding) {
 async function findChunksByIds(chunkIds) {
   if (!chunkIds || chunkIds.length === 0) return [];
   const [rows] = await pool.query(
-    `SELECT rc.id, rc.content, rd.title AS document_title
+    `SELECT rc.id, rc.content, rd.title AS document_title, rd.book_year
      FROM regulation_chunks rc
      JOIN regulation_documents rd ON rd.id = rc.document_id
      WHERE rc.id IN (?)`,
     [chunkIds]
   );
-  return rows.map((row) => ({ chunkId: row.id, documentTitle: row.document_title, content: row.content }));
+  return rows.map((row) => ({ chunkId: row.id, documentTitle: row.document_title, bookYear: row.book_year ?? null, content: row.content }));
 }
 
 async function findOrCreateCurrentConversation(studentId) {
@@ -141,6 +184,8 @@ async function saveMessage(conversationId, { role, content, citedChunkIds }) {
 module.exports = {
   MIN_SIMILARITY,
   findRelevantChunks,
+  selectChunksByYear,
+  getAvailableBookYears,
   findChunksByIds,
   findOrCreateCurrentConversation,
   findConversationById,

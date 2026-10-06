@@ -7,7 +7,7 @@ const microDegrees = require('../../db/seed/micro_degrees.json');
 
 /**
  * server/scripts/seedLinkedMajorsAndMicroDegrees.js
- * db/seed/linked_majors.json / micro_degrees.json(2025_교육과정.pdf Ⅴ~Ⅵ, Ⅷ~Ⅸ장에서
+ * db/seed/linked_majors.json / micro_degrees.json(2025·2026_교육과정.pdf Ⅴ~Ⅵ, Ⅷ~Ⅸ장에서
  * pdfplumber로 추출)을 linked_majors/linked_major_courses, micro_degrees/micro_degree_courses에
  * 적재한다. 두 프로그램 다 department_id에 안 묶이는 부가 전공이라(어떤 학과 학생이든
  * 복수전공/부전공/그 자체로 추가 이수 가능) 독립 테이블에 이름 기준으로 시딩한다.
