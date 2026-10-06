@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MessageText from './MessageText.jsx';
 
 /**
  * ChatBubble Component
@@ -14,7 +15,11 @@ function ChatBubble({ message }) {
   return (
     <div className={`chat-bubble ${message.sender}`}>
       <div className="message-sender">{message.sender === 'user' ? '나' : 'ONE Student'}</div>
-      <div className="message-text">{message.text}</div>
+      {message.sender === 'user' ? (
+        <div className="message-text">{message.text}</div>
+      ) : (
+        <MessageText text={message.text} />
+      )}
       {citations.length > 0 && (
         <div className="message-citations">
           <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)}>

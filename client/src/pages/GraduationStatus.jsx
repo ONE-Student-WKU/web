@@ -4,6 +4,7 @@ import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { cleanRequirementNote } from '../utils/displayText.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
@@ -246,7 +247,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       </span>
                       <div>
                         <p className="home-card-label">{cert.category}</p>
-                        <p className="grad-cert-desc">{cert.description}</p>
+                        <p className="grad-cert-desc">{cleanRequirementNote(cert.description)}</p>
                       </div>
                     </div>
                   </section>
