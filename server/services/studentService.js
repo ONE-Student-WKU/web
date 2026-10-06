@@ -115,21 +115,58 @@ async function linkOauthToStudent(studentId, { provider, oauthId }) {
 // 2017~2025학번만, 공학3계열은 2026학번부터), curriculum_requirements의 공통 요건
 // (enrollment_type IS NULL — 전과/편입 특례 행은 학과의 "기본 학번 범위"가 아니므로 제외) 행에서
 // 학번 범위를 집계해 함께 내려준다. 프론트에 학번 범위를 하드코딩하지 않기 위함.
+//
+// 범위를 두 벌 내려준다.
+//  - min/maxAdmissionYear: 모든 카테고리 행 기준(졸업인증제·교직 등 부가 행 포함). 전과생용 —
+//    전과생은 학번이 새 학과의 요건 시작 학번보다 옛날일 수 있다(예: 2021학번이 2024년에 경영학과로 전과).
+//  - coreMin/MaxAdmissionYear: 교양·전공 요건 행 기준. 일반·편입 학생용 — 졸업인증제 행 하나가
+//    2020학번부터 일괄로 들어 있어 전공 요건이 2023학번부터인 학과도 2020학번이 선택지로 열리던 문제.
+//    규정 엔진이 "자료 있음"으로 보는 기준(evaluate.js CORE_CATEGORIES)과 같다. 핵심 행의 학번 값이
+//    모두 NULL이면 NULL(프론트가 기존 범위로 되돌린다).
+const CORE_REQUIREMENT_CATEGORIES = ['교양필수', '교양선택', '전공필수', '전공선택', '전공'];
+
 async function listDepartments() {
   const [rows] = await pool.query(
     `SELECT d.id, d.name,
             MIN(cr.min_admission_year) AS min_admission_year,
-            MAX(cr.max_admission_year) AS max_admission_year
+            MAX(cr.max_admission_year) AS max_admission_year,
+            MIN(CASE WHEN cr.category IN (?) THEN cr.min_admission_year END) AS core_min_admission_year,
+            MAX(CASE WHEN cr.category IN (?) THEN cr.max_admission_year END) AS core_max_admission_year
      FROM departments d
      LEFT JOIN curriculum_requirements cr ON cr.department_id = d.id AND cr.enrollment_type IS NULL
      GROUP BY d.id, d.name
-     ORDER BY d.id`
+     ORDER BY d.id`,
+    [CORE_REQUIREMENT_CATEGORIES, CORE_REQUIREMENT_CATEGORIES]
   );
+
+  // 개편으로 이름이 바뀐 옛 학과는 "지금은 무슨 학과로 이어졌는지"를 같이 내려준다 — 옛 학번 학생이 옛 이름을
+  // 골라야 하는데(요건 범위를 좁힌 결과), 학교 공식 소속명과 달라 헷갈리지 않게 화면이 안내 문구를 붙인다.
+  // 개편 이력은 대부분 이름이 비슷해서 이은 추정(NAME_MATCH)이라 confirmed(전부 DOC 근거)도 함께 준다 — 확정이
+  // 아니면 화면이 "이어진 것으로 보여요"로 완곡하게 쓴다. 후속 학과가 여럿이면(분리) 이름을 모두 내려준다.
+  const [lineageRows] = await pool.query(
+    `SELECT dl.from_department_id AS from_id, td.name AS to_name, dl.effective_year, dl.source
+     FROM department_lineage dl
+     JOIN departments td ON td.id = dl.to_department_id
+     WHERE dl.from_department_id IS NOT NULL AND dl.to_department_id <> dl.from_department_id
+     ORDER BY dl.effective_year, td.name`
+  );
+  const successorsByFrom = new Map();
+  for (const e of lineageRows) {
+    const list = successorsByFrom.get(e.from_id) || [];
+    const found = list.find((x) => x.name === e.to_name);
+    if (found) found.confirmed = found.confirmed && e.source !== 'NAME_MATCH';
+    else list.push({ name: e.to_name, effectiveYear: e.effective_year, confirmed: e.source !== 'NAME_MATCH' });
+    successorsByFrom.set(e.from_id, list);
+  }
+
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
     minAdmissionYear: r.min_admission_year,
     maxAdmissionYear: r.max_admission_year,
+    coreMinAdmissionYear: r.core_min_admission_year,
+    coreMaxAdmissionYear: r.core_max_admission_year,
+    successors: successorsByFrom.get(r.id) || [],
   }));
 }
 

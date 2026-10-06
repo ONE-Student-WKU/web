@@ -2737,6 +2737,8 @@ body {
 .onb-option-caption { font-size: 0.8125rem; color: var(--color-text-muted); }
 .onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
+.onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
+.onb-q-sub-note { margin-top: -6px; font-size: 0.8125rem; }
 
 .onb-field-group { margin-bottom: 18px; }
 
