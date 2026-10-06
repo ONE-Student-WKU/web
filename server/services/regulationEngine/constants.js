@@ -65,7 +65,7 @@ const TEXT_SOURCES = Object.freeze({
 });
 
 /**
- * 근거 레지스트리. kind: ARTICLE(규정 조문) | BOOKLET(교육과정 책자 문구) | CASE(실제 학교 안내 사례) | CONVENTION(앱의 가정).
+ * 근거 레지스트리. kind: ARTICLE(규정 조문) | BOOKLET(교육과정 책자 문구) | SITE(학교 홈페이지 안내 — 원문 보관본을 file로 둔다) | CASE(실제 학교 안내 사례) | CONVENTION(앱의 가정).
  * quote는 CITATION 테스트가 file 원문에서 찾는 문장(공백 무시)이다. CASE/CONVENTION은 원문 파일이 없어 quote를 두지 않는다.
  */
 const CITATIONS = Object.freeze({
@@ -157,6 +157,16 @@ const CITATIONS = Object.freeze({
     kind: 'BOOKLET', doc: '2026학년도 교육과정 책자(해설)', article: '30쪽 교양 이수학점 상한',
     file: 'db/regulations/교육과정/2026_교육과정_해설.md',
     quote: '교양제한학점: 2021학번까지는 제한이 없고, **2022학번부터는 52학점**까지 인정한다',
+  },
+  SITE_GRADUATION_LIBERAL_CAP: {
+    kind: 'SITE', doc: '학교 홈페이지 학사학위수여(2026-10-06 확인)', article: '2. 교양학점',
+    file: 'docs/school-inquiry/근거_학교홈페이지/학사학위수여_2026-10-06.txt',
+    quote: '2022년 3월 1일 입학자부터 52학점을 초과하는 경우 졸업학점으로 인정불가',
+  },
+  SITE_MAJOR_CHANGE_LIBERAL_CUTOFF: {
+    kind: 'SITE', doc: '학교 홈페이지 전과 안내(2026-10-06 확인)', article: '10항 전과(부)생 교육과정 이수 안내',
+    file: 'docs/school-inquiry/근거_학교홈페이지/전과_2026-10-06.txt',
+    quote: '2022-1학기 전과생 까지: 교양필수(5학점), 교양선택(24학점, 영역구분없음)',
   },
   BOOKLET_2026_RESTRUCTURING_LIBERAL: {
     kind: 'BOOKLET', doc: '2026학년도 교육과정 책자(해설)', article: '소속변경 학생 안내',

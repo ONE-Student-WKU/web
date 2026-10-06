@@ -6,38 +6,38 @@
     "toTrack": null,
     "relation": "RENAME",
     "effectiveYear": 2022,
-    "source": "NAME_MATCH",
-    "note": "2021 농식품융합대학 생물환경화학과가 2022 생명환경학과로 이어진 것으로 보임. 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+    "source": "DOC",
+    "note": "학교 홈페이지 연혁(2021.06.): 2022학년도 학과명칭변경 — 농식품융합대학 생물환경화학과를 생명환경학과로 변경"
   },
   {
     "fromDepartment": "국제통상학부",
     "fromTrack": null,
     "toDepartment": "무역학과",
     "toTrack": null,
-    "relation": "REORG",
+    "relation": "RENAME",
     "effectiveYear": 2022,
-    "source": "NAME_MATCH",
-    "note": "2021 경영대학 국제통상학부가 2022 무역학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+    "source": "DOC",
+    "note": "학교 홈페이지 연혁(2021.06.): 2022학년도 학과명칭변경 — 경영대학 국제통상학부를 무역학과로 변경"
   },
   {
     "fromDepartment": "바이오나노화학부",
     "fromTrack": null,
     "toDepartment": "화학과",
     "toTrack": null,
-    "relation": "REORG",
+    "relation": "RENAME",
     "effectiveYear": 2022,
-    "source": "NAME_MATCH",
-    "note": "2021 자연과학대학 바이오나노화학부가 2022 화학과로 이어진 것으로 보임(이름이 비슷함). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+    "source": "DOC",
+    "note": "학교 홈페이지 연혁(2021.02.26.): 2022학년도 학과명칭변경 — 자연과학대학 바이오나노화학부를 화학과로 변경"
   },
   {
     "fromDepartment": "SW융합학과",
     "fromTrack": null,
     "toDepartment": "인공지능융합학과",
     "toTrack": null,
-    "relation": "REORG",
+    "relation": "RENAME",
     "effectiveYear": 2022,
-    "source": "NAME_MATCH",
-    "note": "2021 SW융합학과와 2022 인공지능융합학과는 총괄표 비고(SW연계·복합전공 필수 이수)와 졸업학점 구조(136, 전공 54)가 같아 이어진 것으로 보임(이름은 다름). 이름이 같거나 이어지는 것으로 보여 이름으로 이은 것(책자에 명시된 개편표는 확인하지 못함)"
+    "source": "DOC",
+    "note": "학교 홈페이지 연혁(2021.02.26.): 2022학년도 학과명칭변경 — 창의공과대학 SW융합학과를 인공지능융합학과로 변경"
   },
   {
     "fromDepartment": "경영학부",
@@ -478,5 +478,15 @@
     "effectiveYear": 2026,
     "source": "NAME_MATCH",
     "note": "푸드테크전공이 푸드테크계열의 식품산업전공·식품안전전공으로 나뉜 것으로 보임. 계열명이 같아 이름으로 이은 것"
+  },
+  {
+    "fromDepartment": "응용수학부",
+    "fromTrack": null,
+    "toDepartment": "빅데이터·금융통계학부",
+    "toTrack": null,
+    "relation": "MERGE",
+    "effectiveYear": 2022,
+    "source": "DOC",
+    "note": "학교 홈페이지 연혁(2020.04.24.): 2022학년도 통합신설 — 자연과학대학 응용수학부, 빅데이터금융통계학부를 빅데이터금융통계학부로 통합"
   }
 ]

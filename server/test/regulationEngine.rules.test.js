@@ -48,11 +48,12 @@ test('일반 재학생 2019학번: 136학점, 신뢰도 확정(INFO 플래그는
   assert.equal(rule(r, 'MAJOR_MINIMUM').value.mode, 'FULL');
   assert.equal(rule(r, 'REQUIREMENTS').confidence, 'CONFIRMED');
   assert.ok(codes(r, 'REQUIREMENTS').includes('COHORT_TRANSITION_ADDENDUM_NOT_HELD'), '2026학번 미만은 종전 부칙 미보유를 알린다');
-  // 교양 상한: 2021학번까지는 책자 한 곳 근거 → 추정 + 시행규칙 문언대로의 52를 대안으로 병기
+  // 교양 상한: 2021학번까지는 학교 홈페이지·책자가 "상한 없음" → 확정(조문 문언과의 차이는 INFO 플래그로만 남김, D-51)
   assert.equal(rule(r, 'LIBERAL_ARTS_CAP').value.cap, null);
-  assert.equal(rule(r, 'LIBERAL_ARTS_CAP').confidence, 'ESTIMATED');
-  assert.deepEqual(rule(r, 'LIBERAL_ARTS_CAP').alternatives.map((a) => a.cap), [52]);
-  assert.equal(r.confidence, 'ESTIMATED', '전체 신뢰도는 가장 나쁜 규칙을 따른다');
+  assert.equal(rule(r, 'LIBERAL_ARTS_CAP').confidence, 'CONFIRMED');
+  assert.deepEqual(rule(r, 'LIBERAL_ARTS_CAP').alternatives, []);
+  assert.ok(codes(r, 'LIBERAL_ARTS_CAP').includes('LIBERAL_CAP_PRE_2022_ARTICLE_SILENT'));
+  assert.equal(r.confidence, 'CONFIRMED');
 });
 
 test('일반 재학생 2023학번: 교양 인정 상한 52는 확정', async () => {
@@ -63,14 +64,15 @@ test('일반 재학생 2023학번: 교양 인정 상한 52는 확정', async () 
 });
 
 // ---------------------------------------------------------------- 전과생
-test('3학년 전과, 컷오프(2022-2) 이전: 교양 29 고정 + 전공 48 + 일반선택 재배분 → 총 136, 컷오프 해석 추정', async () => {
+test('3학년 전과, 컷오프(2022-2) 이전: 교양 29 고정 + 전공 48 + 일반선택 재배분 → 총 136, 컷오프는 전과 시점 기준으로 확정(학교 전과 안내, D-52)', async () => {
   const r = await resolve({ admissionYear: 2019, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 3, year: 2021, semester: 2 } });
   assert.deepEqual(credits(r), { 교양필수: 5, 교양선택: 24, 전공: 48, 일반선택: 59 }); // 이수학점_총괄표 9절의 59
   assert.equal(rule(r, 'REQUIREMENTS').value.totalRequiredCredits, 136);
   assert.deepEqual(rule(r, 'REQUIREMENTS').value.adjustments, ['MAJOR_RELAXATION', 'LIBERAL_FIXED_29', 'GENERAL_ELECTIVE_REBALANCE']);
   assert.equal(rule(r, 'LIBERAL_ARTS_BASIS').value.mode, 'FIXED_29');
-  assert.equal(rule(r, 'LIBERAL_ARTS_BASIS').confidence, 'ESTIMATED');
-  assert.ok(codes(r, 'LIBERAL_ARTS_BASIS').includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'));
+  assert.equal(rule(r, 'LIBERAL_ARTS_BASIS').confidence, 'CONFIRMED');
+  assert.ok(!codes(r, 'LIBERAL_ARTS_BASIS').includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'));
+  assert.ok(rule(r, 'LIBERAL_ARTS_BASIS').basis.some((b) => b.key === 'SITE_MAJOR_CHANGE_LIBERAL_CUTOFF'));
   assert.equal(rule(r, 'MAJOR_MINIMUM').value.mode, 'RELAXED');
   assert.equal(rule(r, 'MAJOR_MINIMUM').confidence, 'CONFIRMED');
 });
@@ -246,6 +248,7 @@ test('컷오프 해석 선택: 구조조정 시점 해석은 시점 입력이 �
 
   const given = await resolve({ ...base, restructuring: { year: 2020, semester: 1 }, policy: { liberalArtsCutoffTrigger: 'RESTRUCTURING_DATE' } });
   assert.equal(rule(given, 'LIBERAL_ARTS_BASIS').value.mode, 'FIXED_29');
+  assert.ok(codes(given, 'LIBERAL_ARTS_BASIS').includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'), '구조조정 시점 해석은 학교 전과 안내와 달라질 수 있어 추정 플래그가 붙는다');
   assert.deepEqual(rule(given, 'LIBERAL_ARTS_BASIS').alternatives.map((a) => [a.id, a.mode]), [['MAJOR_CHANGE_DATE', 'COHORT_TABLE']]);
   assert.equal(credits(given).교양선택, 24);
   assert.equal(credits(given).일반선택, 136 - 48 - 29, '구조조정 시점 해석에서도 총량은 136(전공 48·교양 29 외 나머지를 일반선택이 흡수)');
