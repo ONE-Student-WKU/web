@@ -160,9 +160,9 @@ const SCENARIOS = [
   {
     id: 'E20', title: '컴소공 2021학번, 2022-1학기 2학년 전과 — 교양 29학점 고정 갈래',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 2, year: 2022, semester: 1 } },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED'], notFlags: ['LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
     question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'ESTIMATED' },
-    why: 'RULE_AUDIT D-1: 컷오프 기준이 "전과 시점"인지 "학사구조조정 시점"인지 미확인, 29학점 실제 적용 사례 없음. 총량 136은 D-07(재배분)',
+    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 신뢰도가 낮은 이유는 컴소공 C등급 구간(HISTORY_NOT_VERIFIED). 총량 136은 D-07(재배분)',
   },
   {
     id: 'E21', title: '컴소공 2022학번, 2024-2학기 3학년 전과 — 최소전공 완화',
@@ -186,11 +186,11 @@ const SCENARIOS = [
     why: 'DECISIONS D-28: 개편 시점 학년 vs 기준일 학년 — 원문에 없음. 농생명바이오계열 개편(이름 일치 계보)',
   },
   {
-    id: 'E24', title: '간호학과 2021학번 — 교양 52학점 상한 근거 충돌',
+    id: 'E24', title: '간호학과 2021학번 — 교양 52학점 상한 없음(2022.3.1. 입학자부터 적용)',
     input: { department: '간호학과', admissionYear: 2021, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['LIBERAL_CAP_PRE_2022_SINGLE_SOURCE'] },
-    question: '교양 52학점 넘게 들으면 졸업학점에 안 들어가?', graduation: { total: 140, confidence: 'ESTIMATED', liberalCapApplied: 52 },
-    why: 'RULE_AUDIT D-3: 책자(2021학번까지 상한 없음) vs 시행규칙 제10조①(52) — 진단은 엄격한 52(D-32)',
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['LIBERAL_CAP_PRE_2022_ARTICLE_SILENT'] },
+    question: '교양 52학점 넘게 들으면 졸업학점에 안 들어가?', graduation: { total: 140, confidence: 'ESTIMATED', liberalCapApplied: null },
+    why: 'D-51: 학교 홈페이지(학사학위수여)와 2026 책자가 "2022년 3월 1일 입학자부터 52학점"으로 일치 → 2021학번 이하 상한 없음(진단도 동일). 신뢰도가 추정인 이유는 상한이 아니라 다른 플래그(별표 4 불일치 등)',
   },
   {
     id: 'E25', title: '컴소공 2022학번 — 2026 공학3계열 개편(제14조)',
@@ -222,11 +222,11 @@ const SCENARIOS = [
     why: '[별표 4] ③ 130학점 칸에 작업치료학과(2017~2024학번 책자는 140). 2025학번부터는 책자도 130으로 일치',
   },
   {
-    id: 'E33', title: '약학과 2022학번 — [별표 4] ③ 232(6년제) vs 책자 240',
+    id: 'E33', title: '약학과 2022학번 — [별표 4] ③ 232(6년제)와 요건 데이터 일치(책자 총괄표 인쇄 240은 오기)',
     input: { department: '약학과', admissionYear: 2022, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['SCHEDULE4_CREDIT_MISMATCH'] },
-    question: '약학과 졸업학점 몇이야?', graduation: { total: 240, confidence: 'ESTIMATED', schedule4: [232, 240] },
-    why: '[별표 4] ③ 약학과(6년제) 232학점, 2022 책자 240(2023학번부터 232로 일치)',
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD'], notFlags: ['SCHEDULE4_CREDIT_MISMATCH'] },
+    question: '약학과 졸업학점 몇이야?', graduation: { total: 232, confidence: 'CONFIRMED' },
+    why: 'D-53: [별표 4] ③·학교 홈페이지(학사학위수여 "232학점이상 2022학번~ 약학과(6년제)")가 232 → 요건 데이터를 232(전공 207)로 정정. 2022 책자 총괄표 인쇄 240은 오기로 봄. 신뢰도 추정은 과목 자료 B등급·판단 보류 때문',
   },
 
   // --- 자료 없음 ---

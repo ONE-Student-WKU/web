@@ -29320,12 +29320,12 @@
   {
     "departmentName": "약학과",
     "category": "전공",
-    "requiredCredits": 215,
+    "requiredCredits": 207,
     "minAdmissionYear": 2022,
     "maxAdmissionYear": 2022,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "졸업총계 240 − 교양 25 = 전공 215학점 (2022_교육과정.pdf 총괄표(책자 25~27쪽, PDF 뷰어 25~27쪽): 전공 칸이 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
+    "description": "졸업총계 232 − 교양 25 = 전공 207학점 (학교 홈페이지 학사학위수여: 약학과(6년제) 232학점 이상, 2022학번~. 2022_교육과정.pdf 총괄표(책자 25~27쪽, PDF 뷰어 25~27쪽)에는 졸업총계가 240으로 인쇄돼 있으나 홈페이지·2023학번 이후 값과 달라 232를 따름. 전공 칸은 \"교육과정 전공이수학점에 따라 이수\"로 병합되어 일반선택 없음)",
     "requiredCourses": []
   },
   {
@@ -29361,7 +29361,7 @@
     "maxAdmissionYear": 2022,
     "enrollmentType": null,
     "minCourseCount": null,
-    "description": "별도 일반선택 요건 없음(졸업총계 240 = 교양 25 + 전공 215)",
+    "description": "별도 일반선택 요건 없음(졸업총계 232 = 교양 25 + 전공 207)",
     "requiredCourses": []
   },
   {

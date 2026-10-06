@@ -29,9 +29,10 @@ function requirementRowsFromJudgment(requirementsRule) {
   ];
 }
 
-// 교양 인정 상한. 엔진은 2021학번 이하에 대해 근거가 갈려(책자: 상한 없음 / 시행규칙 제10조①: 52) "상한 없음(추정)"과
-// 대안 52를 함께 낸다. 졸업진단은 그중 더 엄격한(작은) 값을 쓴다 — 학점을 덜 인정하는 쪽은 틀려도 "졸업 가능"을 잘못
-// 알려주는 사고로 이어지지 않기 때문이다(보수적 선택, D-32). null이면 상한 없음.
+// 교양 인정 상한. 엔진 판단(2021학번 이하 상한 없음, 2022학번부터 52 — 학교 홈페이지·책자 근거, D-51)을 그대로 쓴다.
+// 예전에는 근거가 책자 한 곳이라 시행규칙 문언의 52를 대안으로 함께 받아 더 엄격한 값을 썼지만(D-32), 지금은 대안이 없다.
+// 엔진이 나중에 다시 근거가 갈리는 대안(alternatives)을 내면 더 엄격한(작은) 값을 쓰도록 남겨 둔다 — 학점을 덜 인정하는
+// 쪽은 틀려도 "졸업 가능"을 잘못 알려주는 사고로 이어지지 않기 때문이다. null이면 상한 없음.
 function liberalArtsCapForDiagnosis(capRule) {
   if (!capRule || !capRule.value) return null;
   const caps = [capRule.value.cap, ...(capRule.alternatives || []).map((a) => a.cap)].filter((c) => c != null);

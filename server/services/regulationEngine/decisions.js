@@ -111,12 +111,11 @@ function isBeforeLiberalArtsCutoff({ year, semester }) {
 /**
  * 교양 이수기준의 갈래: 학번별 표(COHORT_TABLE) vs 29학점 고정(FIXED_29).
  *
- * 해석 선택(policy.liberalArtsCutoffTrigger) — 두 원문 근거가 서로 다른 "시점"을 말해서 둘 다 구조로 지원한다:
- *  - MAJOR_CHANGE_DATE(기본, 현재 앱의 동작): 학생의 "전과 시점"이 2022-2 이전이면 29학점. 근거는 웹정보서비스 실사례
- *    (이후 전과자 사례만 확인)와 전과 안내 문서.
- *  - RESTRUCTURING_DATE: 책자 문구 그대로 "학사구조조정이 이루어진 시점"이 2022-2 이전이면 29학점. 구조조정 시점 입력이 필요.
- * 어느 쪽이 학교 실무와 맞는지는 학사지원과 확인 전까지 알 수 없으므로 기본값은 현재 앱 동작을 유지하고,
- * 29학점 갈래가 나올 때는 항상 LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS 플래그(추정)를 붙인다.
+ * 해석 선택(policy.liberalArtsCutoffTrigger) — 책자 문구와 학교 전과 안내가 서로 다른 "시점"을 말해서 둘 다 구조로 지원한다:
+ *  - MAJOR_CHANGE_DATE(기본): 학생의 "전과 시점"이 2022-2 이전이면 29학점. 학교 전과 안내(10항)가 "2022-1학기 전과생까지
+ *    교양필수 5 + 교양선택 24, 2022-2학기 전과생부터 새 기준"이라고 전과한 시점을 기준으로 적고 있어 확정이다(D-52).
+ *  - RESTRUCTURING_DATE: 책자 문구 그대로 "학사구조조정이 이루어진 시점"이 2022-2 이전이면 29학점. 구조조정 시점 입력이 필요하고
+ *    학교 전과 안내와 달라질 수 있어, 이 해석으로 29학점 갈래가 나올 때만 LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS 플래그(추정)를 붙인다.
  */
 function decideLiberalArtsBasis(ctx, triggerOverride) {
   const flags = [];
@@ -156,19 +155,21 @@ function decideLiberalArtsBasis(ctx, triggerOverride) {
 
   if (isBeforeLiberalArtsCutoff(point)) {
     basis.push('BOOKLET_2026_RESTRUCTURING_LIBERAL');
-    flags.push(makeFlag('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'));
+    if (trigger === 'MAJOR_CHANGE_DATE') basis.push('SITE_MAJOR_CHANGE_LIBERAL_CUTOFF');
+    else flags.push(makeFlag('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'));
     return { mode: 'FIXED_29', trigger, flags, basis };
   }
   basis.push('BOOKLET_ROWS');
-  if (trigger === 'MAJOR_CHANGE_DATE') basis.push('CASE_MAJOR_CHANGE_AFTER_CUTOFF');
+  if (trigger === 'MAJOR_CHANGE_DATE') basis.push('CASE_MAJOR_CHANGE_AFTER_CUTOFF', 'SITE_MAJOR_CHANGE_LIBERAL_CUTOFF');
   else flags.push(makeFlag('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'));
   return { mode: 'COHORT_TABLE', trigger, flags, basis };
 }
 
 /**
- * 교양 인정 상한. 책자는 학번으로 갈라 "2021학번까지 제한 없음, 2022학번부터 52학점"이라 하고, 시행규칙 제10조①은
- * 학번 구분 없이 52학점 초과분 불인정이라 한다(졸업진단은 둘 중 엄격한 52를 적용 — D-32). 두 근거가 어긋나는
- * 2021학번 이하는 보수적으로 "추정"으로 두고, 시행규칙 문언대로의 값(52)을 alternatives에 함께 낸다.
+ * 교양 인정 상한. 학교 홈페이지(학사학위수여)와 2026 책자가 모두 "2022년 3월 1일 입학자부터 52학점 초과분 불인정(2021학번까지는
+ * 제한 없음)"이라고 적는다. 시행규칙 제10조①은 학번 구분 없이 52학점 초과분 불인정이라고만 쓰여 있고 입학 시점 제한이 없지만,
+ * 학교가 직접 공지하는 두 곳이 일치하므로 2021학번 이하는 상한 없음(cap: null)으로 판단한다(D-51). 이 판단은 졸업진단도
+ * 그대로 따른다(예전에는 근거가 책자 한 곳이라 진단만 52를 썼다 — D-32). 조문 문언과의 차이는 INFO 플래그로 남긴다.
  */
 function decideLiberalArtsCap(ctx) {
   const flags = [];
@@ -178,11 +179,10 @@ function decideLiberalArtsCap(ctx) {
 
   if (ctx.admissionYear < LIBERAL_ARTS_CAP_FIRST_COHORT) {
     cap = null;
-    basis.push('BOOKLET_2026_LIBERAL_CAP');
-    flags.push(makeFlag('LIBERAL_CAP_PRE_2022_SINGLE_SOURCE'));
-    alternatives.push({ id: 'ARTICLE_LITERAL', description: '시행규칙 제10조 제1항 문언대로(학번 구분 없음)', cap: LIBERAL_ARTS_CREDIT_CAP });
+    basis.push('BOOKLET_2026_LIBERAL_CAP', 'SITE_GRADUATION_LIBERAL_CAP');
+    flags.push(makeFlag('LIBERAL_CAP_PRE_2022_ARTICLE_SILENT'));
   } else {
-    basis.push('BOOKLET_2026_LIBERAL_CAP');
+    basis.push('BOOKLET_2026_LIBERAL_CAP', 'SITE_GRADUATION_LIBERAL_CAP');
   }
   if (ctx.enrollmentType === 'TRANSFER_ADMISSION') flags.push(makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
   return { cap, flags, basis, alternatives };

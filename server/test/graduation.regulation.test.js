@@ -49,20 +49,19 @@ test('응답 모양: 기존 필드 + regulation(신뢰도·플래그·교양 상
   assert.equal(s.regulation.totalDefinitive, true);
 });
 
-test('교양 상한: 2021학번은 근거가 갈려 엔진은 "상한 없음(추정)"이지만 진단은 더 엄격한 52를 적용한다(예전과 같은 숫자)', async () => {
+test('교양 상한: 2021학번 이하는 학교 홈페이지·책자 근거로 상한 없음 — 진단도 같은 값을 쓴다(D-51, 예전에는 52)', async () => {
   await setStudent('컴퓨터·소프트웨어공학과', 2021);
-  // 교양선택 60학점 이수 → 52까지만 인정되면 교양 요구학점을 다 채우고 초과분(52-요구)만 일반선택으로 흐른다.
+  // 교양선택 60학점 이수 → 상한이 없으니 60학점이 모두 인정되고 요구학점을 넘는 분량(60-요구)이 일반선택으로 흐른다.
   for (let i = 0; i < 20; i++) {
     await pool.query("INSERT INTO student_courses (student_id, name, credits, category, year, semester) VALUES (?, ?, 3, '교양선택', 2021, 1)", [studentId, `교양테스트${i}`]);
   }
   const s = await getGraduationStatus(studentId);
-  assert.deepEqual(s.regulation.liberalArtsCap, { applied: 52, engineValue: null });
-  assert.ok(codes(s).includes('LIBERAL_CAP_PRE_2022_SINGLE_SOURCE'));
-  assert.equal(s.regulation.confidence, 'ESTIMATED');
+  assert.deepEqual(s.regulation.liberalArtsCap, { applied: null, engineValue: null });
+  assert.ok(codes(s).includes('LIBERAL_CAP_PRE_2022_ARTICLE_SILENT'));
   const liberalRequired = s.categories.filter((c) => c.category === '교양필수' || c.category === '교양선택').reduce((a, c) => a + c.requiredCredits, 0);
   const general = s.categories.find((c) => c.category === '일반선택');
-  // 상한 52 적용: 일반선택으로 넘어가는 교양 초과분 = 52 - 교양 요구학점(상한이 없었다면 60 - 교양 요구학점)
-  assert.equal(general.earnedCredits, Math.min(general.requiredCredits, 52 - liberalRequired));
+  // 상한 없음: 일반선택으로 넘어가는 교양 초과분 = 60 - 교양 요구학점(예전 상한 52였다면 52 - 교양 요구학점)
+  assert.equal(general.earnedCredits, Math.min(general.requiredCredits, 60 - liberalRequired));
 });
 
 test('1·2학년 전과 + 컷오프 이전: 총 요구학점이 일반 재학생과 같다(예전 142 → 136)', async () => {
@@ -72,7 +71,7 @@ test('1·2학년 전과 + 컷오프 이전: 총 요구학점이 일반 재학생
   const general = await getGraduationStatus(studentId);
   assert.equal(mc.totalRequiredCredits, general.totalRequiredCredits);
   assert.equal(mc.totalRequiredCredits, 136);
-  assert.ok(codes(mc).includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'), '29학점 갈래는 추정 플래그');
+  assert.ok(!codes(mc).includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'), '전과 시점 기준은 학교 전과 안내로 확정이라 해석 모호 플래그가 없다(D-52)');
 });
 
 test('자료 없는 학과·학번: 다른 행으로 채우지 않고 빈 요건 + 자료없음(예전: 인증제 행만 보임)', async () => {

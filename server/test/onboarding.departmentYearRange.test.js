@@ -2,6 +2,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const pool = require('../db');
 const studentService = require('../services/studentService');
+const { buildRuleKey } = require('../services/curriculumKeys');
 
 /**
  * server/test/onboarding.departmentYearRange.test.js
@@ -17,30 +18,35 @@ let openEndedDeptId;
 let successorAId;
 let successorBId;
 
-async function addRow(departmentId, category, min, max, { enrollmentType = null, minCourseCount = null } = {}) {
+// rule_key는 실제 시드와 같은 규칙(buildRuleKey)으로 채운다: 서버 테스트 파일은 병렬로 돌고, curriculumHistoryService.test.js가
+// 전체 테이블에서 "rule_key가 JS 규칙과 같다"와 "같은 (학과, rule_key)의 학번 범위는 겹치지 않는다"를 검사한다.
+// 임시 행의 rule_key가 비어 있거나 임의 값이면 그 사이에 돌 때 간헐적으로 실패한다.
+async function addRow(departmentId, departmentName, category, min, max, { enrollmentType = null, minCourseCount = null } = {}) {
   await pool.query(
     `INSERT INTO curriculum_requirements
-       (department_id, category, required_credits, min_admission_year, max_admission_year, enrollment_type, min_course_count)
-     VALUES (?, ?, 10, ?, ?, ?, ?)`,
-    [departmentId, category, min, max, enrollmentType, minCourseCount]
+       (department_id, category, required_credits, min_admission_year, max_admission_year, enrollment_type, min_course_count, rule_key)
+     VALUES (?, ?, 10, ?, ?, ?, ?, ?)`,
+    [departmentId, category, min, max, enrollmentType, minCourseCount, buildRuleKey(departmentName, category, enrollmentType)]
   );
 }
 
 before(async () => {
-  const [d1] = await pool.query('INSERT INTO departments (name) VALUES (?)', [`yr-test-${run}`]);
+  const name1 = `yr-test-${run}`;
+  const [d1] = await pool.query('INSERT INTO departments (name) VALUES (?)', [name1]);
   deptId = d1.insertId;
   // 전공·교양 요건은 2023~2025, 졸업인증제 행은 2020~2025, 전과 특례 행은 2018~2025.
-  await addRow(deptId, '전공필수', 2023, 2023);
-  await addRow(deptId, '전공선택', 2024, 2025);
-  await addRow(deptId, '교양필수', 2023, 2025);
-  await addRow(deptId, '졸업인증제', 2020, 2025, { minCourseCount: 1 });
-  await addRow(deptId, '전공', 2018, 2025, { enrollmentType: 'MAJOR_CHANGE' });
+  await addRow(deptId, name1, '전공필수', 2023, 2023);
+  await addRow(deptId, name1, '전공선택', 2024, 2025);
+  await addRow(deptId, name1, '교양필수', 2023, 2025);
+  await addRow(deptId, name1, '졸업인증제', 2020, 2025, { minCourseCount: 1 });
+  await addRow(deptId, name1, '전공', 2018, 2025, { enrollmentType: 'MAJOR_CHANGE' });
 
   // 상한이 열린 학과(2026학번부터 max=NULL) — 졸업인증제는 더 이른 학번부터.
-  const [d2] = await pool.query('INSERT INTO departments (name) VALUES (?)', [`yr-open-${run}`]);
+  const name2 = `yr-open-${run}`;
+  const [d2] = await pool.query('INSERT INTO departments (name) VALUES (?)', [name2]);
   openEndedDeptId = d2.insertId;
-  await addRow(openEndedDeptId, '전공선택', 2026, null);
-  await addRow(openEndedDeptId, '졸업인증제', 2022, null, { minCourseCount: 1 });
+  await addRow(openEndedDeptId, name2, '전공선택', 2026, null);
+  await addRow(openEndedDeptId, name2, '졸업인증제', 2022, null, { minCourseCount: 1 });
 
   // 개편 이력: 옛 학과(openEndedDeptId)가 후속 두 학과로 분리(추정 1건, 문서 확인 1건).
   const [s1] = await pool.query('INSERT INTO departments (name) VALUES (?)', [`yr-succ-a-${run}`]);

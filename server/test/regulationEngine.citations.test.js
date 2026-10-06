@@ -44,7 +44,7 @@ test('코드가 참조하는 근거 키와 플래그 코드는 전부 등록돼 
   for (const f of files) {
     const src = fs.readFileSync(path.join(ENGINE_DIR, f), 'utf8');
     for (const m of src.matchAll(/makeFlag\('([A-Z0-9_]+)'/g)) usedFlags.add(m[1]);
-    for (const m of src.matchAll(/'((?:ENF|ACAD|BOOKLET|CASE)_[A-Z0-9_]+)'/g)) usedCitations.add(m[1]);
+    for (const m of src.matchAll(/'((?:ENF|ACAD|BOOKLET|CASE|SITE)_[A-Z0-9_]+)'/g)) usedCitations.add(m[1]);
   }
   assert.ok(usedFlags.size > 10 && usedCitations.size > 5, '스캔이 동작해야 해요');
   for (const code of usedFlags) assert.ok(FLAG_CATALOG[code], `플래그 ${code} 가 카탈로그에 없어요`);

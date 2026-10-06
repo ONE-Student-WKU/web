@@ -153,18 +153,26 @@ test('DB: 질문에 다른 학번이 나오면 그 학번·일반 재학생 가�
 
 // ─── 보정 라운드 B(B-28, D-48): RAG 해설 문서와 진단의 교양 상한 충돌을 근거 메타데이터로 드러낸다 ───
 
-test('근거 충돌: 2021학번 이하 — 상한 없음(추정) vs 시행규칙 52, 판단 청크에 충돌 줄 + conflicts 메타데이터(진단은 52)', async () => {
+test('근거 충돌: 2021학번 이하 — 학교 홈페이지·책자가 일치(상한 없음)해서 충돌 항목이 없다(D-51)', async () => {
   const { resolveApplicableRulesForStudent } = require('../services/regulationEngine');
   const { evidenceConflicts } = require('../services/regulationContextService');
   const j = await resolveApplicableRulesForStudent({ admissionYear: 2021, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: '2026-10-05' });
-  const c = evidenceConflicts(j);
+  const capRule = j.requirements.rules.find((r) => r.id === 'LIBERAL_ARTS_CAP');
+  assert.equal(capRule.value.cap, null);
+  assert.deepEqual(capRule.alternatives, []);
+  assert.deepEqual(evidenceConflicts(j), []);
+  const chunk = formatJudgmentChunks(j, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2021, enrollmentType: 'GENERAL', hypothetical: false })[0];
+  assert.deepEqual(chunk.conflicts, []);
+  assert.doesNotMatch(chunk.content, /근거가 서로 다른 항목/);
+});
+
+test('근거 충돌 장치: 판단이 "상한 없음" + 시행규칙 문언 대안(52)을 함께 내면 충돌 항목과 안내를 만든다(합성 입력)', () => {
+  const { evidenceConflicts } = require('../services/regulationContextService');
+  const judgment = { requirements: { rules: [{ id: 'LIBERAL_ARTS_CAP', value: { cap: null }, alternatives: [{ id: 'ARTICLE_LITERAL', cap: 52 }] }] } };
+  const c = evidenceConflicts(judgment);
   assert.equal(c.length, 1);
   assert.deepEqual([c[0].id, c[0].engineValue, c[0].diagnosisValue], ['LIBERAL_CAP_PRE_2022', null, 52]);
-  assert.deepEqual(c[0].sources.map((s) => s.source), ['교육과정 해설 문서(RAG 청크)', '학칙시행규칙 제10조 제1항']);
-  const chunk = formatJudgmentChunks(j, { departmentName: '컴퓨터·소프트웨어공학과', cohort: 2021, enrollmentType: 'GENERAL', hypothetical: false })[0];
-  assert.deepEqual(chunk.conflicts, c);
-  assert.match(chunk.content, /근거가 서로 다른 항목\(답할 때 두 쪽을 모두 밝힐 것\)/);
-  assert.match(chunk.content, /교양 인정 상한\(2021학번 이하\): 교육과정 해설 문서\(RAG 청크\) — "2021학번까지는 제한이 없고.*52학점.*단정하지 말고 두 근거를 모두 밝혀라/s);
+  assert.match(c[0].guide, /더 엄격한 52학점.*두 근거를 모두 밝혀라/);
 });
 
 test('근거 충돌: 2022학번 이상은 두 근거가 일치(52)해서 충돌 항목이 없다', async () => {
