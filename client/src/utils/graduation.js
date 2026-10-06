@@ -90,6 +90,12 @@ export function buildRequirementGroups(categories) {
 // 재미를 주자는 요청 — 노랑(0%)에서 초록(100%)으로 이어지게 했다(보라 시작은 어색하다는
 // 피드백으로 노랑으로 교체). 100%에서 기존 "충족" 초록(--color-success, hsl(122, 39%, 59%))과
 // 거의 같은 색에 자연스럽게 도달한다.
+// 요구학점이 0이면 0으로 나누어 NaN%·Infinity%가 되므로 0%로 돌려준다(진행률 막대용).
+export function getPercent(earned, required) {
+  if (!(required > 0)) return 0;
+  return Math.min(100, Math.round((earned / required) * 100));
+}
+
 export function getProgressColor(percent) {
   const clamped = Math.max(0, Math.min(100, percent));
   const hue = 50 + (70 * clamped) / 100;
