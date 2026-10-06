@@ -38,7 +38,8 @@ test('컴소공 2018학번: 2026 공학3계열 개편(DOC 계보)이 제14조로
   assert.ok(reorg.details.edges.some((e) => e.toDepartmentName === '공학3계열' && e.effectiveYear === 2026 && e.source === 'DOC'));
   assert.equal(rule(r, 'ACAD_SCHED4_3_2013_2024').status, 'APPLIES');
   assert.equal(rule(r, 'ENF13_4_CATEGORY_AT_REGISTRATION').confidence, 'INSUFFICIENT');
-  assert.equal(r.history.years.find((y) => y.year === 2019).courses.label, '기록 없음(검증 안 됨)');
+  // 2018→2019는 2019 책자 표로 분리돼 변경 기록이 생길 수 있다(변경 있음) — 어느 쪽이든 "검증 안 됨" 표시가 붙어야 한다
+  assert.match(r.history.years.find((y) => y.year === 2019).courses.label, /검증 안 됨/);
   // 졸업요건 값(파트 1)은 그대로 136, 총괄표 등급 A
   assert.equal(r.requirements.rules.find((x) => x.id === 'REQUIREMENTS').value.totalRequiredCredits, 136);
   assert.equal(r.confidence, 'INSUFFICIENT');
