@@ -42613,6 +42613,638 @@
       "courseNameEn": "Academic-Industrial Omnibus Lecture"
     }
   ],
+  "컴퓨터·소프트웨어공학과": [
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "교필",
+      "category": "교양필수",
+      "courseCode": "001111",
+      "courseName": "종교와원불교",
+      "credits": "3",
+      "courseNameEn": "Religion and Won-Buddhism"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "교필",
+      "category": "교양필수",
+      "courseCode": "001252",
+      "courseName": "대학생활과자기혁신",
+      "credits": "2",
+      "courseNameEn": "Guide to the Collegiate life & Innovation Oneself"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004014",
+      "courseName": "수학1",
+      "credits": "3",
+      "courseNameEn": "Mathematics 1"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004016",
+      "courseName": "일반물리학1",
+      "credits": "2",
+      "courseNameEn": "General Physics 1"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004017",
+      "courseName": "일반물리학실험1",
+      "credits": "1",
+      "courseNameEn": "General Physics Lab. 1"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "003506",
+      "courseName": "실무원어민영어1",
+      "credits": "2",
+      "courseNameEn": "Practical English of Native speaker 1"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "003463",
+      "courseName": "창의적발상기법",
+      "credits": "2",
+      "courseNameEn": "Creative idea technique"
+    },
+    {
+      "grade": "1",
+      "semester": "1",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374001",
+      "courseName": "C언어및실습",
+      "credits": "3",
+      "courseNameEn": "C Language and Experimentation"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004015",
+      "courseName": "수학2",
+      "credits": "3",
+      "courseNameEn": "Mathematics 2"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004018",
+      "courseName": "일반물리학2",
+      "credits": "2",
+      "courseNameEn": "General Physics 2"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "계필",
+      "category": "교양선택",
+      "courseCode": "004019",
+      "courseName": "일반물리학실험2",
+      "credits": "1",
+      "courseNameEn": "General Physics Lab. 2"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "003507",
+      "courseName": "실무원어민영어2",
+      "credits": "2",
+      "courseNameEn": "Practical English of Native speaker 2"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "",
+      "courseName": "영역별자유선택1",
+      "credits": "2",
+      "courseNameEn": null
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "003402",
+      "courseName": "3D프린팅이해및활용",
+      "credits": "2",
+      "courseNameEn": "3D Printing Comprehension and Applications"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374003",
+      "courseName": "고급프로그래밍언어및실습",
+      "credits": "3",
+      "courseNameEn": "Advanced Programming Language and Experimentation"
+    },
+    {
+      "grade": "1",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374004",
+      "courseName": "창의공학설계",
+      "credits": "3",
+      "courseNameEn": "Creative Engineering Design"
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "",
+      "courseName": "영역별자유선택1",
+      "credits": "2",
+      "courseNameEn": null
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374006",
+      "courseName": "이산수학",
+      "credits": "3",
+      "courseNameEn": "Discrete Mathematics"
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374008",
+      "courseName": "데이터구조",
+      "credits": "3",
+      "courseNameEn": "Data Structure"
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374065",
+      "courseName": "Java와객체지향프로그래밍",
+      "credits": "3",
+      "courseNameEn": "Java and Object-Oriented Programming"
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374066",
+      "courseName": "웹(HTML5)프로그래밍",
+      "credits": "3",
+      "courseNameEn": "HTML5 Web Programming"
+    },
+    {
+      "grade": "2",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374067",
+      "courseName": "IT융합기술이해",
+      "credits": "3",
+      "courseNameEn": "Understanding IT Convergence Technology"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "",
+      "courseName": "영역별자유선택1",
+      "credits": "2",
+      "courseNameEn": null
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "003445",
+      "courseName": "모바일프로그래밍",
+      "credits": "2",
+      "courseNameEn": "Mobile programming"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374131",
+      "courseName": "오픈소스SW응용",
+      "credits": "3",
+      "courseNameEn": "Open Source Software Aplication"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374014",
+      "courseName": "프로그래밍언어론",
+      "credits": "3",
+      "courseNameEn": "Programming Language"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374015",
+      "courseName": "알고리즘",
+      "credits": "3",
+      "courseNameEn": "Algorithm"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374018",
+      "courseName": "윈도우프로그래밍실습",
+      "credits": "1",
+      "courseNameEn": "Windows Programming Lab."
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374068",
+      "courseName": "컴퓨터조직",
+      "credits": "3",
+      "courseNameEn": "Computer Organization"
+    },
+    {
+      "grade": "2",
+      "semester": "2",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374121",
+      "courseName": "창의실무프로젝트",
+      "credits": "1",
+      "courseNameEn": "Creative Practical Project"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "일선",
+      "category": "일반선택",
+      "courseCode": "006121",
+      "courseName": "군사학1",
+      "credits": "3",
+      "courseNameEn": "Military Science & Art 1"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374022",
+      "courseName": "소프트웨어공학",
+      "credits": "3",
+      "courseNameEn": "Software Engineering"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374025",
+      "courseName": "컴퓨터그래픽스",
+      "credits": "3",
+      "courseNameEn": "Computer Graphics"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374026",
+      "courseName": "데이터통신",
+      "credits": "3",
+      "courseNameEn": "Data Communications"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374078",
+      "courseName": "사물인터넷",
+      "credits": "3",
+      "courseNameEn": "Internet of Things"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374079",
+      "courseName": "인공지능",
+      "credits": "3",
+      "courseNameEn": "Artificial Intelligence"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374027",
+      "courseName": "확률통계",
+      "credits": "3",
+      "courseNameEn": "Probability and Statistics"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374071",
+      "courseName": "시스템분석과설계",
+      "credits": "3",
+      "courseNameEn": "System Analysis and Synthesis"
+    },
+    {
+      "grade": "3",
+      "semester": "1",
+      "categoryRaw": "기전",
+      "category": "전공필수",
+      "courseCode": "374122",
+      "courseName": "창의융합프로젝트",
+      "credits": "1",
+      "courseNameEn": "Creative Fusional Project"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "일선",
+      "category": "일반선택",
+      "courseCode": "006122",
+      "courseName": "군사학2",
+      "credits": "3",
+      "courseNameEn": "Military Science & Art 2"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "002957",
+      "courseName": "기술보고서작성및발표",
+      "credits": "2",
+      "courseNameEn": "Writing and Speaking of Technical Report"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374070",
+      "courseName": "스마트디바이스",
+      "credits": "3",
+      "courseNameEn": "Smart Devices"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374029",
+      "courseName": "컴퓨터네트워크",
+      "credits": "3",
+      "courseNameEn": "Computer Networks"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374031",
+      "courseName": "데이터베이스",
+      "credits": "3",
+      "courseNameEn": "Database"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374124",
+      "courseName": "빅데이터",
+      "credits": "3",
+      "courseNameEn": "Big Data"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374044",
+      "courseName": "정보보안",
+      "credits": "3",
+      "courseNameEn": "Information Security"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374033",
+      "courseName": "영상처리",
+      "credits": "3",
+      "courseNameEn": "Image Processing"
+    },
+    {
+      "grade": "3",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374123",
+      "courseName": "기업연계프로젝트1",
+      "credits": "2",
+      "courseNameEn": "Industry-linked Project1"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "일선",
+      "category": "일반선택",
+      "courseCode": "006123",
+      "courseName": "군사학3",
+      "credits": "3",
+      "courseNameEn": "Military Science & Art 3"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374125",
+      "courseName": "빅데이터처리",
+      "credits": "3",
+      "courseNameEn": "Big-Data Processing"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374126",
+      "courseName": "머신러닝",
+      "credits": "3",
+      "courseNameEn": "Machine Learning"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374038",
+      "courseName": "운영체제",
+      "credits": "3",
+      "courseNameEn": "Operating Systems"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "373074",
+      "courseName": "해킹및방어기술",
+      "credits": "3",
+      "courseNameEn": "Automatic Control and Experiment"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374039",
+      "courseName": "가상현실",
+      "credits": "3",
+      "courseNameEn": "Virtual Reality"
+    },
+    {
+      "grade": "4",
+      "semester": "1",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374127",
+      "courseName": "기업연계프로젝트2",
+      "credits": "2",
+      "courseNameEn": "Industry-linked Project2"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "교필",
+      "category": "교양필수",
+      "courseCode": "001175",
+      "courseName": "졸업(시험.작품)논문",
+      "credits": "P",
+      "courseNameEn": "Graduation Thesis"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "일선",
+      "category": "일반선택",
+      "courseCode": "006124",
+      "courseName": "군사학4",
+      "credits": "3",
+      "courseNameEn": "Military Science & Art 4"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "교선",
+      "category": "교양선택",
+      "courseCode": "",
+      "courseName": "영역별자유선택1",
+      "credits": "2",
+      "courseNameEn": null
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374058",
+      "courseName": "분산시스템",
+      "credits": "3",
+      "courseNameEn": "Distributed Systems"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374128",
+      "courseName": "지능정보시스템",
+      "credits": "3",
+      "courseNameEn": "Intelligent Information System"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374129",
+      "courseName": "사물인터넷응용",
+      "credits": "3",
+      "courseNameEn": "Internet of Things Application"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374130",
+      "courseName": "빅데이터시스템",
+      "credits": "3",
+      "courseNameEn": "Big-Data System"
+    },
+    {
+      "grade": "4",
+      "semester": "2",
+      "categoryRaw": "선전",
+      "category": "전공선택",
+      "courseCode": "374082",
+      "courseName": "산학옴니버스강좌",
+      "credits": "3",
+      "courseNameEn": "Industry Cooperative Omnibus Lecture"
+    }
+  ],
   "디지털콘텐츠공학과": [
     {
       "grade": "1",

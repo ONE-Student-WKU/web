@@ -11,8 +11,8 @@ const rawData = require('../../db/curriculum/_source/2021_학과별_전공과목
  * "전공과목 이수" 표를 추출한 원본 데이터)을 curriculum_courses에 시딩한다.
  *
  * 2021학번 단독 스냅샷이라 min/max_admission_year를 2021으로 한정한다(2022·2023·2024·2025·2026 스크립트와 동일한 방침).
- * 컴퓨터·소프트웨어공학과는 db/curriculum/*.md를 읽는 seedCurriculum.js가 2017~2025학번을
- * 이미 관리하므로 이 JSON에 넣지 않는다.
+ * 컴퓨터·소프트웨어공학과도 이 JSON(2021학년도 책자 컴소공 표)로 2021학번을 관리한다. db/curriculum/*.md를 읽는
+ * seedCurriculum.js는 2021학번을 비우고 ~2018·2023~2025학번만 넣는다.
  *
  * 키 규칙: "학과명" 또는 "계열(전공명)". 괄호 앞이 departments.name, 괄호 안이 tracks.name이다.
  * 예: "행정·언론학부(행정학전공)" → 학과 행정·언론학부, 트랙 행정학전공 / "약학과(2+4년제)" → 학과 약학과, 트랙 2+4년제.

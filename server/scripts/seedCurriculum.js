@@ -137,23 +137,24 @@ function parseNewTrackFile(filePath) {
 // 파일 -> {department, track, minAdmissionYear, maxAdmissionYear, parse} 매핑.
 // db/regulations/졸업/이수학점_총괄표.md 근거: 구학과는 ~2025학번, 공학3계열은 2026학번부터.
 const FILE_CONFIGS = [
-  // 2020학번은 2020학년도 책자 기준 데이터(2020_학과별_전공과목_원본.json)가 따로 있다. 같은 학번에 두 소스가
-  // 겹쳐 중복 조회되지 않도록 이 파일은 2020을 비운 두 구간으로 나눠 넣는다. 처음의 (null~2025) 한 구간 행은
-  // legacyRanges로 같이 지운다.
+  // 2019·2020·2021·2022학번은 해당 학년도 책자 기준 데이터(YYYY_학과별_전공과목_원본.json)가 따로 있다. 같은 학번에
+  // 두 소스가 겹쳐 중복 조회되지 않도록 이 파일은 그 학번을 비운 두 구간(~2018, 2023~2025)으로 나눠 넣는다.
+  // 2017·2018은 책자가 사진·깨진 글자라 JSON이 없어 이 파일을 그대로 쓴다. 이전 방식으로 넣은 구간
+  // ((null~2025) 한 구간, (null~2019)·(2021~2025) 두 구간)의 행은 legacyRanges로 같이 지운다.
   {
     fileName: '컴퓨터소프트웨어공학과_교육과정.md',
     department: '컴퓨터·소프트웨어공학과',
     track: null,
     minAdmissionYear: null,
-    maxAdmissionYear: 2019,
-    legacyRanges: [[null, 2025]],
+    maxAdmissionYear: 2018,
+    legacyRanges: [[null, 2025], [null, 2019], [2021, 2025]],
     parse: parseOldDeptFile,
   },
   {
     fileName: '컴퓨터소프트웨어공학과_교육과정.md',
     department: '컴퓨터·소프트웨어공학과',
     track: null,
-    minAdmissionYear: 2021,
+    minAdmissionYear: 2023,
     maxAdmissionYear: 2025,
     parse: parseOldDeptFile,
   },

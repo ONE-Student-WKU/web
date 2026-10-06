@@ -150,12 +150,12 @@ test('데이터 등급 B: 2026 교육과정(등급 B)과 비교한 과목 판단
 
 test('데이터 등급: 컴소공은 전공과목 대신 컴소공 열을 쓰고, C 구간이 섞이면 찾은 과목 목록도 자료 불충분', () => {
   const cse = { id: 1, name: '컴퓨터·소프트웨어공학과' };
-  const res = resolveApplicableRules(input({ admissionYear: 2022, departmentId: 1 }), base({
+  const res = resolveApplicableRules(input({ admissionYear: 2018, departmentId: 1 }), base({
     department: cse,
     courseChanges: [change({ departmentId: 1, field: 'category', changeType: 'CHANGED', oldValue: '전공필수', newValue: '전공선택', fromYear: 2025, toYear: 2026 })],
   }));
   assert.deepEqual(res.dataQuality.majorCourses, { area: 'CSE_MAJOR_COURSES', grade: 'C' });
-  assert.deepEqual(res.dataQuality.unverifiedCourseYears, [2023]);
+  assert.deepEqual(res.dataQuality.unverifiedCourseYears, [2019]);
   const r = rule(res, 'ENF13_2_REQUIRED_TO_ELECTIVE_OR_ABOLISHED');
   assert.equal(r.status, 'APPLIES');
   assert.ok(codes(r).includes('HISTORY_NOT_VERIFIED'));
