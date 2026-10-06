@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, describeRequirementTrust } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
@@ -57,7 +57,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const trust = status ? describeRequirementTrust(status) : null;
   const remaining = status ? Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits) : 0;
   const progressPercent = status && status.totalRequiredCredits > 0
-    ? Math.min(100, Math.round((status.totalEarnedCredits / status.totalRequiredCredits) * 100))
+    ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
   const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications) : [];
   const groups = status ? buildRequirementGroups(status.categories) : null;
@@ -166,16 +166,16 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     }
                   >
                     {groups.major.earnedCredits} / {groups.major.requiredCredits}학점 ·{' '}
-                    {Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100)}%
+                    {getPercent(groups.major.earnedCredits, groups.major.requiredCredits)}%
                   </span>
                 </div>
                 <div className="home-progress-track">
                   <div
                     className="home-progress-fill"
                     style={{
-                      width: `${Math.min(100, Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100))}%`,
+                      width: `${getPercent(groups.major.earnedCredits, groups.major.requiredCredits)}%`,
                       backgroundColor: getProgressColor(
-                        Math.round((groups.major.earnedCredits / groups.major.requiredCredits) * 100)
+                        getPercent(groups.major.earnedCredits, groups.major.requiredCredits)
                       ),
                     }}
                   />
@@ -206,16 +206,16 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     }
                   >
                     {groups.liberalArts.earnedCredits} / {groups.liberalArts.requiredCredits}학점 ·{' '}
-                    {Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100)}%
+                    {getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)}%
                   </span>
                 </div>
                 <div className="home-progress-track">
                   <div
                     className="home-progress-fill"
                     style={{
-                      width: `${Math.min(100, Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100))}%`,
+                      width: `${getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)}%`,
                       backgroundColor: getProgressColor(
-                        Math.round((groups.liberalArts.earnedCredits / groups.liberalArts.requiredCredits) * 100)
+                        getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)
                       ),
                     }}
                   />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent } from './graduation.js';
 
 describe('mergeMajorCategories', () => {
   it('전공필수/전공선택을 합쳐서 초과 이수분이 서로 상쇄되게 한다', () => {
@@ -151,5 +151,19 @@ describe('describeRequirementTrust', () => {
     expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
     expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
     expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+  });
+});
+
+describe('getPercent', () => {
+  it('요구학점이 0·없음이면 NaN/Infinity 대신 0을 돌려준다', () => {
+    expect(getPercent(10, 0)).toBe(0);
+    expect(getPercent(0, 0)).toBe(0);
+    expect(getPercent(10, null)).toBe(0);
+    expect(getPercent(10, undefined)).toBe(0);
+  });
+
+  it('정상 값은 반올림하고 100%를 넘지 않는다', () => {
+    expect(getPercent(50, 136)).toBe(37);
+    expect(getPercent(150, 100)).toBe(100);
   });
 });

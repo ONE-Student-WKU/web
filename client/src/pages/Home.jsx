@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 
@@ -93,7 +93,7 @@ function Home({
   const gradeLevel = getGradeLevel(user?.admissionYear, user?.leaveSemesters);
   const earnedCredits = status?.totalEarnedCredits ?? 0;
   const requiredTotal = status?.totalRequiredCredits ?? null;
-  const progressPercent = requiredTotal ? Math.min(100, Math.round((earnedCredits / requiredTotal) * 100)) : 0;
+  const progressPercent = getPercent(earnedCredits, requiredTotal);
 
   return (
     <div className="home-page">
