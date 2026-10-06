@@ -63,18 +63,18 @@ const SCENARIOS = [
     why: 'DATA_AUDIT §4 전공과목 2020 = C(이웃 이상치 11건 미확인) — 2019→2020, 2020→2021 비교 모두 미검증',
   },
   {
-    id: 'E07', title: '컴소공 2018학번 — 컴소공 전공과목 등급 C(2017~2019·2021·2022)',
+    id: 'E07', title: '컴소공 2018학번 — 컴소공 전공과목 등급 C(2017·2018)',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2018, enrollmentType: 'GENERAL' },
     expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED', 'DATA_PENDING_HOLD'] },
     question: '내 졸업요건이 뭐야?', graduation: { total: 136, confidence: 'ESTIMATED' },
     why: 'DATA_AUDIT §4 컴소공 열 C + N-8(2017~2022학번 전공과목이 2026 기준 md), #260 컴소공 교양 분할 보류. 졸업 총학점 136은 총괄표 A',
   },
   {
-    id: 'E08', title: '컴소공 2021학번 — 컴소공 C 구간',
-    input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2021, enrollmentType: 'GENERAL' },
+    id: 'E08', title: '컴소공 2017학번 — 컴소공 C 구간(2017·2018은 책자 대조 불가)',
+    input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2017, enrollmentType: 'GENERAL' },
     expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED'] },
     question: '전공필수 바뀐 거 나한테도 적용돼?', graduation: { total: 136 },
-    why: 'DATA_AUDIT §4 컴소공 2021·2022 = C(일치 33/52, 36/45)',
+    why: 'DATA_AUDIT §4 컴소공 2017·2018 = C(책자가 깨진 글자·사진). 2019·2021·2022는 해당 학년도 책자 컴소공 표로 분리해 B',
   },
   {
     id: 'E09', title: '컴소공 2023학번 — 컴소공 B 구간(부분 검증)',
@@ -160,16 +160,16 @@ const SCENARIOS = [
   {
     id: 'E20', title: '컴소공 2021학번, 2022-1학기 2학년 전과 — 교양 29학점 고정 갈래',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 2, year: 2022, semester: 1 } },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED'], notFlags: ['LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['COURSE_DATA_GRADE_B'], notFlags: ['HISTORY_NOT_VERIFIED', 'LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
     question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'ESTIMATED' },
-    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 신뢰도가 낮은 이유는 컴소공 C등급 구간(HISTORY_NOT_VERIFIED). 총량 136은 D-07(재배분)',
+    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 컴소공 2021은 2021 책자 컴소공 표로 분리해 B등급(추정)이다. 총량 136은 D-07(재배분)',
   },
   {
     id: 'E21', title: '컴소공 2022학번, 2024-2학기 3학년 전과 — 최소전공 완화',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2022, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 3, year: 2024, semester: 2 } },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED'] },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['COURSE_DATA_GRADE_B'], notFlags: ['HISTORY_NOT_VERIFIED'] },
     graduation: { total: 136, confidence: 'CONFIRMED' },
-    why: '요건(전공 완화, 시행규칙 제8조①)은 확정이지만 컴소공 2022 과목 자료 C → 과목 경과조치는 자료 불충분',
+    why: '요건(전공 완화, 시행규칙 제8조①)은 확정이고, 컴소공 2022는 2022 책자 컴소공 표로 분리해 B등급 → 과목 경과조치는 추정',
   },
   {
     id: 'E22', title: '컴소공 2023학번 편입 — 편입 학년·총학점 미확정',
@@ -195,7 +195,7 @@ const SCENARIOS = [
   {
     id: 'E25', title: '컴소공 2022학번 — 2026 공학3계열 개편(제14조)',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2022, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, rules: { ENF14_1_REORG_EQUIVALENT_COURSES: 'APPLIES', ENF14_2_REORG_KEEP_OLD_CURRICULUM: 'APPLIES', ENF15_EQUIVALENT_COURSE_DESIGNATION: 'UNKNOWN' }, flags: ['EQUIVALENCE_LIST_NOT_HELD'] },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, rules: { ENF14_1_REORG_EQUIVALENT_COURSES: 'APPLIES', ENF14_2_REORG_KEEP_OLD_CURRICULUM: 'APPLIES', ENF15_EQUIVALENT_COURSE_DESIGNATION: 'UNKNOWN' }, flags: ['EQUIVALENCE_LIST_NOT_HELD'] },
     question: '학과가 공학3계열로 바뀌면 내 전공과목은 어떻게 인정돼?',
     why: '제14조는 재량("할 수 있다"), 동일과목 지정 목록 미보유, 소속변경 여부 미확인(RULE_AUDIT D-2)',
   },

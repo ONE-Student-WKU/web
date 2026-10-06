@@ -122,8 +122,8 @@ async function ask(student, message) {
   return assembleStructuredChunks({ message, searchText: message, student, yearContext });
 }
 
-test('DB: 컴소공 2022학번 졸업요건 질문 → 판단 청크가 맨 앞, 과목 자료 C등급이라 자료 불충분 + 단정 금지 지시, 조문 원문 포함', async () => {
-  const s = await ask({ department_id: D['컴퓨터·소프트웨어공학과'], admission_year: 2022, enrollment_type: 'GENERAL' }, '내 졸업요건이 뭐야?');
+test('DB: 컴소공 2018학번 졸업요건 질문 → 판단 청크가 맨 앞, 과목 자료 C등급이라 자료 불충분 + 단정 금지 지시, 조문 원문 포함', async () => {
+  const s = await ask({ department_id: D['컴퓨터·소프트웨어공학과'], admission_year: 2018, enrollment_type: 'GENERAL' }, '내 졸업요건이 뭐야?');
   assert.equal(s.judgment.confidence, 'INSUFFICIENT');
   const merged = mergeChunks({ structured: s, yearContext: { bookYears: [] } });
   assert.match(merged[0].chunkId, /^regulation-judgment-/);

@@ -18,7 +18,7 @@ const GRADE_TO_CONFIDENCE = Object.freeze({ A: CONFIDENCE.CONFIRMED, B: CONFIDEN
 const DATA_GRADES = Object.freeze({
   REQUIREMENTS: { 2017: 'A', 2018: 'A', 2019: 'A', 2020: 'A', 2021: 'A', 2022: 'A', 2023: 'A', 2024: 'A', 2025: 'A', 2026: 'A' },
   MAJOR_COURSES: { 2017: 'C', 2018: 'C', 2019: 'A', 2020: 'C', 2021: 'A', 2022: 'A', 2023: 'A', 2024: 'A', 2025: 'A', 2026: 'B' },
-  CSE_MAJOR_COURSES: { 2017: 'C', 2018: 'C', 2019: 'C', 2020: 'B', 2021: 'C', 2022: 'C', 2023: 'B', 2024: 'B', 2025: 'B', 2026: 'B' },
+  CSE_MAJOR_COURSES: { 2017: 'C', 2018: 'C', 2019: 'B', 2020: 'B', 2021: 'B', 2022: 'B', 2023: 'B', 2024: 'B', 2025: 'B', 2026: 'B' },
   RAG: { 2017: 'B', 2018: 'B', 2019: 'B', 2020: 'B', 2021: 'B', 2022: 'B', 2023: 'B', 2024: 'B', 2025: 'B', 2026: 'B' },
 });
 

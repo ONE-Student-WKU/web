@@ -31,17 +31,22 @@ test('DB의 적용범위 행이 레포 원천(applicability.json + 원문)과 �
   assert.equal(n, seed.articles.length);
 });
 
-test('컴소공 2022학번: 2026 공학3계열 개편(DOC 계보)이 제14조로 잡히고, 컴소공 C등급 구간 때문에 과목 판단은 자료 불충분', async () => {
-  const r = await resolveApplicableRulesForStudent({ admissionYear: 2022, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: ASOF });
+test('컴소공 2018학번: 2026 공학3계열 개편(DOC 계보)이 제14조로 잡히고, 컴소공 C등급 구간(2017·2018은 책자 대조 불가) 때문에 과목 판단은 자료 불충분', async () => {
+  const r = await resolveApplicableRulesForStudent({ admissionYear: 2018, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: ASOF });
   const reorg = rule(r, 'ENF14_1_REORG_EQUIVALENT_COURSES');
   assert.equal(reorg.status, 'APPLIES');
   assert.ok(reorg.details.edges.some((e) => e.toDepartmentName === '공학3계열' && e.effectiveYear === 2026 && e.source === 'DOC'));
   assert.equal(rule(r, 'ACAD_SCHED4_3_2013_2024').status, 'APPLIES');
   assert.equal(rule(r, 'ENF13_4_CATEGORY_AT_REGISTRATION').confidence, 'INSUFFICIENT');
-  assert.equal(r.history.years.find((y) => y.year === 2023).courses.label, '기록 없음(검증 안 됨)');
+  assert.equal(r.history.years.find((y) => y.year === 2019).courses.label, '기록 없음(검증 안 됨)');
   // 졸업요건 값(파트 1)은 그대로 136, 총괄표 등급 A
   assert.equal(r.requirements.rules.find((x) => x.id === 'REQUIREMENTS').value.totalRequiredCredits, 136);
   assert.equal(r.confidence, 'INSUFFICIENT');
+});
+
+test('컴소공 2022학번: 2022 책자 컴소공 표로 분리돼 컴소공 B등급이라 과목 판단은 자료 불충분이 아니라 추정', async () => {
+  const r = await resolveApplicableRulesForStudent({ admissionYear: 2022, enrollmentType: 'GENERAL', departmentName: '컴퓨터·소프트웨어공학과', asOfDate: ASOF });
+  assert.equal(rule(r, 'ENF13_4_CATEGORY_AT_REGISTRATION').confidence, 'ESTIMATED');
 });
 
 test('간호학과 2026학번(입학 학년도 = 기준일 학년도): 경과조치 대상 없음, 확정', async () => {
