@@ -12,7 +12,7 @@ const communityService = require('../services/communityService');
 const emailRelayService = require('../services/emailRelayService');
 const emailRelayRouter = require('../routes/emailRelay');
 
-const { buildRelayMessage, sanitizeRelayHtml, relayInboundEmail } = emailRelayService;
+const { buildRelayMessage, sanitizeRelayHtml, relayInboundEmail, RELAY_LIMITS } = emailRelayService;
 
 /**
  * server/test/emailRelayService.relay.test.js
@@ -42,7 +42,7 @@ test('sanitizeRelayHtml: 네이버 읽음 확인 픽셀과 숨김 테이블, htm
   assert.ok(!out.includes('margin-top:0px;margin-bottom'), 'style 태그 안의 CSS 텍스트가 본문에 새면 안 됨');
 });
 
-test('sanitizeRelayHtml: 스크립트/이벤트 속성/숨김 요소/1×1 이미지는 지우고 일반 이미지와 링크, cid 이미지는 남긴다', () => {
+test('sanitizeRelayHtml: 스크립트/이벤트 속성/숨김 요소/1×1 이미지는 지우고, 외부 이미지는 안내 문구로 바꾸고, 링크와 cid 이미지는 남긴다', () => {
   const out = sanitizeRelayHtml(
     '<div>보이는 글</div>' +
       '<script>alert(1)</script>' +
@@ -61,10 +61,85 @@ test('sanitizeRelayHtml: 스크립트/이벤트 속성/숨김 요소/1×1 이미
   assert.ok(!out.includes('숨김 글'));
   assert.ok(!out.includes('hidden 속성 글'));
   assert.ok(!out.includes('tracker.example'));
-  assert.ok(out.includes('https://img.example/photo.png'));
+  assert.ok(!out.includes('img.example'), '외부 이미지는 크기와 상관없이 주소가 남으면 안 됨');
+  assert.ok(out.includes('외부 이미지는 개인정보 보호를 위해 표시되지 않습니다'));
   assert.ok(out.includes('src="cid:ii_abc123"'));
   assert.ok(out.includes('href="https://example.com"'));
   assert.ok(!out.includes('javascript:'));
+});
+
+test('sanitizeRelayHtml: style은 안전한 속성만 남기고 외부 요청(url)·화면 덮기(position)는 걸러낸다', () => {
+  const cases = [
+    '<div style="background:url(https://evil.example/t.gif)">배경</div>',
+    '<div style="background-image:url(&quot;https://evil.example/t.gif&quot;)">배경2</div>',
+    '<ul style="list-style-image:url(https://evil.example/l.gif)"><li>목록</li></ul>',
+    '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999">위장</div>',
+    '<div style="color:url(https://evil.example/c)">색</div>',
+    '<table style="background:#fff url(https://evil.example/t.gif)"><tr><td>표</td></tr></table>',
+  ];
+  for (const html of cases) {
+    const out = sanitizeRelayHtml(html);
+    assert.ok(!out.includes('evil.example'), `외부 주소가 남음: ${out}`);
+    assert.ok(!/url\(|position|z-index/i.test(out), `위험한 style이 남음: ${out}`);
+  }
+  assert.ok(sanitizeRelayHtml(cases[3]).includes('위장'), 'style만 걸러지고 글은 남아야 함');
+
+  const kept = sanitizeRelayHtml(
+    '<p style="color: rgb(34, 34, 34); background-color:#ffeeaa; text-align:center; font-weight:bold; font-size:14px; font-family: Arial, 맑은 고딕, sans-serif">서식</p>'
+  );
+  assert.ok(kept.includes('color:rgb(34, 34, 34)'));
+  assert.ok(kept.includes('background-color:#ffeeaa'));
+  assert.ok(kept.includes('text-align:center'));
+  assert.ok(kept.includes('font-weight:bold'));
+  assert.ok(kept.includes('font-size:14px'));
+  assert.ok(kept.includes('font-family:Arial, 맑은 고딕, sans-serif'));
+});
+
+// allowedStyles를 넣으면 exclusiveFilter가 걸러진 뒤의 style을 보게 돼, 숨김 요소가 오히려 보이게 되는
+// 함정이 있다(리뷰 #247에서 실측). 숨김 판정이 원본 속성 기준으로 이뤄지는지 고정한다.
+test('sanitizeRelayHtml: 숨김 요소는 style 허용 목록과 상관없이 내용째 제거된다', () => {
+  const hidden = [
+    '<div style="display:none">숨김1</div>',
+    '<div style="display: none !important">숨김2</div>',
+    '<div style="DISPLAY:NONE">숨김3</div>',
+    '<div style="color:red; display:none">숨김4</div>',
+    '<span style="visibility:hidden">숨김5</span>',
+    '<div style="mso-hide:all">숨김6</div>',
+    '<p hidden>숨김7</p>',
+    '<table style="display:none"><tr><td>숨김8<img src="cid:x"></td></tr></table>',
+  ];
+  for (const html of hidden) {
+    const out = sanitizeRelayHtml(`<p>보임</p>${html}`);
+    assert.ok(!out.includes('숨김'), `숨김 요소가 남음: ${out}`);
+    assert.ok(out.includes('보임'));
+  }
+  assert.equal(sanitizeRelayHtml('<img src="cid:pixel" style="width:1px;height:1px">'), '', 'style로 크기를 준 1×1 cid 이미지도 제거');
+  assert.ok(!sanitizeRelayHtml('<p>a</p>').includes('data-relay'), '내부 표시 속성은 출력에 남지 않음');
+});
+
+test('sanitizeRelayHtml: 외부 이미지는 크기·형식과 상관없이 모두 막고 cid 이미지만 남긴다', () => {
+  const external = [
+    '<img src="https://img.example/a.png" width="600" height="400">',
+    '<img src="https://img.example/b.png">',
+    '<img src="https://img.example/c.png" width="2" height="2">',
+    '<img src="//img.example/d.png">',
+    '<img src="http://img.example/e.png" width="1">',
+    '<img src="HTTPS://img.example/f.png">',
+  ];
+  for (const html of external) {
+    const out = sanitizeRelayHtml(html);
+    assert.ok(!out.includes('img.example'), `외부 이미지 주소가 남음: ${out}`);
+    assert.ok(!/<img/i.test(out), `빈 img 태그가 남음: ${out}`);
+  }
+  // 1×1 같은 추적 이미지는 안내 문구 없이 조용히 사라지고, 일반 외부 이미지만 안내 문구가 붙는다.
+  assert.equal(sanitizeRelayHtml('<img src="https://t.example/p.gif" width="1" height="1">'), '');
+  assert.ok(sanitizeRelayHtml(external[0]).includes('외부 이미지는 개인정보 보호를 위해 표시되지 않습니다'));
+
+  const srcset = sanitizeRelayHtml('<img src="cid:ok1" srcset="https://img.example/2x.png 2x" alt="사진">');
+  assert.ok(srcset.includes('src="cid:ok1"'));
+  assert.ok(!srcset.includes('srcset') && !srcset.includes('img.example'));
+  assert.ok(sanitizeRelayHtml('<img src="CID:Upper@host">').includes('src="CID:Upper@host"'));
+  assert.equal(sanitizeRelayHtml('<img>'), '', 'src 없는 img는 제거');
 });
 
 test('buildRelayMessage: 본문을 안내 양식으로 감싸고, 텍스트 본문에도 같은 안내를 붙인다', () => {
@@ -89,6 +164,40 @@ test('buildRelayMessage: HTML만 온 메일은 HTML에서 텍스트 본문을 �
   const msg = buildRelayMessage({ subject: 's', text: null, html: '<p>첫 줄</p><p>둘째 &amp; 줄</p><div style="display:none">숨김</div>' });
   assert.ok(msg.text.includes('첫 줄\n둘째 & 줄'));
   assert.ok(!msg.text.includes('숨김'));
+});
+
+test('buildRelayMessage: 제목의 개행·제어문자는 공백으로 바꿔 헤더 주입을 막고, 너무 긴 제목은 자른다', () => {
+  assert.equal(buildRelayMessage({ subject: 'a\r\nBcc: attacker@example.com', text: 't' }).subject, 'a Bcc: attacker@example.com');
+  assert.equal(buildRelayMessage({ subject: 'x\n\n\ny\tz\u0000w', text: 't' }).subject, 'x y z w');
+  assert.equal(buildRelayMessage({ subject: '\r\n', text: 't' }).subject, '(제목 없음)');
+  const long = buildRelayMessage({ subject: '가'.repeat(500), text: 't' }).subject;
+  assert.equal(long, `${'가'.repeat(RELAY_LIMITS.maxSubjectLength)}…`);
+});
+
+test('buildRelayMessage: 전달 안내(notices)는 HTML 안내 상자와 텍스트 본문 모두에 이스케이프해 넣는다', () => {
+  const msg = buildRelayMessage({ subject: 's', text: '본문', html: null }, { notices: ['첨부 <1개> 누락'] });
+  assert.ok(msg.html.includes('첨부 &lt;1개&gt; 누락'));
+  assert.ok(msg.text.includes('※ 첨부 <1개> 누락'));
+  assert.ok(!buildRelayMessage({ subject: 's', text: '본문', html: null }).text.includes('※'), '안내가 없으면 상자도 없음');
+});
+
+test('buildRelayMessage: 한도를 넘는 큰 HTML 본문은 서식 없이 텍스트로 보내고 빠르게 끝난다', () => {
+  const chunk = '<div style="color:#333"><p>큰 본문 <b>테스트</b></p><img src="https://img.example/x.png"></div>';
+  const html = chunk.repeat(Math.ceil((RELAY_LIMITS.maxHtmlLength * 5) / chunk.length)); // 한도의 5배
+  const started = Date.now();
+  const msg = buildRelayMessage({ subject: 's', text: null, html });
+  const elapsed = Date.now() - started;
+
+  assert.ok(elapsed < 3000, `너무 오래 걸림: ${elapsed}ms`);
+  assert.ok(msg.html.includes('원본 메일 본문이 너무 커서 서식 없이 텍스트로만 전달되었습니다.'));
+  assert.ok(msg.html.includes('white-space:pre-wrap'), '서식 없는 텍스트 양식으로 들어감');
+  assert.ok(!msg.html.includes('img.example'));
+  assert.ok(msg.text.includes('큰 본문 테스트'));
+  assert.ok(msg.html.length < RELAY_LIMITS.maxHtmlLength * 2, `결과 HTML이 너무 큼: ${msg.html.length}`);
+
+  const hugeText = buildRelayMessage({ subject: 's', text: 'a'.repeat(RELAY_LIMITS.maxTextLength + 10), html: null });
+  assert.ok(hugeText.text.includes('원본 메일 본문이 너무 길어 앞부분만 전달되었습니다.'));
+  assert.ok(hugeText.text.length < RELAY_LIMITS.maxTextLength + 1000);
 });
 
 function fakeClient({ received, attachments = [], getError = null, sendError = null } = {}) {
@@ -179,6 +288,108 @@ test('relayInboundEmail: 첨부 다운로드가 실패하면 첨부 없이 보�
   await assert.rejects(
     relayInboundEmail({ emailId: 'em_3', to: 't@example.com', from: 'p@relay.example' }, { client, fetchImpl: failingFetch }),
     /첨부파일 다운로드 실패/
+  );
+  assert.equal(calls.send.length, 0);
+});
+
+// 첨부 목록 항목 n개를 만든다(size는 바이트). 가짜 fetch는 URL에 적힌 크기만큼 바이트를 돌려준다.
+function attachmentItems(sizes) {
+  return sizes.map((size, i) => ({
+    id: `a${i}`,
+    filename: `f${i}.bin`,
+    size,
+    content_type: 'application/octet-stream',
+    content_disposition: 'attachment',
+    download_url: `https://dl/a${i}?size=${size}`,
+  }));
+}
+
+function sizedFetch() {
+  const state = { calls: [], active: 0, maxActive: 0, signals: [] };
+  const fetchImpl = async (url, opts = {}) => {
+    state.calls.push(url);
+    state.signals.push(opts.signal);
+    state.active += 1;
+    state.maxActive = Math.max(state.maxActive, state.active);
+    await new Promise((r) => setTimeout(r, 5));
+    state.active -= 1;
+    const size = Number(new URL(url).searchParams.get('size'));
+    return { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(size) };
+  };
+  return { fetchImpl, state };
+}
+
+const MB = 1024 * 1024;
+
+test('relayInboundEmail: 첨부는 하나씩 순서대로 내려받고, 각 요청에 타임아웃 signal을 건다', async () => {
+  const items = attachmentItems([100, 200, 300]);
+  const { client, calls } = fakeClient({ received: { subject: 's', text: 't', html: null, attachments: items }, attachments: items });
+  const { fetchImpl, state } = sizedFetch();
+  await relayInboundEmail({ emailId: 'em_seq', to: 't@example.com', from: 'p@relay.example' }, { client, fetchImpl });
+
+  assert.equal(state.maxActive, 1, '동시에 둘 이상 내려받으면 안 됨');
+  assert.deepEqual(state.calls, items.map((a) => a.download_url));
+  assert.ok(state.signals.every((s) => s instanceof AbortSignal));
+  const [payload] = calls.send[0];
+  assert.equal(payload.attachments.length, 3);
+  assert.ok(!payload.text.includes('※'), '한도 안이면 안내 없음');
+});
+
+test('relayInboundEmail: 첨부 개수 한도를 넘는 첨부는 내려받지 않고, 본문에 빠진 개수를 안내한다', async () => {
+  const items = attachmentItems(Array(RELAY_LIMITS.maxAttachments + 1).fill(10));
+  const { client, calls } = fakeClient({ received: { subject: 's', text: 't', html: '<p>본문</p>', attachments: items }, attachments: items });
+  const { fetchImpl, state } = sizedFetch();
+  await relayInboundEmail({ emailId: 'em_cnt', to: 't@example.com', from: 'p@relay.example' }, { client, fetchImpl });
+
+  assert.equal(state.calls.length, RELAY_LIMITS.maxAttachments, '한도를 넘는 첨부는 다운로드 자체를 안 함');
+  const [payload] = calls.send[0];
+  assert.equal(payload.attachments.length, RELAY_LIMITS.maxAttachments);
+  assert.ok(payload.html.includes('첨부파일 1개는 전달 한도'));
+  assert.ok(payload.text.includes('첨부파일 1개는 전달 한도'));
+  assert.ok(payload.html.includes('본문'));
+});
+
+test('relayInboundEmail: 합계 크기 한도는 경계값까지 허용하고, 넘는 첨부만 건너뛴다', async () => {
+  const total = RELAY_LIMITS.maxAttachmentTotalBytes;
+  // 정확히 한도: 모두 전달
+  const exact = attachmentItems([total - 1 * MB, 1 * MB]);
+  const ok = fakeClient({ received: { subject: 's', text: 't', html: null, attachments: exact }, attachments: exact });
+  await relayInboundEmail({ emailId: 'em_exact', to: 't@example.com', from: 'p@relay.example' }, { client: ok.client, fetchImpl: sizedFetch().fetchImpl });
+  assert.equal(ok.calls.send[0][0].attachments.length, 2);
+  assert.ok(!ok.calls.send[0][0].text.includes('※'));
+
+  // 1바이트 초과: 두 번째(큰 것)는 건너뛰고, 그 뒤 작은 첨부는 여유가 있으니 전달
+  const over = attachmentItems([total - 1 * MB, 1 * MB + 1, 100]);
+  const big = fakeClient({ received: { subject: 's', text: 't', html: null, attachments: over }, attachments: over });
+  const { fetchImpl, state } = sizedFetch();
+  await relayInboundEmail({ emailId: 'em_over', to: 't@example.com', from: 'p@relay.example' }, { client: big.client, fetchImpl });
+  assert.deepEqual(state.calls, [over[0].download_url, over[2].download_url], '한도를 넘는 첨부는 다운로드하지 않음');
+  const [payload] = big.calls.send[0];
+  assert.deepEqual(payload.attachments.map((a) => a.filename), ['f0.bin', 'f2.bin']);
+  assert.ok(payload.text.includes('첨부파일 1개는 전달 한도'));
+});
+
+test('relayInboundEmail: 목록의 size가 실제보다 작아도, 내려받은 실제 크기로 한도를 다시 확인한다', async () => {
+  const items = attachmentItems([5 * MB, 5 * MB]);
+  items[1].size = 10; // 목록에는 작게 적혀 있지만
+  items[1].download_url = `https://dl/a1?size=${6 * MB}`; // 실제로는 6MB
+  const { client, calls } = fakeClient({ received: { subject: 's', text: 't', html: null, attachments: items }, attachments: items });
+  await relayInboundEmail({ emailId: 'em_lie', to: 't@example.com', from: 'p@relay.example' }, { client, fetchImpl: sizedFetch().fetchImpl });
+
+  const [payload] = calls.send[0];
+  assert.equal(payload.attachments.length, 1);
+  assert.ok(payload.text.includes('첨부파일 1개는 전달 한도'));
+});
+
+test('relayInboundEmail: 첨부 다운로드 타임아웃은 첨부를 빼고 보내지 않고 예외를 올린다(웹훅 재시도에 맡김)', async () => {
+  const items = attachmentItems([100]);
+  const { client, calls } = fakeClient({ received: { subject: 's', text: 't', html: null, attachments: items }, attachments: items });
+  const timingOut = async () => {
+    throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  };
+  await assert.rejects(
+    relayInboundEmail({ emailId: 'em_to', to: 't@example.com', from: 'p@relay.example' }, { client, fetchImpl: timingOut }),
+    { name: 'TimeoutError' }
   );
   assert.equal(calls.send.length, 0);
 });
