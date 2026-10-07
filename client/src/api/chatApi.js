@@ -130,20 +130,20 @@ export const getLatestConfirmedRoadmap = () => apiRequest('/career/roadmap/lates
 
 export const createCareerSession = () => apiRequest('/career/sessions', { method: 'POST' });
 
-export const submitCareerFixedAnswers = (sessionId, fixedAnswers) =>
-  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'POST', body: JSON.stringify({ fixedAnswers }) });
+export const submitCareerFixedAnswers = (sessionId, fixedAnswers, language) =>
+  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'POST', body: JSON.stringify({ fixedAnswers, language }) });
 
 export const updateCareerFixedAnswers = (sessionId, fixedAnswers) =>
   apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'PATCH', body: JSON.stringify({ fixedAnswers }) });
 
-export const sendCareerMessage = (sessionId, content) =>
-  apiRequest(`/career/sessions/${sessionId}/messages`, { method: 'POST', body: JSON.stringify({ content }) });
+export const sendCareerMessage = (sessionId, content, language) =>
+  apiRequest(`/career/sessions/${sessionId}/messages`, { method: 'POST', body: JSON.stringify({ content, language }) });
 
-export const generateCareerCandidates = (sessionId) =>
-  apiRequest(`/career/sessions/${sessionId}/candidates`, { method: 'POST' });
+export const generateCareerCandidates = (sessionId, language) =>
+  apiRequest(`/career/sessions/${sessionId}/candidates`, { method: 'POST', body: JSON.stringify({ language }) });
 
-export const confirmCareer = (sessionId, careerName) =>
-  apiRequest(`/career/sessions/${sessionId}/confirm`, { method: 'POST', body: JSON.stringify({ careerName }) });
+export const confirmCareer = (sessionId, careerName, language) =>
+  apiRequest(`/career/sessions/${sessionId}/confirm`, { method: 'POST', body: JSON.stringify({ careerName, language }) });
 
 export const getCommunityPosts = () => apiRequest('/community');
 

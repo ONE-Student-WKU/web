@@ -22,10 +22,12 @@ export function getYearRange(department, enrollmentType, nowYear = new Date().ge
 // 개편으로 이름이 바뀐 옛 학과에 붙이는 안내 문구. 옛 학번 학생은 옛 이름을 골라야 하는데 학교 공식 소속명과
 // 달라 헷갈리지 않게 "이후 학과"를 보여준다. 개편 이력이 이름 유사 추정(confirmed=false)이면 "(추정)"을 붙인다.
 // 조사(으로/로)는 받침에 따라 달라 쓰지 않는다. 후속 학과가 없으면 null.
-export function describeSuccessors(department) {
+// t(화면 언어 번역 함수)를 넘기면 그 언어로 만들고, 안 넘기면 기존 한국어 문구 그대로다. 학과 이름은 서버 데이터라 번역하지 않는다.
+export function describeSuccessors(department, t = null) {
   const successors = department?.successors || [];
   if (successors.length === 0) return null;
   const names = successors.map((s) => s.name).join(', ');
   const confirmed = successors.every((s) => s.confirmed);
+  if (t) return t(confirmed ? 'dept.successors' : 'dept.successorsEstimated', { names });
   return `이후 학과${confirmed ? '' : '(추정)'}: ${names}`;
 }

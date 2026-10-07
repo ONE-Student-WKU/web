@@ -11,6 +11,7 @@ const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
 const { guardAnswer } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
+const { parseLanguage } = require('../services/language');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -20,11 +21,8 @@ const { lookupRegulationJudgment } = require('../services/regulationContextServi
 const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 질문을 다르게 표현해보시거나, 관련 부서에 직접 확인해주세요.';
 const NOT_FOUND_MESSAGE_EN = "I couldn't find a relevant regulation. Try rephrasing your question, or check directly with the relevant office.";
 
-// 화면 언어('ko' | 'en'). 클라이언트가 보내는 값은 허용 목록으로만 받고, 모르는 값은 한국어(기존 동작)로 둔다.
-// 답변 언어만 바꾼다 — 검색·규정 판단·요건 계산은 언어와 무관하게 한국어 원문 기준 그대로다.
-function parseLanguage(value) {
-  return value === 'en' ? 'en' : 'ko';
-}
+// 화면 언어('ko' | 'en')는 services/language.js의 parseLanguage로 받는다. 답변 언어만 바꾼다 —
+// 검색·규정 판단·요건 계산은 언어와 무관하게 한국어 원문 기준 그대로다.
 // AI 호출에 실어 보낼 최근 대화 이력 개수(비용/토큰 상한 목적). 대화가 길어질수록 이보다
 // 오래된 turn은 컨텍스트에서 자연히 빠짐.
 const HISTORY_LIMIT = 10;

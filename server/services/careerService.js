@@ -142,7 +142,7 @@ async function updateFixedAnswers(studentId, sessionId, fixedAnswers) {
 
 // 고정 질문(프론트 하드코딩) 답변을 assistant(질문)/user(답변) 턴으로 이어 붙여 대화 이력의
 // 시작 부분을 채우고, 이어서 AI의 첫 자유 대화 질문을 생성한다.
-async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student) {
+async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
@@ -152,20 +152,20 @@ async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student) {
   }
 
   const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
-  const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses);
+  const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses, language);
   await saveMessage(sessionId, 'assistant', followUp);
 
   return listMessages(sessionId);
 }
 
 // 자유 대화 한 턴 — 사용자 메시지를 저장하고, 이어서 AI의 다음 질문을 저장한다.
-async function postMessage(studentId, sessionId, content, student) {
+async function postMessage(studentId, sessionId, content, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
   await saveMessage(sessionId, 'user', content);
   const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
-  const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses);
+  const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses, language);
   await saveMessage(sessionId, 'assistant', followUp);
 
   return listMessages(sessionId);
@@ -173,7 +173,7 @@ async function postMessage(studentId, sessionId, content, student) {
 
 // 지금까지의 대화를 종합해 진로 후보를 뽑는다. "더 이야기해볼게요"로 되돌아갔다가 다시
 // 요청하는 경우를 대비해 이전 후보는 지우고 새로 채운다.
-async function generateCandidates(studentId, sessionId, student) {
+async function generateCandidates(studentId, sessionId, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
@@ -184,7 +184,7 @@ async function generateCandidates(studentId, sessionId, student) {
   // 사용자가 이해할 수 있는 CAREER_CANDIDATES_EMPTY로 수렴시킨다.
   let candidates;
   try {
-    candidates = await aiClient.generateCareerCandidates(history, student, completedCourses);
+    candidates = await aiClient.generateCareerCandidates(history, student, completedCourses, language);
   } catch {
     candidates = [];
   }
@@ -224,7 +224,7 @@ async function getRemainingCourses(studentId, student) {
 }
 
 // 후보 중 하나를 진로로 확정하고, 남은 교육과정만으로 로드맵을 생성한다.
-async function confirmCareer(studentId, sessionId, careerName, student) {
+async function confirmCareer(studentId, sessionId, careerName, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
@@ -237,7 +237,7 @@ async function confirmCareer(studentId, sessionId, careerName, student) {
 
   let roadmap = [];
   try {
-    roadmap = await aiClient.generateCareerRoadmap(chosen.careerName, chosen.reasoning, remainingCourses, student);
+    roadmap = await aiClient.generateCareerRoadmap(chosen.careerName, chosen.reasoning, remainingCourses, student, language);
   } catch {
     roadmap = [];
   }

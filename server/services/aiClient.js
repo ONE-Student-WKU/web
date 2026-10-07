@@ -248,6 +248,30 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
   return data.content.map((block) => block.text).join('');
 }
 
+// 진로 상담(후속 질문·후보·로드맵)의 답변 언어 지시 — 챗봇의 ENGLISH_ANSWER_NOTE와 같은 방식으로, 영어 화면일 때만 덧붙인다.
+// 로드맵의 courseName은 careerService가 교육과정 목록과 글자 그대로 대조(그라운딩)하므로 영어로 옮기면 전부 걸러진다 —
+// 그래서 과목명만은 반드시 한국어 원문 그대로 쓰게 한다. 학생 호칭 지시("이름님")는 한국어 존댓말 규칙이라 영어에선 쓰지 않게 한다.
+const CAREER_ENGLISH_NOTE = `Answer language: the student is using the English version of the app. Write everything the student will read in English, including the text values inside any JSON you output (such as "careerName", "reasoning" and "reason"), even though the instructions and the conversation so far may be in Korean.
+- The Korean honorific rule above (adding "님" to the name) does not apply in English: address the student naturally, by name only if it feels natural, and never as "you" in a stiff way.
+- Exception: in a course roadmap, the "courseName" value must stay exactly as written in the course list (Korean); do not translate or alter it. Only the "reason" is in English.
+- Keep the JSON structure and keys exactly as specified.`;
+
+function buildCareerLanguageNote(language) {
+  return language === 'en' ? CAREER_ENGLISH_NOTE : null;
+}
+
+// 대화 이력이 한국어(고정 질문 답변 + 이전 대화)로 쌓여 있으면 모델이 시스템 프롬프트의 영어 지시보다 이력의 언어를 따라가
+// 영어 화면에서도 한국어로 답하는 것이 실측으로 확인됐다. 그래서 영어일 때는 마지막 user 턴 끝에도 짧은 영어 지시를 덧붙여
+// 보낸다(저장된 대화에는 들어가지 않는 요청용 사본). 한국어(기본)는 이력을 그대로 보낸다.
+const ENGLISH_REPLY_REMINDER = '\n\n[Reply to the student in English.]';
+
+function withEnglishReminder(messages, language) {
+  if (language !== 'en' || messages.length === 0) return messages;
+  const last = messages[messages.length - 1];
+  if (last.role !== 'user') return messages;
+  return [...messages.slice(0, -1), { ...last, content: `${last.content}${ENGLISH_REPLY_REMINDER}` }];
+}
+
 const CAREER_FOLLOWUP_SYSTEM_PROMPT = `너는 대학생의 진로를 함께 찾아주는 다정한 진로 상담사다.
 학생이 방금 답한 내용에 짧게 공감한 뒤, 진로를 구체화하는 데 도움이 될 후속 질문을 딱 하나만 던져라.
 실제 경험이나 구체적인 상황을 묻는 방식으로 하고, 질문 하나에 문장 1~2개를 넘기지 마라.
@@ -341,10 +365,10 @@ function parseJsonArray(text) {
 
 // history: [{role: 'user'|'assistant', content}, ...] — 고정 질문 답변 + 자유 대화를 하나의
 // 트랜스크립트로 이어 붙인 것. 마지막이 user 턴이어야 다음 assistant 질문을 생성할 수 있다.
-async function getCareerFollowUp(history, student, completedCourses) {
+async function getCareerFollowUp(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
-  const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, studentNote].filter(Boolean).join('\n\n');
-  return callClaude(system, history, 300);
+  const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
+  return callClaude(system, withEnglishReminder(history, language), 300);
 }
 
 // 대화 이력을 종합해 진로 후보 2~3개를 뽑는다. 파싱 실패(모델이 JSON을 안 지켰을 때)는
@@ -354,10 +378,14 @@ async function getCareerFollowUp(history, student, completedCourses) {
 // "추천받기"를 누른 것이므로. Anthropic API에 그대로 넘기면 마지막 assistant 메시지를 새 턴이
 // 아니라 "이어쓸 대상"으로 취급해 빈 응답을 반환하는 문제가 실측으로 확인됨 — 반드시 user
 // 턴으로 대화를 마무리한 뒤 요청해야 한다.
-async function generateCareerCandidates(history, student, completedCourses) {
+async function generateCareerCandidates(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
-  const system = [CAREER_CANDIDATES_SYSTEM_PROMPT, studentNote].filter(Boolean).join('\n\n');
-  const messages = [...history, { role: 'user', content: '여기까지의 대화를 바탕으로 진로 후보를 알려줘.' }];
+  const system = [CAREER_CANDIDATES_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
+  const closing =
+    language === 'en'
+      ? 'Based on the conversation so far, suggest career candidates. Write careerName and reasoning in English.'
+      : '여기까지의 대화를 바탕으로 진로 후보를 알려줘.';
+  const messages = [...history, { role: 'user', content: closing }];
   const text = await callClaude(system, messages, 800);
   return parseJsonArray(text);
 }
@@ -365,13 +393,15 @@ async function generateCareerCandidates(history, student, completedCourses) {
 // remainingCourses: [{grade, semester, courseName, category, credits}, ...] — 이 학생이
 // 아직 안 들은 교육과정 과목만 담긴 닫힌 목록(careerService에서 계산). 이 목록 밖의 과목을
 // 추천하면 careerService가 결과에서 걸러낸다(그라운딩 안전망).
-async function generateCareerRoadmap(careerName, careerReasoning, remainingCourses, student) {
+async function generateCareerRoadmap(careerName, careerReasoning, remainingCourses, student, language = 'ko') {
   const studentNote = buildCareerStudentNote(student);
-  const system = [CAREER_ROADMAP_SYSTEM_PROMPT, studentNote].filter(Boolean).join('\n\n');
+  const system = [CAREER_ROADMAP_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
   const courseListText = remainingCourses
     .map((c) => `${c.grade}학년 ${c.semester}학기 - ${c.courseName} (${c.category}, ${c.credits}학점)`)
     .join('\n');
-  const userContent = `목표 진로: ${careerName}\n추천 이유: ${careerReasoning}\n\n남은 교육과정 목록:\n${courseListText}`;
+  const englishReminder =
+    language === 'en' ? '\n\n[Write each "reason" in English. Keep every "courseName" exactly as written in the list above.]' : '';
+  const userContent = `목표 진로: ${careerName}\n추천 이유: ${careerReasoning}\n\n남은 교육과정 목록:\n${courseListText}${englishReminder}`;
   const text = await callClaude(system, [{ role: 'user', content: userContent }], 1000);
   return parseJsonArray(text);
 }
@@ -448,6 +478,8 @@ module.exports = {
   buildYearContextNote,
   buildSystemPrompt,
   buildLanguageNote,
+  buildCareerLanguageNote,
+  withEnglishReminder,
   getAIChatResponse,
   rewriteSearchQuery,
   getCareerFollowUp,

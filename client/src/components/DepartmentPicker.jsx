@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSearch, IconX } from './icons.jsx';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
 import { groupDepartmentsByCollege, searchDepartments, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * DepartmentPicker
@@ -15,22 +16,24 @@ import { groupDepartmentsByCollege, searchDepartments, FORMER_GROUP_LABEL } from
  * - onSelect: (department) => void
  */
 function DepartmentCard({ department, selected, onSelect, showCollege }) {
+  const { t } = useI18n();
   const range = getYearRange(department, 'GENERAL');
   return (
     <button type="button" className={'onb-option-card' + (selected ? ' selected' : '')} onClick={() => onSelect(department)}>
       <span className="onb-option-title">{department.name}</span>
       <span className="onb-option-caption">
         {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
-        {department.maxAdmissionYear ? `${range.min}~${range.max}학번` : `${range.min}학번`}
-        {showCollege && department.college && ` · ${department.college}${department.former ? ' (이전 학과)' : ''}`}
-        {showCollege && !department.college && department.former && ' · 이전 학과(개편·폐지)'}
+        {department.maxAdmissionYear ? t('dept.cohortRange', { min: range.min, max: range.max }) : t('dept.cohortSingle', { min: range.min })}
+        {showCollege && department.college && ` · ${department.college}${department.former ? ` (${t('dept.former')})` : ''}`}
+        {showCollege && !department.college && department.former && ` · ${t('dept.formerClosed')}`}
       </span>
-      {describeSuccessors(department) && <span className="onb-option-note">{describeSuccessors(department)}</span>}
+      {describeSuccessors(department, t) && <span className="onb-option-note">{describeSuccessors(department, t)}</span>}
     </button>
   );
 }
 
 function DepartmentPicker({ departments, selectedId, onSelect }) {
+  const { t } = useI18n();
   // 입력창에 보이는 글(inputValue)과 실제로 필터에 쓰는 검색어(query)를 나눈다. 한글은 자음+모음이 조합돼야 완성된 글자가 되는데
   // ("컴" = ㅋ+ㅓ+ㅁ), 조합 중간의 낱자("컴ㅍ")로 바로 걸러 내면 "맞는 학과가 없어요"와 결과가 깜빡인다 — 과목 카탈로그 검색
   // (CourseManagement)과 같은 방식으로 조합 중에는 검색을 보류하고 글자가 완성되는 순간(compositionend)에만 반영한다.
@@ -96,12 +99,12 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
             isComposingRef.current = true;
           }}
           onCompositionEnd={handleCompositionEnd}
-          placeholder="학과 이름으로 검색 (예: 컴퓨터, 경영)"
-          aria-label="학과 검색"
+          placeholder={t('dept.search.placeholder')}
+          aria-label={t('dept.search.aria')}
           autoComplete="off"
         />
         {inputValue && (
-          <button type="button" className="onb-search-clear" onClick={clearSearch} aria-label="검색어 지우기">
+          <button type="button" className="onb-search-clear" onClick={clearSearch} aria-label={t('dept.search.clear')}>
             <IconX size={14} />
           </button>
         )}
@@ -110,11 +113,11 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
       {trimmed ? (
         results.length === 0 ? (
           <p className="onb-search-empty">
-            "{trimmed}"와 맞는 학과가 없어요. 이름의 일부만 입력하거나, 옛 이름(예: 경영학부)으로도 찾아보세요.
+            {t('dept.search.empty', { query: trimmed })}
           </p>
         ) : (
           <>
-            <p className="onb-search-count">검색 결과 {results.length}개</p>
+            <p className="onb-search-count">{t('dept.search.count', { count: results.length })}</p>
             <div className="onb-option-list" ref={resultsRef}>
               {results.map((d) => (
                 <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege />
@@ -134,7 +137,7 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
                   onClick={() => toggle(g.college)}
                   aria-expanded={open}
                 >
-                  <span className="onb-college-name">{g.college}</span>
+                  <span className="onb-college-name">{g.college === FORMER_GROUP_LABEL ? t('dept.formerGroup') : g.college}</span>
                   <span className="onb-college-count">{g.departments.length}</span>
                   <span className="onb-college-chevron" aria-hidden="true">
                     {open ? '▾' : '▸'}
@@ -143,7 +146,7 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
                 {open && (
                   <div className="onb-option-list onb-college-body">
                     {g.college === FORMER_GROUP_LABEL && (
-                      <p className="onb-college-hint">지금은 없거나 이름이 바뀐 학과예요. 입학 당시 학과 이름을 고르세요.</p>
+                      <p className="onb-college-hint">{t('dept.formerHint')}</p>
                     )}
                     {g.departments.map((d) => (
                       <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />

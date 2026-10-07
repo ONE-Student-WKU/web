@@ -3,9 +3,9 @@ import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../a
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
-const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 
 function isTransferAvailable(department) {
   const range = getYearRange(department, 'TRANSFER_ADMISSION');
@@ -32,8 +32,9 @@ let cachedDepartments = null;
 // (앞선 항목을 고치면서 연쇄적으로 지워진 경우 등) 값 대신 "선택 필요"를 강조색으로 보여줘서,
 // 무효해진 조합이 조용히 남아있지 않고 반드시 눈에 띄게 한다.
 function SummaryRow({ label, value, editable, onClick }) {
+  const { t } = useI18n();
   const valueEl = (
-    <span className={value ? 'onb-summary-val' : 'onb-summary-val onb-summary-val-warning'}>{value || '선택 필요'}</span>
+    <span className={value ? 'onb-summary-val' : 'onb-summary-val onb-summary-val-warning'}>{value || t('onb.required')}</span>
   );
   if (!editable) {
     return (
@@ -67,6 +68,7 @@ function SummaryRow({ label, value, editable, onClick }) {
  *   요약 화면의 휴학 학기 수 항목에 강조 애니메이션을 준다.
  */
 function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
+  const { t } = useI18n();
   // 최초 온보딩(회원가입 직후)은 처음부터 순서대로 걷지만, 이미 완료한 사용자가 "학적정보
   // 수정"으로 재진입하면 기존 값이 채워진 요약 화면으로 바로 들어가 필요한 항목만 고쳐서
   // 저장한다 — 매번 학과부터 다시 고르게 하던 문제(실사용 피드백) 해결.
@@ -100,7 +102,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
         setDepartments(data);
         cachedDepartments = data;
       })
-      .catch(() => setLoadError('학과 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .catch(() => setLoadError('onb.err.departments'))
       .finally(() => setDepartmentsLoading(false));
   }, []);
 
@@ -283,14 +285,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     setLeaveSemestersSaved(false);
     const value = Number(leaveSemesters);
     if (!Number.isInteger(value) || value < 0) {
-      setLeaveSemestersError('0 이상의 정수를 입력해주세요.');
+      setLeaveSemestersError(t('onb.leaveError'));
       return;
     }
     try {
       await updateProfile({ leaveSemesters: value });
       setLeaveSemestersSaved(true);
     } catch {
-      setLeaveSemestersError('저장에 실패했어요.');
+      setLeaveSemestersError(t('profile.err.saveFailed'));
     }
   }
 
@@ -324,7 +326,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       setManualStep(null);
       setStepIndex(path.indexOf('done'));
     } catch {
-      setSubmitError('저장에 실패했어요. 다시 시도해주세요.');
+      setSubmitError(t('onb.err.save'));
     } finally {
       setSubmitting(false);
     }
@@ -344,7 +346,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       <header className="screen-header">
         <div className="screen-header-left">
           {(stepIndex > 0 || editingFromSummary) && current !== 'done' && (
-            <button className="back-btn" onClick={goBack} aria-label={editingFromSummary ? '요약으로 돌아가기' : '이전 질문'}>
+            <button className="back-btn" onClick={goBack} aria-label={editingFromSummary ? t('onb.backToSummary') : t('onb.prevQuestion')}>
               <IconChevronLeft />
             </button>
           )}
@@ -362,13 +364,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       </header>
 
       <div className="courses-body">
-        {loadError && <p className="home-error">{loadError}</p>}
+        {loadError && <p className="home-error">{t(loadError)}</p>}
         {submitError && <p className="home-error">{submitError}</p>}
 
         {current === 'department' && (
           <>
-            <h2 className="onb-q-title">어느 학과 소속이에요?</h2>
-            <p className="onb-q-sub">선택한 학과와 학번을 기준으로 졸업요건을 계산해요.</p>
+            <h2 className="onb-q-title">{t('onb.dept.title')}</h2>
+            <p className="onb-q-sub">{t('onb.dept.sub')}</p>
             {departmentsLoading && departments.length === 0 && (
               <div className="onb-option-list">
                 <div className="skeleton skeleton-text skeleton-row" style={{ height: 52 }} />
@@ -383,8 +385,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'track' && (
           <>
-            <h2 className="onb-q-title">희망하는 세부전공을 선택하세요</h2>
-            <p className="onb-q-sub">2학년 진급 시 확정되는 세부전공이에요. 아직 정식으로 선택하기 전이라도, 지금 희망하는 쪽을 골라주세요.</p>
+            <h2 className="onb-q-title">{t('onb.track.title')}</h2>
+            <p className="onb-q-sub">{t('onb.track.sub')}</p>
             <div className="onb-option-list">
               {tracks.map((t) => (
                 <button
@@ -401,34 +403,34 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'enrollmentType' && (
           <>
-            <h2 className="onb-q-title">어떤 유형으로 재학 중이에요?</h2>
-            <p className="onb-q-sub">전형에 따라 최소 전공 이수 학점이 달라질 수 있어요.</p>
+            <h2 className="onb-q-title">{t('onb.type.title')}</h2>
+            <p className="onb-q-sub">{t('onb.type.sub')}</p>
             <div className="onb-option-list">
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'GENERAL' ? ' selected' : '')}
                 onClick={() => selectEnrollmentType('GENERAL')}
               >
-                <span className="onb-option-title">일반 재학생</span>
-                <span className="onb-option-caption">신입학으로 입학해 재학 중</span>
+                <span className="onb-option-title">{t('onb.type.GENERAL')}</span>
+                <span className="onb-option-caption">{t('onb.type.GENERAL.caption')}</span>
               </button>
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'TRANSFER_ADMISSION' ? ' selected' : '')}
                 disabled={!transferAvailable}
                 onClick={() => selectEnrollmentType('TRANSFER_ADMISSION')}
               >
-                <span className="onb-option-title">편입생</span>
+                <span className="onb-option-title">{t('onb.type.TRANSFER_ADMISSION')}</span>
                 <span className="onb-option-caption">
                   {transferAvailable
-                    ? '타 대학·전문학사에서 편입'
-                    : (selectedDepartment?.name || '') + '은(는) 아직 편입 가능한 학번이 없어요'}
+                    ? t('onb.type.TRANSFER_ADMISSION.caption')
+                    : t('onb.type.TRANSFER_ADMISSION.unavailable', { dept: selectedDepartment?.name || '' })}
                 </span>
               </button>
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'MAJOR_CHANGE' ? ' selected' : '')}
                 onClick={() => selectEnrollmentType('MAJOR_CHANGE')}
               >
-                <span className="onb-option-title">전과생</span>
-                <span className="onb-option-caption">다른 학과에서 전과해 옴</span>
+                <span className="onb-option-title">{t('onb.type.MAJOR_CHANGE')}</span>
+                <span className="onb-option-caption">{t('onb.type.MAJOR_CHANGE.caption')}</span>
               </button>
             </div>
           </>
@@ -436,32 +438,34 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'year' && (
           <>
-            <h2 className="onb-q-title">몇 학번이에요?</h2>
+            <h2 className="onb-q-title">{t('onb.year.title')}</h2>
             <p className="onb-q-sub">
-              {selectedDepartment?.name}은(는) {yearRange?.min}
-              {yearRange?.max ? `~${yearRange.max}` : ''}학번만 이 이수구조를 따라요.
+              {t('onb.year.sub', {
+                dept: selectedDepartment?.name,
+                range: `${yearRange?.min}${yearRange?.max ? `~${yearRange.max}` : ''}`,
+              })}
             </p>
-            {describeSuccessors(selectedDepartment) && (
-              <p className="onb-q-sub onb-q-sub-note">{describeSuccessors(selectedDepartment)}</p>
+            {describeSuccessors(selectedDepartment, t) && (
+              <p className="onb-q-sub onb-q-sub-note">{describeSuccessors(selectedDepartment, t)}</p>
             )}
             <div className="onb-field-group">
-              <label className="onb-field-label">입학년도</label>
+              <label className="onb-field-label">{t('onb.year.label')}</label>
               <select
                 className="onb-select"
                 value={answers.admissionYear ?? ''}
                 onChange={(e) => setAnswers((a) => ({ ...a, admissionYear: Number(e.target.value) }))}
               >
                 <option value="" disabled>
-                  선택
+                  {t('onb.select')}
                 </option>
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
-                    {y}학번
+                    {t('onb.cohort', { year: y })}
                   </option>
                 ))}
               </select>
               {answers.enrollmentType === 'TRANSFER_ADMISSION' && (
-                <p className="onb-hint">편입생은 올해 학번으로는 들어올 수 없어 그 해는 빠져 있어요.</p>
+                <p className="onb-hint">{t('onb.year.transferHint')}</p>
               )}
             </div>
           </>
@@ -469,27 +473,27 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'majorChange' && (
           <>
-            <h2 className="onb-q-title">전과 시점을 알려주세요</h2>
-            <p className="onb-q-sub">교양 이수기준이 전과 시점(연도·학기) 기준으로 갈려서 필요해요.</p>
+            <h2 className="onb-q-title">{t('onb.mc.title')}</h2>
+            <p className="onb-q-sub">{t('onb.mc.sub')}</p>
             <div className="onb-field-group">
-              <label className="onb-field-label">전과한 연도</label>
+              <label className="onb-field-label">{t('onb.mc.year')}</label>
               <select
                 className="onb-select"
                 value={answers.majorChangeYear ?? ''}
                 onChange={(e) => setAnswers((a) => ({ ...a, majorChangeYear: Number(e.target.value) }))}
               >
                 <option value="" disabled>
-                  선택
+                  {t('onb.select')}
                 </option>
                 {mcYearOptions.map((y) => (
                   <option key={y} value={y}>
-                    {y}년
+                    {t('onb.mc.yearN', { year: y })}
                   </option>
                 ))}
               </select>
             </div>
             <div className="onb-field-group">
-              <label className="onb-field-label">전과한 학기</label>
+              <label className="onb-field-label">{t('onb.mc.semester')}</label>
               <div className="onb-chip-row">
                 {[1, 2].map((s) => (
                   <button
@@ -498,16 +502,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                     disabled={s === 1 && firstSemesterBlocked}
                     onClick={() => setAnswers((a) => ({ ...a, majorChangeSemester: s }))}
                   >
-                    {s}학기
+                    {t('courses.semesterN', { n: s })}
                   </button>
                 ))}
               </div>
               {firstSemesterBlocked && (
-                <p className="onb-hint">입학한 해에는 최소 한 학기를 다녀야 전과할 수 있어 1학기는 고를 수 없어요.</p>
+                <p className="onb-hint">{t('onb.mc.firstBlocked')}</p>
               )}
             </div>
             <div className="onb-field-group">
-              <label className="onb-field-label">전과 당시 학년</label>
+              <label className="onb-field-label">{t('onb.mc.grade')}</label>
               <div className="onb-chip-row">
                 {gradeOptions.map((g) => (
                   <button
@@ -515,15 +519,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                     className={'onb-chip' + (answers.majorChangeGrade === g ? ' selected' : '')}
                     onClick={() => setAnswers((a) => ({ ...a, majorChangeGrade: g }))}
                   >
-                    {g}학년
+                    {t('home.gradeLevel', { grade: g })}
                   </button>
                 ))}
               </div>
               {gradeRange && (
-                <p className="onb-hint">
-                  선택하신 학번·전과 시점 기준으로 정상 진급 학년은 {gradeRange.naive}학년이에요. 휴학 등으로 늦어졌을
-                  경우까지만 골라둘 수 있어요.
-                </p>
+                <p className="onb-hint">{t('onb.mc.gradeHint', { naive: gradeRange.naive })}</p>
               )}
             </div>
           </>
@@ -531,32 +532,32 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'summary' && (
           <>
-            <h2 className="onb-q-title">입력한 정보를 확인해주세요</h2>
+            <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
             <p className="onb-q-sub">
-              {editMode ? '고칠 항목을 눌러서 바로 수정할 수 있어요.' : '틀린 항목은 뒤로 가서 다시 고를 수 있어요.'}
+              {editMode ? t('onb.summary.editHint') : t('onb.summary.backHint')}
             </p>
             <div className="onb-summary-list">
               <SummaryRow
-                label="학과"
+                label={t('onb.summary.department')}
                 value={selectedDepartment?.name}
                 editable={editMode}
                 onClick={() => setManualStep('department')}
               />
               <SummaryRow
-                label="학번"
-                value={answers.admissionYear ? `${answers.admissionYear}학번` : null}
+                label={t('onb.summary.cohort')}
+                value={answers.admissionYear ? t('onb.cohort', { year: answers.admissionYear }) : null}
                 editable={editMode}
                 onClick={() => setManualStep('year')}
               />
               <SummaryRow
-                label="입학 유형"
-                value={ENROLLMENT_TYPE_LABEL[answers.enrollmentType]}
+                label={t('onb.summary.type')}
+                value={answers.enrollmentType ? t(`onb.type.${answers.enrollmentType}`) : null}
                 editable={editMode}
                 onClick={() => setManualStep('enrollmentType')}
               />
               {hasTracks && (
                 <SummaryRow
-                  label="세부전공"
+                  label={t('onb.summary.track')}
                   value={tracks.find((t) => t.id === answers.trackId)?.name}
                   editable={editMode}
                   onClick={() => setManualStep('track')}
@@ -564,10 +565,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               )}
               {answers.enrollmentType === 'MAJOR_CHANGE' && (
                 <SummaryRow
-                  label="전과 시점"
+                  label={t('onb.summary.majorChange')}
                   value={
                     answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade
-                      ? `${answers.majorChangeGrade}학년 · ${answers.majorChangeYear}년 ${answers.majorChangeSemester}학기`
+                      ? t('onb.summary.majorChangeValue', {
+                          grade: answers.majorChangeGrade,
+                          year: answers.majorChangeYear,
+                          semester: answers.majorChangeSemester,
+                        })
                       : null
                   }
                   editable={editMode}
@@ -581,7 +586,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   }
                   style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
                 >
-                  <span className="onb-summary-key">휴학 학기 수</span>
+                  <span className="onb-summary-key">{t('onb.summary.leave')}</span>
                   <div className="settings-inline-field">
                     <input
                       type="number"
@@ -595,11 +600,11 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                       }}
                     />
                     <button type="button" className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
-                      저장
+                      {t('profile.save')}
                     </button>
                   </div>
                   {leaveSemestersError && <p className="home-error">{leaveSemestersError}</p>}
-                  {leaveSemestersSaved && <p className="settings-field-hint">저장했어요.</p>}
+                  {leaveSemestersSaved && <p className="settings-field-hint">{t('profile.saved')}</p>}
                 </div>
               )}
             </div>
@@ -609,28 +614,28 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
         {current === 'done' && (
           <div className="onb-done-wrap">
             <div className="onb-done-circle">✓</div>
-            <p className="onb-done-title">설정이 끝났어요</p>
-            <p className="onb-done-sub">이제 내 학사정보를 바로 확인할 수 있어요.</p>
+            <p className="onb-done-title">{t('onb.done.title')}</p>
+            <p className="onb-done-sub">{t('onb.done.sub')}</p>
           </div>
         )}
 
         {current === 'summary' ? (
           <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
-            {submitting ? '저장 중…' : editMode ? '저장' : '시작하기'}
+            {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
           </button>
         ) : current === 'done' ? (
           <button className="auth-submit-btn" onClick={onDone}>
-            홈으로 가기
+            {t('onb.done.home')}
           </button>
         ) : (
           <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
-            {editingFromSummary ? '확인' : '다음'}
+            {editingFromSummary ? t('onb.confirm') : t('onb.next')}
           </button>
         )}
 
         {current !== 'done' && !editingFromSummary && (
           <button className="onb-skip-link" onClick={onSkip}>
-            {editMode ? '취소' : '나중에 선택하기'}
+            {editMode ? t('onb.cancel') : t('onb.later')}
           </button>
         )}
       </div>
