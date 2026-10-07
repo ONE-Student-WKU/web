@@ -11,6 +11,7 @@ const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
 const { guardAnswer } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
+const { parseLanguage } = require('../services/language');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -18,6 +19,10 @@ const { lookupRegulationJudgment } = require('../services/regulationContextServi
  */
 
 const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 질문을 다르게 표현해보시거나, 관련 부서에 직접 확인해주세요.';
+const NOT_FOUND_MESSAGE_EN = "I couldn't find a relevant regulation. Try rephrasing your question, or check directly with the relevant office.";
+
+// 화면 언어('ko' | 'en')는 services/language.js의 parseLanguage로 받는다. 답변 언어만 바꾼다 —
+// 검색·규정 판단·요건 계산은 언어와 무관하게 한국어 원문 기준 그대로다.
 // AI 호출에 실어 보낼 최근 대화 이력 개수(비용/토큰 상한 목적). 대화가 길어질수록 이보다
 // 오래된 turn은 컨텍스트에서 자연히 빠짐.
 const HISTORY_LIMIT = 10;
@@ -32,6 +37,8 @@ function stripDisclaimer(content) {
   return content
     .replace(/\n*[-—]{2,}\n*\*[^*\n]*비공식[^*\n]*\*\s*$/i, '')
     .replace(/\n*\*[^*\n]*비공식[^*\n]*\*\s*$/i, '')
+    .replace(/\n*[-—]{2,}\n*\*[^*\n]*unofficial[^*\n]*\*\s*$/i, '')
+    .replace(/\n*\*[^*\n]*unofficial[^*\n]*\*\s*$/i, '')
     .trim();
 }
 
@@ -62,6 +69,7 @@ router.get('/conversations/current', async (req, res, next) => {
 router.post('/messages', async (req, res, next) => {
   try {
     const { conversationId, message } = req.body;
+    const language = parseLanguage(req.body.language);
 
     if (!conversationId) return res.status(400).json({ status: 400, code: 'REQUIRED_CONVERSATION_ID', message: null, data: null });
     if (!message) return res.status(400).json({ status: 400, code: 'REQUIRED_MESSAGE', message: null, data: null });
@@ -151,20 +159,21 @@ router.post('/messages', async (req, res, next) => {
     const relevantChunks = mergeChunks({ structured, previousCitedChunks, freshChunks, yearContext });
 
     if (relevantChunks.length === 0) {
-      await regulationService.saveMessage(conversationId, { role: 'assistant', content: NOT_FOUND_MESSAGE });
+      const notFound = language === 'en' ? NOT_FOUND_MESSAGE_EN : NOT_FOUND_MESSAGE;
+      await regulationService.saveMessage(conversationId, { role: 'assistant', content: notFound });
       await regulationService.touchConversation(conversationId);
 
       return res.status(200).json({
         status: 200,
         code: 'CHAT_MESSAGE_SUCCESS',
         message: null,
-        data: { role: 'assistant', content: NOT_FOUND_MESSAGE },
+        data: { role: 'assistant', content: notFound },
       });
     }
 
-    const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext);
+    const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext, language);
     // 신뢰도가 확정이 아닌데 단서(추정·확인 필요 등)가 하나도 없는 답변에는 안내문을 덧붙인다(answerGuard.js, D-49).
-    const answer = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment).answer;
+    const answer = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment, language).answer;
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,

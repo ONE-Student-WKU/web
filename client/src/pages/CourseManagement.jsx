@@ -17,8 +17,9 @@ import {
 } from '../api/chatApi.js';
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck, IconAlertTriangle } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { displayCategory } from '../utils/graduation.js';
+import { displayCategory, translateCategory } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 const DAYS = ['월', '화', '수', '목', '금'];
 // P(Pass)/NP(Not Pass)는 "전체성적조회" PDF 가져오기로만 들어오는 값(P/F 채점 과목) —
@@ -33,13 +34,20 @@ const CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선�
 // 같은 코드가 곳곳에 있어도 손댈 필요 없이 그대로 학사력 순서가 된다 — 재수강 대상 판정
 // (server/services/courseService.js의 listRetakeEligibleCourses)처럼 "가장 최근 성적"을
 // 정렬 순서로 판단하는 로직이 정확히 동작하려면 이 순서가 중요하다.
-const SEMESTER_LABELS = { 1: '1학기', 2: '여름학기', 3: '2학기', 4: '겨울학기' };
+// 라벨 문구는 i18n 사전(courses.semester.N)에 있고, 모르는 값이면 "N학기"로 폴백한다.
 // 학기 토글 탭은 폭이 좁아 "여름학기"/"겨울학기"라고 다 쓰면 pill 4개가 줄바꿈되기 쉬워
-// 짧은 라벨을 따로 둔다.
-const SEMESTER_TAB_LABELS = { 1: '1학기', 2: '여름', 3: '2학기', 4: '겨울' };
-function semesterLabel(semester) {
-  return SEMESTER_LABELS[semester] || `${semester}학기`;
+// 짧은 라벨(courses.semesterTab.N)을 따로 둔다.
+const KNOWN_SEMESTERS = [1, 2, 3, 4];
+function semesterLabel(semester, tr) {
+  return KNOWN_SEMESTERS.includes(semester) ? tr(`courses.semester.${semester}`) : tr('courses.semesterN', { n: semester });
 }
+function semesterTabLabel(semester, tr) {
+  return KNOWN_SEMESTERS.includes(semester) ? tr(`courses.semesterTab.${semester}`) : tr('courses.semesterN', { n: semester });
+}
+
+// 불러오기 실패처럼 이펙트 안에서 세팅되는 오류는 번역 함수에 의존하지 않도록 문구가 아니라 키를 담아 두고,
+// 렌더할 때 번역한다(아래 errorText).
+const LOAD_ERROR = { key: 'courses.err.load' };
 
 // 여름/겨울방학 중엔 다음 학기가 없으니, 학사력 기준으로 "현재 학기"를 추정.
 // 8월은 수업 자체는 방학이지만 2학기 수강신청이 이미 시작되는 시기라 2학기로 친다
@@ -115,7 +123,7 @@ function generateSemesterRange(startYear, endYear, endSemester) {
 
 // 카탈로그 검색 결과에 과목명·교수만 있으면 같은 과목의 여러 분반을 구분할 수가 없어서,
 // "수1 목78" 같은 압축 표기로 시간을 같이 보여준다 (요일별로 교시를 묶어 붙임).
-function formatSchedule(schedule) {
+function formatSchedule(schedule, tr) {
   if (!schedule || schedule.length === 0) return '';
   const byDay = new Map();
   for (const s of schedule) {
@@ -123,7 +131,7 @@ function formatSchedule(schedule) {
     byDay.get(s.day).push(s.period);
   }
   return DAYS.filter((d) => byDay.has(d))
-    .map((d) => `${d}${byDay.get(d).sort((a, b) => a - b).join('')}`)
+    .map((d) => `${tr(`courses.day.${d}`)}${byDay.get(d).sort((a, b) => a - b).join('')}`)
     .join(' ');
 }
 
@@ -140,6 +148,8 @@ function formatSchedule(schedule) {
  * - onOpenProfile: function
  */
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
+  // 이 파일은 콜백 인자 이름으로 t(학기 탭, 시간표 칸 등)를 많이 써서 번역 함수는 tr로 받는다.
+  const { t: tr, tRich } = useI18n();
   const [current, setCurrent] = useState(getCurrentYearSemester);
   const [summary, setSummary] = useState(courseMgmtCache.summary);
   const [status, setStatus] = useState(courseMgmtCache.status);
@@ -238,13 +248,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setSummary(data);
         setCourseMgmtCache('summary', data);
       })
-      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+      .catch(() => setError(LOAD_ERROR));
     getSemesters()
       .then((data) => {
         setSemesters(data);
         setCourseMgmtCache('semesters', data);
       })
-      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+      .catch(() => setError(LOAD_ERROR));
     getRetakeEligibleCourses()
       .then((data) => {
         setRetakeEligible(data);
@@ -282,7 +292,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         setTimetable(table);
         courseMgmtCache.semesterData.set(key, { myCourses: courses, timetable: table });
       })
-      .catch(() => setError('정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
+      .catch(() => setError(LOAD_ERROR))
       .finally(() => setSemesterLoading(false));
   };
 
@@ -417,31 +427,31 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       await updateMyCourse(courseId, { letterGrade: letterGrade || null });
       await refreshAfterChange();
     } catch {
-      setError('성적 저장에 실패했어요.');
+      setError(tr('courses.err.grade'));
     }
   };
 
   const handleDelete = async (courseId) => {
-    if (!window.confirm('이 과목을 삭제할까요?')) return;
+    if (!window.confirm(tr('courses.confirm.delete'))) return;
     setError(null);
     try {
       await deleteMyCourse(courseId);
       await refreshAfterChange();
     } catch {
-      setError('삭제에 실패했어요.');
+      setError(tr('courses.err.delete'));
     }
   };
 
   // 등록된 과목을 전부 지우고 처음부터 다시 등록하고 싶을 때(PDF 재업로드 테스트 등) 쓰는
   // 되돌릴 수 없는 동작 — 실수로 누르는 걸 막기 위해 두 번 확인한다.
   const handleDeleteAll = async () => {
-    if (!window.confirm('등록된 과목을 전부 삭제할까요? 되돌릴 수 없어요.')) return;
+    if (!window.confirm(tr('courses.confirm.deleteAll'))) return;
     setError(null);
     try {
       await deleteAllMyCourses();
       await refreshAfterChange();
     } catch {
-      setError('전체 삭제에 실패했어요.');
+      setError(tr('courses.err.deleteAll'));
     }
   };
 
@@ -512,21 +522,21 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   // 카탈로그(시간표 없는 항목)/직접입력 두 경로가 같은 에러 코드를 쓰므로 메시지 문구를 공용으로 뺐다.
   const describeAddCourseError = (err) => {
-    if (err.code === 'COURSE_ALREADY_ADDED') return '이미 추가된 과목이에요.';
-    if (err.code === 'INVALID_CREDITS') return '학점은 0 이상 9.9 이하로 입력해주세요.';
-    if (err.code === 'DUPLICATE_SCHEDULE_SLOT') return '같은 시간을 두 번 입력했어요.';
+    if (err.code === 'COURSE_ALREADY_ADDED') return tr('courses.err.alreadyAdded');
+    if (err.code === 'INVALID_CREDITS') return tr('courses.err.invalidCredits');
+    if (err.code === 'DUPLICATE_SCHEDULE_SLOT') return tr('courses.err.duplicateSlot');
     if (err.code === 'SCHEDULE_CONFLICT') {
       const { day, period, conflictCourseName } = err.data || {};
-      return `${day}요일 ${period}교시는 이미 "${conflictCourseName}"와 겹쳐요.`;
+      return tr('courses.err.conflict', { day: tr(`courses.day.${day}`), period, name: conflictCourseName });
     }
-    return '과목 추가에 실패했어요.';
+    return tr('courses.err.addFailed');
   };
 
   const handleSelectCatalogResult = (r) => {
     // 0학점 과목(졸업(시험·작품)논문 등)은 원래부터 실제 수업 시간이 없는 P/F 인증
     // 항목이라(courseService.js 참고), 시간표를 물어볼 필요 없이 시간표 있는 과목과
     // 동일하게 바로 등록한다.
-    if (formatSchedule(r.schedule) || r.credits === 0) {
+    if (formatSchedule(r.schedule, tr) || r.credits === 0) {
       handleAddFromCatalog(r.courseId, undefined, r.name);
     } else {
       setManualSchedule([]);
@@ -544,7 +554,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         semester: current.semester,
         schedule: validSchedule.length > 0 ? validSchedule : undefined,
       });
-      showToast(name ? `"${name}" 추가했어요` : '과목을 추가했어요');
+      showToast(name ? tr('courses.toast.added', { name }) : tr('courses.toast.addedGeneric'));
       resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
@@ -566,7 +576,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
         semester: current.semester,
         schedule: validSchedule.length > 0 ? validSchedule : undefined,
       });
-      showToast(`"${manualFields.name}" 추가했어요`);
+      showToast(tr('courses.toast.added', { name: manualFields.name }));
       resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
@@ -581,21 +591,19 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const describePdfImportError = (err) => {
     if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') {
-      return `이번 학기 PDF 가져오기 한도(${err.data?.limit ?? 5}회)를 모두 사용했어요. 다음 학기에 다시 이용해주세요.`;
+      return tr('courses.err.pdfLimit', { limit: err.data?.limit ?? 5 });
     }
-    return 'PDF를 분석하지 못했어요. 원광대 인트라넷 "이수과목확인리스트" 또는 "전체성적조회"를 PDF로 저장한 파일이 맞는지 확인해주세요.';
+    return tr('courses.err.pdfParse');
   };
 
   // 텍스트 붙여넣기 경로 전용 — 한도는 PDF 경로와 공유하므로 그 문구는 그대로 쓰고, 나머지는
   // PDF 파일 안내 대신 붙여넣은 내용 기준으로 안내한다.
   const describePasteImportError = (err) => {
     if (err.code === 'PDF_IMPORT_LIMIT_EXCEEDED') return describePdfImportError(err);
-    if (err.code === 'REQUIRED_TEXT') return '붙여넣은 내용이 없어요. "전체성적조회" 화면의 표를 복사해 붙여넣어주세요.';
-    if (err.code === 'TEXT_TOO_LONG') return '붙여넣은 내용이 너무 길어요. "전체성적조회" 화면의 성적 표 부분만 복사해 붙여넣어주세요.';
-    if (err.code === 'TEXT_NOT_FULL_TRANSCRIPT') {
-      return '"2024 년 1 학기" 같은 학기 제목을 찾지 못했어요. 원광대 인트라넷 "전체성적조회" 화면에서 학기 제목까지 포함해 복사했는지 확인해주세요.';
-    }
-    return '붙여넣은 내용을 분석하지 못했어요. 원광대 인트라넷 "전체성적조회" 화면의 표를 복사한 내용이 맞는지 확인해주세요.';
+    if (err.code === 'REQUIRED_TEXT') return tr('courses.err.pasteRequired');
+    if (err.code === 'TEXT_TOO_LONG') return tr('courses.err.pasteTooLong');
+    if (err.code === 'TEXT_NOT_FULL_TRANSCRIPT') return tr('courses.err.pasteNoSemester');
+    return tr('courses.err.pasteParse');
   };
 
   const handlePdfFileSelect = async (e) => {
@@ -680,24 +688,24 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const removePdfRow = (tempId) => setPdfRows((prev) => prev.filter((r) => r.tempId !== tempId));
 
   const describePdfConfirmError = (err) => {
-    if (err.code === 'REQUIRED_ROWS') return '등록할 과목을 선택해주세요.';
-    if (err.code === 'INVALID_ROW') return '과목 이름·학점·이수구분·연도·학기 중 비어있는 값이 있어요. 각 행을 확인해주세요.';
-    if (err.code === 'INVALID_CATEGORY') return '이수구분 값이 올바르지 않아요. 다시 선택해주세요.';
+    if (err.code === 'REQUIRED_ROWS') return tr('courses.err.requiredRows');
+    if (err.code === 'INVALID_ROW') return tr('courses.err.invalidRow');
+    if (err.code === 'INVALID_CATEGORY') return tr('courses.err.invalidCategory');
     if (err.code === 'ROW_NAME_TOO_LONG') {
       const name = err.data?.name || '';
-      return `과목명이 너무 길어요(100자 제한, 현재 ${name.length}자). 아래 행을 표에서 직접 줄여주세요. PDF 표 레이아웃이 깨져 여러 과목명이 합쳐진 경우일 수 있어요.\n\n"${name}"`;
+      return tr('courses.err.nameTooLong', { length: name.length, name });
     }
-    if (err.code === 'INVALID_CREDITS') return '학점 값이 올바르지 않아요. 표에서 해당 과목의 학점을 확인해주세요.';
-    if (err.code === 'INVALID_LETTER_GRADE') return '등급 값이 올바르지 않아요. 표에서 해당 과목의 등급을 확인해주세요.';
-    if (err.status === 401) return '로그인이 만료됐어요. 다시 로그인한 뒤 시도해주세요.';
-    return '등록에 실패했어요.';
+    if (err.code === 'INVALID_CREDITS') return tr('courses.err.invalidCreditsValue');
+    if (err.code === 'INVALID_LETTER_GRADE') return tr('courses.err.invalidGrade');
+    if (err.status === 401) return tr('courses.err.sessionExpired');
+    return tr('courses.err.confirmFailed');
   };
 
   const handlePdfConfirm = async () => {
     const included = pdfRows.filter((r) => r.include);
     if (included.length === 0) return;
     if (included.some((r) => !r.category)) {
-      setError('이수구분을 선택하지 않은 과목이 있어요.');
+      setError(tr('courses.err.missingCategory'));
       return;
     }
 
@@ -719,10 +727,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
       const { inserted = 0, gradesFilled = 0, skipped = 0 } = result || {};
       const segments = [];
-      if (inserted > 0) segments.push(`${inserted}개 추가`);
-      if (gradesFilled > 0) segments.push(`등급 ${gradesFilled}개 채움`);
-      if (skipped > 0) segments.push(`중복 ${skipped}개 제외`);
-      showToast(`과목 ${segments.join(' · ')}`);
+      if (inserted > 0) segments.push(tr('courses.toast.inserted', { n: inserted }));
+      if (gradesFilled > 0) segments.push(tr('courses.toast.gradesFilled', { n: gradesFilled }));
+      if (skipped > 0) segments.push(tr('courses.toast.skipped', { n: skipped }));
+      showToast(tr('courses.toast.imported', { segments: segments.join(' · ') }));
     } catch (err) {
       setError(describePdfConfirmError(err));
     } finally {
@@ -730,14 +738,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     }
   };
 
+  const errorText = error && (typeof error === 'object' ? tr(error.key) : error);
+  const catLabel = (category) => translateCategory(displayCategory(category), tr);
+
   return (
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={onGoHome} aria-label={tr('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">과목 관리</span>
+          <span className="screen-title">{tr('courses.title')}</span>
         </div>
         <AccountMenu
           user={user}
@@ -758,23 +769,23 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       )}
 
       <div className="courses-body">
-        {error && !showAddForm && <p className="home-error">{error}</p>}
+        {errorText && !showAddForm && <p className="home-error">{errorText}</p>}
 
         {outOfRangeYears.length > 0 && (
           <p className="home-error">
-            학번을 바꾸셨네요 — {outOfRangeYears.join(', ')}년 과목은 그대로 남아있어요. 필요 없으면 아래에서 삭제해주세요.
+            {tr('courses.outOfRange', { years: outOfRangeYears.join(', ') })}
           </p>
         )}
 
         {retakeEligible.length > 0 && (
           <div className="courses-retake-notice">
-            <p className="courses-section-label">재수강 가능 안내</p>
+            <p className="courses-section-label">{tr('courses.retake.title')}</p>
             <div className="courses-retake-list">
               {retakeEligible.map((c) => (
                 <div key={c.id} className="courses-retake-item">
                   <p className="courses-list-item-name">{c.name}</p>
                   <p className="courses-list-item-meta">
-                    {c.year}-{semesterLabel(c.semester)} · {displayCategory(c.category)} · {c.letterGrade}
+                    {c.year}-{semesterLabel(c.semester, tr)} · {catLabel(c.category)} · {c.letterGrade}
                   </p>
                 </div>
               ))}
@@ -799,7 +810,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             className="courses-semester-nav"
             onClick={goToPrevSemester}
             disabled={currentTabIndex <= 0}
-            aria-label="이전 학기"
+            aria-label={tr('courses.prevSemester')}
           >
             ‹
           </button>
@@ -810,7 +821,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 className={`courses-semester-btn ${t.semester === current.semester ? 'active' : ''}`}
                 onClick={() => setCurrent(t)}
               >
-                {SEMESTER_TAB_LABELS[t.semester] || `${t.semester}학기`}
+                {semesterTabLabel(t.semester, tr)}
               </button>
             ))}
           </div>
@@ -818,7 +829,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             className="courses-semester-nav"
             onClick={goToNextSemester}
             disabled={currentTabIndex < 0 || currentTabIndex >= tabs.length - 1}
-            aria-label="다음 학기"
+            aria-label={tr('courses.nextSemester')}
           >
             ›
           </button>
@@ -851,24 +862,24 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           <>
             <div className="courses-summary-row">
               <div className="courses-summary-stat">
-                <p className="home-card-label">신청학점</p>
-                <p className="courses-summary-value">{registeredCredits}학점</p>
+                <p className="home-card-label">{tr('courses.summary.registered')}</p>
+                <p className="courses-summary-value">{tr('courses.credits', { n: registeredCredits })}</p>
               </div>
               <div className="courses-summary-stat">
-                <p className="home-card-label">평균 학점</p>
+                <p className="home-card-label">{tr('courses.summary.gpa')}</p>
                 <p className="courses-summary-value">{currentSemesterSummary ? currentSemesterSummary.gpa : '-'}</p>
               </div>
             </div>
 
             <div className="courses-summary-row courses-summary-row-total">
               <div className={'courses-summary-stat' + (totalCreditsHighlight ? ' settings-highlight' : '')}>
-                <p className="home-card-label">전체 이수학점</p>
+                <p className="home-card-label">{tr('courses.summary.totalEarned')}</p>
                 <p className="courses-summary-value">
-                  {status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0}학점
+                  {tr('courses.credits', { n: status ? status.totalEarnedCredits : summary ? summary.total.earnedCredits : 0 })}
                 </p>
               </div>
               <div className="courses-summary-stat">
-                <p className="home-card-label">전체 평균 학점</p>
+                <p className="home-card-label">{tr('courses.summary.totalGpa')}</p>
                 <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
               </div>
             </div>
@@ -877,7 +888,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
         {isViewingRealCurrentSemester && (semesterLoading || myCourses.length > 0) && (
           <>
-            <p className="courses-section-label">시간표</p>
+            <p className="courses-section-label">{tr('courses.timetable')}</p>
             {semesterLoading ? (
               <div className="home-card skeleton-card">
                 <div className="skeleton skeleton-bar" />
@@ -890,7 +901,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   <div className="courses-timetable-corner" />
                   {DAYS.map((d) => (
                     <div key={d} className="courses-timetable-daylabel">
-                      {d}
+                      {tr(`courses.day.${d}`)}
                     </div>
                   ))}
                   {Array.from({ length: maxPeriod }, (_, i) => i + 1).map((period) => (
@@ -913,19 +924,19 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </>
         )}
 
-        <p className="courses-section-label">수강 목록</p>
+        <p className="courses-section-label">{tr('courses.list.title')}</p>
         <div className="courses-list">
           {semesterLoading && <div className="skeleton skeleton-text skeleton-row" />}
-          {!semesterLoading && myCourses.length === 0 && <p className="courses-empty">아직 등록된 과목이 없어요.</p>}
+          {!semesterLoading && myCourses.length === 0 && <p className="courses-empty">{tr('courses.list.empty')}</p>}
           {myCourses.map((c) => (
             <div key={c.id} className="courses-list-item">
               <div className="courses-list-item-info">
                 <p className="courses-list-item-name">
                   {c.name}
-                  {c.supersededByRetake && <span className="courses-superseded-badge">재수강으로 대체됨</span>}
+                  {c.supersededByRetake && <span className="courses-superseded-badge">{tr('courses.list.superseded')}</span>}
                 </p>
                 <p className="courses-list-item-meta">
-                  {displayCategory(c.category)} · {c.credits}학점
+                  {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
                 </p>
               </div>
               <select
@@ -933,14 +944,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 value={c.letterGrade || ''}
                 onChange={(e) => handleGradeChange(c.id, e.target.value)}
               >
-                <option value="">미입력</option>
+                <option value="">{tr('courses.grade.none')}</option>
                 {GRADES.map((g) => (
                   <option key={g} value={g}>
                     {g}
                   </option>
                 ))}
               </select>
-              <button className="courses-delete-btn" onClick={() => handleDelete(c.id)} aria-label="삭제">
+              <button className="courses-delete-btn" onClick={() => handleDelete(c.id)} aria-label={tr('courses.delete')}>
                 <IconTrash />
               </button>
             </div>
@@ -957,18 +968,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               }}
             >
               <IconPlus />
-              과목 추가
+              {tr('courses.add')}
             </button>
             <button className="courses-delete-all-btn" onClick={handleDeleteAll}>
               <IconTrash />
-              전체 삭제
+              {tr('courses.deleteAll')}
             </button>
           </>
         )}
 
         {showAddForm && (
           <div className="courses-add-form" ref={addFormRef}>
-            {error && <p className="home-error courses-form-error">{error}</p>}
+            {errorText && <p className="home-error courses-form-error">{errorText}</p>}
             <div className="courses-add-form-header">
               <div className="courses-add-mode-toggle">
                 {isViewingRealCurrentSemester && (
@@ -977,7 +988,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     onClick={() => setAddMode('catalog')}
                     type="button"
                   >
-                    카탈로그 검색
+                    {tr('courses.mode.catalog')}
                   </button>
                 )}
                 <button
@@ -985,22 +996,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   onClick={() => setAddMode('manual')}
                   type="button"
                 >
-                  직접입력
+                  {tr('courses.mode.manual')}
                 </button>
                 <div className="courses-pdf-hint-wrap">
                   {showAddModeHint && (
-                    <span className="courses-pdf-hint-bubble">PDF나 텍스트를 붙여넣을 수 있어요!</span>
+                    <span className="courses-pdf-hint-bubble">{tr('courses.mode.hint')}</span>
                   )}
                   <button
                     className={addMode === 'pdf' ? 'active' : ''}
                     onClick={() => setAddMode('pdf')}
                     type="button"
                   >
-                    한 번에 가져오기
+                    {tr('courses.mode.import')}
                   </button>
                 </div>
               </div>
-              <button className="courses-close-btn" onClick={closeAddForm} aria-label="닫기">
+              <button className="courses-close-btn" onClick={closeAddForm} aria-label={tr('courses.close')}>
                 <IconX />
               </button>
             </div>
@@ -1008,9 +1019,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             {addMode === 'pdf' && (
               <div className="courses-pdf-import">
                 <p className="courses-manual-hint">
-                  등급까지 한 번에 채우려면 <strong>전체성적조회</strong>를 추천해요(과목·등급만 가져오고,
-                  이름·학번은 저장하지 않아요). 성적 입력 없이 과목만 먼저 등록하고 싶다면{' '}
-                  <strong>이수과목확인리스트</strong>도 쓸 수 있어요(등급은 나중에 직접 입력).
+                  {tRich('courses.import.intro')}
                 </p>
 
                 {!pdfRows && (
@@ -1019,7 +1028,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         "PDF가 고장 났을 때만 쓰는 비상용"이 아니라, PDF 준비가 귀찮은 사람도 처음부터
                         바로 고를 수 있는 방법이어야 해서다. 다만 붙여넣기는 전체성적조회 형식만
                         지원하므로(parseFullTranscriptText 전용) 그 제약을 바로 옆에 명시한다. */}
-                    <div className="courses-import-method-toggle" role="tablist" aria-label="가져오기 방법">
+                    <div className="courses-import-method-toggle" role="tablist" aria-label={tr('courses.import.method')}>
                       <button
                         type="button"
                         role="tab"
@@ -1027,7 +1036,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         className={!pdfPasteMode ? 'active' : ''}
                         onClick={() => setPdfPasteMode(false)}
                       >
-                        PDF 업로드
+                        {tr('courses.import.pdf')}
                       </button>
                       <button
                         type="button"
@@ -1036,7 +1045,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         className={pdfPasteMode ? 'active' : ''}
                         onClick={() => setPdfPasteMode(true)}
                       >
-                        텍스트 붙여넣기
+                        {tr('courses.import.paste')}
                       </button>
                     </div>
                   </>
@@ -1052,8 +1061,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       <p className="courses-pdf-warning-item">
                         <IconAlertTriangle size={14} />
                         <span>
-                          전체성적조회는 PDF보다 위의 <strong>텍스트 붙여넣기</strong>가 더 안정적이에요. 기기나
-                          브라우저에 따라 PDF에 한글이 깨지거나 일부만 저장되는 경우가 있어요.
+                          {tRich('courses.import.pasteBetter')}
                         </span>
                       </p>
                     </div>
@@ -1061,48 +1069,47 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     <details
                       className={`courses-pdf-help${pdfHelpHighlightArmed ? ' settings-highlight' : ''}`}
                     >
-                      <summary>어떤 PDF를 올려야 하나요? (클릭해서 확인)</summary>
+                      <summary>{tr('courses.help.summary')}</summary>
 
                       <p className="courses-pdf-help-note courses-pdf-help-intro">
-                        아래 두 방법 중 <strong>하나만</strong> 준비하면 돼요. 둘 다 올릴 필요는 없어요.
+                        {tRich('courses.help.intro')}
                       </p>
 
-                      <p className="courses-pdf-help-doctype">전체성적조회 (등급까지 포함, 추천)</p>
+                      <p className="courses-pdf-help-doctype">{tr('courses.help.doc1')}</p>
                       <ol className="courses-pdf-help-steps">
-                        <li>원광대 인트라넷 웹정보서비스 로그인 → 상단 <strong>정보서비스</strong> 탭 클릭</li>
+                        <li>{tRich('courses.help.login')}</li>
                         <li>
-                          좌측 사이드 메뉴에서 <strong>성적관리 → 전체성적조회</strong> 클릭
+                          {tRich('courses.help.menuFull')}
                         </li>
                         <li>
-                          화면 우측 상단 <strong>파란색 "성적조회"</strong> 버튼 클릭
+                          {tRich('courses.help.btnFull')}
                         </li>
                         <li>
-                          화면 좌측의 <strong>"화면출력"</strong> 버튼 클릭
+                          {tRich('courses.help.btnScreen')}
                         </li>
                         <li>
-                          인쇄 대화상자에서 대상을 <strong>"PDF로 저장"</strong>으로 바꾼 뒤 저장
+                          {tRich('courses.help.savePdf')}
                         </li>
                       </ol>
 
-                      <p className="courses-pdf-help-divider">또는</p>
+                      <p className="courses-pdf-help-divider">{tr('courses.help.or')}</p>
 
-                      <p className="courses-pdf-help-doctype">이수과목확인리스트 (등급 없이 과목만)</p>
+                      <p className="courses-pdf-help-doctype">{tr('courses.help.doc2')}</p>
                       <ol className="courses-pdf-help-steps">
-                        <li>원광대 인트라넷 웹정보서비스 로그인 → 상단 <strong>정보서비스</strong> 탭 클릭</li>
+                        <li>{tRich('courses.help.login')}</li>
                         <li>
-                          좌측 사이드 메뉴에서 <strong>성적관리 → 이수과목확인리스트</strong> 클릭
+                          {tRich('courses.help.menuList')}
                         </li>
                         <li>
-                          화면 우측 상단 <strong>주황색 "출력"</strong> 버튼 클릭
+                          {tRich('courses.help.btnPrint')}
                         </li>
                         <li>
-                          인쇄 대화상자에서 대상을 <strong>"PDF로 저장"</strong>으로 바꾼 뒤 저장
+                          {tRich('courses.help.savePdf')}
                         </li>
                       </ol>
 
                       <p className="courses-pdf-help-note">
-                        화면을 캡처한 사진이 아니라 위 방식으로 저장한 PDF여야 정확히 인식돼요. 성적증명서·수강신청내역·시간표
-                        화면은 표 형식이 달라 인식되지 않으니, 반드시 위 두 화면 중 하나로 저장한 PDF를 사용해주세요.
+                        {tr('courses.help.note')}
                       </p>
                     </details>
 
@@ -1110,10 +1117,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       {pdfLoading ? (
                         <span className="courses-pdf-upload-loading">
                           <span className="courses-pdf-spinner" aria-hidden="true" />
-                          분석 중...
+                          {tr('courses.upload.analyzing')}
                         </span>
                       ) : (
-                        'PDF 파일 선택'
+                        tr('courses.upload.choose')
                       )}
                       <input
                         type="file"
@@ -1129,14 +1136,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 {!pdfRows && pdfPasteMode && (
                   <div className="courses-pdf-paste">
                     <p className="courses-manual-hint">
-                      <strong>전체성적조회</strong> 화면의 표를 길게 눌러 선택한 뒤 끝까지 드래그해서 복사하고,
-                      아래에 붙여넣어 주세요. 이수과목확인리스트는 PDF 업로드를 이용해주세요.
+                      {tRich('courses.paste.hint')}
                     </p>
                     <textarea
                       className="courses-pdf-paste-textarea"
                       value={pdfPasteText}
                       onChange={(e) => setPdfPasteText(e.target.value)}
-                      placeholder="여기를 길게 눌러 붙여넣기"
+                      placeholder={tr('courses.paste.placeholder')}
                       rows={8}
                       disabled={pdfLoading}
                     />
@@ -1146,7 +1152,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       onClick={handlePdfPasteSubmit}
                       disabled={pdfLoading || !pdfPasteText.trim()}
                     >
-                      {pdfLoading ? '분석 중...' : '붙여넣은 내용 분석하기'}
+                      {pdfLoading ? tr('courses.upload.analyzing') : tr('courses.paste.submit')}
                     </button>
                   </div>
                 )}
@@ -1169,15 +1175,15 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           setPdfPasteMode(true);
                         }}
                       >
-                        텍스트 붙여넣기로 다시 시도하기
+                        {tr('courses.retryPaste')}
                       </button>
                     )}
 
                     {pdfDocType && (
                       <p className="courses-manual-hint">
                         {pdfDocType === 'full_transcript'
-                          ? '전체성적조회 문서예요 — 등급까지 인식했어요. 아래 목록에서 확인하고 등록해주세요.'
-                          : '이수과목확인리스트 문서예요 — 이 문서엔 등급이 없어서 등록 후 과목 목록에서 직접 입력해주세요.'}
+                          ? tr('courses.doc.full')
+                          : tr('courses.doc.list')}
                       </p>
                     )}
 
@@ -1187,8 +1193,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     {pdfParseMethod && (
                       <p className="courses-manual-hint">
                         {pdfParseMethod === 'rule'
-                          ? '규칙 기반으로 바로 처리했어요 — 이 시도는 AI 가져오기 한도(5회)에 포함되지 않아요.'
-                          : '형식이 예상과 달라 AI로 처리했어요 — 이 시도는 AI 가져오기 한도(5회)에 포함돼요.'}
+                          ? tr('courses.parse.rule')
+                          : tr('courses.parse.ai')}
                       </p>
                     )}
 
@@ -1199,16 +1205,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                             <span className="courses-pdf-pf-badge">
                               {pdfRows.filter((r) => r.wasOriginallyF).length}
                             </span>
-                            불합격 과목 확인
+                            {tr('courses.pf.title')}
                           </span>
                           <span className="courses-pdf-pf-progress">
-                            {pdfRows.filter((r) => r.wasOriginallyF && r.letterGrade === 'NP').length} /{' '}
-                            {pdfRows.filter((r) => r.wasOriginallyF).length} 확인함
+                            {tr('courses.pf.progress', {
+                              done: pdfRows.filter((r) => r.wasOriginallyF && r.letterGrade === 'NP').length,
+                              total: pdfRows.filter((r) => r.wasOriginallyF).length,
+                            })}
                           </span>
                         </div>
                         <p className="courses-pdf-pf-desc">
-                          일반 과목의 F는 학점·평점에 그대로 반영돼요. 아래 과목이 P/F(합격·불합격)로 평가되는
-                          과목이었다면 "P/F"를 눌러주세요 — 학점만 빠지고 평점엔 영향 없게 처리돼요.
+                          {tr('courses.pf.desc')}
                         </p>
                         <div className="courses-pdf-pf-list">
                           {pdfRows
@@ -1221,7 +1228,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 <div className="courses-pdf-pf-item-info">
                                   <p className="courses-pdf-pf-item-name">{r.name}</p>
                                   <p className="courses-pdf-pf-item-meta">
-                                    {r.year}-{semesterLabel(r.semester)} · {r.credits}학점
+                                    {r.year}-{semesterLabel(r.semester, tr)} · {tr('courses.credits', { n: r.credits })}
                                   </p>
                                 </div>
                                 <div className="courses-pdf-pf-toggle-group">
@@ -1230,7 +1237,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                     className={r.letterGrade !== 'NP' ? 'active-f' : ''}
                                     onClick={() => updatePdfRow(r.tempId, 'letterGrade', 'F')}
                                   >
-                                    일반 F
+                                    {tr('courses.pf.normalF')}
                                   </button>
                                   <button
                                     type="button"
@@ -1244,7 +1251,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                             ))}
                         </div>
                         <p className="courses-pdf-pf-note">
-                          헷갈리면 "일반 F"로 두세요 — 나중에 과목 관리 화면에서 등급을 언제든 NP로 바꿀 수 있어요.
+                          {tr('courses.pf.note')}
                         </p>
                       </div>
                     )}
@@ -1261,7 +1268,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     )}
                     {pdfCreditsCheck && (
                       <p className="courses-manual-hint">
-                        문서상 총 취득학점 {pdfCreditsCheck.declared} · 인식된 학점 합계 {pdfCreditsCheck.extracted}
+                        {tr('courses.creditsCheck', { declared: pdfCreditsCheck.declared, extracted: pdfCreditsCheck.extracted })}
                       </p>
                     )}
 
@@ -1273,7 +1280,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                               type="checkbox"
                               checked={r.include}
                               onChange={(e) => updatePdfRow(r.tempId, 'include', e.target.checked)}
-                              aria-label="가져오기 포함"
+                              aria-label={tr('courses.row.include')}
                             />
                             <input
                               type="text"
@@ -1285,29 +1292,29 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                               type="button"
                               className="courses-schedule-remove"
                               onClick={() => removePdfRow(r.tempId)}
-                              aria-label="목록에서 제외"
+                              aria-label={tr('courses.row.exclude')}
                             >
                               <IconX />
                             </button>
                           </div>
                           <div className="courses-pdf-row-meta">
                             <label className="courses-pdf-meta-field courses-pdf-meta-category">
-                              <span className="courses-pdf-meta-label">이수구분</span>
+                              <span className="courses-pdf-meta-label">{tr('courses.field.category')}</span>
                               <select
                                 className={!r.category ? 'courses-pdf-category-missing' : ''}
                                 value={r.category}
                                 onChange={(e) => updatePdfRow(r.tempId, 'category', e.target.value)}
                               >
-                                <option value="">선택 안 됨</option>
+                                <option value="">{tr('courses.field.categoryNone')}</option>
                                 {CATEGORIES.map((c) => (
                                   <option key={c} value={c}>
-                                    {displayCategory(c)}
+                                    {catLabel(c)}
                                   </option>
                                 ))}
                               </select>
                             </label>
                             <label className="courses-pdf-meta-field courses-pdf-meta-credits">
-                              <span className="courses-pdf-meta-label">학점</span>
+                              <span className="courses-pdf-meta-label">{tr('courses.field.credits')}</span>
                               <input
                                 type="number"
                                 step="0.5"
@@ -1316,7 +1323,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                               />
                             </label>
                             <label className="courses-pdf-meta-field courses-pdf-meta-year">
-                              <span className="courses-pdf-meta-label">이수년도</span>
+                              <span className="courses-pdf-meta-label">{tr('courses.field.year')}</span>
                               <input
                                 type="number"
                                 value={r.year}
@@ -1324,22 +1331,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                               />
                             </label>
                             <label className="courses-pdf-meta-field courses-pdf-meta-semester">
-                              <span className="courses-pdf-meta-label">학기</span>
+                              <span className="courses-pdf-meta-label">{tr('courses.field.semester')}</span>
                               <select
                                 value={r.semester}
                                 onChange={(e) => updatePdfRow(r.tempId, 'semester', Number(e.target.value))}
                               >
-                                <option value={1}>1학기</option>
-                                <option value={2}>여름학기</option>
-                                <option value={3}>2학기</option>
-                                <option value={4}>겨울학기</option>
+                                <option value={1}>{semesterLabel(1, tr)}</option>
+                                <option value={2}>{semesterLabel(2, tr)}</option>
+                                <option value={3}>{semesterLabel(3, tr)}</option>
+                                <option value={4}>{semesterLabel(4, tr)}</option>
                               </select>
                             </label>
                             {pdfDocType === 'full_transcript' && (
                               // F↔NP 여부는 위쪽 "불합격 과목 확인" 카드에서만 바꾸도록 하고, 여기선
                               // 결과만 배지로 보여준다 — 같은 조작을 두 군데서 할 수 있게 하면 헷갈린다.
                               <div className="courses-pdf-meta-field courses-pdf-meta-grade">
-                                <span className="courses-pdf-meta-label">등급</span>
+                                <span className="courses-pdf-meta-label">{tr('courses.field.grade')}</span>
                                 <span
                                   className={`courses-pdf-grade-tag ${r.letterGrade === 'F' ? 'is-f' : ''} ${r.letterGrade === 'NP' ? 'is-np' : ''
                                     }`}
@@ -1362,8 +1369,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           disabled={pdfSubmitting || pdfRows.every((r) => !r.include)}
                         >
                           {pdfSubmitting
-                            ? '등록 중...'
-                            : `선택한 ${pdfRows.filter((r) => r.include).length}개 과목 등록`}
+                            ? tr('courses.confirm.submitting')
+                            : tr('courses.confirm.submit', { n: pdfRows.filter((r) => r.include).length })}
                         </button>
                         <button
                           type="button"
@@ -1375,7 +1382,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                             setPdfCreditsCheck(null);
                           }}
                         >
-                          ‹ 다시 업로드
+                          {tr('courses.reuploadBack')}
                         </button>
                       </>
                     ) : (
@@ -1392,7 +1399,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           setPdfCreditsCheck(null);
                         }}
                       >
-                        다시 업로드
+                        {tr('courses.reupload')}
                       </button>
                     )}
                   </>
@@ -1404,17 +1411,16 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               catalogSelection ? (
                 <div className="courses-manual-fields">
                   <p className="courses-manual-hint">
-                    "{catalogSelection.name}"은 아직 시간표가 등록되어 있지 않아요. 알고 있다면 아래에서
-                    입력해주세요 — 몰라도 등록은 되고, 나중에 다시 채울 수 있습니다.
+                    {tr('courses.catalog.noSchedule', { name: catalogSelection.name })}
                   </p>
                   <div className="auth-field">
-                    <label>시간표 (선택)</label>
+                    <label>{tr('courses.schedule.label')}</label>
                     {manualSchedule.map((s, i) => (
                       <div className="courses-schedule-row" key={i}>
                         <select value={s.day} onChange={(e) => updateScheduleRow(i, 'day', e.target.value)}>
                           {DAYS.map((d) => (
                             <option key={d} value={d}>
-                              {d}
+                              {tr(`courses.day.${d}`)}
                             </option>
                           ))}
                         </select>
@@ -1424,7 +1430,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         >
                           {Array.from({ length: 10 }, (_, p) => p + 1).map((p) => (
                             <option key={p} value={p}>
-                              {p}교시
+                              {tr('courses.period', { p })}
                             </option>
                           ))}
                         </select>
@@ -1432,7 +1438,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                           type="button"
                           className="courses-schedule-remove"
                           onClick={() => removeScheduleRow(i)}
-                          aria-label="시간 삭제"
+                          aria-label={tr('courses.schedule.remove')}
                         >
                           <IconX />
                         </button>
@@ -1440,7 +1446,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     ))}
                     <button type="button" className="courses-schedule-add" onClick={addScheduleRow}>
                       <IconPlus />
-                      교시 추가
+                      {tr('courses.schedule.addPeriod')}
                     </button>
                   </div>
                   <button
@@ -1448,23 +1454,22 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     className="auth-submit-btn"
                     onClick={() => handleAddFromCatalog(catalogSelection.courseId, manualSchedule, catalogSelection.name)}
                   >
-                    추가하기
+                    {tr('courses.submitAdd')}
                   </button>
                   <button type="button" className="courses-manual-only-note courses-catalog-back" onClick={() => setCatalogSelection(null)}>
-                    ‹ 검색으로 돌아가기
+                    {tr('courses.catalog.back')}
                   </button>
                 </div>
               ) : (
                 <>
                   <p className="courses-manual-hint">
-                    전공 과목 위주로 검색돼요 — 교양 과목은 학기에 따라 카탈로그에 없을 수 있어요.
-                    검색 결과가 없으면 "직접입력" 탭을 이용해주세요.
+                    {tr('courses.catalog.hint')}
                   </p>
                   <div className="courses-search-box">
                     <IconSearch />
                     <input
                       type="text"
-                      placeholder="과목명 검색"
+                      placeholder={tr('courses.catalog.searchPlaceholder')}
                       value={keyword}
                       ref={searchInputRef}
                       onChange={(e) => handleSearch(e.target.value)}
@@ -1481,12 +1486,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       >
                         <span className="courses-list-item-name">{r.name}</span>
                         <span className="courses-list-item-meta">
-                          {displayCategory(r.category)} · {r.credits}학점{r.professor ? ` · ${r.professor}` : ''}
-                          {formatSchedule(r.schedule)
-                            ? ` · ${formatSchedule(r.schedule)}`
+                          {catLabel(r.category)} · {tr('courses.credits', { n: r.credits })}{r.professor ? ` · ${r.professor}` : ''}
+                          {formatSchedule(r.schedule, tr)
+                            ? ` · ${formatSchedule(r.schedule, tr)}`
                             : r.credits === 0
                               ? ''
-                              : ' · 시간표 미등록'}
+                              : ` · ${tr('courses.catalog.noScheduleYet')}`}
                         </span>
                       </button>
                     ))}
@@ -1495,9 +1500,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               )
             ) : (
               <form className="courses-manual-fields" onSubmit={handleAddManual}>
-                <p className="courses-manual-hint">과목이 없거나 학점인정(어학·자격증)이면 여기서 등록하세요.</p>
+                <p className="courses-manual-hint">{tr('courses.manual.hint')}</p>
                 <div className="auth-field">
-                  <label>과목명</label>
+                  <label>{tr('courses.manual.name')}</label>
                   <input
                     type="text"
                     value={manualFields.name}
@@ -1507,7 +1512,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   />
                 </div>
                 <div className="auth-field">
-                  <label>학점</label>
+                  <label>{tr('courses.manual.credits')}</label>
                   {/* min=0 — 졸업논문처럼 P/F 판정에 졸업학점 합산이 안 되는 과목은 0학점으로
                       등록해야 한다(실사용 확인: 등록할 방법이 아예 없다는 신고). */}
                   <input
@@ -1521,7 +1526,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   />
                 </div>
                 <div className="auth-field">
-                  <label>이수구분</label>
+                  <label>{tr('courses.manual.category')}</label>
                   <select
                     className="courses-category-select"
                     value={manualFields.category}
@@ -1529,20 +1534,20 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
-                        {displayCategory(c)}
+                        {catLabel(c)}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="auth-field">
-                  <label>시간표 (선택)</label>
+                  <label>{tr('courses.schedule.label')}</label>
                   {manualSchedule.map((s, i) => (
                     <div className="courses-schedule-row" key={i}>
                       <select value={s.day} onChange={(e) => updateScheduleRow(i, 'day', e.target.value)}>
                         {DAYS.map((d) => (
                           <option key={d} value={d}>
-                            {d}
+                            {tr(`courses.day.${d}`)}
                           </option>
                         ))}
                       </select>
@@ -1552,23 +1557,23 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                       >
                         {Array.from({ length: 10 }, (_, p) => p + 1).map((p) => (
                           <option key={p} value={p}>
-                            {p}교시
+                            {tr('courses.period', { p })}
                           </option>
                         ))}
                       </select>
-                      <button type="button" className="courses-schedule-remove" onClick={() => removeScheduleRow(i)} aria-label="시간 삭제">
+                      <button type="button" className="courses-schedule-remove" onClick={() => removeScheduleRow(i)} aria-label={tr('courses.schedule.remove')}>
                         <IconX />
                       </button>
                     </div>
                   ))}
                   <button type="button" className="courses-schedule-add" onClick={addScheduleRow}>
                     <IconPlus />
-                    교시 추가
+                    {tr('courses.schedule.addPeriod')}
                   </button>
                 </div>
 
                 <button type="submit" className="auth-submit-btn">
-                  추가하기
+                  {tr('courses.submitAdd')}
                 </button>
               </form>
             ))}

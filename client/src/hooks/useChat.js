@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCurrentConversation, sendChatMessage } from '../api/chatApi';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막 대화를 캐시해둔다.
 // sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
@@ -22,6 +23,7 @@ export function resetChatCache() {
  * Custom hook for chat operations and state management.
  */
 function useChat() {
+  const { t, lang } = useI18n();
   const [conversationId, setConversationId] = useState(chatCache.conversationId);
   const [messages, setMessages] = useState(chatCache.messages || []);
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ function useChat() {
       setLoading(true);
 
       try {
-        const response = await sendChatMessage(conversationId, text);
+        const response = await sendChatMessage(conversationId, text, lang);
         const assistantMsg = {
           sender: 'assistant',
           text: response.content,
@@ -73,14 +75,14 @@ function useChat() {
         console.error('Failed to send message:', error);
         const text =
           error.code === 'CHAT_DAILY_LIMIT_EXCEEDED'
-            ? `오늘 채팅 한도(${error.data?.limit ?? 20}회)를 모두 사용했어요. 내일 다시 이용해주세요.`
-            : '오류가 발생했어요. 잠시 후 다시 시도해주세요.';
+            ? t('chat.dailyLimit', { limit: error.data?.limit ?? 20 })
+            : t('chat.error');
         setMessages((prev) => [...prev, { sender: 'assistant', text, timestamp: new Date().toLocaleTimeString() }]);
       } finally {
         setLoading(false);
       }
     },
-    [conversationId]
+    [conversationId, t, lang]
   );
 
   return {

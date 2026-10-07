@@ -1,4 +1,6 @@
 const pool = require('../db');
+const { CURRENT_CONSENT_VERSION } = require('./consent');
+const { attachColleges } = require('./departmentColleges');
 
 /**
  * server/services/studentService.js
@@ -7,6 +9,8 @@ const pool = require('../db');
 
 // onboarding.js / me.js에서 공통으로 쓰는 검증값 (courseService.VALID_CATEGORIES와 동일한 패턴)
 const VALID_ENROLLMENT_TYPES = ['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'];
+// 화면·챗봇 답변 언어(students.language). client/src/i18n/I18nContext.jsx의 SUPPORTED_LANGUAGES와 같은 코드.
+const VALID_LANGUAGES = ['ko', 'en'];
 const VALID_MAJOR_CHANGE_GRADES = [1, 2, 3, 4];
 const VALID_MAJOR_CHANGE_SEMESTERS = [1, 2];
 
@@ -55,6 +59,10 @@ function serializeStudent(student) {
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
+    // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
+    language: student.language || null,
+    // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
+    consentRequired: student.consent_version !== CURRENT_CONSENT_VERSION,
   };
 }
 
@@ -159,7 +167,7 @@ async function listDepartments() {
     successorsByFrom.set(e.from_id, list);
   }
 
-  return rows.map((r) => ({
+  const departments = rows.map((r) => ({
     id: r.id,
     name: r.name,
     minAdmissionYear: r.min_admission_year,
@@ -168,6 +176,8 @@ async function listDepartments() {
     coreMaxAdmissionYear: r.core_max_admission_year,
     successors: successorsByFrom.get(r.id) || [],
   }));
+  // 소속 대학(트리 화면용). 학칙 [별표 1] 2026학년도 표 기준이고, 자료를 못 읽으면 college=null로 평평한 목록이 된다.
+  return attachColleges(departments);
 }
 
 async function findDepartmentById(id) {
@@ -197,6 +207,11 @@ async function completeOnboarding(studentId, { departmentId, admissionYear, enro
   );
 }
 
+// 이용약관·개인정보 수집·이용 동의를 기록한다(동의 시각 + 동의한 버전).
+async function recordConsent(studentId, version) {
+  await pool.query('UPDATE students SET consented_at = NOW(), consent_version = ? WHERE id = ?', [version, studentId]);
+}
+
 // 프로필 수정(PATCH /api/me) 전용 — 넘어온 필드만 부분 갱신 (courseService.updateMyCourse와 동일한 패턴)
 async function updateProfile(studentId, updates) {
   const columnMap = {
@@ -211,6 +226,7 @@ async function updateProfile(studentId, updates) {
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
+    language: 'language',
   };
 
   const fields = [];
@@ -242,11 +258,25 @@ async function countAll() {
   return count;
 }
 
+// 이메일 형식만 맞으면 가입되던 옛 로그인 폼 시절에 만들어진 테스트(가짜) 계정 수 — 개발에 참여한 4명이 그때 가입한 계정을
+// 세어 추정한 값이다. 운영 DB에서 계정을 직접 지우는 대신(운영 DB를 건드리는 부담이 크다) 관리자 화면의 "가입 수"에서만 이만큼 뺀다.
+// 계정 자체는 그대로 있으므로 countAll()이나 다른 기능에는 영향이 없다. 그 계정들을 정리하면 이 상수는 0으로 바꾸거나 지운다.
+const LEGACY_TEST_ACCOUNT_COUNT = 10;
+
+// 관리자 대시보드에 보여줄 "실제 가입 수" = 전체 계정 수 - 옛 테스트 계정 수(0 밑으로는 내려가지 않는다).
+function excludeLegacyTestAccounts(total) {
+  return Math.max(0, total - LEGACY_TEST_ACCOUNT_COUNT);
+}
+
 module.exports = {
+  LEGACY_TEST_ACCOUNT_COUNT,
+  excludeLegacyTestAccounts,
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
   VALID_MAJOR_CHANGE_SEMESTERS,
+  VALID_LANGUAGES,
   serializeStudent,
+  recordConsent,
   findByEmail,
   findByName,
   findById,

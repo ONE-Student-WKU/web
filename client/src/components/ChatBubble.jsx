@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MessageText from './MessageText.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * ChatBubble Component
@@ -9,12 +10,13 @@ import MessageText from './MessageText.jsx';
  * - message: { sender: 'user'|'assistant', text: string, timestamp: string, citedChunks?: array }
  */
 function ChatBubble({ message }) {
+  const { t } = useI18n();
   const [showCitations, setShowCitations] = useState(false);
   const citations = message.citedChunks || [];
 
   return (
     <div className={`chat-bubble ${message.sender}`}>
-      <div className="message-sender">{message.sender === 'user' ? '나' : 'ONE Student'}</div>
+      <div className="message-sender">{message.sender === 'user' ? t('chat.me') : 'ONE Student'}</div>
       {message.sender === 'user' ? (
         <div className="message-text">{message.text}</div>
       ) : (
@@ -23,7 +25,7 @@ function ChatBubble({ message }) {
       {citations.length > 0 && (
         <div className="message-citations">
           <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)}>
-            {showCitations ? '출처 접기' : `출처 더 보기 (${citations.length})`}
+            {showCitations ? t('chat.citationsHide') : t('chat.citationsMore', { count: citations.length })}
           </button>
           {showCitations && (
             <ul>

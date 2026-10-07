@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
 import useChat from '../hooks/useChat.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * Chat Page Component
@@ -19,6 +20,7 @@ import useChat from '../hooks/useChat.js';
  *   모바일 키보드가 떠 있는 동안 하단 탭바를 같이 숨길 수 있게 한다.
  */
 function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile, onInputFocusChange }) {
+  const { t } = useI18n();
   const { messages, sendMessage, loading, initialLoading } = useChat();
   const bottomRef = useRef(null);
   // 모바일에서 입력창에 포커스가 가면(키보드가 뜨면) 화면이 좁아지므로, 입력창 자체를
@@ -65,7 +67,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
         {loading && (
           <div className="chat-bubble assistant">
             <div className="message-sender">ONE Student</div>
-            <div className="typing-dots" aria-label="답변을 준비하고 있어요">
+            <div className="typing-dots" aria-label={t('chat.typing')}>
               <span></span>
               <span></span>
               <span></span>
@@ -77,7 +79,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
       <ChatInput onSendMessage={sendMessage} disabled={loading} onFocusChange={handleInputFocusChange} />
       {!inputFocused && (
         <div className="chat-disclaimer">
-          본 답변은 비공식 참고용입니다. 정확한 사항은 웹정보서비스 또는 관련 부서에서 확인하세요.
+          {t('chat.disclaimer')}
         </div>
       )}
     </div>

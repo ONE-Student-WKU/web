@@ -10,14 +10,15 @@ import {
 import { IconChevronLeft } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // 이메일 재인증 요청/확인 실패 코드는 서버(server/routes/auth.js)가 내려주는 err.code
 // 기준 — Login.jsx의 describeEmailError와 같은 코드 집합을 다루되 문구는 재인증 맥락에 맞춤.
-function describeReauthError(code) {
-  if (code === 'NOT_FOUND') return '인증코드를 다시 요청해주세요.';
-  if (code === 'INVALID_CODE') return '인증코드가 올바르지 않아요.';
-  if (code === 'TOO_MANY_ATTEMPTS') return '시도 횟수를 초과했어요. 인증코드를 다시 요청해주세요.';
-  return '요청에 실패했어요. 잠시 후 다시 시도해주세요.';
+function describeReauthError(code, t) {
+  if (code === 'NOT_FOUND') return t('login.err.notFound');
+  if (code === 'INVALID_CODE') return t('login.err.invalidCode');
+  if (code === 'TOO_MANY_ATTEMPTS') return t('login.err.tooManyAttempts');
+  return t('login.err.request');
 }
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
@@ -66,6 +67,7 @@ export function resetProfileCache() {
  *   실제 삭제 시점엔 서버가 다시 한번 유효성을 검사한다(REAUTH_REQUIRED).
  */
 function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthenticated }) {
+  const { t } = useI18n();
   const [name, setName] = useState(user?.name || '');
   const [nameSaved, setNameSaved] = useState(false);
   const [nameError, setNameError] = useState(null);
@@ -129,7 +131,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
         setNow(Date.now());
         setEmailReauthStep('code'); // 이미 코드를 받은 적이 있다는 뜻 — 코드 입력 화면 유지
       } else {
-        setEmailReauthError('인증코드 발송에 실패했어요. 잠시 후 다시 시도해주세요.');
+        setEmailReauthError(t('profile.reauth.sendFailed'));
       }
     } finally {
       setEmailReauthSubmitting(false);
@@ -144,7 +146,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       await verifyDeleteReauthCode(emailReauthCode.trim());
       setEmailReauthenticated(true);
     } catch (err) {
-      setEmailReauthError(describeReauthError(err.code));
+      setEmailReauthError(describeReauthError(err.code, t));
     } finally {
       setEmailReauthSubmitting(false);
     }
@@ -156,7 +158,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
     setNameSaved(false);
     const trimmed = name.trim();
     if (!trimmed) {
-      setNameError('이름을 입력해주세요.');
+      setNameError(t('profile.err.nameRequired'));
       return;
     }
     try {
@@ -164,16 +166,16 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       onNameChanged?.(trimmed);
       setNameSaved(true);
     } catch (err) {
-      if (err.code === 'DUPLICATE_NAME') setNameError('이미 사용 중인 닉네임이에요.');
-      else if (err.code === 'RESERVED_NAME') setNameError('"user숫자" 형식은 자동 배정용이라 쓸 수 없어요.');
-      else setNameError('저장에 실패했어요.');
+      if (err.code === 'DUPLICATE_NAME') setNameError(t('profile.err.duplicateName'));
+      else if (err.code === 'RESERVED_NAME') setNameError(t('profile.err.reservedName'));
+      else setNameError(t('profile.err.saveFailed'));
     }
   }
 
   async function handleDeleteAccount(e) {
     e.preventDefault();
     setDeleteError(null);
-    if (!window.confirm('정말 계정을 삭제할까요? 수강 이력, 대화 기록을 포함한 모든 데이터가 사라지고 되돌릴 수 없어요.')) {
+    if (!window.confirm(t('profile.delete.confirm'))) {
       return;
     }
     setDeleting(true);
@@ -182,7 +184,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       onAccountDeleted();
     } catch (err) {
       setDeleteError(
-        err.code === 'REAUTH_REQUIRED' ? '재인증이 만료됐어요. 다시 로그인해서 확인해주세요.' : '삭제에 실패했어요.'
+        err.code === 'REAUTH_REQUIRED' ? t('profile.delete.reauthExpired') : t('profile.delete.failed')
       );
       setDeleting(false);
     }
@@ -192,16 +194,16 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={onGoHome} aria-label={t('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">계정 정보 수정</span>
+          <span className="screen-title">{t('profile.title')}</span>
         </div>
       </header>
 
       <div className="courses-body">
         <section className="home-card">
-          <p className="home-card-label">이름</p>
+          <p className="home-card-label">{t('profile.name')}</p>
           <form className="settings-inline-field" onSubmit={handleSaveName}>
             <input
               type="text"
@@ -213,26 +215,26 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
               }}
             />
             <button type="submit" className="settings-theme-btn">
-              저장
+              {t('profile.save')}
             </button>
           </form>
           {nameError && <p className="home-error">{nameError}</p>}
-          {nameSaved && <p className="settings-field-hint">저장했어요.</p>}
+          {nameSaved && <p className="settings-field-hint">{t('profile.saved')}</p>}
         </section>
 
         {confirmedRoadmapLoading ? (
           <section className="home-card">
-            <p className="home-card-label">확정한 진로</p>
+            <p className="home-card-label">{t('profile.career')}</p>
             <div className="skeleton skeleton-text skeleton-row" style={{ height: 38 }} />
           </section>
         ) : (
           confirmedRoadmap && (
             <section className="home-card">
-              <p className="home-card-label">확정한 진로</p>
+              <p className="home-card-label">{t('profile.career')}</p>
               <div className="settings-inline-field">
                 <span className="profile-career-name">{confirmedRoadmap.confirmedCareer}</span>
                 <button className="settings-theme-btn" onClick={() => setRoadmapExpanded((v) => !v)}>
-                  {roadmapExpanded ? '로드맵 접기' : '로드맵 보기'}
+                  {roadmapExpanded ? t('profile.roadmapHide') : t('profile.roadmapShow')}
                 </button>
               </div>
               {roadmapExpanded && (
@@ -245,20 +247,20 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
         )}
 
         <section className="home-card profile-danger-zone">
-          <p className="home-card-label">계정 삭제</p>
+          <p className="home-card-label">{t('profile.delete.title')}</p>
           <p className="settings-field-hint">
-            계정을 삭제하면 수강 이력, 대화 기록 등 모든 데이터가 함께 삭제되고 되돌릴 수 없어요.
+            {t('profile.delete.desc')}
           </p>
           {justReauthenticated || emailReauthenticated ? (
             <form onSubmit={handleDeleteAccount}>
               {deleteError && <p className="home-error">{deleteError}</p>}
               <button type="submit" className="profile-delete-btn" disabled={deleting}>
-                {deleting ? '삭제하는 중...' : '계정 삭제'}
+                {deleting ? t('profile.delete.deleting') : t('profile.delete.title')}
               </button>
             </form>
           ) : user?.hasGoogleAccount ? (
             <button type="button" className="settings-theme-btn" onClick={startGoogleReauth}>
-              다시 로그인해서 확인
+              {t('profile.reauth.google')}
             </button>
           ) : emailReauthStep === 'idle' ? (
             <>
@@ -270,27 +272,27 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                 disabled={emailReauthSubmitting || !!retryAt}
               >
                 {emailReauthSubmitting
-                  ? '전송 중...'
+                  ? t('profile.reauth.sending')
                   : retryAt
-                    ? `${formatCountdown(cooldownRemainingMs)} 후 다시 시도`
-                    : '인증코드 받고 확인'}
+                    ? t('profile.reauth.retryIn', { time: formatCountdown(cooldownRemainingMs) })
+                    : t('profile.reauth.getCode')}
               </button>
             </>
           ) : (
             <form onSubmit={handleVerifyEmailReauthCode}>
-              <p className="settings-field-hint">가입한 이메일로 인증코드를 보냈어요. 15분 이내에 입력해주세요.</p>
+              <p className="settings-field-hint">{t('profile.reauth.codeSent')}</p>
               <div className="settings-inline-field">
                 <input
                   type="text"
                   className="onb-select"
                   inputMode="numeric"
-                  placeholder="6자리 숫자"
+                  placeholder={t('login.codePlaceholder')}
                   value={emailReauthCode}
                   onChange={(e) => setEmailReauthCode(e.target.value)}
                   required
                 />
                 <button type="submit" className="settings-theme-btn" disabled={emailReauthSubmitting}>
-                  {emailReauthSubmitting ? '확인 중...' : '확인'}
+                  {emailReauthSubmitting ? t('login.verifying') : t('profile.reauth.confirm')}
                 </button>
               </div>
               {emailReauthError && <p className="home-error">{emailReauthError}</p>}
@@ -300,7 +302,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                 onClick={handleRequestEmailReauthCode}
                 disabled={emailReauthSubmitting || !!retryAt}
               >
-                {retryAt ? `${formatCountdown(cooldownRemainingMs)} 후 다시 받기` : '인증코드 다시 받기'}
+                {retryAt ? t('profile.reauth.resendWait', { time: formatCountdown(cooldownRemainingMs) }) : t('profile.reauth.resend')}
               </button>
             </form>
           )}

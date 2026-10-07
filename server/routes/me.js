@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -10,7 +11,7 @@ const studentService = require('../services/studentService');
  *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, serializeStudent } = studentService;
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
 router.get('/me', requireAuth, async (req, res, next) => {
@@ -21,6 +22,21 @@ router.get('/me', requireAuth, async (req, res, next) => {
     }
 
     return res.status(200).json({ status: 200, code: 'ME_SUCCESS', message: null, data: serializeStudent(student) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/consent — 이용약관·개인정보 수집·이용 동의(로그인 직후 동의 화면). 클라이언트가 보낸 버전이 현재 버전일 때만
+// 기록한다(약관이 바뀌었는데 옛 화면에서 동의가 들어오는 일을 막는다).
+router.post('/me/consent', requireAuth, async (req, res, next) => {
+  try {
+    if (!isCurrentConsent(req.body.version)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CONSENT_VERSION', message: null, data: null });
+    }
+    await studentService.recordConsent(req.session.userId, CURRENT_CONSENT_VERSION);
+    const updated = await studentService.findById(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'CONSENT_RECORDED', message: null, data: serializeStudent(updated) });
   } catch (err) {
     next(err);
   }
@@ -40,7 +56,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester,
-      secondDepartmentId, careerCounselingCount, leaveSemesters,
+      secondDepartmentId, careerCounselingCount, leaveSemesters, language,
     } = req.body;
 
     if (name !== undefined && !name.trim()) {
@@ -67,6 +83,11 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     if (enrollmentType !== undefined && !VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
+    }
+
+    // 화면·챗봇 답변 언어 — 지원하는 언어 코드만 받는다(null로 "정한 적 없음"으로 되돌리는 건 지원하지 않음).
+    if (language !== undefined && !VALID_LANGUAGES.includes(language)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_LANGUAGE', message: null, data: null });
     }
 
     if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
@@ -139,6 +160,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,
+      language,
     });
 
     const updated = await studentService.findById(req.session.userId);

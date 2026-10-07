@@ -27,6 +27,10 @@
 --   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
 --     휴학한 학생의 학년이 실제보다 높게 나오는 문제가 실사용으로 확인되어, 학생이 직접
 --     보정할 수 있도록 설정 화면에서 입력받음)
+--   - students.language (화면·챗봇 답변 언어 'ko' | 'en'. NULL = 아직 계정에 언어를 정한 적 없음 — 이때는 브라우저에
+--     저장된 선택을 따른다. 기기를 바꿔도 같은 언어로 시작하게 하려고 계정에 저장함)
+--   - students.consented_at / consent_version (이용약관·개인정보 수집·이용 동의 시각과 동의한 버전. NULL이면 아직 동의 기록이 없는
+--     계정 — 로그인 직후 동의 화면을 한 번 보여준다. 버전은 server/services/consent.js의 CURRENT_CONSENT_VERSION)
 --   - curriculum_requirements.department_id / min_admission_year / max_admission_year
 --     (학과·입학년도별로 이수규정이 갈리는 경우 대응)
 --   - curriculum_requirements.enrollment_type (전과/편입/복수전공생의 완화된 최소전공
@@ -102,6 +106,9 @@ CREATE TABLE IF NOT EXISTS students (
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
                                                        -- 군복무 등)가 있어 학생이 직접 보정할 수 있게 둠 — 2학기당
                                                        -- 1년으로 환산해 client/src/utils/academic.js에서 학년 계산에 반영.
+  language                  VARCHAR(5) NULL,  -- 화면·챗봇 답변 언어('ko' | 'en'). NULL이면 계정에 저장된 선택이 없다는 뜻
+  consented_at              TIMESTAMP NULL,    -- 이용약관·개인정보 수집·이용에 동의한 시각
+  consent_version           VARCHAR(20) NULL,  -- 동의한 약관 버전(server/services/consent.js). NULL이면 동의 기록 없음
   onboarding_completed_at   TIMESTAMP NULL,
 
   created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

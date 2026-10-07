@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const careerService = require('../services/careerService');
 const studentService = require('../services/studentService');
+const { parseLanguage } = require('../services/language');
 
 /**
  * Routes for 진로 탐색 (상담형) — /api/career
@@ -78,7 +79,7 @@ router.post('/sessions/:id/fixed-answers', async (req, res, next) => {
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
 
-    const messages = await careerService.submitFixedAnswers(req.session.userId, req.params.id, fixedAnswers, student);
+    const messages = await careerService.submitFixedAnswers(req.session.userId, req.params.id, fixedAnswers, student, parseLanguage(req.body.language));
     res.status(200).json({ status: 200, code: 'CAREER_FIXED_ANSWERS_SUCCESS', message: null, data: { messages } });
   } catch (err) {
     if (err.code === 'SESSION_NOT_FOUND') {
@@ -116,7 +117,7 @@ router.post('/sessions/:id/messages', async (req, res, next) => {
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
 
-    const messages = await careerService.postMessage(req.session.userId, req.params.id, content, student);
+    const messages = await careerService.postMessage(req.session.userId, req.params.id, content, student, parseLanguage(req.body.language));
     res.status(200).json({ status: 200, code: 'CAREER_MESSAGE_SUCCESS', message: null, data: { messages } });
   } catch (err) {
     if (err.code === 'SESSION_NOT_FOUND') {
@@ -132,7 +133,7 @@ router.post('/sessions/:id/candidates', async (req, res, next) => {
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
 
-    const candidates = await careerService.generateCandidates(req.session.userId, req.params.id, student);
+    const candidates = await careerService.generateCandidates(req.session.userId, req.params.id, student, parseLanguage(req.body && req.body.language));
     res.status(200).json({ status: 200, code: 'CAREER_CANDIDATES_SUCCESS', message: null, data: { candidates } });
   } catch (err) {
     if (err.code === 'SESSION_NOT_FOUND') {
@@ -154,7 +155,7 @@ router.post('/sessions/:id/confirm', async (req, res, next) => {
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
 
-    const roadmap = await careerService.confirmCareer(req.session.userId, req.params.id, careerName, student);
+    const roadmap = await careerService.confirmCareer(req.session.userId, req.params.id, careerName, student, parseLanguage(req.body.language));
     res.status(200).json({ status: 200, code: 'CAREER_CONFIRM_SUCCESS', message: null, data: { roadmap, confirmedCareer: careerName } });
   } catch (err) {
     if (err.code === 'SESSION_NOT_FOUND' || err.code === 'CAREER_CANDIDATE_NOT_FOUND') {
