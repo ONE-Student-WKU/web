@@ -250,7 +250,19 @@ async function countAll() {
   return count;
 }
 
+// 이메일 형식만 맞으면 가입되던 옛 로그인 폼 시절에 만들어진 테스트(가짜) 계정 수 — 개발에 참여한 4명이 그때 가입한 계정을
+// 세어 추정한 값이다. 운영 DB에서 계정을 직접 지우는 대신(운영 DB를 건드리는 부담이 크다) 관리자 화면의 "가입 수"에서만 이만큼 뺀다.
+// 계정 자체는 그대로 있으므로 countAll()이나 다른 기능에는 영향이 없다. 그 계정들을 정리하면 이 상수는 0으로 바꾸거나 지운다.
+const LEGACY_TEST_ACCOUNT_COUNT = 10;
+
+// 관리자 대시보드에 보여줄 "실제 가입 수" = 전체 계정 수 - 옛 테스트 계정 수(0 밑으로는 내려가지 않는다).
+function excludeLegacyTestAccounts(total) {
+  return Math.max(0, total - LEGACY_TEST_ACCOUNT_COUNT);
+}
+
 module.exports = {
+  LEGACY_TEST_ACCOUNT_COUNT,
+  excludeLegacyTestAccounts,
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
   VALID_MAJOR_CHANGE_SEMESTERS,
