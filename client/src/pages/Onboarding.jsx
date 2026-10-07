@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
-import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
+import { getYearRange } from '../utils/onboardingYears.js';
+import DepartmentPicker from '../components/DepartmentPicker.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
@@ -374,24 +375,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <div className="skeleton skeleton-text skeleton-row" style={{ height: 52 }} />
               </div>
             )}
-            <div className="onb-option-list">
-              {departments.map((d) => (
-                <button
-                  key={d.id}
-                  className={'onb-option-card' + (answers.departmentId === d.id ? ' selected' : '')}
-                  onClick={() => selectDepartment(d)}
-                >
-                  <span className="onb-option-title">{d.name}</span>
-                  <span className="onb-option-caption">
-                    {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
-                    {d.maxAdmissionYear
-                      ? `${getYearRange(d, 'GENERAL').min}~${getYearRange(d, 'GENERAL').max}학번`
-                      : `${getYearRange(d, 'GENERAL').min}학번`}
-                  </span>
-                  {describeSuccessors(d) && <span className="onb-option-note">{describeSuccessors(d)}</span>}
-                </button>
-              ))}
-            </div>
+            {departments.length > 0 && (
+              <DepartmentPicker departments={departments} selectedId={answers.departmentId} onSelect={selectDepartment} />
+            )}
           </>
         )}
 

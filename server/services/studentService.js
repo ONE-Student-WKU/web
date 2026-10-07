@@ -1,4 +1,5 @@
 const pool = require('../db');
+const { attachColleges } = require('./departmentColleges');
 
 /**
  * server/services/studentService.js
@@ -159,7 +160,7 @@ async function listDepartments() {
     successorsByFrom.set(e.from_id, list);
   }
 
-  return rows.map((r) => ({
+  const departments = rows.map((r) => ({
     id: r.id,
     name: r.name,
     minAdmissionYear: r.min_admission_year,
@@ -168,6 +169,8 @@ async function listDepartments() {
     coreMaxAdmissionYear: r.core_max_admission_year,
     successors: successorsByFrom.get(r.id) || [],
   }));
+  // 소속 대학(트리 화면용). 학칙 [별표 1] 2026학년도 표 기준이고, 자료를 못 읽으면 college=null로 평평한 목록이 된다.
+  return attachColleges(departments);
 }
 
 async function findDepartmentById(id) {
