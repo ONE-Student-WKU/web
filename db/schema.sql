@@ -786,6 +786,12 @@ CREATE TABLE IF NOT EXISTS community_posts (
   reject_reason TEXT NULL,  -- 반려 시 관리자가 남긴 사유(선택, decidePost가 매 결정마다 덮어씀 —
                             -- 승인 시 NULL). status가 pending/approved일 땐 화면에서 안 보여주므로
                             -- 수정 후 재검토 대기 중에 이전 반려 사유가 남아있어도 노출되지 않는다.
+  -- 모집 마감일(선택, 날짜 단위). NULL이면 기간 없이 글쓴이가 직접 마감할 때까지 모집. 마감일이 지나면(마감일 당일까지는 모집)
+  -- 신청 불가·목록에서 "마감"으로 표시된다("기간 마감" — 글쓴이가 따로 마감하지 않아도 판정만 달라지고 closed_at은
+  -- 건드리지 않는다). 글 작성·수정 시 오늘부터 1년 이내만 받는다(routes/community.js). 마감일을 바꾸는 수정은 글 수정이라
+  -- 관리자 재승인 대상이다(editPost). DATETIME이 아니라 DATE인 이유: 화면이 날짜만 받고, 서버 DB 시간대(UTC)와 한국
+  -- 날짜가 어긋나는 문제를 피하려고 "오늘"을 앱(KST)에서 계산해 넘기기 때문이다.
+  recruit_end_date   DATE NULL,
 
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE,
   -- status는 FK가 아니라 자동 인덱스가 안 붙는다. listApprovedPosts/listPostsForAdmin이
@@ -844,6 +850,11 @@ CREATE TABLE IF NOT EXISTS community_reports (
   status               VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
   created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   resolved_at          DATETIME NULL,
+  -- 관리자가 처리 완료할 때 신고자에게 남기는 안내(선택). 신고자 본인 화면("내 신고 내역")에만 보인다. 신고 대상자에게는
+  -- 나가지 않는다. NULL이면 화면이 기본 안내 문구를 보여준다.
+  resolution_note      TEXT NULL,
+  -- 신고자가 처리 결과를 확인한 시각. status='resolved'인데 NULL이면 "읽지 않은 처리 결과"(커뮤니티 탭 점 표시).
+  resolution_seen_at   DATETIME NULL,
 
   FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL,

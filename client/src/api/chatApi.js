@@ -188,10 +188,21 @@ export const deleteAdminApplication = (id) => apiRequest(`/admin/community/appli
 
 export const getAdminReports = (status) => apiRequest(`/admin/community/reports?status=${status}`);
 
-export const resolveAdminReport = (id) => apiRequest(`/admin/community/reports/${id}/resolve`, { method: 'POST' });
+// note(선택): 신고자에게 보이는 처리 안내. 비우면 서버가 NULL로 저장하고 신고자 화면이 기본 문구를 보여준다.
+export const resolveAdminReport = (id, note) =>
+  apiRequest(`/admin/community/reports/${id}/resolve`, { method: 'POST', body: JSON.stringify({ note: note ?? null }) });
 
-export const sanctionReport = (id, { scope, duration, reason }) =>
-  apiRequest(`/admin/community/reports/${id}/sanction`, { method: 'POST', body: JSON.stringify({ scope, duration, reason }) });
+// reason은 제재받는 사용자에게, resolutionNote(선택)는 신고자에게 보이는 별개의 문구다.
+export const sanctionReport = (id, { scope, duration, reason, resolutionNote }) =>
+  apiRequest(`/admin/community/reports/${id}/sanction`, {
+    method: 'POST',
+    body: JSON.stringify({ scope, duration, reason, resolutionNote: resolutionNote ?? null }),
+  });
+
+// 신고자 본인의 신고 내역(처리 상태 + 관리자 처리 안내) / 읽지 않은 처리 결과 수 / 확인 처리.
+export const getMyReports = () => apiRequest('/community/reports/mine');
+export const getUnseenReportCount = () => apiRequest('/community/reports/unseen-count').then((d) => d.count);
+export const markMyReportsSeen = () => apiRequest('/community/reports/seen', { method: 'POST' });
 
 // 신고 대상자 요약(읽기 전용, 관리자 전용). 서버가 아직 이 엔드포인트가 없는 배포 순서면 404 → 화면이 에러 안내만 보여준다.
 export const getReportedStudentSummary = (studentId) => apiRequest(`/admin/community/students/${studentId}/summary`);
