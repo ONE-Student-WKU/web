@@ -23,7 +23,7 @@ export function resetChatCache() {
  * Custom hook for chat operations and state management.
  */
 function useChat() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [conversationId, setConversationId] = useState(chatCache.conversationId);
   const [messages, setMessages] = useState(chatCache.messages || []);
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ function useChat() {
       setLoading(true);
 
       try {
-        const response = await sendChatMessage(conversationId, text);
+        const response = await sendChatMessage(conversationId, text, lang);
         const assistantMsg = {
           sender: 'assistant',
           text: response.content,
@@ -82,7 +82,7 @@ function useChat() {
         setLoading(false);
       }
     },
-    [conversationId, t]
+    [conversationId, t, lang]
   );
 
   return {

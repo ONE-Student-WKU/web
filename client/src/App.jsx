@@ -15,8 +15,9 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
-import { getMe, logout, getUnseenReportCount } from './api/chatApi.js';
+import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
+import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
 // 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
 // null — 탭바는 보이되 아무 탭도 강조되지 않는다.
@@ -47,6 +48,7 @@ function resetAllUserCaches() {
  * Handles simple routing state (Login/Home/Chat/CourseManagement/GraduationStatus/Settings/Onboarding/Profile pages)
  */
 function App() {
+  const { lang, languageChosen, setLang } = useI18n();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
@@ -150,6 +152,33 @@ function App() {
     if (view === 'admin') writeCache('app_view', 'admin');
     else clearCache('app_view');
   }, [view, authChecked]);
+
+  // 화면 언어를 계정에 저장한다 — 기기·브라우저를 바꿔도 같은 언어로 시작하게 하려는 것(students.language).
+  // 저장에 실패해도 화면은 이미 바뀌었고 브라우저에도 저장돼 있어서 조용히 넘어간다(다음에 바꿀 때 다시 저장됨).
+  const saveAccountLanguage = (code) => {
+    updateProfile({ language: code })
+      .then(() => setUser((u) => (u ? { ...u, language: code } : u)))
+      .catch(() => {});
+  };
+
+  // 로그인(또는 새로고침으로 세션이 복원)된 직후 한 번, 어느 쪽 언어를 따를지 정한다. 우선순위:
+  //  1) 로그인 화면에서 방금 고른 언어 — 그 선택을 계정에 저장한다(Google 로그인은 페이지가 새로 로드되므로 sessionStorage 표시를 쓴다).
+  //  2) 계정에 저장된 언어 — 다른 기기에서 정한 것이라도 따른다.
+  //  3) 계정에 없고 이 브라우저에서 직접 고른 적이 있으면 그 언어를 계정에 저장한다(기존 계정의 첫 로그인).
+  //  4) 둘 다 없으면 기본값(한국어)을 그대로 두고 아무것도 저장하지 않는다.
+  // user.id가 바뀔 때만 실행한다 — 이후 user 객체가 갱신될 때마다 다시 돌면 방금 바꾼 언어를 계정 값으로 되돌려 버린다.
+  useEffect(() => {
+    if (!user) return;
+    const chosenBeforeLogin = consumeLanguageChosenBeforeLogin();
+    if (chosenBeforeLogin) {
+      if (chosenBeforeLogin !== user.language) saveAccountLanguage(chosenBeforeLogin);
+    } else if (user.language) {
+      if (user.language !== lang) setLang(user.language);
+    } else if (languageChosen) {
+      saveAccountLanguage(lang);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 로그인 직후 한 번만 판단한다(위 주석).
+  }, [user?.id]);
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
@@ -331,7 +360,14 @@ function App() {
             onUnseenReportsChange={setUnseenReportCount}
           />
         ) : view === 'settings' ? (
-          <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
+          <Settings
+            theme={theme}
+            onSetTheme={setTheme}
+            fontSize={fontSize}
+            onSetFontSize={setFontSize}
+            onGoHome={() => setView('home')}
+            onLanguageChange={saveAccountLanguage}
+          />
         ) : view === 'onboarding' ? (
           <Onboarding
             user={user}

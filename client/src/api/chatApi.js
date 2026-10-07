@@ -116,8 +116,9 @@ export const confirmImportedCourses = (rows) =>
 
 export const getCurrentConversation = () => apiRequest('/chat/conversations/current');
 
-export const sendChatMessage = (conversationId, message) =>
-  apiRequest('/chat/messages', { method: 'POST', body: JSON.stringify({ conversationId, message }) });
+// language: 챗봇 답변 언어('ko' | 'en') — 화면 언어와 같은 값을 보낸다(서버가 허용 목록으로 검증).
+export const sendChatMessage = (conversationId, message, language) =>
+  apiRequest('/chat/messages', { method: 'POST', body: JSON.stringify({ conversationId, message, language }) });
 
 export const getLatestCareerSession = () => apiRequest('/career/sessions/latest');
 
