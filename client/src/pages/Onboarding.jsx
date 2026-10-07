@@ -1,18 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
+import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
 
 const NOW_YEAR = new Date().getFullYear();
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
-
-function getYearRange(department, enrollmentType) {
-  const min = department.minAdmissionYear ?? NOW_YEAR - 15;
-  let max = department.maxAdmissionYear ?? NOW_YEAR;
-  // 편입생은 기존 학점을 인정받아 들어오는 전형이라 정의상 "계산상 1학년"이 되는 올해
-  // 학번으로는 편입할 수 없다 — 그 해는 편입생 기준 학번 범위에서 뺀다.
-  if (enrollmentType === 'TRANSFER_ADMISSION') max = Math.min(max, NOW_YEAR - 1);
-  return { min, max };
-}
 
 function isTransferAvailable(department) {
   const range = getYearRange(department, 'TRANSFER_ADMISSION');
@@ -391,10 +383,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 >
                   <span className="onb-option-title">{d.name}</span>
                   <span className="onb-option-caption">
+                    {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
                     {d.maxAdmissionYear
-                      ? `${d.minAdmissionYear ?? ''}~${d.maxAdmissionYear}학번`
-                      : `${d.minAdmissionYear ?? ''}학번`}
+                      ? `${getYearRange(d, 'GENERAL').min}~${getYearRange(d, 'GENERAL').max}학번`
+                      : `${getYearRange(d, 'GENERAL').min}학번`}
                   </span>
+                  {describeSuccessors(d) && <span className="onb-option-note">{describeSuccessors(d)}</span>}
                 </button>
               ))}
             </div>
@@ -461,6 +455,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {selectedDepartment?.name}은(는) {yearRange?.min}
               {yearRange?.max ? `~${yearRange.max}` : ''}학번만 이 이수구조를 따라요.
             </p>
+            {describeSuccessors(selectedDepartment) && (
+              <p className="onb-q-sub onb-q-sub-note">{describeSuccessors(selectedDepartment)}</p>
+            )}
             <div className="onb-field-group">
               <label className="onb-field-label">입학년도</label>
               <select

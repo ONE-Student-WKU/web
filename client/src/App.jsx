@@ -15,7 +15,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
-import { getMe, logout } from './api/chatApi.js';
+import { getMe, logout, getUnseenReportCount } from './api/chatApi.js';
+import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 
 // 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
 // null — 탭바는 보이되 아무 탭도 강조되지 않는다.
@@ -66,6 +67,10 @@ function App() {
     if (path === '/terms') return 'terms';
     const params = new URLSearchParams(window.location.search);
     if (params.get('reauth') || params.get('authError')) return 'profile';
+    // 새로고침하면 React 상태(view)가 사라져 항상 홈으로 돌아가는데, 새 문의·신고를 확인하려고 새로고침하는
+    // 관리자가 많다 — 관리자 화면에 있었다면 sessionStorage에 남겨둔 표시로 그 화면에서 시작한다. 이 값은
+    // "관리자였다"는 힌트일 뿐이라 로그인 확인 후 role을 다시 검사한다(loadUser, 아래 렌더 가드).
+    if (readCache('app_view') === 'admin') return 'admin';
     return 'home';
   });
 
@@ -99,8 +104,13 @@ function App() {
         // /privacy, /terms로 직접 들어온 로그인 상태 사용자, 그리고 재인증(reauth)/에러
         // 쿼리로 Profile로 돌아온 경우는 그대로 그 화면을 보여준다 — 그 외에는 기존과 동일하게
         // 온보딩 완료 여부로 시작 화면을 정한다.
+        // 'admin'은 서버가 알려준 role이 admin일 때만 유지한다(sessionStorage 값만 믿지 않음) — 관리자가 아니면 홈으로.
         setView((v) =>
-          v === 'privacy' || v === 'terms' || v === 'profile' ? v : data.onboardingCompleted ? 'home' : 'onboarding'
+          v === 'privacy' || v === 'terms' || v === 'profile' || (v === 'admin' && data.role === 'admin')
+            ? v
+            : data.onboardingCompleted
+              ? 'home'
+              : 'onboarding'
         );
       })
       .catch(() => {});
@@ -133,6 +143,14 @@ function App() {
     };
   }, []);
 
+  // 관리자 화면에 있는 동안만 표시를 남기고, 다른 화면으로 가면(로그아웃 포함 — handleLogout이 view를 home으로 돌림) 지운다.
+  // 로그인 확인이 끝난 뒤에만 쓴다 — 확인 전에 지우면 새로고침 직후 초기값 'admin'이 사라진다.
+  useEffect(() => {
+    if (!authChecked) return;
+    if (view === 'admin') writeCache('app_view', 'admin');
+    else clearCache('app_view');
+  }, [view, authChecked]);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
   );
@@ -143,6 +161,21 @@ function App() {
   // Community.jsx가 마운트 시 한 번 소비하고 onInitialPostConsumed로 다시 null로 돌려놔야,
   // 나중에 하단 탭바로 평범하게 커뮤니티에 들어갔을 때 같은 글이 또 열리지 않는다.
   const [communityInitialPostId, setCommunityInitialPostId] = useState(null);
+  // 신고자가 아직 확인하지 않은 신고 처리 결과 수 — 하단 탭바 커뮤니티 아이콘의 점과 커뮤니티 "내 신고" 탭 점에 쓴다.
+  // 화면을 옮길 때마다 가볍게 다시 확인한다(커뮤니티를 보고 있을 땐 그 화면이 직접 0으로 맞춘다). 실패는 조용히 무시.
+  const [unseenReportCount, setUnseenReportCount] = useState(0);
+  useEffect(() => {
+    if (!user || view === 'community') return;
+    let cancelled = false;
+    getUnseenReportCount()
+      .then((count) => {
+        if (!cancelled) setUnseenReportCount(count);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, view]);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
   // 채팅/진로 탐색처럼 ChatInput을 쓰는 화면에서 입력창이 포커스를 받으면(모바일 키보드가
   // 뜨면) 하단 탭바를 잠깐 숨겨 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는
@@ -294,6 +327,8 @@ function App() {
             onOpenInquiry={() => setView('inquiry')}
             initialPostId={communityInitialPostId}
             onInitialPostConsumed={() => setCommunityInitialPostId(null)}
+            unseenReportCount={unseenReportCount}
+            onUnseenReportsChange={setUnseenReportCount}
           />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
@@ -321,7 +356,7 @@ function App() {
             onAccountDeleted={handleAccountDeleted}
             justReauthenticated={justReauthenticated}
           />
-        ) : view === 'admin' ? (
+        ) : view === 'admin' && user.role === 'admin' ? (
           <Admin
             user={user}
             onLogout={handleLogout}
@@ -364,6 +399,7 @@ function App() {
             onOpenChat={() => setView('chat')}
             onOpenCareer={() => setView('career')}
             onOpenCommunity={() => setView('community')}
+            communityBadge={unseenReportCount > 0}
           />
         )}
       </div>

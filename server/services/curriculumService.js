@@ -1,4 +1,6 @@
 const pool = require('../db');
+const { extractAskedYears } = require('./yearContext');
+const historyService = require('./curriculumHistoryService');
 
 /**
  * server/services/curriculumService.js
@@ -193,12 +195,19 @@ function formatRequirementChunk(row) {
 // 모델이 확신 있게 연결하지 못해 "명확하지 않다"며 답을 회피하는 문제가 실측으로 확인됐다.
 // curriculum_courses 조회(findMentionedCourseNames)와 같은 패턴으로 curriculum_requirements를
 // 구조화 조회해 min_course_count와 전체 대상 과목 목록을 명시적으로 근거에 포함시킨다.
-async function lookupRequirementsFromMessage(text, student) {
-  const baseFilter = {
-    departmentId: student?.department_id || undefined,
-    admissionYear: student?.admission_year || undefined,
-  };
-  const allRequirementRows = await findRequirementRows(baseFilter);
+async function lookupRequirementsFromMessage(text, student, yearContext = null) {
+  // 요건도 질문의 학번/학년도(yearContext)를 따른다. 예전에는 메시지에서 말한 학번을 무시하고 프로필 학번만 썼다
+  // (lookupFromMessage는 메시지 학번을 쓰는 불일치). 프로필 학번은 yearContext.applicableCohort가 폴백으로 이미 포함한다.
+  const years = yearContext
+    ? resolveQueryYears(text, student, yearContext)
+    : [student?.admission_year || null];
+  const rowsByYear = await Promise.all(
+    years.map((year) =>
+      findRequirementRows({ departmentId: student?.department_id || undefined, admissionYear: year || undefined })
+    )
+  );
+  const seenIds = new Set();
+  const allRequirementRows = rowsByYear.flat().filter((r) => !seenIds.has(r.id) && seenIds.add(r.id));
 
   const matched = allRequirementRows.filter(
     (row) =>
@@ -220,16 +229,63 @@ function formatChunk(row) {
     : '';
 
   return {
-    chunkId: `curriculum-${row.departmentName}-${row.trackName || ''}-${row.grade}-${row.semester}-${row.courseCode || row.courseName}`,
+    // 학번 범위(버전)까지 chunkId에 넣는다 — 같은 과목이 2024·2025·2026에 각각 있을 때 서로 다른 청크로 구분돼야 하고,
+    // 인용 출처(chunkId)가 어느 해 자료인지도 남는다.
+    chunkId: `curriculum-${row.departmentName}-${row.trackName || ''}-${row.minAdmissionYear ?? ''}~${row.maxAdmissionYear ?? ''}-${row.grade}-${row.semester}-${row.courseCode || row.courseName}`,
     documentTitle: `${row.departmentName}${trackLabel} 교육과정${cohortLabel}`,
     content: `${row.grade}학년 ${row.semester}학기 — 구분: ${row.category}, 교과목: ${row.courseName}${codeLabel}${enLabel}, ${creditsLabel}${remarksLabel}`,
   };
 }
 
+// 구조화 조회(과목/요건)에서 "어느 학번·학년도 기준으로 조회할지" 목록을 정한다.
+//  - yearContext가 있으면 그것을 따른다(질문의 학년도/학번, 비교면 여러 해, 아무것도 없으면 프로필 학번).
+//  - 없으면(옛 호출) 예전처럼 메시지 학번 → 프로필 학번 하나.
+// null은 "연도를 모른다"는 뜻이고, 그때는 학과·세부전공마다 가장 최신 버전 하나만 쓴다(collapseToLatestVersion).
+const MAX_QUERY_YEARS = 3;
+
+function resolveQueryYears(message, student, yearContext) {
+  if (yearContext) {
+    const years = yearContext.targetYears.length > 0 ? yearContext.targetYears : [yearContext.applicableCohort ?? null];
+    return years.slice(0, MAX_QUERY_YEARS);
+  }
+  return [extractAdmissionYear(message) || student?.admission_year || null];
+}
+
+// 연도를 모르면 같은 학과·세부전공의 서로 다른 해 자료가 한꺼번에 섞여 나오므로 가장 최신 버전(학번 범위의 하한이
+// 가장 큰 것)만 남긴다. 예전에는 전부 보여주되 중복 제거 키에 연도가 없어서 임의로 하나만 남는 문제가 있었다.
+function collapseToLatestVersion(rows) {
+  const latest = new Map();
+  for (const r of rows) {
+    const k = `${r.departmentName}|${r.trackName || ''}`;
+    const v = r.minAdmissionYear ?? 0;
+    if (!latest.has(k) || v > latest.get(k)) latest.set(k, v);
+  }
+  return rows.filter((r) => (r.minAdmissionYear ?? 0) === latest.get(`${r.departmentName}|${r.trackName || ''}`));
+}
+
+// 학과 개편으로 그 학번에 이 학과 자료가 없으면(예: 2018학번 컴소공이 2026학번 자료를 물음) 개편 전후의 이어지는
+// 학과에서 찾는다. 세부전공은 따라가지 않는다(학과 단위로만 이어짐).
+async function findCoursesWithLineage(filter) {
+  const rows = await findCourses(filter);
+  if (rows.length > 0 || !filter.departmentId || !filter.admissionYear) return rows;
+
+  const chain = await historyService.getDepartmentChain(filter.departmentId);
+  const related = chain.departmentIds.filter((id) => id !== filter.departmentId);
+  const collected = [];
+  for (const departmentId of related) {
+    collected.push(...(await findCourses({ ...filter, departmentId, trackId: undefined })));
+  }
+  return collected;
+}
+
 // 메시지에서 과목명/학년+학기를 감지하면 조건에 맞는 행을 전부 조회해 근거 청크로 변환한다.
 // student의 학과/트랙/입학년도를 알면 그 학생에게 실제로 해당하는 커리큘럼으로 좁히고,
-// 모르면(온보딩 전 등) 전체를 다 보여줘 사용자가 스스로 판단할 수 있게 한다.
-async function lookupFromMessage(message, student) {
+// 모르면(온보딩 전 등) 학과 전체를 대상으로 하되 가장 최신 버전만 보여준다.
+// yearContext(server/services/yearContext.js)가 있으면 질문의 학번/학년도(비교면 여러 해)를 따른다.
+//
+// 중복 제거는 "같은 해 안의 같은 과목"만 합친다. 연도가 다른 같은 과목은 별도 청크로 유지해야 비교/이력 질문에
+// 연도별 값(학점, 이수구분, 학기)이 보존된다(키에 학번 범위를 포함).
+async function lookupFromMessage(message, student, yearContext = null) {
   const mentionedCourseNames = await findMentionedCourseNames(message, {
     departmentId: student?.department_id,
     trackId: student?.track_id,
@@ -237,24 +293,25 @@ async function lookupFromMessage(message, student) {
   const gradeSemester = extractGradeSemester(message);
   if (mentionedCourseNames.length === 0 && !gradeSemester) return [];
 
-  // 메시지에서 직접 언급된 학번이 있으면 그걸 우선한다 — 온보딩 프로필보다 지금 대화
-  // 맥락이 더 구체적/최신 정보이고, 온보딩을 안 끝낸 계정은 프로필에 학번 자체가 없다.
-  const messageAdmissionYear = extractAdmissionYear(message);
-  const baseFilter = {
-    departmentId: student?.department_id || undefined,
-    trackId: student?.track_id || undefined,
-    admissionYear: messageAdmissionYear || student?.admission_year || undefined,
-  };
-
-  const queries = mentionedCourseNames.map((courseName) => findCourses({ courseName, ...baseFilter }));
-  if (gradeSemester) {
-    queries.push(findCourses({ grade: gradeSemester.grade, semester: gradeSemester.semester, ...baseFilter }));
+  const years = resolveQueryYears(message, student, yearContext);
+  const results = [];
+  for (const year of years) {
+    const baseFilter = {
+      departmentId: student?.department_id || undefined,
+      trackId: student?.track_id || undefined,
+      admissionYear: year || undefined,
+    };
+    const queries = mentionedCourseNames.map((courseName) => findCoursesWithLineage({ courseName, ...baseFilter }));
+    if (gradeSemester) {
+      queries.push(findCoursesWithLineage({ grade: gradeSemester.grade, semester: gradeSemester.semester, ...baseFilter }));
+    }
+    const rows = (await Promise.all(queries)).flat();
+    results.push(...(year ? rows : collapseToLatestVersion(rows)));
   }
 
-  const results = (await Promise.all(queries)).flat();
   const seen = new Set();
   const deduped = results.filter((r) => {
-    const key = `${r.departmentName}-${r.trackName}-${r.grade}-${r.semester}-${r.courseCode || r.courseName}`;
+    const key = `${r.departmentName}-${r.trackName}-${r.minAdmissionYear}~${r.maxAdmissionYear}-${r.grade}-${r.semester}-${r.courseCode || r.courseName}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -330,9 +387,18 @@ function formatOfferingChunk(group) {
 // 메시지에서 연도(및 있으면 학기)를 감지하면 그 학기에 실제 개설된 과목을 조회해 근거 청크로
 // 변환한다. student의 학과/트랙을 알면 그 학생 소속으로 좁히고, 모르면(온보딩 전 등) 전체를
 // 반환한다 — lookupFromMessage와 동일한 방침.
-async function lookupOfferingsFromMessage(text, student) {
-  const year = extractYear(text);
-  if (!year) return [];
+async function lookupOfferingsFromMessage(text, student, yearContext = null) {
+  // 연도가 나왔다고 다 개설 이력 질문은 아니다 — "2024학년도 졸업요건"에는 그 해 개설과목 수백 행이 필요 없고
+  // 근거 문서만 부풀린다. 개설/수강 의도가 있거나, 요건·이력·비교 의도가 없는 연도 질문일 때만 조회한다.
+  // 연도는 첫 번째 것만이 아니라 질문에 나온 것 전부(최대 MAX_QUERY_YEARS개) 조회한다.
+  if (yearContext) {
+    const { offering, requirement, history, compare } = yearContext.intents;
+    if (!offering && (requirement || history || compare)) return [];
+  }
+  // 직전 질문에서 이어받은 연도가 아니라 이번 질문에 직접 나온 연도만 쓴다.
+  const years = (yearContext ? yearContext.explicitAskedYears : extractAskedYears(text)).slice(0, MAX_QUERY_YEARS);
+  const targetYears = years.length > 0 ? years : [extractYear(text)].filter(Boolean);
+  if (targetYears.length === 0) return [];
 
   const semester = extractSemester(text);
   const baseFilter = {
@@ -340,7 +406,7 @@ async function lookupOfferingsFromMessage(text, student) {
     trackId: student?.track_id || undefined,
   };
 
-  const rows = await findOfferings({ year, semester, ...baseFilter });
+  const rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
   if (rows.length === 0) return [];
 
   const groups = new Map();
@@ -364,10 +430,153 @@ async function lookupOfferingsFromMessage(text, student) {
   return [...groups.values()].map(formatOfferingChunk);
 }
 
+// ---------------------------------------------------------------------------
+// 연계·복합전공 / 마이크로디그리 (linked_majors, micro_degrees)
+//
+// 위 curriculum_courses/curriculum_requirements와 달리 department_id에 안 묶이는
+// 부가 전공 프로그램이라(어떤 학과 학생이든 신청 가능) student 필터링이 없다 — 메시지에
+// 프로그램명이 언급되는지만 본다.
+//
+// 프로그램명이 "JST 농생명바이오학부 메디컬바이오전공"처럼 사업단 접두어가 붙어 있어
+// 학생은 보통 뒷부분("메디컬바이오전공")만 말한다. 접두어를 뗀 핵심명도 같이 후보로 둔다.
+// ---------------------------------------------------------------------------
+// 마지막 공백 구분 토큰(보통 "OOO전공"/"OOO마이크로디그리")만 후보로 추가한다. 앞의 사업단
+// 접두어를 전부 떼는 방식(예: "융합전공")은 남은 조각이 너무 짧고 흔해서 "스마트헬스케어SW
+// 융합전공" 같은 다른 프로그램명의 부분 문자열로 우연히 걸리는 오탐이 실측으로 확인됨 —
+// 최소 길이(5자)로 그런 일반적인 잔여 조각을 걸러낸다.
+//
+// 마지막 토큰이 "마이크로디그리"/"전공"처럼 카테고리 통칭어 그 자체인 경우(K-치유힐링
+// 공동체혁신 5개 마이크로디그리가 전부 "...마이크로디그리"로 끝남)도 구분력이 없어 같은
+// 방식으로 오탐이 남으므로, 그럴 땐 바로 앞 토큰까지 묶어서 후보로 삼는다.
+const MIN_CORE_NAME_LENGTH = 5;
+const GENERIC_SUFFIX_WORDS = new Set(['전공', '마이크로디그리', '분야', '트랙']);
+
+function coreProgramName(name) {
+  const tokens = name.trim().split(/\s+/);
+  let last = tokens[tokens.length - 1];
+  if (GENERIC_SUFFIX_WORDS.has(last) && tokens.length >= 2) {
+    last = `${tokens[tokens.length - 2]} ${last}`;
+  }
+  return last.length >= MIN_CORE_NAME_LENGTH ? last : null;
+}
+
+// 세부 과정이 붙은 프로그램("지방대활성화 반려동물 창업분야 창업기초 과정")과 사업단 접두어 뒤의
+// 주제어("JST 농생명바이오학부 메디컬바이오 융합" → "메디컬바이오")는 학생이 분야/주제 단위로 물을 때가
+// 많아, 전체 이름·핵심명 외에 이 키들도 후보로 둔다. 주제어 키는 이름이 구체적일 때만(최소 4자)
+// 쓰고, 마이크로디그리와 연계전공이 같은 주제어를 공유하면 둘 다 조회돼도 무방하다(둘 다 실제로 있는 과정).
+function programMatchKeys(name) {
+  const keys = new Set([name]);
+  const core = coreProgramName(name);
+  if (core) keys.add(core);
+
+  const tokens = name.trim().split(/\s+/);
+  // 세부 과정: "지방대활성화 <분야명> XXX 과정" → 분야명(접두어 제외)과 "XXX 과정"
+  const fieldIdx = tokens.findIndex((t) => t.endsWith('분야'));
+  if (tokens[tokens.length - 1] === '과정' && fieldIdx > 0) {
+    keys.add(tokens.slice(fieldIdx + 1).join(' '));
+    const field = tokens.slice(1, fieldIdx + 1).join(' '); // 예: "반려동물 창업분야"
+    keys.add(field);
+    keys.add(field.replace(/분야$/, ''));
+  }
+  // K-치유힐링: 5개 전공/5개 마이크로디그리가 사업단명으로 통칭되는 경우가 많다
+  if (tokens[0] === 'K-치유힐링') keys.add(tokens[0]);
+  // JST: "JST XX학부 주제어 [융합|실무|전공]" → 주제어
+  const collegeIdx = tokens.findIndex((t) => /학부$/.test(t));
+  if (tokens[0] === 'JST' && collegeIdx >= 0 && tokens[collegeIdx + 1]) {
+    const topic = tokens[collegeIdx + 1].replace(/전공$/, '');
+    if (topic.length >= 4) keys.add(topic);
+  }
+  return [...keys].filter((k) => k.length >= 4);
+}
+
+async function findProgramsByMessage(table, message) {
+  const [rows] = await pool.query(`SELECT id, name FROM ${table}`);
+  return rows.filter((r) => programMatchKeys(r.name).some((k) => message.includes(k)));
+}
+
+function summarizeProgramCourses(courseRows) {
+  const byCategory = new Map();
+  for (const c of courseRows) {
+    if (!byCategory.has(c.category)) byCategory.set(c.category, []);
+    byCategory.get(c.category).push(`${c.course_name}(${Number(c.credits)}학점)`);
+  }
+  return [...byCategory.entries()].map(([category, names]) => `${category}: ${names.join(', ')}`).join('\n');
+}
+
+async function lookupLinkedMajorsFromMessage(message) {
+  const matched = await findProgramsByMessage('linked_majors', message);
+  if (matched.length === 0) return [];
+
+  const chunks = [];
+  for (const program of matched) {
+    const [[meta]] = await pool.query(
+      `SELECT name, program_group, required_credits, minor_required_credits, lead_professor, participating_departments
+       FROM linked_majors WHERE id = ?`,
+      [program.id]
+    );
+    const [courseRows] = await pool.query(
+      `SELECT category, course_name, credits FROM linked_major_courses
+       WHERE linked_major_id = ? ORDER BY category, course_name`,
+      [program.id]
+    );
+    const professorLabel = meta.lead_professor ? `, 지도교수: ${meta.lead_professor}` : '';
+    const deptLabel = meta.participating_departments ? `, 참여학과: ${meta.participating_departments}` : '';
+    const minorLabel = meta.minor_required_credits != null
+      ? ` (연계·복합 부전공으로 이수 시 ${Number(meta.minor_required_credits)}학점 이상)`
+      : '';
+    const creditsLabel = meta.required_credits != null
+      ? `복수전공 이수 시 ${Number(meta.required_credits)}학점 이상${minorLabel}`
+      : '이수학점 정보 없음';
+
+    chunks.push({
+      chunkId: `linked-major-${program.id}`,
+      documentTitle: `연계·복합전공 — ${meta.name}`,
+      content:
+        `${meta.name}(연계·복합전공, 소속 학과 무관하게 복수전공/부전공으로 추가 이수 가능). ` +
+        `${creditsLabel}${professorLabel}${deptLabel}. 개설 과목:\n${summarizeProgramCourses(courseRows)}`,
+    });
+  }
+  return chunks;
+}
+
+async function lookupMicroDegreesFromMessage(message) {
+  const matched = await findProgramsByMessage('micro_degrees', message);
+  if (matched.length === 0) return [];
+
+  const chunks = [];
+  for (const program of matched) {
+    const [[meta]] = await pool.query(
+      `SELECT name, program_group, required_credits, lead_professor FROM micro_degrees WHERE id = ?`,
+      [program.id]
+    );
+    const [courseRows] = await pool.query(
+      `SELECT category, course_name, credits FROM micro_degree_courses
+       WHERE micro_degree_id = ? ORDER BY category, course_name`,
+      [program.id]
+    );
+    const professorLabel = meta.lead_professor ? `, 지도교수: ${meta.lead_professor}` : '';
+    const creditsLabel = meta.required_credits != null
+      ? `이수학점 ${Number(meta.required_credits)}학점`
+      : '이수학점 정보 없음(자세한 기준은 해당 사업단 문의)';
+
+    chunks.push({
+      chunkId: `micro-degree-${program.id}`,
+      documentTitle: `마이크로디그리 — ${meta.name}`,
+      content:
+        `${meta.name}(마이크로디그리, 소속 학과 무관하게 추가 이수 가능). ` +
+        `${creditsLabel}${professorLabel}. 개설 과목:\n${summarizeProgramCourses(courseRows)}`,
+    });
+  }
+  return chunks;
+}
+
 module.exports = {
   findCourses,
   extractGradeSemester,
   lookupFromMessage,
+  findMentionedCourseNames,
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
+  lookupLinkedMajorsFromMessage,
+  lookupMicroDegreesFromMessage,
 };

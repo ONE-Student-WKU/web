@@ -5,6 +5,7 @@ const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
+const reportedStudentService = require('../services/reportedStudentService');
 const pool = require('../db');
 
 /**
@@ -92,14 +93,48 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/community/reports/:id/resolve — "반려"(조치 없이 신고만 처리완료).
+// 신고자에게 보여줄 처리 안내(선택) 최대 길이.
+const RESOLUTION_NOTE_MAX_LENGTH = 500;
+
+// 선택 입력 — 문자열이 아니면(undefined/null 포함) 없는 것으로 보고, 너무 길면 거부한다(ok:false).
+function normalizeResolutionNote(note) {
+  if (note === undefined || note === null) return { ok: true, value: null };
+  if (typeof note !== 'string') return { ok: false, value: null };
+  const trimmed = note.trim();
+  if (trimmed.length > RESOLUTION_NOTE_MAX_LENGTH) return { ok: false, value: null };
+  return { ok: true, value: trimmed || null };
+}
+
+// POST /api/admin/community/reports/:id/resolve — "반려"(조치 없이 신고만 처리완료). body.note(선택)는 신고자에게 보이는 처리 안내.
 router.post('/community/reports/:id/resolve', async (req, res, next) => {
   try {
-    const resolved = await communityService.resolveReport(req.params.id);
+    const note = normalizeResolutionNote(req.body?.note);
+    if (!note.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RESOLUTION_NOTE', message: null, data: null });
+    }
+    const resolved = await communityService.resolveReport(req.params.id, note.value);
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/community/students/:id/summary — 신고함에서 신고 대상자를 눌렀을 때 보는 요약(읽기 전용).
+// 실제 이메일·학번 전체 등은 내려주지 않는다(reportedStudentService 주석). requireAdmin은 위 router.use에서 이미 통과.
+router.get('/community/students/:id/summary', async (req, res, next) => {
+  try {
+    const studentId = Number(req.params.id);
+    if (!Number.isInteger(studentId) || studentId <= 0) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    const summary = await reportedStudentService.getReportedStudentSummary(studentId);
+    if (!summary) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'ADMIN_REPORTED_STUDENT_SUMMARY', message: null, data: summary });
   } catch (err) {
     next(err);
   }
@@ -126,6 +161,11 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
     if (!trimmedReason) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_REASON', message: null, data: null });
     }
+    // 신고자에게 보이는 처리 안내(선택). 제재 사유(제재받는 사용자에게 보임)와 별개의 값이다.
+    const resolutionNote = normalizeResolutionNote(req.body.resolutionNote);
+    if (!resolutionNote.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RESOLUTION_NOTE', message: null, data: null });
+    }
 
     const report = await communityService.getReportById(req.params.id);
     if (!report) {
@@ -149,7 +189,7 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
     if (report.targetType === 'post') await communityService.deletePost(report.targetId);
     else await communityService.deleteApplication(report.targetId);
 
-    await communityService.resolveReport(report.id);
+    await communityService.resolveReport(report.id, resolutionNote.value);
     res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: null });
   } catch (err) {
     next(err);

@@ -78,26 +78,59 @@ function nicknameOf(name, id) {
   return name || `user${id}`;
 }
 
+// 모집 기간 판정의 "오늘"은 한국 날짜 기준이다. DB 서버 시간대(운영 UTC)의 CURDATE()를 쓰면 한국 시간 새벽 0~9시에
+// 하루가 어긋나므로, 앱에서 KST 날짜를 계산해 비교한다. 날짜는 'YYYY-MM-DD' 문자열이라 사전순 비교가 곧 날짜 비교다.
+function todayKst(now = Date.now()) {
+  return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// 'YYYY-MM-DD'에 일수를 더한다(마감일 상한 계산용, 시간대 영향 없는 UTC 연산).
+function addDaysToDate(dateStr, days) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// 'open' 모집 중 / 'ended' 마감일이 지남(신청 불가, 마감일 당일까지는 모집) / 'closed' 글쓴이가 직접 마감.
+// 기간만 지난 글('ended')은 closed_at을 건드리지 않는다 — 대기 중인 신청은 그대로 검토할 수 있고(글쓴이가 마감하면 기존처럼
+// 대기 신청이 자동 반려), 마감일을 늘리는 수정(관리자 재승인 대상)으로 다시 모집할 수도 있다.
+function recruitStateOf({ closedAt, recruitEndDate }, today = todayKst()) {
+  if (closedAt) return 'closed';
+  if (recruitEndDate && recruitEndDate < today) return 'ended';
+  return 'open';
+}
+
+const RECRUIT_DATE_COLUMNS = "DATE_FORMAT(p.recruit_end_date, '%Y-%m-%d') AS recruit_end_date";
+
+function recruitFields(row, today) {
+  return {
+    recruitEndDate: row.recruit_end_date,
+    recruitState: recruitStateOf({ closedAt: row.closed_at ?? row.post_closed_at, recruitEndDate: row.recruit_end_date }, today),
+  };
+}
+
 // 이 학과에 승인 대기 없이도 학생이 볼 수 있는 글 목록을 위한 전제: status='pending'인
 // 글은 목록/상세 어디서도 제3자에게 노출되면 안 된다(db/schema.sql 커뮤니티 게시판 주석
 // 참고 — 관리자 승인 전엔 비공개). 아래 학생용 함수들이 이 규칙을 지킨다.
 
-async function createPost(authorId, { title, body, category, capacity }) {
+async function createPost(authorId, { title, body, category, capacity, recruitEndDate = null }) {
   const [result] = await pool.query(
-    "INSERT INTO community_posts (author_id, title, body, category, capacity, status) VALUES (?, ?, ?, ?, ?, 'pending')",
-    [authorId, title, body, category, capacity]
+    "INSERT INTO community_posts (author_id, title, body, category, capacity, recruit_end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+    [authorId, title, body, category, capacity, recruitEndDate]
   );
   return result.insertId;
 }
 
 async function listApprovedPosts() {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name,
+            ${RECRUIT_DATE_COLUMNS}
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = 'approved'
      ORDER BY p.created_at DESC`
   );
+  const today = todayKst();
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -107,19 +140,27 @@ async function listApprovedPosts() {
     closedAt: row.closed_at,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
+    ...recruitFields(row, today),
   }));
 }
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
 // 목록에 안 뜨니 이게 없으면 글을 썼는지 확인할 방법이 없다.
+// 글이 여러 개면 "어느 글에 신청이 왔는지"를 목록에서 바로 알아볼 수 있어야 해서, 글마다 받은
+// 신청 수(전체/대기중)를 같이 내려준다 — 상세를 하나씩 열어보지 않아도 새 신청이 달린 글을
+// 찾을 수 있다. 신청 테이블을 읽기만 하는 상관 서브쿼리라 스키마·기존 필드는 그대로다.
 async function listMyPosts(studentId) {
   const [rows] = await pool.query(
-    `SELECT id, title, body, category, capacity, status, closed_at, created_at
-     FROM community_posts
-     WHERE author_id = ?
-     ORDER BY created_at DESC`,
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at,
+            ${RECRUIT_DATE_COLUMNS},
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id) AS application_count,
+            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id AND a.status = 'pending') AS pending_application_count
+     FROM community_posts p
+     WHERE p.author_id = ?
+     ORDER BY p.created_at DESC`,
     [studentId]
   );
+  const today = todayKst();
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -129,6 +170,9 @@ async function listMyPosts(studentId) {
     status: row.status,
     closedAt: row.closed_at,
     createdAt: row.created_at,
+    applicationCount: Number(row.application_count),
+    pendingApplicationCount: Number(row.pending_application_count),
+    ...recruitFields(row, today),
   }));
 }
 
@@ -138,7 +182,8 @@ async function listMyPosts(studentId) {
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
 async function getPostById(id, { studentId }) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name,
+            ${RECRUIT_DATE_COLUMNS}
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.id = ?`,
@@ -183,6 +228,7 @@ async function getPostById(id, { studentId }) {
     closedAt: row.closed_at,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
+    ...recruitFields(row),
     isMine,
     myApplication,
     rejectReason: isMine ? row.reject_reason : null,
@@ -195,11 +241,12 @@ async function getPostById(id, { studentId }) {
 // 적용돼 공개 목록에서 사라진다). closed_at은 건드리지 않는다(마감 여부는 수정과 무관한
 // 별개 상태). 이미 달린 신청(대기/수락 포함)도 그대로 둔다 — 수정은 글 노출 여부만
 // 잠그지, 신청 데이터를 건드리지 않는다.
-async function editPost(id, authorId, { title, body, category, capacity }) {
+async function editPost(id, authorId, { title, body, category, capacity, recruitEndDate = null }) {
   const [result] = await pool.query(
-    `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?, status = 'pending', decided_at = NULL
+    `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?,
+            recruit_end_date = ?, status = 'pending', decided_at = NULL
      WHERE id = ? AND author_id = ?`,
-    [title, body, category, capacity, id, authorId]
+    [title, body, category, capacity, recruitEndDate, id, authorId]
   );
   return result.affectedRows > 0;
 }
@@ -270,6 +317,7 @@ async function getMyApplications(studentId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
+            DATE_FORMAT(p.recruit_end_date, '%Y-%m-%d') AS recruit_end_date,
             s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
@@ -279,12 +327,14 @@ async function getMyApplications(studentId) {
      ORDER BY a.created_at DESC`,
     [studentId]
   );
+  const today = todayKst();
   return rows.map((row) => ({
     id: row.id,
     postId: row.post_id,
     postTitle: row.post_title,
     postCategory: row.post_category,
     postClosedAt: row.post_closed_at,
+    postRecruitState: recruitFields(row, today).recruitState,
     message: row.message,
     status: row.status,
     createdAt: row.created_at,
@@ -421,8 +471,8 @@ async function isApplicationOwnedByPostAuthor(applicationId, authorId) {
 }
 
 // 신고 생성(#187). target_type은 'post' | 'application' — DB에 다형 FK를 걸 수 없어서
-// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 대기중 상태로
-// 중복 신고하는 것은 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
+// 대상이 실제 존재하는지 여기서 먼저 확인한다. 같은 신고자가 같은 대상을 다시 신고하는 것은
+// (처리 상태와 무관하게) 막는다(스팸 방지) — applyToPost의 중복 신청 방지와 동일한 이유.
 //
 // 접수 시점에 신고 대상(작성자/신청자 id)과 내용(제목/본문 또는 메시지)을 스냅샷으로 같이
 // 저장한다(#201) — 나중에 제재 조치로 원본이 삭제돼도 "누구를, 무엇 때문에" 신고했는지
@@ -452,18 +502,42 @@ async function createReport(reporterId, targetType, targetId, reason) {
     targetBody = rows[0].message;
   }
 
-  const [existing] = await pool.query(
-    "SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'pending' LIMIT 1",
-    [reporterId, targetType, targetId]
-  );
-  if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_REPORT' };
+  // 자기 글/자기 신청은 신고할 수 없다. 화면은 버튼을 숨기지만(Community.jsx) 그건 막은 게 아니다 —
+  // API를 직접 호출하면 스스로를 신고해 신고함을 어지럽히거나 제재 대상이 될 수 있어 서버가 거부한다.
+  if (reportedStudentId === reporterId) return { ok: false, reason: 'CANNOT_REPORT_OWN' };
 
-  const [result] = await pool.query(
-    `INSERT INTO community_reports (reporter_id, target_type, target_id, reported_student_id, target_title, target_body, reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [reporterId, targetType, targetId, reportedStudentId, targetTitle, targetBody, reason]
-  );
-  return { ok: true, id: result.insertId };
+  // 같은 신고자가 같은 대상을 한 번 신고했다면 처리 상태(대기/처리완료)와 상관없이 중복이다.
+  // "대기중인 것만" 중복으로 보면 처리 후 같은 사람이 다시 신고할 수 있고, 확인과 INSERT 사이가 비어 있어서
+  // 더블 클릭 같은 동시 요청 둘이 확인을 둘 다 통과할 수 있었다. 그래서 확인+INSERT를 한 트랜잭션에 넣고,
+  // 신고자 학생 행을 FOR UPDATE로 잠가 같은 신고자의 요청을 한 줄로 세운다(courseService.reservePdfImport와 같은 방식).
+  // 나중 요청은 앞 요청이 커밋될 때까지 잠금에서 기다렸다가, 그 뒤에 읽는 목록에서 앞 요청의 행을 보게 된다.
+  // DB 유니크 인덱스는 쓰지 않는다 — 운영에 이미 중복 행이 있으면 인덱스 생성이 실패해 배포가 깨질 수 있다.
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('SELECT id FROM students WHERE id = ? FOR UPDATE', [reporterId]);
+    const [existing] = await conn.query(
+      'SELECT id FROM community_reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? LIMIT 1',
+      [reporterId, targetType, targetId]
+    );
+    if (existing.length > 0) {
+      await conn.rollback();
+      return { ok: false, reason: 'DUPLICATE_REPORT' };
+    }
+
+    const [result] = await conn.query(
+      `INSERT INTO community_reports (reporter_id, target_type, target_id, reported_student_id, target_title, target_body, reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [reporterId, targetType, targetId, reportedStudentId, targetTitle, targetBody, reason]
+    );
+    await conn.commit();
+    return { ok: true, id: result.insertId };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 관리자가 제재를 적용할 때 대상(reportedStudentId)과 실제 삭제 대상(targetType/targetId)을
@@ -485,7 +559,7 @@ async function getReportById(id) {
 async function listReportsForAdmin(status) {
   const [rows] = await pool.query(
     `SELECT r.id, r.target_type, r.target_id, r.reported_student_id, r.target_title, r.target_body,
-            r.reason, r.status, r.created_at, r.resolved_at,
+            r.reason, r.status, r.created_at, r.resolved_at, r.resolution_note,
             s.name AS reporter_name, s.id AS reporter_id,
             rs.name AS reported_name
      FROM community_reports r
@@ -514,10 +588,13 @@ async function listReportsForAdmin(status) {
       status: row.status,
       createdAt: row.created_at,
       resolvedAt: row.resolved_at,
+      resolutionNote: row.resolution_note,
       targetType: row.target_type,
       // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
       // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
       reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
+      // 관리자 화면이 대상자 요약(GET /api/admin/community/students/:id/summary)을 열 때 쓰는 id. 구버전 신고·탈퇴한 대상자는 null.
+      reportedStudentId: row.reported_student_id,
       targetTitle: row.target_title,
       targetBody: row.target_body,
       targetExists: targetPostId !== null,
@@ -528,12 +605,54 @@ async function listReportsForAdmin(status) {
 }
 
 // status가 이미 'pending'이 아니면 아무 것도 안 바뀐다(decidePost와 동일한 재처리 방지 가드).
-async function resolveReport(id) {
+// note는 신고자에게 보여줄 처리 안내(선택). 비면 NULL로 저장되고 화면이 기본 문구를 보여준다.
+async function resolveReport(id, note = null) {
+  const trimmed = typeof note === 'string' && note.trim() ? note.trim() : null;
   const [result] = await pool.query(
-    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW() WHERE id = ? AND status = 'pending'",
-    [id]
+    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW(), resolution_note = ? WHERE id = ? AND status = 'pending'",
+    [trimmed, id]
   );
   return result.affectedRows > 0;
+}
+
+// 신고자 본인의 신고 내역("내 신고 내역"). 신고 대상자·제재 여부는 내려주지 않는다 — 신고자에게는 "내가 무엇을 신고했고,
+// 어떻게 처리됐다는 안내를 받았는지"만 보여준다. isUnseen: 처리 완료됐는데 아직 확인하지 않은 결과.
+async function listMyReports(reporterId) {
+  const [rows] = await pool.query(
+    `SELECT id, target_type, target_title, reason, status, created_at, resolved_at, resolution_note, resolution_seen_at
+     FROM community_reports
+     WHERE reporter_id = ?
+     ORDER BY created_at DESC, id DESC`,
+    [reporterId]
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    targetType: row.target_type,
+    targetTitle: row.target_title,
+    reason: row.reason,
+    status: row.status,
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at,
+    resolutionNote: row.status === 'resolved' ? row.resolution_note : null,
+    isUnseen: row.status === 'resolved' && row.resolution_seen_at === null,
+  }));
+}
+
+async function countUnseenReportResults(reporterId) {
+  const [[{ count }]] = await pool.query(
+    "SELECT COUNT(*) AS count FROM community_reports WHERE reporter_id = ? AND status = 'resolved' AND resolution_seen_at IS NULL",
+    [reporterId]
+  );
+  return Number(count);
+}
+
+// "내 신고 내역"을 연 시점에 호출 — 이미 확인한 건은 시각을 덮어쓰지 않는다.
+async function markMyReportResultsSeen(reporterId) {
+  const [result] = await pool.query(
+    "UPDATE community_reports SET resolution_seen_at = NOW() WHERE reporter_id = ? AND status = 'resolved' AND resolution_seen_at IS NULL",
+    [reporterId]
+  );
+  return result.affectedRows;
 }
 
 module.exports = {
@@ -558,4 +677,10 @@ module.exports = {
   getReportById,
   listReportsForAdmin,
   resolveReport,
+  listMyReports,
+  countUnseenReportResults,
+  markMyReportResultsSeen,
+  recruitStateOf,
+  todayKst,
+  addDaysToDate,
 };

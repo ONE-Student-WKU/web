@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const fs = require('fs');
 const pool = require('../db');
+const { buildCourseKey } = require('../services/curriculumKeys');
 
 /**
  * server/scripts/seedCurriculum.js
@@ -136,11 +137,24 @@ function parseNewTrackFile(filePath) {
 // 파일 -> {department, track, minAdmissionYear, maxAdmissionYear, parse} 매핑.
 // db/regulations/졸업/이수학점_총괄표.md 근거: 구학과는 ~2025학번, 공학3계열은 2026학번부터.
 const FILE_CONFIGS = [
+  // 2019·2020·2021·2022학번은 해당 학년도 책자 기준 데이터(YYYY_학과별_전공과목_원본.json)가 따로 있다. 같은 학번에
+  // 두 소스가 겹쳐 중복 조회되지 않도록 이 파일은 그 학번을 비운 두 구간(~2018, 2023~2025)으로 나눠 넣는다.
+  // 2017·2018은 책자가 사진·깨진 글자라 JSON이 없어 이 파일을 그대로 쓴다. 이전 방식으로 넣은 구간
+  // ((null~2025) 한 구간, (null~2019)·(2021~2025) 두 구간)의 행은 legacyRanges로 같이 지운다.
   {
     fileName: '컴퓨터소프트웨어공학과_교육과정.md',
     department: '컴퓨터·소프트웨어공학과',
     track: null,
     minAdmissionYear: null,
+    maxAdmissionYear: 2018,
+    legacyRanges: [[null, 2025], [null, 2019], [2021, 2025]],
+    parse: parseOldDeptFile,
+  },
+  {
+    fileName: '컴퓨터소프트웨어공학과_교육과정.md',
+    department: '컴퓨터·소프트웨어공학과',
+    track: null,
+    minAdmissionYear: 2023,
     maxAdmissionYear: 2025,
     parse: parseOldDeptFile,
   },
@@ -192,19 +206,23 @@ async function seedFile(config) {
     return 0;
   }
 
-  await pool.query(
-    trackId
-      ? 'DELETE FROM curriculum_courses WHERE department_id = ? AND track_id = ?'
-      : 'DELETE FROM curriculum_courses WHERE department_id = ? AND track_id IS NULL',
-    trackId ? [departmentId, trackId] : [departmentId]
-  );
+  // 이 설정이 넣는 학번 구간(+이전 방식의 구간)의 행만 지운다. 같은 학과의 다른 학번 구간 행(예: 2020 JSON 시드)은 건드리지 않는다.
+  const ranges = [[config.minAdmissionYear, config.maxAdmissionYear], ...(config.legacyRanges || [])];
+  for (const [lo, hi] of ranges) {
+    await pool.query(
+      `DELETE FROM curriculum_courses
+       WHERE department_id = ? AND ${trackId ? 'track_id = ?' : 'track_id IS NULL'}
+         AND min_admission_year <=> ? AND max_admission_year <=> ?`,
+      trackId ? [departmentId, trackId, lo, hi] : [departmentId, lo, hi]
+    );
+  }
 
   for (const row of rows) {
     await pool.query(
       `INSERT INTO curriculum_courses
         (department_id, track_id, min_admission_year, max_admission_year, grade, semester,
-         category, course_code, course_name, course_name_en, credits, remarks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         category, course_code, course_name, course_name_en, credits, remarks, course_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         departmentId,
         trackId,
@@ -218,6 +236,7 @@ async function seedFile(config) {
         row.courseNameEn,
         row.credits,
         row.remarks,
+        buildCourseKey(row.courseCode, row.courseName),
       ]
     );
   }

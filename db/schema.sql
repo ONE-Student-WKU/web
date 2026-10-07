@@ -296,8 +296,13 @@ CREATE TABLE IF NOT EXISTS curriculum_requirements (
   max_admission_year  INT,  -- NULL이면 상한 없음
   enrollment_type     ENUM('GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'),  -- NULL이면 전체 공통
   min_course_count    INT,  -- "이 중 최소 N개" 식 OR 조건 (졸업인증제 등). NULL이면 미적용
+  -- 학년도가 달라도 "같은 규정"이면 같은 값 — "학과|카테고리코드|입학유형(없으면 GENERAL)".
+  -- 같은 rule_key의 행들은 min/max_admission_year 범위가 겹치지 않는 시간순 버전들이다
+  -- (server/services/curriculumKeys.js buildRuleKey). 재시딩하면 id는 바뀌지만 이 값은 그대로.
+  rule_key            VARCHAR(150),
 
-  FOREIGN KEY (department_id) REFERENCES departments(id)
+  FOREIGN KEY (department_id) REFERENCES departments(id),
+  INDEX idx_curriculum_requirements_rule_key (rule_key)
 );
 
 CREATE TABLE IF NOT EXISTS curriculum_required_courses (
@@ -334,9 +339,169 @@ CREATE TABLE IF NOT EXISTS curriculum_courses (
   course_name_en      VARCHAR(150),
   credits             DECIMAL(3,1),
   remarks             VARCHAR(100),
+  -- 학년도가 달라도 "같은 과목"이면 같은 값 — 학수번호가 있으면 "C:학수번호", 없으면
+  -- "N:정규화한 과목명" (server/services/curriculumKeys.js buildCourseKey). 과목명·학점·구분이
+  -- 바뀌어도 학수번호가 같으면 같은 과목으로 이어진다.
+  course_key          VARCHAR(120),
 
   FOREIGN KEY (department_id) REFERENCES departments(id),
-  FOREIGN KEY (track_id) REFERENCES tracks(id)
+  FOREIGN KEY (track_id) REFERENCES tracks(id),
+  INDEX idx_curriculum_courses_course_key (course_key),
+  INDEX idx_curriculum_courses_dept_track_year (department_id, track_id, min_admission_year)
+);
+
+-- ---------------------------------------------------------------------------
+-- 6.55. 학과·과목 계보 (lineage) — 개편으로 이름/소속이 바뀐 대상의 "이전 → 이후" 관계
+--
+-- departments는 이름이 UNIQUE인 평면 마스터라 "2025 경영학과가 2026 경영계열 경영학전공이 됐다"는
+-- 관계를 담을 곳이 없었다. 학과(+선택적으로 세부전공) 단위의 이전→이후 간선(edge)만 저장한다.
+-- 이름이 그대로 이어지는 학과(예: 원불교학과)는 같은 department_id라 간선이 필요 없다.
+--
+-- relation: RENAME(이름변경) / REORG(개편: 다른 학과·계열의 전공으로 편입) / MERGE(통합: 여러 학과가
+--   한 곳으로) / SPLIT(분리: 한 곳이 여러 곳으로) / ABOLISH(폐지: to가 NULL) / REPLACE(대체)
+-- effective_year: "이후" 구조가 처음 적용되는 입학학번(예: 2026학번부터 경영계열 → 2026).
+-- source: DOC(교육과정 책자·학칙 문서에 명시) / NAME_MATCH(전공명이 학과명과 같아 이름으로 이은 것 — 추정) /
+--   MANUAL(사람이 확인해 입력). NAME_MATCH는 챗봇이 "추정"으로 안내해야 한다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS department_lineage (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  from_department_id INT NULL,   -- NULL이면 신설
+  from_track_id      INT NULL,
+  to_department_id   INT NULL,   -- NULL이면 폐지
+  to_track_id        INT NULL,
+  relation           ENUM('RENAME', 'REORG', 'MERGE', 'SPLIT', 'ABOLISH', 'REPLACE') NOT NULL,
+  effective_year     INT NOT NULL,
+  source             ENUM('DOC', 'NAME_MATCH', 'MANUAL') NOT NULL,
+  note               VARCHAR(255),
+
+  FOREIGN KEY (from_department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (from_track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  INDEX idx_department_lineage_from (from_department_id, effective_year),
+  INDEX idx_department_lineage_to (to_department_id, effective_year)
+);
+
+-- 과목 단위 계보. 이름만 바뀐 과목은 course_key(학수번호)가 같아서 간선이 필요 없고
+-- curriculum_changes의 course_name 변경으로 남는다. 키 자체가 달라진 경우만 여기에 둔다.
+--
+-- relation: RENAME(학수번호만 바뀜, 과목명 동일 — 자동 감지) / REPLACE(다른 과목으로 대체) /
+--   MERGE(여러 과목 → 하나) / SPLIT(하나 → 여러 과목) / ABOLISH(폐지: to가 NULL)
+-- department_id: 이 변경이 일어난 학과(없으면 전체). effective_year는 department_lineage와 같은 의미.
+CREATE TABLE IF NOT EXISTS course_lineage (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  from_course_key VARCHAR(120) NULL,   -- NULL이면 신설
+  to_course_key   VARCHAR(120) NULL,   -- NULL이면 폐지
+  from_name       VARCHAR(100),
+  to_name         VARCHAR(100),
+  department_id   INT NULL,
+  relation        ENUM('RENAME', 'REPLACE', 'MERGE', 'SPLIT', 'ABOLISH') NOT NULL,
+  effective_year  INT NOT NULL,
+  source          ENUM('AUTO', 'MANUAL') NOT NULL,
+  note            VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_lineage_from (from_course_key),
+  INDEX idx_course_lineage_to (to_course_key)
+);
+
+-- ---------------------------------------------------------------------------
+-- 6.56. 교육과정 변경 이력 — "무엇이 언제 바뀌었나"
+--
+-- 학년도별 스냅샷(curriculum_requirements/curriculum_courses)을 인접 학번 구간끼리 비교해서
+-- 만든다(server/scripts/generateCurriculumChanges.js, source=AUTO — 재실행하면 AUTO 행만 다시 만든다).
+-- from_year = 변경 전 값이 마지막으로 적용된 입학학번, to_year = 변경 후 값이 처음 적용된 입학학번.
+-- 연속된 학번이 아니어도 된다(예: 2019학번 이후 값이 같다가 2022에 바뀌면 from_year=2021, to_year=2022).
+--
+-- subject_type/subject_key:
+--   REQUIREMENT — rule_key (예: "경영학과|MAJOR_REQUIRED|GENERAL") 또는 합산 키
+--                 ("경영학과|GRAD_TOTAL|GENERAL" = 졸업학점 총계, MAJOR_TOTAL, LIBERAL_TOTAL)
+--   COURSE      — course_key (예: "C:169041")
+--   DEPARTMENT  — 학과 개편(department_lineage 한 건당 한 행)
+-- field: required_credits / course_name / credits / category / grade / semester / course_code /
+--   existence(ADDED·REMOVED) / structure(학과 개편)
+-- successor_*: 학과 개편을 건너 이어진 변경일 때 "이후" 쪽 학과(subject는 "이전" 쪽 학과 기준).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS curriculum_changes (
+  id                      INT AUTO_INCREMENT PRIMARY KEY,
+  subject_type            ENUM('REQUIREMENT', 'COURSE', 'DEPARTMENT') NOT NULL,
+  subject_key             VARCHAR(160) NOT NULL,
+  display_name            VARCHAR(150),
+  department_id           INT NULL,
+  track_id                INT NULL,
+  successor_department_id INT NULL,
+  successor_track_id      INT NULL,
+  from_year               INT NULL,   -- ADDED(신설)이면 NULL
+  to_year                 INT NULL,   -- REMOVED(폐지)이면 마지막으로 있던 학번 다음 해(처음 없어진 학번)
+  field                   VARCHAR(40) NOT NULL,
+  change_type             ENUM('CHANGED', 'ADDED', 'REMOVED') NOT NULL,
+  old_value               VARCHAR(255),
+  new_value               VARCHAR(255),
+  note                    VARCHAR(255),
+  source                  ENUM('AUTO', 'MANUAL') NOT NULL,
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  FOREIGN KEY (successor_department_id) REFERENCES departments(id) ON DELETE SET NULL,
+  FOREIGN KEY (successor_track_id) REFERENCES tracks(id) ON DELETE SET NULL,
+  INDEX idx_curriculum_changes_subject (subject_type, subject_key),
+  INDEX idx_curriculum_changes_dept_year (department_id, to_year)
+);
+
+-- ---------------------------------------------------------------------------
+-- 6.6. 연계·복합전공 / 마이크로디그리전공 (department_id에 안 묶이는 부가 전공 프로그램)
+--
+-- 정규 학과 커리큘럼(curriculum_courses)과 달리, 이 두 프로그램은 특정 학과 소속이
+-- 아니라 여러 학과가 공동 편성하며 어떤 학과 학생이든 복수전공/부전공(연계·복합전공)
+-- 또는 그 자체(마이크로디그리)로 추가 이수할 수 있다. department_id FK를 쓰지 않고
+-- 프로그램 단위 독립 테이블로 둔 이유.
+--
+-- minor_required_credits(연계·복합 부전공 21학점)는 프로그램마다 다르지 않고 전 프로그램
+-- 공통(2025_교육과정.pdf 71p "라. 연계·복합 부전공 이수학점은 자기전공 이외의 교과목으로
+-- 21학점 이상") - 행마다 반복 저장하지만 애플리케이션에서 하드코딩 상수로 둬도 무방함.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS linked_majors (
+  id                        INT AUTO_INCREMENT PRIMARY KEY,
+  name                      VARCHAR(100) NOT NULL,
+  program_group             VARCHAR(50),   -- 일반 / 글로벌K-컬처사업단 / JST공유대학 / K-치유힐링융합인재양성사업단
+  required_credits          DECIMAL(4,1),  -- 복수전공으로 이수 시 필요 학점(영역별 이수방법표 기준)
+  minor_required_credits    DECIMAL(4,1),  -- 연계·복합 부전공으로 이수 시 필요 학점(자기 전공 외 과목, 전 프로그램 공통 21)
+  lead_professor            VARCHAR(50),
+  participating_departments VARCHAR(255)   -- 참여학과 목록(자유 텍스트 나열, 구조화 안 함)
+);
+
+CREATE TABLE IF NOT EXISTS linked_major_courses (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  linked_major_id      INT NOT NULL,
+  semester             VARCHAR(5),
+  category             VARCHAR(20) NOT NULL,
+  course_code          VARCHAR(20),
+  course_name          VARCHAR(100) NOT NULL,
+  credits              DECIMAL(3,1),
+  offering_department  VARCHAR(50),  -- 주관학부(과)
+
+  FOREIGN KEY (linked_major_id) REFERENCES linked_majors(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS micro_degrees (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  name              VARCHAR(100) NOT NULL,
+  program_group     VARCHAR(50),   -- 지방대학활성화사업단 / JST공유대학 / K-치유힐링융합인재양성사업단 / 글로벌K-컬처선도융합인재양성사업단
+  required_credits  DECIMAL(4,1),
+  lead_professor    VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS micro_degree_courses (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  micro_degree_id      INT NOT NULL,
+  semester             VARCHAR(5),
+  category             VARCHAR(20) NOT NULL,
+  course_code          VARCHAR(20),
+  course_name          VARCHAR(100) NOT NULL,
+  credits              DECIMAL(3,1),
+  offering_department  VARCHAR(50),
+
+  FOREIGN KEY (micro_degree_id) REFERENCES micro_degrees(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------
@@ -364,7 +529,12 @@ CREATE TABLE IF NOT EXISTS regulation_documents (
   category        VARCHAR(30),  -- 학칙 / 이수규정 등
   source_type     ENUM('CURATED', 'VERBATIM') NOT NULL,  -- 정리 문서 / 원문
   source_url      VARCHAR(500),
-  effective_date  DATE
+  effective_date  DATE,
+  -- 교육과정 책자 학년도(예: 2025_교육과정.pdf에서 만든 문서는 2025). 학칙·수강신청 안내처럼 특정 해의 책자가 아닌
+  -- "현행 규정" 문서는 NULL. 검색(regulationService.findRelevantChunks)이 질문의 학번/학년도에 맞는 책자만
+  -- 고르는 데 쓴다 — 해마다 소제목이 같은 문서가 쌓이면 서로 다른 해의 비슷한 청크가 섞이기 때문.
+  book_year       INT NULL,
+  INDEX idx_regulation_documents_book_year (book_year)
 );
 
 CREATE TABLE IF NOT EXISTS regulation_chunks (
@@ -375,6 +545,145 @@ CREATE TABLE IF NOT EXISTS regulation_chunks (
   embedding     JSON,  -- 임베딩 벡터. 서버에서 코사인 유사도 계산용
 
   FOREIGN KEY (document_id) REFERENCES regulation_documents(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 7.5. 규정 판단 엔진 — 조문·판본·적용범위 (server/services/regulationEngine)
+--
+-- 위 regulation_documents/chunks는 "검색용" 저장소(RAG)라 문서를 청크로 쪼개 임베딩만 갖고, 매 재시딩(--force)마다
+-- 통째로 지워졌다 다시 만들어진다. 여기 테이블들은 "판단용" — 어떤 조문이 언제부터 누구에게 적용되는지를 행으로 둔다.
+-- 둘을 섞지 않은 이유는 docs/regulation-engine/DECISIONS.md D-24(재시딩 주기·키가 다르고, 섞으면 한쪽 재시딩이 다른 쪽을 지움).
+--
+-- 시드: server/scripts/seedRegulationArticles.js (npm run seed:regulation-articles). 원문 txt + db/regulation-engine/*.json을
+-- 읽어 이 테이블들만 지우고 다시 넣는다(멱등). 레포에는 현행 원문만 있으므로 과거 판본 행은 text_held=0, 날짜는 원문에서
+-- 직접 읽은 것만 채우고 모르면 NULL + date_confidence='UNKNOWN'이다(규정 내용을 만들어내지 않기 위함).
+-- ---------------------------------------------------------------------------
+
+-- 규정 판본. "학칙 2026-06-26 개정본"처럼 문서(doc_code) × 판본(version_label) 한 건당 한 행.
+-- supersedes_version_id: 이 판본이 대체한 직전 판본(원문 부칙으로 확인될 때만). 공포일과 시행일을 따로 두는 이유는
+-- 시행규칙(2026.02.05. 공포 → 2026.03.01. 시행)처럼 둘이 다른 경우가 있고, 경과조치 판단은 시행일 기준이기 때문.
+CREATE TABLE IF NOT EXISTS regulation_versions (
+  id                    INT AUTO_INCREMENT PRIMARY KEY,
+  doc_code              VARCHAR(40) NOT NULL,   -- ACADEMIC_REGULATIONS / ENFORCEMENT_RULES / CLASS_MANAGEMENT
+  title                 VARCHAR(150) NOT NULL,
+  version_label         VARCHAR(40) NOT NULL,   -- 부칙 날짜 그대로(예: '2026.06.26.')
+  promulgated_on        DATE NULL,
+  effective_from        DATE NULL,
+  effective_to          DATE NULL,              -- 다음 판본 시행 전날. 현행이면 NULL
+  supersedes_version_id INT NULL,
+  text_held             TINYINT(1) NOT NULL DEFAULT 0,  -- 1 = 이 판본 본문을 레포에 보유(현행 최종본만 1)
+  source_file           VARCHAR(255),
+  date_confidence       ENUM('CONFIRMED', 'ESTIMATED', 'UNKNOWN') NOT NULL,
+  note                  VARCHAR(255),
+
+  FOREIGN KEY (supersedes_version_id) REFERENCES regulation_versions(id) ON DELETE SET NULL,
+  CONSTRAINT uq_regulation_versions UNIQUE (doc_code, version_label)
+);
+
+-- 조문 단위 본문. article_key는 판본 안에서 유일한 사람이 읽을 수 있는 키:
+--   본문 조문 '제13조', 부칙 조문 '부칙(2026.04.10.)제2조', 별표 하위표 '별표4-3'.
+-- amendment_markers: 조문 안의 <개정 YYYY. M. D.>/<신설 ...> 표시를 파싱한 배열([{kind, dates:[...]}, ...]).
+-- 표시는 "그 날 이 조문이 바뀌었다"만 알려주고 이전 문구는 알려주지 않으므로, 이전 문구가 필요하면 UNKNOWN으로 다룬다.
+CREATE TABLE IF NOT EXISTS regulation_articles (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  version_id        INT NOT NULL,
+  article_key       VARCHAR(60) NOT NULL,
+  article_no        INT NULL,                -- 본문·부칙 조문 번호(별표는 NULL)
+  section           ENUM('BODY', 'ADDENDUM', 'SCHEDULE') NOT NULL,
+  title             VARCHAR(200),
+  chapter           VARCHAR(100),            -- '제2장 교육과정' 같은 소속 장(본문만)
+  body              MEDIUMTEXT NOT NULL,
+  amendment_markers JSON,
+  last_amended_on   DATE NULL,               -- markers 중 가장 늦은 날짜(없으면 NULL — "개정 없음"이 아니라 "표시 없음")
+  ord               INT NOT NULL,            -- 원문 등장 순서
+
+  FOREIGN KEY (version_id) REFERENCES regulation_versions(id) ON DELETE CASCADE,
+  CONSTRAINT uq_regulation_articles UNIQUE (version_id, article_key)
+);
+
+-- 적용범위. "이 규칙이 누구에게, 언제부터 적용되나"를 조문과 분리해 데이터로 둔다.
+-- scope:
+--   COHORT_ONLY  — 특정 학번 범위에만(예: 학칙 [별표 4]의 학번별 졸업학점표, 학칙시행규칙 제5조 "입학 당시의 기준")
+--   ALL_ENROLLED — 시행일 이후 재학생 전원(예: 제13조① 개편된 신 교육과정은 전 학년 적용)
+--   TRANSITIONAL — 경과조치: 조건부로 위 둘 사이를 조정(예: 제13조②~④, 부칙의 "졸업자부터")
+-- curriculum_requirements의 min/max_admission_year와 역할이 다르다: 그쪽은 "그 학번 책자에 적힌 값"(스냅샷),
+-- 여기는 "개정이 이미 입학한 학번에 소급되는지"(소급·경과조치). DECISIONS.md D-25.
+-- condition_code/params: 판단 함수(resolveApplicableRules)가 해석하는 조건 이름과 인자. 새 코드는 함수에 구현이 있어야 한다.
+CREATE TABLE IF NOT EXISTS regulation_applicability (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  rule_code          VARCHAR(80) NOT NULL,
+  article_id         INT NULL,               -- 시드가 article_ref로 찾아 채운다(못 찾으면 NULL로 두고 경고)
+  article_ref        VARCHAR(120) NOT NULL,  -- 'ENFORCEMENT_RULES:제13조' 형식
+  paragraph          VARCHAR(20),            -- '①' 등. 조 전체면 NULL
+  scope              ENUM('COHORT_ONLY', 'ALL_ENROLLED', 'TRANSITIONAL') NOT NULL,
+  applies_from       DATE NULL,              -- 이 규칙이 효력을 갖는 날(모르면 NULL)
+  min_admission_year INT NULL,
+  max_admission_year INT NULL,
+  enrollment_type    ENUM('GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE') NULL,  -- NULL이면 전체
+  condition_code     VARCHAR(60),
+  condition_params   JSON,
+  effect             VARCHAR(255) NOT NULL,  -- 사람이 읽는 효과 요약(원문 인용이 아니라 요약)
+  confidence         ENUM('CONFIRMED', 'ESTIMATED', 'UNKNOWN') NOT NULL,
+  -- 0이면 결과에 보여주되 전체 신뢰도 계산에서 뺀다(예: 원문을 보유하지 않은 종전 부칙 — 모든 2025학번 이전을
+  -- "자료없음"으로 만들지 않고, 학번별 값은 책자 행으로 판단했다는 안내만 남기기 위함).
+  critical           TINYINT(1) NOT NULL DEFAULT 1,
+  note               VARCHAR(255),
+
+  FOREIGN KEY (article_id) REFERENCES regulation_articles(id) ON DELETE SET NULL,
+  CONSTRAINT uq_regulation_applicability_rule UNIQUE (rule_code)
+);
+
+-- 문서·조문 사이 관계. REFERS(단순 참조 "제N조에 따른다") / DELEGATES_TO(위임: 학칙 → 시행규칙·별표) /
+-- OVERRIDES(특칙이 일반 규정을 덮음) / AMENDS(부칙·개정이 다른 조문을 바꿈).
+-- to_article_id로 못 잇는 대상(보유하지 않은 종전 부칙, 다른 규정집)은 to_ref 문자열로만 남긴다.
+CREATE TABLE IF NOT EXISTS regulation_relations (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  from_article_id INT NOT NULL,
+  relation        ENUM('REFERS', 'DELEGATES_TO', 'OVERRIDES', 'AMENDS') NOT NULL,
+  to_article_id   INT NULL,
+  to_ref          VARCHAR(160),
+  source          ENUM('PARSED', 'MANUAL') NOT NULL,
+  note            VARCHAR(255),
+
+  FOREIGN KEY (from_article_id) REFERENCES regulation_articles(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_article_id) REFERENCES regulation_articles(id) ON DELETE CASCADE,
+  INDEX idx_regulation_relations_from (from_article_id),
+  INDEX idx_regulation_relations_to (to_article_id)
+);
+
+-- 동일과목 지정(학칙시행규칙 제15조). course_lineage(자동 추정한 학수번호 변경)와 분리한 이유: 동일과목은 "학교가 지정한
+-- 사실"이라 출처가 문서여야 하고, 자동 추정과 섞이면 추정이 공식 지정처럼 보인다(D-24). 지금은 지정 목록 자료가 없어 비어 있다.
+CREATE TABLE IF NOT EXISTS course_equivalences (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  department_id     INT NULL,
+  from_course_key   VARCHAR(120) NOT NULL,
+  to_course_key     VARCHAR(120) NOT NULL,
+  designated_year   INT NULL,
+  basis_article_ref VARCHAR(120) NOT NULL DEFAULT 'ENFORCEMENT_RULES:제15조',
+  source            ENUM('DOC', 'MANUAL') NOT NULL,
+  note              VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_equivalences_from (from_course_key),
+  INDEX idx_course_equivalences_to (to_course_key)
+);
+
+-- 이수구분 override(학칙시행규칙 제13조④: 이수구분이 바뀐 과목은 "수강신청한 학년도·학기"의 이수구분을 따른다).
+-- 교육과정 스냅샷(curriculum_courses)은 학번 기준이라 "그 과목을 들은 학기의 이수구분"을 직접 표현하지 못해 따로 둔다.
+-- 학과가 개별 공지한 예외만 넣는 용도(자동 생성 금지). 지금은 비어 있고, 기본 판단은 curriculum_changes의 category 변경 + 수강 학기로 한다.
+CREATE TABLE IF NOT EXISTS course_category_overrides (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  department_id     INT NULL,
+  course_key        VARCHAR(120) NOT NULL,
+  academic_year     INT NOT NULL,
+  semester          TINYINT NULL,           -- NULL이면 그 학년도 전체
+  category          VARCHAR(30) NOT NULL,
+  basis_article_ref VARCHAR(120) NOT NULL DEFAULT 'ENFORCEMENT_RULES:제13조④',
+  source            ENUM('DOC', 'MANUAL') NOT NULL,
+  note              VARCHAR(255),
+
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+  INDEX idx_course_category_overrides_course (course_key, academic_year)
 );
 
 -- ---------------------------------------------------------------------------
@@ -477,6 +786,12 @@ CREATE TABLE IF NOT EXISTS community_posts (
   reject_reason TEXT NULL,  -- 반려 시 관리자가 남긴 사유(선택, decidePost가 매 결정마다 덮어씀 —
                             -- 승인 시 NULL). status가 pending/approved일 땐 화면에서 안 보여주므로
                             -- 수정 후 재검토 대기 중에 이전 반려 사유가 남아있어도 노출되지 않는다.
+  -- 모집 마감일(선택, 날짜 단위). NULL이면 기간 없이 글쓴이가 직접 마감할 때까지 모집. 마감일이 지나면(마감일 당일까지는 모집)
+  -- 신청 불가·목록에서 "마감"으로 표시된다("기간 마감" — 글쓴이가 따로 마감하지 않아도 판정만 달라지고 closed_at은
+  -- 건드리지 않는다). 글 작성·수정 시 오늘부터 1년 이내만 받는다(routes/community.js). 마감일을 바꾸는 수정은 글 수정이라
+  -- 관리자 재승인 대상이다(editPost). DATETIME이 아니라 DATE인 이유: 화면이 날짜만 받고, 서버 DB 시간대(UTC)와 한국
+  -- 날짜가 어긋나는 문제를 피하려고 "오늘"을 앱(KST)에서 계산해 넘기기 때문이다.
+  recruit_end_date   DATE NULL,
 
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE,
   -- status는 FK가 아니라 자동 인덱스가 안 붙는다. listApprovedPosts/listPostsForAdmin이
@@ -535,6 +850,11 @@ CREATE TABLE IF NOT EXISTS community_reports (
   status               VARCHAR(20) NOT NULL DEFAULT 'pending',  -- pending / resolved
   created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   resolved_at          DATETIME NULL,
+  -- 관리자가 처리 완료할 때 신고자에게 남기는 안내(선택). 신고자 본인 화면("내 신고 내역")에만 보인다. 신고 대상자에게는
+  -- 나가지 않는다. NULL이면 화면이 기본 안내 문구를 보여준다.
+  resolution_note      TEXT NULL,
+  -- 신고자가 처리 결과를 확인한 시각. status='resolved'인데 NULL이면 "읽지 않은 처리 결과"(커뮤니티 탭 점 표시).
+  resolution_seen_at   DATETIME NULL,
 
   FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL,

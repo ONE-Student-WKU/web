@@ -90,6 +90,12 @@ export function buildRequirementGroups(categories) {
 // 재미를 주자는 요청 — 노랑(0%)에서 초록(100%)으로 이어지게 했다(보라 시작은 어색하다는
 // 피드백으로 노랑으로 교체). 100%에서 기존 "충족" 초록(--color-success, hsl(122, 39%, 59%))과
 // 거의 같은 색에 자연스럽게 도달한다.
+// 요구학점이 0이면 0으로 나누어 NaN%·Infinity%가 되므로 0%로 돌려준다(진행률 막대용).
+export function getPercent(earned, required) {
+  if (!(required > 0)) return 0;
+  return Math.min(100, Math.round((earned / required) * 100));
+}
+
 export function getProgressColor(percent) {
   const clamped = Math.max(0, Math.min(100, percent));
   const hue = 50 + (70 * clamped) / 100;
@@ -122,4 +128,44 @@ export function formatShortfallSentence(shortfalls) {
   if (!shortfalls || shortfalls.length === 0) return null;
   const last = shortfalls[shortfalls.length - 1];
   return `${shortfalls.join(', ')}${pickJosa(last, ['이', '가'])} 부족해요.`;
+}
+
+// ---------------------------------------------------------------------------
+// 졸업요건 근거 신뢰도 표시 (보정 라운드 A 2-6, DECISIONS D-39)
+//
+// 서버(getGraduationStatus)가 규정 판단 엔진의 결과를 status.regulation으로 내려준다: confidence(확정/추정/자료 불충분/자료없음),
+// flags(사유), totalDefinitive(편입생 총량 확정 여부), schedule4(학칙 [별표 4]와 책자 졸업학점이 다를 때의 두 값).
+// 화면은 이 값을 "작게" 보여 주기만 한다 — 숫자를 바꾸거나 판단하지 않는다.
+// ---------------------------------------------------------------------------
+
+const TRUST_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분', NO_DATA: '자료 없음' };
+const FLAG_SEVERITY = { NO_DATA: 3, INSUFFICIENT: 2, ESTIMATED: 1 };
+
+// 사유 한 줄: 가장 심각한 level의 플래그 하나. 학칙 [별표 4] 불일치는 학생에게 가장 쓸모 있는 정보(두 값)로 바꿔 말한다.
+function pickTrustReason(regulation) {
+  const s4 = regulation.schedule4;
+  if (s4) return `학칙 [별표 4]는 ${s4.schedule4Credits}학점, 교육과정 책자는 ${s4.bookCredits}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.`;
+  const flags = (regulation.flags || []).filter((f) => f.level !== 'INFO' && f.message);
+  if (flags.length === 0) return null;
+  return flags.reduce((best, f) => ((FLAG_SEVERITY[f.level] || 0) > (FLAG_SEVERITY[best.level] || 0) ? f : best)).message;
+}
+
+/**
+ * status → 화면 표시용 정보.
+ *  - noData: 졸업요건 자료가 없어 진단할 수 없음(총 요구학점 0 또는 자료없음) → 0/0 대신 안내
+ *  - badge: { label, level('ok'|'warn'|'none') } | null (서버가 regulation을 안 줬으면 null — 예전 응답도 그대로 동작)
+ *  - reason: 사유 한 줄 | null
+ *  - totalEstimated: 총 요구학점을 확정으로 보이면 안 되는 경우(편입생 총량 미확정, 추정 이하)
+ */
+export function describeRequirementTrust(status) {
+  const regulation = status && status.regulation ? status.regulation : null;
+  const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
+  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
+  const level = regulation.confidence === 'CONFIRMED' ? 'ok' : regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
+  return {
+    noData,
+    badge: { label: regulation.confidenceLabel || TRUST_LABEL[regulation.confidence] || '', level },
+    reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation),
+    totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
+  };
 }
