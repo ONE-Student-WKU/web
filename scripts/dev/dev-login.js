@@ -62,6 +62,11 @@ async function createSessionCookie(pool, kind) {
     row = { id: r.insertId };
   }
 
+  // 로컬 테스트 계정은 약관 동의를 이미 받은 것으로 둔다 — 안 그러면 로그인할 때마다 동의 화면이 먼저 떠서 화면 확인이 번거롭다.
+  // (동의 화면을 보고 싶으면 `UPDATE students SET consent_version = NULL WHERE email = '...'`로 지우면 된다.)
+  const { CURRENT_CONSENT_VERSION } = require(path.join(ROOT, 'server', 'services', 'consent'));
+  await pool.query('UPDATE students SET consented_at = COALESCE(consented_at, NOW()), consent_version = ? WHERE id = ?', [CURRENT_CONSENT_VERSION, row.id]);
+
   if (kind === 'student') {
     // 온보딩 화면을 매번 처음부터 볼 수 있게 미완료 상태로 되돌린다.
     await pool.query(

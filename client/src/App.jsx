@@ -11,6 +11,7 @@ import Profile, { resetProfileCache } from './pages/Profile.jsx';
 import Community, { resetCommunityCache } from './pages/Community.jsx';
 import Admin from './pages/Admin.jsx';
 import Inquiry from './pages/Inquiry.jsx';
+import ConsentGate from './pages/ConsentGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -299,6 +300,14 @@ function App() {
             onOpenTerms={() => setView('terms')}
             onLoginSuccess={loadUser}
           />
+        ) : user.consentRequired ? (
+          // 이용약관·개인정보 수집·이용 동의 기록이 없거나 옛 버전이면 동의할 때까지 다른 화면에 들어가지 못한다.
+          <ConsentGate
+            onAccepted={() => setUser((u) => ({ ...u, consentRequired: false }))}
+            onDecline={handleLogout}
+            onOpenPrivacy={() => setView('privacy')}
+            onOpenTerms={() => setView('terms')}
+          />
         ) : view === 'chat' ? (
           <Chat
             user={user}
@@ -427,7 +436,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && TAB_BAR_VIEWS.has(view) && !(PROMPT_INPUT_VIEWS.has(view) && promptInputFocused) && (
+        {authChecked && user && !user.consentRequired && TAB_BAR_VIEWS.has(view) && !(PROMPT_INPUT_VIEWS.has(view) && promptInputFocused) && (
           <BottomTabBar
             active={VIEW_TO_TAB[view] || null}
             onOpenHome={() => setView('home')}

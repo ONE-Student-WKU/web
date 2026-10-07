@@ -1,4 +1,5 @@
 const pool = require('../db');
+const { CURRENT_CONSENT_VERSION } = require('./consent');
 const { attachColleges } = require('./departmentColleges');
 
 /**
@@ -60,6 +61,8 @@ function serializeStudent(student) {
     leaveSemesters: student.leave_semesters,
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
     language: student.language || null,
+    // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
+    consentRequired: student.consent_version !== CURRENT_CONSENT_VERSION,
   };
 }
 
@@ -204,6 +207,11 @@ async function completeOnboarding(studentId, { departmentId, admissionYear, enro
   );
 }
 
+// 이용약관·개인정보 수집·이용 동의를 기록한다(동의 시각 + 동의한 버전).
+async function recordConsent(studentId, version) {
+  await pool.query('UPDATE students SET consented_at = NOW(), consent_version = ? WHERE id = ?', [version, studentId]);
+}
+
 // 프로필 수정(PATCH /api/me) 전용 — 넘어온 필드만 부분 갱신 (courseService.updateMyCourse와 동일한 패턴)
 async function updateProfile(studentId, updates) {
   const columnMap = {
@@ -256,6 +264,7 @@ module.exports = {
   VALID_MAJOR_CHANGE_SEMESTERS,
   VALID_LANGUAGES,
   serializeStudent,
+  recordConsent,
   findByEmail,
   findByName,
   findById,

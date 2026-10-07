@@ -15,18 +15,17 @@ vi.mock('./api/chatApi.js', async (importOriginal) => ({
 vi.mock('./pages/Login.jsx', () => ({ default: () => <div>LOGIN</div> }));
 vi.mock('./pages/Home.jsx', async () => {
   const { useI18n } = await import('./i18n/I18nContext.jsx');
-  return {
-    default: ({ onOpenSettings }) => {
-      const { lang } = useI18n();
-      return (
-        <div>
-          <span>{`HOME-${lang}`}</span>
-          <button onClick={onOpenSettings}>go-settings</button>
-        </div>
-      );
-    },
-    resetHomeCache: () => {},
-  };
+  // 훅을 쓰는 스텁이라 컴포넌트 이름(대문자)이 있어야 한다(react-hooks/rules-of-hooks).
+  function HomeStub({ onOpenSettings }) {
+    const { lang } = useI18n();
+    return (
+      <div>
+        <span>{`HOME-${lang}`}</span>
+        <button onClick={onOpenSettings}>go-settings</button>
+      </div>
+    );
+  }
+  return { default: HomeStub, resetHomeCache: () => {} };
 });
 vi.mock('./pages/Chat.jsx', () => ({ default: () => <div>CHAT</div> }));
 vi.mock('./pages/CourseManagement.jsx', () => ({ default: () => <div>COURSES</div>, resetCourseMgmtCache: () => {} }));

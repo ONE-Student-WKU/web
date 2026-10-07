@@ -23,3 +23,11 @@
 ### 확인
 - `cd client && npm test`: `I18nContext.test.jsx`가 영어 사전에 빠진 키와 한국어에 없는 영어 키를 잡아낸다. 한국어를 코드에 직접 쓴 경우는 못 잡으므로 영어 모드에서 화면을 직접 확인한다.
 - 새 언어를 추가할 때는 `locales/<code>.js`를 만들고 `I18nContext.jsx`의 `DICTIONARIES`와 `SUPPORTED_LANGUAGES`에 등록한 뒤, 위 완전성 테스트를 그 언어에도 적용한다.
+
+## 약관·개인정보 동의
+
+로그인 폼의 필수 동의 체크(`client/src/pages/Login.jsx`)와 로그인 직후 동의 화면(`ConsentGate.jsx`)은 이용약관·개인정보 수집·이용의 **버전**으로 동의를 받는다. 동의 시각과 버전은 `students.consented_at` / `consent_version`에 기록된다.
+
+- 이용약관(`TermsOfService.jsx`)이나 개인정보처리방침(`PrivacyPolicy.jsx`)을 의미 있게 고치면(수집 항목, 위탁·해외 이전, 보관 기간, 이용 규칙 등) **`server/services/consent.js`의 `CURRENT_CONSENT_VERSION`과 `client/src/utils/consent.js`의 `CONSENT_VERSION`을 같은 값으로 올린다.** 서버는 두 값이 같을 때만 동의로 인정한다. 올리면 이미 동의한 계정도 다음 접속 때 동의 화면을 한 번 더 본다.
+- 오탈자 수정처럼 의미가 바뀌지 않는 수정은 버전을 올리지 않는다.
+- 새 로그인 수단을 추가하면 계정을 만들기 전에 서버에서 `isCurrentConsent`를 검사한다(`routes/auth.js` 참고).

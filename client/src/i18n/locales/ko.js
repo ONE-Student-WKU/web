@@ -93,6 +93,9 @@ export default {
   'login.retypeEmail': '이메일 다시 입력하기',
   'login.privacy': '개인정보처리방침',
   'login.terms': '이용약관',
+  'login.consent': '[필수] {terms} 및 {privacy}에 동의합니다',
+  'login.consentNeeded': '로그인하려면 위 동의가 필요해요.',
+  'login.err.consentRequired': '이용약관과 개인정보 수집·이용에 동의해야 로그인할 수 있어요.',
   'login.err.stateMismatch': '로그인 요청이 만료됐어요. 다시 시도해주세요.',
   'login.err.emailNotVerified': '이메일이 인증되지 않은 구글 계정이에요. 다른 계정으로 시도해주세요.',
   'login.err.generic': '로그인에 실패했어요. 잠시 후 다시 시도해주세요.',
@@ -102,6 +105,14 @@ export default {
   'login.err.invalidCode': '인증코드가 올바르지 않아요.',
   'login.err.tooManyAttempts': '시도 횟수를 초과했어요. 인증코드를 다시 요청해주세요.',
   'login.err.request': '요청에 실패했어요. 잠시 후 다시 시도해주세요.',
+
+  // 약관 동의 화면(로그인 직후, 동의 기록이 없는 계정)
+  'consent.title': '서비스 이용 동의',
+  'consent.body': '계속 이용하려면 이용약관과 개인정보 수집·이용에 동의해 주세요. 동의하지 않으면 서비스를 이용할 수 없어요.',
+  'consent.agree': '동의하고 계속하기',
+  'consent.saving': '저장 중...',
+  'consent.decline': '동의하지 않고 나가기',
+  'consent.err': '동의를 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
 
   // 졸업요건 진단
   'grad.err.load': '졸업요건 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',

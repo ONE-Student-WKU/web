@@ -100,6 +100,24 @@ async function ensureStudentLanguageColumn(connection) {
   }
 }
 
+// 이용약관·개인정보 수집·이용 동의 기록용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
+// 컬럼을 직접 ALTER한다. NULL(동의 기록 없음)로 두어 기존 계정은 다음 접속 때 동의 화면을 한 번 보게 된다.
+async function ensureStudentConsentColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME IN ('consented_at', 'consent_version')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('consented_at')) {
+    console.log('[db:migrate] students.consented_at 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN consented_at TIMESTAMP NULL');
+  }
+  if (!existing.has('consent_version')) {
+    console.log('[db:migrate] students.consent_version 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN consent_version VARCHAR(20) NULL');
+  }
+}
+
 // 닉네임 사칭/도용 방지용 UNIQUE 도입 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT
 // EXISTS로 반영이 안 되므로 제약을 직접 ALTER한다. 이미 중복 닉네임이 존재하는 상태에서
 // UNIQUE를 추가하면 ALTER 자체가 실패해 배포(Pre-Deploy Command)가 막히므로, 먼저 중복
@@ -421,6 +439,7 @@ async function migrate() {
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
     await ensureStudentLanguageColumn(connection);
+    await ensureStudentConsentColumns(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);
