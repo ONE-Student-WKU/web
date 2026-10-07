@@ -1,5 +1,6 @@
 import React from 'react';
 import { IconHome, IconChecklist, IconMessageCircle, IconCompass, IconUsers } from './icons.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * BottomTabBar Component
@@ -17,13 +18,14 @@ import { IconHome, IconChecklist, IconMessageCircle, IconCompass, IconUsers } fr
  * - communityBadge: boolean (선택) — 커뮤니티에 확인하지 않은 신고 처리 결과가 있으면 아이콘 옆에 작은 점을 보여준다.
  */
 function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpenCareer, onOpenCommunity, communityBadge = false }) {
+  const { t } = useI18n();
   return (
-    <nav className="bottom-tab-bar" aria-label="주요 화면 이동">
+    <nav className="bottom-tab-bar" aria-label={t('nav.aria')}>
       <button
         type="button"
         className={active === 'home' ? 'bottom-tab active' : 'bottom-tab'}
         onClick={onOpenHome}
-        aria-label="홈"
+        aria-label={t('nav.home')}
         aria-current={active === 'home' ? 'page' : undefined}
       >
         <IconHome size={21} />
@@ -32,7 +34,7 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
         type="button"
         className={active === 'graduation' ? 'bottom-tab active' : 'bottom-tab'}
         onClick={onOpenGraduation}
-        aria-label="졸업요건 진단"
+        aria-label={t('nav.graduation')}
         aria-current={active === 'graduation' ? 'page' : undefined}
       >
         <IconChecklist size={21} />
@@ -41,7 +43,7 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
         type="button"
         className={active === 'chat' ? 'bottom-tab-chat active' : 'bottom-tab-chat'}
         onClick={onOpenChat}
-        aria-label="채팅"
+        aria-label={t('nav.chat')}
         aria-current={active === 'chat' ? 'page' : undefined}
       >
         <IconMessageCircle size={20} />
@@ -50,7 +52,7 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
         type="button"
         className={active === 'career' ? 'bottom-tab active' : 'bottom-tab'}
         onClick={onOpenCareer}
-        aria-label="진로 탐색"
+        aria-label={t('nav.career')}
         aria-current={active === 'career' ? 'page' : undefined}
       >
         <IconCompass size={21} />
@@ -59,7 +61,7 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
         type="button"
         className={active === 'community' ? 'bottom-tab active' : 'bottom-tab'}
         onClick={onOpenCommunity}
-        aria-label={communityBadge ? '커뮤니티, 새 알림 있음' : '커뮤니티'}
+        aria-label={communityBadge ? t('nav.communityBadge') : t('nav.community')}
         aria-current={active === 'community' ? 'page' : undefined}
       >
         <IconUsers size={21} />

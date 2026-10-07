@@ -1,4 +1,5 @@
 import { pickJosa } from './korean.js';
+import { translate } from '../i18n/I18nContext.jsx';
 
 /**
  * client/src/utils/graduation.js
@@ -102,8 +103,20 @@ export function getProgressColor(percent) {
   return `hsl(${hue}, 70%, 50%)`;
 }
 
-export function summarizeShortfalls(categories, certifications) {
+// 서버/DB가 한국어로 내려주는 항목명(기본전공, 졸업인증제 등)을 화면 언어로 바꾼다. t를 안 넘기거나
+// 번역 키가 없으면 원문 그대로 — 모르는 항목명이 빈 칸이 되거나 키 문자열로 보이지 않게 한다.
+export function translateCategory(raw, t) {
+  if (!t) return raw;
+  const key = `category.${raw}`;
+  const translated = t(key);
+  return translated === key ? raw : translated;
+}
+
+// t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
+// 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
+export function summarizeShortfalls(categories, certifications, t = null) {
   const items = [];
+  const label = (raw) => translateCategory(raw, t);
 
   for (const c of categories || []) {
     // 일반선택은 전공/교양 초과 이수분이 자동으로 채워지는 항목이라(graduationService.js의
@@ -112,11 +125,14 @@ export function summarizeShortfalls(categories, certifications) {
     // 오해를 주는 문제가 있었다(실사용 확인).
     if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
-    if (missing > 0) items.push(`${displayCategory(c.category)} ${missing}학점`);
+    if (missing > 0) {
+      const category = displayCategory(c.category);
+      items.push(t ? t('grad.shortfallCredits', { category: label(category), n: missing }) : `${category} ${missing}학점`);
+    }
   }
 
   for (const cert of certifications || []) {
-    if (!cert.satisfied) items.push(cert.category);
+    if (!cert.satisfied) items.push(label(cert.category));
   }
 
   return items;
@@ -124,8 +140,10 @@ export function summarizeShortfalls(categories, certifications) {
 
 // summarizeShortfalls 결과를 "OO, OO가 부족해요." 문장으로 조립 — 마지막 항목의 받침 유무에
 // 맞춰 이/가를 고른다(항상 "이"로 고정하면 "졸업인증제이 부족해요"처럼 어색해짐).
-export function formatShortfallSentence(shortfalls) {
+// 한국어가 아닌 언어는 조사가 없어서 번역 문장 틀(home.shortfallSentence)에 항목만 끼워 넣는다.
+export function formatShortfallSentence(shortfalls, lang = 'ko') {
   if (!shortfalls || shortfalls.length === 0) return null;
+  if (lang !== 'ko') return translate(lang, 'home.shortfallSentence', { items: shortfalls.join(', ') });
   const last = shortfalls[shortfalls.length - 1];
   return `${shortfalls.join(', ')}${pickJosa(last, ['이', '가'])} 부족해요.`;
 }
@@ -141,9 +159,15 @@ export function formatShortfallSentence(shortfalls) {
 const TRUST_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분', NO_DATA: '자료 없음' };
 const FLAG_SEVERITY = { NO_DATA: 3, INSUFFICIENT: 2, ESTIMATED: 1 };
 
+function pickTrustLabel(regulation, lang) {
+  if (lang !== 'ko' && TRUST_LABEL[regulation.confidence]) return translate(lang, `grad.trust.${regulation.confidence}`);
+  return regulation.confidenceLabel || TRUST_LABEL[regulation.confidence] || '';
+}
+
 // 사유 한 줄: 가장 심각한 level의 플래그 하나. 학칙 [별표 4] 불일치는 학생에게 가장 쓸모 있는 정보(두 값)로 바꿔 말한다.
-function pickTrustReason(regulation) {
+function pickTrustReason(regulation, lang) {
   const s4 = regulation.schedule4;
+  if (s4 && lang !== 'ko') return translate(lang, 'grad.trust.schedule4', { a: s4.schedule4Credits, b: s4.bookCredits });
   if (s4) return `학칙 [별표 4]는 ${s4.schedule4Credits}학점, 교육과정 책자는 ${s4.bookCredits}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.`;
   const flags = (regulation.flags || []).filter((f) => f.level !== 'INFO' && f.message);
   if (flags.length === 0) return null;
@@ -157,15 +181,17 @@ function pickTrustReason(regulation) {
  *  - reason: 사유 한 줄 | null
  *  - totalEstimated: 총 요구학점을 확정으로 보이면 안 되는 경우(편입생 총량 미확정, 추정 이하)
  */
-export function describeRequirementTrust(status) {
+// lang이 한국어가 아니면 서버가 한국어로 내려준 신뢰도 라벨과 [별표 4] 불일치 사유를 그 언어로 바꾼다.
+// 그 외 사유(flags[].message)는 서버가 만든 한국어 문장이라 번역하지 못하고 그대로 보여준다.
+export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
   if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
   const level = regulation.confidence === 'CONFIRMED' ? 'ok' : regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
   return {
     noData,
-    badge: { label: regulation.confidenceLabel || TRUST_LABEL[regulation.confidence] || '', level },
-    reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation),
+    badge: { label: pickTrustLabel(regulation, lang), level },
+    reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
   };
 }
