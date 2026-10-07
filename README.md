@@ -65,6 +65,14 @@
    npm run dev
    ```
 
+5. **로컬에서 로그인 없이 화면 확인** (이메일 인증코드·Google 로그인이 어려울 때, 로컬 DB 전용):
+   ```bash
+   npm run dev:login
+   ```
+   켜 둔 채 브라우저에서 `http://localhost:3001/`을 열면 자동 로그인되어 앱으로 이동합니다.
+   - `/` 온보딩 전 계정(온보딩을 처음부터 다시 볼 수 있게 초기화) · `/onboarded` 온보딩을 마친 계정(컴퓨터·소프트웨어공학과 2022학번) · `/admin` 관리자 계정
+   - 앱 서버에는 로그인 우회 코드가 없고, 로컬 DB에 세션을 직접 만들어 쿠키를 심는 방식입니다. `NODE_ENV=production`이거나 `DB_HOST`가 로컬이 아니면 시작하지 않습니다.
+
 ## Docs
 
 설계 문서는 [GitHub Wiki](https://github.com/ONE-Student-WKU/web/wiki)에서 관리합니다.
