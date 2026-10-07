@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
-import { getYearRange } from '../utils/onboardingYears.js';
+import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
