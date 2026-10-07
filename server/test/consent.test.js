@@ -1,3 +1,10 @@
+// routes/auth.js → services/mailer.js가 require 시점에 Resend 클라이언트를 만들어서, CI처럼 .env가 없는 환경에선 키가 없다고
+// throw한다(emailRelayService.relay.test.js와 같은 이유로 더미 값). 아래 값들은 require보다 먼저 정해져 있어야 한다.
+process.env.RESEND_API_KEY ||= 're_test_dummy';
+process.env.GOOGLE_CLIENT_ID ||= 'test-client-id';
+process.env.GOOGLE_CLIENT_SECRET ||= 'test-client-secret';
+process.env.OAUTH_CALLBACK_BASE_URL ||= 'http://localhost:5173';
+
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
