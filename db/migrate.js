@@ -87,6 +87,19 @@ async function ensureRoleColumn(connection) {
   }
 }
 
+// 화면 언어를 계정에 저장하기 위한 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
+// 컬럼을 직접 ALTER한다. NULL(아직 계정에 정한 적 없음)로 두어 기존 계정은 브라우저에 저장된 언어를 그대로 따른다.
+async function ensureStudentLanguageColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'language'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.language 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN language VARCHAR(5) NULL');
+  }
+}
+
 // 닉네임 사칭/도용 방지용 UNIQUE 도입 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT
 // EXISTS로 반영이 안 되므로 제약을 직접 ALTER한다. 이미 중복 닉네임이 존재하는 상태에서
 // UNIQUE를 추가하면 ALTER 자체가 실패해 배포(Pre-Deploy Command)가 막히므로, 먼저 중복
@@ -407,6 +420,7 @@ async function migrate() {
     await ensureOauthColumns(connection);
     await ensureNameNullable(connection);
     await ensureRoleColumn(connection);
+    await ensureStudentLanguageColumn(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);

@@ -10,7 +10,7 @@ const studentService = require('../services/studentService');
  *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, serializeStudent } = studentService;
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
 router.get('/me', requireAuth, async (req, res, next) => {
@@ -40,7 +40,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester,
-      secondDepartmentId, careerCounselingCount, leaveSemesters,
+      secondDepartmentId, careerCounselingCount, leaveSemesters, language,
     } = req.body;
 
     if (name !== undefined && !name.trim()) {
@@ -67,6 +67,11 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     if (enrollmentType !== undefined && !VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
+    }
+
+    // 화면·챗봇 답변 언어 — 지원하는 언어 코드만 받는다(null로 "정한 적 없음"으로 되돌리는 건 지원하지 않음).
+    if (language !== undefined && !VALID_LANGUAGES.includes(language)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_LANGUAGE', message: null, data: null });
     }
 
     if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
@@ -139,6 +144,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,
+      language,
     });
 
     const updated = await studentService.findById(req.session.userId);

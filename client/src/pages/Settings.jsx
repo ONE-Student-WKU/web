@@ -15,8 +15,9 @@ const FONT_SIZE_VALUES = ['small', 'medium', 'large'];
  * - fontSize: 'small' | 'medium' | 'large'
  * - onSetFontSize: function
  * - onGoHome: function
+ * - onLanguageChange: function(code) — 선택 사항, 언어를 바꾼 뒤 호출된다(App이 계정에 저장하는 데 씀).
  */
-function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome }) {
+function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, onLanguageChange }) {
   const { t, lang, setLang } = useI18n();
 
   return (
@@ -71,7 +72,10 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome }) {
               <button
                 key={option.code}
                 className={lang === option.code ? 'settings-theme-btn active' : 'settings-theme-btn'}
-                onClick={() => setLang(option.code)}
+                onClick={() => {
+                  setLang(option.code);
+                  onLanguageChange?.(option.code);
+                }}
                 lang={option.code}
                 aria-pressed={lang === option.code}
               >

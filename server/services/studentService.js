@@ -8,6 +8,8 @@ const { attachColleges } = require('./departmentColleges');
 
 // onboarding.js / me.js에서 공통으로 쓰는 검증값 (courseService.VALID_CATEGORIES와 동일한 패턴)
 const VALID_ENROLLMENT_TYPES = ['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE'];
+// 화면·챗봇 답변 언어(students.language). client/src/i18n/I18nContext.jsx의 SUPPORTED_LANGUAGES와 같은 코드.
+const VALID_LANGUAGES = ['ko', 'en'];
 const VALID_MAJOR_CHANGE_GRADES = [1, 2, 3, 4];
 const VALID_MAJOR_CHANGE_SEMESTERS = [1, 2];
 
@@ -56,6 +58,8 @@ function serializeStudent(student) {
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
+    // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
+    language: student.language || null,
   };
 }
 
@@ -214,6 +218,7 @@ async function updateProfile(studentId, updates) {
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
+    language: 'language',
   };
 
   const fields = [];
@@ -249,6 +254,7 @@ module.exports = {
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
   VALID_MAJOR_CHANGE_SEMESTERS,
+  VALID_LANGUAGES,
   serializeStudent,
   findByEmail,
   findByName,

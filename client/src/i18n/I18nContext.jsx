@@ -27,12 +27,38 @@ function isSupported(code) {
   return SUPPORTED_LANGUAGES.some((l) => l.code === code);
 }
 
+// 브라우저에 저장된 선택. 저장된 적이 없으면 null(= 사용자가 아직 고른 적 없음).
 function readStoredLanguage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isSupported(stored) ? stored : DEFAULT_LANGUAGE;
+    return isSupported(stored) ? stored : null;
   } catch {
-    return DEFAULT_LANGUAGE;
+    return null;
+  }
+}
+
+// 로그인 화면에서 방금 고른 언어 표시 — 로그인하면 계정에 저장된 언어보다 이 선택을 우선해서 계정에 반영한다.
+// Google 로그인은 전체 페이지 리다이렉트라 React 상태가 사라지므로 같은 탭에서 살아남는 sessionStorage에 둔다.
+const PENDING_KEY = 'language_chosen_before_login';
+
+// eslint-disable-next-line react-refresh/only-export-components -- 로그인 화면 전환기(LanguageSwitcher)가 쓰는 헬퍼라 Provider와 같은 파일에 둔다.
+export function markLanguageChosenBeforeLogin(code) {
+  try {
+    sessionStorage.setItem(PENDING_KEY, code);
+  } catch {
+    // 저장소를 못 쓰는 환경 — 로그인 후에는 계정에 저장된 언어를 따른다.
+  }
+}
+
+// 읽으면서 지운다(한 번만 반영). 지원하지 않는 값이거나 없으면 null.
+// eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 로그인 직후 한 번 읽는 헬퍼라 Provider와 같은 파일에 둔다.
+export function consumeLanguageChosenBeforeLogin() {
+  try {
+    const value = sessionStorage.getItem(PENDING_KEY);
+    sessionStorage.removeItem(PENDING_KEY);
+    return isSupported(value) ? value : null;
+  } catch {
+    return null;
   }
 }
 
@@ -67,31 +93,41 @@ function renderRich(text) {
 // Provider 없이 렌더되는 곳(단위 테스트 등)에서도 한국어로 그대로 동작하도록 기본값을 둔다.
 const I18nContext = createContext({
   lang: DEFAULT_LANGUAGE,
+  languageChosen: false,
   setLang: () => {},
   t: (key, params) => translate(DEFAULT_LANGUAGE, key, params),
   tRich: (key, params) => renderRich(translate(DEFAULT_LANGUAGE, key, params)),
 });
 
 export function LanguageProvider({ children }) {
-  const [lang, setLangState] = useState(readStoredLanguage);
+  const [storedLang] = useState(readStoredLanguage);
+  const [lang, setLangState] = useState(storedLang || DEFAULT_LANGUAGE);
+  // 사용자가 직접 고른(또는 계정에서 받아온) 적이 있는지 — 기본값(한국어)과 구분해야, 고른 적 없는 브라우저의
+  // 기본값이 계정에 저장된 언어를 덮어쓰거나 계정에 기본값이 저장되는 일이 없다.
+  const [languageChosen, setLanguageChosen] = useState(storedLang !== null);
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    // 고른 적 없는 기본값은 저장하지 않는다 — 저장하면 다음 방문에 "고른 값"으로 읽혀 계정 언어와 헷갈린다.
+    if (!languageChosen) return;
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch {
       // 저장소를 못 쓰는 환경(사생활 보호 모드 등) — 이번 방문 동안만 유지된다.
     }
-  }, [lang]);
+  }, [lang, languageChosen]);
 
   const setLang = useCallback((code) => {
-    if (isSupported(code)) setLangState(code);
+    if (isSupported(code)) {
+      setLangState(code);
+      setLanguageChosen(true);
+    }
   }, []);
 
   const t = useCallback((key, params) => translate(lang, key, params), [lang]);
   const tRich = useCallback((key, params) => renderRich(translate(lang, key, params)), [lang]);
 
-  const value = useMemo(() => ({ lang, setLang, t, tRich }), [lang, setLang, t, tRich]);
+  const value = useMemo(() => ({ lang, languageChosen, setLang, t, tRich }), [lang, languageChosen, setLang, t, tRich]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
