@@ -224,6 +224,13 @@ body {
   gap: 8px;
 }
 
+.settings-note {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
 .settings-theme-btn {
   flex: 1;
   padding: 10px;
@@ -236,6 +243,28 @@ body {
 }
 
 .settings-theme-btn.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* 로그인 화면 헤더의 언어 전환기 — 설정 화면의 선택 버튼과 같은 색 규칙을 쓰되 헤더에 맞게 작게. */
+.language-switcher {
+  display: flex;
+  gap: 6px;
+}
+
+.language-switcher-btn {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.language-switcher-btn.active {
   border-color: var(--color-accent);
   color: var(--color-accent);
   background: var(--color-accent-bg);

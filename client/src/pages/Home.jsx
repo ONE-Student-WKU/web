@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, IconUsers } from '../components/icons.jsx';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
 // 새로고침 등)에도 직전에 불러온 값을 바로 보여줄 수 있다(utils/sessionCache.js 참고).
 const homeDataCache = {
   status: readCache('home_status'),
-  shortfalls: readCache('home_shortfalls'),
 };
 
 function setHomeCache(key, value) {
@@ -25,7 +25,6 @@ function setHomeCache(key, value) {
 // eslint-disable-next-line react-refresh/only-export-components -- App.jsx가 재사용하는 캐시 리셋 함수라 의도적으로 컴포넌트와 같이 export함.
 export function resetHomeCache() {
   homeDataCache.status = null;
-  homeDataCache.shortfalls = null;
   clearCache('home_status');
   clearCache('home_shortfalls');
 }
@@ -62,8 +61,8 @@ function Home({
   onOpenInquiry,
   onLogout,
 }) {
+  const { t, lang } = useI18n();
   const [status, setStatus] = useState(homeDataCache.status);
-  const [shortfalls, setShortfalls] = useState(homeDataCache.shortfalls);
 
   useEffect(() => {
     // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
@@ -76,12 +75,17 @@ function Home({
       .then((data) => {
         setStatus(data);
         setHomeCache('status', data);
-        const nextShortfalls = summarizeShortfalls(mergeMajorCategories(data.categories), data.certifications);
-        setShortfalls(nextShortfalls);
-        setHomeCache('shortfalls', nextShortfalls);
       })
-      .catch(() => setShortfalls(null));
+      .catch(() => {});
   }, []);
+
+  // 부족 요건 문구는 화면 언어에 따라 달라져서 완성된 문장이 아니라 서버 응답(status)만 캐시하고
+  // 매 렌더에서 조립한다 — 언어를 바꿨을 때 이전 언어로 만든 문구가 캐시에 남지 않게.
+  // status가 아직 없으면(첫 로딩/실패) null — 카드에 기존 안내 문구를 그대로 둔다.
+  const shortfalls = useMemo(
+    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t) : null),
+    [status, t]
+  );
 
   // 뒤로가기 등으로 홈에 재진입할 때마다 서버 응답을 기다리는 동안 "0학점" 같은 빈 기본값이
   // 잠깐 보이는 문제(배포 환경처럼 왕복 지연이 있으면 눈에 띔) 방지 — 첫 진입이라 캐시가
@@ -129,24 +133,24 @@ function Home({
           </>
         ) : (
           <>
-            <p className="home-greeting">{user?.name || '사용자'}님, 반갑습니다</p>
+            <p className="home-greeting">{t('home.greeting', { name: user?.name || t('home.defaultName') })}</p>
             <div className="home-subgreeting-row">
               <p className="home-subgreeting">
-                {user?.department || '학과 정보 없음'}
-                {gradeLevel ? ` ${gradeLevel}학년` : ''}
+                {user?.department || t('home.noDepartment')}
+                {gradeLevel ? ` ${t('home.gradeLevel', { grade: gradeLevel })}` : ''}
               </p>
               {gradeLevel && (
                 <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>
-                  학년이 다르신가요?
+                  {t('home.gradeFix')}
                 </button>
               )}
             </div>
 
             <section className="home-card">
-              <p className="home-card-label">이수학점 진행률</p>
+              <p className="home-card-label">{t('home.creditProgress')}</p>
               <div className="home-credit-value">
                 <span className="home-credit-number">{earnedCredits}</span>
-                <span className="home-credit-total">{requiredTotal ? ` / ${requiredTotal}학점` : '학점'}</span>
+                <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
               </div>
               <div className="home-progress-track">
                 <div
@@ -158,7 +162,7 @@ function Home({
             </section>
 
             <section className="home-card">
-              <p className="home-card-label">부족 요건</p>
+              <p className="home-card-label">{t('home.shortfall')}</p>
               <div
                 className={
                   shortfalls === null
@@ -174,31 +178,31 @@ function Home({
                 {shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
                 <span>
                   {shortfalls === null
-                    ? '졸업요건 진단에서 확인해보세요.'
-                    : formatShortfallSentence(shortfalls) || '모든 요건을 충족했어요!'}
+                    ? t('home.shortfallCheck')
+                    : formatShortfallSentence(shortfalls, lang) || t('home.allMet')}
                 </span>
               </div>
             </section>
           </>
         )}
 
-        <p className="home-quick-label">메뉴</p>
+        <p className="home-quick-label">{t('home.menu')}</p>
         <div className="home-quick-actions">
           <button className="home-quick-btn" onClick={onOpenCourses}>
             <IconBook />
-            <span>과목 관리</span>
+            <span>{t('home.courses')}</span>
           </button>
           <button className="home-quick-btn" onClick={onOpenGraduation}>
             <IconChecklist />
-            <span>졸업요건 진단</span>
+            <span>{t('nav.graduation')}</span>
           </button>
           <button className="home-quick-btn" onClick={onOpenCareer}>
             <IconCompass />
-            <span>진로 탐색</span>
+            <span>{t('nav.career')}</span>
           </button>
           <button className="home-quick-btn" onClick={onOpenCommunity}>
             <IconUsers />
-            <span>커뮤니티</span>
+            <span>{t('nav.community')}</span>
           </button>
         </div>
       </div>

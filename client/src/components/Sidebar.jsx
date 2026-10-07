@@ -1,6 +1,7 @@
 import React from 'react';
 import AccountMenu from './AccountMenu.jsx';
 import { IconChevronLeft } from './icons.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * Sidebar Component
@@ -15,11 +16,12 @@ import { IconChevronLeft } from './icons.jsx';
  * - onOpenProfile: function
  */
 function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
+  const { t } = useI18n();
   return (
     <header className="screen-header">
       <div className="screen-header-left">
         {onGoHome && (
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={onGoHome} aria-label={t('common.backHome')}>
             <IconChevronLeft />
           </button>
         )}

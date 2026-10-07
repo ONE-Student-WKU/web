@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IconUser } from './icons.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * AccountMenu Component
@@ -19,6 +20,7 @@ import { IconUser } from './icons.jsx';
  *   CareerExploration/Admin)에서 둘 다 연결돼 있음.
  */
 function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
       <button
         className="avatar-btn"
         onClick={() => setOpen((v) => !v)}
-        title={user?.name ? `${user.name} · 계정 메뉴` : '계정 메뉴'}
+        title={user?.name ? t('account.menuNamed', { name: user.name }) : t('account.menu')}
       >
         <IconUser />
       </button>
@@ -48,7 +50,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
                   onOpenAdmin();
                 }}
               >
-                관리자
+                {t('account.admin')}
               </button>
               <div className="account-menu-divider" />
             </>
@@ -60,7 +62,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
               onOpenSettings();
             }}
           >
-            설정
+            {t('account.settings')}
           </button>
           <button
             className="account-menu-item"
@@ -69,7 +71,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
               onOpenOnboarding();
             }}
           >
-            학과, 학번 수정
+            {t('account.editDepartment')}
           </button>
           <button
             className="account-menu-item"
@@ -78,7 +80,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
               onOpenProfile();
             }}
           >
-            계정 정보 수정
+            {t('account.editProfile')}
           </button>
           {onOpenInquiry && (
             <button
@@ -88,7 +90,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
                 onOpenInquiry();
               }}
             >
-              문의하기
+              {t('account.inquiry')}
             </button>
           )}
           <div className="account-menu-divider" />
@@ -99,7 +101,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
               onLogout();
             }}
           >
-            로그아웃
+            {t('account.logout')}
           </button>
         </div>
       )}

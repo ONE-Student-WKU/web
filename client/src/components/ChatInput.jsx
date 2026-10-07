@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IconArrowUp } from './icons.jsx';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 const MAX_TEXTAREA_HEIGHT = 120;
 
@@ -15,6 +16,7 @@ const MAX_TEXTAREA_HEIGHT = 120;
  *   (모바일에서 키보드가 뜨는 동안 하단 탭바/안내문 같은 주변 UI를 잠깐 접어 공간을 확보하는 용도)
  */
 function ChatInput({ onSendMessage, disabled, onFocusChange }) {
+  const { t } = useI18n();
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
 
@@ -59,7 +61,7 @@ function ChatInput({ onSendMessage, disabled, onFocusChange }) {
         <textarea
           ref={textareaRef}
           className="prompt-bar-input"
-          placeholder="무엇이든 물어보세요"
+          placeholder={t('chat.placeholder')}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -72,7 +74,7 @@ function ChatInput({ onSendMessage, disabled, onFocusChange }) {
       <button
         type="submit"
         className="prompt-send-btn"
-        aria-label="전송"
+        aria-label={t('chat.send')}
         disabled={disabled}
         // 탭 시 버튼이 입력창의 포커스를 가로채면(=입력창 blur) 탭바/안내문이 다시 나타나며
         // 레이아웃이 바뀌어 버튼이 손가락 아래에서 살짝 움직인다 — 그 결과 첫 탭은 키보드만

@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
@@ -31,8 +32,10 @@ export function resetGraduationCache() {
  * - onOpenProfile: function
  */
 function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
+  const { t, lang } = useI18n();
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
+  // 번역 키를 저장해 두고 렌더에서 t()로 바꾼다 — 로딩 이펙트가 번역 함수에 의존하지 않게 하려는 것.
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
 
@@ -47,7 +50,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
         if (err.code === 'ONBOARDING_REQUIRED') {
           setOnboardingRequired(true);
         } else {
-          setError('졸업요건 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.');
+          setError('grad.err.load');
         }
       })
       .finally(() => setLoading(false));
@@ -55,12 +58,12 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
 
   // 요건 자료가 없으면 총 요구학점이 0이라 0으로 나누면 NaN%가 됐다 — 이 경우는 아래에서 "진단할 수 없어요" 안내로 대신한다.
   // trust는 서버(규정 판단 엔진)가 내려준 근거 신뢰도·사유를 화면용으로 정리한 것(utils/graduation.js).
-  const trust = status ? describeRequirementTrust(status) : null;
+  const trust = status ? describeRequirementTrust(status, lang) : null;
   const remaining = status ? Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits) : 0;
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications) : [];
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t) : [];
   const groups = status ? buildRequirementGroups(status.categories) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
@@ -70,10 +73,10 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label="홈으로">
+          <button className="back-btn" onClick={onGoHome} aria-label={t('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">졸업요건 진단</span>
+          <span className="screen-title">{t('nav.graduation')}</span>
         </div>
         <AccountMenu
           user={user}
@@ -87,8 +90,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       </header>
 
       <div className="courses-body">
-        {error && <p className="home-error">{error}</p>}
-        {onboardingRequired && <p className="home-error">학과·학번 정보를 먼저 등록해야 진단할 수 있어요.</p>}
+        {error && <p className="home-error">{t(error)}</p>}
+        {onboardingRequired && <p className="home-error">{t('grad.needOnboarding')}</p>}
 
         {loading && !status && (
           <>
@@ -107,7 +110,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
         {status && trust.noData && (
           <section className="home-card grad-empty-notice">
             <p className="grad-empty-notice-text">
-              이 학과·학번의 졸업요건 자료가 아직 없어서 진단할 수 없어요. 학과 또는 학사지원과에 확인해주세요.
+              {t('grad.noData')}
             </p>
             {trust.badge && <span className={`grad-trust-badge ${trust.badge.level}`}>{trust.badge.label}</span>}
             {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
@@ -117,10 +120,10 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
         {status && !trust.noData && status.totalEarnedCredits === 0 && (
           <section className="home-card grad-empty-notice">
             <p className="grad-empty-notice-text">
-              아직 등록된 과목이 없어서 정확한 진단이 어려워요. 과목 관리에서 수강 이력을 먼저 채워주세요.
+              {t('grad.noCourses')}
             </p>
             <button className="auth-submit-btn" onClick={onOpenCourses}>
-              과목 관리로 이동
+              {t('grad.goCourses')}
             </button>
           </section>
         )}
@@ -129,13 +132,13 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           <>
             <section className="home-card">
               <p className="home-card-label">
-                전체 이수학점
+                {t('grad.totalLabel')}
                 {trust.badge && <span className={`grad-trust-badge ${trust.badge.level}`}>{trust.badge.label}</span>}
               </p>
               <div className="home-credit-value">
                 <span className="home-credit-number">{status.totalEarnedCredits}</span>
-                <span className="home-credit-total"> / {status.totalRequiredCredits}학점</span>
-                {trust.totalEstimated && <span className="grad-trust-tag">(추정)</span>}
+                <span className="home-credit-total">{t('grad.totalCredits', { total: status.totalRequiredCredits })}</span>
+                {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
               <div className="home-progress-track">
@@ -146,19 +149,19 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </div>
               <p className="grad-remaining-text">
                 {progressPercent}% ·{' '}
-                {remaining > 0 ? `졸업까지 ${remaining}학점 남음` : '졸업 학점을 모두 채웠어요'}
+                {remaining > 0 ? t('grad.remaining', { n: remaining }) : t('grad.complete')}
               </p>
               {generalElectiveCredits > 0 && (
-                <p className="grad-flex-note">그 중 일반선택으로 {generalElectiveCredits}학점 포함</p>
+                <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
               )}
             </section>
 
-            <p className="home-quick-label">전공·교양 이수 현황</p>
+            <p className="home-quick-label">{t('grad.sectionMajorLiberal')}</p>
 
             {groups?.major && (
               <section className="home-card">
                 <div className="grad-category-row">
-                  <p className="home-card-label">전공</p>
+                  <p className="home-card-label">{t('grad.major')}</p>
                   <span
                     className={
                       groups.major.earnedCredits >= groups.major.requiredCredits
@@ -166,8 +169,11 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                         : 'grad-category-value'
                     }
                   >
-                    {groups.major.earnedCredits} / {groups.major.requiredCredits}학점 ·{' '}
-                    {getPercent(groups.major.earnedCredits, groups.major.requiredCredits)}%
+                    {t('grad.groupCredits', {
+                      earned: groups.major.earnedCredits,
+                      required: groups.major.requiredCredits,
+                      percent: getPercent(groups.major.earnedCredits, groups.major.requiredCredits),
+                    })}
                   </span>
                 </div>
                 <div className="home-progress-track">
@@ -182,14 +188,14 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   />
                 </div>
                 {groups.major.earnedCredits > groups.major.requiredCredits && (
-                  <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
+                  <p className="grad-overflow-note">{t('grad.overflow')}</p>
                 )}
                 {groups.major.baseSatisfied !== null && (
                   <div className="grad-subcheck-row">
                     <span className={groups.major.baseSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
                       {groups.major.baseSatisfied && <IconCheck size={11} />}
                     </span>
-                    <p className="grad-subcheck-label">기본전공 {groups.major.baseSatisfied ? '충족' : '미충족'}</p>
+                    <p className="grad-subcheck-label">{groups.major.baseSatisfied ? t('grad.baseMet') : t('grad.baseUnmet')}</p>
                   </div>
                 )}
               </section>
@@ -198,7 +204,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
             {groups?.liberalArts && (
               <section className="home-card">
                 <div className="grad-category-row">
-                  <p className="home-card-label">교양</p>
+                  <p className="home-card-label">{t('grad.liberal')}</p>
                   <span
                     className={
                       groups.liberalArts.earnedCredits >= groups.liberalArts.requiredCredits
@@ -206,8 +212,11 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                         : 'grad-category-value'
                     }
                   >
-                    {groups.liberalArts.earnedCredits} / {groups.liberalArts.requiredCredits}학점 ·{' '}
-                    {getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)}%
+                    {t('grad.groupCredits', {
+                      earned: groups.liberalArts.earnedCredits,
+                      required: groups.liberalArts.requiredCredits,
+                      percent: getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits),
+                    })}
                   </span>
                 </div>
                 <div className="home-progress-track">
@@ -222,23 +231,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   />
                 </div>
                 {groups.liberalArts.earnedCredits > groups.liberalArts.requiredCredits && (
-                  <p className="grad-overflow-note">요건보다 많이 이수했어요 — 초과분은 다른 요건 충족에 도움이 돼요.</p>
+                  <p className="grad-overflow-note">{t('grad.overflow')}</p>
                 )}
                 <div className="grad-subcheck-row">
                   <span className={groups.liberalArts.requiredSatisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
                     {groups.liberalArts.requiredSatisfied && <IconCheck size={11} />}
                   </span>
                   <p className="grad-subcheck-label">
-                    교양필수 {groups.liberalArts.requiredSatisfied ? '충족' : '미충족'}
+                    {groups.liberalArts.requiredSatisfied ? t('grad.liberalRequiredMet') : t('grad.liberalRequiredUnmet')}
                   </p>
                 </div>
-                <p className="grad-flex-note">교양선택 {groups.liberalArts.electiveEarnedCredits}학점 이수</p>
+                <p className="grad-flex-note">{t('grad.electiveEarned', { n: groups.liberalArts.electiveEarnedCredits })}</p>
               </section>
             )}
 
             {status.certifications.length > 0 && (
               <>
-                <p className="home-quick-label">졸업논문·졸업인증제</p>
+                <p className="home-quick-label">{t('grad.sectionCerts')}</p>
                 {status.certifications.map((cert) => (
                   <section className="home-card" key={cert.category}>
                     <div className="grad-cert-row">
@@ -246,7 +255,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                         {cert.satisfied && <IconCheck size={11} />}
                       </span>
                       <div>
-                        <p className="home-card-label">{cert.category}</p>
+                        <p className="home-card-label">{translateCategory(cert.category, t)}</p>
                         <p className="grad-cert-desc">{cleanRequirementNote(cert.description)}</p>
                       </div>
                     </div>
@@ -256,7 +265,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
             )}
 
             <section className={shortfalls.length > 0 ? 'grad-shortfall-box' : 'grad-shortfall-box ok'}>
-              <p className="home-card-label">부족 요건 요약</p>
+              <p className="home-card-label">{t('grad.summaryTitle')}</p>
               {shortfalls.length > 0 ? (
                 <ul className="grad-shortfall-list">
                   {shortfalls.map((s) => (
@@ -264,7 +273,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   ))}
                 </ul>
               ) : (
-                <p>모든 요건을 충족했어요!</p>
+                <p>{t('home.allMet')}</p>
               )}
             </section>
           </>
