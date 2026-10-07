@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -21,6 +22,21 @@ router.get('/me', requireAuth, async (req, res, next) => {
     }
 
     return res.status(200).json({ status: 200, code: 'ME_SUCCESS', message: null, data: serializeStudent(student) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/consent — 이용약관·개인정보 수집·이용 동의(로그인 직후 동의 화면). 클라이언트가 보낸 버전이 현재 버전일 때만
+// 기록한다(약관이 바뀌었는데 옛 화면에서 동의가 들어오는 일을 막는다).
+router.post('/me/consent', requireAuth, async (req, res, next) => {
+  try {
+    if (!isCurrentConsent(req.body.version)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CONSENT_VERSION', message: null, data: null });
+    }
+    await studentService.recordConsent(req.session.userId, CURRENT_CONSENT_VERSION);
+    const updated = await studentService.findById(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'CONSENT_RECORDED', message: null, data: serializeStudent(updated) });
   } catch (err) {
     next(err);
   }

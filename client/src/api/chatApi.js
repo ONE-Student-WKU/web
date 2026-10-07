@@ -25,8 +25,9 @@ async function apiRequest(path, options = {}) {
 
 // Google 로그인/재인증은 풀 페이지 브라우저 리다이렉트가 필요해서(fetch로는 Google의
 // 동의 화면 리다이렉트 체인을 탈 수 없음) apiRequest가 아니라 직접 네비게이션한다.
-export const startGoogleLogin = (remember = true) => {
-  window.location.href = `/api/auth/google?remember=${remember ? '1' : '0'}`;
+// consent: 로그인 폼에서 동의한 이용약관·개인정보 수집·이용의 버전(utils/consent.js) — 서버가 현재 버전과 같을 때만 로그인을 시작한다.
+export const startGoogleLogin = (remember = true, consent = '') => {
+  window.location.href = `/api/auth/google?remember=${remember ? '1' : '0'}&consent=${encodeURIComponent(consent)}`;
 };
 
 export const startGoogleReauth = () => {
@@ -35,11 +36,14 @@ export const startGoogleReauth = () => {
 
 // 이메일 인증코드(OTP) 로그인 — 구글과 달리 fetch 응답으로 바로 끝나므로(풀 페이지
 // 리다이렉트 없음) apiRequest로 처리한다.
-export const requestEmailCode = (email) =>
-  apiRequest('/auth/email/request', { method: 'POST', body: JSON.stringify({ email }) });
+export const requestEmailCode = (email, consent) =>
+  apiRequest('/auth/email/request', { method: 'POST', body: JSON.stringify({ email, consent }) });
 
-export const verifyEmailCode = (email, code, remember = true) =>
-  apiRequest('/auth/email/verify', { method: 'POST', body: JSON.stringify({ email, code, remember }) });
+export const verifyEmailCode = (email, code, remember = true, consent) =>
+  apiRequest('/auth/email/verify', { method: 'POST', body: JSON.stringify({ email, code, remember, consent }) });
+
+// 로그인 직후 동의 화면(ConsentGate)에서 이용약관·개인정보 수집·이용에 동의한다.
+export const acceptConsent = (version) => apiRequest('/me/consent', { method: 'POST', body: JSON.stringify({ version }) });
 
 // 이메일 OTP로만 가입한 계정(oauth_id 없음)의 계정 삭제 재인증 — Google 계정은
 // startGoogleReauth를 그대로 쓴다. 대상 이메일은 서버가 세션의 본인 계정 것으로 고정하므로

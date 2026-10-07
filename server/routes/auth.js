@@ -7,6 +7,7 @@ const studentService = require('../services/studentService');
 const emailAuthService = require('../services/emailAuthService');
 const mailer = require('../services/mailer');
 const { requireAuth } = require('../middleware/auth');
+const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 
 /**
  * Routes for Authentication (/api/auth)
@@ -48,9 +49,21 @@ function makeState(purpose, remember = true) {
   return `${purpose}:${remember ? '1' : '0'}:${crypto.randomBytes(16).toString('hex')}`;
 }
 
+// 로그인한 계정에 현재 버전의 약관 동의 기록이 없으면 남긴다. 로그인 시작 단계에서 동의(consent)를 이미 확인했으므로
+// (Google은 /google 시작, 이메일은 /email/request·/email/verify) 여기서는 기록만 한다.
+async function recordConsentIfNeeded(student) {
+  if (student.consent_version === CURRENT_CONSENT_VERSION) return;
+  await studentService.recordConsent(student.id, CURRENT_CONSENT_VERSION);
+}
+
 // GET /api/auth/google — 로그인 시작. fetch가 아니라 실제 브라우저 네비게이션
 // (window.location.href)으로 호출해야 함 — Google 로그인 자체가 풀 페이지 리다이렉트 플로우.
+// 로그인 폼의 필수 동의 체크를 거쳤다는 표시(?consent=현재 버전)가 없으면 Google로 보내지 않고 오류로 돌려보낸다
+// — 동의 없이 계정이 만들어지는 경로를 서버에서도 막는다.
 router.get('/google', (req, res) => {
+  if (!isCurrentConsent(req.query.consent)) {
+    return res.redirect(`${CALLBACK_BASE_URL}/?authError=CONSENT_REQUIRED`);
+  }
   const remember = req.query.remember !== '0'; // 기본값 유지(체크 해제 시에만 '0')
   const state = makeState(STATE_PURPOSE.LOGIN, remember);
   req.session.oauthState = state; // CSRF 방지 — 콜백에서 반드시 이 값과 비교
@@ -157,6 +170,8 @@ router.get('/google/callback', async (req, res, next) => {
       }
     }
 
+    await recordConsentIfNeeded(student);
+
     // 세션 고정(Session Fixation) 방지 — 로그인 성공 시 세션 ID를 재발급한다. regenerate는
     // 콜백에서 req.session이 새 객체로 교체되므로, 그 이후 시점에 userId를 셋팅해야 한다.
     req.session.regenerate((err) => {
@@ -222,6 +237,10 @@ router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
     if (!isValidEmail(email)) {
       return res.status(400).json({ status: 400, code: 'INVALID_EMAIL', message: null, data: null });
     }
+    // 로그인 폼의 필수 동의 체크를 거쳤을 때만 코드를 보낸다(약관·개인정보 수집·이용 동의 — services/consent.js).
+    if (!isCurrentConsent(req.body.consent)) {
+      return res.status(400).json({ status: 400, code: 'CONSENT_REQUIRED', message: null, data: null });
+    }
     if (!(await guardResend(email, 'login', res))) return;
 
     const code = await emailAuthService.createLoginToken(email);
@@ -247,6 +266,10 @@ router.post('/email/verify', async (req, res, next) => {
     if (!isValidEmail(email) || !code) {
       return res.status(400).json({ status: 400, code: 'INVALID_REQUEST', message: null, data: null });
     }
+    // 동의 없이 코드를 소비하거나 계정을 만들지 않는다 — 코드 확인보다 먼저 검사해 코드가 헛되이 소진되지 않게 한다.
+    if (!isCurrentConsent(req.body.consent)) {
+      return res.status(400).json({ status: 400, code: 'CONSENT_REQUIRED', message: null, data: null });
+    }
 
     const result = await emailAuthService.verifyLoginToken(email, code);
     if (!result.ok) {
@@ -260,6 +283,7 @@ router.post('/email/verify', async (req, res, next) => {
       const id = await studentService.createEmailStudent({ email });
       student = { id };
     }
+    await recordConsentIfNeeded(student);
 
     // 세션 고정(Session Fixation) 방지 — 구글 콜백(/google/callback)과 동일하게 로그인 성공
     // 시 세션 ID를 재발급한다. regenerate 콜백에서 req.session이 새 객체로 교체되므로, 그

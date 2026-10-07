@@ -496,6 +496,51 @@ body {
   background: #a9adb6;
 }
 
+/* 필수 동의 체크 — 로그인 폼과 동의 화면 공용. 줄이 길어지면 체크박스는 첫 줄 높이에 맞춘다. */
+.auth-consent-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.auth-consent-field input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.auth-consent-link {
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.auth-consent-needed {
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Google 로고 + 문구를 가운데로 나란히 */
+.auth-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
 .auth-submit-btn {
   width: 100%;
   padding: 14px;

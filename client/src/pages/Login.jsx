@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { startGoogleLogin, requestEmailCode, verifyEmailCode } from '../api/chatApi';
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
+import ConsentCheckbox from '../components/ConsentCheckbox.jsx';
+import { IconGoogle } from '../components/icons.jsx';
+import { CONSENT_VERSION, readStoredConsent, storeConsent } from '../utils/consent.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
@@ -23,6 +26,7 @@ function formatCountdown(ms) {
 function describeAuthError(code, t) {
   if (code === 'STATE_MISMATCH') return t('login.err.stateMismatch');
   if (code === 'EMAIL_NOT_VERIFIED') return t('login.err.emailNotVerified');
+  if (code === 'CONSENT_REQUIRED') return t('login.err.consentRequired');
   if (code === 'INVALID_CREDENTIALS') return t('login.err.generic');
   if (code === 'OAUTH_FAILED') return t('login.err.oauthFailed');
   return t('login.err.generic');
@@ -31,6 +35,7 @@ function describeAuthError(code, t) {
 // 이메일 인증코드 요청/확인 실패 코드는 서버(server/routes/auth.js)가 내려주는 err.code 기준.
 function describeEmailError(code, t) {
   if (code === 'INVALID_EMAIL') return t('login.err.invalidEmail');
+  if (code === 'CONSENT_REQUIRED') return t('login.err.consentRequired');
   if (code === 'NOT_FOUND') return t('login.err.notFound');
   if (code === 'INVALID_CODE') return t('login.err.invalidCode');
   if (code === 'TOO_MANY_ATTEMPTS') return t('login.err.tooManyAttempts');
@@ -53,6 +58,13 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [remember, setRemember] = useState(true);
+  // 이용약관·개인정보 수집·이용 동의(필수) — 체크하기 전에는 Google/이메일 로그인 버튼을 모두 막는다. 이 브라우저에서 현재 버전에
+  // 이미 동의했으면 처음부터 체크돼 있다(약관 링크를 보러 갔다 와도 유지된다). 서버에도 같은 검사가 있다(routes/auth.js).
+  const [consented, setConsented] = useState(readStoredConsent);
+  const handleConsentChange = (checked) => {
+    setConsented(checked);
+    storeConsent(checked);
+  };
   const [submitting, setSubmitting] = useState(false);
   const [emailError, setEmailError] = useState(null);
   const [resending, setResending] = useState(false);
@@ -89,7 +101,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
     setSubmitting(true);
     setEmailError(null);
     try {
-      await requestEmailCode(email.trim());
+      await requestEmailCode(email.trim(), CONSENT_VERSION);
       setStep('code');
     } catch (err) {
       handleEmailRequestError(err);
@@ -105,7 +117,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
     setEmailError(null);
     setResent(false);
     try {
-      await requestEmailCode(email.trim());
+      await requestEmailCode(email.trim(), CONSENT_VERSION);
       setResent(true);
     } catch (err) {
       handleEmailRequestError(err);
@@ -121,7 +133,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
     try {
       // 이메일 앱에서 코드를 복사해 붙여넣을 때 앞뒤에 공백/줄바꿈이 섞여 들어오는 경우가
       // 있어(눈으로는 똑같아 보여도 해시 비교가 실패함), 항상 trim 후 전송한다.
-      await verifyEmailCode(email.trim(), code.trim(), remember);
+      await verifyEmailCode(email.trim(), code.trim(), remember, CONSENT_VERSION);
       await onLoginSuccess();
     } catch (err) {
       setEmailError(describeEmailError(err.code, t));
@@ -148,9 +160,23 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
           {t('login.remember')}
         </label>
 
-        <button type="button" className="auth-submit-btn" onClick={() => startGoogleLogin(remember)}>
+        <ConsentCheckbox
+          checked={consented}
+          onChange={handleConsentChange}
+          onOpenTerms={onOpenTerms}
+          onOpenPrivacy={onOpenPrivacy}
+        />
+
+        <button
+          type="button"
+          className="auth-submit-btn auth-submit-btn--secondary auth-google-btn"
+          onClick={() => startGoogleLogin(remember, CONSENT_VERSION)}
+          disabled={!consented}
+        >
+          <IconGoogle />
           {t('login.google')}
         </button>
+        {!consented && <p className="settings-field-hint auth-consent-needed">{t('login.consentNeeded')}</p>}
 
         <div className="auth-divider">{t('login.or')}</div>
 
@@ -174,7 +200,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
             <button
               type="submit"
               className="auth-submit-btn auth-submit-btn--secondary"
-              disabled={submitting || !!retryAt}
+              disabled={submitting || !!retryAt || !consented}
             >
               {submitting ? t('login.sending') : t('login.sendCode')}
             </button>
@@ -205,7 +231,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
             >
               {t('login.codeResent')}
             </p>
-            <button type="submit" className="auth-submit-btn auth-submit-btn--secondary" disabled={submitting}>
+            <button type="submit" className="auth-submit-btn auth-submit-btn--secondary" disabled={submitting || !consented}>
               {submitting ? t('login.verifying') : t('login.submit')}
             </button>
             <button

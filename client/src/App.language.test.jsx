@@ -15,18 +15,17 @@ vi.mock('./api/chatApi.js', async (importOriginal) => ({
 vi.mock('./pages/Login.jsx', () => ({ default: () => <div>LOGIN</div> }));
 vi.mock('./pages/Home.jsx', async () => {
   const { useI18n } = await import('./i18n/I18nContext.jsx');
-  return {
-    default: ({ onOpenSettings }) => {
-      const { lang } = useI18n();
-      return (
-        <div>
-          <span>{`HOME-${lang}`}</span>
-          <button onClick={onOpenSettings}>go-settings</button>
-        </div>
-      );
-    },
-    resetHomeCache: () => {},
-  };
+  // 훅을 쓰는 스텁이라 컴포넌트 이름(대문자)이 있어야 한다(react-hooks/rules-of-hooks).
+  function HomeStub({ onOpenSettings }) {
+    const { lang } = useI18n();
+    return (
+      <div>
+        <span>{`HOME-${lang}`}</span>
+        <button onClick={onOpenSettings}>go-settings</button>
+      </div>
+    );
+  }
+  return { default: HomeStub, resetHomeCache: () => {} };
 });
 vi.mock('./pages/Chat.jsx', () => ({ default: () => <div>CHAT</div> }));
 vi.mock('./pages/CourseManagement.jsx', () => ({ default: () => <div>COURSES</div>, resetCourseMgmtCache: () => {} }));
@@ -76,7 +75,8 @@ describe('계정에 저장된 화면 언어', () => {
     renderApp();
 
     expect(await screen.findByText('HOME-en')).toBeInTheDocument();
-    expect(localStorage.getItem('language')).toBe('en');
+    // 브라우저 저장은 렌더 뒤의 이펙트에서 일어나서, 화면이 바뀐 직후엔 아직일 수 있다.
+    await waitFor(() => expect(localStorage.getItem('language')).toBe('en'));
     expect(api.updateProfile).not.toHaveBeenCalled();
   });
 

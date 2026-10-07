@@ -103,6 +103,9 @@ export default {
   'login.retypeEmail': 'Re-enter email',
   'login.privacy': 'Privacy Policy',
   'login.terms': 'Terms of Service',
+  'login.consent': '[Required] I agree to the {terms} and the {privacy}',
+  'login.consentNeeded': 'Please agree above to log in.',
+  'login.err.consentRequired': 'You need to agree to the Terms of Service and the collection and use of personal information to log in.',
   'login.err.stateMismatch': 'Your login request expired. Please try again.',
   'login.err.emailNotVerified': "This Google account's email is not verified. Please try another account.",
   'login.err.generic': 'Login failed. Please try again in a moment.',
@@ -112,6 +115,15 @@ export default {
   'login.err.invalidCode': 'The verification code is incorrect.',
   'login.err.tooManyAttempts': 'Too many attempts. Please request a new verification code.',
   'login.err.request': 'The request failed. Please try again in a moment.',
+
+  // Consent screen (right after login, for accounts without a consent record)
+  'consent.title': 'Agree to continue',
+  'consent.body':
+    'To keep using the service, please agree to the Terms of Service and the collection and use of personal information. You cannot use the service without agreeing.',
+  'consent.agree': 'Agree and continue',
+  'consent.saving': 'Saving...',
+  'consent.decline': 'Leave without agreeing',
+  'consent.err': "Couldn't save your agreement. Please try again in a moment.",
 
   // Graduation check
   'grad.err.load': "Couldn't load your graduation requirements. Please refresh and try again.",
