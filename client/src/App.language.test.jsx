@@ -76,7 +76,8 @@ describe('계정에 저장된 화면 언어', () => {
     renderApp();
 
     expect(await screen.findByText('HOME-en')).toBeInTheDocument();
-    expect(localStorage.getItem('language')).toBe('en');
+    // 브라우저 저장은 렌더 뒤의 이펙트에서 일어나서, 화면이 바뀐 직후엔 아직일 수 있다.
+    await waitFor(() => expect(localStorage.getItem('language')).toBe('en'));
     expect(api.updateProfile).not.toHaveBeenCalled();
   });
 
