@@ -500,7 +500,7 @@ export default {
 
   // Community (study & project recruiting) — only the UI text is translated. Posts, application messages, nicknames and written reasons (report, rejection, sanction) are shown as the people wrote them.
   'community.category.study': 'Study group',
-  'community.category.project': 'Project',
+  'community.category.project': 'Team activity / contest',
   'community.postStatus.pending': 'Pending',
   'community.postStatus.approved': 'Approved',
   'community.postStatus.rejected': 'Rejected',
@@ -600,7 +600,7 @@ export default {
   'community.reapplyPlaceholder': 'Improve on what was missing last time and write it again.',
   'community.reapplyBtn': 'Apply again',
   'community.write.editHint': 'After editing, the post needs admin approval again before it appears in the list.',
-  'community.write.newHint': 'Post to find teammates for a study group or project. It appears in the list after admin approval.',
+  'community.write.newHint': 'Post to find teammates for a study group, team activity or contest. It appears in the list after admin approval.',
   'community.write.category': 'Type',
   'community.write.capacity': 'Number of people (optional)',
   'community.write.capacityPlaceholder': 'e.g. 4',

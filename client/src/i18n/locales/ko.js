@@ -462,7 +462,7 @@ export default {
 
   // 커뮤니티(스터디·프로젝트 모집) — 화면 문구만 번역한다. 글 제목·본문, 신청 메시지, 닉네임, 신고·반려·제재 사유처럼 사람이 쓴 글은 그대로 보여준다.
   'community.category.study': '스터디',
-  'community.category.project': '프로젝트',
+  'community.category.project': '팀 활동·공모전',
   'community.postStatus.pending': '대기중',
   'community.postStatus.approved': '승인됨',
   'community.postStatus.rejected': '반려됨',
@@ -562,7 +562,7 @@ export default {
   'community.reapplyPlaceholder': '이전과 다른 점을 보완해서 다시 적어보세요.',
   'community.reapplyBtn': '재신청하기',
   'community.write.editHint': '수정하면 다시 관리자 승인을 받아야 목록에 노출돼요.',
-  'community.write.newHint': '스터디·프로젝트 팀원을 구하는 글을 올려보세요. 관리자 승인 후 목록에 노출돼요.',
+  'community.write.newHint': '스터디나 팀 활동·공모전 팀원을 구하는 글을 올려보세요. 관리자 승인 후 목록에 노출돼요.',
   'community.write.category': '구분',
   'community.write.capacity': '모집 인원 (선택)',
   'community.write.capacityPlaceholder': '예: 4',
