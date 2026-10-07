@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LanguageProvider, translate, useI18n } from './I18nContext.jsx';
 import ko from './locales/ko.js';
@@ -11,6 +11,7 @@ import { summarizeShortfalls, formatShortfallSentence, describeRequirementTrust 
 import Login from '../pages/Login.jsx';
 import GraduationStatus from '../pages/GraduationStatus.jsx';
 import CourseManagement from '../pages/CourseManagement.jsx';
+import Chat from '../pages/Chat.jsx';
 import * as api from '../api/chatApi.js';
 import { vi } from 'vitest';
 
@@ -22,6 +23,8 @@ vi.mock('../api/chatApi.js', async (importOriginal) => ({
   getRetakeEligibleCourses: vi.fn(),
   getMyCourses: vi.fn(),
   getTimetable: vi.fn(),
+  getCurrentConversation: vi.fn(),
+  sendChatMessage: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -239,5 +242,34 @@ describe('졸업요건 진단 / 과목 관리 화면', () => {
     render(<LanguageProvider><GraduationStatus user={{ name: 'x' }} onGoHome={() => {}} onOpenCourses={() => {}} /></LanguageProvider>);
     expect(await screen.findByText('전체 이수학점')).toBeInTheDocument();
     expect(screen.getByText('기본전공 미충족')).toBeInTheDocument();
+  });
+});
+
+describe('챗봇 답변 언어', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    Element.prototype.scrollIntoView = vi.fn();
+    api.getCurrentConversation.mockResolvedValue({ conversationId: 7, messages: [] });
+    api.sendChatMessage.mockResolvedValue({ content: 'Answer', citedChunks: [] });
+  });
+
+  async function sendOne(text) {
+    render(<LanguageProvider><Chat user={{ name: 'x' }} onGoHome={() => {}} /></LanguageProvider>);
+    await waitFor(() => expect(api.getCurrentConversation).toHaveBeenCalled());
+    const input = await screen.findByRole('textbox');
+    await waitFor(() => expect(input).not.toBeDisabled());
+    await userEvent.type(input, `${text}{Enter}`);
+    await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalled());
+  }
+
+  it('영어 화면이면 질문과 함께 language: en을 서버에 보낸다', async () => {
+    localStorage.setItem('language', 'en');
+    await sendOne('How many credits do I need?');
+    await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledWith(7, 'How many credits do I need?', 'en'));
+  });
+
+  it('한국어 화면이면 language: ko를 보낸다', async () => {
+    await sendOne('졸업학점이 몇 점이야?');
+    await waitFor(() => expect(api.sendChatMessage).toHaveBeenCalledWith(7, '졸업학점이 몇 점이야?', 'ko'));
   });
 });

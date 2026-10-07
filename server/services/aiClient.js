@@ -139,13 +139,29 @@ const EVIDENCE_PRIORITY_NOTE = `근거 우선순위(근거 문서끼리 내용�
 4. 그 밖의 정리 문서와 교육과정 책자
 아래 순위 문서가 위 순위 문서와 다르면 위 순위를 따르고, 자료 사이에 차이가 있다고 밝혀라. 어느 문서에도 없는 내용은 만들지 마라.`;
 
-function buildSystemPrompt(student, graduationStatus, yearContext = null) {
+// 화면 언어가 영어일 때 답변 언어를 영어로 못박는다. 근거 문서·학생 프로필·이수 현황은 전부 한국어 원문 그대로 두고
+// (RAG 검색과 규정 판단 엔진은 한국어 기준이라 건드리지 않는다), 모델이 번역해서 답하게 한다 — 다만 학생이 학과 사무실이나
+// 포털에서 같은 이름을 찾을 수 있어야 하므로 과목명·조문명·부서명은 한국어 원문을 괄호로 함께 적게 한다.
+// 한국어(기본)는 프롬프트에 아무것도 더하지 않아 기존 동작과 완전히 같다.
+const ENGLISH_ANSWER_NOTE = `Answer language: the student is using the English version of the app. Write the entire answer in English, even if the question or the source documents are in Korean.
+- Translate the content faithfully; do not add, drop or change any rule, number or condition.
+- Keep numbers, credits, years, student-ID cohorts and phone numbers exactly as in the source.
+- For course names, regulation article names, department/office names and majors, give a short English rendering followed by the original Korean in parentheses, e.g. Academic Affairs Office (학사지원과), Article 13 of the Enforcement Rules (학칙시행규칙 제13조). After the first mention you may use the English name alone.
+- Keep the rules above about not guessing, about confidence ("estimated" / "needs confirmation") and about pointing the student to the right office; express them in natural English.
+- Do not add an "unofficial / for reference only" disclaimer; the app already shows one.`;
+
+function buildLanguageNote(language) {
+  return language === 'en' ? ENGLISH_ANSWER_NOTE : null;
+}
+
+function buildSystemPrompt(student, graduationStatus, yearContext = null, language = 'ko') {
   const parts = [
     SYSTEM_PROMPT,
     EVIDENCE_PRIORITY_NOTE,
     buildStudentProfileNote(student),
     buildYearContextNote(yearContext),
     buildGraduationStatusNote(graduationStatus),
+    buildLanguageNote(language),
   ].filter(Boolean);
   return parts.join('\n\n');
 }
@@ -193,7 +209,8 @@ async function rewriteSearchQuery(rawQuery) {
 
 // history: 이번 메시지 이전까지의 대화 이력 [{role, content}, ...] — "왜 그래?" 같은 후속
 // 질문이 직전 turn을 참고할 수 있도록 Anthropic Messages API의 멀티턴 형식으로 그대로 넘긴다.
-async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null, yearContext = null) {
+// language: 'ko'(기본) | 'en' — 답변 언어(buildLanguageNote).
+async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null, yearContext = null, language = 'ko') {
   // 교육과정 책자 문서는 제목에 학년도가 없는 경우도 있어서(book_year 메타데이터) 라벨에 책자 학년도를 덧붙인다.
   const context = relevantChunks
     .map((c, i) => {
@@ -215,7 +232,7 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
-      system: buildSystemPrompt(student, graduationStatus, yearContext),
+      system: buildSystemPrompt(student, graduationStatus, yearContext, language),
       messages,
     }),
     // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
@@ -430,6 +447,7 @@ async function extractFullTranscriptRows(rawText) {
 module.exports = {
   buildYearContextNote,
   buildSystemPrompt,
+  buildLanguageNote,
   getAIChatResponse,
   rewriteSearchQuery,
   getCareerFollowUp,
