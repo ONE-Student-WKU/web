@@ -18,61 +18,80 @@ import { useI18n } from '../i18n/I18nContext.jsx';
 // 고정 질문의 question/options는 서버에 저장되고 AI 컨텍스트로 쓰이는 원문(한국어)이라 화면 언어와 무관하게 그대로 보낸다.
 // 화면에 보이는 문구는 i18n 사전(career.q.N.title / career.q.N.opt.M)에서 같은 순서로 가져온다 — 이 배열의 순서나 개수를
 // 바꾸면 사전도 같이 바꿔야 한다.
-// 전공/개발 경험 무관하게 답할 수 있는 일반적인 성향·관심사 질문 — 자유 대화를 뭘로
-// 시작할지 막막한 진입장벽을 낮추고, 아주 대략적인 분야를 먼저 잡아두는 용도(합의된 설계).
-// 개발 프로젝트 경험을 전제로 한 문구는 피한다 — 진로를 못 정한 학생일수록 그런 경험이
-// 없는 경우가 더 많을 수 있어서다. multi:true인 성향 질문은 복수 선택을 허용하고(선택지가
-// 하나로 딱 떨어지지 않을 수 있음), 마지막 개발 경험 수준 질문만 단일 선택 — 이후 자유
-// 대화에서 AI가 학생 수준에 맞춰 설명하도록 참고 정보로 흘러들어간다.
+// 설계 의도: 진로를 못 정한 학생일수록 "뭘 좋아하는지"는 잘 못 느끼고 "뭐가 싫은지"만 잘 느낀다. 그래서 성향·가치나 좋아하는 것을
+// 묻지 않고, 이미 겪은 일(행동·사건)에서 싫었거나 힘들었던 것을 골라 걸러내는 제외법으로 묻는다(마지막 질문만 사실을 묻는다).
+// 선택지는 한 줄에 활동 하나만 쓰고 좋고 나쁨이 없게 쓴다. "딱히 없어요"는 건너뜀이 아니라 정식 답("특별히 싫은 게 없다")이라
+// 선택지로 두되(exclusive) 다른 선택지와 같이 고를 수 없다. 복수 선택은 max개까지. 서버 프롬프트(aiClient.js)가 이 답들을 "피할 것"으로 읽는다.
+// 선택지 문구에 ', '(쉼표+공백)를 쓰지 않는다 — 답을 ', '로 이어붙여 저장하고 parseFixedAnswersFromMessages가 그걸로 다시 쪼갠다.
 const FIXED_QUESTIONS = [
   {
-    question: '새로운 걸 배울 때 더 끌리는 쪽은?',
+    question: '솔직히 하루 종일 하라면 가장 하기 싫은 일은?',
     multi: true,
+    max: 2,
+    exclusive: ['딱히 없어요'],
     options: [
-      '직접 해보면서 몸으로 익히는 것',
-      '원리를 깊이 파고들어 이해하는 것',
-      '다른 사람과 이야기하며 함께 배우는 것',
-      '자료를 찾아보고 비교해보는 것',
+      '계속 사람을 상대하는 일',
+      '혼자 오래 집중해서 하는 일',
+      '매번 새로운 상황에 대응해야 하는 일',
+      '정해진 절차를 반복하는 일',
+      '숫자와 자료를 꼼꼼히 다루는 일',
+      '사람들 앞에서 말하거나 발표하는 일',
+      '딱히 없어요',
     ],
   },
   {
-    question: '여러 명이 같이 무언가를 할 때 자연스럽게 맡게 되는 역할은?',
+    question: '최근 한두 학기 동안 해본 일 중 하다가 가장 지치거나 지루했던 건?',
     multi: true,
+    max: 2,
+    exclusive: ['딱히 없어요'],
     options: [
-      '전체 일정과 역할을 조율하는 역할',
-      '어려운 부분을 깊이 파고드는 역할',
-      '결과물을 보기 좋게 다듬는 역할',
-      '자료를 조사하고 정리하는 역할',
+      '무언가를 직접 만들거나 고치거나 실습해본 일',
+      '자료를 조사하고 원인을 따져본 일',
+      '글·그림·영상·디자인으로 나를 표현해본 일',
+      '다른 사람의 이야기를 들어주거나 가르쳐주거나 도와준 일',
+      '사람들을 모아 일을 나누고 이끌어본 일',
+      '정리·계획·기록처럼 체계를 잡아본 일',
+      '딱히 없어요',
     ],
   },
   {
-    question: '무언가를 할 때 더 중요하게 여기는 가치는?',
+    question: '조별과제에서 가장 맡기 싫었거나 힘들었던 역할은?',
     multi: true,
+    max: 2,
+    exclusive: ['딱히 없어요', '조별과제 경험이 없어요'],
     options: [
-      '눈에 보이는 결과물을 빠르게 만드는 것',
-      '깊이 있게 파고들어 전문성을 쌓는 것',
-      '사람들에게 실질적으로 도움이 되는 것',
-      '안정적이고 예측 가능한 환경',
+      '자료를 찾고 정리하는 일',
+      '아이디어를 내는 일',
+      '일정과 역할을 조율하는 일',
+      '결과물을 보기 좋게 다듬는 일',
+      '막힌 부분을 해결하는 일',
+      '딱히 없어요',
+      '조별과제 경험이 없어요',
     ],
   },
   {
-    question: '몰입해서 시간 가는 줄 몰랐던 경험에 가까운 건?',
+    question: '지금까지 들은 수업 중 과제가 가장 힘들게 느껴졌던 유형은?',
     multi: true,
+    max: 2,
+    exclusive: ['딱히 없어요', '아직 들은 수업이 많지 않아요'],
     options: [
-      '무언가의 원인을 끝까지 파고들어 알아냈을 때',
-      '무언가를 보기 좋게 다듬고 완성했을 때',
-      '사람들을 설득하거나 의견을 조율했을 때',
-      '자료를 분석해서 새로운 걸 찾아냈을 때',
+      '개념과 이론을 이해하는 수업',
+      '실습·실험·제작 수업',
+      '토론·발표 중심 수업',
+      '글쓰기·보고서 수업',
+      '암기·시험 중심 수업',
+      '딱히 없어요',
+      '아직 들은 수업이 많지 않아요',
     ],
   },
   {
-    question: '지금까지 개발(코딩) 경험은 어느 정도인가요?',
+    question: '전공과 관련해 수업 밖에서 해본 활동은?',
     multi: false,
     options: [
-      '전혀 해본 적 없어요',
-      '수업에서 배운 정도예요',
-      '개인 프로젝트나 과제를 몇 번 해봤어요',
-      '실무나 대회 수준으로 다뤄봤어요',
+      '수업 밖에서는 해본 적 없어요',
+      '수업 과제나 실습 정도예요',
+      '동아리·스터디·공모전·대외활동을 해봤어요',
+      '인턴·현장실습·관련 일을 해봤어요',
     ],
   },
 ];
@@ -81,6 +100,17 @@ const FIXED_MESSAGE_COUNT = FIXED_QUESTIONS.length * 2;
 
 // "모르겠어요" 답변의 저장값 — 서버 저장과 parseFixedAnswersFromMessages의 역파싱이 같은 문자열에 의존하므로 화면 언어와 무관하게 고정.
 const SKIPPED_ANSWER = '(잘 모르겠어요, 건너뜀)';
+
+// 선택 규칙 — 복수 선택 질문은 max개까지만 고를 수 있고(넘기면 가장 먼저 고른 것이 빠진다), exclusive에 든 선택지("딱히 없어요" 등)는
+// 다른 선택지와 같이 고를 수 없다(고르면 나머지가 해제되고, 다른 걸 고르면 exclusive가 해제된다).
+function toggledSelection(question, selected, option) {
+  if (!question.multi) return [option];
+  if (selected.includes(option)) return selected.filter((o) => o !== option);
+  const exclusive = question.exclusive || [];
+  if (exclusive.includes(option)) return [option];
+  const next = [...selected.filter((o) => !exclusive.includes(o)), option];
+  return question.max && next.length > question.max ? next.slice(next.length - question.max) : next;
+}
 
 // 불러오기 실패처럼 이펙트 안에서 세팅되는 오류는 번역 함수에 의존하지 않도록 문구 대신 키를 담고, 렌더에서 번역한다.
 const LOAD_ERROR = { key: 'career.err.load' };
@@ -191,11 +221,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   function toggleOption(option) {
     const question = FIXED_QUESTIONS[stepIndex];
-    if (!question.multi) {
-      setDraftAnswer([option]);
-      return;
-    }
-    setDraftAnswer((prev) => (prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option]));
+    setDraftAnswer((prev) => toggledSelection(question, prev, option));
   }
 
   async function advanceQuestion(selected) {
@@ -247,13 +273,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   function toggleEditOption(questionIndex, option) {
     const question = FIXED_QUESTIONS[questionIndex];
-    setEditDrafts((prev) =>
-      prev.map((selected, i) => {
-        if (i !== questionIndex) return selected;
-        if (!question.multi) return [option];
-        return selected.includes(option) ? selected.filter((o) => o !== option) : [...selected, option];
-      })
-    );
+    setEditDrafts((prev) => prev.map((selected, i) => (i === questionIndex ? toggledSelection(question, selected, option) : selected)));
   }
 
   async function handleSaveEditAnswers() {
@@ -418,7 +438,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         {!loading && !onboardingRequired && stage === 'questions' && currentQuestion && (
           <>
             <h2 className="onb-q-title">{t(`career.q.${stepIndex}.title`)}</h2>
-            <p className="onb-q-sub">{currentQuestion.multi ? t('career.q.multiHint') : t('career.q.singleHint')}</p>
+            <p className="onb-q-sub">{currentQuestion.multi ? (currentQuestion.max ? t('career.q.multiMaxHint', { max: currentQuestion.max }) : t('career.q.multiHint')) : t('career.q.singleHint')}</p>
             <div className="onb-option-list">
               {currentQuestion.options.map((option, optIndex) => (
                 <button
