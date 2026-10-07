@@ -22,6 +22,7 @@ import {
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
@@ -48,13 +49,19 @@ export function resetCommunityCache() {
   clearCache('community_myApplications');
 }
 
-const MY_POST_STATUS_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
-const REPORT_STATUS_LABEL = { pending: '검토 중', resolved: '처리 완료' };
-// 관리자가 처리 안내를 비워 두고 처리했을 때 신고자에게 보여주는 기본 문구(Admin.jsx의 기본 입력값과 같다).
-const DEFAULT_RESOLUTION_NOTE = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
+// 상태·구분 라벨과 기본 처리 안내 문구는 i18n 사전(community.postStatus.* / appStatus.* / reportStatus.* / category.* / defaultResolution)에 있다.
+// 관리자가 처리 안내를 비워 두고 처리했을 때 신고자에게 보여주는 기본 문구는 Admin.jsx의 기본 입력값(한국어)과 같은 뜻이다.
 const MAX_RECRUIT_DAYS = 365;
-const APPLICATION_STATUS_LABEL = { pending: '대기중', accepted: '수락됨', rejected: '반려됨' };
-const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
+
+// 이펙트나 openPost처럼 번역 함수에 의존시키고 싶지 않은 곳의 오류는 문구 대신 사전 키를 담고, 렌더에서 번역한다(errorText).
+const ERR = {
+  loadPosts: { key: 'community.err.loadPosts' },
+  loadMine: { key: 'community.err.loadMine' },
+  loadReports: { key: 'community.err.loadReports' },
+  loadApps: { key: 'community.err.loadApps' },
+  loadApplicants: { key: 'community.err.loadApplicants' },
+  loadPost: { key: 'community.err.loadPost' },
+};
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -81,12 +88,12 @@ function isRecruitClosed(closedAt, recruitState) {
 // 글 작성·수정·신청이 막히는 경고성 제재(post_apply) 안내 배너 — 목록 상단, 글 상세, 글쓰기/수정 폼에서
 // 같은 문구를 쓰도록 한 곳에 둔다(수정만 안내가 없던 문제, 서버는 PATCH /:id에도 같은 제재를 건다).
 function SanctionBanner({ sanction }) {
+  const { t, tRich } = useI18n();
+  const when = sanction.endsAt ? t('community.sanction.untilDate', { date: formatDate(sanction.endsAt) }) : t('community.sanction.permanent');
   return (
     <div className="community-sanction-banner">
       <IconAlertTriangle size={16} />
-      <p>
-        {sanction.endsAt ? <b>{formatDate(sanction.endsAt)}까지</b> : <b>영구히</b>} 글 작성·수정·신청이 제한돼요 · 사유: {sanction.reason}
-      </p>
+      <p>{tRich('community.sanction.banner', { when, reason: sanction.reason })}</p>
     </div>
   );
 }
@@ -122,6 +129,7 @@ function Community({
   unseenReportCount = 0,
   onUnseenReportsChange,
 }) {
+  const { t, tRich } = useI18n();
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications' | 'reports'
   // null이면 "아직 안 불러옴"(첫 진입) — 빈 배열([])과는 구분해야 실제로 글이 0개인 것과
   // 로딩 중인 것을 헷갈리지 않는다(Home.jsx의 profile/status와 동일한 패턴).
@@ -131,6 +139,7 @@ function Community({
   // 내 신고 내역(처리 상태 + 관리자 처리 안내). 열 때마다 새로 불러오고 캐시하지 않는다 — 처리 결과는 그때그때 최신이어야 한다.
   const [myReports, setMyReports] = useState(null);
   const [error, setError] = useState(null);
+  const errorText = error && (typeof error === 'object' ? t(error.key) : error);
 
   // 사용자 제재(#201) — null이면 정지 아님. scope==='full'이면 이 화면 진입 자체가 서버에서
   // 이미 막혀 있어서(전체 탭 fetch의 catch에서 SANCTIONED로 채워짐) 커뮤니티 전체를 안내
@@ -238,14 +247,14 @@ function Community({
           setPosts(list);
           setCommunityCache('posts', list);
         })
-        .catch((err) => handleFetchError(err, '커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, ERR.loadPosts));
     } else if (tab === 'mine') {
       getMyCommunityPosts()
         .then((mine) => {
           setMyPosts(mine);
           setCommunityCache('myPosts', mine);
         })
-        .catch((err) => handleFetchError(err, '내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, ERR.loadMine));
     } else if (tab === 'reports') {
       getMyReports()
         .then((reports) => {
@@ -257,14 +266,14 @@ function Community({
               .catch(() => {}); // 확인 표시 실패는 조용히 무시 — 다음에 열 때 다시 시도된다
           }
         })
-        .catch((err) => handleFetchError(err, '신고 내역을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, ERR.loadReports));
     } else {
       getMyCommunityApplications()
         .then((myApps) => {
           setMyApplications(myApps);
           setCommunityCache('myApplications', myApps);
         })
-        .catch((err) => handleFetchError(err, '신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'));
+        .catch((err) => handleFetchError(err, ERR.loadApps));
     }
   }, [tab]);
 
@@ -283,11 +292,11 @@ function Community({
           setApplicantsLoading(true);
           getCommunityApplicants(id)
             .then(setApplicants)
-            .catch(() => setError('신청자 목록을 불러오지 못했어요.'))
+            .catch(() => setError(ERR.loadApplicants))
             .finally(() => setApplicantsLoading(false));
         }
       })
-      .catch(() => setError('글을 불러오지 못했어요.'))
+      .catch(() => setError(ERR.loadPost))
       .finally(() => setDetailLoading(false));
   };
 
@@ -349,10 +358,10 @@ function Community({
       };
       if (editingPostId) {
         await editCommunityPost(editingPostId, payload);
-        showToast('수정했어요 — 다시 승인 대기 중이에요.');
+        showToast(t('community.toast.edited'));
       } else {
         await createCommunityPost(payload);
-        showToast('글을 올렸어요 — 승인 후 목록에 노출돼요.');
+        showToast(t('community.toast.posted'));
       }
       resetAfterWrite();
       setSelectedPost(null);
@@ -362,11 +371,11 @@ function Community({
       // 제재가 걸린 뒤 이 화면을 열어둔 경우(또는 getMySanction이 실패했던 경우)에도 안내가 나오게 서버 응답으로 채운다.
       if (err.code === 'SANCTIONED') {
         setSanction(err.data);
-        setError(editingPostId ? '글 수정이 제한된 계정이에요.' : '글 작성이 제한된 계정이에요.');
+        setError(editingPostId ? t('community.err.editSanctioned') : t('community.err.writeSanctioned'));
       } else if (err.code === 'INVALID_RECRUIT_END') {
-        setError('모집 마감일은 오늘부터 1년 이내로 정해주세요.');
+        setError(t('community.err.recruitEnd'));
       } else {
-        setError(editingPostId ? '수정하지 못했어요. 잠시 후 다시 시도해주세요.' : '글을 올리지 못했어요. 잠시 후 다시 시도해주세요.');
+        setError(editingPostId ? t('community.err.editFailed') : t('community.err.postFailed'));
       }
     } finally {
       setWriteSubmitting(false);
@@ -387,17 +396,17 @@ function Community({
   };
 
   const handleDelete = async (post) => {
-    if (!window.confirm('정말 이 글을 삭제할까요? 신청 내역도 함께 삭제되고 되돌릴 수 없어요.')) return;
+    if (!window.confirm(t('community.confirm.delete'))) return;
     setDeleteSubmitting(true);
     setError(null);
     try {
       await deleteCommunityPost(post.id);
-      showToast('삭제했어요.');
+      showToast(t('community.toast.deleted'));
       setSelectedPost(null);
       setTab('mine');
       await refreshLists();
     } catch {
-      setError('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setError(t('community.err.deleteFailed'));
     } finally {
       setDeleteSubmitting(false);
     }
@@ -407,17 +416,17 @@ function Community({
   // 관리자 페이지까지 가서 찾을 필요 없이 즉각 조치할 수 있게 한다. deleteCommunityPost(작성자
   // 전용)가 아니라 admin.js의 deleteAdminPost를 쓴다 — 서버도 requireAdmin으로 다시 확인한다.
   const handleAdminDelete = async (post) => {
-    if (!window.confirm('관리자 권한으로 이 글을 완전히 삭제할까요? 신청 내역도 함께 삭제되고 되돌릴 수 없어요.')) return;
+    if (!window.confirm(t('community.confirm.adminDelete'))) return;
     setDeleteSubmitting(true);
     setError(null);
     try {
       await deleteAdminPost(post.id);
-      showToast('삭제했어요.');
+      showToast(t('community.toast.deleted'));
       setSelectedPost(null);
       setTab('list');
       await refreshLists();
     } catch {
-      setError('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setError(t('community.err.deleteFailed'));
     } finally {
       setDeleteSubmitting(false);
     }
@@ -428,11 +437,11 @@ function Community({
     setError(null);
     try {
       await closeCommunityPost(post.id);
-      showToast('모집을 마감했어요.');
+      showToast(t('community.toast.closed'));
       openPost(post.id);
       await refreshLists();
     } catch {
-      setError('마감하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setError(t('community.err.closeFailed'));
     } finally {
       setCloseSubmitting(false);
     }
@@ -445,20 +454,20 @@ function Community({
     setError(null);
     try {
       await applyToCommunityPost(selectedPost.id, applyMessage.trim());
-      showToast('신청했어요 — 글쓴이가 검토하면 알 수 있어요.');
+      showToast(t('community.toast.applied'));
       setApplyMessage('');
       openPost(selectedPost.id);
       const myApps = await getMyCommunityApplications();
       setMyApplications(myApps);
       setCommunityCache('myApplications', myApps);
     } catch (err) {
-      if (err.code === 'DUPLICATE_APPLICATION') setError('이미 이 글에 신청했어요.');
-      else if (err.code === 'APPLICATION_LIMIT_REACHED') setError('이 글에는 최대 3번까지만 신청할 수 있어요.');
+      if (err.code === 'DUPLICATE_APPLICATION') setError(t('community.err.duplicateApplication'));
+      else if (err.code === 'APPLICATION_LIMIT_REACHED') setError(t('community.err.applicationLimit'));
       else if (err.code === 'RECRUIT_ENDED') {
         // 상세를 다시 불러와 마감 표시로 바꾸되, openPost가 error를 비우므로 안내는 그 뒤에 채운다.
         openPost(selectedPost.id);
-        setError('모집 기간이 끝나서 신청할 수 없어요.');
-      } else setError('신청하지 못했어요. 잠시 후 다시 시도해주세요.');
+        setError(t('community.err.recruitEnded'));
+      } else setError(t('community.err.applyFailed'));
     } finally {
       setApplySubmitting(false);
     }
@@ -470,7 +479,7 @@ function Community({
     try {
       if (decision === 'accepted') await acceptCommunityApplication(applicationId);
       else await rejectCommunityApplication(applicationId, rejectMessages[applicationId]);
-      showToast(decision === 'accepted' ? '수락했어요.' : '반려했어요.');
+      showToast(decision === 'accepted' ? t('community.toast.accepted') : t('community.toast.declined'));
       setRejectMessages((prev) => {
         const next = { ...prev };
         delete next[applicationId];
@@ -481,7 +490,7 @@ function Community({
         setApplicants(updated);
       }
     } catch {
-      setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setError(t('community.err.decideFailed'));
     } finally {
       setApplicantActionId(null);
     }
@@ -494,13 +503,13 @@ function Community({
     setError(null);
     try {
       await reportCommunityPost(selectedPost.id, reportReason.trim());
-      showToast('신고했어요 — 관리자가 확인할게요.');
+      showToast(t('community.toast.reported'));
       setReportReason('');
       setReportFormOpen(false);
     } catch (err) {
-      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 글이에요.');
-      else if (err.code === 'CANNOT_REPORT_OWN') setError('내가 쓴 글은 신고할 수 없어요.');
-      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+      if (err.code === 'DUPLICATE_REPORT') setError(t('community.err.duplicateReportPost'));
+      else if (err.code === 'CANNOT_REPORT_OWN') setError(t('community.err.cannotReportOwnPost'));
+      else setError(t('community.err.reportFailed'));
     } finally {
       setReportSubmitting(false);
     }
@@ -513,7 +522,7 @@ function Community({
     setError(null);
     try {
       await reportCommunityApplication(applicationId, reason);
-      showToast('신고했어요 — 관리자가 확인할게요.');
+      showToast(t('community.toast.reported'));
       setApplicantReportReasons((prev) => {
         const next = { ...prev };
         delete next[applicationId];
@@ -521,9 +530,9 @@ function Community({
       });
       setApplicantReportOpenId(null);
     } catch (err) {
-      if (err.code === 'DUPLICATE_REPORT') setError('이미 신고한 신청이에요.');
-      else if (err.code === 'CANNOT_REPORT_OWN') setError('내 신청은 신고할 수 없어요.');
-      else setError('신고하지 못했어요. 잠시 후 다시 시도해주세요.');
+      if (err.code === 'DUPLICATE_REPORT') setError(t('community.err.duplicateReportApp'));
+      else if (err.code === 'CANNOT_REPORT_OWN') setError(t('community.err.cannotReportOwnApp'));
+      else setError(t('community.err.reportFailed'));
     } finally {
       setApplicantReportSubmittingId(null);
     }
@@ -533,15 +542,15 @@ function Community({
     const post = selectedPost;
     return (
       <div className="community-detail">
-        {error && <p className="home-error">{error}</p>}
+        {errorText && <p className="home-error">{errorText}</p>}
         <div className="community-detail-title-row">
           <h2 className="community-detail-title">
-            {isRecruitClosed(post.closedAt, post.recruitState) && <span className="community-closed-prefix">마감</span>}
-            {post.contentHidden ? '재승인 대기 중' : post.title}
+            {isRecruitClosed(post.closedAt, post.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
+            {post.contentHidden ? t('community.hiddenTitle') : post.title}
           </h2>
           {!post.isMine && (
             <div className="community-detail-title-actions">
-              <button type="button" className="community-title-icon-btn" onClick={() => setReportFormOpen(true)} aria-label="신고하기">
+              <button type="button" className="community-title-icon-btn" onClick={() => setReportFormOpen(true)} aria-label={t('community.reportAria')}>
                 <IconSiren size={20} />
               </button>
               {user?.role === 'admin' && (
@@ -550,7 +559,7 @@ function Community({
                   className="community-title-icon-btn"
                   onClick={() => handleAdminDelete(post)}
                   disabled={deleteSubmitting}
-                  aria-label="관리자 권한으로 삭제"
+                  aria-label={t('community.adminDeleteAria')}
                 >
                   <IconX size={20} />
                 </button>
@@ -560,20 +569,20 @@ function Community({
         </div>
         <p className="community-detail-meta">
           {post.author} · {formatDate(post.createdAt)}
-          <span className={`community-badge community-badge-${post.category}`}>{CATEGORY_LABEL[post.category]}</span>
-          {post.capacity && <span className="community-badge community-badge-capacity">모집인원 {post.capacity}명</span>}
-          {post.closedAt && <span className="community-badge community-badge-closed">모집 마감</span>}
-          {!post.closedAt && post.recruitState === 'ended' && <span className="community-badge community-badge-closed">모집 기간 마감</span>}
+          <span className={`community-badge community-badge-${post.category}`}>{t(`community.category.${post.category}`)}</span>
+          {post.capacity && <span className="community-badge community-badge-capacity">{t('community.capacity', { n: post.capacity })}</span>}
+          {post.closedAt && <span className="community-badge community-badge-closed">{t('community.badge.closed')}</span>}
+          {!post.closedAt && post.recruitState === 'ended' && <span className="community-badge community-badge-closed">{t('community.badge.periodEnded')}</span>}
           {!post.closedAt && post.recruitState === 'open' && post.recruitEndDate && (
-            <span className="community-badge community-badge-capacity">{formatDeadline(post.recruitEndDate)}까지 모집</span>
+            <span className="community-badge community-badge-capacity">{t('community.deadlineBadge', { date: formatDeadline(post.recruitEndDate) })}</span>
           )}
           {post.status !== 'approved' && (
-            <span className={`community-badge community-badge-${post.status}`}>{MY_POST_STATUS_LABEL[post.status]}</span>
+            <span className={`community-badge community-badge-${post.status}`}>{t(`community.postStatus.${post.status}`)}</span>
           )}
         </p>
         {post.contentHidden ? (
           <p className="courses-manual-hint">
-            이 글은 수정되어 재승인 대기 중이라 내용을 다시 볼 수 없어요. 신청 상태는 아래에서 계속 확인할 수 있어요.
+            {t('community.hiddenBody')}
           </p>
         ) : (
           <p className="community-detail-body">{post.body}</p>
@@ -581,7 +590,7 @@ function Community({
 
         {post.status === 'rejected' && post.rejectReason && (
           <p className="admin-reject-reason">
-            <b>반려 사유</b> · {post.rejectReason}
+            <b>{t('community.label.rejectReason')}</b> · {post.rejectReason}
           </p>
         )}
 
@@ -589,7 +598,7 @@ function Community({
           <>
             {post.status === 'approved' && !post.closedAt && post.recruitState === 'ended' && (
               <p className="community-close-hint">
-                마감일({formatDeadline(post.recruitEndDate)})이 지나 신청을 받지 않아요. 더 모집하려면 글을 수정해 마감일을 바꿔주세요(수정하면 관리자 승인을 다시 받아요).
+                {t('community.endedHint', { date: formatDeadline(post.recruitEndDate) })}
               </p>
             )}
             {post.status === 'approved' && !post.closedAt && (
@@ -600,49 +609,49 @@ function Community({
                   onClick={() => handleClose(post)}
                   disabled={closeSubmitting || applicantsLoading || applicants.length === 0}
                 >
-                  {closeSubmitting ? '처리 중...' : '모집 마감하기'}
+                  {closeSubmitting ? t('community.processing') : t('community.closeBtn')}
                 </button>
                 {!applicantsLoading && applicants.length === 0 && (
-                  <p className="community-close-hint">신청자가 1명 이상 있어야 마감할 수 있어요.</p>
+                  <p className="community-close-hint">{t('community.closeNeedApplicant')}</p>
                 )}
               </>
             )}
             {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
             <div className="community-owner-actions">
               <button type="button" className="community-outline-btn" onClick={() => startEdit(post)} disabled={sanction?.scope === 'post_apply'}>
-                {sanction?.scope === 'post_apply' ? '수정 (제한됨)' : '수정'}
+                {sanction?.scope === 'post_apply' ? t('community.editLimited') : t('community.edit')}
               </button>
               <button type="button" className="community-outline-btn community-danger" onClick={() => handleDelete(post)} disabled={deleteSubmitting}>
-                {deleteSubmitting ? '삭제 중...' : '삭제'}
+                {deleteSubmitting ? t('community.deleting') : t('community.delete')}
               </button>
             </div>
 
             <p className="community-section-label">
-              「{post.title}」에 온 신청자 {applicants.length}명
+              {t('community.applicantsHeading', { title: post.title, count: applicants.length })}
             </p>
             {applicantsLoading ? (
-              <p className="courses-manual-hint">불러오는 중...</p>
+              <p className="courses-manual-hint">{t('community.loading')}</p>
             ) : applicants.length === 0 ? (
-              <p className="courses-manual-hint">아직 신청자가 없어요.</p>
+              <p className="courses-manual-hint">{t('community.noApplicants')}</p>
             ) : (
               <div className="community-applicant-list">
                 {applicants.map((a) => (
                   <div className="community-applicant-card" key={a.id}>
                     <div className="community-applicant-top">
                       <span className="community-applicant-name">{a.applicant}</span>
-                      {a.hasAppliedBefore && <span className="community-badge community-badge-reapply">재신청</span>}
-                      <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
+                      {a.hasAppliedBefore && <span className="community-badge community-badge-reapply">{t('community.reapplied')}</span>}
+                      <span className={`community-badge community-badge-${a.status}`}>{t(`community.appStatus.${a.status}`)}</span>
                     </div>
                     <p className="community-applicant-msg">{a.message}</p>
                     <div className="community-applicant-date">
-                      {formatDate(a.createdAt)} · 「{post.title}」
+                      {t('community.applicantDate', { date: formatDate(a.createdAt), title: post.title })}
                     </div>
                     {a.status === 'pending' && (
                       <>
                         <textarea
                           className="community-reject-message-input"
                           rows={2}
-                          placeholder="거부 사유(선택) — 신청자에게 전달돼요."
+                          placeholder={t('community.rejectPlaceholder')}
                           value={rejectMessages[a.id] || ''}
                           onChange={(e) => setRejectMessages((prev) => ({ ...prev, [a.id]: e.target.value }))}
                         />
@@ -653,7 +662,7 @@ function Community({
                             onClick={() => handleDecideApplication(a.id, 'accepted')}
                             disabled={applicantActionId === a.id}
                           >
-                            수락
+                            {t('community.accept')}
                           </button>
                           <button
                             type="button"
@@ -661,19 +670,19 @@ function Community({
                             onClick={() => handleDecideApplication(a.id, 'rejected')}
                             disabled={applicantActionId === a.id}
                           >
-                            거부
+                            {t('community.decline')}
                           </button>
                         </div>
                       </>
                     )}
                     {a.status === 'accepted' && a.contactEmail && (
                       <div className="community-contact-box">
-                        <b>연락 이메일</b> · {a.contactEmail}
+                        <b>{t('community.label.contactEmail')}</b> · {a.contactEmail}
                       </div>
                     )}
                     {a.status === 'rejected' && a.rejectReason && (
                       <p className="community-reject-message">
-                        <b>거부 사유</b> · {a.rejectReason}
+                        <b>{t('community.label.declineReason')}</b> · {a.rejectReason}
                       </p>
                     )}
                     {applicantReportOpenId === a.id ? (
@@ -681,7 +690,7 @@ function Community({
                         <textarea
                           className="community-reject-message-input"
                           rows={2}
-                          placeholder="신고 사유를 적어주세요."
+                          placeholder={t('community.reportReasonPlaceholder')}
                           value={applicantReportReasons[a.id] || ''}
                           onChange={(e) => setApplicantReportReasons((prev) => ({ ...prev, [a.id]: e.target.value }))}
                         />
@@ -692,16 +701,16 @@ function Community({
                             onClick={() => handleReportApplication(a.id)}
                             disabled={applicantReportSubmittingId === a.id}
                           >
-                            {applicantReportSubmittingId === a.id ? '신고하는 중...' : '신고 제출'}
+                            {applicantReportSubmittingId === a.id ? t('community.reporting') : t('community.submitReport')}
                           </button>
                           <button type="button" className="community-outline-btn" onClick={() => setApplicantReportOpenId(null)}>
-                            취소
+                            {t('onb.cancel')}
                           </button>
                         </div>
                       </>
                     ) : (
                       <button type="button" className="community-outline-btn community-danger" onClick={() => setApplicantReportOpenId(a.id)}>
-                        신고하기
+                        {t('community.report')}
                       </button>
                     )}
                   </div>
@@ -713,66 +722,66 @@ function Community({
           <>
             {post.myApplication === null ? (
               post.closedAt ? (
-                <p className="courses-manual-hint">모집이 마감됐어요.</p>
+                <p className="courses-manual-hint">{t('community.recruitClosed')}</p>
               ) : post.recruitState === 'ended' ? (
-                <p className="courses-manual-hint">모집 기간이 끝났어요 ({formatDeadline(post.recruitEndDate)}까지).</p>
+                <p className="courses-manual-hint">{t('community.recruitEndedLine', { date: formatDeadline(post.recruitEndDate) })}</p>
               ) : sanction?.scope === 'post_apply' ? (
-                <p className="courses-manual-hint">신청이 제한됐어요 · 사유: {sanction.reason}</p>
+                <p className="courses-manual-hint">{t('community.applyRestricted', { reason: sanction.reason })}</p>
               ) : (
                 <form className="community-apply-form" onSubmit={handleApply}>
                   <div className="auth-field">
-                    <label>신청 메시지</label>
+                    <label>{t('community.applyMessage')}</label>
                     <textarea
                       rows={5}
                       value={applyMessage}
                       onChange={(e) => setApplyMessage(e.target.value)}
-                      placeholder="간단한 소개나 참여하고 싶은 이유를 적어주세요."
+                      placeholder={t('community.applyPlaceholder')}
                       required
                     />
                   </div>
                   <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                    {applySubmitting ? '신청하는 중...' : '신청하기'}
+                    {applySubmitting ? t('community.applying') : t('community.apply')}
                   </button>
                 </form>
               )
             ) : (
               <div className="community-status-box">
                 <div className="community-status-top">
-                  <span className="community-status-label">내 신청</span>
+                  <span className="community-status-label">{t('community.myApplication')}</span>
                   <span className={`community-badge community-badge-${post.myApplication.status}`}>
-                    {APPLICATION_STATUS_LABEL[post.myApplication.status]}
+                    {t(`community.appStatus.${post.myApplication.status}`)}
                   </span>
                 </div>
                 {post.myApplication.status === 'pending' && (
-                  <p className="community-status-desc">글쓴이가 아직 검토하지 않았어요.</p>
+                  <p className="community-status-desc">{t('community.pendingDesc')}</p>
                 )}
                 {post.myApplication.status === 'accepted' && (
-                  <p className="community-status-desc">수락됐어요! "내 신청" 탭에서 연락 이메일을 확인해보세요.</p>
+                  <p className="community-status-desc">{t('community.acceptedDesc')}</p>
                 )}
                 {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
                   <p className="community-reject-message">
-                    <b>거부 사유</b> · {post.myApplication.rejectReason}
+                    <b>{t('community.label.declineReason')}</b> · {post.myApplication.rejectReason}
                   </p>
                 )}
                 {post.myApplication.status === 'rejected' && !isRecruitClosed(post.closedAt, post.recruitState) && (
                   <>
-                    <p className="community-status-desc">아쉽지만 이번엔 선정되지 않았어요. 메시지를 보완해서 다시 신청할 수 있어요.</p>
+                    <p className="community-status-desc">{t('community.notSelectedDesc')}</p>
                     {sanction?.scope === 'post_apply' ? (
-                      <p className="courses-manual-hint">재신청이 제한됐어요 · 사유: {sanction.reason}</p>
+                      <p className="courses-manual-hint">{t('community.reapplyRestricted', { reason: sanction.reason })}</p>
                     ) : (
                       <form className="community-apply-form" onSubmit={handleApply}>
                         <div className="auth-field">
-                          <label>다시 신청하기</label>
+                          <label>{t('community.reapplyLabel')}</label>
                           <textarea
                             rows={4}
                             value={applyMessage}
                             onChange={(e) => setApplyMessage(e.target.value)}
-                            placeholder="이전과 다른 점을 보완해서 다시 적어보세요."
+                            placeholder={t('community.reapplyPlaceholder')}
                             required
                           />
                         </div>
                         <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                          {applySubmitting ? '신청하는 중...' : '재신청하기'}
+                          {applySubmitting ? t('community.applying') : t('community.reapplyBtn')}
                         </button>
                       </form>
                     )}
@@ -788,35 +797,33 @@ function Community({
 
   const renderWriteForm = () => (
     <form className="courses-manual-fields community-write-form" onSubmit={handleWriteSubmit}>
-      {error && <p className="home-error">{error}</p>}
+      {errorText && <p className="home-error">{errorText}</p>}
       {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
       <p className="courses-manual-hint">
-        {editingPostId
-          ? '수정하면 다시 관리자 승인을 받아야 목록에 노출돼요.'
-          : '스터디·프로젝트 팀원을 구하는 글을 올려보세요. 관리자 승인 후 목록에 노출돼요.'}
+        {editingPostId ? t('community.write.editHint') : t('community.write.newHint')}
       </p>
       <div className="community-write-row">
         <div className="auth-field">
-          <label>구분</label>
+          <label>{t('community.write.category')}</label>
           <select className="onb-select" value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
-            <option value="study">스터디</option>
-            <option value="project">프로젝트</option>
+            <option value="study">{t('community.category.study')}</option>
+            <option value="project">{t('community.category.project')}</option>
           </select>
         </div>
         <div className="auth-field">
-          <label>모집 인원 (선택)</label>
+          <label>{t('community.write.capacity')}</label>
           <input
             type="number"
             min={1}
             max={999}
-            placeholder="예: 4"
+            placeholder={t('community.write.capacityPlaceholder')}
             value={writeFields.capacity}
             onChange={(e) => setWriteFields((f) => ({ ...f, capacity: e.target.value }))}
           />
         </div>
       </div>
       <div className="auth-field">
-        <label htmlFor="community-recruit-end">모집 마감일 (선택)</label>
+        <label htmlFor="community-recruit-end">{t('community.write.endDate')}</label>
         <input
           id="community-recruit-end"
           type="date"
@@ -826,12 +833,12 @@ function Community({
           onChange={(e) => setWriteFields((f) => ({ ...f, recruitEndDate: e.target.value }))}
         />
         <p className="courses-manual-hint">
-          언제까지 모집하나요? 마감일 당일까지 신청을 받고, 지나면 신청이 닫혀요. 비워 두면 직접 마감할 때까지 모집해요(최대 오늘부터 1년).
-          {editingPostId && ' 마감일을 바꾸려면 글을 수정해야 하고, 수정할 때마다 관리자 승인을 다시 받아요.'}
+          {t('community.write.endDateHint')}
+          {editingPostId && ` ${t('community.write.endDateEditHint')}`}
         </p>
       </div>
       <div className="auth-field">
-        <label htmlFor="community-write-title">제목</label>
+        <label htmlFor="community-write-title">{t('community.write.title')}</label>
         <input
           id="community-write-title"
           type="text"
@@ -842,14 +849,14 @@ function Community({
         />
       </div>
       <div className="auth-field">
-        <label htmlFor="community-write-body">내용</label>
+        <label htmlFor="community-write-body">{t('community.write.body')}</label>
         <textarea id="community-write-body" rows={6} maxLength={1000} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
       </div>
       <button type="submit" className="auth-submit-btn" disabled={writeSubmitting}>
-        {writeSubmitting ? '저장하는 중...' : editingPostId ? '수정하기' : '등록하기'}
+        {writeSubmitting ? t('community.write.saving') : editingPostId ? t('community.write.update') : t('community.write.submit')}
       </button>
       <button type="button" className="courses-manual-only-note courses-catalog-back" onClick={resetAfterWrite}>
-        취소
+        {t('onb.cancel')}
       </button>
     </form>
   );
@@ -858,10 +865,10 @@ function Community({
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? '목록으로' : '홈으로'}>
+          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? t('community.backToList') : t('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">커뮤니티</span>
+          <span className="screen-title">{t('nav.community')}</span>
         </div>
         <AccountMenu
           user={user}
@@ -887,14 +894,14 @@ function Community({
             <div className="community-sanction-icon">
               <IconBan size={28} />
             </div>
-            <p className="community-sanction-heading">커뮤니티 이용이 제한되었어요</p>
+            <p className="community-sanction-heading">{t('community.sanctionFull.heading')}</p>
             <p className="community-sanction-detail">
-              {sanction.endsAt ? `${formatDate(sanction.endsAt)}까지 커뮤니티 전체 이용이 제한됩니다.` : '커뮤니티 전체 이용이 영구 제한됩니다.'}
+              {sanction.endsAt ? t('community.sanctionFull.until', { date: formatDate(sanction.endsAt) }) : t('community.sanctionFull.permanent')}
             </p>
             <div className="community-sanction-reason-box">
-              <b>사유</b> · {sanction.reason}
+              {tRich('community.sanctionFull.reason', { reason: sanction.reason })}
             </div>
-            <p className="community-sanction-footer">문의사항은 프로필 메뉴의 문의하기를 이용해주세요</p>
+            <p className="community-sanction-footer">{t('community.sanctionFull.footer')}</p>
           </div>
         ) : selectedPost ? (
           renderDetail()
@@ -902,35 +909,35 @@ function Community({
           renderWriteForm()
         ) : (
           <>
-            {error && <p className="home-error">{error}</p>}
+            {errorText && <p className="home-error">{errorText}</p>}
 
             {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
 
             <div className="courses-year-tabs">
               <button type="button" className={`courses-year-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
-                전체 글
+                {t('community.tab.all')}
               </button>
               <button type="button" className={`courses-year-tab ${tab === 'mine' ? 'active' : ''}`} onClick={() => setTab('mine')}>
-                내가 쓴 글
+                {t('community.tab.mine')}
               </button>
               <button
                 type="button"
                 className={`courses-year-tab ${tab === 'applications' ? 'active' : ''}`}
                 onClick={() => setTab('applications')}
               >
-                내 신청
+                {t('community.tab.apps')}
               </button>
               <button type="button" className={`courses-year-tab ${tab === 'reports' ? 'active' : ''}`} onClick={() => setTab('reports')}>
-                내 신고
-                {unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label="새 처리 결과 있음" />}
+                {t('community.tab.reports')}
+                {unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label={t('community.newResultsAria')} />}
               </button>
             </div>
 
             {tab === 'list' ? (
               posts === null ? (
-                <p className="courses-manual-hint">불러오는 중...</p>
+                <p className="courses-manual-hint">{t('community.loading')}</p>
               ) : posts.length === 0 ? (
-                <p className="courses-manual-hint">아직 등록된 글이 없어요.</p>
+                <p className="courses-manual-hint">{t('community.empty.posts')}</p>
               ) : (
                 <div className="community-post-list">
                   {posts.map((p) => (
@@ -941,14 +948,14 @@ function Community({
                       disabled={detailLoading}
                     >
                       <span className="community-post-list-row">
-                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">마감</span>}
+                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
                         <span className="community-post-list-title">{p.title}</span>
-                        <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
+                        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
                       </span>
                       <span className="courses-list-item-meta">
                         {p.author} · {formatDate(p.createdAt)}
-                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
-                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${formatDeadline(p.recruitEndDate)}까지`}
+                        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
+                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
                       </span>
                     </button>
                   ))}
@@ -956,9 +963,9 @@ function Community({
               )
             ) : tab === 'mine' ? (
               myPosts === null ? (
-                <p className="courses-manual-hint">불러오는 중...</p>
+                <p className="courses-manual-hint">{t('community.loading')}</p>
               ) : myPosts.length === 0 ? (
-                <p className="courses-manual-hint">아직 쓴 글이 없어요.</p>
+                <p className="courses-manual-hint">{t('community.empty.mine')}</p>
               ) : (
                 <div className="community-post-list">
                   {myPosts.map((p) => (
@@ -969,20 +976,20 @@ function Community({
                       disabled={detailLoading}
                     >
                       <span className="community-post-list-row">
-                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">마감</span>}
+                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
                         <span className="community-post-list-title">{p.title}</span>
-                        <span className={`community-badge community-badge-${p.category}`}>{CATEGORY_LABEL[p.category]}</span>
-                        <span className={`community-badge community-badge-${p.status}`}>{MY_POST_STATUS_LABEL[p.status]}</span>
+                        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
+                        <span className={`community-badge community-badge-${p.status}`}>{t(`community.postStatus.${p.status}`)}</span>
                       </span>
                       <span className="courses-list-item-meta">
                         {formatDate(p.createdAt)}
-                        {p.capacity && ` · 모집인원 ${p.capacity}명`}
-                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${formatDeadline(p.recruitEndDate)}까지`}
+                        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
+                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
                         {/* 서버가 아직 이 필드를 안 내려주는 배포 순서(프론트 먼저)에서는 undefined라 아무것도 안 보인다. */}
-                        {p.applicationCount > 0 && ` · 받은 신청 ${p.applicationCount}건`}
+                        {p.applicationCount > 0 && ` · ${t('community.receivedApps', { n: p.applicationCount })}`}
                       </span>
                       {p.pendingApplicationCount > 0 && (
-                        <span className="community-row-pending">검토 대기 신청 {p.pendingApplicationCount}건</span>
+                        <span className="community-row-pending">{t('community.pendingApps', { n: p.pendingApplicationCount })}</span>
                       )}
                     </button>
                   ))}
@@ -990,44 +997,44 @@ function Community({
               )
             ) : tab === 'reports' ? (
               myReports === null ? (
-                <p className="courses-manual-hint">불러오는 중...</p>
+                <p className="courses-manual-hint">{t('community.loading')}</p>
               ) : myReports.length === 0 ? (
-                <p className="courses-manual-hint">신고한 내역이 없어요.</p>
+                <p className="courses-manual-hint">{t('community.empty.reports')}</p>
               ) : (
                 <div className="community-post-list">
                   {myReports.map((r) => (
                     <div key={r.id} className="community-status-box">
                       <div className="community-status-top">
                         <span className="community-status-label">
-                          {r.targetType === 'post' ? '글 신고' : '신청 신고'} · {r.targetTitle || '(삭제된 글)'}
+                          {r.targetType === 'post' ? t('community.reportItem.post') : t('community.reportItem.application')} · {r.targetTitle || t('community.reportItem.deletedPost')}
                         </span>
                         <span className={`community-badge community-badge-${r.status === 'resolved' ? 'accepted' : 'pending'}`}>
-                          {REPORT_STATUS_LABEL[r.status]}
+                          {t(`community.reportStatus.${r.status}`)}
                         </span>
                       </div>
                       <p className="community-detail-meta">
-                        신고일 {formatDate(r.createdAt)}
-                        {r.status === 'resolved' && r.resolvedAt && ` · 처리일 ${formatDate(r.resolvedAt)}`}
-                        {r.isUnseen && <span className="community-badge community-badge-new">새 처리 결과</span>}
+                        {t('community.reportItem.date', { date: formatDate(r.createdAt) })}
+                        {r.status === 'resolved' && r.resolvedAt && ` · ${t('community.reportItem.resolvedDate', { date: formatDate(r.resolvedAt) })}`}
+                        {r.isUnseen && <span className="community-badge community-badge-new">{t('community.reportItem.newResult')}</span>}
                       </p>
                       <p className="community-detail-body">
-                        <b>내 신고 사유</b> · {r.reason}
+                        {tRich('community.reportItem.myReason', { reason: r.reason })}
                       </p>
                       {r.status === 'resolved' ? (
                         <p className="community-resolution-note">
-                          <b>처리 안내</b> · {r.resolutionNote || DEFAULT_RESOLUTION_NOTE}
+                          {tRich('community.reportItem.note', { note: r.resolutionNote || t('community.defaultResolution') })}
                         </p>
                       ) : (
-                        <p className="community-status-desc">관리자가 확인하고 있어요. 처리되면 여기에 안내가 올라와요.</p>
+                        <p className="community-status-desc">{t('community.reportItem.waiting')}</p>
                       )}
                     </div>
                   ))}
                 </div>
               )
             ) : myApplications === null ? (
-              <p className="courses-manual-hint">불러오는 중...</p>
+              <p className="courses-manual-hint">{t('community.loading')}</p>
             ) : myApplications.length === 0 ? (
-              <p className="courses-manual-hint">아직 신청한 글이 없어요.</p>
+              <p className="courses-manual-hint">{t('community.empty.apps')}</p>
             ) : (
               <div className="community-post-list">
                 {myApplications.map((a) => (
@@ -1038,15 +1045,15 @@ function Community({
                     disabled={detailLoading}
                   >
                     <span className="community-post-list-row">
-                      {isRecruitClosed(a.postClosedAt, a.postRecruitState) && <span className="community-closed-prefix">마감</span>}
+                      {isRecruitClosed(a.postClosedAt, a.postRecruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
                       <span className="community-post-list-title">{a.postTitle}</span>
-                      <span className={`community-badge community-badge-${a.postCategory}`}>{CATEGORY_LABEL[a.postCategory]}</span>
-                      <span className={`community-badge community-badge-${a.status}`}>{APPLICATION_STATUS_LABEL[a.status]}</span>
+                      <span className={`community-badge community-badge-${a.postCategory}`}>{t(`community.category.${a.postCategory}`)}</span>
+                      <span className={`community-badge community-badge-${a.status}`}>{t(`community.appStatus.${a.status}`)}</span>
                     </span>
                     <span className="courses-list-item-meta">
-                      {a.author} · 신청일 {formatDate(a.createdAt)}
+                      {t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}
                     </span>
-                    {a.contactEmail && <span className="community-row-contact">연락 이메일 · {a.contactEmail}</span>}
+                    {a.contactEmail && <span className="community-row-contact">{t('community.appItem.contact', { email: a.contactEmail })}</span>}
                   </button>
                 ))}
               </div>
@@ -1060,7 +1067,7 @@ function Community({
                 disabled={sanction?.scope === 'post_apply'}
               >
                 <IconPlus size={16} />
-                {sanction?.scope === 'post_apply' ? '글 쓰기 (제한됨)' : '글 쓰기'}
+                {sanction?.scope === 'post_apply' ? t('community.writeBtnLimited') : t('community.writeBtn')}
               </button>
             )}
           </>
@@ -1070,24 +1077,24 @@ function Community({
       {reportFormOpen && (
         <div className="career-confirm-overlay" onClick={() => setReportFormOpen(false)}>
           <form className="career-confirm-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleReportPost}>
-            {error && <p className="home-error">{error}</p>}
+            {errorText && <p className="home-error">{errorText}</p>}
             <div className="auth-field">
-              <label>신고 사유</label>
+              <label>{t('community.reportReasonLabel')}</label>
               <textarea
                 rows={3}
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
-                placeholder="신고하는 이유를 적어주세요."
+                placeholder={t('community.reportReasonPlaceholder2')}
                 required
                 autoFocus
               />
             </div>
             <div className="community-applicant-actions">
               <button type="submit" className="community-act-btn community-act-reject" disabled={reportSubmitting}>
-                {reportSubmitting ? '신고하는 중...' : '신고 제출'}
+                {reportSubmitting ? t('community.reporting') : t('community.submitReport')}
               </button>
               <button type="button" className="community-outline-btn" onClick={() => setReportFormOpen(false)}>
-                취소
+                {t('onb.cancel')}
               </button>
             </div>
           </form>

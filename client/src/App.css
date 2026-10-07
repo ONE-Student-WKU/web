@@ -1695,7 +1695,8 @@ body {
   line-height: 1.5;
 }
 
-.community-sanction-banner b {
+.community-sanction-banner b,
+.community-sanction-banner strong {
   color: var(--color-warning);
 }
 
@@ -1748,7 +1749,8 @@ body {
   text-align: left;
 }
 
-.community-sanction-reason-box b {
+.community-sanction-reason-box b,
+.community-sanction-reason-box strong {
   color: var(--color-text-primary);
 }
 
@@ -2019,7 +2021,8 @@ body {
   color: var(--color-text-primary);
 }
 
-.community-contact-box b {
+.community-contact-box b,
+.community-contact-box strong {
   color: var(--color-accent);
 }
 
@@ -2032,7 +2035,8 @@ body {
   color: var(--color-text-secondary);
 }
 
-.community-reject-message b {
+.community-reject-message b,
+.community-reject-message strong {
   color: var(--color-danger);
 }
 
@@ -2213,7 +2217,8 @@ body {
   margin: 0 0 10px;
 }
 
-.admin-reject-reason b {
+.admin-reject-reason b,
+.admin-reject-reason strong {
   color: var(--color-danger);
 }
 

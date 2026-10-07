@@ -68,24 +68,29 @@ function interpolate(template, params) {
   return template.replace(/\{(\w+)\}/g, (match, name) => (params[name] === undefined ? match : String(params[name])));
 }
 
+function lookupTemplate(lang, key) {
+  return DICTIONARIES[lang]?.[key] ?? DICTIONARIES[DEFAULT_LANGUAGE][key] ?? key;
+}
+
 // eslint-disable-next-line react-refresh/only-export-components -- 컴포넌트 밖(utils/graduation.js)에서도 쓰는 순수 함수라 같은 파일에 둔다.
 export function translate(lang, key, params) {
-  const template = DICTIONARIES[lang]?.[key] ?? DICTIONARIES[DEFAULT_LANGUAGE][key] ?? key;
-  return interpolate(template, params);
+  return interpolate(lookupTemplate(lang, key), params);
 }
 
 // 문구 안의 <b>강조</b>를 <strong>으로 바꿔 React 요소로 돌려준다 — 안내문 중간에 굵은 글씨가 끼는 문장을
 // 어순이 다른 언어에서도 한 문장 단위로 번역할 수 있게 하려는 용도. 그 외 HTML은 해석하지 않고 글자 그대로
 // 둔다(React 요소로만 만들어 HTML을 직접 주입하지 않는다 — XSS 안전).
-function renderRich(text) {
-  return text
+// template은 값을 채우기 전의 문구다 — 먼저 <b>로 쪼갠 뒤 각 조각에 params를 채워서, 사용자가 쓴 글(params 값)에 "<b>"가 들어 있어도
+// 굵게 해석되지 않는다(커뮤니티의 신고·제재 사유 등).
+function renderRich(template, params) {
+  return template
     .split(/(<b>.*?<\/b>)/g)
     .filter(Boolean)
     .map((part, i) =>
       part.startsWith('<b>') && part.endsWith('</b>') ? (
-        <strong key={i}>{part.slice(3, -4)}</strong>
+        <strong key={i}>{interpolate(part.slice(3, -4), params)}</strong>
       ) : (
-        <React.Fragment key={i}>{part}</React.Fragment>
+        <React.Fragment key={i}>{interpolate(part, params)}</React.Fragment>
       )
     );
 }
@@ -96,7 +101,7 @@ const I18nContext = createContext({
   languageChosen: false,
   setLang: () => {},
   t: (key, params) => translate(DEFAULT_LANGUAGE, key, params),
-  tRich: (key, params) => renderRich(translate(DEFAULT_LANGUAGE, key, params)),
+  tRich: (key, params) => renderRich(lookupTemplate(DEFAULT_LANGUAGE, key), params),
 });
 
 export function LanguageProvider({ children }) {
@@ -125,7 +130,7 @@ export function LanguageProvider({ children }) {
   }, []);
 
   const t = useCallback((key, params) => translate(lang, key, params), [lang]);
-  const tRich = useCallback((key, params) => renderRich(translate(lang, key, params)), [lang]);
+  const tRich = useCallback((key, params) => renderRich(lookupTemplate(lang, key), params), [lang]);
 
   const value = useMemo(() => ({ lang, languageChosen, setLang, t, tRich }), [lang, languageChosen, setLang, t, tRich]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
