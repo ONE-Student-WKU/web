@@ -35,6 +35,21 @@ function isValidCategory(category) {
   return VALID_CATEGORIES.includes(category);
 }
 
+// 모집 마감일(선택) — 'YYYY-MM-DD' 하나. 비우면 null(마감일 없음 = 글쓴이가 직접 마감할 때까지 모집).
+// 오늘(한국 날짜)부터 1년 이내만 받는다. 지난 날짜를 받지 않는 이유: 마감일을 바꾸는 수정은 관리자 재승인 대상이라
+// (editPost), 이미 끝난 날짜를 새로 저장할 이유가 없다. 지난 마감일이 남은 글을 고칠 때는 새 날짜를 넣거나 비워야 한다.
+const MAX_RECRUIT_DAYS = 365;
+
+function normalizeRecruitEndDate(value) {
+  if (value === undefined || value === null || value === '') return { ok: true, value: null };
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { ok: false, value: null };
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== value) return { ok: false, value: null };
+  const today = communityService.todayKst();
+  if (value < today || value > communityService.addDaysToDate(today, MAX_RECRUIT_DAYS)) return { ok: false, value: null };
+  return { ok: true, value };
+}
+
 function isValidReportReason(reason) {
   return typeof reason === 'string' && reason.trim().length > 0 && reason.trim().length <= REPORT_REASON_MAX_LENGTH;
 }
@@ -103,12 +118,17 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
     if (!capacityResult.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_CAPACITY', message: null, data: null });
     }
+    const recruitEnd = normalizeRecruitEndDate(req.body.recruitEndDate);
+    if (!recruitEnd.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
+    }
 
     const id = await communityService.createPost(req.session.userId, {
       title,
       body,
       category: req.body.category,
       capacity: capacityResult.value,
+      recruitEndDate: recruitEnd.value,
     });
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
@@ -122,6 +142,37 @@ router.get('/mine', async (req, res, next) => {
   try {
     const posts = await communityService.listMyPosts(req.session.userId);
     res.status(200).json({ status: 200, code: 'COMMUNITY_MY_POSTS', message: null, data: posts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/community/reports/mine — 내 신고 내역(처리 상태 + 관리자가 남긴 처리 안내). 신고 대상자 정보는 내려주지 않는다.
+// "/:id"보다 먼저 등록해야 "reports"가 :id로 잘못 매칭되지 않는다.
+router.get('/reports/mine', async (req, res, next) => {
+  try {
+    const reports = await communityService.listMyReports(req.session.userId);
+    res.status(200).json({ status: 200, code: 'COMMUNITY_MY_REPORTS', message: null, data: reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/community/reports/unseen-count — 아직 확인하지 않은 처리 결과 수(커뮤니티 탭의 점 표시용).
+router.get('/reports/unseen-count', async (req, res, next) => {
+  try {
+    const count = await communityService.countUnseenReportResults(req.session.userId);
+    res.status(200).json({ status: 200, code: 'COMMUNITY_UNSEEN_REPORT_COUNT', message: null, data: { count } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/community/reports/seen — "내 신고 내역"을 열었을 때 처리 결과를 확인한 것으로 표시.
+router.post('/reports/seen', async (req, res, next) => {
+  try {
+    const updated = await communityService.markMyReportResultsSeen(req.session.userId);
+    res.status(200).json({ status: 200, code: 'COMMUNITY_REPORTS_SEEN', message: null, data: { updated } });
   } catch (err) {
     next(err);
   }
@@ -169,12 +220,17 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
     if (!capacityResult.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_CAPACITY', message: null, data: null });
     }
+    const recruitEnd = normalizeRecruitEndDate(req.body.recruitEndDate);
+    if (!recruitEnd.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
+    }
 
     const edited = await communityService.editPost(req.params.id, req.session.userId, {
       title,
       body,
       category: req.body.category,
       capacity: capacityResult.value,
+      recruitEndDate: recruitEnd.value,
     });
     if (!edited) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
@@ -234,6 +290,10 @@ router.post('/:id/apply', requireNotWritingSanctioned, async (req, res, next) =>
     }
     if (post.closedAt) {
       return res.status(400).json({ status: 400, code: 'POST_CLOSED', message: null, data: null });
+    }
+    // 모집 마감일(선택) — 마감일이 지났으면 신청할 수 없다. closed_at은 그대로라 글쓴이가 마감일을 고쳐(재승인) 다시 열 수 있다.
+    if (post.recruitState === 'ended') {
+      return res.status(400).json({ status: 400, code: 'RECRUIT_ENDED', message: null, data: null });
     }
 
     const result = await communityService.applyToPost(req.params.id, req.session.userId, message);

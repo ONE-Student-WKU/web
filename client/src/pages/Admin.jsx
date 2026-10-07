@@ -35,6 +35,9 @@ const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions
 // (사용자 화면의 제재 안내가 이 사유를 보여줌) — 신고자의 주장·비난·개인정보가 섞일 수 있고, 관리자가 확인한 사실도 아니다.
 // 그래서 중립 고정 문구를 기본으로 두고 관리자가 필요하면 구체적으로 고쳐 쓴다. 신고 사유는 이 화면에서 참고용으로만 보인다.
 const DEFAULT_SANCTION_REASON = '커뮤니티 운영 정책 위반';
+// 신고자에게 보이는 처리 안내의 기본 문구 — 신고자의 "내 신고 내역"이 안내가 없을 때 보여주는 문구와 같다.
+const DEFAULT_RESOLUTION_NOTE = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
+const RESOLUTION_NOTE_MAX_LENGTH = 500;
 const SANCTION_STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
 const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리' };
 // 제재 팝업의 기간 선택지(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질
@@ -143,6 +146,9 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [sanctionDuration, setSanctionDuration] = useState('7d');
   const [sanctionReason, setSanctionReason] = useState('');
   const [sanctionSubmitting, setSanctionSubmitting] = useState(false);
+  // 신고자에게 보이는 처리 안내(제재 사유와 별개). 반려 팝업과 제재 팝업이 같은 입력 상태를 쓴다(한 번에 하나만 열림).
+  const [resolutionNote, setResolutionNote] = useState(DEFAULT_RESOLUTION_NOTE);
+  const [resolveTargetReport, setResolveTargetReport] = useState(null);
 
   // 신고 대상자 요약 팝업 — report를 들고 있으면 열림. 읽기 전용(제재·삭제 같은 조치는 이 팝업에서 하지 않는다).
   const [studentSummaryReport, setStudentSummaryReport] = useState(null);
@@ -260,13 +266,24 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
   };
 
-  const handleResolveReport = async (id) => {
+  // "반려"(조치 없이 처리완료) — 신고자에게 보낼 처리 안내를 적는 팝업을 먼저 연다.
+  const openResolveModal = (report) => {
+    setResolveTargetReport(report);
+    setResolutionNote(DEFAULT_RESOLUTION_NOTE);
+  };
+
+  const closeResolveModal = () => setResolveTargetReport(null);
+
+  const handleResolveReport = async () => {
+    if (!resolveTargetReport) return;
+    const id = resolveTargetReport.id;
     setReportActionId(id);
     setError(null);
     try {
-      await resolveAdminReport(id);
+      await resolveAdminReport(id, resolutionNote.trim() || null);
       setReports((prev) => prev.filter((r) => r.id !== id));
       showToast('처리완료로 표시했어요.');
+      closeResolveModal();
     } catch {
       setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -301,6 +318,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     setSanctionScope('post_apply');
     setSanctionDuration('7d');
     setSanctionReason(DEFAULT_SANCTION_REASON);
+    setResolutionNote(DEFAULT_RESOLUTION_NOTE);
   };
 
   const openStudentSummary = (report) => {
@@ -330,6 +348,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
         scope: sanctionScope,
         duration: sanctionDuration,
         reason: sanctionReason.trim(),
+        resolutionNote: resolutionNote.trim() || null,
       });
       setReports((prev) => prev.filter((r) => r.id !== sanctionTargetReport.id));
       showToast('제재를 적용했어요.');
@@ -557,6 +576,11 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                     <p className="community-detail-body">
                       <b>신고 사유</b> · {r.reason}
                     </p>
+                    {reportSubFilter === 'resolved' && r.resolutionNote && (
+                      <p className="community-detail-body">
+                        <b>신고자에게 보낸 안내</b> · {r.resolutionNote}
+                      </p>
+                    )}
                     {reportSubFilter === 'pending' && (
                       <div className="community-applicant-actions" onClick={(e) => e.stopPropagation()}>
                         <button
@@ -571,7 +595,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                         <button
                           type="button"
                           className="community-act-btn community-act-reject"
-                          onClick={() => handleResolveReport(r.id)}
+                          onClick={() => openResolveModal(r)}
                           disabled={reportActionId === r.id}
                         >
                           반려
@@ -718,6 +742,46 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
         </div>
       )}
 
+      {resolveTargetReport && (
+        <div className="career-confirm-overlay" onClick={closeResolveModal}>
+          <form
+            className="career-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleResolveReport();
+            }}
+          >
+            <p className="admin-post-title">신고 반려(조치 없이 처리완료)</p>
+            <p className="community-detail-body">
+              <b>신고 사유(참고용)</b> · {resolveTargetReport.reason}
+            </p>
+            <div className="auth-field">
+              <label htmlFor="resolution-note">신고자에게 보낼 처리 안내 (신고자에게만 보여요)</label>
+              <textarea
+                id="resolution-note"
+                rows={3}
+                maxLength={RESOLUTION_NOTE_MAX_LENGTH}
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+              />
+              <p className="courses-manual-hint">
+                신고 대상자의 이름·학과 같은 개인 정보나 제재 내용은 쓰지 마세요. 비워 두면 기본 안내가 보여요.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button type="submit" className="community-close-btn" disabled={reportActionId === resolveTargetReport.id}>
+                {reportActionId === resolveTargetReport.id ? '처리하는 중...' : '처리완료로 표시'}
+              </button>
+              <button type="button" className="community-outline-btn" onClick={closeResolveModal}>
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {sanctionTargetReport && (
         <div className="career-confirm-overlay" onClick={closeSanctionModal}>
           <form
@@ -773,8 +837,22 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
             </div>
 
             <div className="auth-field">
-              <label>제재 사유 (사용자에게 보여요)</label>
-              <textarea rows={2} value={sanctionReason} onChange={(e) => setSanctionReason(e.target.value)} required />
+              <label htmlFor="sanction-reason">제재 사유 (사용자에게 보여요)</label>
+              <textarea id="sanction-reason" rows={2} value={sanctionReason} onChange={(e) => setSanctionReason(e.target.value)} required />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="resolution-note">신고자에게 보낼 처리 안내 (신고자에게만 보여요)</label>
+              <textarea
+                id="resolution-note"
+                rows={3}
+                maxLength={RESOLUTION_NOTE_MAX_LENGTH}
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+              />
+              <p className="courses-manual-hint">
+                신고 대상자의 이름·학과 같은 개인 정보나 제재 내용은 쓰지 마세요. 비워 두면 기본 안내가 보여요.
+              </p>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

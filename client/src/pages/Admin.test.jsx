@@ -29,6 +29,7 @@ import Admin from './Admin.jsx';
  */
 
 const NEUTRAL = '커뮤니티 운영 정책 위반';
+const RESOLUTION_DEFAULT = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
 const baseProps = {
   user: { name: '관리자', role: 'admin' },
   onGoHome: vi.fn(),
@@ -170,7 +171,8 @@ describe('제재 사유 기본값 (항목 7)', () => {
   async function openSanctionModal() {
     render(<Admin {...baseProps} />);
     await userEvent.click(await screen.findByRole('button', { name: '제재' }));
-    return screen.getByRole('textbox');
+    // 팝업에는 입력칸이 둘이다(제재 사유 = 제재받는 사용자에게 보임, 처리 안내 = 신고자에게 보임) — 제재 사유 쪽을 라벨로 고른다.
+    return screen.getByRole('textbox', { name: /제재 사유/ });
   }
 
   it('제재 사유 입력란의 기본값은 신고 사유가 아니라 고정된 중립 문구다', async () => {
@@ -192,18 +194,73 @@ describe('제재 사유 기본값 (항목 7)', () => {
     await openSanctionModal();
     await userEvent.click(screen.getByRole('button', { name: '제재 확정' }));
     await waitFor(() => expect(api.sanctionReport).toHaveBeenCalledTimes(1));
-    expect(api.sanctionReport).toHaveBeenLastCalledWith(10, { scope: 'post_apply', duration: '7d', reason: NEUTRAL });
+    expect(api.sanctionReport).toHaveBeenLastCalledWith(10, { scope: 'post_apply', duration: '7d', reason: NEUTRAL, resolutionNote: RESOLUTION_DEFAULT });
 
     api.getAdminReports.mockResolvedValue([report({ id: 11 })]);
     // 다른 신고로 다시 열기: 목록을 다시 불러오도록 하위 화면을 한 번 오간다
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
     await userEvent.click(await screen.findByRole('button', { name: /신고함/ }));
     await userEvent.click(await screen.findByRole('button', { name: '제재' }));
-    const textarea = screen.getByRole('textbox');
+    const textarea = screen.getByRole('textbox', { name: /제재 사유/ });
     await userEvent.clear(textarea);
     await userEvent.type(textarea, '반복적인 광고성 글 게시');
     await userEvent.click(screen.getByRole('button', { name: '제재 확정' }));
     await waitFor(() => expect(api.sanctionReport).toHaveBeenCalledTimes(2));
-    expect(api.sanctionReport).toHaveBeenLastCalledWith(11, { scope: 'post_apply', duration: '7d', reason: '반복적인 광고성 글 게시' });
+    expect(api.sanctionReport).toHaveBeenLastCalledWith(11, { scope: 'post_apply', duration: '7d', reason: '반복적인 광고성 글 게시', resolutionNote: RESOLUTION_DEFAULT });
+  });
+});
+
+describe('신고자에게 보낼 처리 안내', () => {
+  beforeEach(() => {
+    sessionStorage.setItem('wku_cache_admin_view', '"reports"');
+    api.getAdminReports.mockResolvedValue([report()]);
+    api.resolveAdminReport.mockResolvedValue(null);
+    api.sanctionReport.mockResolvedValue(null);
+  });
+
+  it('반려를 누르면 처리 안내 팝업이 열리고, 기본 문구 그대로 확정하면 그 문구가 서버로 간다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '반려' }));
+    const note = screen.getByRole('textbox', { name: /처리 안내/ });
+    expect(note).toHaveValue(RESOLUTION_DEFAULT);
+    expect(screen.getByText(/개인 정보나 제재 내용은 쓰지 마세요/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '처리완료로 표시' }));
+    await waitFor(() => expect(api.resolveAdminReport).toHaveBeenCalledWith(10, RESOLUTION_DEFAULT));
+  });
+
+  it('처리 안내를 고쳐 쓰거나 비우면 그대로(비우면 null) 서버로 간다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '반려' }));
+    const note = screen.getByRole('textbox', { name: /처리 안내/ });
+    await userEvent.clear(note);
+    await userEvent.type(note, '확인했고 문제가 없어 종료했어요.');
+    await userEvent.click(screen.getByRole('button', { name: '처리완료로 표시' }));
+    await waitFor(() => expect(api.resolveAdminReport).toHaveBeenCalledWith(10, '확인했고 문제가 없어 종료했어요.'));
+
+    api.getAdminReports.mockResolvedValue([report({ id: 12 })]);
+    await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
+    await userEvent.click(await screen.findByRole('button', { name: /신고함/ }));
+    await userEvent.click(await screen.findByRole('button', { name: '반려' }));
+    await userEvent.clear(screen.getByRole('textbox', { name: /처리 안내/ }));
+    await userEvent.click(screen.getByRole('button', { name: '처리완료로 표시' }));
+    await waitFor(() => expect(api.resolveAdminReport).toHaveBeenLastCalledWith(12, null));
+  });
+
+  it('취소하면 서버 호출 없이 팝업만 닫힌다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '반려' }));
+    await userEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(api.resolveAdminReport).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: /처리 안내/ })).toBeNull();
+  });
+
+  it('제재 팝업의 처리 안내를 고치면 제재 사유와 별개로 resolutionNote로 간다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '제재' }));
+    const note = screen.getByRole('textbox', { name: /처리 안내/ });
+    await userEvent.clear(note);
+    await userEvent.type(note, '조치했어요.');
+    await userEvent.click(screen.getByRole('button', { name: '제재 확정' }));
+    await waitFor(() => expect(api.sanctionReport).toHaveBeenCalledWith(10, { scope: 'post_apply', duration: '7d', reason: NEUTRAL, resolutionNote: '조치했어요.' }));
   });
 });

@@ -15,7 +15,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
-import { getMe, logout } from './api/chatApi.js';
+import { getMe, logout, getUnseenReportCount } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 
 // 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
@@ -161,6 +161,21 @@ function App() {
   // Community.jsx가 마운트 시 한 번 소비하고 onInitialPostConsumed로 다시 null로 돌려놔야,
   // 나중에 하단 탭바로 평범하게 커뮤니티에 들어갔을 때 같은 글이 또 열리지 않는다.
   const [communityInitialPostId, setCommunityInitialPostId] = useState(null);
+  // 신고자가 아직 확인하지 않은 신고 처리 결과 수 — 하단 탭바 커뮤니티 아이콘의 점과 커뮤니티 "내 신고" 탭 점에 쓴다.
+  // 화면을 옮길 때마다 가볍게 다시 확인한다(커뮤니티를 보고 있을 땐 그 화면이 직접 0으로 맞춘다). 실패는 조용히 무시.
+  const [unseenReportCount, setUnseenReportCount] = useState(0);
+  useEffect(() => {
+    if (!user || view === 'community') return;
+    let cancelled = false;
+    getUnseenReportCount()
+      .then((count) => {
+        if (!cancelled) setUnseenReportCount(count);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, view]);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
   // 채팅/진로 탐색처럼 ChatInput을 쓰는 화면에서 입력창이 포커스를 받으면(모바일 키보드가
   // 뜨면) 하단 탭바를 잠깐 숨겨 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는
@@ -312,6 +327,8 @@ function App() {
             onOpenInquiry={() => setView('inquiry')}
             initialPostId={communityInitialPostId}
             onInitialPostConsumed={() => setCommunityInitialPostId(null)}
+            unseenReportCount={unseenReportCount}
+            onUnseenReportsChange={setUnseenReportCount}
           />
         ) : view === 'settings' ? (
           <Settings theme={theme} onSetTheme={setTheme} fontSize={fontSize} onSetFontSize={setFontSize} onGoHome={() => setView('home')} />
@@ -382,6 +399,7 @@ function App() {
             onOpenChat={() => setView('chat')}
             onOpenCareer={() => setView('career')}
             onOpenCommunity={() => setView('community')}
+            communityBadge={unseenReportCount > 0}
           />
         )}
       </div>

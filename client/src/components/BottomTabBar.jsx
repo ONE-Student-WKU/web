@@ -14,8 +14,9 @@ import { IconHome, IconChecklist, IconMessageCircle, IconCompass, IconUsers } fr
  * - onOpenChat: function
  * - onOpenCareer: function
  * - onOpenCommunity: function
+ * - communityBadge: boolean (선택) — 커뮤니티에 확인하지 않은 신고 처리 결과가 있으면 아이콘 옆에 작은 점을 보여준다.
  */
-function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpenCareer, onOpenCommunity }) {
+function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpenCareer, onOpenCommunity, communityBadge = false }) {
   return (
     <nav className="bottom-tab-bar" aria-label="주요 화면 이동">
       <button
@@ -58,10 +59,11 @@ function BottomTabBar({ active, onOpenHome, onOpenGraduation, onOpenChat, onOpen
         type="button"
         className={active === 'community' ? 'bottom-tab active' : 'bottom-tab'}
         onClick={onOpenCommunity}
-        aria-label="커뮤니티"
+        aria-label={communityBadge ? '커뮤니티, 새 알림 있음' : '커뮤니티'}
         aria-current={active === 'community' ? 'page' : undefined}
       >
         <IconUsers size={21} />
+        {communityBadge && <span className="bottom-tab-dot" aria-hidden="true" />}
       </button>
     </nav>
   );

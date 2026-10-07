@@ -220,6 +220,35 @@ async function ensureCommunityReportSanctionColumns(connection) {
   }
 }
 
+// 모집 마감일(recruit_end_date)과 신고 처리 안내(resolution_note/resolution_seen_at) 도입용 guard —
+// 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다. 전부 NULL 허용이라 기존 행은
+// 그대로 안전하다(마감일 없는 글 = 직접 마감할 때까지 모집, 처리 안내 없는 신고 = 기본 문구).
+async function ensureCommunityRecruitPeriodAndResolutionColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND ((TABLE_NAME = 'community_posts' AND COLUMN_NAME = 'recruit_end_date')
+         OR (TABLE_NAME = 'community_reports' AND COLUMN_NAME IN ('resolution_note', 'resolution_seen_at')))`
+  );
+  const has = new Set(cols.map((c) => `${c.TABLE_NAME}.${c.COLUMN_NAME}`));
+  const wanted = [
+    ['community_posts', 'recruit_end_date', 'DATE NULL'],
+    ['community_reports', 'resolution_note', 'TEXT NULL'],
+    ['community_reports', 'resolution_seen_at', 'DATETIME NULL'],
+  ];
+  for (const [table, column, definition] of wanted) {
+    if (has.has(`${table}.${column}`)) continue;
+    console.log(`[db:migrate] ${table}.${column} 컬럼 추가...`);
+    await connection.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    // 이미 처리 완료된 기존 신고는 "읽지 않은 결과"로 보이면 안 된다 — 컬럼을 방금 만든 이 한 번만 확인한 것으로 채운다.
+    if (column === 'resolution_seen_at') {
+      await connection.query(
+        "UPDATE community_reports SET resolution_seen_at = COALESCE(resolved_at, NOW()) WHERE status = 'resolved' AND resolution_seen_at IS NULL"
+      );
+    }
+  }
+}
+
 // 커뮤니티 status 필터 인덱스 도입용 guard — status는 FK가 아니라 CREATE TABLE IF NOT
 // EXISTS의 INDEX 선언이 기존 운영 테이블에는 반영되지 않으므로 직접 ALTER한다.
 // (listApprovedPosts/listPostsForAdmin/listReportsForAdmin이 status 단독으로 필터링함)
@@ -385,6 +414,7 @@ async function migrate() {
     await ensureApplicationRejectReasonColumn(connection);
     await ensureCommunityCategoryCapacityColumns(connection);
     await ensureCommunityStatusIndexes(connection);
+    await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
 
