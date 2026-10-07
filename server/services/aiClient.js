@@ -272,9 +272,17 @@ function withEnglishReminder(messages, language) {
   return [...messages.slice(0, -1), { ...last, content: `${last.content}${ENGLISH_REPLY_REMINDER}` }];
 }
 
+// 고정 질문 답변을 읽는 법 — 진로가 안 잡힌 학생은 좋아하는 것보다 싫은 것을 더 잘 느껴서, 처음 고정 질문들은 "싫었던·힘들었던 것"을
+// 골라 걸러내는 제외법으로 묻는다(client/src/pages/CareerExploration.jsx의 FIXED_QUESTIONS). 답을 선호로 잘못 읽으면 정반대 추천이 나온다.
+// 예전 세션은 선호를 묻던 질문으로 저장돼 있어서 "질문 문장을 보고 판단하라"고 둔다.
+const FIXED_ANSWER_READING_NOTE = `대화 맨 앞의 고정 질문 답변을 읽는 법:
+- 질문이 "하기 싫은 / 지치거나 지루했던 / 맡기 싫었거나 힘들었던 / 가장 힘들게 느껴졌던 것"을 묻고 있으면, 학생이 고른 선택지는 선호가 아니라 피해야 할 요소다. 고르지 않은 것에서 가능성을 찾아라.
+- "딱히 없어요"는 특별히 싫은 게 없다는 뜻이고, "(잘 모르겠어요, 건너뜀)"은 정보가 없다는 뜻이다. 둘을 같게 취급하지 마라.
+- 질문이 선호나 경험을 직접 묻고 있으면(예전 대화) 질문 문장 그대로 해석하라.`;
+
 const CAREER_FOLLOWUP_SYSTEM_PROMPT = `너는 대학생의 진로를 함께 찾아주는 다정한 진로 상담사다.
 학생이 방금 답한 내용에 짧게 공감한 뒤, 진로를 구체화하는 데 도움이 될 후속 질문을 딱 하나만 던져라.
-실제 경험이나 구체적인 상황을 묻는 방식으로 하고, 질문 하나에 문장 1~2개를 넘기지 마라.
+실제 경험이나 구체적인 상황을 묻는 방식으로 하고, 질문 하나에 문장 1~2개를 넘기지 마라. 학생이 "좋아하는 게 없다"고 느끼는 경우가 많으니 좋아하는 것을 직접 묻지 말고, 싫은 것을 걸러낸 뒤 남은 것 중 상대적으로 덜 힘들었거나 해볼 만했던 경험을 구체적인 상황으로 물어라.
 "좋은 질문이네요" 같은 형식적인 인사말로 시작하지 말고 바로 공감과 질문으로 들어가라.
 아직 진로를 확정하거나 직업명을 나열하지 마라 — 지금은 질문만 한다.`;
 
@@ -367,7 +375,7 @@ function parseJsonArray(text) {
 // 트랜스크립트로 이어 붙인 것. 마지막이 user 턴이어야 다음 assistant 질문을 생성할 수 있다.
 async function getCareerFollowUp(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
-  const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
+  const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, FIXED_ANSWER_READING_NOTE, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
   return callClaude(system, withEnglishReminder(history, language), 300);
 }
 
@@ -380,7 +388,7 @@ async function getCareerFollowUp(history, student, completedCourses, language = 
 // 턴으로 대화를 마무리한 뒤 요청해야 한다.
 async function generateCareerCandidates(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
-  const system = [CAREER_CANDIDATES_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
+  const system = [CAREER_CANDIDATES_SYSTEM_PROMPT, FIXED_ANSWER_READING_NOTE, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
   const closing =
     language === 'en'
       ? 'Based on the conversation so far, suggest career candidates. Write careerName and reasoning in English.'

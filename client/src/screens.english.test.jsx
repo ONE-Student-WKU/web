@@ -58,25 +58,64 @@ describe('진로 탐색', () => {
     api.submitCareerFixedAnswers.mockResolvedValue({ messages: [] });
     renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
 
-    expect(await screen.findByRole('heading', { name: 'When learning something new, which appeals to you more?' })).toBeInTheDocument();
-    expect(screen.getByText('Select all that apply.')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Honestly, which task would you least want to do all day long?' })).toBeInTheDocument();
+    expect(screen.getByText('Select up to 2.')).toBeInTheDocument();
 
     // 1~4번 질문(복수 선택): 첫 선택지를 고르고 다음으로.
-    const firstOptions = ['Learning by doing it myself', 'Coordinating the overall schedule and roles', 'Quickly producing visible results', 'When I dug into the cause of something until I figured it out'];
+    const firstOptions = ['Dealing with people nonstop', 'Building, fixing or practicing something hands-on', 'Finding and organizing materials', 'Classes about understanding concepts and theory'];
     for (const option of firstOptions) {
       await userEvent.click(await screen.findByRole('button', { name: option }));
       await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     }
-    expect(await screen.findByRole('heading', { name: 'How much development (coding) experience do you have so far?' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Only what I learned in class' }));
+    expect(await screen.findByRole('heading', { name: 'Outside of class, what have you done related to your major?' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Just class assignments or practice' }));
     await userEvent.click(screen.getByRole('button', { name: 'Start chatting' }));
 
     await waitFor(() => expect(api.submitCareerFixedAnswers).toHaveBeenCalled());
     const [sid, payload, language] = api.submitCareerFixedAnswers.mock.calls[0];
     expect(sid).toBe(9);
     expect(language).toBe('en');
-    expect(payload[0]).toEqual({ question: '새로운 걸 배울 때 더 끌리는 쪽은?', answer: '직접 해보면서 몸으로 익히는 것' });
-    expect(payload[4]).toEqual({ question: '지금까지 개발(코딩) 경험은 어느 정도인가요?', answer: '수업에서 배운 정도예요' });
+    expect(payload[0]).toEqual({ question: '솔직히 하루 종일 하라면 가장 하기 싫은 일은?', answer: '계속 사람을 상대하는 일' });
+    expect(payload[4]).toEqual({ question: '전공과 관련해 수업 밖에서 해본 활동은?', answer: '수업 과제나 실습 정도예요' });
+  });
+
+  it('복수 선택은 최대 2개까지이고 3개째를 고르면 가장 먼저 고른 것이 빠진다', async () => {
+    renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
+    const names = ['Dealing with people nonstop', 'Concentrating alone for long stretches', 'Handling new situations every time'];
+    for (const name of names) await userEvent.click(await screen.findByRole('button', { name }));
+
+    const isSelected = (name) => screen.getByRole('button', { name }).className.includes('selected');
+    expect(isSelected(names[0])).toBe(false);
+    expect(isSelected(names[1])).toBe(true);
+    expect(isSelected(names[2])).toBe(true);
+  });
+
+  it('"딱히 없어요"는 다른 선택지와 같이 고를 수 없다(고르면 나머지 해제, 다른 걸 고르면 해제)', async () => {
+    renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
+    const isSelected = (name) => screen.getByRole('button', { name }).className.includes('selected');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dealing with people nonstop' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Nothing in particular' }));
+    expect(isSelected('Nothing in particular')).toBe(true);
+    expect(isSelected('Dealing with people nonstop')).toBe(false);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Repeating a set procedure' }));
+    expect(isSelected('Repeating a set procedure')).toBe(true);
+    expect(isSelected('Nothing in particular')).toBe(false);
+  });
+
+  it('"딱히 없어요"를 고르면 건너뜀이 아니라 그 선택지가 답으로 저장된다', async () => {
+    api.createCareerSession.mockResolvedValue({ id: 5 });
+    api.submitCareerFixedAnswers.mockResolvedValue({ messages: [] });
+    renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Nothing in particular' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    for (let i = 0; i < 4; i++) await userEvent.click(await screen.findByRole('button', { name: "I'm not sure, next" }));
+    await waitFor(() => expect(api.submitCareerFixedAnswers).toHaveBeenCalled());
+    const payload = api.submitCareerFixedAnswers.mock.calls[0][1];
+    expect(payload[0].answer).toBe('딱히 없어요');
+    expect(payload[1].answer).toBe('(잘 모르겠어요, 건너뜀)');
   });
 
   it('"잘 모르겠어요" 건너뛰기는 화면 언어와 무관하게 같은 저장값으로 간다', async () => {
