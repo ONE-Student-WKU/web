@@ -33,7 +33,11 @@ router.post('/inbound', async (req, res, next) => {
       return res.status(200).json({ status: 200, code: 'PROXY_NOT_FOUND', message: null, data: null });
     }
 
-    await emailRelayService.forwardToRecipient({
+    // 첨부 개수·크기·다운로드 시간 한도(emailRelayService.RELAY_LIMITS)가 이 응답이 늦어지는 상한을
+    // 정한다. 다운로드 실패 등으로 예외가 나면 500으로 응답해 Resend가 재시도하게 두고, 재시도로
+    // 중복 발송되는 것은 relayInboundEmail의 idempotency key가 막는다. 먼저 200을 응답하고 뒤에서
+    // 처리하면 그 사이 서버가 재시작될 때 메일이 조용히 사라지므로 일부러 끝까지 기다린다.
+    await emailRelayService.relayInboundEmail({
       emailId: event.data.email_id,
       to: target.recipientEmail,
       from: target.senderProxyEmail,
