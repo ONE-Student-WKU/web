@@ -495,10 +495,11 @@ function parseJsonArray(text) {
 // ("고객님"처럼 한글 뒤에 붙은 님은 건드리지 않는다). 한국어 응답에만 적용한다.
 const BARE_HONORIFIC = /(^|[\s("'“‘])님(?=[의이은는을를께도과와에만,.!?\s)"'”’]|$)/g;
 
+// "당신"도 같은 방식으로 막는다 — 프롬프트에서 금지해도 위기 안내처럼 감정이 실린 답변에서 가끔 나온다.
 function fixBareHonorific(text, student, language = 'ko') {
   if (language !== 'ko' || typeof text !== 'string') return text;
   const label = student && student.name ? `${student.name}님` : '학생';
-  return text.replace(BARE_HONORIFIC, (_m, lead) => `${lead}${label}`);
+  return text.replace(BARE_HONORIFIC, (_m, lead) => `${lead}${label}`).replace(/당신/g, label);
 }
 
 // history: [{role: 'user'|'assistant', content}, ...] — 고정 질문 답변 + 자유 대화를 하나의

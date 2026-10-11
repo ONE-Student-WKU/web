@@ -25,6 +25,11 @@ test('닉네임이 없으면 "학생"으로 바꾼다', () => {
   assert.equal(fixBareHonorific('님의 성향과 잘 맞아요.', null), '학생의 성향과 잘 맞아요.');
 });
 
+test('"당신"도 닉네임+님(없으면 학생)으로 바꾼다', () => {
+  assert.equal(fixBareHonorific('당신의 말을 들어줄 사람이 있어요.', student), 'user42님의 말을 들어줄 사람이 있어요.');
+  assert.equal(fixBareHonorific('당신이 힘든 걸 알아요.', null), '학생이 힘든 걸 알아요.');
+});
+
 test('영어 응답이나 문자열이 아닌 값은 그대로 둔다', () => {
   assert.equal(fixBareHonorific('님의 성향', student, 'en'), '님의 성향');
   assert.equal(fixBareHonorific(undefined, student), undefined);
