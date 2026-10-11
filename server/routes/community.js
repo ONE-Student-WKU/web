@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const { requireNotFullySanctioned, requireNotWritingSanctioned } = require('../middleware/sanction');
 const communityService = require('../services/communityService');
 const sanctionService = require('../services/sanctionService');
+const studentService = require('../services/studentService');
 
 /**
  * server/routes/community.js
@@ -191,7 +192,12 @@ router.get('/', async (req, res, next) => {
 // GET /api/community/:id — 글 상세. 승인된 글이거나 본인 글이어야 조회 가능.
 router.get('/:id', async (req, res, next) => {
   try {
-    const post = await communityService.getPostById(req.params.id, { studentId: req.session.userId });
+    // 관리자에게만 작성자 id를 내려준다 — 글에서 작성자를 눌러 바로 제재할 때 필요하고, 일반 사용자에게는 노출하지 않는다.
+    const viewer = await studentService.findById(req.session.userId);
+    const post = await communityService.getPostById(req.params.id, {
+      studentId: req.session.userId,
+      includeAuthorId: Boolean(viewer && viewer.role === 'admin'),
+    });
     if (!post) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }

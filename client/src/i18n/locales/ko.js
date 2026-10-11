@@ -48,7 +48,6 @@ export default {
   // 채팅
   'chat.placeholder': '무엇이든 물어보세요',
   'chat.send': '전송',
-  'chat.me': '나',
   'chat.citationsHide': '출처 접기',
   'chat.citationsMore': '출처 더 보기 ({count})',
   'chat.typing': '답변을 준비하고 있어요',
@@ -299,6 +298,7 @@ export default {
   'inquiry.send': '보내기',
   'inquiry.loading': '불러오는 중...',
   'inquiry.empty': '아직 보낸 문의가 없어요.',
+  'inquiry.reply': '운영진 답변',
 
   // 계정 정보 수정
   'profile.title': '계정 정보 수정',
@@ -389,7 +389,7 @@ export default {
   // 학과 선택(검색 + 소속 트리)
   'dept.search.placeholder': '학과 이름으로 검색 (예: 컴퓨터, 경영)',
   'dept.search.aria': '학과 검색',
-  'dept.search.clear': '검색어 지우기',
+  'dept.search.hint': '학과 이름의 일부만 입력해도 찾아요. 옛 이름(예: 경영학부)으로도 찾을 수 있어요.',
   'dept.search.empty': '"{query}"와 맞는 학과가 없어요. 이름의 일부만 입력하거나, 옛 이름(예: 경영학부)으로도 찾아보세요.',
   'dept.search.count': '검색 결과 {count}개',
   'dept.formerGroup': '이전 학과 (개편·폐지)',
@@ -525,6 +525,8 @@ export default {
   'community.toast.edited': '수정했어요 — 다시 승인 대기 중이에요.',
   'community.toast.posted': '글을 올렸어요 — 승인 후 목록에 노출돼요.',
   'community.toast.deleted': '삭제했어요.',
+  'community.toast.sanctioned': '제재를 적용했어요.',
+  'community.sanctionAuthorAria': '작성자 {author} 제재하기',
   'community.toast.closed': '모집을 마감했어요.',
   'community.toast.applied': '신청했어요 — 글쓴이가 검토하면 알 수 있어요.',
   'community.toast.accepted': '수락했어요.',
@@ -535,7 +537,7 @@ export default {
   'community.closedPrefix': '마감',
   'community.hiddenTitle': '재승인 대기 중',
   'community.reportAria': '신고하기',
-  'community.adminDeleteAria': '관리자 권한으로 삭제',
+  'community.adminDeleteShort': '삭제 (관리자)',
   'community.capacity': '모집인원 {n}명',
   'community.badge.closed': '모집 마감',
   'community.badge.periodEnded': '모집 기간 마감',

@@ -48,7 +48,7 @@
   font-size: 18px;
 }
 
-/* 라이트 테마 — 설정 화면에서 명시적으로 선택했을 때만 적용(App.jsx가 <html data-theme="light">로 설정).
+/* 라이트 테마 — 처음 방문 기본값이자 설정 화면에서 고를 수 있는 테마(App.jsx가 <html data-theme="light">로 설정).
    변수 이름은 :root와 동일하게 유지해서 나머지 CSS는 전혀 손댈 필요 없음. */
 :root[data-theme='light'] {
   --color-bg-page: #f0f1f4;
@@ -546,44 +546,12 @@ body {
   color: var(--color-danger);
 }
 
-/* 동의 없이 로그인 버튼·입력 칸을 눌렀을 때 동의 체크 강조 — 좌우로 흔들고 붉은 테두리를 잠깐 보여준다.
-   같은 애니메이션을 연속으로 다시 재생하려고 a/b 두 이름을 번갈아 쓴다(ConsentCheckbox.jsx). */
-.auth-consent-field--nudge-a,
-.auth-consent-field--nudge-b {
+/* 동의 없이 로그인 버튼·입력 칸을 눌렀을 때 동의 체크 강조 — 붉은 테두리·배경만 잠깐 보여준다(흔들림 없음).
+   표시 시간은 ConsentCheckbox.jsx의 NUDGE_MS가 정한다. */
+.auth-consent-field--nudge {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   box-shadow: 0 0 0 2px var(--color-danger);
   color: var(--color-text-primary);
-}
-
-.auth-consent-field--nudge-a {
-  animation: consent-nudge-a 0.5s ease-in-out;
-}
-
-.auth-consent-field--nudge-b {
-  animation: consent-nudge-b 0.5s ease-in-out;
-}
-
-@keyframes consent-nudge-a {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(3px); }
-}
-
-@keyframes consent-nudge-b {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(3px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-consent-field--nudge-a,
-  .auth-consent-field--nudge-b {
-    animation: none;
-  }
 }
 
 .auth-submit-btn:disabled,
@@ -1734,6 +1702,22 @@ body {
   display: none;
 }
 
+/* 열릴 때 오른쪽에서 밀려 들어온다. 프레임이 overflow: hidden이라 화면 밖으로 삐져나가지 않는다. */
+.search-screen--enter {
+  animation: search-screen-slide-in 0.25s ease-out;
+}
+
+@keyframes search-screen-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-screen--enter {
+    animation: none;
+  }
+}
+
 .search-screen-bar {
   display: flex;
   align-items: center;
@@ -2029,35 +2013,84 @@ body {
   overflow-wrap: break-word;
 }
 
-.community-detail-title-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
+/* 글 상세 — 제목·작성자 줄 아래 구분선, 본문은 카드, 신고·삭제는 글자가 붙은 작은 버튼, 신청은 구분선 아래 따로. */
+.community-detail-meta-divider {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.community-title-icon-btn {
+.community-detail-body-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 72px;
+  margin-bottom: 10px;
+}
+
+.community-detail-tools {
   display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.community-tool-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   background: none;
-  border: none;
-  color: var(--color-alert);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   cursor: pointer;
 }
 
-.community-title-icon-btn:disabled {
+.community-tool-btn.community-tool-danger {
+  color: var(--color-alert);
+}
+
+.community-tool-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* 작은 화면에서 팝업이 화면보다 길어도 확정·취소 버튼까지 스크롤로 닿게 한다. */
+.student-sanction-dialog {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.community-apply-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.community-apply-section .auth-field label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .community-detail-meta {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
   margin: 0 0 16px;
+}
+
+/* 관리자에게만 보이는 작성자 이름 버튼 — 누르면 제재 팝업. 일반 글자처럼 보이되 밑줄로 눌러볼 수 있다는 걸 알린다. */
+.community-author-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .community-detail-body {
@@ -2088,6 +2121,18 @@ body {
 
 .community-badge-project {
   background: #394967;
+}
+
+/* 라이트 테마에서는 스터디(초록)·반려(빨강) 배지가 어두운 톤이면 칙칙해서 밝은 색으로 바꾼다.
+   배경이 밝아져 흰 글자로는 안 읽히므로 글자색은 본문색으로 둔다. */
+:root[data-theme='light'] .community-badge-study {
+  background: #b6d061;
+  color: var(--color-text-primary);
+}
+
+:root[data-theme='light'] .community-badge-rejected {
+  background: #e88d87;
+  color: var(--color-text-primary);
 }
 
 .community-badge-capacity {
@@ -2518,6 +2563,25 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
+  position: relative;
+}
+
+/* 처리 대기 건수 뱃지 — 신고함·문의함·커뮤니티 관리 타일 오른쪽 위에 빨간 원으로 붙는다(0건이면 그리지 않음). */
+.admin-tile-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--color-alert);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
 }
 
 .courses-category-select {
@@ -3494,24 +3558,7 @@ select.onb-select {
 }
 .community-badge-new { background: var(--color-danger, #e5484d); color: #fff; margin-left: 6px; }
 
-/* 학과 선택: 검색창 + 소속(단과대학) 트리 */
-.onb-search {
-  margin-bottom: 12px;
-}
-.onb-search-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-.onb-search-count,
-.onb-search-empty,
+/* 학과 선택: 검색 진입 버튼(.search-entry) + 소속(단과대학) 트리 */
 .onb-college-hint {
   margin: 0 0 8px;
   line-height: 1.5;
@@ -3554,4 +3601,184 @@ select.onb-select {
 }
 .onb-college-body {
   margin: 8px 0 4px 10px;
+}
+
+/* 관리자 현황 칸 중 시간대별 추이로 이어지는 칸 — 일반 칸과 같은 모양의 버튼 */
+.admin-stat-cell--link {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.admin-stat-cell--link:hover {
+  background: var(--color-accent-bg);
+}
+
+.admin-stat-link-hint {
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+/* 현황 추이 화면 — 지표 카드, 막대 그래프(TrendChart), 표 보기 */
+.admin-trend-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.admin-trend-total {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.admin-trend-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* 호버·포커스 값을 보여 주는 줄 — 내용이 바뀌어도 높이가 변하지 않게 한 줄 자리를 잡아 둔다. */
+.admin-trend-readout {
+  min-height: 1.5em;
+  margin: 4px 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+}
+
+.trend-chart-grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.trend-chart-baseline {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+
+.trend-chart-axis {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-chart-col {
+  outline: none;
+  cursor: pointer;
+}
+
+.trend-chart-hit {
+  fill: transparent;
+}
+
+.trend-chart-bar {
+  fill: var(--color-accent);
+  opacity: 0.75;
+  transition: opacity 0.12s;
+}
+
+.trend-chart-col.active .trend-chart-bar {
+  opacity: 1;
+}
+
+.trend-chart-focus {
+  fill: none;
+  stroke: none;
+}
+
+/* 선 그래프(점이 많은 1년·전체) — 선 2px, 면적은 같은 색 10%, 강조 점은 카드색 2px 링 */
+.trend-chart--line {
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+
+.trend-chart--line:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.trend-chart-line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-chart-area {
+  fill: var(--color-accent);
+  opacity: 0.1;
+}
+
+.trend-chart-cursor {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+}
+
+.trend-chart-dot {
+  fill: var(--color-accent);
+  stroke: var(--color-bg-card);
+  stroke-width: 2;
+}
+
+.trend-chart-col:focus-visible .trend-chart-focus {
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.admin-trend-table {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+}
+
+.admin-trend-table summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.admin-trend-table table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.admin-trend-table th,
+.admin-trend-table td {
+  padding: 6px 4px;
+  border-top: 1px solid var(--color-border);
+  text-align: left;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-trend-table thead th {
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.admin-trend-table td,
+.admin-trend-table thead th:last-child {
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trend-chart-bar {
+    transition: none;
+  }
 }

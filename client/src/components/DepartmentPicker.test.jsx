@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DepartmentPicker from './DepartmentPicker.jsx';
 import { groupDepartmentsByCollege, searchDepartments, normalizeForSearch, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
@@ -75,28 +75,43 @@ describe('DepartmentPicker', () => {
     expect(screen.getByRole('button', { name: /경상대학/ })).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('검색창에 입력하면 트리 대신 일치하는 학과가 소속과 함께 한 줄 목록으로 나온다', async () => {
+  // 검색은 별도 전체 화면(SearchScreen)에서 한다 — 진입 버튼을 눌러 열고, 결과는 그 화면(dialog) 안에서 본다.
+  const openSearch = async () => {
+    await userEvent.click(screen.getByRole('button', { name: '학과 검색' }));
+    return screen.getByRole('dialog', { name: '학과 검색' });
+  };
+
+  it('검색 진입 버튼을 누르면 검색 전용 화면이 열리고, 입력하면 일치하는 학과가 소속과 함께 한 줄 목록으로 나온다', async () => {
     renderPicker();
-    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '컴퓨터');
-    expect(screen.getByText('검색 결과 1개')).toBeInTheDocument();
-    const card = screen.getByRole('button', { name: /컴퓨터·소프트웨어공학과/ });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const dialog = await openSearch();
+    expect(within(dialog).getByText(/학과 이름의 일부만 입력해도 찾아요/)).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '컴퓨터');
+    expect(within(dialog).getByText('검색 결과 1개')).toBeInTheDocument();
+    const card = within(dialog).getByRole('button', { name: /컴퓨터·소프트웨어공학과/ });
     expect(within(card).getByText(/공과대학 \(이전 학과\)/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /경상대학/ })).toBeNull(); // 트리는 숨겨짐
+    expect(within(dialog).queryByRole('button', { name: /경상대학/ })).toBeNull(); // 결과 화면에는 트리가 없다
   });
 
-  it('검색 결과에서 학과를 누르면 onSelect가 불린다', async () => {
+  it('검색 결과에서 학과를 누르면 onSelect가 불리고 검색 화면이 닫힌다', async () => {
     const { onSelect } = renderPicker();
-    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '경영학부');
-    await userEvent.click(screen.getByRole('button', { name: /경영학부/ }));
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '경영학부');
+    await userEvent.click(within(dialog).getByRole('button', { name: /경영학부/ }));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
-  it('일치하는 학과가 없으면 안내 문구가 나오고, 지우기 버튼으로 트리로 돌아간다', async () => {
+  it('일치하는 학과가 없으면 안내 문구가 나오고, 뒤로가기 버튼으로 닫으면 검색어가 비워진 채 트리로 돌아간다', async () => {
     renderPicker();
-    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '없는학과');
-    expect(screen.getByText(/맞는 학과가 없어요/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: '검색어 지우기' }));
+    let dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '없는학과');
+    expect(within(dialog).getByText(/맞는 학과가 없어요/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: '검색 닫기' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByRole('button', { name: /공과대학/ })).toBeInTheDocument();
+    dialog = await openSearch(); // 다시 열면 이전 검색어가 남아 있지 않다
+    expect(within(dialog).getByRole('searchbox', { name: '학과 검색' })).toHaveValue('');
   });
 
   it('"이전 학과 (개편·폐지)" 묶음에는 입학 당시 이름을 고르라는 안내가 있다', async () => {
@@ -112,20 +127,22 @@ describe('DepartmentPicker', () => {
     expect(screen.queryByRole('button', { name: /공과대학/ })).toBeNull();
     expect(screen.getByRole('button', { name: /^경영계열/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^원불교학과/ })).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '원불교');
-    expect(screen.getByText('검색 결과 1개')).toBeInTheDocument();
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '원불교');
+    expect(within(dialog).getByText('검색 결과 1개')).toBeInTheDocument();
   });
 
-  it('한글 조합 중에는 검색을 보류하고(깜빡임 방지, 과목 카탈로그 검색과 같은 방식) 글자가 완성되는 순간에만 반영한다', () => {
+  it('한글 조합 중에는 검색을 보류하고(깜빡임 방지, 과목 카탈로그 검색과 같은 방식) 글자가 완성되는 순간에만 반영한다', async () => {
     renderPicker();
-    const input = screen.getByRole('searchbox', { name: '학과 검색' });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
     fireEvent.compositionStart(input);
     fireEvent.change(input, { target: { value: '컴ㅍ' } }); // 조합 중 낱자 — 이 상태로 걸러 내면 "맞는 학과가 없어요"가 번쩍인다
     expect(input).toHaveValue('컴ㅍ'); // 입력창에는 바로 보이지만
-    expect(screen.queryByText(/맞는 학과가 없어요/)).toBeNull(); // 검색은 아직 안 했고
-    expect(screen.getByRole('button', { name: /공과대학/ })).toBeInTheDocument(); // 트리가 그대로다
+    expect(within(dialog).queryByText(/맞는 학과가 없어요/)).toBeNull(); // 검색은 아직 안 했고
+    expect(within(dialog).getByText(/학과 이름의 일부만 입력해도 찾아요/)).toBeInTheDocument(); // 안내가 그대로다
     fireEvent.change(input, { target: { value: '컴퓨' } });
     fireEvent.compositionEnd(input, { target: { value: '컴퓨' } });
-    expect(screen.getByText('검색 결과 1개')).toBeInTheDocument();
+    expect(within(dialog).getByText('검색 결과 1개')).toBeInTheDocument();
   });
 });

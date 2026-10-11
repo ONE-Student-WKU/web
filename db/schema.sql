@@ -906,6 +906,8 @@ CREATE TABLE IF NOT EXISTS inquiries (
   status       VARCHAR(20) NOT NULL DEFAULT 'open',  -- open / resolved
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   resolved_at  DATETIME NULL,
+  -- 관리자가 처리완료할 때 문의자에게 남기는 답변(선택). 문의자 본인 화면("내 문의")에만 보인다. NULL이면 답변 없이 처리완료.
+  resolution_note TEXT NULL,
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );

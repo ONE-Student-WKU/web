@@ -6,7 +6,7 @@ const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const reportedStudentService = require('../services/reportedStudentService');
-const pool = require('../db');
+const adminStatsService = require('../services/adminStatsService');
 
 /**
  * server/routes/admin.js
@@ -93,7 +93,7 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// 신고자에게 보여줄 처리 안내(선택) 최대 길이.
+// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이.
 const RESOLUTION_NOTE_MAX_LENGTH = 500;
 
 // 선택 입력 — 문자열이 아니면(undefined/null 포함) 없는 것으로 보고, 너무 길면 거부한다(ok:false).
@@ -144,22 +144,25 @@ const SANCTION_SCOPES = ['post_apply', 'full'];
 // null = 영구정지.
 const SANCTION_DURATIONS = { '1d': 1, '3d': 3, '7d': 7, '30d': 30, permanent: null };
 
+// 제재 요청 본문(범위·기간·사유) 검증 — 신고함 제재와 글에서 바로 거는 제재가 같은 규칙을 쓴다. 문제가 있으면 { error: 코드 }.
+function parseSanctionInput(body) {
+  const { scope, duration, reason } = body || {};
+  if (!SANCTION_SCOPES.includes(scope)) return { error: 'INVALID_SCOPE' };
+  if (!Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) return { error: 'INVALID_DURATION' };
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+  if (!trimmedReason) return { error: 'REQUIRED_REASON' };
+  return { scope, durationDays: SANCTION_DURATIONS[duration], reason: trimmedReason };
+}
+
 // POST /api/admin/community/reports/:id/sanction — "제재"(#201). 신고 대상 계정에 정지를
 // 걸고, 신고된 글/신청을 실제로 삭제하고(이미 지워졌으면 조용히 건너뜀), 신고를
 // 처리완료로 표시한다 — 세 가지가 한 번의 조치로 묶여야 신고함에 "제재는 걸었는데
 // 글은 안 지워짐" 같은 어중간한 상태가 안 남는다.
 router.post('/community/reports/:id/sanction', async (req, res, next) => {
   try {
-    const { scope, duration, reason } = req.body;
-    if (!SANCTION_SCOPES.includes(scope)) {
-      return res.status(400).json({ status: 400, code: 'INVALID_SCOPE', message: null, data: null });
-    }
-    if (!Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) {
-      return res.status(400).json({ status: 400, code: 'INVALID_DURATION', message: null, data: null });
-    }
-    const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
-    if (!trimmedReason) {
-      return res.status(400).json({ status: 400, code: 'REQUIRED_REASON', message: null, data: null });
+    const input = parseSanctionInput(req.body);
+    if (input.error) {
+      return res.status(400).json({ status: 400, code: input.error, message: null, data: null });
     }
     // 신고자에게 보이는 처리 안내(선택). 제재 사유(제재받는 사용자에게 보임)와 별개의 값이다.
     const resolutionNote = normalizeResolutionNote(req.body.resolutionNote);
@@ -179,9 +182,9 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
 
     await sanctionService.createSanction({
       studentId: report.reportedStudentId,
-      reason: trimmedReason,
-      scope,
-      durationDays: SANCTION_DURATIONS[duration],
+      reason: input.reason,
+      scope: input.scope,
+      durationDays: input.durationDays,
       createdBy: req.session.userId,
       reportId: report.id,
     });
@@ -191,6 +194,41 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
 
     await communityService.resolveReport(report.id, resolutionNote.value);
     res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/community/students/:id/sanction — 신고 없이 직접 거는 제재(커뮤니티 글에서 작성자를 눌러 바로 조치).
+// 신고함 제재와 달리 글/신청을 지우거나 신고를 처리완료로 바꾸는 부수 효과는 없다 — 글은 승인·삭제 흐름으로 관리자가 따로 다룬다.
+// 관리자 계정은 대상이 될 수 없다: 본인이나 다른 관리자를 실수로 눌러 커뮤니티에서 막히는 일을 서버에서 막는다.
+router.post('/community/students/:id/sanction', async (req, res, next) => {
+  try {
+    const studentId = Number(req.params.id);
+    if (!Number.isInteger(studentId) || studentId <= 0) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    const input = parseSanctionInput(req.body);
+    if (input.error) {
+      return res.status(400).json({ status: 400, code: input.error, message: null, data: null });
+    }
+
+    const target = await studentService.findById(studentId);
+    if (!target) {
+      return res.status(404).json({ status: 404, code: 'STUDENT_NOT_FOUND', message: null, data: null });
+    }
+    if (target.role === 'admin') {
+      return res.status(400).json({ status: 400, code: 'CANNOT_SANCTION_ADMIN', message: null, data: null });
+    }
+
+    await sanctionService.createSanction({
+      studentId,
+      reason: input.reason,
+      scope: input.scope,
+      durationDays: input.durationDays,
+      createdBy: req.session.userId,
+    });
+    res.status(200).json({ status: 200, code: 'STUDENT_SANCTIONED', message: null, data: null });
   } catch (err) {
     next(err);
   }
@@ -230,10 +268,14 @@ router.get('/inquiries', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/inquiries/:id/resolve
+// POST /api/admin/inquiries/:id/resolve — body.note(선택)는 문의자에게 보이는 처리 답변(신고 처리 안내와 같은 검증).
 router.post('/inquiries/:id/resolve', async (req, res, next) => {
   try {
-    const resolved = await inquiryService.resolveInquiry(req.params.id);
+    const note = normalizeResolutionNote(req.body?.note);
+    if (!note.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RESOLUTION_NOTE', message: null, data: null });
+    }
+    const resolved = await inquiryService.resolveInquiry(req.params.id, note.value);
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'INQUIRY_NOT_FOUND', message: null, data: null });
     }
@@ -243,7 +285,8 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats — 관리자 대시보드 상단 통계. activeSessions는 "현재 접속자"
+// GET /api/admin/stats — 관리자 대시보드 통계(집계는 services/adminStatsService.js: 처리 대기 건수(뱃지)와 최근 24시간 운영 지표).
+// activeSessions는 "현재 접속자"
 // (최근 5분 내 요청이 있었던 계정 수 — student_activity, middleware/activityTracker.js).
 // 원래 sessions 테이블(express-mysql-session)의 만료 안 된 행 개수를 그대로 셌는데, 로그인
 // 유지 기간이 30일이라 실제 접속 여부와 무관하게 값이 크게 부풀려지는 문제가 있었다(실사용
@@ -251,16 +294,24 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
 // 옛 로그인 폼 시절의 테스트 계정 수를 뺀 값).
 router.get('/stats', async (req, res, next) => {
   try {
-    const [[{ count }]] = await pool.query(
-      'SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at > NOW() - INTERVAL 5 MINUTE'
-    );
+    const stats = await adminStatsService.getDashboardStats();
     const totalStudents = studentService.excludeLegacyTestAccounts(await studentService.countAll());
-    res.status(200).json({
-      status: 200,
-      code: 'ADMIN_STATS',
-      message: null,
-      data: { activeSessions: count, totalStudents },
-    });
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS', message: null, data: { ...stats, totalStudents } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/stats/trend?range=24h|30d|1y|all — 대시보드 지표(신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
+// 24h는 1시간 단위, 나머지는 하루 단위(services/adminStatsService.js getTrend).
+router.get('/stats/trend', async (req, res, next) => {
+  try {
+    const range = req.query.range || '24h';
+    if (!adminStatsService.isTrendRange(range)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RANGE', message: null, data: null });
+    }
+    const trend = await adminStatsService.getTrend(range);
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_TREND', message: null, data: trend });
   } catch (err) {
     next(err);
   }

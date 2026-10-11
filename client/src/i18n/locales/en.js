@@ -47,7 +47,6 @@ export default {
   // Chat
   'chat.placeholder': 'Ask me anything',
   'chat.send': 'Send',
-  'chat.me': 'Me',
   'chat.citationsHide': 'Hide sources',
   'chat.citationsMore': 'Show more sources ({count})',
   'chat.typing': 'Preparing an answer',
@@ -330,6 +329,7 @@ export default {
   'inquiry.send': 'Send',
   'inquiry.loading': 'Loading...',
   'inquiry.empty': "You haven't sent any inquiries yet.",
+  'inquiry.reply': 'Reply from the team',
 
   // Edit account info
   'profile.title': 'Edit account info',
@@ -425,7 +425,7 @@ export default {
   // Department picker (search + college tree)
   'dept.search.placeholder': 'Search by department name (e.g. 컴퓨터, 경영)',
   'dept.search.aria': 'Search departments',
-  'dept.search.clear': 'Clear search',
+  'dept.search.hint': 'Type any part of the department name. Old names (e.g. 경영학부) work too.',
   'dept.search.empty': 'No department matches "{query}". Try part of the name, or an old name (e.g. 경영학부).',
   'dept.search.count': '{count} results',
   'dept.formerGroup': 'Former departments (reorganized or closed)',
@@ -563,6 +563,8 @@ export default {
   'community.toast.edited': 'Updated — it is waiting for approval again.',
   'community.toast.posted': 'Posted — it will appear in the list after approval.',
   'community.toast.deleted': 'Deleted.',
+  'community.toast.sanctioned': 'Sanction applied.',
+  'community.sanctionAuthorAria': 'Sanction author {author}',
   'community.toast.closed': 'Recruitment closed.',
   'community.toast.applied': "Applied — you'll find out once the author reviews it.",
   'community.toast.accepted': 'Accepted.',
@@ -573,7 +575,7 @@ export default {
   'community.closedPrefix': 'Closed',
   'community.hiddenTitle': 'Awaiting re-approval',
   'community.reportAria': 'Report',
-  'community.adminDeleteAria': 'Delete as admin',
+  'community.adminDeleteShort': 'Delete (admin)',
   'community.capacity': 'Recruiting {n}',
   'community.badge.closed': 'Recruitment closed',
   'community.badge.periodEnded': 'Recruitment period ended',

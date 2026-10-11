@@ -10,6 +10,7 @@ import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
 import Community, { resetCommunityCache } from './pages/Community.jsx';
 import Admin from './pages/Admin.jsx';
+import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -17,6 +18,7 @@ import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
+import useClearStaleSelection from './hooks/useClearStaleSelection.js';
 import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
@@ -40,6 +42,7 @@ function resetAllUserCaches() {
   resetProfileCache();
   resetChatCache();
   resetCommunityCache();
+  resetAdminTrendCache();
 }
 
 /**
@@ -179,9 +182,9 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 로그인 직후 한 번만 판단한다(위 주석).
   }, [user?.id]);
 
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-  );
+  // 처음 방문(저장된 선택 없음)은 OS 설정과 무관하게 라이트 — 전체 학과 기준으로 라이트가 더 범용적이라서.
+  // 설정에서 한 번 고르면 그 값이 저장돼 이후엔 그대로 따른다.
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   // 홈의 "학년이 다르신가요?" 링크로 설정에 왔을 때만 휴학 학기 수 입력란을 강조 — 계정
   // 메뉴로 평범하게 들어온 경우엔 안 켜지게 별도 플래그로 관리.
   const [highlightLeaveSemesters, setHighlightLeaveSemesters] = useState(false);
@@ -209,6 +212,8 @@ function App() {
   // 입력 공간을 확보한다 — 채팅·진로 탐색뿐 아니라 커뮤니티 글쓰기/검색, 과목 검색·직접 입력 등
   // 탭바가 보이는 모든 화면이 같은 기준을 쓴다(화면마다 콜백을 내려주지 않아도 된다).
   const textInputFocused = useTextInputFocused(view);
+  // 홈 등에서 글자를 클릭해 둔 채 다른 화면으로 가면 그 자리의 커서가 허공에 남는 문제 방지.
+  useClearStaleSelection(view);
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
