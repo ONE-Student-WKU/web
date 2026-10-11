@@ -16,7 +16,7 @@ function ChatBubble({ message }) {
 
   return (
     <div className={`chat-bubble ${message.sender}`}>
-      <div className="message-sender">{message.sender === 'user' ? t('chat.me') : 'ONE Student'}</div>
+      {message.sender !== 'user' && <div className="message-sender">ONE Student</div>}
       {message.sender === 'user' ? (
         <div className="message-text">{message.text}</div>
       ) : (

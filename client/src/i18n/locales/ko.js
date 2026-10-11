@@ -48,7 +48,6 @@ export default {
   // 채팅
   'chat.placeholder': '무엇이든 물어보세요',
   'chat.send': '전송',
-  'chat.me': '나',
   'chat.citationsHide': '출처 접기',
   'chat.citationsMore': '출처 더 보기 ({count})',
   'chat.typing': '답변을 준비하고 있어요',
