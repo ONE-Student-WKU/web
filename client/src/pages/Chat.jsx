@@ -16,20 +16,15 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - onOpenSettings: function
  * - onOpenOnboarding: function
  * - onOpenProfile: function
- * - onInputFocusChange: function(boolean) — optional, 입력창 포커스 상태를 상위(App)에 전달해
- *   모바일 키보드가 떠 있는 동안 하단 탭바를 같이 숨길 수 있게 한다.
  */
-function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile, onInputFocusChange }) {
+function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const { t } = useI18n();
   const { messages, sendMessage, loading, initialLoading } = useChat();
   const bottomRef = useRef(null);
   // 모바일에서 입력창에 포커스가 가면(키보드가 뜨면) 화면이 좁아지므로, 입력창 자체를
-  // 제외한 주변 UI(안내 문구, 하단 탭바)를 잠깐 접어 입력 공간을 확보한다.
+  // 제외한 주변 UI(안내 문구)를 잠깐 접어 입력 공간을 확보한다. 하단 탭바는 App.jsx가
+  // 입력 칸 포커스를 보고 알아서 접는다(useTextInputFocused).
   const [inputFocused, setInputFocused] = useState(false);
-  const handleInputFocusChange = (focused) => {
-    setInputFocused(focused);
-    onInputFocusChange?.(focused);
-  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -76,7 +71,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
         )}
         <div ref={bottomRef} />
       </div>
-      <ChatInput onSendMessage={sendMessage} disabled={loading} onFocusChange={handleInputFocusChange} />
+      <ChatInput onSendMessage={sendMessage} disabled={loading} onFocusChange={setInputFocused} />
       {!inputFocused && (
         <div className="chat-disclaimer">
           {t('chat.disclaimer')}

@@ -8,6 +8,12 @@ export default {
   // 공통
   'common.backHome': '홈으로',
 
+  // 검색 전용 화면(SearchScreen) 공통
+  'search.close': '검색 닫기',
+  'search.clear': '검색어 지우기',
+  'search.empty': '"{query}"에 맞는 결과가 없어요.',
+  'search.loading': '검색 중이에요…',
+
   // 설정
   'settings.title': '설정',
   'settings.theme': '테마',
@@ -210,13 +216,11 @@ export default {
   'courses.list.superseded': '재수강으로 대체됨',
   'courses.grade.none': '미입력',
   'courses.delete': '삭제',
-  'courses.add': '과목 추가',
   'courses.deleteAll': '전체 삭제',
   'courses.mode.catalog': '카탈로그 검색',
   'courses.mode.manual': '직접입력',
   'courses.mode.import': '한 번에 가져오기',
   'courses.mode.hint': 'PDF나 텍스트를 붙여넣을 수 있어요!',
-  'courses.close': '닫기',
   'courses.import.intro': '등급까지 한 번에 채우려면 <b>전체성적조회</b>를 추천해요(과목·등급만 가져오고, 이름·학번은 저장하지 않아요). 성적 입력 없이 과목만 먼저 등록하고 싶다면 <b>이수과목확인리스트</b>도 쓸 수 있어요(등급은 나중에 직접 입력).',
   'courses.import.method': '가져오기 방법',
   'courses.import.pdf': 'PDF 업로드',
@@ -265,7 +269,8 @@ export default {
   'courses.reupload': '다시 업로드',
   'courses.catalog.noSchedule': '"{name}"은 아직 시간표가 등록되어 있지 않아요. 알고 있다면 아래에서 입력해주세요 — 몰라도 등록은 되고, 나중에 다시 채울 수 있습니다.',
   'courses.catalog.hint': '전공 과목 위주로 검색돼요 — 교양 과목은 학기에 따라 카탈로그에 없을 수 있어요. 검색 결과가 없으면 "직접입력" 탭을 이용해주세요.',
-  'courses.catalog.searchPlaceholder': '과목명 검색',
+  'courses.catalog.searchPlaceholder': '과목명·교수명 검색 (초성도 돼요)',
+  'courses.catalog.searchAria': '과목 검색',
   'courses.catalog.noScheduleYet': '시간표 미등록',
   'courses.catalog.back': '‹ 검색으로 돌아가기',
   'courses.schedule.label': '시간표 (선택)',
@@ -610,6 +615,11 @@ export default {
   'community.reportItem.waiting': '관리자가 확인하고 있어요. 처리되면 여기에 안내가 올라와요.',
   'community.appItem.date': '{author} · 신청일 {date}',
   'community.appItem.contact': '연락 이메일 · {email}',
+  'community.search.placeholder': '제목·내용으로 글 검색',
+  'community.search.aria': '글 검색',
+  'community.search.hint': '제목이나 내용에 들어간 말로 찾아요.',
+  'community.search.count': '검색 결과 {count}개',
+  'community.search.err': '검색하지 못했어요. 잠시 후 다시 시도해주세요.',
   'community.writeBtn': '글 쓰기',
   'community.writeBtnLimited': '글 쓰기 (제한됨)',
   'community.reportReasonLabel': '신고 사유',

@@ -40,7 +40,12 @@ import { CONSENT_VERSION } from './utils/consent.js';
  * client/src/consent.test.jsx
  * 이용약관·개인정보 수집·이용 동의: 로그인 폼의 필수 체크(체크 전에는 Google/이메일 로그인 버튼이 막힘, 로고 버튼)와
  * 동의 기록이 없는 계정이 로그인 직후 보는 동의 화면(ConsentGate).
+ * 막힌 버튼은 disabled가 아니라 aria-disabled다 — 눌렀을 때 빠진 동의를 강조해 알려주려면 클릭이 들어와야 해서.
  */
+
+const blocked = (el) => expect(el).toHaveAttribute('aria-disabled', 'true');
+const open = (el) => expect(el).not.toHaveAttribute('aria-disabled', 'true');
+const consentLabel = () => screen.getByRole('checkbox', { name: /동의합니다/ }).closest('label');
 
 const renderLogin = (props = {}) =>
   render(
@@ -61,9 +66,50 @@ beforeEach(() => {
 describe('로그인 폼의 필수 동의', () => {
   it('체크하기 전에는 Google 로그인과 인증코드 받기 버튼이 모두 막혀 있고, 안내가 보인다', () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: /Google로 로그인/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '인증코드 받기' })).toBeDisabled();
+    blocked(screen.getByRole('button', { name: /Google로 로그인/ }));
+    blocked(screen.getByRole('button', { name: '인증코드 받기' }));
     expect(screen.getByText('로그인하려면 위 동의가 필요해요.')).toBeInTheDocument();
+  });
+
+  it('동의 없이 Google 로그인 버튼을 누르면 로그인은 시작되지 않고 동의 체크가 강조된다', async () => {
+    renderLogin();
+    expect(consentLabel().className).not.toMatch(/nudge/);
+    await userEvent.click(screen.getByRole('button', { name: /Google로 로그인/ }));
+    expect(api.startGoogleLogin).not.toHaveBeenCalled();
+    expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
+    expect(screen.getByRole('checkbox', { name: /동의합니다/ })).toHaveFocus();
+    expect(screen.getByText('로그인하려면 위 동의가 필요해요.').className).toMatch(/auth-consent-needed--alert/);
+  });
+
+  it('동의 없이 인증코드 받기를 누르거나 Enter로 제출해도 요청하지 않고 강조한다', async () => {
+    renderLogin();
+    await userEvent.type(screen.getByLabelText('이메일 주소'), 'a@example.com{Enter}');
+    expect(api.requestEmailCode).not.toHaveBeenCalled();
+    expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
+  });
+
+  it('동의 없이 이메일 입력 칸을 눌러도 강조하지만 포커스는 입력 칸에 남는다', async () => {
+    renderLogin();
+    await userEvent.click(screen.getByLabelText('이메일 주소'));
+    expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
+    expect(screen.getByLabelText('이메일 주소')).toHaveFocus();
+  });
+
+  it('연속으로 눌러도 매번 애니메이션이 다시 시작되도록 클래스 이름이 번갈아 바뀐다', async () => {
+    renderLogin();
+    const google = screen.getByRole('button', { name: /Google로 로그인/ });
+    await userEvent.click(google);
+    const first = consentLabel().className;
+    await userEvent.click(google);
+    expect(consentLabel().className).not.toBe(first);
+    expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
+  });
+
+  it('동의하면 강조가 사라진다', async () => {
+    renderLogin();
+    await userEvent.click(screen.getByRole('button', { name: /Google로 로그인/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /동의합니다/ }));
+    expect(consentLabel().className).not.toMatch(/nudge/);
   });
 
   it('체크하면 버튼이 열리고, Google 로그인은 현재 약관 버전과 함께 시작된다', async () => {
@@ -71,7 +117,7 @@ describe('로그인 폼의 필수 동의', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: /이용약관.*개인정보처리방침.*동의합니다/ }));
 
     const google = screen.getByRole('button', { name: /Google로 로그인/ });
-    expect(google).toBeEnabled();
+    open(google);
     await userEvent.click(google);
     expect(api.startGoogleLogin).toHaveBeenCalledWith(true, CONSENT_VERSION);
     expect(localStorage.getItem('consent_version')).toBe(CONSENT_VERSION);
@@ -81,7 +127,7 @@ describe('로그인 폼의 필수 동의', () => {
     localStorage.setItem('consent_version', CONSENT_VERSION);
     renderLogin();
     expect(screen.getByRole('checkbox', { name: /동의합니다/ })).toBeChecked();
-    expect(screen.getByRole('button', { name: /Google로 로그인/ })).toBeEnabled();
+    open(screen.getByRole('button', { name: /Google로 로그인/ }));
   });
 
   it('옛 버전에 동의한 기억은 인정하지 않는다', () => {
@@ -94,7 +140,7 @@ describe('로그인 폼의 필수 동의', () => {
     localStorage.setItem('consent_version', CONSENT_VERSION);
     renderLogin();
     await userEvent.click(screen.getByRole('checkbox', { name: /동의합니다/ }));
-    expect(screen.getByRole('button', { name: '인증코드 받기' })).toBeDisabled();
+    blocked(screen.getByRole('button', { name: '인증코드 받기' }));
     expect(localStorage.getItem('consent_version')).toBeNull();
   });
 
@@ -128,7 +174,7 @@ describe('로그인 폼의 필수 동의', () => {
     localStorage.setItem('language', 'en');
     renderLogin();
     expect(screen.getByRole('checkbox', { name: /I agree to the.*Terms of Service.*Privacy Policy/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Log in with Google/ })).toBeDisabled();
+    blocked(screen.getByRole('button', { name: /Log in with Google/ }));
     expect(screen.getByText('Please agree above to log in.')).toBeInTheDocument();
   });
 
@@ -160,13 +206,21 @@ describe('로그인 직후 동의 화면', () => {
     api.acceptConsent.mockResolvedValue({});
     renderApp();
     const agree = await screen.findByRole('button', { name: '동의하고 계속하기' });
-    expect(agree).toBeDisabled();
+    blocked(agree);
 
     await userEvent.click(screen.getByRole('checkbox', { name: /동의합니다/ }));
     await userEvent.click(agree);
 
     await waitFor(() => expect(api.acceptConsent).toHaveBeenCalledWith(CONSENT_VERSION));
     expect(await screen.findByText('HOME')).toBeInTheDocument();
+  });
+
+  it('체크 없이 동의 버튼을 누르면 저장하지 않고 동의 체크를 강조한다', async () => {
+    api.getMe.mockResolvedValue(user(true));
+    renderApp();
+    await userEvent.click(await screen.findByRole('button', { name: '동의하고 계속하기' }));
+    expect(api.acceptConsent).not.toHaveBeenCalled();
+    expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
   });
 
   it('저장에 실패하면 안내를 보여주고 화면을 유지한다', async () => {
