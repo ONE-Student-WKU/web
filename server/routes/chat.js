@@ -155,6 +155,7 @@ router.post('/messages', async (req, res, next) => {
         previousUserMessage: lastUserMessage?.content ?? null,
         yearContext,
         regulationJudgment,
+        progress,
       }),
     ]);
 

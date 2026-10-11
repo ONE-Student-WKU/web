@@ -19,22 +19,26 @@ const regulationContext = require('./regulationContextService');
 
 // regulationJudgment: routes/chat.js가 RAG 검색 전에 미리 구한 판단(lookupRegulationJudgment 결과). 넘기지 않으면 여기서 구한다
 // (테스트·다른 호출자 호환).
-async function assembleStructuredChunks({ message, searchText, student, previousUserMessage, yearContext, regulationJudgment }) {
+// progress: studentProgress.getStudentProgress 결과(이수 과목명 포함). "앞으로 들을 과목" 질문에서 개설 − 이수 청크(remaining)를 만드는 데 쓴다.
+async function assembleStructuredChunks({ message, searchText, student, previousUserMessage, yearContext, regulationJudgment, progress = null }) {
   // 판단을 먼저 구한다 — 졸업요건 청크가 같은 판단 결과(입학유형 반영, 자료 없음 판정)의 값을 쓰기 때문이다(보정 라운드 A, D-35).
   const judgment = regulationJudgment !== undefined
     ? regulationJudgment
     : await regulationContext.lookupRegulationJudgment({ message, student, yearContext });
-  const [graduation, history, curriculum, requirement, offering, linkedMajor, microDegree] = await Promise.all([
+  const [graduation, history, curriculum, requirement, offeringResult, linkedMajor, microDegree] = await Promise.all([
     curriculumContext.lookupGraduationRequirements({ message, student, yearContext, judgment: judgment ? judgment.judgment : null }),
     curriculumContext.lookupChangeHistory({ message, contextText: previousUserMessage, student, yearContext }),
     curriculumService.lookupFromMessage(message, student, yearContext),
     curriculumService.lookupRequirementsFromMessage(searchText || message, student, yearContext),
-    curriculumService.lookupOfferingsFromMessage(message, student, yearContext),
+    curriculumService.lookupOfferingChunks(message, student, yearContext, { completedCourseNames: progress ? progress.completedCourseNames : [] }),
     curriculumService.lookupLinkedMajorsFromMessage(message),
     curriculumService.lookupMicroDegreesFromMessage(message),
   ]);
   const regulation = judgment ? judgment.chunks : [];
-  return { regulation, judgment: judgment ? judgment.judgment : null, graduation, history, curriculum, requirement, offering, linkedMajor, microDegree };
+  return {
+    regulation, judgment: judgment ? judgment.judgment : null, graduation, history, curriculum, requirement,
+    offering: offeringResult.offering, remaining: offeringResult.remaining, linkedMajor, microDegree,
+  };
 }
 
 /**
@@ -63,6 +67,8 @@ function mergeChunks({ structured, previousCitedChunks = [], freshChunks = [], y
     ...structured.history,
     ...structured.curriculum,
     ...structured.requirement,
+    // 개설 − 이수 목록이 개설 목록보다 먼저: 같은 학기의 "아직 안 들은 과목"이 모델에 먼저 보이게(remaining이 없는 호출도 있다).
+    ...(structured.remaining || []),
     ...structured.offering,
     ...structured.linkedMajor,
     ...structured.microDegree,
