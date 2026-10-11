@@ -70,6 +70,15 @@ test('테스트 계정 수와 같거나 더 적으면 0이고 음수가 되지 �
 
 test('countAll 자체는 보정하지 않는다(다른 곳에서 실제 계정 수가 필요할 때 그대로 쓸 수 있다)', async () => {
   mock.restoreAll();
-  const [[{ count }]] = await pool.query('SELECT COUNT(*) AS count FROM students');
-  assert.equal(await studentService.countAll(), count);
+  // node --test는 테스트 파일을 병렬로 돌리고, 다른 파일이 같은 DB에 임시 학생을 만들고 지운다. 그래서 아래 두 조회 사이에
+  // 계정 수가 바뀌면(예: SELECT는 5, countAll은 6) 값이 어긋나 CI에서 간헐적으로 실패했다. 앞뒤 조회가 같아 값이 안정된 때만 비교한다.
+  let last;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const [[{ count: before }]] = await pool.query('SELECT COUNT(*) AS count FROM students');
+    const all = await studentService.countAll();
+    const [[{ count: after }]] = await pool.query('SELECT COUNT(*) AS count FROM students');
+    last = { before, all, after };
+    if (before === after) break; // 이 구간에 계정 수가 안 바뀌었다 — countAll도 같은 값이어야 한다
+  }
+  assert.equal(last.all, last.before);
 });
