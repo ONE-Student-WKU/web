@@ -21,7 +21,7 @@ async function createInquiry(studentId, title, content) {
 
 async function listMyInquiries(studentId) {
   const [rows] = await pool.query(
-    'SELECT id, title, content, status, created_at, resolved_at FROM inquiries WHERE student_id = ? ORDER BY created_at DESC',
+    'SELECT id, title, content, status, created_at, resolved_at, resolution_note FROM inquiries WHERE student_id = ? ORDER BY created_at DESC',
     [studentId]
   );
   return rows.map((row) => ({
@@ -31,12 +31,13 @@ async function listMyInquiries(studentId) {
     status: row.status,
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
+    resolutionNote: row.resolution_note,
   }));
 }
 
 async function listInquiriesForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT i.id, i.title, i.content, i.status, i.created_at, i.resolved_at, s.name AS student_name, s.id AS student_id
+    `SELECT i.id, i.title, i.content, i.status, i.created_at, i.resolved_at, i.resolution_note, s.name AS student_name, s.id AS student_id
      FROM inquiries i
      JOIN students s ON s.id = i.student_id
      WHERE i.status = ?
@@ -50,16 +51,17 @@ async function listInquiriesForAdmin(status) {
     status: row.status,
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
+    resolutionNote: row.resolution_note,
     student: nicknameOf(row.student_name, row.student_id),
   }));
 }
 
 // status가 이미 'open'이 아니면 아무 것도 안 바뀐다(community 쪽 decidePost와 동일한
-// 재처리 방지 가드).
-async function resolveInquiry(id) {
+// 재처리 방지 가드). note는 문의자에게 보여줄 처리 답변(선택, 없으면 null).
+async function resolveInquiry(id, note = null) {
   const [result] = await pool.query(
-    "UPDATE inquiries SET status = 'resolved', resolved_at = NOW() WHERE id = ? AND status = 'open'",
-    [id]
+    "UPDATE inquiries SET status = 'resolved', resolved_at = NOW(), resolution_note = ? WHERE id = ? AND status = 'open'",
+    [note, id]
   );
   return result.affectedRows > 0;
 }

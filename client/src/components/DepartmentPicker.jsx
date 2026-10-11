@@ -1,13 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { IconSearch, IconX } from './icons.jsx';
+import React, { useEffect, useMemo, useState } from 'react';
+import { IconSearch } from './icons.jsx';
+import SearchScreen from './SearchScreen.jsx';
+import { closeSearchScreen } from './searchScreenHistory.js';
+import useSearchInput from '../hooks/useSearchInput.js';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
 import { groupDepartmentsByCollege, searchDepartments, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * DepartmentPicker
- * 온보딩·학적정보 수정의 학과 선택 — 맨 위 검색창 + "소속(단과대학) → 학과" 트리.
- * 검색어가 있으면 트리를 접어 두고 일치하는 학과만 한 줄 목록(소속 표시)으로 보여준다.
+ * 온보딩·학적정보 수정의 학과 선택 — 맨 위 검색창 모양 진입 버튼 + "소속(단과대학) → 학과" 트리.
+ * 검색은 과목·커뮤니티 검색처럼 별도 전체 화면(SearchScreen)에서 하고, 일치하는 학과만 한 줄 목록(소속 표시)으로 보여준다.
+ * 검색 결과에서 학과를 고르면 검색 화면이 닫히고, 트리에서 그 학과가 든 묶음이 펼쳐진 채 선택 표시가 된다.
  * 소속 정보를 못 받은 경우(서버가 college를 안 내려주는 배포 순서, 자료 읽기 실패)에는 기존처럼 평평한 목록이 된다.
  *
  * Props:
@@ -34,13 +38,10 @@ function DepartmentCard({ department, selected, onSelect, showCollege }) {
 
 function DepartmentPicker({ departments, selectedId, onSelect }) {
   const { t } = useI18n();
-  // 입력창에 보이는 글(inputValue)과 실제로 필터에 쓰는 검색어(query)를 나눈다. 한글은 자음+모음이 조합돼야 완성된 글자가 되는데
-  // ("컴" = ㅋ+ㅓ+ㅁ), 조합 중간의 낱자("컴ㅍ")로 바로 걸러 내면 "맞는 학과가 없어요"와 결과가 깜빡인다 — 과목 카탈로그 검색
-  // (CourseManagement)과 같은 방식으로 조합 중에는 검색을 보류하고 글자가 완성되는 순간(compositionend)에만 반영한다.
-  const [inputValue, setInputValue] = useState('');
+  // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
+  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const isComposingRef = useRef(false);
-  const resultsRef = useRef(null);
+  const deptSearch = useSearchInput(setQuery);
   const groups = useMemo(() => groupDepartmentsByCollege(departments), [departments]);
   const hasTree = groups.some((g) => g.college !== FORMER_GROUP_LABEL) || groups.length > 1;
   // 처음 열 때는 고른 학과가 들어 있는 묶음만 펼쳐 둔다(없으면 전부 접힘). 이후는 사용자가 누른 대로.
@@ -60,22 +61,30 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
   const trimmed = query.trim();
   const results = useMemo(() => (trimmed ? searchDepartments(departments, trimmed) : []), [departments, trimmed]);
 
-  // 검색 결과가 새로 생기면 목록이 보이는 위치까지 맞춘다(과목 카탈로그 검색과 동일). 이미 보이면 block: 'nearest'라 매 타이핑마다 튀지 않는다.
-  useEffect(() => {
-    if (results.length > 0) resultsRef.current?.scrollIntoView?.({ behavior: 'instant', block: 'nearest' });
-  }, [results]);
-
-  const handleChange = (e) => {
-    setInputValue(e.target.value);
-    if (!isComposingRef.current) setQuery(e.target.value);
-  };
-  const handleCompositionEnd = (e) => {
-    isComposingRef.current = false;
-    setQuery(e.target.value);
-  };
-  const clearSearch = () => {
-    setInputValue('');
+  const dismissSearch = () => {
+    deptSearch.reset();
     setQuery('');
+    setSearchOpen(false);
+  };
+
+  const handleSelectFromSearch = (department) => {
+    onSelect(department);
+    closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
+  };
+
+  const renderSearchResults = () => {
+    if (!trimmed) return <p className="search-screen-hint">{t('dept.search.hint')}</p>;
+    if (results.length === 0) return <p className="search-screen-hint">{t('dept.search.empty', { query: trimmed })}</p>;
+    return (
+      <>
+        <p className="search-screen-count">{t('dept.search.count', { count: results.length })}</p>
+        <div className="onb-option-list">
+          {results.map((d) => (
+            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={handleSelectFromSearch} showCollege />
+          ))}
+        </div>
+      </>
+    );
   };
 
   const toggle = (college) =>
@@ -88,44 +97,12 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
 
   return (
     <div className="onb-dept-picker">
-      <div className="courses-search-box onb-search">
+      <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('dept.search.aria')}>
         <IconSearch />
-        <input
-          type="text"
-          role="searchbox"
-          value={inputValue}
-          onChange={handleChange}
-          onCompositionStart={() => {
-            isComposingRef.current = true;
-          }}
-          onCompositionEnd={handleCompositionEnd}
-          placeholder={t('dept.search.placeholder')}
-          aria-label={t('dept.search.aria')}
-          autoComplete="off"
-        />
-        {inputValue && (
-          <button type="button" className="onb-search-clear" onClick={clearSearch} aria-label={t('dept.search.clear')}>
-            <IconX size={14} />
-          </button>
-        )}
-      </div>
+        <span>{t('dept.search.placeholder')}</span>
+      </button>
 
-      {trimmed ? (
-        results.length === 0 ? (
-          <p className="onb-search-empty">
-            {t('dept.search.empty', { query: trimmed })}
-          </p>
-        ) : (
-          <>
-            <p className="onb-search-count">{t('dept.search.count', { count: results.length })}</p>
-            <div className="onb-option-list" ref={resultsRef}>
-              {results.map((d) => (
-                <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege />
-              ))}
-            </div>
-          </>
-        )
-      ) : hasTree ? (
+      {hasTree ? (
         <div className="onb-college-tree">
           {groups.map((g) => {
             const open = openGroups.has(g.college);
@@ -163,6 +140,12 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
             <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />
           ))}
         </div>
+      )}
+
+      {searchOpen && (
+        <SearchScreen search={deptSearch} onClose={dismissSearch} placeholder={t('dept.search.placeholder')} ariaLabel={t('dept.search.aria')}>
+          {renderSearchResults()}
+        </SearchScreen>
       )}
     </div>
   );

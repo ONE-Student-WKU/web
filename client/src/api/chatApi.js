@@ -233,6 +233,7 @@ export const getMyInquiries = () => apiRequest('/inquiries/mine');
 
 export const getAdminInquiries = (status) => apiRequest(`/admin/inquiries?status=${status}`);
 
-export const resolveAdminInquiry = (id) => apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST' });
+export const resolveAdminInquiry = (id, note) =>
+  apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST', body: JSON.stringify({ note: note || null }) });
 
 export const getAdminStats = () => apiRequest('/admin/stats');

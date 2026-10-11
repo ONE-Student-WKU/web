@@ -251,6 +251,62 @@ describe('제재 사유 기본값 (항목 7)', () => {
   });
 });
 
+describe('문의자에게 보낼 처리 답변', () => {
+  const inquiry = (over = {}) => ({
+    id: 5, title: '버튼이 안 눌려요', content: '졸업요건 화면에서요', status: 'open',
+    createdAt: '2026-10-01T00:00:00.000Z', resolvedAt: null, resolutionNote: null, student: '문의자닉', ...over,
+  });
+
+  // 하위 탭("처리완료")과 카드의 처리 버튼("처리완료")이 이름이 같아서 클래스로 구분한다.
+  const pickButton = (className) => screen.queryAllByRole('button', { name: '처리완료' }).find((b) => b.classList.contains(className));
+  const resolveButton = () => waitFor(() => expect(pickButton('community-act-accept')).toBeTruthy()).then(() => pickButton('community-act-accept'));
+  const resolvedTab = () => waitFor(() => expect(pickButton('admin-sub-tab')).toBeTruthy()).then(() => pickButton('admin-sub-tab'));
+
+  beforeEach(() => {
+    sessionStorage.setItem('wku_cache_admin_view', '"inquiries"');
+    api.getAdminInquiries.mockResolvedValue([inquiry()]);
+    api.resolveAdminInquiry.mockResolvedValue(null);
+  });
+
+  it('처리완료를 누르면 답변 팝업이 열리고, 답변을 적어 확정하면 그 글이 서버로 간다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await resolveButton());
+    const note = screen.getByRole('textbox', { name: /문의자에게 보낼 답변/ });
+    expect(note).toHaveValue(''); // 신고와 달리 기본 문구는 없다
+    await userEvent.type(note, '  수정해서 배포했어요.  ');
+    await userEvent.click(screen.getByRole('button', { name: '처리완료로 표시' }));
+    await waitFor(() => expect(api.resolveAdminInquiry).toHaveBeenCalledWith(5, '수정해서 배포했어요.'));
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: /문의자에게 보낼 답변/ })).toBeNull());
+  });
+
+  it('답변을 비워 두면 null로 가서 답변 없이 처리완료된다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await resolveButton());
+    await userEvent.click(screen.getByRole('button', { name: '처리완료로 표시' }));
+    await waitFor(() => expect(api.resolveAdminInquiry).toHaveBeenCalledWith(5, null));
+  });
+
+  it('취소하면 서버 호출 없이 팝업만 닫힌다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await resolveButton());
+    await userEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(api.resolveAdminInquiry).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: /문의자에게 보낼 답변/ })).toBeNull();
+  });
+
+  it('처리완료 탭에서는 보낸 답변을 보여주고, 답변이 없었으면 그렇게 표시한다', async () => {
+    api.getAdminInquiries.mockResolvedValue([
+      inquiry({ id: 6, status: 'resolved', resolutionNote: '수정해서 배포했어요.' }),
+      inquiry({ id: 7, title: '다른 문의', status: 'resolved', resolutionNote: null }),
+    ]);
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await resolvedTab());
+    expect(await screen.findByText(/수정해서 배포했어요\./)).toBeInTheDocument();
+    expect(screen.getByText(/답변 없이 처리완료/)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '처리완료' }).filter((b) => b.classList.contains('community-act-accept'))).toHaveLength(0); // 이미 처리된 문의에는 처리 버튼이 없다
+  });
+});
+
 describe('신고자에게 보낼 처리 안내', () => {
   beforeEach(() => {
     sessionStorage.setItem('wku_cache_admin_view', '"reports"');

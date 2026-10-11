@@ -12,8 +12,8 @@ const NUDGE_MS = 1800;
  * - checked: boolean
  * - onChange: function(boolean)
  * - onOpenTerms / onOpenPrivacy: function — 이용약관/개인정보처리방침 화면으로 이동
- * - nudgeKey: number (선택) — 값이 바뀔 때마다(동의 안 한 채 로그인 버튼 등을 눌렀을 때) 이 체크를 눈에 띄게 강조한다.
- *   0이면 강조하지 않는다. 연속으로 눌러도 매번 애니메이션이 다시 시작되도록 숫자의 홀짝으로 애니메이션 이름을 번갈아 쓴다.
+ * - nudgeKey: number (선택) — 값이 바뀔 때마다(동의 안 한 채 로그인 버튼 등을 눌렀을 때) 이 체크를 붉은 블럭으로 잠깐 강조한다.
+ *   0이면 강조하지 않는다. 연속으로 눌러도 강조 시간(NUDGE_MS)이 처음부터 다시 센다.
  * - nudgeFocus: boolean (선택) — 강조할 때 체크박스로 포커스도 옮길지. 입력 칸을 누르다 강조되는 경우엔 타이핑을 끊지 않도록 false.
  */
 function ConsentCheckbox({ checked, onChange, onOpenTerms, onOpenPrivacy, nudgeKey = 0, nudgeFocus = false }) {
@@ -32,7 +32,7 @@ function ConsentCheckbox({ checked, onChange, onOpenTerms, onOpenPrivacy, nudgeK
     return () => clearTimeout(timer);
   }, [nudgeKey]); // eslint-disable-line react-hooks/exhaustive-deps -- nudgeFocus는 누른 순간의 값만 쓰면 된다
 
-  const nudgeClass = nudging && !checked ? ` auth-consent-field--nudge-${nudgeKey % 2 ? 'a' : 'b'}` : '';
+  const nudgeClass = nudging && !checked ? ' auth-consent-field--nudge' : '';
 
   return (
     <label ref={labelRef} className={`auth-consent-field${nudgeClass}`}>

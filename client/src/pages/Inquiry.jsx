@@ -141,6 +141,11 @@ function Inquiry({ onGoHome }) {
                   <span className={`community-badge community-badge-${STATUS_BADGE_CLASS[i.status]}`}>{t(`inquiry.status.${i.status}`)}</span>
                 </span>
                 <p className="community-detail-body">{i.content}</p>
+                {i.resolutionNote && (
+                  <p className="community-resolution-note">
+                    <b>{t('inquiry.reply')}</b> · {i.resolutionNote}
+                  </p>
+                )}
                 <span className="courses-list-item-meta">{formatDate(i.createdAt)}</span>
               </div>
             ))}

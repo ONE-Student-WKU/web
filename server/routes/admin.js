@@ -93,7 +93,7 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// 신고자에게 보여줄 처리 안내(선택) 최대 길이.
+// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이.
 const RESOLUTION_NOTE_MAX_LENGTH = 500;
 
 // 선택 입력 — 문자열이 아니면(undefined/null 포함) 없는 것으로 보고, 너무 길면 거부한다(ok:false).
@@ -268,10 +268,14 @@ router.get('/inquiries', async (req, res, next) => {
   }
 });
 
-// POST /api/admin/inquiries/:id/resolve
+// POST /api/admin/inquiries/:id/resolve — body.note(선택)는 문의자에게 보이는 처리 답변(신고 처리 안내와 같은 검증).
 router.post('/inquiries/:id/resolve', async (req, res, next) => {
   try {
-    const resolved = await inquiryService.resolveInquiry(req.params.id);
+    const note = normalizeResolutionNote(req.body?.note);
+    if (!note.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RESOLUTION_NOTE', message: null, data: null });
+    }
+    const resolved = await inquiryService.resolveInquiry(req.params.id, note.value);
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'INQUIRY_NOT_FOUND', message: null, data: null });
     }

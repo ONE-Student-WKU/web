@@ -162,6 +162,9 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   const [inquiries, setInquiries] = useState([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiryActionId, setInquiryActionId] = useState(null); // 처리완료 처리 중인 문의 id
+  // 문의 "처리완료" 팝업 — 문의자에게 보낼 답변을 적는다. 대상 문의를 들고 있으면 열림, null이면 닫힘.
+  const [resolveTargetInquiry, setResolveTargetInquiry] = useState(null);
+  const [inquiryNote, setInquiryNote] = useState('');
 
   const [sanctions, setSanctions] = useState([]);
   const [sanctionsLoading, setSanctionsLoading] = useState(true);
@@ -311,13 +314,23 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
   };
 
-  const handleResolveInquiry = async (id) => {
+  const openInquiryResolveModal = (inquiry) => {
+    setResolveTargetInquiry(inquiry);
+    setInquiryNote('');
+  };
+
+  const closeInquiryResolveModal = () => setResolveTargetInquiry(null);
+
+  const handleResolveInquiry = async () => {
+    if (!resolveTargetInquiry) return;
+    const id = resolveTargetInquiry.id;
     setInquiryActionId(id);
     setError(null);
     try {
-      await resolveAdminInquiry(id);
+      await resolveAdminInquiry(id, inquiryNote.trim() || null);
       setInquiries((prev) => prev.filter((i) => i.id !== id));
       showToast('처리완료로 표시했어요.');
+      closeInquiryResolveModal();
     } catch {
       setError('처리하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -637,12 +650,17 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                       {i.student} · {formatDate(i.createdAt)}
                     </p>
                     <p className="community-detail-body">{i.content}</p>
+                    {inquirySubFilter === 'resolved' && (
+                      <p className="community-resolution-note">
+                        <b>보낸 답변</b> · {i.resolutionNote || '(답변 없이 처리완료)'}
+                      </p>
+                    )}
                     {inquirySubFilter === 'open' && (
                       <div className="community-applicant-actions">
                         <button
                           type="button"
                           className="community-act-btn community-act-accept"
-                          onClick={() => handleResolveInquiry(i.id)}
+                          onClick={() => openInquiryResolveModal(i)}
                           disabled={inquiryActionId === i.id}
                         >
                           처리완료
@@ -782,6 +800,48 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                 {reportActionId === resolveTargetReport.id ? '처리하는 중...' : '처리완료로 표시'}
               </button>
               <button type="button" className="community-outline-btn" onClick={closeResolveModal}>
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {resolveTargetInquiry && (
+        <div className="career-confirm-overlay" onClick={closeInquiryResolveModal}>
+          <form
+            className="career-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleResolveInquiry();
+            }}
+          >
+            <p className="admin-post-title">문의 처리완료</p>
+            <p className="community-detail-body">
+              <b>{resolveTargetInquiry.title}</b>
+              <br />
+              {resolveTargetInquiry.content}
+            </p>
+            <div className="auth-field">
+              <label htmlFor="inquiry-note">문의자에게 보낼 답변 (문의자에게만 보여요)</label>
+              <textarea
+                id="inquiry-note"
+                rows={4}
+                maxLength={RESOLUTION_NOTE_MAX_LENGTH}
+                value={inquiryNote}
+                onChange={(e) => setInquiryNote(e.target.value)}
+              />
+              <p className="courses-manual-hint">
+                어떻게 처리했는지 알려 주세요. 비워 두면 답변 없이 처리완료로만 표시돼요.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button type="submit" className="community-close-btn" disabled={inquiryActionId === resolveTargetInquiry.id}>
+                {inquiryActionId === resolveTargetInquiry.id ? '처리하는 중...' : '처리완료로 표시'}
+              </button>
+              <button type="button" className="community-outline-btn" onClick={closeInquiryResolveModal}>
                 취소
               </button>
             </div>
