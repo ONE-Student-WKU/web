@@ -121,13 +121,40 @@ test('전과 정보가 비어 있으면 가정을 플래그로 남기고 추정�
   assert.equal(noInfo.confidence, 'ESTIMATED');
 });
 
-test('전과 학년이 학번·전과시점으로 계산한 학년과 다르면(휴학 등) 추정으로 낮춘다', async () => {
-  // 2022학번이 2024-1에 전과하면 3학년(5학기초). 입력이 4학년이면 불일치.
+test('전과 학년이 학번·전과시점으로 가능한 범위를 벗어나면 추정으로 낮춘다', async () => {
+  // 2022학번이 2024-1에 전과하면 3학년(5학기초). 입력이 4학년이면 계산 학년보다 높아 불가능하다.
   const r = await resolve({ admissionYear: 2022, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 4, year: 2024, semester: 1 } });
   const flag = rule(r, 'MAJOR_MINIMUM').flags.find((f) => f.code === 'MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH');
   assert.ok(flag);
   assert.deepEqual([flag.impliedGrade, flag.inputGrade], [3, 4]);
   assert.equal(rule(r, 'MAJOR_MINIMUM').confidence, 'ESTIMATED');
+});
+
+const mismatchFlagged = async (admissionYear, year, semester, grade) => {
+  const r = await resolve({ admissionYear, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade, year, semester } });
+  return codes(r, 'MAJOR_MINIMUM').includes('MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH');
+};
+
+test('휴학으로 학년이 늦어진 전과생은 경고하지 않는다(2022학번, 4학기 휴학, 2025-2 2학년 전과)', async () => {
+  // 달력상으로는 4학년(입학 2022-1 → 2025-2)이지만 4학기를 쉬었으면 2학년 2학기다. 온보딩이 허용하는 범위(계산 학년−2 ~ 계산 학년)와 같은 기준.
+  const r = await resolve({ admissionYear: 2022, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 2, year: 2025, semester: 2 } });
+  assert.equal(codes(r, 'MAJOR_MINIMUM').includes('MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH'), false);
+  assert.equal(rule(r, 'MAJOR_MINIMUM').value.mode, 'FULL', '2학년 전과는 전공 완화 없음(신입생과 동일)');
+  assert.equal(rule(r, 'MAJOR_MINIMUM').confidence, 'CONFIRMED');
+});
+
+test('전과 학년 허용 범위: 계산 학년−2 ~ 계산 학년(4학년 상한)의 양 끝은 통과, 바깥은 경고', async () => {
+  // 2022학번 2025-2 → 계산 4학년 → 허용 2~4
+  assert.equal(await mismatchFlagged(2022, 2025, 2, 1), true);
+  for (const g of [2, 3, 4]) assert.equal(await mismatchFlagged(2022, 2025, 2, g), false, `${g}학년`);
+  // 2022학번 2024-1·2024-2 → 계산 3학년 → 허용 1~3 (학기 경계에서도 같은 학년)
+  for (const s of [1, 2]) {
+    assert.equal(await mismatchFlagged(2022, 2024, s, 3), false);
+    assert.equal(await mismatchFlagged(2022, 2024, s, 4), true);
+  }
+  // 계산 학년이 4를 넘으면(2019학번 2024-1 → 6) 4학년만 허용 — 온보딩의 min(4, 계산 학년)·max(1, 계산 학년−2)와 같다.
+  assert.equal(await mismatchFlagged(2019, 2024, 1, 3), true);
+  assert.equal(await mismatchFlagged(2019, 2024, 1, 4), false);
 });
 
 test('전과 완화 행이 자료에 없으면 일반 기준으로 계산하되 추정 플래그를 남긴다', async () => {

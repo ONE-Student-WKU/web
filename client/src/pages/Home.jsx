@@ -137,7 +137,9 @@ function Home({
             <div className="home-subgreeting-row">
               <p className="home-subgreeting">
                 {user?.department || t('home.noDepartment')}
-                {gradeLevel ? ` ${t('home.gradeLevel', { grade: gradeLevel })}` : ''}
+                {/* 학년은 한 덩어리로 — 좁은 화면에서 "4 / 학년"처럼 학년 중간에서 줄이 끊기지 않게 한다. */}
+                {gradeLevel ? ' ' : ''}
+                {gradeLevel ? <span className="nowrap-unit">{t('home.gradeLevel', { grade: gradeLevel })}</span> : null}
               </p>
               {gradeLevel && (
                 <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>

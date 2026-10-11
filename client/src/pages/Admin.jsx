@@ -24,7 +24,7 @@ function formatDate(dateStr) {
 }
 
 const SUB_FILTER_LABEL = { pending: '대기중', approved: '승인됨', rejected: '반려됨' };
-const CATEGORY_LABEL = { study: '스터디', project: '프로젝트' };
+const CATEGORY_LABEL = { study: '스터디', project: '팀 활동·공모전' };
 const SUB_FILTERS = ['pending', 'approved', 'rejected'];
 const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료' };
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];

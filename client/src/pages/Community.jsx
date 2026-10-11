@@ -20,7 +20,9 @@ import {
   markMyReportsSeen,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle } from '../components/icons.jsx';
+import SearchScreen from '../components/SearchScreen.jsx';
+import useSearchInput from '../hooks/useSearchInput.js';
+import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -190,10 +192,14 @@ function Community({
   // 글쓰기)까지 구분해서 복원하지는 않는다 — 목록 밖으로 새지만 않으면 되는 문제라 이 정도로 충분.
   const inSubView = showWriteForm || !!selectedPost;
   const skipHistoryPush = useRef(true);
+  const inSubViewRef = useRef(inSubView);
+  inSubViewRef.current = inSubView;
 
   useEffect(() => {
     function handlePopState(event) {
-      skipHistoryPush.current = true;
+      // 뒤로가기로 inSubView가 실제로 바뀔 때만 다음 이펙트의 히스토리 쌓기를 건너뛴다 — 바뀌지 않는 popstate(검색 화면을
+      // 닫는 경우 등)에서도 켜 두면, 이펙트가 돌지 않아 표시가 남았다가 다음 글 열기가 히스토리를 쌓지 않게 된다.
+      if (!!event.state?.communityInSubView !== inSubViewRef.current) skipHistoryPush.current = true;
       if (!event.state?.communityInSubView) {
         setSelectedPost(null);
         setShowWriteForm(false);
@@ -215,6 +221,50 @@ function Community({
       window.history.replaceState({ ...window.history.state, communityInSubView: inSubView }, '');
     }
   }, [inSubView]);
+
+  // 글 검색(MVP) — 제목·본문에 검색어가 들어간 글. 검색 전용 화면(SearchScreen)에서 서버에 `?q=`로 묻는다.
+  // searchedQuery: 마지막으로 요청한 검색어(공백 제거), searchResults: null이면 아직 검색 전.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchedQuery, setSearchedQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchError, setSearchError] = useState(false);
+  const searchRequestIdRef = useRef(0);
+
+  // 응답이 늦게 도착해 그사이 검색어가 더 바뀌었으면(requestId 불일치) 버린다 — 오래된 검색어 결과가 최신 결과를 덮어쓰는 걸 막음.
+  const runPostSearch = (value) => {
+    const query = value.trim();
+    const requestId = ++searchRequestIdRef.current;
+    setSearchedQuery(query);
+    setSearchError(false);
+    if (!query) {
+      setSearchResults(null);
+      return;
+    }
+    getCommunityPosts(query)
+      .then((list) => {
+        if (requestId === searchRequestIdRef.current) setSearchResults(list);
+      })
+      .catch((err) => {
+        if (requestId !== searchRequestIdRef.current) return;
+        if (err.code === 'SANCTIONED') {
+          setSanction(err.data);
+          dismissSearch();
+        } else {
+          setSearchError(true);
+        }
+      });
+  };
+  const postSearch = useSearchInput(runPostSearch);
+
+  // 검색 화면을 끝낸다(뒤로가기로 닫힌 경우, 검색 결과에서 글을 지우거나 고치러 가는 경우 공통).
+  function dismissSearch() {
+    searchRequestIdRef.current += 1;
+    setSearchOpen(false);
+    setSearchedQuery('');
+    setSearchResults(null);
+    setSearchError(false);
+    postSearch.reset();
+  }
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -365,6 +415,7 @@ function Community({
       }
       resetAfterWrite();
       setSelectedPost(null);
+      dismissSearch();
       setTab('mine');
       await refreshLists();
     } catch (err) {
@@ -392,6 +443,7 @@ function Community({
     });
     setEditingPostId(post.id);
     setSelectedPost(null);
+    dismissSearch();
     setShowWriteForm(true);
   };
 
@@ -403,6 +455,7 @@ function Community({
       await deleteCommunityPost(post.id);
       showToast(t('community.toast.deleted'));
       setSelectedPost(null);
+      dismissSearch();
       setTab('mine');
       await refreshLists();
     } catch {
@@ -423,6 +476,7 @@ function Community({
       await deleteAdminPost(post.id);
       showToast(t('community.toast.deleted'));
       setSelectedPost(null);
+      dismissSearch();
       setTab('list');
       await refreshLists();
     } catch {
@@ -861,6 +915,40 @@ function Community({
     </form>
   );
 
+  // 전체 글 목록과 검색 결과가 같은 모양으로 보이도록 항목 하나를 그리는 함수를 공유한다.
+  const renderPublicPostItem = (p) => (
+    <button
+      key={p.id}
+      className={`community-post-list-item ${isRecruitClosed(p.closedAt, p.recruitState) ? 'community-post-list-item-closed' : ''}`}
+      onClick={() => openPost(p.id)}
+      disabled={detailLoading}
+    >
+      <span className="community-post-list-row">
+        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
+        <span className="community-post-list-title">{p.title}</span>
+        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
+      </span>
+      <span className="courses-list-item-meta">
+        {p.author} · {formatDate(p.createdAt)}
+        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
+        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
+      </span>
+    </button>
+  );
+
+  const renderSearchResults = () => {
+    if (!searchedQuery) return <p className="search-screen-hint">{t('community.search.hint')}</p>;
+    if (searchError) return <p className="home-error">{t('community.search.err')}</p>;
+    if (searchResults === null) return <p className="search-screen-hint">{t('search.loading')}</p>;
+    if (searchResults.length === 0) return <p className="search-screen-hint">{t('search.empty', { query: searchedQuery })}</p>;
+    return (
+      <>
+        <p className="search-screen-count">{t('community.search.count', { count: searchResults.length })}</p>
+        <div className="community-post-list">{searchResults.map(renderPublicPostItem)}</div>
+      </>
+    );
+  };
+
   return (
     <div className="courses-page">
       <header className="screen-header">
@@ -913,7 +1001,7 @@ function Community({
 
             {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
 
-            <div className="courses-year-tabs">
+            <div className="courses-year-tabs courses-year-tabs--fill">
               <button type="button" className={`courses-year-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
                 {t('community.tab.all')}
               </button>
@@ -933,33 +1021,20 @@ function Community({
               </button>
             </div>
 
+            {tab === 'list' && (
+              <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')}>
+                <IconSearch />
+                <span>{t('community.search.placeholder')}</span>
+              </button>
+            )}
+
             {tab === 'list' ? (
               posts === null ? (
                 <p className="courses-manual-hint">{t('community.loading')}</p>
               ) : posts.length === 0 ? (
                 <p className="courses-manual-hint">{t('community.empty.posts')}</p>
               ) : (
-                <div className="community-post-list">
-                  {posts.map((p) => (
-                    <button
-                      key={p.id}
-                      className={`community-post-list-item ${isRecruitClosed(p.closedAt, p.recruitState) ? 'community-post-list-item-closed' : ''}`}
-                      onClick={() => openPost(p.id)}
-                      disabled={detailLoading}
-                    >
-                      <span className="community-post-list-row">
-                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
-                        <span className="community-post-list-title">{p.title}</span>
-                        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
-                      </span>
-                      <span className="courses-list-item-meta">
-                        {p.author} · {formatDate(p.createdAt)}
-                        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
-                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <div className="community-post-list">{posts.map(renderPublicPostItem)}</div>
               )
             ) : tab === 'mine' ? (
               myPosts === null ? (
@@ -1073,6 +1148,19 @@ function Community({
           </>
         )}
       </div>
+
+      {searchOpen && (
+        <SearchScreen
+          search={postSearch}
+          onClose={dismissSearch}
+          placeholder={t('community.search.placeholder')}
+          ariaLabel={t('community.search.aria')}
+          // 결과에서 글을 열면 검색 화면은 닫지 않고 숨겨 둔다 — 상세에서 뒤로가면 검색 결과가 그대로 있다.
+          hidden={!!selectedPost || showWriteForm}
+        >
+          {renderSearchResults()}
+        </SearchScreen>
+      )}
 
       {reportFormOpen && (
         <div className="career-confirm-overlay" onClick={() => setReportFormOpen(false)}>

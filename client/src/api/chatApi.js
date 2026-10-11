@@ -145,7 +145,8 @@ export const generateCareerCandidates = (sessionId, language) =>
 export const confirmCareer = (sessionId, careerName, language) =>
   apiRequest(`/career/sessions/${sessionId}/confirm`, { method: 'POST', body: JSON.stringify({ careerName, language }) });
 
-export const getCommunityPosts = () => apiRequest('/community');
+// query가 있으면 제목·본문에 그 검색어가 들어간 글만(서버가 최신순으로 내려준다).
+export const getCommunityPosts = (query) => apiRequest(query ? `/community?q=${encodeURIComponent(query)}` : '/community');
 
 export const getMyCommunityPosts = () => apiRequest('/community/mine');
 

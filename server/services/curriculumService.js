@@ -1,6 +1,8 @@
 const pool = require('../db');
 const { extractAskedYears } = require('./yearContext');
 const historyService = require('./curriculumHistoryService');
+const { OFFERING_SEMESTER, regularSemesterToOfferingCode, offeringCodeLabel } = require('./termCode');
+const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
 
 /**
  * server/services/curriculumService.js
@@ -334,9 +336,16 @@ function extractYear(text) {
   return m ? Number(m[1]) : null;
 }
 
+// 질문 속 학기 → course_offerings.semester 코드(termCode.js). "2학기"는 코드 3이다 — 그대로 2를 넣으면 여름 계절학기를 조회한다.
+// "여름/겨울 학기"는 계절학기 코드로, "3학기"처럼 1·2가 아닌 숫자는 개설 학기를 가리키는 말이 아니라 보고 학기 조건을 걸지 않는다.
+const SUMMER_RE = /(여름|하계)\s*(계절\s*)?학기/;
+const WINTER_RE = /(겨울|동계)\s*(계절\s*)?학기/;
+
 function extractSemester(text) {
+  if (SUMMER_RE.test(text)) return OFFERING_SEMESTER.SUMMER;
+  if (WINTER_RE.test(text)) return OFFERING_SEMESTER.WINTER;
   const m = text.match(SEMESTER_RE);
-  return m ? Number(m[1] || m[2]) : null;
+  return m ? regularSemesterToOfferingCode(Number(m[1] || m[2])) : null;
 }
 
 async function findOfferings({ departmentId, trackId, year, semester } = {}) {
@@ -379,36 +388,95 @@ function formatOfferingChunk(group) {
 
   return {
     chunkId: `offering-${group.departmentName}-${group.trackName || ''}-${group.year}-${group.semester}-${group.grade ?? 'x'}`,
-    documentTitle: `${group.departmentName}${trackLabel} ${group.year}학년도 ${group.semester}학기 ${gradeLabel} 개설과목`,
-    content: `${group.year}년 ${group.semester}학기에 실제 개설된 과목 목록(${gradeLabel}):\n${categoryLines}`,
+    documentTitle: `${group.departmentName}${trackLabel} ${group.year}학년도 ${offeringCodeLabel(group.semester)} ${gradeLabel} 개설과목`,
+    content: `${group.year}년 ${offeringCodeLabel(group.semester)}에 실제 개설된 과목 목록(${gradeLabel}):\n${categoryLines}`,
   };
 }
 
 // 메시지에서 연도(및 있으면 학기)를 감지하면 그 학기에 실제 개설된 과목을 조회해 근거 청크로
 // 변환한다. student의 학과/트랙을 알면 그 학생 소속으로 좁히고, 모르면(온보딩 전 등) 전체를
 // 반환한다 — lookupFromMessage와 동일한 방침.
-async function lookupOfferingsFromMessage(text, student, yearContext = null) {
-  // 연도가 나왔다고 다 개설 이력 질문은 아니다 — "2024학년도 졸업요건"에는 그 해 개설과목 수백 행이 필요 없고
-  // 근거 문서만 부풀린다. 개설/수강 의도가 있거나, 요건·이력·비교 의도가 없는 연도 질문일 때만 조회한다.
-  // 연도는 첫 번째 것만이 아니라 질문에 나온 것 전부(최대 MAX_QUERY_YEARS개) 조회한다.
+// 개설 과목 조회의 대상 학년도·학기를 정한다(DB 없이 테스트 가능). 우선순위:
+//  1) 질문에 직접 나온 학년도 — 항상 최우선(분류가 뭐라 하든 사용자가 말한 해를 따른다)
+//  2) 질문 분류가 정한 학년도(yearContext.offeringYears) — 연도 표현이 없는 "들을만한 과목", "지금 개설된 과목" 같은 질문.
+//     앞으로 들을 과목을 묻는 질문(NEXT_TERM_PLANNING)은 "1학기에 12학점, 2학기에 6학점"처럼 질문 속 학기 숫자가 학기 조건이 아니라
+//     계획의 일부라서 학기를 걸러내지 않고 두 학기를 다 준다.
+//  3) 연도 표현이 없고 분류도 없으면 조회하지 않는다.
+// 반환 null = 조회 안 함.
+function resolveOfferingTargets(text, yearContext = null) {
   if (yearContext) {
+    const explicit = yearContext.explicitAskedYears.slice(0, MAX_QUERY_YEARS);
+    const classified = yearContext.offeringYears || [];
+    if (explicit.length === 0 && classified.length > 0) {
+      return {
+        years: classified.slice(0, MAX_QUERY_YEARS),
+        semester: yearContext.questionIntent === 'NEXT_TERM_PLANNING' ? null : extractSemester(text),
+        fromClassification: true,
+      };
+    }
+    // 연도가 나왔다고 다 개설 이력 질문은 아니다 — "2024학년도 졸업요건"에는 그 해 개설과목 수백 행이 필요 없고
+    // 근거 문서만 부풀린다. 개설/수강 의도가 있거나, 요건·이력·비교 의도가 없는 연도 질문일 때만 조회한다.
     const { offering, requirement, history, compare } = yearContext.intents;
-    if (!offering && (requirement || history || compare)) return [];
+    if (!offering && (requirement || history || compare)) return null;
   }
-  // 직전 질문에서 이어받은 연도가 아니라 이번 질문에 직접 나온 연도만 쓴다.
+  // 직전 질문에서 이어받은 연도가 아니라 이번 질문에 직접 나온 연도만 쓴다. 연도는 첫 번째 것만이 아니라 질문에 나온 것 전부(최대 MAX_QUERY_YEARS개).
   const years = (yearContext ? yearContext.explicitAskedYears : extractAskedYears(text)).slice(0, MAX_QUERY_YEARS);
   const targetYears = years.length > 0 ? years : [extractYear(text)].filter(Boolean);
-  if (targetYears.length === 0) return [];
+  if (targetYears.length === 0) return null;
+  return { years: targetYears, semester: extractSemester(text), fromClassification: false };
+}
 
-  const semester = extractSemester(text);
+// 해당 학년도 이전 중 개설 이력이 있는 가장 최근 학년도. 앞으로 들을 학기(예: 내년)의 개설 정보는 보통 아직 없어서, 그때는 가장
+// 최근 학년도의 실제 개설 이력을 참고용으로 대신 쓴다 — 근거 문서 제목에 실제 학년도가 찍혀 모델이 "○학년도 기준"이라고 밝힐 수 있다.
+async function findLatestOfferingYearBefore({ departmentId, trackId, year } = {}) {
+  const conditions = ['year < ?'];
+  const params = [year];
+  if (departmentId) {
+    conditions.push('department_id = ?');
+    params.push(departmentId);
+  }
+  if (trackId) {
+    conditions.push('track_id = ?');
+    params.push(trackId);
+  }
+  const [[row]] = await pool.query(`SELECT MAX(year) AS latest FROM course_offerings WHERE ${conditions.join(' AND ')}`, params);
+  return row && row.latest != null ? row.latest : null;
+}
+
+// 질문에 맞는 개설 이력 행을 조회한다. 조회 대상이 아니거나 행이 없으면 null.
+async function fetchOfferingRows(text, student, yearContext = null) {
+  const target = resolveOfferingTargets(text, yearContext);
+  if (!target) return null;
+  const { years: targetYears, semester, fromClassification } = target;
   const baseFilter = {
     departmentId: student?.department_id || undefined,
     trackId: student?.track_id || undefined,
   };
 
-  const rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
-  if (rows.length === 0) return [];
+  let rows;
+  if (fromClassification) {
+    // 그 해 개설 정보가 없으면 더 이전의 가장 최근 학년도로 대신한다. 같은 학년도로 모이면 한 번만 조회한다.
+    const rowsByYear = new Map();
+    for (const year of targetYears) {
+      let usedYear = year;
+      let yearRows = await findOfferings({ year, semester, ...baseFilter });
+      if (yearRows.length === 0) {
+        const latest = await findLatestOfferingYearBefore({ ...baseFilter, year });
+        if (latest == null) continue;
+        usedYear = latest;
+        yearRows = rowsByYear.get(latest) || (await findOfferings({ year: latest, semester, ...baseFilter }));
+      }
+      if (!rowsByYear.has(usedYear)) rowsByYear.set(usedYear, yearRows);
+    }
+    rows = [...rowsByYear.values()].flat();
+  } else {
+    rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
+  }
+  return rows.length === 0 ? null : rows;
+}
 
+// 개설 행 → (학과·세부전공·학년도·학기·학년) 단위 그룹. 근거 청크가 비대해지지 않도록 카테고리별 과목명만 나열한다.
+function groupOfferingRows(rows) {
   const groups = new Map();
   for (const row of rows) {
     const key = `${row.department_name}-${row.track_name || ''}-${row.year}-${row.semester}-${row.grade ?? 'x'}`;
@@ -426,8 +494,61 @@ async function lookupOfferingsFromMessage(text, student, yearContext = null) {
     if (!group.categories.has(row.category)) group.categories.set(row.category, new Set());
     group.categories.get(row.category).add(`${row.course_name}(${Number(row.credits)}학점)`);
   }
+  return [...groups.values()];
+}
 
-  return [...groups.values()].map(formatOfferingChunk);
+// "개설된 과목 − 학생이 이미 이수한 과목" 청크(학기마다 하나). 학생이 앞으로 들을 과목을 묻는 질문에서, 모델이 개설 목록과 이수 목록을
+// 머릿속으로 대조하다 틀리지 않도록 코드가 미리 뺀다. 개설 학년은 권장 학년일 뿐 수강 조건이 아니라서 학년으로 거르지 않고 항목에 표시만 한다.
+// 이수 기록에 없는 과목은 미이수로 나오므로(등록 누락 가능) 그 한계를 청크 본문에 밝힌다.
+function buildRemainingOfferingChunks(rows, completedNameSet, completedCount) {
+  const groups = new Map();
+  for (const row of rows) {
+    const key = `${row.department_name}-${row.track_name || ''}-${row.year}-${row.semester}`;
+    if (!groups.has(key)) {
+      groups.set(key, { departmentName: row.department_name, trackName: row.track_name, year: row.year, semester: row.semester, categories: new Map(), excluded: new Set() });
+    }
+    const group = groups.get(key);
+    if (isCompleted(row.course_name, completedNameSet)) {
+      group.excluded.add(row.course_name);
+      continue;
+    }
+    if (!group.categories.has(row.category)) group.categories.set(row.category, new Set());
+    const gradeLabel = row.grade != null ? `, ${row.grade}학년` : '';
+    group.categories.get(row.category).add(`${row.course_name}(${Number(row.credits)}학점${gradeLabel})`);
+  }
+
+  return [...groups.values()]
+    .filter((g) => g.categories.size > 0)
+    .map((g) => {
+      const trackLabel = g.trackName ? ` · ${g.trackName}` : '';
+      const termLabel = `${g.year}학년도 ${offeringCodeLabel(g.semester)}`;
+      const categoryLines = [...g.categories.entries()].map(([category, names]) => `${category}: ${[...names].join(', ')}`).join('\n');
+      return {
+        chunkId: `remaining-${g.departmentName}-${g.trackName || ''}-${g.year}-${g.semester}`,
+        documentTitle: `${g.departmentName}${trackLabel} ${termLabel} 개설과목 중 아직 이수하지 않은 과목`,
+        content:
+          `${termLabel}에 실제 개설된 과목 중 학생이 아직 이수하지 않은 과목(이수 기록 ${completedCount}개를 뺀 목록, 이미 이수한 개설 과목 ${g.excluded.size}개 제외 — 이수 기록에 없는 과목은 미이수로 나온다):\n` +
+          categoryLines,
+      };
+    });
+}
+
+// 개설 과목 근거 청크. offering은 개설 과목 목록, remaining은 질문이 "앞으로 들을 과목"(NEXT_TERM_PLANNING)이고 이수 과목을 알 때만 만든다
+// (이수 기록이 없으면 전부 미이수로 나와 오해를 부르니 만들지 않는다).
+async function lookupOfferingChunks(text, student, yearContext = null, { completedCourseNames = [] } = {}) {
+  const rows = await fetchOfferingRows(text, student, yearContext);
+  if (!rows) return { offering: [], remaining: [] };
+
+  const offering = groupOfferingRows(rows).map(formatOfferingChunk);
+  const wantsRemaining = yearContext && yearContext.questionIntent === 'NEXT_TERM_PLANNING' && completedCourseNames.length > 0;
+  const remaining = wantsRemaining
+    ? buildRemainingOfferingChunks(rows, buildCompletedNameSet(completedCourseNames), completedCourseNames.length)
+    : [];
+  return { offering, remaining };
+}
+
+async function lookupOfferingsFromMessage(text, student, yearContext = null) {
+  return (await lookupOfferingChunks(text, student, yearContext)).offering;
 }
 
 // ---------------------------------------------------------------------------
@@ -577,6 +698,11 @@ module.exports = {
   findMentionedCourseNames,
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
+  lookupOfferingChunks,
+  buildRemainingOfferingChunks,
+  extractSemester,
+  resolveOfferingTargets,
+  formatOfferingChunk,
   lookupLinkedMajorsFromMessage,
   lookupMicroDegreesFromMessage,
 };

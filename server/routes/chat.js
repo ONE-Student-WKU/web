@@ -7,6 +7,7 @@ const regulationService = require('../services/regulationService');
 const curriculumService = require('../services/curriculumService');
 const studentService = require('../services/studentService');
 const graduationService = require('../services/graduationService');
+const studentProgressService = require('../services/studentProgress');
 const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
 const { guardAnswer } = require('../services/answerGuard');
@@ -105,7 +106,8 @@ router.post('/messages', async (req, res, next) => {
     // 검색 직전에 캐주얼한 표현(줄임말/은어)을 정식 학사 용어로 정규화 — 원문 문서엔 "겜콘" 같은
     // 표현이 없어서 그대로 임베딩하면 검색이 실패한다. 사용자에게 보여줄 답변이 아니라
     // 검색어로만 쓰이므로 원본 message는 그대로 DB에 저장하고 화면에도 그대로 남는다.
-    const normalizedSearchQuery = await aiClient.rewriteSearchQuery(searchQuery);
+    // 같은 호출에서 질문 의도도 분류한다(어느 해의 개설 과목을 근거로 삼을지 — aiClient.analyzeQuestion, yearContext.questionIntent).
+    const { searchQuery: normalizedSearchQuery, intent: questionIntent } = await aiClient.analyzeQuestion(searchQuery);
 
     const queryEmbedding = await embeddingClient.getEmbedding(normalizedSearchQuery, 'query');
     // 온보딩 전이거나 학과 정보가 없으면 getGraduationStatus가 ONBOARDING_REQUIRED로 던지는데,
@@ -116,6 +118,8 @@ router.post('/messages', async (req, res, next) => {
       graduationService.getGraduationStatus(req.session.userId).catch(() => null),
       regulationService.getAvailableBookYears(),
     ]);
+    // 다음 수강 학기의 학년·학기와 이수 과목은 코드로 계산해 모델에 준다(studentProgress.js). 실패해도 챗봇은 계속 동작한다.
+    const progress = await studentProgressService.getStudentProgress(req.session.userId, student).catch(() => null);
 
     // 질문의 연도 해석은 여기서 한 번만 정하고 아래 모든 검색/조회가 같은 결과를 쓴다. 예전에는 조회 함수마다
     // 연도를 따로 읽어서(첫 연도만 읽거나, 학번과 학년도를 구분 못 하거나, 메시지 학번을 무시하는 등) 같은
@@ -126,6 +130,7 @@ router.post('/messages', async (req, res, next) => {
       previousUserMessage: lastUserMessage?.content ?? null,
       profileCohort: student?.admission_year ?? null,
       availableBookYears,
+      questionIntent,
     });
 
     // 규정 판단(이 학생에게 기준일에 적용되는 규정·신뢰도)은 RAG 검색보다 먼저 정한다 — 판단 결과가 최우선 근거이고,
@@ -150,6 +155,7 @@ router.post('/messages', async (req, res, next) => {
         previousUserMessage: lastUserMessage?.content ?? null,
         yearContext,
         regulationJudgment,
+        progress,
       }),
     ]);
 
@@ -171,7 +177,7 @@ router.post('/messages', async (req, res, next) => {
       });
     }
 
-    const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext, language);
+    const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext, language, progress);
     // 신뢰도가 확정이 아닌데 단서(추정·확인 필요 등)가 하나도 없는 답변에는 안내문을 덧붙인다(answerGuard.js, D-49).
     const answer = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment, language).answer;
     const citedChunks = relevantChunks.map((c) => ({

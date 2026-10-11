@@ -22,7 +22,7 @@ const FLAG_CATALOG = {
   MAJOR_CHANGE_GRADE_MISSING: [L.ESTIMATED, '전과한 학년이 없어 1·2학년 전과(전공 완화 없음)로 가정했어요. 3·4학년 전과라면 전공 기준이 완화돼요.'],
   MAJOR_CHANGE_BEFORE_ADMISSION: [L.NO_DATA, '전과 시점이 입학 이전으로 입력돼 판단할 수 없어요.'],
   ASOF_BEFORE_MAJOR_CHANGE: [L.NO_DATA, '기준일에는 아직 전과 전이라 그 시점의 (이전 학과) 규정은 입력 정보만으로 알 수 없어요.'],
-  MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH: [L.ESTIMATED, '전과 시점으로 계산한 학년과 입력한 전과 학년이 달라요. 전과생은 "전과한 학년의 당초 입학자"와 같이 이수하므로(전과 안내), 본인 학번 기준이 맞는지 확인이 필요해요.'],
+  MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH: [L.ESTIMATED, '입력한 전과 학년이 입학년도와 전과 시점으로 가능한 범위(휴학은 최대 2년까지 감안)를 벗어나요. 전과 시점과 전과 학년을 다시 확인해 주세요.'],
   TRANSFER_GRADE_ASSUMED: [L.ESTIMATED, '편입 학년을 몰라 3학년 편입(정원내 편입의 원칙)으로 가정했어요. 2학년 편입은 전공 완화가 없고 4학년 편입은 최소전공이 21학점이에요.'],
   TRANSFER_COHORT_YEAR_UNVERIFIED: [L.ESTIMATED, '편입생에게 어느 학번 기준 요건을 적용하는지(편입 연도 vs 편입 학년의 당초 입학자 학번)가 확인되지 않아, 입력한 학번을 그대로 사용했어요.'],
   TRANSFER_TOTAL_UNRESOLVED: [L.ESTIMATED, '편입생은 전적대학 인정학점이 있어 졸업에 필요한 총 학점을 단정할 수 없어요(전공 최소학점 등 개별 기준만 안내해요).'],

@@ -1,0 +1,138 @@
+const pool = require('../db');
+const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
+const { academicTermOf, termIndex, todayKst } = require('./regulationEngine/context');
+const { offeringCodeToRegularSemester } = require('./termCode');
+
+/**
+ * server/services/studentProgress.js
+ * 학생의 "수강 진행 상태" — 다음에 수강신청할 학기가 재학 몇 번째 학기(몇 학년)인지와 이미 이수한 과목을 코드로 계산한다.
+ * 챗봇이 "현재 3학년"이라는 문장만 보고 학년·학기를 즉흥으로 추정하면 3학년 과목만 권하는 식으로 틀려서(2026-10 실사용 확인),
+ * 모델은 계산된 값을 그대로 쓰게 한다. 학기는 정규 학기(1·2) 번호 체계다(계절학기는 재학 학기 수에 세지 않는다 — termCode.js).
+ *
+ * 재학 학기 수(enrolledBefore: 다음 학기 직전까지 등록해 다닌 정규 학기 수)를 구하는 방법:
+ *  1) RECORDS  — 과목 관리에 등록한 이수 기록이 입학 학기부터 이어져 있으면, 기록이 있는 정규 학기 수를 센다.
+ *                기록이 없는 중간 학기는 휴학으로 본다(휴학 시기를 따로 입력받지 않기 위한 설계).
+ *  2) ESTIMATED — 기록이 입학 학기부터가 아니면(과목을 일부만 등록한 학생) 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수.
+ * 학년 = 시작 학년(편입생 3, 그 외 1) + floor(재학 학기 수 / 2), 최대 4(그 이상은 초과학기).
+ */
+
+const MAX_GRADE = 4;
+const TRANSFER_START_GRADE = 3; // 규정 엔진도 편입생을 3학년으로 가정한다(TRANSFER_GRADE_ASSUMED)
+const UPCOMING_TERM_COUNT = 2;
+
+function termFromIndex(index) {
+  return { year: Math.floor(index / 2), semester: (index % 2) + 1 };
+}
+
+function termLabel({ year, semester }) {
+  return `${year}학년도 ${semester}학기`;
+}
+
+/**
+ * @param {object} p
+ * @param {number} p.admissionYear
+ * @param {string} [p.enrollmentType]   GENERAL | TRANSFER_ADMISSION | MAJOR_CHANGE
+ * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수
+ * @param {Array<{year:number, semester:number}>} [p.recordedTerms] 이수 기록의 (학년도, DB 학기 코드). 계절학기(2·4)는 무시한다
+ * @param {string} p.today              'YYYY-MM-DD'(KST)
+ */
+function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemesters = 0, recordedTerms = [], today }) {
+  if (!admissionYear) return null;
+
+  const currentTerm = academicTermOf(today);
+  const firstUpcomingIndex = termIndex(currentTerm) + 1;
+  const admissionIndex = termIndex({ year: admissionYear, semester: 1 });
+  const startGrade = enrollmentType === 'TRANSFER_ADMISSION' ? TRANSFER_START_GRADE : 1;
+  const flags = [];
+  if (enrollmentType === 'TRANSFER_ADMISSION') flags.push('TRANSFER_GRADE_ASSUMED');
+
+  const recordedIndexes = new Set();
+  for (const r of recordedTerms) {
+    const semester = offeringCodeToRegularSemester(r.semester);
+    if (semester == null) continue;
+    const index = termIndex({ year: r.year, semester });
+    if (index < firstUpcomingIndex) recordedIndexes.add(index);
+  }
+
+  const leave = Math.max(0, Number(leaveSemesters) || 0);
+  const estimated = Math.max(0, firstUpcomingIndex - admissionIndex - leave);
+  const recordsCoverAdmission = recordedIndexes.size > 0 && Math.min(...recordedIndexes) <= admissionIndex;
+
+  let enrolledBefore;
+  let source;
+  let needsConfirmation;
+  if (recordsCoverAdmission) {
+    source = 'RECORDS';
+    // 이번 학기를 아직 등록하지 않았다면 추정값은 이번 학기까지 센 값이라 기록보다 하나 많은 게 정상이다 —
+    // 이때는 이번 학기도 다니는 중으로 보고 추정값을 쓴다(기록만 세면 진행 중인 학기가 빠져 학년이 한 학기 낮게 나온다).
+    const currentRecorded = recordedIndexes.has(termIndex(currentTerm));
+    const consistent = recordedIndexes.size === estimated || (!currentRecorded && recordedIndexes.size + 1 === estimated);
+    enrolledBefore = consistent ? estimated : recordedIndexes.size;
+    if (!consistent) flags.push('RECORDS_LEAVE_MISMATCH');
+    needsConfirmation = !consistent;
+  } else {
+    enrolledBefore = estimated;
+    source = 'ESTIMATED';
+    needsConfirmation = true;
+  }
+
+  const upcomingTerms = [];
+  for (let i = 0; i < UPCOMING_TERM_COUNT; i++) {
+    const enrolled = enrolledBefore + i;
+    const rawGrade = startGrade + Math.floor(enrolled / 2);
+    upcomingTerms.push({
+      ...termFromIndex(firstUpcomingIndex + i),
+      grade: Math.min(MAX_GRADE, rawGrade),
+      enrolledTermNumber: enrolled + 1,
+      extended: rawGrade > MAX_GRADE,
+    });
+  }
+  if (upcomingTerms.some((t) => t.extended)) flags.push('EXTENDED_TERM');
+
+  return {
+    today,
+    currentTerm,
+    source,
+    needsConfirmation,
+    flags,
+    enrolledTermsCompleted: enrolledBefore,
+    leaveSemesters: leave,
+    upcomingTerms,
+  };
+}
+
+/** 이수 과목명 목록(중복 제거). 낙제(F·NP)와 재수강으로 대체된 이전 기록은 뺀다 — 졸업요건 계산(graduationService)과 같은 기준. */
+function completedCourseNames(rows, supersededIds = new Set()) {
+  const names = [];
+  const seen = new Set();
+  for (const row of rows) {
+    if (supersededIds.has(row.id)) continue;
+    if (row.letter_grade && FAILING_GRADES.includes(row.letter_grade)) continue;
+    if (seen.has(row.name)) continue;
+    seen.add(row.name);
+    names.push(row.name);
+  }
+  return names;
+}
+
+async function getStudentProgress(studentId, student, { today = todayKst() } = {}) {
+  if (!student || !student.admission_year) return null;
+
+  const [rows] = await pool.query(
+    'SELECT id, name, year, semester, letter_grade FROM student_courses WHERE student_id = ? ORDER BY year, semester, id',
+    [studentId]
+  );
+  const progress = computeProgress({
+    admissionYear: student.admission_year,
+    enrollmentType: student.enrollment_type,
+    leaveSemesters: student.leave_semesters,
+    recordedTerms: rows.map((r) => ({ year: r.year, semester: r.semester })),
+    today,
+  });
+  if (!progress) return null;
+
+  const supersededIds = await getSupersededCourseIds(studentId);
+  return { ...progress, completedCourseNames: completedCourseNames(rows, supersededIds) };
+}
+
+module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel };

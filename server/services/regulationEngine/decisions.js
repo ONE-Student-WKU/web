@@ -20,11 +20,21 @@ const { termIndex } = require('./context');
 
 const FIRST_TERM_OF_ADMISSION = (admissionYear) => ({ year: admissionYear, semester: 1 });
 
-/** 전과 시점이 입학 후 몇 번째 학기(0부터)인지. 전과는 "학기초"에 이뤄지므로 floor(n/2)+1이 곧 전과 학년이다. */
+/** 전과 시점이 입학 후 몇 번째 학기(0부터)인지. 전과는 "학기초"에 이뤄지므로 휴학이 없다면 floor(n/2)+1이 곧 전과 학년이다. */
 function impliedMajorChangeGrade(ctx) {
   const { year, semester } = ctx.majorChange;
   const elapsed = termIndex({ year, semester }) - termIndex(FIRST_TERM_OF_ADMISSION(ctx.admissionYear));
   return { elapsed, grade: Math.floor(elapsed / 2) + 1 };
+}
+
+/**
+ * 입력한 전과 학년이 가능한 범위인지. 휴학하면 전과 학년이 달력상 계산 학년보다 늦어질 수 있지만(최대 2년) 앞설 수는 없다.
+ * 이 범위는 온보딩 화면(client/src/pages/Onboarding.jsx의 getMajorChangeGradeRange)이 선택지로 허용하는 범위와 같다 —
+ * 화면이 허용한 값을 엔진이 "다르다"며 경고하던 어긋남(휴학한 전과생 대부분이 걸림)을 없애려고 맞췄다.
+ * students에는 누적 휴학 학기 수만 있고 그 시기를 몰라서 휴학 값으로 학년을 역산하지 않고 범위로만 본다.
+ */
+function majorChangeGradeRange(implied) {
+  return { min: Math.max(1, implied.grade - 2), max: Math.min(4, implied.grade) };
 }
 
 /**
@@ -71,7 +81,10 @@ function decideMajorRelaxation(ctx) {
     }
     if (ctx.majorChange.year != null && ctx.majorChange.semester != null) {
       const implied = impliedMajorChangeGrade(ctx);
-      if (implied.elapsed >= 0 && implied.grade !== grade) flags.push(makeFlag('MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH', { impliedGrade: implied.grade, inputGrade: grade }));
+      const allowed = majorChangeGradeRange(implied);
+      if (implied.elapsed >= 0 && (grade < allowed.min || grade > allowed.max)) {
+        flags.push(makeFlag('MAJOR_CHANGE_GRADE_VS_COHORT_MISMATCH', { impliedGrade: implied.grade, inputGrade: grade, allowedMinGrade: allowed.min, allowedMaxGrade: allowed.max }));
+      }
     }
     if (grade <= 2) {
       basis.push('ENF_ART8_2_EXCLUDED', 'ENF_ART116_MAJOR_CHANGE');

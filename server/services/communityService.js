@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db');
+const { prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
 
 /**
  * server/services/communityService.js
@@ -121,7 +122,21 @@ async function createPost(authorId, { title, body, category, capacity, recruitEn
   return result.insertId;
 }
 
-async function listApprovedPosts() {
+// 게시글 검색 — 제목이나 본문에 검색어가 들어간 글(koreanSearch.js: 띄어쓰기·문장부호 무시, 제목 일치가 본문 일치보다
+// 앞, 초성, 가벼운 오타 허용). 같은 단계 안에서는 최신순을 지키고, 사용자가 고르는 정렬 옵션은 없다. 승인된 글만 메모리에
+// 올려 걸러내며, 목록 API가 원래 승인된 글 전체를 내려주는 규모라 부담이 없다.
+// 앞뒤 공백은 버리고, 너무 긴 검색어는 잘라서 계산 비용을 제한한다.
+const SEARCH_MAX_LENGTH = 50;
+const SEARCH_RESULT_LIMIT = 100;
+
+function normalizeSearchQuery(q) {
+  if (typeof q !== 'string') return '';
+  return q.normalize('NFC').trim().slice(0, SEARCH_MAX_LENGTH);
+}
+
+// query가 비어 있으면 검색하지 않고 전체 목록(기존 동작)을 돌려준다.
+async function listApprovedPosts({ query } = {}) {
+  const keyword = normalizeSearchQuery(query);
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name,
             ${RECRUIT_DATE_COLUMNS}
@@ -131,7 +146,7 @@ async function listApprovedPosts() {
      ORDER BY p.created_at DESC`
   );
   const today = todayKst();
-  return rows.map((row) => ({
+  const posts = rows.map((row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -142,6 +157,12 @@ async function listApprovedPosts() {
     author: nicknameOf(row.author_name, row.author_id),
     ...recruitFields(row, today),
   }));
+  if (!keyword) return posts;
+
+  // "?!"처럼 문장부호뿐이라 정규화하면 비는 검색어는 아무것도 찾지 않는다(rankEntries가 빈 배열을 준다).
+  const prepared = prepareQuery(keyword);
+  const searchable = posts.map((post) => ({ item: post, entry: prepareEntry(post.title, [post.body]) }));
+  return rankEntries(searchable, prepared, { limit: SEARCH_RESULT_LIMIT }).map((r) => r.item);
 }
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
@@ -656,6 +677,7 @@ async function markMyReportResultsSeen(reporterId) {
 }
 
 module.exports = {
+  normalizeSearchQuery,
   createPost,
   listApprovedPosts,
   listMyPosts,

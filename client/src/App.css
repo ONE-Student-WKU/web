@@ -79,6 +79,15 @@ body {
   font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   background: var(--color-bg-page);
   color: var(--color-text-primary);
+  /* 한글은 기본값(글자 단위로 아무 데서나 줄바꿈)이면 "졸/업논문", "4/학년"처럼 단어 중간에서 끊긴다 — 띄어쓰기에서만
+     끊고, 한 단어가 칸보다 길 때(이메일·URL 등)만 글자 단위로 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 줄이 좁아도 중간에서 끊기면 안 되는 짧은 묶음(학년, 버튼·탭 이름 등) */
+.nowrap-unit {
+  white-space: nowrap;
 }
 
 .app-container {
@@ -431,6 +440,7 @@ body {
 }
 
 .auth-subheading {
+  line-height: 1.5;
   font-size: 0.875rem;
   color: var(--color-text-muted);
   text-align: center;
@@ -461,6 +471,7 @@ body {
 .auth-field label {
   display: block;
   margin-bottom: 6px;
+  line-height: 1.4;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
@@ -501,7 +512,10 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 0 0 14px;
+  /* 강조(nudge) 때 테두리·배경이 글자에 붙어 보이지 않게 안쪽 여백을 주고, 그만큼 바깥 여백을 줄여 자리는 그대로 둔다. */
+  padding: 6px 8px;
+  margin: 0 -8px 8px;
+  border-radius: 10px;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--color-text-secondary);
@@ -528,7 +542,52 @@ body {
   text-align: center;
 }
 
-.auth-submit-btn:disabled {
+.auth-consent-needed--alert {
+  color: var(--color-danger);
+}
+
+/* 동의 없이 로그인 버튼·입력 칸을 눌렀을 때 동의 체크 강조 — 좌우로 흔들고 붉은 테두리를 잠깐 보여준다.
+   같은 애니메이션을 연속으로 다시 재생하려고 a/b 두 이름을 번갈아 쓴다(ConsentCheckbox.jsx). */
+.auth-consent-field--nudge-a,
+.auth-consent-field--nudge-b {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  box-shadow: 0 0 0 2px var(--color-danger);
+  color: var(--color-text-primary);
+}
+
+.auth-consent-field--nudge-a {
+  animation: consent-nudge-a 0.5s ease-in-out;
+}
+
+.auth-consent-field--nudge-b {
+  animation: consent-nudge-b 0.5s ease-in-out;
+}
+
+@keyframes consent-nudge-a {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes consent-nudge-b {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-consent-field--nudge-a,
+  .auth-consent-field--nudge-b {
+    animation: none;
+  }
+}
+
+.auth-submit-btn:disabled,
+.auth-submit-btn[aria-disabled='true'] {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -642,6 +701,18 @@ body {
   padding: 16px;
 }
 
+/* 위기 신호로 후보를 막았을 때의 도움 안내 — 오류가 아니므로 경고색 대신 차분한 카드로 보여준다. */
+.career-support-note {
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+}
+
 .home-error {
   color: var(--color-danger);
   font-size: 0.875rem;
@@ -664,9 +735,10 @@ body {
 
 .home-subgreeting-row {
   display: flex;
+  flex-wrap: wrap; /* 좁은 화면에서는 "학년이 다르신가요?"가 학과명을 짓누르지 않고 아래 줄로 내려간다 */
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
   margin: 0 0 16px;
 }
 
@@ -745,6 +817,7 @@ body {
 
 .home-card-label {
   font-size: 0.8125rem;
+  line-height: 1.4;
   font-weight: 700;
   color: var(--color-text-muted);
   margin: 0 0 10px;
@@ -754,6 +827,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  line-height: 1.5;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
@@ -1135,6 +1209,7 @@ body {
 
 .chat-disclaimer {
   padding: 0 16px 12px;
+  line-height: 1.5;
   font-size: 0.75rem;
   color: var(--color-text-muted);
   text-align: center;
@@ -1209,6 +1284,12 @@ body {
   color: var(--color-text-muted);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* 탭 이름이 길어 두 줄로 나뉠 때(영어, 좁은 화면) 줄마다 폭을 꽉 채워 한 줄에 혼자 남은 탭이 어색하지 않게 한다. */
+.courses-year-tabs--fill .courses-year-tab {
+  flex: 1 1 auto;
+  text-align: center;
 }
 
 .courses-year-tab.active {
@@ -1462,22 +1543,6 @@ body {
   align-items: center;
 }
 
-.courses-add-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
 .courses-add-form {
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
@@ -1492,9 +1557,15 @@ body {
   margin-bottom: 12px;
 }
 
+/* 탭 이름("카탈로그 검색", "한 번에 가져오기")은 한 덩어리로 두고, 한 줄에 다 못 들어가는 좁은 화면(큰 글자 설정 포함)에서는
+   버튼 안쪽 글자가 아니라 버튼 단위로 다음 줄에 내려가게 한다. flex: 1 1 auto라 줄마다 폭을 나눠 가진다. */
 .courses-add-mode-toggle {
+  flex: 1;
+  min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  position: relative; /* PDF 안내 말풍선이 탭 줄 위에 뜨는 기준 */
 }
 
 .courses-add-mode-toggle button {
@@ -1504,7 +1575,38 @@ body {
   border: 1px solid var(--color-border);
   background: none;
   color: var(--color-text-muted);
+  white-space: nowrap;
+  text-align: center;
   cursor: pointer;
+}
+
+.courses-add-mode-toggle > button,
+.courses-add-mode-toggle > .courses-pdf-hint-wrap {
+  flex: 1 1 auto;
+}
+
+.courses-pdf-hint-wrap > button {
+  width: 100%;
+}
+
+@media (max-width: 360px) {
+  /* 320px 폭에서도 세 탭이 한 줄에 들어가도록 바깥 여백을 조금 줄인다. */
+  .courses-body {
+    padding: 14px 12px;
+  }
+
+  .courses-add-form {
+    padding: 12px 10px;
+  }
+
+  .courses-add-mode-toggle {
+    gap: 4px;
+  }
+
+  .courses-add-mode-toggle button {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
 }
 
 .courses-add-mode-toggle button.active {
@@ -1513,8 +1615,9 @@ body {
   border-color: var(--color-accent-bg);
 }
 
+/* 말풍선은 세 번째 탭이 아니라 탭 줄(.courses-add-mode-toggle) 오른쪽 위에 붙인다 — 탭이 두 줄로 나뉘어도 첫 줄을 가리지 않게. */
 .courses-pdf-hint-wrap {
-  position: relative;
+  position: static;
 }
 
 .courses-pdf-hint-bubble {
@@ -1540,17 +1643,7 @@ body {
   border-top-color: var(--color-accent);
 }
 
-.courses-close-btn {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-/* 등록된 과목 전체 삭제 — courses-add-btn과 같은 모양으로 통일하되, 되돌릴 수 없는 위험한
-   동작이라는 걸 색으로 구분한다. */
+/* 등록된 과목 전체 삭제 — 되돌릴 수 없는 위험한 동작이라는 걸 색으로 구분한다. 과목 추가 폼 아래에 둔다. */
 .courses-delete-all-btn {
   width: 100%;
   display: flex;
@@ -1558,7 +1651,7 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 12px;
-  margin-top: 8px;
+  margin-top: 16px;
   font-size: 0.875rem;
   font-weight: 500;
   background: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg-frame));
@@ -1590,12 +1683,139 @@ body {
   font-family: inherit;
 }
 
+/* 검색 전용 화면(SearchScreen)의 결과 목록 — 화면 전체 높이를 쓰므로 높이 제한 없이 화면 스크롤을 따른다. */
 .courses-search-results {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 200px;
+}
+
+/* 폼/목록 위의 검색창 모양 진입 버튼 — 누르면 검색 전용 화면이 열린다. */
+.search-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-entry svg {
+  flex-shrink: 0;
+}
+
+.search-entry span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 검색 전용 화면 — 앱 프레임(.app-frame) 전체를 덮어 하단 탭바까지 가린다. 토스트(z-index 50)는 이 위에 뜬다. */
+.search-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-frame);
+}
+
+.search-screen[hidden] {
+  display: none;
+}
+
+.search-screen-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.search-screen-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.search-screen-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 18px;
+  color: var(--color-text-muted);
+}
+
+.search-screen-field svg {
+  flex-shrink: 0;
+}
+
+.search-screen-field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  /* iOS Safari는 16px 미만 입력창에 포커스가 가면 화면을 확대해 버린다 */
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.search-screen-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.search-screen-body {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px;
+}
+
+.search-screen-hint {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  word-break: keep-all;
+}
+
+.search-screen-count {
+  margin: 0 0 10px;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
 }
 
 .courses-search-result {
@@ -2059,6 +2279,7 @@ body {
 
 .community-write-row {
   display: flex;
+  align-items: flex-end; /* 라벨이 한 칸은 한 줄, 한 칸은 두 줄로 나뉘어도 입력 칸의 윗선이 어긋나지 않게 아래를 맞춘다 */
   gap: 10px;
 }
 
@@ -2358,6 +2579,7 @@ body {
 
 .courses-pdf-help summary {
   font-size: 0.8125rem;
+  line-height: 1.4;
   font-weight: 700;
   color: var(--color-accent);
   cursor: pointer;
@@ -2776,6 +2998,7 @@ body {
 
 .onb-q-title {
   font-size: 1.25rem;
+  line-height: 1.4;
   font-weight: 800;
   margin: 0 0 6px;
   letter-spacing: -0.2px;
@@ -2812,8 +3035,8 @@ body {
 .onb-option-card:hover:not(:disabled) { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
-.onb-option-title { font-size: 0.9375rem; font-weight: 500; }
-.onb-option-caption { font-size: 0.8125rem; color: var(--color-text-muted); }
+.onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
+.onb-option-caption { font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); }
 .onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
 .onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
@@ -3291,6 +3514,7 @@ select.onb-select {
 .onb-search-empty,
 .onb-college-hint {
   margin: 0 0 8px;
+  line-height: 1.5;
   font-size: 0.8125rem;
   color: var(--color-text-secondary);
 }

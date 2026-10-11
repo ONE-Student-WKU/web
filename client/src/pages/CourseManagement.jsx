@@ -16,6 +16,9 @@ import {
   confirmImportedCourses,
 } from '../api/chatApi.js';
 import { IconPlus, IconTrash, IconSearch, IconX, IconChevronLeft, IconCheck, IconAlertTriangle } from '../components/icons.jsx';
+import SearchScreen from '../components/SearchScreen.jsx';
+import { closeSearchScreen } from '../components/searchScreenHistory.js';
+import useSearchInput from '../hooks/useSearchInput.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { displayCategory, translateCategory } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
@@ -164,11 +167,25 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const [timetable, setTimetable] = useState(initialSemesterCache?.timetable || []);
   const [pageLoading, setPageLoading] = useState(courseMgmtCache.summary === null);
   const [semesterLoading, setSemesterLoading] = useState(!initialSemesterCache);
-  const [error, setError] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [error, setErrorRaw] = useState(null);
+  // 과목 추가 폼은 항상 화면에 있다(별도 "과목 추가" 버튼을 거치지 않음) — 폼이 목록 아래쪽에 있어서, 추가 과정에서 난 오류는
+  // 화면 위쪽이 아니라 폼 안(카탈로그 검색 화면 안)에 보여준다. errorInForm이 그 구분이다.
+  const [errorInForm, setErrorInForm] = useState(false);
+  const setError = (message) => {
+    setErrorRaw(message);
+    setErrorInForm(false);
+  };
+  const setFormError = (message) => {
+    setErrorRaw(message);
+    setErrorInForm(message != null);
+  };
   const [addMode, setAddMode] = useState('catalog'); // 'catalog' | 'manual' | 'pdf'
-  const [keyword, setKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  // 카탈로그 검색은 별도 전체 화면(SearchScreen)에서 한다 — 폼에는 검색창 모양의 진입 버튼만 둔다.
+  // searchResults: null이면 아직 검색 전, catalogQuery: 마지막으로 요청한 검색어(공백 제거).
+  const [catalogSearchOpen, setCatalogSearchOpen] = useState(false);
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [manualFields, setManualFields] = useState({ name: '', credits: '', category: '전공선택' });
   const [manualSchedule, setManualSchedule] = useState([]); // [{day, period}] — 선택 입력, 직접입력/시간표 없는 카탈로그 과목 공용
   // 시간표가 없는 카탈로그 과목(교수/시간 미확보)을 선택했을 때만 세팅 — 확정된 시간표가
@@ -203,18 +220,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 검색)에 남아있고 아직 등록한 과목이 없을 때 항상 표시.
   const showAddModeHint = addMode === 'catalog' && myCourses.length === 0;
   const [toast, setToast] = useState(null);
-  const addFormRef = useRef(null);
-  const searchResultsRef = useRef(null);
   const toastTimerRef = useRef(null);
   const searchRequestIdRef = useRef(0);
   // 한글 입력은 자음+모음이 조합돼야 완성된 글자가 된다("데" = ㄷ+ㅔ) — 조합 중간에 나오는
   // 낱자 상태("빅ㄷ")는 실제 과목명 문자열에 없는 형태라 검색이 빈 결과를 내고, 그게 결과
-  // 목록이 껐다 켜졌다 깜빡이는 원인이었다(실사용 피드백). compositionstart~compositionend
-  // 구간(조합 중)에는 검색을 보류했다가 조합이 끝나는 순간(완성된 글자)에만 검색하면 이
-  // 깜빡임이 사라진다 — 글자가 웬만한 디바운스 대기시간보다 훨씬 빨리 완성되므로 체감 속도도
-  // 더 빨라진다.
-  const isComposingRef = useRef(false);
-  const searchInputRef = useRef(null);
+  // 목록이 껐다 켜졌다 깜빡이는 원인이었다(실사용 피드백). 조합 중에는 검색을 보류하고 글자가
+  // 완성되는 순간에만 검색하는 처리는 useSearchInput이 맡는다(커뮤니티 글 검색과 공용).
+  const catalogSearch = useSearchInput((value) => handleSearch(value));
   const manualNameRef = useRef(null);
 
   // PDF로 한꺼번에 여러 과목(대부분 지난 학기들)을 등록하면, 화면은 계속 "현재 학기" 탭에
@@ -228,19 +240,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }
 
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
-
-  // "과목 추가"를 누르면 폼이 화면 아래쪽에 새로 생기는데 스크롤 위치는 그대로라 매번 직접
-  // 내려야 했다 — 폼이 열리는 순간 자동으로 보이는 위치까지 스크롤한다.
-  useEffect(() => {
-    if (showAddForm) addFormRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
-  }, [showAddForm]);
-
-  // 검색어를 입력해 결과 목록이 새로 생겨도 스크롤 위치는 그대로라 목록을 보려면 또 내려야
-  // 했다 — 결과가 생기면 목록이 보이는 위치까지 자동으로 맞춘다. 이미 보이고 있으면
-  // block: 'nearest'라 매 타이핑마다 점프하지 않는다.
-  useEffect(() => {
-    if (searchResults.length > 0) searchResultsRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-  }, [searchResults]);
 
   useEffect(() => {
     getCourseSummary()
@@ -305,17 +304,16 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   useEffect(() => {
     // 학기를 바꿨는데 이전 학기 기준 검색 결과/선택이 그대로 남아있으면, 실제로는
     // 개설되지 않은 학기에도 그 과목을 추가할 수 있게 된다 — 학기 전환 시 함께 초기화.
-    setKeyword('');
-    setSearchResults([]);
+    resetCatalogSearch();
     setCatalogSelection(null);
     setManualSchedule([]);
-    searchRequestIdRef.current += 1;
     loadSemesterData(current.year, current.semester);
 
     // "카탈로그 검색"은 실제 현재 학기가 아닌 탭에서는 버튼도, 아래 addMode==='catalog' 렌더
     // 분기도 isViewingRealCurrentSemester로 함께 막혀 있다(courses-add-mode-toggle 참고) —
     // 여기서는 상태값 자체를 그 학기의 기본 탭인 '직접입력'으로 맞춰 토글의 active 표시도 정리한다.
     if (!isViewingRealCurrentSemester) setAddMode((prev) => (prev === 'catalog' ? 'manual' : prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 학기가 바뀔 때만 다시 불러온다(loadSemesterData·resetCatalogSearch는 매 렌더 새로 만들어진다)
   }, [current, isViewingRealCurrentSemester]);
 
   const tabs = useMemo(() => {
@@ -461,38 +459,38 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 검색됨). 응답이 늦게 도착해 그사이 검색어가 더 바뀌었으면(requestId 불일치) 버린다 —
   // 네트워크 지연으로 응답 순서가 뒤바뀌어 오래된 검색어 결과가 최신 결과를 덮어쓰는 걸 막음.
   const handleSearch = (value) => {
-    setKeyword(value);
-
-    if (!value.trim()) {
-      setSearchResults([]);
+    const query = value.trim();
+    const requestId = ++searchRequestIdRef.current;
+    setCatalogQuery(query);
+    if (!query) {
+      setSearchResults(null);
+      setSearchLoading(false);
       return;
     }
-    if (isComposingRef.current) return; // 조합 중 — 완성되면 handleCompositionEnd가 다시 호출
-
-    const requestId = ++searchRequestIdRef.current;
+    setSearchLoading(true);
     (async () => {
       try {
         const results = await searchCatalog(value, current.year, current.semester);
         if (requestId === searchRequestIdRef.current) setSearchResults(results);
       } catch {
         if (requestId === searchRequestIdRef.current) setSearchResults([]);
+      } finally {
+        if (requestId === searchRequestIdRef.current) setSearchLoading(false);
       }
     })();
   };
 
-  const handleSearchCompositionStart = () => {
-    isComposingRef.current = true;
-  };
+  // 검색어·결과·진행 중인 요청을 모두 비운다(학기 전환, 폼 초기화, 과목 추가 직후 공통).
+  function resetCatalogSearch() {
+    searchRequestIdRef.current += 1;
+    catalogSearch.reset();
+    setCatalogQuery('');
+    setSearchResults(null);
+    setSearchLoading(false);
+  }
 
-  const handleSearchCompositionEnd = (e) => {
-    isComposingRef.current = false;
-    handleSearch(e.target.value);
-  };
-
-  const closeAddForm = () => {
-    setShowAddForm(false);
-    setKeyword('');
-    setSearchResults([]);
+  const resetAddForm = () => {
+    resetCatalogSearch();
     setManualFields({ name: '', credits: '', category: '전공선택' });
     setManualSchedule([]);
     setCatalogSelection(null);
@@ -508,15 +506,14 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   // 과목을 하나 추가할 때마다 폼 전체가 닫혀서, 여러 과목을 연달아 등록하려면 매번 "과목 추가"
   // 버튼과 검색창/입력창을 다시 눌러야 했다(실사용 피드백). 성공 후 폼을 닫는 대신 입력
   // 흔적만 지우고 그대로 열어둔 채 입력창에 포커스를 돌려줘서, 클릭 없이 바로 다음 과목을
-  // 타이핑할 수 있게 한다. 다 썼으면 헤더의 닫기(X) 버튼으로 직접 닫으면 된다(closeAddForm).
+  // 타이핑할 수 있게 한다. 다 썼으면 검색 화면의 뒤로가기로 나가면 된다.
   // 이수구분(category)은 연달아 같은 값을 쓰는 경우가 많아 초기화하지 않고 유지한다.
   const resetAfterAdd = () => {
-    setKeyword('');
-    setSearchResults([]);
+    resetCatalogSearch();
     setCatalogSelection(null);
     setManualSchedule([]);
     setManualFields((f) => ({ ...f, name: '', credits: '' }));
-    if (addMode === 'catalog') searchInputRef.current?.focus();
+    if (addMode === 'catalog') catalogSearch.focus();
     else if (addMode === 'manual') manualNameRef.current?.focus();
   };
 
@@ -539,8 +536,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     if (formatSchedule(r.schedule, tr) || r.credits === 0) {
       handleAddFromCatalog(r.courseId, undefined, r.name);
     } else {
+      // 시간표를 더 물어봐야 하니 검색 화면을 닫고 폼에서 입력받는다.
       setManualSchedule([]);
       setCatalogSelection(r);
+      closeSearchScreen();
     }
   };
 
@@ -558,7 +557,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
-      setError(describeAddCourseError(err));
+      setFormError(describeAddCourseError(err));
     }
   };
 
@@ -580,7 +579,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       resetAfterAdd();
       await refreshAfterChange();
     } catch (err) {
-      setError(describeAddCourseError(err));
+      setFormError(describeAddCourseError(err));
     }
   };
 
@@ -641,7 +640,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           : null
       );
     } catch (err) {
-      setError(describePdfImportError(err));
+      setFormError(describePdfImportError(err));
     } finally {
       setPdfLoading(false);
     }
@@ -677,7 +676,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       setPdfPasteMode(false);
       setPdfPasteText('');
     } catch (err) {
-      setError(describePasteImportError(err));
+      setFormError(describePasteImportError(err));
     } finally {
       setPdfLoading(false);
     }
@@ -705,7 +704,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     const included = pdfRows.filter((r) => r.include);
     if (included.length === 0) return;
     if (included.some((r) => !r.category)) {
-      setError(tr('courses.err.missingCategory'));
+      setFormError(tr('courses.err.missingCategory'));
       return;
     }
 
@@ -722,7 +721,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           letterGrade: r.letterGrade || null,
         }))
       );
-      closeAddForm();
+      resetAddForm();
       await refreshAfterChange({ highlightTotalChange: true });
 
       const { inserted = 0, gradesFilled = 0, skipped = 0 } = result || {};
@@ -732,7 +731,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       if (skipped > 0) segments.push(tr('courses.toast.skipped', { n: skipped }));
       showToast(tr('courses.toast.imported', { segments: segments.join(' · ') }));
     } catch (err) {
-      setError(describePdfConfirmError(err));
+      setFormError(describePdfConfirmError(err));
     } finally {
       setPdfSubmitting(false);
     }
@@ -740,6 +739,39 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const errorText = error && (typeof error === 'object' ? tr(error.key) : error);
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
+
+  // 카탈로그 검색 화면의 본문 — 검색 전에는 안내, 결과가 없으면 그 사실을, 있으면 전체 높이로 목록을 보여준다.
+  const renderCatalogResults = () => {
+    if (!catalogQuery) return <p className="search-screen-hint">{tr('courses.catalog.hint')}</p>;
+    if (searchResults === null || (searchLoading && searchResults.length === 0)) {
+      return <p className="search-screen-hint">{tr('search.loading')}</p>;
+    }
+    if (searchResults.length === 0) {
+      return (
+        <>
+          <p className="search-screen-hint">{tr('search.empty', { query: catalogQuery })}</p>
+          <p className="search-screen-hint">{tr('courses.catalog.hint')}</p>
+        </>
+      );
+    }
+    return (
+      <div className="courses-search-results">
+        {searchResults.map((r) => (
+          <button key={r.courseId} className="courses-search-result" onClick={() => handleSelectCatalogResult(r)}>
+            <span className="courses-list-item-name">{r.name}</span>
+            <span className="courses-list-item-meta">
+              {catLabel(r.category)} · {tr('courses.credits', { n: r.credits })}{r.professor ? ` · ${r.professor}` : ''}
+              {formatSchedule(r.schedule, tr)
+                ? ` · ${formatSchedule(r.schedule, tr)}`
+                : r.credits === 0
+                  ? ''
+                  : ` · ${tr('courses.catalog.noScheduleYet')}`}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="courses-page">
@@ -769,7 +801,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       )}
 
       <div className="courses-body">
-        {errorText && !showAddForm && <p className="home-error">{errorText}</p>}
+        {errorText && !errorInForm && <p className="home-error">{errorText}</p>}
 
         {outOfRangeYears.length > 0 && (
           <p className="home-error">
@@ -958,28 +990,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           ))}
         </div>
 
-        {!showAddForm && (
-          <>
-            <button
-              className="courses-add-btn"
-              onClick={() => {
-                setError(null);
-                setShowAddForm(true);
-              }}
-            >
-              <IconPlus />
-              {tr('courses.add')}
-            </button>
-            <button className="courses-delete-all-btn" onClick={handleDeleteAll}>
-              <IconTrash />
-              {tr('courses.deleteAll')}
-            </button>
-          </>
-        )}
-
-        {showAddForm && (
-          <div className="courses-add-form" ref={addFormRef}>
-            {errorText && <p className="home-error courses-form-error">{errorText}</p>}
+        {/* 과목 추가 폼은 별도 버튼 없이 처음부터 보인다 — 카탈로그 검색·직접입력·가져오기를 바로 고를 수 있게. */}
+        <div className="courses-add-form">
+            {errorText && errorInForm && !catalogSearchOpen && <p className="home-error courses-form-error">{errorText}</p>}
             <div className="courses-add-form-header">
               <div className="courses-add-mode-toggle">
                 {isViewingRealCurrentSemester && (
@@ -1011,9 +1024,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   </button>
                 </div>
               </div>
-              <button className="courses-close-btn" onClick={closeAddForm} aria-label={tr('courses.close')}>
-                <IconX />
-              </button>
             </div>
 
             {addMode === 'pdf' && (
@@ -1465,37 +1475,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   <p className="courses-manual-hint">
                     {tr('courses.catalog.hint')}
                   </p>
-                  <div className="courses-search-box">
+                  <button type="button" className="search-entry" onClick={() => setCatalogSearchOpen(true)} aria-label={tr('courses.catalog.searchAria')}>
                     <IconSearch />
-                    <input
-                      type="text"
-                      placeholder={tr('courses.catalog.searchPlaceholder')}
-                      value={keyword}
-                      ref={searchInputRef}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onCompositionStart={handleSearchCompositionStart}
-                      onCompositionEnd={handleSearchCompositionEnd}
-                    />
-                  </div>
-                  <div className="courses-search-results" ref={searchResultsRef}>
-                    {searchResults.map((r) => (
-                      <button
-                        key={r.courseId}
-                        className="courses-search-result"
-                        onClick={() => handleSelectCatalogResult(r)}
-                      >
-                        <span className="courses-list-item-name">{r.name}</span>
-                        <span className="courses-list-item-meta">
-                          {catLabel(r.category)} · {tr('courses.credits', { n: r.credits })}{r.professor ? ` · ${r.professor}` : ''}
-                          {formatSchedule(r.schedule, tr)
-                            ? ` · ${formatSchedule(r.schedule, tr)}`
-                            : r.credits === 0
-                              ? ''
-                              : ` · ${tr('courses.catalog.noScheduleYet')}`}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                    <span>{tr('courses.catalog.searchPlaceholder')}</span>
+                  </button>
                 </>
               )
             ) : (
@@ -1577,9 +1560,25 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 </button>
               </form>
             ))}
-          </div>
-        )}
+        </div>
+
+        <button className="courses-delete-all-btn" onClick={handleDeleteAll}>
+          <IconTrash />
+          {tr('courses.deleteAll')}
+        </button>
       </div>
+
+      {catalogSearchOpen && (
+        <SearchScreen
+          search={catalogSearch}
+          onClose={() => setCatalogSearchOpen(false)}
+          placeholder={tr('courses.catalog.searchPlaceholder')}
+          ariaLabel={tr('courses.catalog.searchAria')}
+        >
+          {errorText && errorInForm && <p className="home-error">{errorText}</p>}
+          {renderCatalogResults()}
+        </SearchScreen>
+      )}
     </div>
   );
 }
