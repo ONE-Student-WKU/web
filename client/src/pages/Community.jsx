@@ -21,6 +21,7 @@ import {
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import SearchScreen from '../components/SearchScreen.jsx';
+import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
@@ -173,6 +174,8 @@ function Community({
   const [applySubmitting, setApplySubmitting] = useState(false);
   const [closeSubmitting, setCloseSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  // 관리자가 글 상세에서 작성자를 눌러 연 제재 팝업의 대상 글 — null이면 닫힘.
+  const [sanctionPost, setSanctionPost] = useState(null);
 
   // 글 신고 — 상세 화면 하나에 글이 하나뿐이라 단일 상태로 충분.
   const [reportFormOpen, setReportFormOpen] = useState(false);
@@ -602,27 +605,17 @@ function Community({
             {isRecruitClosed(post.closedAt, post.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
             {post.contentHidden ? t('community.hiddenTitle') : post.title}
           </h2>
-          {!post.isMine && (
-            <div className="community-detail-title-actions">
-              <button type="button" className="community-title-icon-btn" onClick={() => setReportFormOpen(true)} aria-label={t('community.reportAria')}>
-                <IconSiren size={20} />
-              </button>
-              {user?.role === 'admin' && (
-                <button
-                  type="button"
-                  className="community-title-icon-btn"
-                  onClick={() => handleAdminDelete(post)}
-                  disabled={deleteSubmitting}
-                  aria-label={t('community.adminDeleteAria')}
-                >
-                  <IconX size={20} />
-                </button>
-              )}
-            </div>
-          )}
         </div>
-        <p className="community-detail-meta">
-          {post.author} · {formatDate(post.createdAt)}
+        {/* 제목·작성자·배지 줄 아래에 구분선(CSS)을 둬서 본문·신청 영역과 나눈다. */}
+        <p className="community-detail-meta community-detail-meta-divider">
+          {user?.role === 'admin' && !post.isMine && post.authorId ? (
+            <button type="button" className="community-author-link" onClick={() => setSanctionPost(post)} aria-label={t('community.sanctionAuthorAria', { author: post.author })}>
+              {post.author}
+            </button>
+          ) : (
+            post.author
+          )}{' '}
+          · {formatDate(post.createdAt)}
           <span className={`community-badge community-badge-${post.category}`}>{t(`community.category.${post.category}`)}</span>
           {post.capacity && <span className="community-badge community-badge-capacity">{t('community.capacity', { n: post.capacity })}</span>}
           {post.closedAt && <span className="community-badge community-badge-closed">{t('community.badge.closed')}</span>}
@@ -634,12 +627,29 @@ function Community({
             <span className={`community-badge community-badge-${post.status}`}>{t(`community.postStatus.${post.status}`)}</span>
           )}
         </p>
+
         {post.contentHidden ? (
           <p className="courses-manual-hint">
             {t('community.hiddenBody')}
           </p>
         ) : (
-          <p className="community-detail-body">{post.body}</p>
+          <p className="community-detail-body community-detail-body-card">{post.body}</p>
+        )}
+
+        {/* 신고·(관리자) 삭제는 아이콘만 두면 무슨 버튼인지 알기 어려워서 글자가 붙은 버튼으로 본문 바로 아래에 둔다. */}
+        {!post.isMine && (
+          <div className="community-detail-tools">
+            <button type="button" className="community-tool-btn" onClick={() => setReportFormOpen(true)}>
+              <IconSiren size={15} />
+              <span>{t('community.reportAria')}</span>
+            </button>
+            {user?.role === 'admin' && (
+              <button type="button" className="community-tool-btn community-tool-danger" onClick={() => handleAdminDelete(post)} disabled={deleteSubmitting}>
+                <IconX size={15} />
+                <span>{t('community.adminDeleteShort')}</span>
+              </button>
+            )}
+          </div>
         )}
 
         {post.status === 'rejected' && post.rejectReason && (
@@ -782,7 +792,7 @@ function Community({
               ) : sanction?.scope === 'post_apply' ? (
                 <p className="courses-manual-hint">{t('community.applyRestricted', { reason: sanction.reason })}</p>
               ) : (
-                <form className="community-apply-form" onSubmit={handleApply}>
+                <form className="community-apply-form community-apply-section" onSubmit={handleApply}>
                   <div className="auth-field">
                     <label>{t('community.applyMessage')}</label>
                     <textarea
@@ -1160,6 +1170,18 @@ function Community({
         >
           {renderSearchResults()}
         </SearchScreen>
+      )}
+
+      {sanctionPost && (
+        <StudentSanctionDialog
+          studentId={sanctionPost.authorId}
+          nickname={sanctionPost.author}
+          onClose={() => setSanctionPost(null)}
+          onDone={() => {
+            setSanctionPost(null);
+            showToast(t('community.toast.sanctioned'));
+          }}
+        />
       )}
 
       {reportFormOpen && (

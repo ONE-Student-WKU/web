@@ -205,6 +205,13 @@ export const sanctionReport = (id, { scope, duration, reason, resolutionNote }) 
     body: JSON.stringify({ scope, duration, reason, resolutionNote: resolutionNote ?? null }),
   });
 
+// 신고 없이 학생을 직접 제재(관리자 전용) — 커뮤니티 글에서 작성자를 눌러 바로 조치할 때 쓴다. reason은 제재받는 사용자에게 보인다.
+export const sanctionStudent = (studentId, { scope, duration, reason }) =>
+  apiRequest(`/admin/community/students/${studentId}/sanction`, {
+    method: 'POST',
+    body: JSON.stringify({ scope, duration, reason }),
+  });
+
 // 신고자 본인의 신고 내역(처리 상태 + 관리자 처리 안내) / 읽지 않은 처리 결과 수 / 확인 처리.
 export const getMyReports = () => apiRequest('/community/reports/mine');
 export const getUnseenReportCount = () => apiRequest('/community/reports/unseen-count').then((d) => d.count);

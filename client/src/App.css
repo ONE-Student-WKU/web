@@ -2029,35 +2029,84 @@ body {
   overflow-wrap: break-word;
 }
 
-.community-detail-title-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
+/* 글 상세 — 제목·작성자 줄 아래 구분선, 본문은 카드, 신고·삭제는 글자가 붙은 작은 버튼, 신청은 구분선 아래 따로. */
+.community-detail-meta-divider {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.community-title-icon-btn {
+.community-detail-body-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 72px;
+  margin-bottom: 10px;
+}
+
+.community-detail-tools {
   display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.community-tool-btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   background: none;
-  border: none;
-  color: var(--color-alert);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   cursor: pointer;
 }
 
-.community-title-icon-btn:disabled {
+.community-tool-btn.community-tool-danger {
+  color: var(--color-alert);
+}
+
+.community-tool-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* 작은 화면에서 팝업이 화면보다 길어도 확정·취소 버튼까지 스크롤로 닿게 한다. */
+.student-sanction-dialog {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.community-apply-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.community-apply-section .auth-field label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .community-detail-meta {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
   margin: 0 0 16px;
+}
+
+/* 관리자에게만 보이는 작성자 이름 버튼 — 누르면 제재 팝업. 일반 글자처럼 보이되 밑줄로 눌러볼 수 있다는 걸 알린다. */
+.community-author-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .community-detail-body {
