@@ -201,7 +201,7 @@ async function listMyPosts(studentId) {
 // 비공개 글을 못 보게 막는 게 목적. 이 함수가 신청 가능 여부 판정도 겸한다(3단계 —
 // server/routes/community.js의 POST /:id/apply가 그대로 재사용): null이면 신청 대상도
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
-async function getPostById(id, { studentId }) {
+async function getPostById(id, { studentId, includeAuthorId = false }) {
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name,
             ${RECRUIT_DATE_COLUMNS}
@@ -249,6 +249,7 @@ async function getPostById(id, { studentId }) {
     closedAt: row.closed_at,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
+    ...(includeAuthorId ? { authorId: row.author_id } : {}),
     ...recruitFields(row),
     isMine,
     myApplication,
