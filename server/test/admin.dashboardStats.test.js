@@ -1,7 +1,7 @@
 const { test, mock, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const pool = require('../db');
-const { getDashboardStats } = require('../services/adminStatsService');
+const { getDashboardStats, getTrend, isTrendRange } = require('../services/adminStatsService');
 const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatConstants');
 
 /**
@@ -60,4 +60,114 @@ test('COUNT 결과가 문자열로 와도 숫자로 돌려준다', async () => {
   const stats = await getDashboardStats();
   assert.equal(stats.pending.reports, 5);
   assert.equal(typeof stats.last24h.chatQuestions, 'number');
+});
+
+// 쿼리 mock: 구간별 결과를 SQL 조각으로 골라 준다.
+function mockTrendQueries({ students = [], user = [], notFound = [], firstStudent = null, firstMessage = null } = {}) {
+  const calls = [];
+  mock.method(pool, 'query', async (sql, params) => {
+    calls.push({ sql, params });
+    if (sql.includes('MIN(created_at)')) return [[{ first: sql.includes('FROM students') ? firstStudent : firstMessage }]];
+    if (sql.includes('FROM students')) return [students];
+    if (sql.includes("role = 'user'")) return [user];
+    if (sql.includes("role = 'assistant'")) return [notFound];
+    throw new Error(`예상 밖 쿼리: ${sql}`);
+  });
+  return calls;
+}
+
+test('24시간 추이: 현재 시를 마지막으로 하는 24개 구간을 오래된 순으로 만들고, 빈 시간은 0으로 채운다', async () => {
+  const now = Date.UTC(2026, 9, 12, 5, 30); // 05:30 UTC → 마지막 구간은 05:00
+  const hourIndex = (h) => Math.floor(Date.UTC(2026, 9, 12, h) / 1000 / 3600);
+  const calls = mockTrendQueries({
+    students: [{ bucket: hourIndex(5), count: 2 }],
+    user: [{ bucket: String(hourIndex(4)), count: '7' }, { bucket: hourIndex(5), count: 3 }], // 문자열 결과도 숫자로
+    notFound: [{ bucket: hourIndex(0) - 5, count: 1 }],
+  });
+
+  const trend = await getTrend('24h', now);
+  assert.equal(trend.range, '24h');
+  assert.equal(trend.unit, 'hour');
+  assert.equal(trend.generatedAt, new Date(now).toISOString());
+  assert.equal(trend.points.length, 24);
+  assert.equal(trend.points[0].at, '2026-10-11T06:00:00.000Z');
+  assert.deepEqual(trend.points[23], { at: '2026-10-12T05:00:00.000Z', signups: 2, chatQuestions: 3, chatNotFound: 0 });
+  assert.deepEqual(trend.points[22], { at: '2026-10-12T04:00:00.000Z', signups: 0, chatQuestions: 7, chatNotFound: 0 });
+  assert.equal(trend.points.find((p) => p.at === '2026-10-11T19:00:00.000Z').chatNotFound, 1);
+
+  // 모든 쿼리가 같은 시작 시각(에포크 초)을 마지막 인자로 받는다
+  const startEpoch = Math.floor(Date.UTC(2026, 9, 11, 6) / 1000);
+  for (const c of calls) assert.equal(c.params[c.params.length - 1], startEpoch);
+});
+
+test('30일 추이: 오늘을 마지막으로 하는 30일을 한국 날짜로 만든다(UTC 오후는 한국의 다음 날)', async () => {
+  // 2026-10-12 16:00 UTC = 한국 2026-10-13 01:00 → 오늘은 10/13
+  const now = Date.UTC(2026, 9, 12, 16, 0);
+  const kstDayIndex = (y, m, d) => Math.floor(Date.UTC(y, m, d) / 1000 / 86400);
+  const calls = mockTrendQueries({
+    students: [{ bucket: kstDayIndex(2026, 9, 13), count: 4 }],
+    user: [{ bucket: kstDayIndex(2026, 9, 12), count: 9 }],
+  });
+
+  const trend = await getTrend('30d', now);
+  assert.equal(trend.unit, 'day');
+  assert.equal(trend.points.length, 30);
+  assert.equal(trend.points[29].at, '2026-10-13');
+  assert.equal(trend.points[0].at, '2026-09-14');
+  assert.equal(trend.points[29].signups, 4);
+  assert.equal(trend.points[28].chatQuestions, 9);
+  assert.equal(trend.points[28].at, '2026-10-12');
+
+  // 일 단위 버킷은 KST(+9h)로 밀어서 나누고, 시작 시각은 30일 전 한국 자정이다
+  assert.match(calls[0].sql, /\+ 32400\) DIV 86400/);
+  const startEpoch = Date.UTC(2026, 8, 14) / 1000 - 9 * 3600;
+  for (const c of calls) assert.equal(c.params[c.params.length - 1], startEpoch);
+});
+
+test('1년 추이는 365일이다', async () => {
+  mockTrendQueries();
+  const trend = await getTrend('1y', Date.UTC(2026, 9, 12, 5, 30));
+  assert.equal(trend.points.length, 365);
+  assert.equal(trend.points[364].at, '2026-10-12');
+  assert.equal(trend.points[0].at, '2025-10-13');
+  assert.ok(trend.points.every((p) => p.signups === 0 && p.chatQuestions === 0 && p.chatNotFound === 0));
+});
+
+test('전체 추이: 가장 오래된 기록의 날(KST)부터 오늘까지다', async () => {
+  const now = Date.UTC(2026, 9, 12, 5, 30);
+  // 가입은 2026-09-20 00:30 UTC(한국 09:30), 챗봇은 2026-10-01 → 더 오래된 가입일부터
+  mockTrendQueries({ firstStudent: Date.UTC(2026, 8, 20, 0, 30) / 1000, firstMessage: Date.UTC(2026, 9, 1) / 1000 });
+  const trend = await getTrend('all', now);
+  assert.equal(trend.points[0].at, '2026-09-20');
+  assert.equal(trend.points[trend.points.length - 1].at, '2026-10-12');
+  assert.equal(trend.points.length, 23);
+});
+
+test('전체 추이: 기록이 없거나 아주 짧으면 최소 7일, 아주 길면 5년(1825일)까지만 돌려준다', async () => {
+  const now = Date.UTC(2026, 9, 12, 5, 30);
+  mock.method(pool, 'query', async (sql) => {
+    if (sql.includes('MIN(created_at)')) return [[{ first: null }]];
+    return [[]];
+  });
+  assert.equal((await getTrend('all', now)).points.length, 7);
+  mock.restoreAll();
+
+  mockTrendQueries({ firstStudent: Date.UTC(2020, 0, 1) / 1000 });
+  assert.equal((await getTrend('all', now)).points.length, 1825);
+  mock.restoreAll();
+
+  mockTrendQueries({ firstMessage: Date.UTC(2026, 9, 12, 1) / 1000 }); // 오늘 처음 생김
+  assert.equal((await getTrend('all', now)).points.length, 7);
+});
+
+test('추이: 근거 못 찾은 답변은 한국어·영어 고정 문구로 센다', async () => {
+  const calls = mockTrendQueries();
+  await getTrend('24h', Date.UTC(2026, 9, 12, 5, 30));
+  const notFoundCall = calls.find((c) => c.sql.includes('content IN'));
+  assert.deepEqual(notFoundCall.params.slice(0, 2), [NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN]);
+});
+
+test('허용된 range만 통과한다', () => {
+  for (const ok of ['24h', '30d', '1y', 'all']) assert.equal(isTrendRange(ok), true);
+  for (const bad of ['7d', '', 'toString', '__proto__', undefined]) assert.equal(isTrendRange(bad), false);
 });

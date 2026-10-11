@@ -15,6 +15,8 @@ import {
   getReportedStudentSummary,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
+import AdminTrendView from '../components/AdminTrendView.jsx';
+import { TREND_METRICS, TREND_RANGES, DEFAULT_TREND_RANGE } from '../utils/adminTrendMetrics.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers, IconBan, IconAlertTriangle } from '../components/icons.jsx';
 
@@ -30,7 +32,7 @@ const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료'
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
 const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
-const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions'];
+const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions', 'trend'];
 // 제재 사유 입력란의 기본값. 신고자가 쓴 신고 사유를 그대로 채우면 그 말이 제재받는 사용자에게 "제재 사유"로 전달된다
 // (사용자 화면의 제재 안내가 이 사유를 보여줌) — 신고자의 주장·비난·개인정보가 섞일 수 있고, 관리자가 확인한 사실도 아니다.
 // 그래서 중립 고정 문구를 기본으로 두고 관리자가 필요하면 구체적으로 고쳐 쓴다. 신고 사유는 이 화면에서 참고용으로만 보인다.
@@ -39,7 +41,7 @@ const DEFAULT_SANCTION_REASON = '커뮤니티 운영 정책 위반';
 const DEFAULT_RESOLUTION_NOTE = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
 const RESOLUTION_NOTE_MAX_LENGTH = 500;
 const SANCTION_STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
-const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리' };
+const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리', trend: '현황 추이' };
 // 제재 팝업의 기간 선택지(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질
 // 수 있어 프리셋으로 제한한다. permanent는 ends_at을 NULL로 저장(영구정지).
 const SANCTION_DURATIONS = [
@@ -57,13 +59,15 @@ const SANCTION_SCOPE_BADGE_LABEL = { post_apply: '경고성', full: '전면 정�
 
 // 대시보드 현황 칸 — 가입 이메일·현재 접속자는 기존 그대로이고, 나머지는 운영·유지보수용 최근 24시간 지표다.
 // 챗봇 질문은 AI 호출 비용(크레딧 소진 같은 일)을 미리 보는 신호이고, 근거 못 찾은 답변은 규정 문서가 모자란 곳을 찾는 신호다.
+// trend가 있는 칸은 누르면 기간별 추이 그래프(TREND_METRICS의 key)로 간다. 가입 이메일·현재 접속자는 지금 값 하나뿐이고,
+// 24시간 활성 사용자는 시간대별 기록이 남지 않아 그래프를 그릴 수 없다.
 const DASHBOARD_STAT_CELLS = [
   { label: '가입 이메일', value: (s) => s?.totalStudents },
   { label: '현재 접속자', value: (s) => s?.activeSessions },
   { label: '24시간 활성 사용자', value: (s) => s?.last24h?.activeStudents },
-  { label: '24시간 신규 가입', value: (s) => s?.last24h?.signups },
-  { label: '24시간 챗봇 질문', value: (s) => s?.last24h?.chatQuestions },
-  { label: '24시간 근거 못 찾은 답변', value: (s) => s?.last24h?.chatNotFound },
+  { label: '24시간 신규 가입', value: (s) => s?.last24h?.signups, trend: 'signups' },
+  { label: '24시간 챗봇 질문', value: (s) => s?.last24h?.chatQuestions, trend: 'chatQuestions' },
+  { label: '24시간 근거 못 찾은 답변', value: (s) => s?.last24h?.chatNotFound, trend: 'chatNotFound' },
 ];
 
 // 메뉴 타일의 처리 대기 건수 뱃지 — 0이면 그리지 않는다. 화면 낭독기에는 타일의 aria-label이 건수를 읽어 주므로 뱃지 자체는 숨긴다.
@@ -115,6 +119,23 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     writeCache('admin_view', adminView);
   }, [adminView]);
   useEffect(() => () => clearCache('admin_view'), []);
+  // 추이 화면에서 고른 지표도 같은 이유로 새로고침에는 남기고 화면을 떠나면 지운다.
+  const [trendMetric, setTrendMetric] = useState(() => {
+    const saved = readCache('admin_trend_metric');
+    return TREND_METRICS.some((m) => m.key === saved) ? saved : TREND_METRICS[0].key;
+  });
+  useEffect(() => {
+    writeCache('admin_trend_metric', trendMetric);
+  }, [trendMetric]);
+  useEffect(() => () => clearCache('admin_trend_metric'), []);
+  const [trendRange, setTrendRange] = useState(() => {
+    const saved = readCache('admin_trend_range');
+    return TREND_RANGES.some((r) => r.key === saved) ? saved : DEFAULT_TREND_RANGE;
+  });
+  useEffect(() => {
+    writeCache('admin_trend_range', trendRange);
+  }, [trendRange]);
+  useEffect(() => () => clearCache('admin_trend_range'), []);
 
   // App.jsx의 view 히스토리 관리와 같은 이유·같은 방식 — adminView 전환은 App.jsx 입장에서
   // view가 그대로 'admin'이라 히스토리에 전혀 안 쌓여서, 신고함/문의함 등 하위 화면에 있을 때
@@ -440,14 +461,37 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
           <>
             <p className="home-quick-label">현황</p>
             <div className="admin-dashboard-stats">
-              {DASHBOARD_STAT_CELLS.map((cell) => (
-                <div className="admin-stat-cell" key={cell.label}>
-                  <p className="admin-stat-label">{cell.label}</p>
-                  <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
-                    {dashboardLoading ? '—' : cell.value(dashboardStats) ?? '—'}
+              {DASHBOARD_STAT_CELLS.map((cell) => {
+                const content = (
+                  <>
+                    <p className="admin-stat-label">
+                      {cell.label}
+                      {cell.trend && <span className="admin-stat-link-hint" aria-hidden="true"> 추이 ›</span>}
+                    </p>
+                    <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                      {dashboardLoading ? '—' : cell.value(dashboardStats) ?? '—'}
+                    </div>
+                  </>
+                );
+                return cell.trend ? (
+                  <button
+                    type="button"
+                    className="admin-stat-cell admin-stat-cell--link"
+                    key={cell.label}
+                    onClick={() => {
+                      setTrendMetric(cell.trend);
+                      setAdminView('trend');
+                    }}
+                    aria-label={`${cell.label} 추이 보기`}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="admin-stat-cell" key={cell.label}>
+                    {content}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <p className="home-quick-label">메뉴</p>
@@ -473,6 +517,8 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
               </button>
             </div>
           </>
+        ) : adminView === 'trend' ? (
+          <AdminTrendView metric={trendMetric} onChangeMetric={setTrendMetric} range={trendRange} onChangeRange={setTrendRange} />
         ) : adminView === 'approval' ? (
           <>
             <div className="admin-sub-tabs">
