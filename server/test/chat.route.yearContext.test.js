@@ -41,7 +41,7 @@ before(async () => {
   assert.ok(ragChunk, '2025학년도 책자 RAG 문서가 필요합니다(migrate의 book_year 백필 확인)');
 
   mock.method(embeddingClient, 'getEmbedding', async () => embeddingToReturn);
-  mock.method(aiClient, 'rewriteSearchQuery', async (q) => q);
+  mock.method(aiClient, 'analyzeQuestion', async (q) => ({ searchQuery: q, intent: 'DEFAULT' }));
   mock.method(aiClient, 'getAIChatResponse', async (message, chunks, history, student, graduationStatus, yearContext) => {
     captured = { chunks, student, yearContext };
     return aiAnswer;

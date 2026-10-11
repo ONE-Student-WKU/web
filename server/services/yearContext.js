@@ -13,7 +13,7 @@
  * 보유 원문 판본). 기준일은 mode/targetYears/bookYears 계산에 쓰지 않는다 — 기존 모드 판정을 바꾸지 않기 위해 결과에 필드만 더한다.
  */
 
-const { isValidIsoDate, todayKst, academicTermOf } = require('./regulationEngine/context');
+const { isValidIsoDate, todayKst, academicTermOf, termIndex } = require('./regulationEngine/context');
 
 // 4자리 연도 + 학년도/년도/년. "2022학년도"의 끝 '2'가 "2학년"으로 읽히지 않도록 4자리를 먼저 통째로 잡는다.
 const ASKED_YEAR_RE = /(?<!\d)(\d{4})\s*(?:학년도|년도|년)/g;
@@ -35,6 +35,15 @@ const AS_OF_DATE_RE = /(?<!\d)(\d{4})\s*(?:년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*�
 
 function unique(list) {
   return [...new Set(list)];
+}
+
+// 질문 분류(aiClient.analyzeQuestion)가 정한 의도 중 "그해 실제 개설 과목"을 근거로 삼는 것들.
+// 모델은 의도 이름만 정하고, 어느 학년도인지는 여기서 오늘(기준일) 날짜로 계산한다 — 모델이 연도를 지어내지 못하게.
+const OFFERING_BASED_INTENTS = new Set(['CURRENT_OFFERINGS', 'NEXT_TERM_PLANNING']);
+
+// 정규 학기 순번(termIndex) → { year, semester }. termIndex = year * 2 + (semester - 1)
+function termFromIndex(index) {
+  return { year: Math.floor(index / 2), semester: (index % 2) + 1 };
 }
 
 // "2025년 9월 1일 기준으로…"의 "2025년"은 학년도가 아니라 날짜의 일부다. 학년도를 읽기 전에 월·일까지 있는 날짜를 지운다 —
@@ -94,11 +103,12 @@ function resolveBookYear(year, availableBookYears) {
  * @param {number[]} [p.availableBookYears]  RAG에 들어 있는 교육과정 책자 학년도
  * @param {string} [p.asOfDate]              호출자가 정한 기준일('YYYY-MM-DD'). 질문에 날짜가 있으면 질문이 우선한다
  * @param {string} [p.today]                 오늘(KST) 고정값 — 테스트용. 없으면 todayKst()
+ * @param {string} [p.questionIntent]        질문 분류 결과(DEFAULT | CURRENT_OFFERINGS | NEXT_TERM_PLANNING). 질문에 연도·학번이 없을 때만 적용
  * @returns {object} 아래 필드. targetYears는 구조화 조회(과목/요건)를 돌릴 학번·학년도 목록.
  *   asOfDate / asOfSource(message | caller | previous | today) / asOfTerm: 규정 판단 기준일(모드 계산과 무관).
  *   mode: COHORT(내 학번 기준) | SPECIFIC_YEAR(특정 학년도) | COMPARE(연도 비교·적용 여부) | HISTORY(변경 이력) | DEFAULT(연도 정보 없음 → 최신)
  */
-function resolveYearContext({ message, previousUserMessage = null, profileCohort = null, availableBookYears = [], asOfDate = null, today = null }) {
+function resolveYearContext({ message, previousUserMessage = null, profileCohort = null, availableBookYears = [], asOfDate = null, today = null, questionIntent: classifiedIntent = 'DEFAULT' }) {
   let askedYears = extractAskedYears(message);
   let messageCohorts = extractCohorts(message);
   const intents = detectIntents(message);
@@ -169,6 +179,24 @@ function resolveYearContext({ message, previousUserMessage = null, profileCohort
   }
   if (!resolvedAsOf) [resolvedAsOf, asOfSource] = [today && isValidIsoDate(today) ? today : todayKst(), 'today'];
 
+  // 질문 분류 결과 적용: 질문(또는 직전 질문에서 이어받은 값)에 학년도·학번이 직접 있으면 그게 확실한 신호라 분류는 쓰지 않는다 —
+  // 분류는 연도 표현이 없는 애매한 질문에서만 결정권을 가진다. 학번 기준 요건·이수구분 조회(mode/targetYears)는 건드리지 않고,
+  // 개설 과목 조회에 쓸 학년도(offeringYears)만 더한다. 분류가 틀려도 DEFAULT와 같아지는 방향(조회를 덜 붙이는 쪽)이 안전한 쪽이다.
+  const hasExplicitYear = askedYears.length > 0 || messageCohorts.length > 0;
+  const asOfTerm = academicTermOf(resolvedAsOf);
+  let questionIntent = 'DEFAULT';
+  let offeringYears = [];
+  if (!hasExplicitYear && OFFERING_BASED_INTENTS.has(classifiedIntent)) {
+    questionIntent = classifiedIntent;
+    if (classifiedIntent === 'CURRENT_OFFERINGS') {
+      offeringYears = [asOfTerm.year];
+    } else {
+      // 앞으로 들을 두 정규 학기가 속한 학년도(방학이면 곧 시작할 학기). 개설 정보가 아직 없는 해는 조회 단계에서 최근 해로 대신한다.
+      const first = termIndex(asOfTerm) + 1;
+      offeringYears = unique([termFromIndex(first).year, termFromIndex(first + 1).year]);
+    }
+  }
+
   return {
     mode,
     askedYears,
@@ -184,7 +212,9 @@ function resolveYearContext({ message, previousUserMessage = null, profileCohort
     inheritedFromPrevious,
     asOfDate: resolvedAsOf,
     asOfSource,
-    asOfTerm: academicTermOf(resolvedAsOf),
+    asOfTerm,
+    questionIntent,
+    offeringYears,
   };
 }
 

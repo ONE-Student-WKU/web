@@ -105,7 +105,7 @@ ${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
 // 정해짐)과 규정의 "변경 이력"(그 뒤 해에 바뀐 내용)을 섞지 않고, 서로 다른 해의 수치를 한 문장에 합치지 않게 한다.
 function buildYearContextNote(yearContext) {
   if (!yearContext) return null;
-  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears } = yearContext;
+  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears, questionIntent } = yearContext;
   const lines = [];
 
   if (applicableCohort) {
@@ -118,6 +118,16 @@ function buildYearContextNote(yearContext) {
   if (mode === 'COMPARE') lines.push(`질문은 ${targetYears.join('학번·')}학번(학년도)을 비교하거나 적용 여부를 묻는다. 연도별로 나눠서(표나 목록) 각각의 값을 밝히고, 어느 해 값인지 숫자마다 표시하라.`);
   if (mode === 'HISTORY') lines.push('질문은 규정·과목의 변경 이력을 묻는다. 근거 문서의 "변경 이력"을 시점(몇 학번부터)과 함께 설명하라.');
   if (mode === 'DEFAULT') lines.push('질문에 학번·학년도가 없고 프로필에도 입학년도가 없다. 근거 문서에 여러 해가 있으면 어느 해 기준인지 밝히고, 학번을 알려주면 정확히 답할 수 있다고 안내하라.');
+  // 질문 분류(aiClient.analyzeQuestion → yearContext.questionIntent) 결과. 학번 기준 요건·이수구분은 위 학번 기준 그대로 쓰되,
+  // "어떤 과목을 들을 수 있나"는 학번 교육과정표가 아니라 실제 개설 이력으로 답하게 한다.
+  if (questionIntent === 'NEXT_TERM_PLANNING') {
+    lines.push('이 질문은 학생이 앞으로 들을 과목·학기 계획을 묻는다(질문에 연도는 없다). 들을 수 있는 과목은 학번 교육과정표가 아니라 근거 문서의 "개설과목" 문서(실제 개설 이력)를 기준으로 답하라. ' +
+      '다음 학기 개설 정보는 아직 확정되지 않았을 수 있으니, 근거 문서 제목에 적힌 학년도를 밝히며 "○학년도 개설 기준 참고용"이라고 알리고 실제 개설은 학과·수강신청 사이트에서 확인하라고 안내하라. ' +
+      '개설 과목의 학년은 권장 학년일 뿐이라 상위·하위 학년 과목도 후보로 볼 수 있다.');
+  }
+  if (questionIntent === 'CURRENT_OFFERINGS') {
+    lines.push('이 질문은 연도 없이 지금(올해) 개설된 과목을 묻는다. 근거 문서의 "개설과목" 문서(실제 개설 이력)를 기준으로, 제목에 적힌 학년도·학기를 밝히며 답하라.');
+  }
 
   lines.push(
     '연도 처리 원칙:\n' +
@@ -201,18 +211,56 @@ function buildSystemPrompt(student, graduationStatus, yearContext = null, langua
   return parts.join('\n\n');
 }
 
-const QUERY_REWRITE_SYSTEM_PROMPT = `너는 원광대학교 학생의 캐주얼한 질문을 학사 규정 검색에 적합한
-정식 용어 질문으로 바꿔주는 도우미다. 학생이 쓴 줄임말·은어·비격식 표현을 원광대학교 공식
-학사 용어로 풀어써라. 예: "겜콘" → "게임콘텐츠학전공", "복전" → "복수전공", "컴공" → "컴퓨터·소프트웨어공학".
-질문의 의미나 의도는 절대 바꾸지 말고, 검색어로 쓸 짧은 문장 하나만 출력하라. 인사말, 설명, 따옴표 없이
-문장만 출력하라. 이미 정식 용어로 되어 있으면 그대로 출력하라.`;
+// 질문 의도(어느 해의 개설 과목을 근거로 삼을지)는 키워드 규칙으로 가르면 "들을만한", "뭐 들을까" 같은 표현을 계속 놓친다
+// (2026-10 실사용: 개설 의도 정규식 "들을 수"에 "들을만한"이 안 걸려 개설 과목이 조회되지 않았다). 그래서 이미 검색 직전에
+// 부르던 재작성 호출이 검색어와 함께 의도 분류도 JSON으로 돌려준다 — 호출은 그대로 한 번이라 추가 비용·지연이 거의 없다.
+// 모델은 의도 "이름"만 정한다. 어느 연도인지는 모델이 말하지 않고 코드(yearContext)가 오늘 날짜로 계산한다.
+const QUESTION_INTENTS = ['DEFAULT', 'CURRENT_OFFERINGS', 'NEXT_TERM_PLANNING'];
 
-// 임베딩 검색 직전에 한 번 더 호출해 캐주얼한 질문을 정식 용어로 정규화한다. "겜콘"처럼 원문
+const QUERY_ANALYSIS_SYSTEM_PROMPT = `너는 원광대학교 학생의 질문을 학사 규정 검색에 맞게 다듬고 분류하는 도우미다.
+반드시 아래 JSON 객체 하나만 출력하라(코드블록·설명·인사말 금지).
+{"searchQuery": "...", "intent": "DEFAULT | CURRENT_OFFERINGS | NEXT_TERM_PLANNING"}
+
+searchQuery: 학생이 쓴 줄임말·은어·비격식 표현을 원광대학교 공식 학사 용어로 풀어쓴 검색용 문장 하나.
+예: "겜콘" → "게임콘텐츠학전공", "복전" → "복수전공", "컴공" → "컴퓨터·소프트웨어공학".
+질문의 의미나 의도는 절대 바꾸지 말고, 이미 정식 용어면 그대로 둔다.
+
+입력이 두 줄 이상이면 앞줄은 직전 질문(맥락)이고 마지막 줄이 이번 질문이다. intent는 이번 질문을 기준으로 고르되, 이번 질문이 "그럼 2학기는?" 같은 후속 질문이면 맥락을 참고한다.
+
+intent: 질문이 "어느 시점의 과목 정보"를 필요로 하는지 고른다.
+- NEXT_TERM_PLANNING: 학생이 앞으로 들을 과목·학기 계획을 묻는다. 남은 과목, 들을 만한 과목 추천, 다음 학기·내년에 뭘 들을지, 학기별 학점 배분 등.
+  예: "1학기에 12학점 2학기에 6학점 채워야 하는데 뭐 들을까?", "졸업하려면 남은 과목 중에 뭐가 있어?", "다음 학기 시간표 짜는 중인데 추천해줘"
+- CURRENT_OFFERINGS: 연도를 말하지 않고 "지금/올해/이번 학기에 개설된 과목"을 묻는다.
+  예: "이번 학기에 개설된 전공선택 뭐 있어?", "지금 열려 있는 과목 알려줘"
+- DEFAULT: 그 밖의 모든 질문. 졸업요건·학칙·규정·절차 질문, 질문에 특정 연도나 학번이 이미 적혀 있는 질문, 과목 변경 이력·비교 질문 포함. 애매하면 DEFAULT.`;
+
+function parseQuestionAnalysis(text, rawQuery) {
+  const fallback = { searchQuery: rawQuery, intent: 'DEFAULT' };
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return fallback;
+
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    // 모델이 JSON 대신 문장만 돌려준 경우(예전 재작성 방식) — 검색어로는 쓰되 의도는 모른다.
+    return { searchQuery: trimmed, intent: 'DEFAULT' };
+  }
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    const searchQuery = typeof parsed.searchQuery === 'string' && parsed.searchQuery.trim() ? parsed.searchQuery.trim() : rawQuery;
+    const intent = QUESTION_INTENTS.includes(parsed.intent) ? parsed.intent : 'DEFAULT';
+    return { searchQuery, intent };
+  } catch {
+    return fallback;
+  }
+}
+
+// 임베딩 검색 직전에 한 번 더 호출해 캐주얼한 질문을 정식 용어로 정규화하고 질문 의도를 분류한다. "겜콘"처럼 원문
 // 문서에 없는 줄임말은 임베딩 유사도가 안 맞아 검색이 실패하는데, 문서마다 동의어를 일일이
 // 심어두는 방식은 학생들이 쓸 모든 표현을 못 따라가서 확장성이 없다 — Claude가 이미 아는
 // 일반 상식(은어/줄임말)을 활용해 검색어만 자동으로 정규화하는 편이 훨씬 일반적으로 통한다.
-// 실패해도 검색 자체가 막히면 안 되므로 원문 그대로 폴백한다.
-async function rewriteSearchQuery(rawQuery) {
+// 실패해도 검색 자체가 막히면 안 되므로 원문 그대로 + 의도 DEFAULT(기존 동작)로 폴백한다.
+async function analyzeQuestion(rawQuery) {
+  const fallback = { searchQuery: rawQuery, intent: 'DEFAULT' };
   try {
     const res = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
@@ -223,8 +271,8 @@ async function rewriteSearchQuery(rawQuery) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 100,
-        system: QUERY_REWRITE_SYSTEM_PROMPT,
+        max_tokens: 200,
+        system: QUERY_ANALYSIS_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: rawQuery }],
       }),
       // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
@@ -232,14 +280,18 @@ async function rewriteSearchQuery(rawQuery) {
       signal: AbortSignal.timeout(15000),
     });
 
-    if (!res.ok) return rawQuery;
+    if (!res.ok) return fallback;
 
     const data = await res.json();
-    const rewritten = data.content.map((block) => block.text).join('').trim();
-    return rewritten || rawQuery;
+    return parseQuestionAnalysis(data.content.map((block) => block.text).join(''), rawQuery);
   } catch {
-    return rawQuery;
+    return fallback;
   }
+}
+
+// 검색어만 필요한 호출처용(분류는 버린다).
+async function rewriteSearchQuery(rawQuery) {
+  return (await analyzeQuestion(rawQuery)).searchQuery;
 }
 
 // history: 이번 메시지 이전까지의 대화 이력 [{role, content}, ...] — "왜 그래?" 같은 후속
@@ -525,6 +577,9 @@ module.exports = {
   buildCareerLanguageNote,
   withEnglishReminder,
   getAIChatResponse,
+  QUESTION_INTENTS,
+  parseQuestionAnalysis,
+  analyzeQuestion,
   rewriteSearchQuery,
   getCareerFollowUp,
   generateCareerCandidates,

@@ -32,7 +32,7 @@ before(async () => {
   conversationId = conv.insertId;
 
   mock.method(embeddingClient, 'getEmbedding', async () => new Array(512).fill(0));
-  mock.method(aiClient, 'rewriteSearchQuery', async (q) => q);
+  mock.method(aiClient, 'analyzeQuestion', async (q) => ({ searchQuery: q, intent: 'DEFAULT' }));
   mock.method(aiClient, 'getAIChatResponse', async (message, chunks, history, student, graduationStatus, yearContext, language) => {
     capturedLanguage = language;
     return 'ok';
