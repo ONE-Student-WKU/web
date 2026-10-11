@@ -398,11 +398,6 @@ async function getApplicantsForPost(postId) {
   });
 }
 
-// 승인/반려와 동일한 "가드 달린 UPDATE + affectedRows" 패턴(아래 decidePost 참고) —
-// 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
-// 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
-// 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
-// 수락(accepted)일 땐 프록시 생성을 상태 변경 UPDATE보다 먼저 한다 — 이 코드베이스엔
 // 수락은 "프록시 2개 생성 + 상태 변경"을 한 트랜잭션으로 묶는다. 예전엔 'pending' 확인 → 프록시 생성 → UPDATE가
 // 각각 따로라서, 같은 신청을 동시에 수락하면(탭 2개·기기 2대) 둘 다 확인을 통과해 프록시가 중복 생성되고
 // 신청자 목록의 LEFT JOIN이 같은 신청을 여러 줄로 부풀렸다. 신청 행을 FOR UPDATE로 잠그면 나중 요청은 앞 요청이
@@ -438,6 +433,11 @@ async function acceptApplication(applicationId, authorId) {
   }
 }
 
+// 승인/반려와 동일한 "가드 달린 UPDATE + affectedRows" 패턴(아래 decidePost 참고) —
+// 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
+// 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
+// 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
+// 수락은 프록시 생성이 같이 필요해서 위 acceptApplication이 맡고, 여기서는 반려만 처리한다.
 async function decideApplication(applicationId, authorId, status, reason = null) {
   if (status === 'accepted') return acceptApplication(applicationId, authorId);
 

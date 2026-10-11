@@ -1,4 +1,4 @@
-const { test, before, after } = require('node:test');
+const { test, before, after, mock } = require('node:test');
 const assert = require('node:assert/strict');
 
 // communityService는 EMAIL_PROXY_DOMAIN을 모듈 로드 시점에 한 번 읽는다. 로컬 .env에는 있지만 CI에는 없어서
@@ -83,4 +83,63 @@ test('글쓴이가 아닌 사람은 수락할 수 없고 프록시도 생기지 
   assert.equal(await communityService.decideApplication(application.id, applicantId, 'accepted'), false);
   const [proxies] = await pool.query('SELECT id FROM community_email_proxies WHERE application_id = ?', [application.id]);
   assert.equal(proxies.length, 0);
+});
+
+test('수락과 반려가 동시에 들어와도 하나만 이기고, 프록시는 수락이 이겼을 때만 2개다', async () => {
+  // 한 번만 돌리면 한쪽이 항상 먼저 도착해 경쟁이 안 생길 수 있어서 여러 신청으로 반복한다.
+  let acceptedWins = 0;
+  let rejectedWins = 0;
+  for (let i = 0; i < 10; i++) {
+    const application = await makePendingApplication(`수락 반려 경쟁 ${i}`);
+    const [accepted, rejected] = await Promise.all([
+      communityService.decideApplication(application.id, authorId, 'accepted'),
+      communityService.decideApplication(application.id, authorId, 'rejected', '사유'),
+    ]);
+    assert.equal(Number(accepted) + Number(rejected), 1, '둘 중 정확히 하나만 성공해야 한다');
+
+    const [[row]] = await pool.query('SELECT status FROM community_applications WHERE id = ?', [application.id]);
+    const [proxies] = await pool.query('SELECT id FROM community_email_proxies WHERE application_id = ?', [application.id]);
+    if (accepted) {
+      acceptedWins++;
+      assert.equal(row.status, 'accepted');
+      assert.equal(proxies.length, 2);
+    } else {
+      rejectedWins++;
+      assert.equal(row.status, 'rejected');
+      assert.equal(proxies.length, 0, '반려가 이겼는데 프록시가 남으면 안 된다');
+    }
+  }
+  assert.equal(acceptedWins + rejectedWins, 10);
+});
+
+test('프록시 생성이 중간에 실패하면 전부 롤백돼 상태는 pending, 프록시는 0개이고 다시 수락할 수 있다', async () => {
+  const application = await makePendingApplication('중간 실패');
+
+  // 두 번째 프록시 INSERT에서만 실패시킨다(첫 번째는 이미 들어간 상태) — 부분 생성이 남는지 보려는 것.
+  const realGetConnection = pool.getConnection.bind(pool);
+  mock.method(pool, 'getConnection', async () => {
+    const conn = await realGetConnection();
+    const realQuery = conn.query.bind(conn);
+    let proxyInserts = 0;
+    conn.query = async (sql, ...rest) => {
+      if (typeof sql === 'string' && sql.includes('INSERT INTO community_email_proxies') && ++proxyInserts === 2) {
+        throw new Error('두 번째 프록시 생성 실패(테스트용)');
+      }
+      return realQuery(sql, ...rest);
+    };
+    return conn;
+  });
+
+  await assert.rejects(() => communityService.decideApplication(application.id, authorId, 'accepted'), /두 번째 프록시 생성 실패/);
+  mock.restoreAll();
+
+  const [[row]] = await pool.query('SELECT status FROM community_applications WHERE id = ?', [application.id]);
+  const [proxies] = await pool.query('SELECT id FROM community_email_proxies WHERE application_id = ?', [application.id]);
+  assert.equal(row.status, 'pending', '실패하면 상태가 바뀌지 않아야 한다');
+  assert.equal(proxies.length, 0, '첫 번째 프록시도 롤백돼야 한다');
+
+  // 되돌아간 상태에서 다시 수락하면 정상으로 끝나고 프록시는 2개다.
+  assert.equal(await communityService.decideApplication(application.id, authorId, 'accepted'), true);
+  const [after2] = await pool.query('SELECT id FROM community_email_proxies WHERE application_id = ?', [application.id]);
+  assert.equal(after2.length, 2);
 });
