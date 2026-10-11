@@ -490,12 +490,24 @@ function parseJsonArray(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
+// 모델이 "홍길동님의 성향과" 대신 이름을 빼고 "님의 성향과"처럼 호칭 조각만 쓰는 경우가 있다(프롬프트로 금지해도 가끔 나옴).
+// 앞에 한글이 붙지 않은 홀로 선 "님"(문장 처음·공백·여는 따옴표/괄호 뒤)만 골라 닉네임+"님"으로 채우고, 닉네임이 없으면 "학생"으로 바꾼다
+// ("고객님"처럼 한글 뒤에 붙은 님은 건드리지 않는다). 한국어 응답에만 적용한다.
+const BARE_HONORIFIC = /(^|[\s("'“‘])님(?=[의이은는을를께도과와에만,.!?\s)"'”’]|$)/g;
+
+function fixBareHonorific(text, student, language = 'ko') {
+  if (language !== 'ko' || typeof text !== 'string') return text;
+  const label = student && student.name ? `${student.name}님` : '학생';
+  return text.replace(BARE_HONORIFIC, (_m, lead) => `${lead}${label}`);
+}
+
 // history: [{role: 'user'|'assistant', content}, ...] — 고정 질문 답변 + 자유 대화를 하나의
 // 트랜스크립트로 이어 붙인 것. 마지막이 user 턴이어야 다음 assistant 질문을 생성할 수 있다.
 async function getCareerFollowUp(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
   const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, FIXED_ANSWER_READING_NOTE, studentNote, buildCareerLanguageNote(language), CAREER_FOLLOWUP_STYLE_REMINDER].filter(Boolean).join('\n\n');
-  return callClaude(system, withEnglishReminder(history, language), 300);
+  const text = await callClaude(system, withEnglishReminder(history, language), 300);
+  return fixBareHonorific(text, student, language);
 }
 
 // 대화 이력을 종합해 진로 후보 2~3개를 뽑는다. 파싱 실패(모델이 JSON을 안 지켰을 때)는
@@ -514,7 +526,8 @@ async function generateCareerCandidates(history, student, completedCourses, lang
       : '여기까지의 대화를 바탕으로 진로 후보를 알려줘.';
   const messages = [...history, { role: 'user', content: closing }];
   const text = await callClaude(system, messages, 800);
-  return parseJsonArray(text);
+  const candidates = parseJsonArray(text);
+  return candidates.map((c) => (c && typeof c.reasoning === 'string' ? { ...c, reasoning: fixBareHonorific(c.reasoning, student, language) } : c));
 }
 
 // remainingCourses: [{grade, semester, courseName, category, credits}, ...] — 이 학생이
@@ -532,7 +545,8 @@ async function generateCareerRoadmap(careerName, careerReasoning, remainingCours
     language === 'en' ? '\n\n[Write each "reason" in English. Keep every "courseName" exactly as written in the list above.]' : '';
   const userContent = `목표 진로: ${careerName}\n추천 이유: ${careerReasoning}\n\n남은 교육과정 목록:\n${courseListText}${englishReminder}`;
   const text = await callClaude(system, [{ role: 'user', content: userContent }], 1000);
-  return parseJsonArray(text);
+  const roadmap = parseJsonArray(text);
+  return roadmap.map((item) => (item && typeof item.reason === 'string' ? { ...item, reason: fixBareHonorific(item.reason, student, language) } : item));
 }
 
 // "이수과목확인리스트" 표 파싱용. 기기/브라우저마다 인쇄 시 표 레이아웃 간격이 미묘하게
@@ -618,6 +632,7 @@ module.exports = {
   getCareerFollowUp,
   generateCareerCandidates,
   generateCareerRoadmap,
+  fixBareHonorific,
   extractCourseListRows,
   extractFullTranscriptRows,
 };
