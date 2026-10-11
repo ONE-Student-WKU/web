@@ -1,5 +1,15 @@
 # 프로젝트 지침
 
+## 배포·DB 재시딩 (먼저 읽을 것)
+
+규정·교육과정 문서(`db/regulations/**` 등)를 운영 챗봇에 반영하는 길은 코드 배포와 **따로** 있다. 자세한 내용과 확인하지 못한 항목은 [docs/deployment.md](docs/deployment.md).
+
+- **운영 서버에서 `seed` 명령을 직접 실행하라고 안내하지 않는다.** `main`에 `db/regulations/**`, `db/curriculum/**`, `db/seed/*.json`(일부) 변경이 push되면 `.github/workflows/db-reseed.yml`이 자동으로 시작되고, Actions 탭에서 `db-reseed` 환경을 **승인**하면 Railway Cron Job이 재시딩한다. 승인자 목록은 GitHub 환경 설정(Settings → Environments → `db-reseed`)에서 확인한다. 승인자에 포함된 BE 담당자는 운영 담당자에게 따로 요청할 필요가 없다.
+- 반영 시점은 `develop` 머지가 아니라 **`main` 반영**이다. `db-reseed` 환경은 `main` 브랜치만 허용한다.
+- 재시딩은 `seed:regulations -- --force`라서 **새 문서 하나만 추가하는 게 아니라 규정 문서 전체를 다시 임베딩**한다(Voyage 비용·시간, 실행 중 일부 문서가 잠깐 검색에서 빈다).
+- Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
+- 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
+
 ## 화면 언어(i18n)
 
 화면에 보이는 문구는 한국어를 코드에 직접 쓰지 않고 번역 사전을 거친다. 언어는 설정 화면과 로그인 화면 헤더에서 바꾸며, 현재 지원 언어는 한국어(`ko`, 기준)와 영어(`en`)다. 당분간은 영어만 진행하고, 일본어와 중국어(간체/번체 미정)는 급하지 않아 보류 중이다. 나중에 추가할 때도 같은 방식을 쓴다.

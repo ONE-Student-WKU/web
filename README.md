@@ -35,7 +35,7 @@
 | Server | Node.js, Express, express-session(MySQL 세션 스토어), Google OAuth, 이메일 OTP(Resend) |
 | DB | MySQL (Railway), mysql2 |
 | AI | Claude Haiku 4.5(응답 생성·PDF 파싱) + Voyage AI(임베딩) 기반 RAG 챗봇 |
-| 인프라 | DB 자동 재시딩 파이프라인(GitHub Actions, `db-reseed` 환경 승인 게이트) |
+| 인프라 | DB 자동 재시딩 파이프라인(GitHub Actions, `db-reseed` 환경 승인 게이트) — 절차는 [docs/deployment.md](docs/deployment.md) |
 | 배포 | 프론트엔드: Vercel (GitHub Actions CI/CD) · 백엔드: Railway (GitHub 연동 자동배포) |
 
 ## 프로젝트 구조
