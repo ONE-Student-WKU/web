@@ -1,6 +1,7 @@
 const pool = require('../db');
 const { extractAskedYears } = require('./yearContext');
 const historyService = require('./curriculumHistoryService');
+const { OFFERING_SEMESTER, regularSemesterToOfferingCode, offeringCodeLabel } = require('./termCode');
 
 /**
  * server/services/curriculumService.js
@@ -334,9 +335,16 @@ function extractYear(text) {
   return m ? Number(m[1]) : null;
 }
 
+// 질문 속 학기 → course_offerings.semester 코드(termCode.js). "2학기"는 코드 3이다 — 그대로 2를 넣으면 여름 계절학기를 조회한다.
+// "여름/겨울 학기"는 계절학기 코드로, "3학기"처럼 1·2가 아닌 숫자는 개설 학기를 가리키는 말이 아니라 보고 학기 조건을 걸지 않는다.
+const SUMMER_RE = /(여름|하계)\s*(계절\s*)?학기/;
+const WINTER_RE = /(겨울|동계)\s*(계절\s*)?학기/;
+
 function extractSemester(text) {
+  if (SUMMER_RE.test(text)) return OFFERING_SEMESTER.SUMMER;
+  if (WINTER_RE.test(text)) return OFFERING_SEMESTER.WINTER;
   const m = text.match(SEMESTER_RE);
-  return m ? Number(m[1] || m[2]) : null;
+  return m ? regularSemesterToOfferingCode(Number(m[1] || m[2])) : null;
 }
 
 async function findOfferings({ departmentId, trackId, year, semester } = {}) {
@@ -379,8 +387,8 @@ function formatOfferingChunk(group) {
 
   return {
     chunkId: `offering-${group.departmentName}-${group.trackName || ''}-${group.year}-${group.semester}-${group.grade ?? 'x'}`,
-    documentTitle: `${group.departmentName}${trackLabel} ${group.year}학년도 ${group.semester}학기 ${gradeLabel} 개설과목`,
-    content: `${group.year}년 ${group.semester}학기에 실제 개설된 과목 목록(${gradeLabel}):\n${categoryLines}`,
+    documentTitle: `${group.departmentName}${trackLabel} ${group.year}학년도 ${offeringCodeLabel(group.semester)} ${gradeLabel} 개설과목`,
+    content: `${group.year}년 ${offeringCodeLabel(group.semester)}에 실제 개설된 과목 목록(${gradeLabel}):\n${categoryLines}`,
   };
 }
 
@@ -577,6 +585,8 @@ module.exports = {
   findMentionedCourseNames,
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
+  extractSemester,
+  formatOfferingChunk,
   lookupLinkedMajorsFromMessage,
   lookupMicroDegreesFromMessage,
 };
