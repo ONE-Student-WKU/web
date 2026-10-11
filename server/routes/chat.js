@@ -13,14 +13,12 @@ const { assembleStructuredChunks, mergeChunks } = require('../services/chatConte
 const { guardAnswer } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
 const { parseLanguage } = require('../services/language');
+const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatConstants');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
-
-const NOT_FOUND_MESSAGE = '관련 규정을 찾지 못했어요. 질문을 다르게 표현해보시거나, 관련 부서에 직접 확인해주세요.';
-const NOT_FOUND_MESSAGE_EN = "I couldn't find a relevant regulation. Try rephrasing your question, or check directly with the relevant office.";
 
 // 화면 언어('ko' | 'en')는 services/language.js의 parseLanguage로 받는다. 답변 언어만 바꾼다 —
 // 검색·규정 판단·요건 계산은 언어와 무관하게 한국어 원문 기준 그대로다.

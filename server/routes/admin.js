@@ -6,7 +6,7 @@ const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const reportedStudentService = require('../services/reportedStudentService');
-const pool = require('../db');
+const adminStatsService = require('../services/adminStatsService');
 
 /**
  * server/routes/admin.js
@@ -243,7 +243,8 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats — 관리자 대시보드 상단 통계. activeSessions는 "현재 접속자"
+// GET /api/admin/stats — 관리자 대시보드 통계(집계는 services/adminStatsService.js: 처리 대기 건수(뱃지)와 최근 24시간 운영 지표).
+// activeSessions는 "현재 접속자"
 // (최근 5분 내 요청이 있었던 계정 수 — student_activity, middleware/activityTracker.js).
 // 원래 sessions 테이블(express-mysql-session)의 만료 안 된 행 개수를 그대로 셌는데, 로그인
 // 유지 기간이 30일이라 실제 접속 여부와 무관하게 값이 크게 부풀려지는 문제가 있었다(실사용
@@ -251,16 +252,9 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
 // 옛 로그인 폼 시절의 테스트 계정 수를 뺀 값).
 router.get('/stats', async (req, res, next) => {
   try {
-    const [[{ count }]] = await pool.query(
-      'SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at > NOW() - INTERVAL 5 MINUTE'
-    );
+    const stats = await adminStatsService.getDashboardStats();
     const totalStudents = studentService.excludeLegacyTestAccounts(await studentService.countAll());
-    res.status(200).json({
-      status: 200,
-      code: 'ADMIN_STATS',
-      message: null,
-      data: { activeSessions: count, totalStudents },
-    });
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS', message: null, data: { ...stats, totalStudents } });
   } catch (err) {
     next(err);
   }
