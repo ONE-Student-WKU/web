@@ -298,6 +298,7 @@ export default {
   'inquiry.send': '보내기',
   'inquiry.loading': '불러오는 중...',
   'inquiry.empty': '아직 보낸 문의가 없어요.',
+  'inquiry.reply': '운영진 답변',
 
   // 계정 정보 수정
   'profile.title': '계정 정보 수정',
@@ -388,7 +389,7 @@ export default {
   // 학과 선택(검색 + 소속 트리)
   'dept.search.placeholder': '학과 이름으로 검색 (예: 컴퓨터, 경영)',
   'dept.search.aria': '학과 검색',
-  'dept.search.clear': '검색어 지우기',
+  'dept.search.hint': '학과 이름의 일부만 입력해도 찾아요. 옛 이름(예: 경영학부)으로도 찾을 수 있어요.',
   'dept.search.empty': '"{query}"와 맞는 학과가 없어요. 이름의 일부만 입력하거나, 옛 이름(예: 경영학부)으로도 찾아보세요.',
   'dept.search.count': '검색 결과 {count}개',
   'dept.formerGroup': '이전 학과 (개편·폐지)',

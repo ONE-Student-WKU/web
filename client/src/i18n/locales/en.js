@@ -329,6 +329,7 @@ export default {
   'inquiry.send': 'Send',
   'inquiry.loading': 'Loading...',
   'inquiry.empty': "You haven't sent any inquiries yet.",
+  'inquiry.reply': 'Reply from the team',
 
   // Edit account info
   'profile.title': 'Edit account info',
@@ -424,7 +425,7 @@ export default {
   // Department picker (search + college tree)
   'dept.search.placeholder': 'Search by department name (e.g. 컴퓨터, 경영)',
   'dept.search.aria': 'Search departments',
-  'dept.search.clear': 'Clear search',
+  'dept.search.hint': 'Type any part of the department name. Old names (e.g. 경영학부) work too.',
   'dept.search.empty': 'No department matches "{query}". Try part of the name, or an old name (e.g. 경영학부).',
   'dept.search.count': '{count} results',
   'dept.formerGroup': 'Former departments (reorganized or closed)',

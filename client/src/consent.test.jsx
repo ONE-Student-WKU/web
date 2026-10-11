@@ -95,14 +95,13 @@ describe('로그인 폼의 필수 동의', () => {
     expect(screen.getByLabelText('이메일 주소')).toHaveFocus();
   });
 
-  it('연속으로 눌러도 매번 애니메이션이 다시 시작되도록 클래스 이름이 번갈아 바뀐다', async () => {
+  it('연속으로 눌러도 붉은 강조는 그대로 유지된다(흔들림 애니메이션 클래스는 없다)', async () => {
     renderLogin();
     const google = screen.getByRole('button', { name: /Google로 로그인/ });
     await userEvent.click(google);
-    const first = consentLabel().className;
     await userEvent.click(google);
-    expect(consentLabel().className).not.toBe(first);
     expect(consentLabel().className).toMatch(/auth-consent-field--nudge/);
+    expect(consentLabel().className).not.toMatch(/nudge-[ab]/);
   });
 
   it('동의하면 강조가 사라진다', async () => {

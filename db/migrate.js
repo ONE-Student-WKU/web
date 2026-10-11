@@ -280,6 +280,19 @@ async function ensureCommunityRecruitPeriodAndResolutionColumns(connection) {
   }
 }
 
+// 문의 처리 답변(inquiries.resolution_note) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
+// 컬럼을 직접 ALTER한다. NULL 허용이라 이미 처리완료된 기존 문의는 "답변 없음"으로 그대로 안전하다.
+async function ensureInquiryResolutionNoteColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inquiries' AND COLUMN_NAME = 'resolution_note'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] inquiries.resolution_note 컬럼 추가...');
+    await connection.query('ALTER TABLE inquiries ADD COLUMN resolution_note TEXT NULL');
+  }
+}
+
 // 커뮤니티 status 필터 인덱스 도입용 guard — status는 FK가 아니라 CREATE TABLE IF NOT
 // EXISTS의 INDEX 선언이 기존 운영 테이블에는 반영되지 않으므로 직접 ALTER한다.
 // (listApprovedPosts/listPostsForAdmin/listReportsForAdmin이 status 단독으로 필터링함)
@@ -448,6 +461,7 @@ async function migrate() {
     await ensureCommunityCategoryCapacityColumns(connection);
     await ensureCommunityStatusIndexes(connection);
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
+    await ensureInquiryResolutionNoteColumn(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
 

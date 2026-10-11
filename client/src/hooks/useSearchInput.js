@@ -40,6 +40,7 @@ export default function useSearchInput(onSearch) {
       composingRef.current = false;
       setValue('');
     },
-    focus: () => inputRef.current?.focus(),
+    // preventScroll: 검색 화면이 오른쪽에서 슬라이드해 들어오는 중에 포커스가 가도, 브라우저가 입력 칸을 보이게 하려고 프레임을 가로로 스크롤하지 않게 한다.
+    focus: () => inputRef.current?.focus({ preventScroll: true }),
   };
 }

@@ -178,6 +178,18 @@ describe('문의하기 / 계정 정보 수정', () => {
     expect(screen.getByText('버튼이 안 눌려요')).toBeInTheDocument();
   });
 
+  it('내 문의 목록: 운영진 답변이 있으면 라벨은 번역되고 답변 글은 쓴 그대로 보인다, 없으면 답변 칸이 없다', async () => {
+    api.getMyInquiries.mockResolvedValue([
+      { id: 1, title: '버튼이 안 눌려요', content: '졸업요건 화면에서요', status: 'resolved', createdAt: '2026-10-01T00:00:00Z', resolutionNote: '수정해서 배포했어요.' },
+      { id: 2, title: '답변 없는 문의', content: '내용', status: 'resolved', createdAt: '2026-10-02T00:00:00Z', resolutionNote: null },
+    ]);
+    renderEn(<Inquiry onGoHome={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'My inquiries' }));
+    expect(await screen.findByText('Reply from the team')).toBeInTheDocument();
+    expect(screen.getByText(/수정해서 배포했어요\./)).toBeInTheDocument();
+    expect(screen.getAllByText('Reply from the team')).toHaveLength(1);
+  });
+
   it('계정 정보 수정이 영어로 나오고, 이름 저장 오류도 영어다', async () => {
     api.updateProfile.mockRejectedValue(Object.assign(new Error('x'), { code: 'DUPLICATE_NAME' }));
     renderEn(<Profile user={{ name: 'abc', hasGoogleAccount: true }} onGoHome={() => {}} />);
@@ -234,10 +246,11 @@ describe('온보딩 / 학과 선택', () => {
   it('학과 선택: 검색 안내, 학번 범위가 영어다', async () => {
     const other = { ...DEPT, id: 5, name: '원불교학과', college: '교학대학', former: false, successors: [], maxAdmissionYear: null, coreMaxAdmissionYear: null };
     renderEn(<DepartmentPicker departments={[DEPT, other]} selectedId={null} onSelect={() => {}} />);
-    expect(screen.getByRole('searchbox', { name: 'Search departments' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /경상대학/ }));
     expect(screen.getByText(/2020–2022 cohorts/)).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('searchbox'), 'zzz');
+    await userEvent.click(screen.getByRole('button', { name: 'Search departments' }));
+    expect(screen.getByText(/Type any part of the department name/)).toBeInTheDocument();
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Search departments' }), 'zzz');
     expect(await screen.findByText(/No department matches "zzz"/)).toBeInTheDocument();
   });
 });
