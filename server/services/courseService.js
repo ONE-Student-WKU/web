@@ -1,4 +1,6 @@
 const pool = require('../db');
+const { normalizeForSearch, prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
+const { expandAliases } = require('./searchAliases');
 
 /**
  * server/services/courseService.js
@@ -116,15 +118,59 @@ async function runWithPdfImportQuota(studentId, parse) {
 // year/semester로 카탈로그를 학기별로 좁힌다 — 예전엔 courses가 "지금 학기" 단일
 // 스냅샷이라 과거/미래 학기 검색이 아예 막혀있었는데(CourseManagement.jsx의 isCurrentTerm
 // 게이트), course_offerings가 학기별 실제 개설 정보를 갖고 있어 그 제한을 없앨 수 있다.
+//
+// 검색은 DB LIKE가 아니라 그 학기 개설과목을 메모리에 올려 놓고 거른다(koreanSearch.js) — 띄어쓰기 무시, 초성("ㅇㄱㄹㅈ"),
+// 약칭("기연프"), 교수명, 가벼운 오타 허용을 DB 스키마 변경 없이 하려는 것. 학기당 천 건대라 메모리 필터로 충분하다.
+const CATALOG_CACHE_TTL_MS = 10 * 60 * 1000;
+const CATALOG_CACHE_MAX_TERMS = 8;
+const CATALOG_RESULT_LIMIT = 200;
+const catalogCache = new Map(); // "year-semester" → { expiresAt, rowsPromise }
+
+function loadCatalogRows(year, semester) {
+  const key = `${year}-${semester}`;
+  const cached = catalogCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.rowsPromise;
+
+  const rowsPromise = pool
+    .query(
+      `SELECT id, course_name AS name, section, professor, credits, category
+       FROM course_offerings
+       WHERE year = ? AND semester = ?
+       ORDER BY course_name, section`,
+      [year, semester]
+    )
+    .then(([courses]) =>
+      courses.map((c) => ({
+        item: c,
+        // 0학점 과목의 담당교수는 의미 없는 값이라(아래 주석) 교수명 검색 대상에서도 뺀다.
+        entry: prepareEntry(c.name, Number(c.credits) === 0 ? [] : [c.professor]),
+      }))
+    );
+  // 실패한 조회가 캐시에 남아 계속 실패하지 않도록 지운다.
+  rowsPromise.catch(() => catalogCache.delete(key));
+  catalogCache.delete(key); // Map의 삽입 순서를 갱신해 가장 오래된 학기부터 밀어낸다
+  catalogCache.set(key, { expiresAt: Date.now() + CATALOG_CACHE_TTL_MS, rowsPromise });
+  while (catalogCache.size > CATALOG_CACHE_MAX_TERMS) catalogCache.delete(catalogCache.keys().next().value);
+  return rowsPromise;
+}
+
+// 시드·테스트에서 개설 정보를 바꾼 직후 캐시를 비울 때 쓴다.
+function clearCatalogCache() {
+  catalogCache.clear();
+}
+
 async function searchCatalog(keyword, year, semester) {
-  const like = `%${keyword || ''}%`;
-  const [courses] = await pool.query(
-    `SELECT id, course_name AS name, section, professor, credits, category
-     FROM course_offerings
-     WHERE course_name LIKE ? AND year = ? AND semester = ?
-     ORDER BY course_name, section`,
-    [like, year, semester]
-  );
+  const rows = await loadCatalogRows(year, semester);
+  const rawKeyword = typeof keyword === 'string' ? keyword.trim() : '';
+  let courses;
+  if (!rawKeyword) {
+    courses = rows.map((r) => r.item); // 검색어가 없으면 그 학기 전체(기존 동작)
+  } else {
+    const normalized = normalizeForSearch(rawKeyword);
+    // "?!"처럼 문장부호뿐이라 정규화하면 비는 검색어는 아무것도 찾지 않는다.
+    const query = prepareQuery(rawKeyword, expandAliases(normalized));
+    courses = rankEntries(rows, query, { limit: CATALOG_RESULT_LIMIT }).map((r) => r.item);
+  }
   if (courses.length === 0) return [];
 
   const courseIds = courses.map((c) => c.id);
@@ -551,6 +597,7 @@ module.exports = {
   FAILING_GRADES,
   getSupersededCourseIds,
   searchCatalog,
+  clearCatalogCache,
   findCourseById,
   listMyCourses,
   addMyCourse,

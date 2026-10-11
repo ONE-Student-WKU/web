@@ -5,6 +5,12 @@
  */
 export default {
   // Common
+  // Shared full-screen search (SearchScreen)
+  'search.close': 'Close search',
+  'search.clear': 'Clear search',
+  'search.empty': 'No results for "{query}".',
+  'search.loading': 'Searching…',
+
   'common.backHome': 'Back to home',
 
   // Settings
@@ -230,13 +236,11 @@ export default {
   'courses.list.superseded': 'Replaced by retake',
   'courses.grade.none': 'Not entered',
   'courses.delete': 'Delete',
-  'courses.add': 'Add course',
   'courses.deleteAll': 'Delete all',
   'courses.mode.catalog': 'Catalog search',
   'courses.mode.manual': 'Manual entry',
   'courses.mode.import': 'Bulk import',
   'courses.mode.hint': 'You can paste a PDF or text!',
-  'courses.close': 'Close',
   'courses.import.intro':
     'To fill in grades at once, we recommend <b>전체성적조회 (Full Grade Inquiry)</b> — only courses and grades are imported; your name and student ID are not saved. If you only want to register courses without grades, you can also use <b>이수과목확인리스트 (Completed Course List)</b> (enter grades later).',
   'courses.import.method': 'Import method',
@@ -295,7 +299,8 @@ export default {
     '"{name}" has no timetable registered yet. If you know it, enter it below — you can still register without it and fill it in later.',
   'courses.catalog.hint':
     'Mostly major courses are searchable — general education courses may not be in the catalog depending on the semester. If there are no results, use the "Manual entry" tab.',
-  'courses.catalog.searchPlaceholder': 'Search course name',
+  'courses.catalog.searchPlaceholder': 'Search course or professor name',
+  'courses.catalog.searchAria': 'Search courses',
   'courses.catalog.noScheduleYet': 'No timetable',
   'courses.catalog.back': '‹ Back to search',
   'courses.schedule.label': 'Timetable (optional)',
@@ -648,6 +653,11 @@ export default {
   'community.reportItem.waiting': "An admin is looking into it. The result will appear here once it's handled.",
   'community.appItem.date': '{author} · Applied {date}',
   'community.appItem.contact': 'Contact email · {email}',
+  'community.search.placeholder': 'Search posts by title or content',
+  'community.search.aria': 'Search posts',
+  'community.search.hint': 'Find posts by words in the title or content.',
+  'community.search.count': '{count} results',
+  'community.search.err': "Couldn't search. Please try again in a moment.",
   'community.writeBtn': 'Write a post',
   'community.writeBtnLimited': 'Write a post (restricted)',
   'community.reportReasonLabel': 'Reason for report',

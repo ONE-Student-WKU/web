@@ -139,10 +139,8 @@ function parseFixedAnswersFromMessages(messages) {
  *
  * Props:
  * - user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile
- * - onInputFocusChange: function(boolean) — optional, 대화 단계 입력창 포커스 상태를 상위(App)에
- *   전달해 모바일 키보드가 떠 있는 동안 하단 탭바를 같이 숨길 수 있게 한다.
  */
-function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry, onInputFocusChange }) {
+function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   const { t, lang } = useI18n();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -168,13 +166,8 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   const [editDrafts, setEditDrafts] = useState([]); // FIXED_QUESTIONS와 같은 순서의 string[] 배열
   const [savingEdit, setSavingEdit] = useState(false);
-  // 모바일에서 입력창에 포커스가 가면(키보드가 뜨면) 화면이 좁아지므로, 입력창 자체를
-  // 제외한 주변 UI(하단 탭바)를 잠깐 접어 입력 공간을 확보한다 — Chat.jsx와 동일한 패턴.
+  // 입력창 포커스(모바일 키보드가 뜨는 시점) — 하단 탭바는 App.jsx가 입력 칸 포커스를 보고 알아서 접는다.
   const [inputFocused, setInputFocused] = useState(false);
-  const handleInputFocusChange = (focused) => {
-    setInputFocused(focused);
-    onInputFocusChange?.(focused);
-  };
 
   const bottomRef = useRef(null);
   const bodyRef = useRef(null);
@@ -566,7 +559,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       </div>
 
       {stage === 'chat' && (
-        <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={handleInputFocusChange} />
+        <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={setInputFocused} />
       )}
 
       {(showConfirmModal || loadingCandidates) && (

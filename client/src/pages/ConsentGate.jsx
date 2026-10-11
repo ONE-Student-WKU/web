@@ -22,7 +22,14 @@ function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
 
+  // 체크하지 않고 동의 버튼을 누르면 막기만 하지 않고 체크를 강조한다(Login.jsx와 같은 방식 — aria-disabled라 클릭이 들어온다).
+  const [nudgeKey, setNudgeKey] = useState(0);
+
   const handleAccept = async () => {
+    if (!checked) {
+      setNudgeKey((n) => n + 1);
+      return;
+    }
     setSaving(true);
     setError(false);
     try {
@@ -47,11 +54,18 @@ function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms }) {
         <h2 className="auth-heading">{t('consent.title')}</h2>
         <p className="auth-subheading">{t('consent.body')}</p>
 
-        <ConsentCheckbox checked={checked} onChange={setChecked} onOpenTerms={onOpenTerms} onOpenPrivacy={onOpenPrivacy} />
+        <ConsentCheckbox
+          checked={checked}
+          onChange={setChecked}
+          onOpenTerms={onOpenTerms}
+          onOpenPrivacy={onOpenPrivacy}
+          nudgeKey={nudgeKey}
+          nudgeFocus
+        />
 
         {error && <p className="auth-error">{t('consent.err')}</p>}
 
-        <button type="button" className="auth-submit-btn" onClick={handleAccept} disabled={!checked || saving}>
+        <button type="button" className="auth-submit-btn" onClick={handleAccept} disabled={saving} aria-disabled={!checked || saving}>
           {saving ? t('consent.saving') : t('consent.agree')}
         </button>
         <button type="button" className="auth-toggle-link auth-toggle-link--block" onClick={onDecline} disabled={saving}>

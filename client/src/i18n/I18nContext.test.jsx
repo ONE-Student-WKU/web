@@ -231,7 +231,10 @@ describe('졸업요건 진단 / 과목 관리 화면', () => {
     expect(await screen.findByText('My courses')).toBeInTheDocument();
     expect(screen.getByText('No courses registered yet.')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Add course/ }));
+    // 과목 추가 폼은 별도 버튼 없이 처음부터 보인다.
+    expect(screen.queryByRole('button', { name: /Add course/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Catalog search' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Search courses' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Manual entry' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Manual entry' }));
     expect(screen.getByText('Course name')).toBeInTheDocument();

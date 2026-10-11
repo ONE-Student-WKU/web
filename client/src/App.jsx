@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import { resetChatCache } from './hooks/useChat.js';
+import useTextInputFocused from './hooks/useTextInputFocused.js';
 import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
@@ -28,9 +29,6 @@ const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', care
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
 const TAB_PEER_VIEWS = new Set(Object.keys(VIEW_TO_TAB));
-
-// ChatInput을 쓰는 화면(채팅/진로 탐색) — 입력창 포커스 시 하단 탭바를 잠깐 숨기는 대상.
-const PROMPT_INPUT_VIEWS = new Set(['chat', 'career']);
 
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
 // SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
@@ -207,13 +205,10 @@ function App() {
     };
   }, [user, view]);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
-  // 채팅/진로 탐색처럼 ChatInput을 쓰는 화면에서 입력창이 포커스를 받으면(모바일 키보드가
-  // 뜨면) 하단 탭바를 잠깐 숨겨 입력 공간을 확보한다 — 다른 화면으로 넘어가면 의미 없는
-  // 값이니 view가 바뀔 때마다 초기화.
-  const [promptInputFocused, setPromptInputFocused] = useState(false);
-  useEffect(() => {
-    if (!PROMPT_INPUT_VIEWS.has(view)) setPromptInputFocused(false);
-  }, [view]);
+  // 어느 화면이든 글자를 입력하는 칸이 포커스를 받으면(모바일 키보드가 뜨면) 하단 탭바를 숨겨
+  // 입력 공간을 확보한다 — 채팅·진로 탐색뿐 아니라 커뮤니티 글쓰기/검색, 과목 검색·직접 입력 등
+  // 탭바가 보이는 모든 화면이 같은 기준을 쓴다(화면마다 콜백을 내려주지 않아도 된다).
+  const textInputFocused = useTextInputFocused(view);
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
@@ -226,8 +221,11 @@ function App() {
 
   useEffect(() => {
     function handlePopState(event) {
-      skipHistoryPush.current = true;
-      setView(event.state?.view || 'home');
+      const nextView = event.state?.view || 'home';
+      // 화면이 실제로 바뀔 때만 다음 이펙트의 히스토리 쌓기를 건너뛴다 — 같은 화면 안의 하위 화면(검색 화면, 커뮤니티 상세 등)을
+      // 닫는 뒤로가기에서도 켜 두면, 이펙트가 돌지 않아 표시가 남았다가 다음 화면 이동이 히스토리를 쌓지 않게 된다.
+      if (nextView !== previousView.current) skipHistoryPush.current = true;
+      setView(nextView);
     }
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -316,7 +314,6 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
-            onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'courses' ? (
           <CourseManagement
@@ -351,7 +348,6 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onOpenAdmin={() => setView('admin')}
             onOpenInquiry={() => setView('inquiry')}
-            onInputFocusChange={setPromptInputFocused}
           />
         ) : view === 'community' ? (
           <Community
@@ -436,7 +432,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && !user.consentRequired && TAB_BAR_VIEWS.has(view) && !(PROMPT_INPUT_VIEWS.has(view) && promptInputFocused) && (
+        {authChecked && user && !user.consentRequired && TAB_BAR_VIEWS.has(view) && !textInputFocused && (
           <BottomTabBar
             active={VIEW_TO_TAB[view] || null}
             onOpenHome={() => setView('home')}

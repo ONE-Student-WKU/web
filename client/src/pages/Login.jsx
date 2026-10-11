@@ -65,6 +65,15 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
     setConsented(checked);
     storeConsent(checked);
   };
+  // 동의하지 않은 채 로그인 버튼이나 입력 칸을 누르면 막기만 하지 않고, 어떤 항목이 빠졌는지 동의 체크를 강조해서 알려준다.
+  // 버튼은 disabled가 아니라 aria-disabled로 둬야 클릭 자체가 들어와 이 안내를 띄울 수 있다(disabled 버튼은 클릭 이벤트가 없다).
+  // focus: 버튼을 눌렀을 땐 체크박스로 포커스도 옮기고, 입력 칸에 포커스가 간 경우엔 타이핑을 끊지 않으려고 옮기지 않는다.
+  const [consentNudge, setConsentNudge] = useState({ key: 0, focus: false });
+  const blockWithoutConsent = ({ focus }) => {
+    if (consented) return false;
+    setConsentNudge((n) => ({ key: n.key + 1, focus }));
+    return true;
+  };
   const [submitting, setSubmitting] = useState(false);
   const [emailError, setEmailError] = useState(null);
   const [resending, setResending] = useState(false);
@@ -98,6 +107,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
 
   const handleRequestCode = async (e) => {
     e.preventDefault();
+    if (blockWithoutConsent({ focus: true })) return;
     setSubmitting(true);
     setEmailError(null);
     try {
@@ -128,6 +138,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
+    if (blockWithoutConsent({ focus: true })) return;
     setSubmitting(true);
     setEmailError(null);
     try {
@@ -165,18 +176,30 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
           onChange={handleConsentChange}
           onOpenTerms={onOpenTerms}
           onOpenPrivacy={onOpenPrivacy}
+          nudgeKey={consentNudge.key}
+          nudgeFocus={consentNudge.focus}
         />
 
         <button
           type="button"
           className="auth-submit-btn auth-submit-btn--secondary auth-google-btn"
-          onClick={() => startGoogleLogin(remember, CONSENT_VERSION)}
-          disabled={!consented}
+          onClick={() => {
+            if (blockWithoutConsent({ focus: true })) return;
+            startGoogleLogin(remember, CONSENT_VERSION);
+          }}
+          aria-disabled={!consented}
         >
           <IconGoogle />
           {t('login.google')}
         </button>
-        {!consented && <p className="settings-field-hint auth-consent-needed">{t('login.consentNeeded')}</p>}
+        {!consented && (
+          <p
+            className={`settings-field-hint auth-consent-needed${consentNudge.key ? ' auth-consent-needed--alert' : ''}`}
+            aria-live="polite"
+          >
+            {t('login.consentNeeded')}
+          </p>
+        )}
 
         <div className="auth-divider">{t('login.or')}</div>
 
@@ -190,6 +213,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => blockWithoutConsent({ focus: false })}
                 required
               />
             </div>
@@ -200,7 +224,8 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
             <button
               type="submit"
               className="auth-submit-btn auth-submit-btn--secondary"
-              disabled={submitting || !!retryAt || !consented}
+              disabled={submitting || !!retryAt}
+              aria-disabled={!consented || submitting || !!retryAt}
             >
               {submitting ? t('login.sending') : t('login.sendCode')}
             </button>
@@ -217,6 +242,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
                 placeholder={t('login.codePlaceholder')}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
+                onFocus={() => blockWithoutConsent({ focus: false })}
                 required
               />
             </div>
@@ -231,7 +257,12 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
             >
               {t('login.codeResent')}
             </p>
-            <button type="submit" className="auth-submit-btn auth-submit-btn--secondary" disabled={submitting || !consented}>
+            <button
+              type="submit"
+              className="auth-submit-btn auth-submit-btn--secondary"
+              disabled={submitting}
+              aria-disabled={!consented || submitting}
+            >
               {submitting ? t('login.verifying') : t('login.submit')}
             </button>
             <button

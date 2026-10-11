@@ -178,10 +178,10 @@ router.post('/reports/seen', async (req, res, next) => {
   }
 });
 
-// GET /api/community — 승인된 글 목록(전체 공개).
+// GET /api/community?q= — 승인된 글 목록(전체 공개). q가 있으면 제목·본문에 그 검색어가 들어간 글만(최신순).
 router.get('/', async (req, res, next) => {
   try {
-    const posts = await communityService.listApprovedPosts();
+    const posts = await communityService.listApprovedPosts({ query: req.query.q });
     res.status(200).json({ status: 200, code: 'COMMUNITY_POSTS_LIST', message: null, data: posts });
   } catch (err) {
     next(err);
