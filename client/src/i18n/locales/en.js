@@ -47,7 +47,6 @@ export default {
   // Chat
   'chat.placeholder': 'Ask me anything',
   'chat.send': 'Send',
-  'chat.me': 'Me',
   'chat.citationsHide': 'Hide sources',
   'chat.citationsMore': 'Show more sources ({count})',
   'chat.typing': 'Preparing an answer',
