@@ -74,11 +74,19 @@ const summary = (over = {}) => ({
   ...over,
 });
 
+const stats = (over = {}) => ({
+  totalStudents: 12,
+  activeSessions: 1,
+  pending: { reports: 0, inquiries: 0, posts: 0 },
+  last24h: { signups: 2, chatQuestions: 45, chatNotFound: 6, activeStudents: 9 },
+  ...over,
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   sessionStorage.clear();
   window.history.replaceState(null, '', '/');
-  api.getAdminStats.mockResolvedValue({ totalStudents: 3, activeSessions: 1 });
+  api.getAdminStats.mockResolvedValue(stats());
   api.getAdminReports.mockResolvedValue([]);
   api.getAdminInquiries.mockResolvedValue([]);
   api.getAdminSanctions.mockResolvedValue([]);
@@ -104,6 +112,39 @@ describe('새로고침 시 하위 화면 유지', () => {
     expect(sessionStorage.getItem('wku_cache_admin_view')).toBe('"reports"');
     unmount();
     expect(sessionStorage.getItem('wku_cache_admin_view')).toBeNull();
+  });
+});
+
+describe('대시보드 현황과 처리 대기 뱃지', () => {
+  it('현황에는 운영 지표를 보여주고 "미처리 신고/문의" 칸은 없다', async () => {
+    render(<Admin {...baseProps} />);
+    await waitFor(() => expect(screen.getByText('45')).toBeInTheDocument());
+    for (const label of ['가입 이메일', '현재 접속자', '24시간 활성 사용자', '24시간 신규 가입', '24시간 챗봇 질문', '24시간 근거 못 찾은 답변']) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    expect(screen.getByText('12')).toBeInTheDocument(); // 가입 이메일
+    expect(screen.getByText('6')).toBeInTheDocument(); // 근거 못 찾은 답변
+    expect(screen.queryByText('미처리 신고')).toBeNull();
+    expect(screen.queryByText('미처리 문의')).toBeNull();
+  });
+
+  it('처리 대기가 있는 타일에만 건수 뱃지를 달고, 0건이면 뱃지가 없다', async () => {
+    api.getAdminStats.mockResolvedValue(stats({ pending: { reports: 0, inquiries: 1, posts: 120 } }));
+    render(<Admin {...baseProps} />);
+    const inquiryTile = await screen.findByRole('button', { name: '문의함, 처리 대기 1건' });
+    expect(inquiryTile.querySelector('.admin-tile-badge').textContent).toBe('1');
+    expect(screen.getByRole('button', { name: '커뮤니티 관리, 처리 대기 120건' }).querySelector('.admin-tile-badge').textContent).toBe('99+');
+    const reportTile = screen.getByRole('button', { name: '신고함' });
+    expect(reportTile.querySelector('.admin-tile-badge')).toBeNull();
+    expect(screen.getByRole('button', { name: '제재 관리' }).querySelector('.admin-tile-badge')).toBeNull();
+  });
+
+  it('통계를 한 번만 불러온다(신고·문의 목록 전체를 불러와 건수를 세지 않는다)', async () => {
+    render(<Admin {...baseProps} />);
+    await waitFor(() => expect(screen.getByText('45')).toBeInTheDocument());
+    expect(api.getAdminStats).toHaveBeenCalledTimes(1);
+    expect(api.getAdminReports).not.toHaveBeenCalled();
+    expect(api.getAdminInquiries).not.toHaveBeenCalled();
   });
 });
 

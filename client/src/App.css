@@ -2518,6 +2518,25 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
+  position: relative;
+}
+
+/* 처리 대기 건수 뱃지 — 신고함·문의함·커뮤니티 관리 타일 오른쪽 위에 빨간 원으로 붙는다(0건이면 그리지 않음). */
+.admin-tile-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--color-alert);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
 }
 
 .courses-category-select {

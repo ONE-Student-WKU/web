@@ -55,13 +55,38 @@ const SANCTION_SCOPES = [
 ];
 const SANCTION_SCOPE_BADGE_LABEL = { post_apply: '경고성', full: '전면 정지' };
 
+// 대시보드 현황 칸 — 가입 이메일·현재 접속자는 기존 그대로이고, 나머지는 운영·유지보수용 최근 24시간 지표다.
+// 챗봇 질문은 AI 호출 비용(크레딧 소진 같은 일)을 미리 보는 신호이고, 근거 못 찾은 답변은 규정 문서가 모자란 곳을 찾는 신호다.
+const DASHBOARD_STAT_CELLS = [
+  { label: '가입 이메일', value: (s) => s?.totalStudents },
+  { label: '현재 접속자', value: (s) => s?.activeSessions },
+  { label: '24시간 활성 사용자', value: (s) => s?.last24h?.activeStudents },
+  { label: '24시간 신규 가입', value: (s) => s?.last24h?.signups },
+  { label: '24시간 챗봇 질문', value: (s) => s?.last24h?.chatQuestions },
+  { label: '24시간 근거 못 찾은 답변', value: (s) => s?.last24h?.chatNotFound },
+];
+
+// 메뉴 타일의 처리 대기 건수 뱃지 — 0이면 그리지 않는다. 화면 낭독기에는 타일의 aria-label이 건수를 읽어 주므로 뱃지 자체는 숨긴다.
+function PendingBadge({ count }) {
+  if (!count || count < 1) return null;
+  return (
+    <span className="admin-tile-badge" aria-hidden="true">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
+function tileLabel(name, count) {
+  return count > 0 ? `${name}, 처리 대기 ${count}건` : undefined;
+}
+
 /**
  * Admin Page
  * 관리자 전용(이슈 #164 4단계) — 학생 홈 화면과 같은 구조(위: 현황 대시보드, 아래: 기능
  * 타일)로 진입해서, 타일을 누르면 커뮤니티 승인/신고함(#187)/문의함(#166)으로 들어간다.
- * 대시보드 통계(가입 이메일/현재 접속자/미처리 신고/미처리 문의)는 기존 GET /api/admin/stats
- * (+ totalStudents 추가)와 신고함/문의함이 이미 쓰던 목록 API를 그대로 재사용해서 뽑아낸
- * 값이라 새 스키마·집계 로직이 필요 없었다 — 대시보드 진입할 때마다 다시 불러온다.
+ * 대시보드는 GET /api/admin/stats 한 번으로 그린다 — 현황(가입 이메일·현재 접속자와 최근 24시간 운영 지표: 신규 가입·활성
+ * 사용자·챗봇 질문·근거 못 찾은 답변)과, 메뉴 타일의 빨간 뱃지(신고함·문의함·커뮤니티 관리의 처리 대기 건수).
+ * 진입할 때마다 다시 불러온다.
  * AccountMenu.jsx가 user.role === 'admin'일 때만 이 화면 진입점을 보여준다.
  * 실제 접근 제어는 서버(server/middleware/auth.js의 requireAdmin)가 매 요청마다 다시
  * 하므로, 여기서는 admin이 아닌 사용자가 어쩌다 들어와도 API가 403을 낼 뿐 안전하다.
@@ -116,8 +141,10 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
     }
     window.history.pushState({ ...window.history.state, adminView }, '');
   }, [adminView]);
-  const [dashboardStats, setDashboardStats] = useState(null); // { totalStudents, activeSessions, pendingReports, pendingInquiries }
+  // GET /api/admin/stats — { totalStudents, activeSessions, pending: { reports, inquiries, posts }, last24h: { signups, chatQuestions, chatNotFound, activeStudents } }
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const pendingCount = { reports: 0, inquiries: 0, posts: 0, ...(dashboardLoading ? null : dashboardStats?.pending) };
   const [subFilter, setSubFilter] = useState('pending');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -166,20 +193,13 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   // 대시보드 진입할 때마다 새로 불러온다 — 신고함/문의함에서 처리하고 돌아왔을 때 그
-  // 숫자가 그대로 남아있으면(특히 미처리 건수) 실제로 처리됐는지 헷갈리게 된다.
+  // 뱃지 숫자가 그대로 남아있으면 실제로 처리됐는지 헷갈리게 된다.
   useEffect(() => {
     if (adminView !== 'dashboard') return;
     setDashboardLoading(true);
     setError(null);
-    Promise.all([getAdminStats(), getAdminReports('pending'), getAdminInquiries('open')])
-      .then(([stats, pendingReports, pendingInquiries]) => {
-        setDashboardStats({
-          totalStudents: stats.totalStudents,
-          activeSessions: stats.activeSessions,
-          pendingReports: pendingReports.length,
-          pendingInquiries: pendingInquiries.length,
-        });
-      })
+    getAdminStats()
+      .then(setDashboardStats)
       .catch(() => setError('현황을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.'))
       .finally(() => setDashboardLoading(false));
   }, [adminView]);
@@ -407,49 +427,36 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
           <>
             <p className="home-quick-label">현황</p>
             <div className="admin-dashboard-stats">
-              <div className="admin-stat-cell">
-                <p className="admin-stat-label">가입 이메일</p>
-                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
-                  {dashboardLoading ? '—' : dashboardStats?.totalStudents ?? '—'}
+              {DASHBOARD_STAT_CELLS.map((cell) => (
+                <div className="admin-stat-cell" key={cell.label}>
+                  <p className="admin-stat-label">{cell.label}</p>
+                  <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
+                    {dashboardLoading ? '—' : cell.value(dashboardStats) ?? '—'}
+                  </div>
                 </div>
-              </div>
-              <div className="admin-stat-cell">
-                <p className="admin-stat-label">현재 접속자</p>
-                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
-                  {dashboardLoading ? '—' : dashboardStats?.activeSessions ?? '—'}
-                </div>
-              </div>
-              <div className="admin-stat-cell">
-                <p className="admin-stat-label">미처리 신고</p>
-                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
-                  {dashboardLoading ? '—' : dashboardStats?.pendingReports ?? '—'}
-                </div>
-              </div>
-              <div className="admin-stat-cell">
-                <p className="admin-stat-label">미처리 문의</p>
-                <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
-                  {dashboardLoading ? '—' : dashboardStats?.pendingInquiries ?? '—'}
-                </div>
-              </div>
+              ))}
             </div>
 
             <p className="home-quick-label">메뉴</p>
             <div className="admin-tiles">
-              <button type="button" className="admin-tile" onClick={() => setAdminView('reports')}>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('reports')} aria-label={tileLabel('신고함', pendingCount.reports)}>
                 <IconSiren size={22} />
                 <span>신고함</span>
+                <PendingBadge count={pendingCount.reports} />
               </button>
-              <button type="button" className="admin-tile" onClick={() => setAdminView('inquiries')}>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('inquiries')} aria-label={tileLabel('문의함', pendingCount.inquiries)}>
                 <IconMessageCircle size={22} />
                 <span>문의함</span>
+                <PendingBadge count={pendingCount.inquiries} />
               </button>
               <button type="button" className="admin-tile" onClick={() => setAdminView('sanctions')}>
                 <IconBan size={22} />
                 <span>제재 관리</span>
               </button>
-              <button type="button" className="admin-tile" onClick={() => setAdminView('approval')}>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('approval')} aria-label={tileLabel('커뮤니티 관리', pendingCount.posts)}>
                 <IconUsers size={22} />
                 <span>커뮤니티 관리</span>
+                <PendingBadge count={pendingCount.posts} />
               </button>
             </div>
           </>
@@ -742,45 +749,45 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
         </div>
       )}
 
-      {resolveTargetReport && (
-        <div className="career-confirm-overlay" onClick={closeResolveModal}>
-          <form
-            className="career-confirm-modal"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleResolveReport();
-            }}
-          >
-            <p className="admin-post-title">신고 반려(조치 없이 처리완료)</p>
-            <p className="community-detail-body">
-              <b>신고 사유(참고용)</b> · {resolveTargetReport.reason}
-            </p>
-            <div className="auth-field">
-              <label htmlFor="resolution-note">신고자에게 보낼 처리 안내 (신고자에게만 보여요)</label>
+      {resolveTargetReport && (
+        <div className="career-confirm-overlay" onClick={closeResolveModal}>
+          <form
+            className="career-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleResolveReport();
+            }}
+          >
+            <p className="admin-post-title">신고 반려(조치 없이 처리완료)</p>
+            <p className="community-detail-body">
+              <b>신고 사유(참고용)</b> · {resolveTargetReport.reason}
+            </p>
+            <div className="auth-field">
+              <label htmlFor="resolution-note">신고자에게 보낼 처리 안내 (신고자에게만 보여요)</label>
               <textarea
                 id="resolution-note"
-                rows={3}
-                maxLength={RESOLUTION_NOTE_MAX_LENGTH}
-                value={resolutionNote}
-                onChange={(e) => setResolutionNote(e.target.value)}
-              />
-              <p className="courses-manual-hint">
-                신고 대상자의 이름·학과 같은 개인 정보나 제재 내용은 쓰지 마세요. 비워 두면 기본 안내가 보여요.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button type="submit" className="community-close-btn" disabled={reportActionId === resolveTargetReport.id}>
-                {reportActionId === resolveTargetReport.id ? '처리하는 중...' : '처리완료로 표시'}
-              </button>
-              <button type="button" className="community-outline-btn" onClick={closeResolveModal}>
-                취소
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+                rows={3}
+                maxLength={RESOLUTION_NOTE_MAX_LENGTH}
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+              />
+              <p className="courses-manual-hint">
+                신고 대상자의 이름·학과 같은 개인 정보나 제재 내용은 쓰지 마세요. 비워 두면 기본 안내가 보여요.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button type="submit" className="community-close-btn" disabled={reportActionId === resolveTargetReport.id}>
+                {reportActionId === resolveTargetReport.id ? '처리하는 중...' : '처리완료로 표시'}
+              </button>
+              <button type="button" className="community-outline-btn" onClick={closeResolveModal}>
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {sanctionTargetReport && (
         <div className="career-confirm-overlay" onClick={closeSanctionModal}>
