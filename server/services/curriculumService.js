@@ -395,26 +395,81 @@ function formatOfferingChunk(group) {
 // 메시지에서 연도(및 있으면 학기)를 감지하면 그 학기에 실제 개설된 과목을 조회해 근거 청크로
 // 변환한다. student의 학과/트랙을 알면 그 학생 소속으로 좁히고, 모르면(온보딩 전 등) 전체를
 // 반환한다 — lookupFromMessage와 동일한 방침.
-async function lookupOfferingsFromMessage(text, student, yearContext = null) {
-  // 연도가 나왔다고 다 개설 이력 질문은 아니다 — "2024학년도 졸업요건"에는 그 해 개설과목 수백 행이 필요 없고
-  // 근거 문서만 부풀린다. 개설/수강 의도가 있거나, 요건·이력·비교 의도가 없는 연도 질문일 때만 조회한다.
-  // 연도는 첫 번째 것만이 아니라 질문에 나온 것 전부(최대 MAX_QUERY_YEARS개) 조회한다.
+// 개설 과목 조회의 대상 학년도·학기를 정한다(DB 없이 테스트 가능). 우선순위:
+//  1) 질문에 직접 나온 학년도 — 항상 최우선(분류가 뭐라 하든 사용자가 말한 해를 따른다)
+//  2) 질문 분류가 정한 학년도(yearContext.offeringYears) — 연도 표현이 없는 "들을만한 과목", "지금 개설된 과목" 같은 질문.
+//     앞으로 들을 과목을 묻는 질문(NEXT_TERM_PLANNING)은 "1학기에 12학점, 2학기에 6학점"처럼 질문 속 학기 숫자가 학기 조건이 아니라
+//     계획의 일부라서 학기를 걸러내지 않고 두 학기를 다 준다.
+//  3) 연도 표현이 없고 분류도 없으면 조회하지 않는다.
+// 반환 null = 조회 안 함.
+function resolveOfferingTargets(text, yearContext = null) {
   if (yearContext) {
+    const explicit = yearContext.explicitAskedYears.slice(0, MAX_QUERY_YEARS);
+    const classified = yearContext.offeringYears || [];
+    if (explicit.length === 0 && classified.length > 0) {
+      return {
+        years: classified.slice(0, MAX_QUERY_YEARS),
+        semester: yearContext.questionIntent === 'NEXT_TERM_PLANNING' ? null : extractSemester(text),
+        fromClassification: true,
+      };
+    }
+    // 연도가 나왔다고 다 개설 이력 질문은 아니다 — "2024학년도 졸업요건"에는 그 해 개설과목 수백 행이 필요 없고
+    // 근거 문서만 부풀린다. 개설/수강 의도가 있거나, 요건·이력·비교 의도가 없는 연도 질문일 때만 조회한다.
     const { offering, requirement, history, compare } = yearContext.intents;
-    if (!offering && (requirement || history || compare)) return [];
+    if (!offering && (requirement || history || compare)) return null;
   }
-  // 직전 질문에서 이어받은 연도가 아니라 이번 질문에 직접 나온 연도만 쓴다.
+  // 직전 질문에서 이어받은 연도가 아니라 이번 질문에 직접 나온 연도만 쓴다. 연도는 첫 번째 것만이 아니라 질문에 나온 것 전부(최대 MAX_QUERY_YEARS개).
   const years = (yearContext ? yearContext.explicitAskedYears : extractAskedYears(text)).slice(0, MAX_QUERY_YEARS);
   const targetYears = years.length > 0 ? years : [extractYear(text)].filter(Boolean);
-  if (targetYears.length === 0) return [];
+  if (targetYears.length === 0) return null;
+  return { years: targetYears, semester: extractSemester(text), fromClassification: false };
+}
 
-  const semester = extractSemester(text);
+// 해당 학년도 이전 중 개설 이력이 있는 가장 최근 학년도. 앞으로 들을 학기(예: 내년)의 개설 정보는 보통 아직 없어서, 그때는 가장
+// 최근 학년도의 실제 개설 이력을 참고용으로 대신 쓴다 — 근거 문서 제목에 실제 학년도가 찍혀 모델이 "○학년도 기준"이라고 밝힐 수 있다.
+async function findLatestOfferingYearBefore({ departmentId, trackId, year } = {}) {
+  const conditions = ['year < ?'];
+  const params = [year];
+  if (departmentId) {
+    conditions.push('department_id = ?');
+    params.push(departmentId);
+  }
+  if (trackId) {
+    conditions.push('track_id = ?');
+    params.push(trackId);
+  }
+  const [[row]] = await pool.query(`SELECT MAX(year) AS latest FROM course_offerings WHERE ${conditions.join(' AND ')}`, params);
+  return row && row.latest != null ? row.latest : null;
+}
+
+async function lookupOfferingsFromMessage(text, student, yearContext = null) {
+  const target = resolveOfferingTargets(text, yearContext);
+  if (!target) return [];
+  const { years: targetYears, semester, fromClassification } = target;
   const baseFilter = {
     departmentId: student?.department_id || undefined,
     trackId: student?.track_id || undefined,
   };
 
-  const rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
+  let rows;
+  if (fromClassification) {
+    // 그 해 개설 정보가 없으면 더 이전의 가장 최근 학년도로 대신한다. 같은 학년도로 모이면 한 번만 조회한다.
+    const rowsByYear = new Map();
+    for (const year of targetYears) {
+      let usedYear = year;
+      let yearRows = await findOfferings({ year, semester, ...baseFilter });
+      if (yearRows.length === 0) {
+        const latest = await findLatestOfferingYearBefore({ ...baseFilter, year });
+        if (latest == null) continue;
+        usedYear = latest;
+        yearRows = rowsByYear.get(latest) || (await findOfferings({ year: latest, semester, ...baseFilter }));
+      }
+      if (!rowsByYear.has(usedYear)) rowsByYear.set(usedYear, yearRows);
+    }
+    rows = [...rowsByYear.values()].flat();
+  } else {
+    rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
+  }
   if (rows.length === 0) return [];
 
   const groups = new Map();
@@ -586,6 +641,7 @@ module.exports = {
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
   extractSemester,
+  resolveOfferingTargets,
   formatOfferingChunk,
   lookupLinkedMajorsFromMessage,
   lookupMicroDegreesFromMessage,

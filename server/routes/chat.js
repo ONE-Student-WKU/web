@@ -106,7 +106,8 @@ router.post('/messages', async (req, res, next) => {
     // 검색 직전에 캐주얼한 표현(줄임말/은어)을 정식 학사 용어로 정규화 — 원문 문서엔 "겜콘" 같은
     // 표현이 없어서 그대로 임베딩하면 검색이 실패한다. 사용자에게 보여줄 답변이 아니라
     // 검색어로만 쓰이므로 원본 message는 그대로 DB에 저장하고 화면에도 그대로 남는다.
-    const normalizedSearchQuery = await aiClient.rewriteSearchQuery(searchQuery);
+    // 같은 호출에서 질문 의도도 분류한다(어느 해의 개설 과목을 근거로 삼을지 — aiClient.analyzeQuestion, yearContext.questionIntent).
+    const { searchQuery: normalizedSearchQuery, intent: questionIntent } = await aiClient.analyzeQuestion(searchQuery);
 
     const queryEmbedding = await embeddingClient.getEmbedding(normalizedSearchQuery, 'query');
     // 온보딩 전이거나 학과 정보가 없으면 getGraduationStatus가 ONBOARDING_REQUIRED로 던지는데,
@@ -129,6 +130,7 @@ router.post('/messages', async (req, res, next) => {
       previousUserMessage: lastUserMessage?.content ?? null,
       profileCohort: student?.admission_year ?? null,
       availableBookYears,
+      questionIntent,
     });
 
     // 규정 판단(이 학생에게 기준일에 적용되는 규정·신뢰도)은 RAG 검색보다 먼저 정한다 — 판단 결과가 최우선 근거이고,
