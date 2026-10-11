@@ -701,6 +701,18 @@ body {
   padding: 16px;
 }
 
+/* 위기 신호로 후보를 막았을 때의 도움 안내 — 오류가 아니므로 경고색 대신 차분한 카드로 보여준다. */
+.career-support-note {
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+}
+
 .home-error {
   color: var(--color-danger);
   font-size: 0.875rem;

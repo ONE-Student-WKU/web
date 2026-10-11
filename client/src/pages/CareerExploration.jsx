@@ -315,6 +315,9 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     } catch (err) {
       if (err.code === 'CAREER_CANDIDATES_EMPTY') {
         setError(t('career.err.candidatesEmpty'));
+      } else if (err.code === 'CAREER_CRISIS_DETECTED') {
+        // 위기 신호가 있는 대화는 후보 대신 도움 안내를 보여준다(서버가 AI를 부르지 않고 막음).
+        setError({ key: 'career.err.crisis', support: true });
       } else {
         setError(t('career.err.candidates'));
       }
@@ -415,7 +418,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       </header>
 
       <div className="courses-body" ref={bodyRef}>
-        {errorText && <p className="home-error">{errorText}</p>}
+        {errorText && <p className={error.support ? 'career-support-note' : 'home-error'} role={error.support ? 'status' : undefined}>{errorText}</p>}
         {onboardingRequired && <p className="home-error">{t('career.needOnboarding')}</p>}
 
         {loading && (

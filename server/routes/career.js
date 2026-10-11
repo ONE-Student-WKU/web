@@ -142,6 +142,10 @@ router.post('/sessions/:id/candidates', async (req, res, next) => {
     if (err.code === 'CAREER_CANDIDATES_EMPTY') {
       return res.status(502).json({ status: 502, code: err.code, message: null, data: null });
     }
+    // 대화에 위기 신호가 있어 후보를 만들지 않았다 — 화면이 도움 안내를 보여준다.
+    if (err.code === 'CAREER_CRISIS_DETECTED') {
+      return res.status(409).json({ status: 409, code: err.code, message: null, data: null });
+    }
     next(err);
   }
 });
