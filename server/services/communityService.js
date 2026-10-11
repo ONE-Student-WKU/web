@@ -28,12 +28,13 @@ function generateProxyEmail() {
 // "이 프록시로 온 메일을 실제로 받을 사람"이라, 신청자에게 보여줄 프록시는 owner_id=authorId로,
 // 글쓴이에게 보여줄 프록시는 owner_id=applicantId로 만든다(getMyApplications/
 // getApplicantsForPost가 조회 시점에 각자 반대쪽 프록시를 찾아서 내려줌). UNIQUE 제약과
-// 충돌하면(극히 낮은 확률) 재생성해서 재시도한다.
-async function createEmailProxiesForApplication(applicationId, applicantId, authorId) {
+// 충돌하면(극히 낮은 확률) 재생성해서 재시도한다. 수락 트랜잭션(decideApplication)의 커넥션(conn)으로
+// 실행한다 — InnoDB는 중복 키로 실패한 문장만 취소하고 트랜잭션은 이어가므로 재시도가 그대로 동작한다.
+async function createEmailProxiesForApplication(conn, applicationId, applicantId, authorId) {
   for (const ownerId of [applicantId, authorId]) {
     for (let attempt = 0; ; attempt++) {
       try {
-        await pool.query(
+        await conn.query(
           'INSERT INTO community_email_proxies (application_id, owner_id, proxy_email) VALUES (?, ?, ?)',
           [applicationId, ownerId, generateProxyEmail()]
         );
@@ -397,26 +398,48 @@ async function getApplicantsForPost(postId) {
   });
 }
 
+// 수락은 "프록시 2개 생성 + 상태 변경"을 한 트랜잭션으로 묶는다. 예전엔 'pending' 확인 → 프록시 생성 → UPDATE가
+// 각각 따로라서, 같은 신청을 동시에 수락하면(탭 2개·기기 2대) 둘 다 확인을 통과해 프록시가 중복 생성되고
+// 신청자 목록의 LEFT JOIN이 같은 신청을 여러 줄로 부풀렸다. 신청 행을 FOR UPDATE로 잠그면 나중 요청은 앞 요청이
+// 커밋될 때까지 기다렸다가 'accepted'를 보고 false로 끝난다(reportPost, reservePdfImport와 같은 방식).
+// 프록시 생성이 중간에 실패하면 전부 롤백돼 상태도 'pending' 그대로라 다시 수락을 누르면 된다.
+// 반려는 UPDATE 한 문장이라 그 자체로 원자적이어서 트랜잭션 없이 처리한다.
+async function acceptApplication(applicationId, authorId) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [[application]] = await conn.query(
+      `SELECT a.applicant_id FROM community_applications a
+       JOIN community_posts p ON p.id = a.post_id
+       WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?
+       FOR UPDATE`,
+      [applicationId, authorId]
+    );
+    if (!application) {
+      await conn.rollback();
+      return false;
+    }
+    await createEmailProxiesForApplication(conn, applicationId, application.applicant_id, authorId);
+    await conn.query("UPDATE community_applications SET status = 'accepted', decided_at = NOW(), reject_reason = NULL WHERE id = ?", [
+      applicationId,
+    ]);
+    await conn.commit();
+    return true;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 // 승인/반려와 동일한 "가드 달린 UPDATE + affectedRows" 패턴(아래 decidePost 참고) —
 // 다만 신청은 소유권이 글(community_posts.author_id)을 통해서만 확인되므로 JOIN해서
 // 한 번에 검증한다. 대기중이 아닌 신청을 다시 수락/반려하는 것도 막는다. reason은 거부일
 // 때만 의미가 있어 수락 시엔 항상 NULL로 저장한다(decidePost와 동일한 이유).
-// 수락(accepted)일 땐 프록시 생성을 상태 변경 UPDATE보다 먼저 한다 — 이 코드베이스엔
-// 트랜잭션이 없어서, 만약 UPDATE부터 하고 프록시 생성이 나중에 실패하면(EMAIL_PROXY_DOMAIN
-// 미설정 등) status만 'accepted'로 바뀐 채 연락처 없는 상태로 멈춰버리고, WHERE status=
-// 'pending' 가드 때문에 재시도(재수락)도 안 된다. 프록시 생성을 먼저 해서 실패 시 상태가
-// 아직 'pending'인 채로 남아있게 하면, 사용자가 그냥 다시 수락을 누르기만 하면 된다.
+// 수락은 프록시 생성이 같이 필요해서 위 acceptApplication이 맡고, 여기서는 반려만 처리한다.
 async function decideApplication(applicationId, authorId, status, reason = null) {
-  if (status === 'accepted') {
-    const [[application]] = await pool.query(
-      `SELECT a.applicant_id FROM community_applications a
-       JOIN community_posts p ON p.id = a.post_id
-       WHERE a.id = ? AND a.status = 'pending' AND p.author_id = ?`,
-      [applicationId, authorId]
-    );
-    if (!application) return false;
-    await createEmailProxiesForApplication(applicationId, application.applicant_id, authorId);
-  }
+  if (status === 'accepted') return acceptApplication(applicationId, authorId);
 
   const [result] = await pool.query(
     `UPDATE community_applications a
