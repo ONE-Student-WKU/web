@@ -1,5 +1,10 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+
+// communityService는 EMAIL_PROXY_DOMAIN을 모듈 로드 시점에 한 번 읽는다. 로컬 .env에는 있지만 CI에는 없어서
+// (수락은 프록시를 만들 때 이 값이 필요하다) require보다 먼저 채운다. 이미 설정돼 있으면 그 값을 그대로 쓴다.
+process.env.EMAIL_PROXY_DOMAIN = process.env.EMAIL_PROXY_DOMAIN || 'relay.example.test';
+
 const pool = require('../db');
 const communityService = require('../services/communityService');
 
