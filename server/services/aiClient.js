@@ -402,6 +402,12 @@ const CAREER_CANDIDATES_SYSTEM_PROMPT = `너는 대학생의 진로를 추천하
 정보가 부족해도 반드시 후보를 내야 한다 — "잘 모르겠다"는 답이 많았다면 그 자체(아직 방향을
 못 정했다는 것)와 학생의 학과·전공을 근거 삼아 그 학과에서 가장 보편적인 진로들을 잠정적으로
 제시하라. 정보 부족을 이유로 후보 제시를 거절하거나 되묻는 답을 하면 절대 안 된다.
+이때 reasoning에는 아직 이야기가 많지 않아 잠정적인 제안이라는 점을 한 마디 넣어라.
+
+- 후보끼리는 일하는 방식이 서로 달라야 한다(예: 같은 계열의 직무 이름만 바꾼 후보 셋은 안 된다). 학생이 다른 방향도 비교해볼 수 있게 하라.
+- 대화나 프로필에 없는 경험·성향을 지어내지 마라("프로젝트 경험을 쌓았다" 등). 근거는 실제 답변, 이수 과목, 학과뿐이다.
+- 학생이 전공 밖의 꿈을 말했다면(예: 요리사가 되고 싶다) 그 꿈을 무시하지 말고, 전공과 이어지는 후보 하나(예: 푸드테크 서비스 개발자)에 그 꿈을 언급해 넣어라.
+- reasoning은 학생에게 직접 보여주는 글이다. 학생을 3인칭으로 말하지 말고("~하는 성향을 보입니다" 대신) "~라고 하셨고", "~하셨던 점이"처럼 학생에게 말하듯 존댓말로 써라.
 
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
 [{"careerName": "직업명", "reasoning": "학생의 어떤 답변(또는 학과)을 근거로 이 진로를 제시하는지 2~3문장"}]`;
@@ -409,6 +415,7 @@ const CAREER_CANDIDATES_SYSTEM_PROMPT = `너는 대학생의 진로를 추천하
 const CAREER_ROADMAP_SYSTEM_PROMPT = `너는 대학생에게 진로에 맞는 수강 로드맵을 짜주는 상담사다.
 반드시 사용자가 제공하는 "남은 교육과정 목록"에 있는 과목 중에서만 골라야 한다 — 목록에 없는
 과목명을 지어내면 절대 안 된다. 이 학생이 목표 진로에 다가가는 데 도움이 될 과목을 4~8개 추천하라.
+목표 진로와 직접 연결되는 과목이 적으면 4개를 억지로 채우지 말고 관련도가 높은 순으로 최소 2~3개를 골라라(빈 배열은 안 된다). 목표 진로가 이 학생의 학과와 거리가 멀어도 응답을 비우지 마라 — 그 진로에서 학과 지식을 활용하는 방식(예: 요리사라면 주방 자동화, 외식 플랫폼, 메뉴·재고 데이터 관리)을 떠올려 거기에 도움이 될 과목을 골라라. reason에는 과목이 진로와 이어지는 지점이나 도움이 될 기초 역량을 솔직하게 적고, 없는 연관을 꾸며내지 마라.
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라(courseName은 목록에 있는
 과목명과 정확히 똑같이 써라):
 [{"grade": 3, "semester": 2, "courseName": "목록에 있는 정확한 과목명", "reason": "이 진로에 왜 도움이 되는지 1문장"}]`;
@@ -516,8 +523,10 @@ async function generateCareerCandidates(history, student, completedCourses, lang
 async function generateCareerRoadmap(careerName, careerReasoning, remainingCourses, student, language = 'ko') {
   const studentNote = buildCareerStudentNote(student);
   const system = [CAREER_ROADMAP_SYSTEM_PROMPT, studentNote, buildCareerLanguageNote(language)].filter(Boolean).join('\n\n');
+  // 한 줄에 한 과목씩, 출력 JSON과 같은 모양으로 준다. "데이터베이스 (심화, 3학점)"처럼 괄호 정보가 붙은 줄을 주면 모델이 그 괄호까지
+  // courseName으로 베껴 써서(운영 구분값 심화·응용 기준 12회 중 7회가 전부 불일치) careerService의 글자 그대로 대조에서 로드맵이 통째로 비었다.
   const courseListText = remainingCourses
-    .map((c) => `${c.grade}학년 ${c.semester}학기 - ${c.courseName} (${c.category}, ${c.credits}학점)`)
+    .map((c) => JSON.stringify({ courseName: c.courseName, grade: c.grade, semester: c.semester, category: c.category, credits: Number(c.credits) }))
     .join('\n');
   const englishReminder =
     language === 'en' ? '\n\n[Write each "reason" in English. Keep every "courseName" exactly as written in the list above.]' : '';

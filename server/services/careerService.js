@@ -223,6 +223,26 @@ async function getRemainingCourses(studentId, student) {
     .map((c) => ({ grade: c.grade, semester: c.semester, courseName: c.courseName, category: c.category, credits: c.credits }));
 }
 
+// AI 로드맵 응답을 교육과정 원본 값으로 접지(grounding)한다 — 목록에 실제로 있는 과목만 남기고, 학년/학기는 AI 응답이
+// 아니라 교육과정 원본 값을 쓴다(모델이 숫자를 잘못 옮겨 적을 수 있어서). 모델이 "데이터베이스 (심화, 3학점)"처럼 목록 모양의 괄호를
+// 과목명 뒤에 붙여 오는 경우가 있어, 정확히 일치하지 않으면 끝의 "(…학점)"을 떼고 한 번 더 찾는다. 같은 과목이 두 번 오면 한 번만 담고,
+// 화면이 학년·학기 순으로 읽히게 정렬한다(모델은 순서를 뒤섞어 내는 경우가 있다).
+function groundRoadmapItems(roadmap, remainingCourses) {
+  const remainingByName = new Map(remainingCourses.map((c) => [c.courseName, c]));
+  const seen = new Set();
+  const items = [];
+  for (const item of Array.isArray(roadmap) ? roadmap : []) {
+    if (!item || typeof item.courseName !== 'string') continue;
+    const name = item.courseName.trim();
+    const source = remainingByName.get(name) || remainingByName.get(name.replace(/\s*\([^()]*학점\)\s*$/, '').trim());
+    if (!source || seen.has(source.courseName)) continue;
+    seen.add(source.courseName);
+    items.push({ grade: source.grade, semester: source.semester, courseName: source.courseName, reason: item.reason || null });
+  }
+  const semesterOrder = (v) => parseInt(String(v), 10) || 0;
+  return items.sort((a, b) => a.grade - b.grade || semesterOrder(a.semester) - semesterOrder(b.semester));
+}
+
 // 후보 중 하나를 진로로 확정하고, 남은 교육과정만으로 로드맵을 생성한다.
 async function confirmCareer(studentId, sessionId, careerName, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
@@ -233,7 +253,6 @@ async function confirmCareer(studentId, sessionId, careerName, student, language
   if (!chosen) throw Object.assign(new Error('CAREER_CANDIDATE_NOT_FOUND'), { code: 'CAREER_CANDIDATE_NOT_FOUND' });
 
   const remainingCourses = await getRemainingCourses(studentId, student);
-  const remainingByName = new Map(remainingCourses.map((c) => [c.courseName, c]));
 
   let roadmap = [];
   try {
@@ -242,14 +261,8 @@ async function confirmCareer(studentId, sessionId, careerName, student, language
     roadmap = [];
   }
 
-  // 그라운딩 안전망: 목록에 실제로 있는 과목명만 남기고, 학년/학기/카테고리는 AI 응답이
-  // 아니라 교육과정 원본 값을 그대로 쓴다(모델이 숫자를 잘못 옮겨 적을 수 있어서).
-  const groundedItems = (Array.isArray(roadmap) ? roadmap : [])
-    .filter((item) => remainingByName.has(item.courseName))
-    .map((item) => {
-      const source = remainingByName.get(item.courseName);
-      return { grade: source.grade, semester: source.semester, courseName: source.courseName, reason: item.reason || null };
-    });
+  // 그라운딩 안전망 — 위 groundRoadmapItems 참고.
+  const groundedItems = groundRoadmapItems(roadmap, remainingCourses);
 
   await pool.query('DELETE FROM career_roadmap_items WHERE session_id = ?', [sessionId]);
   let order = 0;
@@ -274,4 +287,5 @@ module.exports = {
   postMessage,
   generateCandidates,
   confirmCareer,
+  groundRoadmapItems,
 };
