@@ -10,6 +10,7 @@ import Onboarding from './pages/Onboarding.jsx';
 import Profile, { resetProfileCache } from './pages/Profile.jsx';
 import Community, { resetCommunityCache } from './pages/Community.jsx';
 import Admin from './pages/Admin.jsx';
+import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -41,6 +42,7 @@ function resetAllUserCaches() {
   resetProfileCache();
   resetChatCache();
   resetCommunityCache();
+  resetAdminTrendCache();
 }
 
 /**

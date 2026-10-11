@@ -302,4 +302,19 @@ router.get('/stats', async (req, res, next) => {
   }
 });
 
+// GET /api/admin/stats/trend?range=24h|30d|1y|all — 대시보드 지표(신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
+// 24h는 1시간 단위, 나머지는 하루 단위(services/adminStatsService.js getTrend).
+router.get('/stats/trend', async (req, res, next) => {
+  try {
+    const range = req.query.range || '24h';
+    if (!adminStatsService.isTrendRange(range)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RANGE', message: null, data: null });
+    }
+    const trend = await adminStatsService.getTrend(range);
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_TREND', message: null, data: trend });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

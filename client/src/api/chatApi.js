@@ -237,3 +237,6 @@ export const resolveAdminInquiry = (id, note) =>
   apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST', body: JSON.stringify({ note: note || null }) });
 
 export const getAdminStats = () => apiRequest('/admin/stats');
+
+// 추이 — range: 24h(1시간 단위) | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, points: [{ at, signups, chatQuestions, chatNotFound }] }(오래된 순)
+export const getAdminStatsTrend = (range) => apiRequest(`/admin/stats/trend?range=${range}`);
