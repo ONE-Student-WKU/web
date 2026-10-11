@@ -154,13 +154,48 @@ function buildLanguageNote(language) {
   return language === 'en' ? ENGLISH_ANSWER_NOTE : null;
 }
 
-function buildSystemPrompt(student, graduationStatus, yearContext = null, language = 'ko') {
+const PROGRESS_FLAG_NOTE = {
+  TRANSFER_GRADE_ASSUMED: '편입생이라 편입 학년을 3학년으로 가정했다',
+  RECORDS_LEAVE_MISMATCH: '프로필의 누적 휴학 학기 수와 이수 기록의 빈 학기가 맞지 않는다(기록 기준으로 계산)',
+  EXTENDED_TERM: '정규 4학년을 넘긴 초과학기다',
+};
+
+// studentProgress.getStudentProgress() 결과를 시스템 프롬프트에 심는다. "현재 N학년"이라는 한 줄만 주면 모델이 학기를 즉흥으로
+// 추정해 이미 끝낸 학년의 과목만 권하는 문제가 있어서, 다음 수강 학기의 학년·학기와 이수한 과목을 계산된 값으로 못박는다.
+function buildProgressNote(progress) {
+  if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
+
+  const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const sourceText = progress.source === 'RECORDS'
+    ? '학생이 과목 관리에 등록한 이수 기록'
+    : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
+  const lines = [
+    '이 학생의 수강 진행 상태(코드로 계산한 값이다. 학년·학기를 직접 추정하지 말고 이 값을 써라):',
+    `- 오늘 기준 현재 학기: ${progress.currentTerm.year}학년도 ${progress.currentTerm.semester}학기`,
+    `- 다음에 수강신청할 학기: ${progress.upcomingTerms.map(termLine).join(', 그다음 ')}`,
+    `- 계산 근거: ${sourceText}. 지금까지 정규 ${progress.enrolledTermsCompleted}학기를 마쳤다.`,
+  ];
+  const flagTexts = progress.flags.map((f) => PROGRESS_FLAG_NOTE[f]).filter(Boolean);
+  if (flagTexts.length) lines.push(`- 계산 참고: ${flagTexts.join('; ')}`);
+  if (progress.needsConfirmation) {
+    lines.push('- 이 학년·학기는 확정이 아니다. 학기 계획을 답할 때 이 가정(예: "다음 학기를 N학년 M학기로 보면")을 한 번 밝히고, 맞지 않으면 알려달라고 안내하라.');
+  }
+  lines.push(
+    progress.completedCourseNames.length > 0
+      ? `- 이미 이수한 과목(성적 미입력 포함, 낙제·재수강으로 대체된 기록 제외) ${progress.completedCourseNames.length}개: ${progress.completedCourseNames.join(', ')}`
+      : '- 이수 기록으로 등록된 과목이 없다. 들은 과목을 모르니 "이미 들은 과목을 뺀다"고 단정하지 말고 학생에게 확인하라.'
+  );
+  return lines.join('\n');
+}
+
+function buildSystemPrompt(student, graduationStatus, yearContext = null, language = 'ko', progress = null) {
   const parts = [
     SYSTEM_PROMPT,
     EVIDENCE_PRIORITY_NOTE,
     buildStudentProfileNote(student),
     buildYearContextNote(yearContext),
     buildGraduationStatusNote(graduationStatus),
+    buildProgressNote(progress),
     buildLanguageNote(language),
   ].filter(Boolean);
   return parts.join('\n\n');
@@ -210,7 +245,7 @@ async function rewriteSearchQuery(rawQuery) {
 // history: 이번 메시지 이전까지의 대화 이력 [{role, content}, ...] — "왜 그래?" 같은 후속
 // 질문이 직전 turn을 참고할 수 있도록 Anthropic Messages API의 멀티턴 형식으로 그대로 넘긴다.
 // language: 'ko'(기본) | 'en' — 답변 언어(buildLanguageNote).
-async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null, yearContext = null, language = 'ko') {
+async function getAIChatResponse(userMessage, relevantChunks, history = [], student = null, graduationStatus = null, yearContext = null, language = 'ko', progress = null) {
   // 교육과정 책자 문서는 제목에 학년도가 없는 경우도 있어서(book_year 메타데이터) 라벨에 책자 학년도를 덧붙인다.
   const context = relevantChunks
     .map((c, i) => {
@@ -232,7 +267,7 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1024,
-      system: buildSystemPrompt(student, graduationStatus, yearContext, language),
+      system: buildSystemPrompt(student, graduationStatus, yearContext, language, progress),
       messages,
     }),
     // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
@@ -484,6 +519,7 @@ async function extractFullTranscriptRows(rawText) {
 
 module.exports = {
   buildYearContextNote,
+  buildProgressNote,
   buildSystemPrompt,
   buildLanguageNote,
   buildCareerLanguageNote,
