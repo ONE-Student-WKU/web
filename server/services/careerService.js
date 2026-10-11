@@ -1,6 +1,7 @@
 const pool = require('../db');
 const aiClient = require('./aiClient');
 const curriculumService = require('./curriculumService');
+const { hasRecentCrisis } = require('./crisis');
 
 /**
  * server/services/careerService.js
@@ -178,6 +179,10 @@ async function generateCandidates(studentId, sessionId, student, language = 'ko'
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
   const history = await listMessages(sessionId);
+  // 최근 대화에 위기 신호가 있으면 직업 후보를 내밀지 않고 도움 안내로 대신한다(AI 호출 없음 — services/crisis.js 참고).
+  if (hasRecentCrisis(history)) {
+    throw Object.assign(new Error('CAREER_CRISIS_DETECTED'), { code: 'CAREER_CRISIS_DETECTED' });
+  }
   const completedCourses = await getCompletedCourses(studentId);
   // 정보가 아주 적을 때 모델이 JSON 대신 되묻는 문장을 낼 수 있어(프롬프트로 최대한
   // 막아뒀지만 100% 보장은 안 됨) 파싱 실패도 "후보 없음"과 동일하게 다뤄, 500 대신

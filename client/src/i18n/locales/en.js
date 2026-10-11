@@ -484,6 +484,7 @@ export default {
   'career.err.saveAnswers': "Couldn't save your answers. Please try again in a moment.",
   'career.err.candidatesEmpty': "We don't have enough to go on yet. Please chat a little more and try again.",
   'career.err.candidates': "Couldn't build your career suggestions. Please try again in a moment.",
+  'career.err.crisis': "It sounds like you're going through a really hard time. Right now, taking care of yourself matters more than career suggestions, and you don't have to get through this alone. You can get help from the Suicide Prevention Hotline in Korea at 109 (24 hours) or from your school's counseling center. We can pick the career conversation back up whenever you feel a little better.",
   'career.err.roadmap': "Couldn't build your roadmap. Please try again in a moment.",
   'career.needOnboarding': 'Please register your department and admission year first to explore careers.',
   'career.roadmapTitle': '{career} roadmap',

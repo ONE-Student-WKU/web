@@ -448,6 +448,7 @@ export default {
   'career.err.saveAnswers': '답변을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
   'career.err.candidatesEmpty': '아직 판단할 만한 이야기가 부족해요. 조금 더 대화한 뒤 다시 시도해주세요.',
   'career.err.candidates': '진로 후보를 만들지 못했어요. 잠시 후 다시 시도해주세요.',
+  'career.err.crisis': '많이 힘든 시간을 보내고 계신 것 같아요. 지금은 진로 추천보다 마음을 먼저 돌보는 게 중요해요. 혼자 견디지 않아도 돼요. 자살예방상담전화 109(24시간)나 학교 상담센터에서 도움을 받을 수 있어요. 진로 이야기는 마음이 조금 나아졌을 때 다시 이어가요.',
   'career.err.roadmap': '로드맵을 만들지 못했어요. 잠시 후 다시 시도해주세요.',
   'career.needOnboarding': '학과·학번 정보를 먼저 등록해야 진로를 탐색할 수 있어요.',
   'career.roadmapTitle': '{career} 로드맵',
