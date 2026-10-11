@@ -2,6 +2,7 @@ const pool = require('../db');
 const { extractAskedYears } = require('./yearContext');
 const historyService = require('./curriculumHistoryService');
 const { OFFERING_SEMESTER, regularSemesterToOfferingCode, offeringCodeLabel } = require('./termCode');
+const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
 
 /**
  * server/services/curriculumService.js
@@ -442,9 +443,10 @@ async function findLatestOfferingYearBefore({ departmentId, trackId, year } = {}
   return row && row.latest != null ? row.latest : null;
 }
 
-async function lookupOfferingsFromMessage(text, student, yearContext = null) {
+// 질문에 맞는 개설 이력 행을 조회한다. 조회 대상이 아니거나 행이 없으면 null.
+async function fetchOfferingRows(text, student, yearContext = null) {
   const target = resolveOfferingTargets(text, yearContext);
-  if (!target) return [];
+  if (!target) return null;
   const { years: targetYears, semester, fromClassification } = target;
   const baseFilter = {
     departmentId: student?.department_id || undefined,
@@ -470,8 +472,11 @@ async function lookupOfferingsFromMessage(text, student, yearContext = null) {
   } else {
     rows = (await Promise.all(targetYears.map((year) => findOfferings({ year, semester, ...baseFilter })))).flat();
   }
-  if (rows.length === 0) return [];
+  return rows.length === 0 ? null : rows;
+}
 
+// 개설 행 → (학과·세부전공·학년도·학기·학년) 단위 그룹. 근거 청크가 비대해지지 않도록 카테고리별 과목명만 나열한다.
+function groupOfferingRows(rows) {
   const groups = new Map();
   for (const row of rows) {
     const key = `${row.department_name}-${row.track_name || ''}-${row.year}-${row.semester}-${row.grade ?? 'x'}`;
@@ -489,8 +494,61 @@ async function lookupOfferingsFromMessage(text, student, yearContext = null) {
     if (!group.categories.has(row.category)) group.categories.set(row.category, new Set());
     group.categories.get(row.category).add(`${row.course_name}(${Number(row.credits)}학점)`);
   }
+  return [...groups.values()];
+}
 
-  return [...groups.values()].map(formatOfferingChunk);
+// "개설된 과목 − 학생이 이미 이수한 과목" 청크(학기마다 하나). 학생이 앞으로 들을 과목을 묻는 질문에서, 모델이 개설 목록과 이수 목록을
+// 머릿속으로 대조하다 틀리지 않도록 코드가 미리 뺀다. 개설 학년은 권장 학년일 뿐 수강 조건이 아니라서 학년으로 거르지 않고 항목에 표시만 한다.
+// 이수 기록에 없는 과목은 미이수로 나오므로(등록 누락 가능) 그 한계를 청크 본문에 밝힌다.
+function buildRemainingOfferingChunks(rows, completedNameSet, completedCount) {
+  const groups = new Map();
+  for (const row of rows) {
+    const key = `${row.department_name}-${row.track_name || ''}-${row.year}-${row.semester}`;
+    if (!groups.has(key)) {
+      groups.set(key, { departmentName: row.department_name, trackName: row.track_name, year: row.year, semester: row.semester, categories: new Map(), excluded: new Set() });
+    }
+    const group = groups.get(key);
+    if (isCompleted(row.course_name, completedNameSet)) {
+      group.excluded.add(row.course_name);
+      continue;
+    }
+    if (!group.categories.has(row.category)) group.categories.set(row.category, new Set());
+    const gradeLabel = row.grade != null ? `, ${row.grade}학년` : '';
+    group.categories.get(row.category).add(`${row.course_name}(${Number(row.credits)}학점${gradeLabel})`);
+  }
+
+  return [...groups.values()]
+    .filter((g) => g.categories.size > 0)
+    .map((g) => {
+      const trackLabel = g.trackName ? ` · ${g.trackName}` : '';
+      const termLabel = `${g.year}학년도 ${offeringCodeLabel(g.semester)}`;
+      const categoryLines = [...g.categories.entries()].map(([category, names]) => `${category}: ${[...names].join(', ')}`).join('\n');
+      return {
+        chunkId: `remaining-${g.departmentName}-${g.trackName || ''}-${g.year}-${g.semester}`,
+        documentTitle: `${g.departmentName}${trackLabel} ${termLabel} 개설과목 중 아직 이수하지 않은 과목`,
+        content:
+          `${termLabel}에 실제 개설된 과목 중 학생이 아직 이수하지 않은 과목(이수 기록 ${completedCount}개를 뺀 목록, 이미 이수한 개설 과목 ${g.excluded.size}개 제외 — 이수 기록에 없는 과목은 미이수로 나온다):\n` +
+          categoryLines,
+      };
+    });
+}
+
+// 개설 과목 근거 청크. offering은 개설 과목 목록, remaining은 질문이 "앞으로 들을 과목"(NEXT_TERM_PLANNING)이고 이수 과목을 알 때만 만든다
+// (이수 기록이 없으면 전부 미이수로 나와 오해를 부르니 만들지 않는다).
+async function lookupOfferingChunks(text, student, yearContext = null, { completedCourseNames = [] } = {}) {
+  const rows = await fetchOfferingRows(text, student, yearContext);
+  if (!rows) return { offering: [], remaining: [] };
+
+  const offering = groupOfferingRows(rows).map(formatOfferingChunk);
+  const wantsRemaining = yearContext && yearContext.questionIntent === 'NEXT_TERM_PLANNING' && completedCourseNames.length > 0;
+  const remaining = wantsRemaining
+    ? buildRemainingOfferingChunks(rows, buildCompletedNameSet(completedCourseNames), completedCourseNames.length)
+    : [];
+  return { offering, remaining };
+}
+
+async function lookupOfferingsFromMessage(text, student, yearContext = null) {
+  return (await lookupOfferingChunks(text, student, yearContext)).offering;
 }
 
 // ---------------------------------------------------------------------------
@@ -640,6 +698,8 @@ module.exports = {
   findMentionedCourseNames,
   lookupRequirementsFromMessage,
   lookupOfferingsFromMessage,
+  lookupOfferingChunks,
+  buildRemainingOfferingChunks,
   extractSemester,
   resolveOfferingTargets,
   formatOfferingChunk,
