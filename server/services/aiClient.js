@@ -49,6 +49,7 @@ function buildStudentProfileNote(student) {
 
   return `이 학생의 프로필 — ${parts.join(', ')}.
 근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
+여기서 "이 학번 기준"은 최신 교육과정 책자에 실린 "${student.admission_year}학번 적용" 표(학번별 이수기준표)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${student.admission_year}학년도 책자의 숫자는 입학 당시 기준(이력)일 뿐이다.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
 "정확히 이 학번 기준 자료는 못 찾았다"고 분명히 밝혀라 — 다른 학번 기준을 이 학생에게 그대로 적용해 단정적으로 답하지 마라.`;
 }
@@ -64,7 +65,13 @@ function buildGraduationStatusNote(graduationStatus) {
   const { totalEarnedCredits, totalRequiredCredits, categories, certifications } = graduationStatus;
   const categoryLines = categories.map((c) => `  - ${c.category}: ${c.earnedCredits}/${c.requiredCredits}학점`).join('\n');
   const certLines = certifications
-    .map((c) => `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`)
+    .map((c) =>
+      c.optional
+        ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 교직과정 이수자만 해당하는 참고 항목이다. 교직을 이수하지 않는 학생에게 졸업 부족 요건으로 말하지 마라 (${c.description})`
+        : c.conditionalExemption === 'BACHELOR_TRANSFER'
+          ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 학사편입학자·산업체편입자는 이 대학 공통 졸업인증제가 면제다. 미충족이면 일반편입인지 학사편입인지 먼저 물어보고 단정하지 마라 (${c.description})`
+          : `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`
+    )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
 
@@ -79,7 +86,7 @@ function buildGraduationStatusNote(graduationStatus) {
     caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유:\n${reasons.join('\n')}`);
   }
   if (regulation && regulation.totalDefinitive === false) {
-    caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다. 카테고리별 기준 위주로 설명하라.');
+    caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다(학교 기준 인정학점을 뺀 "본교에서 이수할 학점"으로 계산했을 수 있다). 카테고리별 기준 위주로 설명하라.');
   }
 
   return `이 학생의 실제 이수 현황(학생이 과목 관리 화면에 직접 등록한 데이터 기준) — 근거
@@ -105,11 +112,17 @@ ${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
 // 정해짐)과 규정의 "변경 이력"(그 뒤 해에 바뀐 내용)을 섞지 않고, 서로 다른 해의 수치를 한 문장에 합치지 않게 한다.
 function buildYearContextNote(yearContext) {
   if (!yearContext) return null;
-  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears, questionIntent } = yearContext;
+  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears, questionIntent, latestBookYear } = yearContext;
   const lines = [];
 
   if (applicableCohort) {
     lines.push(`이 질문에서 학생에게 적용되는 교육과정은 ${applicableCohort}학번 기준이다${cohortSource === 'message' ? '(질문에서 직접 말한 학번)' : '(프로필 학번)'}.`);
+    // 원광대는 개편된 교육과정을 전 학년에 적용하고 학번별 차이는 최신 책자의 학번별 이수기준표로 정한다(2026 책자 경과조치 가, 교육혁신과 면담 2026-10-12).
+    // 모델이 "2019학번이니 2019 책자"로 답하지 않게, 어느 책자의 표가 지금 기준인지 못박는다.
+    if (latestBookYear && applicableCohort < latestBookYear) {
+      lines.push(`"${applicableCohort}학번 기준"이란 ${applicableCohort}학년도 책자가 아니라 최신(${latestBookYear}학년도) 교육과정 책자에 실린 "${applicableCohort}학번 적용" 표(학번별 이수기준표·경과조치)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정한다. ` +
+        `${applicableCohort}학년도 책자의 숫자(예: 영역별 교양 기준)는 "입학 당시 기준(이력)"이며 지금 적용되는 값이 아니다. 둘이 다르면 최신 책자의 학번별 표를 따르고, 옛 값은 그렇게 표시해서만 언급하라. 판단 결과·졸업요건 청크의 숫자가 이미 그 표 값이다.`);
+    }
     if (messageCohorts.length > 0 && profileCohort && messageCohorts[0] !== profileCohort) {
       lines.push(`프로필 학번(${profileCohort}학번)과 질문의 학번(${messageCohorts[0]}학번)이 다르다. 질문의 학번을 기준으로 답하되, 아래 "실제 이수 현황" 수치는 프로필 학번 기준이라는 점을 구분하라.`);
     }
@@ -132,8 +145,8 @@ function buildYearContextNote(yearContext) {
 
   lines.push(
     '연도 처리 원칙:\n' +
-      '- 졸업학점 등 학번별 이수기준은 입학학번의 기준표 값으로 답한다. 그러나 이후 해의 변경("이후 변경" 항목)이 이 학번에 적용되는지는 경과조치에 따라 달라지므로 "적용되지 않는다"고 단정하지 마라 — 학칙시행규칙 제13조(①신 교육과정은 공포일부터 전 학년 적용 ②필수→선택 변경·폐설 과목은 이수하지 않아도 됨 ③선택→필수 변경은 재학 학년보다 저학년 개설이면 이수하지 않아도 됨 ④이수구분은 수강신청 당시 기준)를 근거로 조건을 설명하고, 확정이 필요하면 학과·학사지원과 확인을 안내하라.\n' +
-      '- 근거 문서에 학번/학년도 표기가 있는 수치는 그 해 것이다. 서로 다른 해의 수치를 섞어 하나의 답으로 만들지 마라.\n' +
+      '- 졸업학점 등 학번별 이수기준은 "그 학번에 적용되는 표"(최신 책자의 학번별 이수기준표) 값으로 답한다. 과목 단위의 이후 변경("이후 변경" 항목)이 이 학번에 적용되는지는 경과조치에 따라 달라지므로 "적용되지 않는다"고 단정하지 마라 — 학칙시행규칙 제13조(①신 교육과정은 공포일부터 전 학년 적용 ②필수→선택 변경·폐설 과목은 이수하지 않아도 됨 ③선택→필수 변경은 재학 학년보다 저학년 개설이면 이수하지 않아도 됨 ④이수구분은 수강신청 당시 기준)를 근거로 조건을 설명하고, 확정이 필요하면 학과·학사지원과 확인을 안내하라.\n' +
+      '- 근거 문서에 학번/학년도 표기가 있는 수치는 그 표기의 것이다. "○○학년도 책자"의 수치와 "○○학번 적용" 표의 수치는 다른 것이니(앞은 그 해 책자, 뒤는 그 학번에 지금 적용되는 기준) 서로 다른 해·표의 수치를 섞어 하나의 답으로 만들지 마라.\n' +
       '- 근거에 해당 학번 자료가 "없음"이라고 되어 있으면 다른 해 값으로 추정해 단정하지 말고 자료가 없다고 밝혀라.\n' +
       '- 변경 이유는 근거에 적혀 있을 때만 설명하고, 없으면 이유는 기록에 없다고 답하라. "(이름 일치로 추정)"이라고 표시된 학과 개편 관계는 추정임을 함께 밝혀라.'
   );

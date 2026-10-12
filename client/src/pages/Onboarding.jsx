@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
-import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
+import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -58,7 +58,7 @@ function SummaryRow({ label, value, editable, onClick }) {
 /**
  * Onboarding Page
  * 회원가입 직후 자동 진입하거나, 계정 메뉴의 "학과, 학번 수정"에서 재진입.
- * 학과 → (세부전공) → 입학유형 → 학번 → (전과 시점) → 확인 → 완료.
+ * 학과 → (세부전공) → 입학유형 → 학번(편입생은 편입 연도·학년) → (전과 시점) → 확인 → 완료.
  *
  * Props:
  * - user: object (onboardingCompleted 여부로 최초 등록(POST)/재설정(PATCH) 분기)
@@ -94,6 +94,10 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     majorChangeYear: editMode ? user.majorChangeYear : null,
     majorChangeSemester: editMode ? user.majorChangeSemester : null,
     majorChangeGrade: editMode ? user.majorChangeGrade : null,
+    // 편입생 전용. 학번(admissionYear)은 편입 연도 − 편입 학년 + 1로 정해지고(제14조③), 편입 연도는 저장하지 않고 학번 + 학년 − 1로 되돌린다.
+    // 옛 방식으로 입력한 편입생은 transferGrade가 없어 둘 다 null — 요약 화면에서 "선택 필요"로 보여 다시 입력하게 한다.
+    transferGrade: editMode ? user.transferGrade ?? null : null,
+    transferYear: editMode ? transferYearOf(user.admissionYear, user.transferGrade) : null,
   });
 
   useEffect(() => {
@@ -122,7 +126,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const path = ['department'];
   if (hasTracks) path.push('track');
-  path.push('enrollmentType', 'year');
+  const isTransfer = answers.enrollmentType === 'TRANSFER_ADMISSION';
+  path.push('enrollmentType', isTransfer ? 'transfer' : 'year');
   if (answers.enrollmentType === 'MAJOR_CHANGE') path.push('majorChange');
   path.push('summary', 'done');
 
@@ -148,7 +153,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
     if (answers.enrollmentType === 'TRANSFER_ADMISSION' && selectedDepartment && !isTransferAvailable(selectedDepartment)) {
-      setAnswers((a) => ({ ...a, enrollmentType: null, admissionYear: null }));
+      setAnswers((a) => ({ ...a, enrollmentType: null, admissionYear: null, transferYear: null, transferGrade: null }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDepartment]);
@@ -159,12 +164,27 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 학번 선택지가 하나뿐이면(예: 공학3계열은 2026학번만 존재) 사용자가 그 하나를 굳이 직접
   // 눌러 고르게 하지 않고 자동으로 채운다 — 유일한 선택지를 누르게 하는 것 자체가 불필요한
   // 클릭이라는 실사용 피드백 반영.
+  // (편입생은 학번을 직접 고르지 않고 편입 연도·학년에서 계산하므로 제외한다.)
   useEffect(() => {
-    if (yearOptions.length === 1 && answers.admissionYear !== yearOptions[0]) {
+    if (!isTransfer && yearOptions.length === 1 && answers.admissionYear !== yearOptions[0]) {
       setAnswers((a) => ({ ...a, admissionYear: yearOptions[0] }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDepartment, answers.enrollmentType]);
+
+  // 편입생: 편입 연도·학년을 고르면 적용 학번(= 편입 연도 − 학년 + 1)을 계산해 학번 답으로 쓴다. 그 학번의 졸업요건 자료가 이 학과에 없으면
+  // (예: 너무 옛날에 편입) 학번을 비워 다음으로 못 넘어가게 하고 안내를 보여 준다.
+  const transferCohort = transferCohortYear(answers.transferYear, answers.transferGrade);
+  const transferCohortValid =
+    transferCohort != null && yearRange != null && transferCohort >= yearRange.min && transferCohort <= yearRange.max;
+  const transferYearOptions = yearRange ? range(yearRange.min + 1, NOW_YEAR) : [];
+
+  useEffect(() => {
+    if (!isTransfer || (answers.transferYear == null && answers.transferGrade == null)) return;
+    const next = transferCohortValid ? transferCohort : null;
+    if (answers.admissionYear !== next) setAnswers((a) => ({ ...a, admissionYear: next }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTransfer, answers.transferYear, answers.transferGrade, transferCohortValid, transferCohort]);
 
   const mcYearOptions = answers.admissionYear ? range(answers.admissionYear, NOW_YEAR) : [];
 
@@ -226,6 +246,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeYear: null,
       majorChangeSemester: null,
       majorChangeGrade: null,
+      transferYear: null,
+      transferGrade: null,
     }));
     setTracks([]);
     getTracks(dept.id)
@@ -243,10 +265,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       const admissionYearStillValid =
         newRange && a.admissionYear != null && a.admissionYear >= newRange.min && a.admissionYear <= newRange.max;
       const isMajorChange = type === 'MAJOR_CHANGE';
+      const toTransfer = type === 'TRANSFER_ADMISSION';
+      const wasTransfer = a.enrollmentType === 'TRANSFER_ADMISSION';
       return {
         ...a,
         enrollmentType: type,
-        admissionYear: admissionYearStillValid ? a.admissionYear : null,
+        // 편입생의 학번은 편입 연도·학년에서 계산되는 값이라, 다른 유형에서 직접 고른 학번을 이어받지 않는다.
+        admissionYear: admissionYearStillValid && !(toTransfer && !wasTransfer) ? a.admissionYear : null,
+        // 편입생이 아닌 유형으로 바뀌면 편입 연도·학년 답변은 의미가 없으니 같이 지운다.
+        transferYear: toTransfer ? a.transferYear : null,
+        transferGrade: toTransfer ? a.transferGrade : null,
         // 전과생이 아닌 유형으로 바뀌면 전과 시점 답변은 더 이상 의미가 없으니 같이 지운다.
         majorChangeYear: isMajorChange ? a.majorChangeYear : null,
         majorChangeSemester: isMajorChange ? a.majorChangeSemester : null,
@@ -302,7 +330,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     !answers.enrollmentType ||
     (hasTracks && !answers.trackId) ||
     (answers.enrollmentType === 'MAJOR_CHANGE' &&
-      !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade));
+      !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
+    (isTransfer && !(answers.transferYear && answers.transferGrade));
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -316,6 +345,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeGrade: isMajorChange ? answers.majorChangeGrade : null,
       majorChangeYear: isMajorChange ? answers.majorChangeYear : null,
       majorChangeSemester: isMajorChange ? answers.majorChangeSemester : null,
+      transferGrade: isTransfer ? answers.transferGrade : null,
     };
     try {
       if (user?.onboardingCompleted) {
@@ -337,6 +367,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'track' && !answers.trackId) ||
     (current === 'enrollmentType' && !answers.enrollmentType) ||
     (current === 'year' && !answers.admissionYear) ||
+    (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid)) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade));
 
   const transferAvailable = selectedDepartment ? isTransferAvailable(selectedDepartment) : true;
@@ -464,8 +495,55 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   </option>
                 ))}
               </select>
-              {answers.enrollmentType === 'TRANSFER_ADMISSION' && (
-                <p className="onb-hint">{t('onb.year.transferHint')}</p>
+            </div>
+          </>
+        )}
+
+        {current === 'transfer' && (
+          <>
+            <h2 className="onb-q-title">{t('onb.transfer.title')}</h2>
+            <p className="onb-q-sub">{t('onb.transfer.sub')}</p>
+            <div className="onb-field-group">
+              <label className="onb-field-label">{t('onb.transfer.year')}</label>
+              <select
+                className="onb-select"
+                value={answers.transferYear ?? ''}
+                onChange={(e) => setAnswers((a) => ({ ...a, transferYear: Number(e.target.value) }))}
+              >
+                <option value="" disabled>
+                  {t('onb.select')}
+                </option>
+                {transferYearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {t('onb.transfer.yearN', { year: y })}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="onb-field-group">
+              <label className="onb-field-label">{t('onb.transfer.grade')}</label>
+              <div className="onb-chip-row">
+                {TRANSFER_GRADES.map((g) => (
+                  <button
+                    key={g}
+                    className={'onb-chip' + (answers.transferGrade === g ? ' selected' : '')}
+                    onClick={() => setAnswers((a) => ({ ...a, transferGrade: g }))}
+                  >
+                    {t('home.gradeLevel', { grade: g })}
+                  </button>
+                ))}
+              </div>
+              {transferCohort != null && transferCohortValid && (
+                <p className="onb-hint">{t('onb.transfer.applied', { year: transferCohort })}</p>
+              )}
+              {transferCohort != null && !transferCohortValid && (
+                <p className="onb-hint">
+                  {t('onb.transfer.outOfRange', {
+                    dept: selectedDepartment?.name,
+                    year: transferCohort,
+                    range: `${yearRange?.min}~${yearRange?.max}`,
+                  })}
+                </p>
               )}
             </div>
           </>
@@ -547,7 +625,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 label={t('onb.summary.cohort')}
                 value={answers.admissionYear ? t('onb.cohort', { year: answers.admissionYear }) : null}
                 editable={editMode}
-                onClick={() => setManualStep('year')}
+                onClick={() => setManualStep(isTransfer ? 'transfer' : 'year')}
               />
               <SummaryRow
                 label={t('onb.summary.type')}
@@ -555,6 +633,18 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 editable={editMode}
                 onClick={() => setManualStep('enrollmentType')}
               />
+              {isTransfer && (
+                <SummaryRow
+                  label={t('onb.summary.transfer')}
+                  value={
+                    answers.transferYear && answers.transferGrade
+                      ? t('onb.summary.transferValue', { year: answers.transferYear, grade: answers.transferGrade })
+                      : null
+                  }
+                  editable={editMode}
+                  onClick={() => setManualStep('transfer')}
+                />
+              )}
               {hasTracks && (
                 <SummaryRow
                   label={t('onb.summary.track')}

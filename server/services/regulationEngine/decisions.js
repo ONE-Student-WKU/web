@@ -4,6 +4,7 @@ const {
   LIBERAL_ARTS_CAP_FIRST_COHORT,
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM,
   DEFAULT_TRANSFER_GRADE,
+  TRANSFER_RECOGNIZED_CREDITS,
   CITATIONS,
 } = require('./constants');
 const { makeFlag } = require('./flags');
@@ -94,14 +95,19 @@ function decideMajorRelaxation(ctx) {
     return { mode: 'RELAXED', relaxedRows: true, overrideMajorCredits: null, flags, basis };
   }
 
-  // TRANSFER_ADMISSION — 편입 학년은 students에 저장되지 않으므로 보통 가정이 필요하다.
+  // TRANSFER_ADMISSION — 편입 학년을 입력하지 않은 옛 계정은 가정이 필요하다.
   let grade = ctx.transfer.grade;
+  const gradeKnown = grade != null;
   if (grade == null) {
     grade = DEFAULT_TRANSFER_GRADE;
     flags.push(makeFlag('TRANSFER_GRADE_ASSUMED'));
     basis.push('ACAD_ART36_2_TRANSFER_GRADE');
   }
-  flags.push(makeFlag('TRANSFER_COHORT_YEAR_UNVERIFIED'), makeFlag('TRANSFER_TOTAL_UNRESOLVED'));
+  // 어느 학번 기준인지는 교육과정 운영에 관한 규정 제14조③(편입학한 학년의 입학년도)으로 정해졌다. 편입 학년을 입력했다면 입력 화면이
+  // 학번을 "편입 연도 − 편입 학년 + 1"로 계산해 저장하므로 그 의미가 확실하다. 학년이 없는 옛 계정은 입력한 학번의 의미를 모른다.
+  if (!gradeKnown) flags.push(makeFlag('TRANSFER_COHORT_YEAR_UNVERIFIED'));
+  flags.push(makeFlag('TRANSFER_TOTAL_UNRESOLVED'));
+  basis.push('REG_CURRICULUM_OP_ART14_TRANSFER_COHORT');
   if (grade === 2) {
     basis.push('ENF_ART8_2_EXCLUDED');
     return { mode: 'FULL', relaxedRows: false, overrideMajorCredits: null, flags, basis, transferGrade: grade };
@@ -113,6 +119,18 @@ function decideMajorRelaxation(ctx) {
   }
   basis.push('ENF_ART8_1_RELAXATION', 'ENF_ART6_1_MIN_MAJOR');
   return { mode: 'RELAXED', relaxedRows: true, overrideMajorCredits: null, flags, basis, transferGrade: grade };
+}
+
+/**
+ * 편입생 인정학점(학교 홈페이지 편입생 교육과정 "1. 편입생 학점인정"). 학과 이름 → 학과 지정값, 아니면 그 학번 일반 학생 졸업학점으로
+ * 대학을 가른다(constants.TRANSFER_RECOGNIZED_CREDITS 주석). 단정할 수 없으면 null — 호출자는 총량을 "미해결"로 둔다.
+ */
+function transferRecognizedCredits(departmentName, admissionYear, generalTotalCredits) {
+  const t = TRANSFER_RECOGNIZED_CREDITS;
+  if (!departmentName || t.undetermined.includes(departmentName)) return null;
+  if (t.byDepartment[departmentName] != null) return t.byDepartment[departmentName];
+  if (departmentName === t.nursing.department) return admissionYear <= t.nursing.untilCohort ? t.nursing.before : t.nursing.from;
+  return t.byGraduationTotal[generalTotalCredits] ?? null;
 }
 
 /** 학기 (year, semester)가 컷오프(2022-2) "이전"인가. 2022-2학기 자체는 이전이 아니다(파트 3 이전 graduationService와 같은 경계). */
@@ -141,10 +159,16 @@ function decideLiberalArtsBasis(ctx, triggerOverride) {
   }
 
   if (ctx.enrollmentType === 'TRANSFER_ADMISSION') {
-    // 시행규칙 제10조②: 3·4학년 편입생은 영역별 교양 기준을 충족한 것으로 본다. 학점표 자체는 참고값으로만 유지.
-    basis.push('BOOKLET_ROWS', 'ENF_ART10_2_TRANSFER_LIBERAL');
+    // 시행규칙 제10조②: 3·4학년 편입생은 "종교와 원불교"를 뺀 영역별 교양 기준을 충족한 것으로 본다(1·2학년 편입은 제외 — 학번표 그대로).
+    // 편입 학년을 모르면 decideMajorRelaxation과 같은 가정(3학년)을 쓴다.
+    const grade = ctx.transfer.grade ?? DEFAULT_TRANSFER_GRADE;
+    if (grade <= 2) {
+      basis.push('BOOKLET_ROWS');
+      return { mode: 'COHORT_TABLE', trigger: null, flags, basis };
+    }
+    basis.push('ENF_ART10_2_TRANSFER_LIBERAL', 'SITE_TRANSFER_RELIGION_REQUIRED');
     flags.push(makeFlag('TRANSFER_LIBERAL_DEEMED_MET'));
-    return { mode: 'COHORT_TABLE', trigger: null, flags, basis };
+    return { mode: 'TRANSFER_DEEMED', trigger: null, flags, basis };
   }
 
   // MAJOR_CHANGE
@@ -218,5 +242,6 @@ module.exports = {
   decideLiberalArtsCap,
   isBeforeLiberalArtsCutoff,
   impliedMajorChangeGrade,
+  transferRecognizedCredits,
   resolveBasis,
 };

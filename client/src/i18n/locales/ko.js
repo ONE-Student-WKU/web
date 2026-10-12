@@ -72,6 +72,10 @@ export default {
 
   // 졸업요건 항목 표기 — 서버가 내려주는 한국어 항목명을 화면 언어로 바꿀 때 쓴다(없으면 원문 그대로).
   'grad.shortfallCredits': '{category} {n}학점',
+  // 전공 합계도 모자라고 그 안의 기본전공 하한도 모자랄 때 — 두 숫자를 따로 쓰면 더해서 읽히므로 "그중"으로 묶는다.
+  'grad.shortfallCreditsWithBase': '{category} {n}학점(그중 {base} {m}학점)',
+  'grad.certOptionalTeaching': '교직과정 이수자만 해당해요. 교직을 이수하지 않으면 졸업 부족 요건에 넣지 않아요.',
+  'grad.certExemptBachelorTransfer': '학사편입(4년제 대학 졸업 후 편입)·산업체편입이라면 이 졸업인증제는 면제예요. 일반편입이면 이수해야 해요.',
 
   // 언어 전환기(로그인 화면 등 로그인 전에도 쓴다)
   'language.switcher': '언어 선택',
@@ -150,6 +154,7 @@ export default {
   'grad.trust.INSUFFICIENT': '자료 불충분',
   'grad.trust.NO_DATA': '자료 없음',
   'grad.trust.schedule4': '학칙 [별표 4]는 {a}학점, 교육과정 책자는 {b}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.',
+  'grad.basis.latestBooklet': '{year}학년도 교육과정 책자의 학번별 이수기준표 기준이에요. 원광대는 개편된 교육과정을 모든 학번에 적용하고, 학번별 차이는 최신 책자의 표로 정해요(입학 당시 책자 숫자와 다를 수 있어요).',
 
   // 과목 관리
   'courses.title': '과목 관리',
@@ -357,7 +362,13 @@ export default {
   'onb.year.title': '몇 학번이에요?',
   'onb.year.sub': '{dept}은(는) {range}학번만 이 이수구조를 따라요.',
   'onb.year.label': '입학년도',
-  'onb.year.transferHint': '편입생은 올해 학번으로는 들어올 수 없어 그 해는 빠져 있어요.',
+  'onb.transfer.title': '언제, 몇 학년으로 편입했어요?',
+  'onb.transfer.sub': '편입생은 편입한 학년의 입학년도 교육과정을 따라요. 예를 들어 2026년에 3학년으로 편입했다면 2024학번 기준이에요.',
+  'onb.transfer.year': '편입한 연도',
+  'onb.transfer.yearN': '{year}년',
+  'onb.transfer.grade': '편입한 학년',
+  'onb.transfer.applied': '적용 학번: {year}학번',
+  'onb.transfer.outOfRange': '{dept}은(는) {year}학번 자료가 없어요. 편입한 연도와 학년을 다시 확인해 주세요. (지원하는 학번: {range})',
   'onb.mc.title': '전과 시점을 알려주세요',
   'onb.mc.sub': '교양 이수기준이 전과 시점(연도·학기) 기준으로 갈려서 필요해요.',
   'onb.mc.year': '전과한 연도',
@@ -374,6 +385,8 @@ export default {
   'onb.summary.type': '입학 유형',
   'onb.summary.track': '세부전공',
   'onb.summary.majorChange': '전과 시점',
+  'onb.summary.transfer': '편입 시점',
+  'onb.summary.transferValue': '{year}년 {grade}학년 편입',
   'onb.summary.majorChangeValue': '{grade}학년 · {year}년 {semester}학기',
   'onb.summary.leave': '휴학 학기 수',
   'onb.done.title': '설정이 끝났어요',

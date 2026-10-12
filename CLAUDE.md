@@ -10,6 +10,15 @@
 - Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
 - 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
 
+## 교육과정 적용 원칙 — 최신 책자가 모든 학번에 적용된다
+
+원광대는 다른 대학과 달리 **교육과정이 개편되면 그 전 학번에게도 최신 교육과정이 적용**되고, 학번별로 달라지는 부분(졸업학점·교양·전공 학점)은 **최신 책자에 실린 학번별 이수기준표(경과조치)**로 정한다(2026 책자 15쪽 경과조치 가, 교육혁신과 면담 2026-10-12). 그래서 "2019학번이면 2019학년도 책자"가 아니다 — 2019학번의 지금 기준은 2026 책자의 2019~2021학번 표다. 자세한 설명은 [docs/regulation-engine/LATEST_CURRICULUM_2026-10-12.md](docs/regulation-engine/LATEST_CURRICULUM_2026-10-12.md).
+
+- `db/seed/curriculum_requirements.json`의 2025학번 이하 일반 요건 행(교양·일반선택·전공·졸업인증제)은 `db/curriculum/_source/2026_학번별_이수기준.json`(2026 책자 학번별 표)로 정렬돼 있다. **옛 학년도 책자를 보고 이 값을 "원래대로" 고치지 않는다.** 옛 책자의 숫자는 그때 기준(이력)이다.
+- 시드를 손으로 고치지 말고 표 JSON을 고친 뒤 `node scripts/audit/applyLatestBookletCohortTables.js --apply`를 돌린다. `server/test/graduation.audit.test.js`가 시드와 표가 어긋나면 실패한다.
+- 새 학년도 책자가 들어오면: 그 책자의 학번별 표를 JSON·`db/regulations/교육과정/YYYY_학번별_이수기준표.md`로 옮기고, `server/services/regulationEngine/constants.js`의 `LATEST_BOOKLET_YEAR`를 올리고, 스크립트를 다시 돌린다.
+- 예외: 통폐합·학부 분리로 재학생이 남은 학과는 과목 편성을 구 교육과정으로 운영할 수 있다(경과조치 가 단서). 학점 기준(학번별 표)은 그래도 적용된다. 엔진은 2026 책자에 학과 행이 없는 학과에 `DEPARTMENT_ABSENT_IN_LATEST_BOOKLET`(INFO)을 붙인다.
+
 ## 화면 언어(i18n)
 
 화면에 보이는 문구는 한국어를 코드에 직접 쓰지 않고 번역 사전을 거친다. 언어는 설정 화면과 로그인 화면 헤더에서 바꾸며, 현재 지원 언어는 한국어(`ko`, 기준)와 영어(`en`)다. 당분간은 영어만 진행하고, 일본어와 중국어(간체/번체 미정)는 급하지 않아 보류 중이다. 나중에 추가할 때도 같은 방식을 쓴다.

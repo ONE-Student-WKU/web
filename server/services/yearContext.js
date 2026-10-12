@@ -159,12 +159,15 @@ function resolveYearContext({ message, previousUserMessage = null, profileCohort
   }
 
   // RAG 책자 학년도: HISTORY는 학생 학번 책자 + 최신 책자(규정이 어떻게 바뀌었는지 양쪽을 봐야 함).
+  // COHORT("내 학번 기준")는 최신 책자를 앞에 둔다 — 원광대는 개편된 교육과정을 전 학년에 적용하고 학번별 기준은 최신 책자의
+  // 학번별 이수기준표가 정하므로(2026 책자 경과조치 가, 교육혁신과 면담 2026-10-12), 2019학번의 "지금 기준"은 2019 책자가 아니라
+  // 2026 책자의 2019~2021학번 표에 있다. 입학 당시 책자는 그때 기준(이력)으로 뒤에 붙인다.
   let bookYears;
   if (mode === 'DEFAULT') {
     bookYears = latestBookYear ? [latestBookYear] : [];
-  } else if (mode === 'HISTORY') {
+  } else if (mode === 'HISTORY' || mode === 'COHORT') {
     const own = targetYears.map((y) => resolveBookYear(y, availableBookYears));
-    bookYears = unique([...own, latestBookYear].filter((y) => y != null));
+    bookYears = unique((mode === 'COHORT' ? [latestBookYear, ...own] : [...own, latestBookYear]).filter((y) => y != null));
   } else {
     bookYears = unique(targetYears.map((y) => resolveBookYear(y, availableBookYears)).filter((y) => y != null));
   }

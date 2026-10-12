@@ -1,6 +1,20 @@
 # HANDOFF — 다음 파트가 알아야 할 것
 
-## P4. 학교 홈페이지 확인 반영 (2026-10-06, 브랜치 `feature/school-site-verified-facts`) · 가장 먼저 읽을 것
+## P5. 교육혁신과 면담 반영 — 최신 책자가 모든 학번에 적용 (2026-10-12, 브랜치 `fix/graduation-audit-code-only`) · 가장 먼저 읽을 것
+
+원광대는 개편된 교육과정을 전 학번에 적용하고 학번별 차이는 **최신(2026) 책자의 학번별 이수기준표**로 정한다(D-55). 시드의 2025학번 이하 교양·일반선택·전공·졸업인증제 754개 값을 그 표로 정렬했고, 엔진·챗봇·화면이 "값의 출처는 최신 책자의 ○○학번 표"라고 알린다. 전체 설명(기획·설계·구현·마무리, 비전공자용)은 [`LATEST_CURRICULUM_2026-10-12.md`](LATEST_CURRICULUM_2026-10-12.md), 면담 기록은 [`docs/school-inquiry/교육혁신과_면담_2026-10-12.md`](../school-inquiry/교육혁신과_면담_2026-10-12.md). 같은 브랜치에는 전 학과 졸업요건 점검([`GRADUATION_AUDIT_2026-10-12.md`](GRADUATION_AUDIT_2026-10-12.md))과 원문 대조([`SOURCE_VERIFICATION_2026-10-12.md`](SOURCE_VERIFICATION_2026-10-12.md))의 코드 수정(편입 학년 입력, 자율전공학부, 졸업인증제 매칭 등)도 들어 있다.
+
+### P5-1. 운영 반영 (승인 필요 — 이번 파트에서 하지 않음)
+1. PR → `develop` → `main`. `db/seed/curriculum_requirements.json`·`db/curriculum/_source/2026_학번별_이수기준.json`·`db/regulations/교육과정/2026_학번별_이수기준표.md`가 바뀌므로 `main` push에 `db-reseed`가 뜨고 **승인**해야 운영 DB에 들어간다(요건: `seed:reference-data`, RAG 문서: `seed:regulations -- --force` 전체 재임베딩).
+2. `generate:curriculum-changes`를 다시 돌려야 옛 값 기준 변경 이력(예: 사범대 2023→2024 가짜 변경)이 운영에서 사라진다. 크론 Start Command에 있는지 확인(docs/deployment.md "확인하지 못한 것").
+3. `db/migrate.js`가 `students.transfer_grade` 컬럼을 추가한다(편입 학년 입력, SOURCE_VERIFICATION F1). Pre-Deploy Command 설정은 미확인.
+
+### P5-2. 학교에 확인할 것 (새로 생긴 것만)
+- 2026 책자 학번별 전공표가 지목하지 않는 21개 행(자율전공학부, 수학·정보통계학부 2017, 중등특수교육과 2017~2020, 국제통상학부·바이오나노화학부 2017~2021, SW융합학과 2020·2021)의 지금 적용 기준.
+- 통폐합·개편으로 2026 책자에 학과 행이 없는 55개 학과(전기공학과·경영학부 등)의 **과목 편성**이 구 교육과정으로 운영 중인지(학점 기준은 표를 따름).
+- 자기계발심층상담 횟수(2020학번부터 8학기, 2019까지 6, 편입 3)를 졸업인증제 판정에 넣을지 — 이번에는 넣지 않았다.
+
+## P4. 학교 홈페이지 확인 반영 (2026-10-06, 브랜치 `feature/school-site-verified-facts`)
 
 Claude in Chrome으로 학교 홈페이지(wku.ac.kr)·조회시스템(intra.wku.ac.kr)을 직접 확인한 결과를 엔진·데이터에 반영했다. 확인 내용 전체와 근거 링크는 [`docs/school-inquiry/확인결과_문의제외.md`](../school-inquiry/확인결과_문의제외.md), 학교에 보낼 문의문은 [`학교문의_발송용.md`](../school-inquiry/학교문의_발송용.md). 홈페이지 원문 보관본은 `docs/school-inquiry/근거_학교홈페이지/`(엔진 근거 레지스트리 `SITE_*`가 이 파일을 인용하고, 근거 무결성 테스트가 문장을 검사한다).
 

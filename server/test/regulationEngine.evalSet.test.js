@@ -59,7 +59,8 @@ const studentRow = (s) => ({
 test('평가 세트 구성: 20~35개, 판단 보류(#260)·C등급 구간·자료 없음 포함, EVAL_SET.md에 전부 기록', () => {
   assert.ok(SCENARIOS.length >= 20 && SCENARIOS.length <= 35, `${SCENARIOS.length}개`);
   assert.equal(new Set(SCENARIOS.map((s) => s.id)).size, SCENARIOS.length, 'id 중복');
-  assert.ok(SCENARIOS.filter((s) => (s.expected.flags || []).includes('DATA_PENDING_HOLD')).length >= 8, '판단 보류 시나리오');
+  // 2026-10-12: 수학교육과·패션·컴소공 교양·사범대 2024 보류 4건이 2026 책자 학번별 표로 해소돼 E07·E10~E12·E14에서 빠졌다(dataQuality.js 주석).
+  assert.ok(SCENARIOS.filter((s) => (s.expected.flags || []).includes('DATA_PENDING_HOLD')).length >= 7, '판단 보류 시나리오');
   assert.ok(SCENARIOS.filter((s) => s.expected.confidence === 'INSUFFICIENT').length >= 4, 'C등급(자료 불충분) 시나리오');
   assert.ok(SCENARIOS.filter((s) => s.expected.confidence === 'NO_DATA').length >= 3, '자료 없음 시나리오');
   for (const s of SCENARIOS) assert.ok(s.why, `${s.id}: 기대값 근거(why) 필요`);

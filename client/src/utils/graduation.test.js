@@ -89,6 +89,50 @@ describe('summarizeShortfalls', () => {
     const categories = [{ category: '교양필수', earnedCredits: 10, requiredCredits: 10 }];
     expect(summarizeShortfalls(categories, [{ category: '졸업논문', satisfied: true }])).toEqual([]);
   });
+
+  // GRADUATION_AUDIT_2026-10-12 1절: 기본전공 9/19 + 선택전공 66/56이면 전공 합계(75)는 차지만 기본전공 하한이 모자라
+  // 졸업할 수 없다. 예전에는 합치면서 이 부족분이 사라져 "부족 요건 없음"이 나왔다.
+  it('전공 합계가 차도 기본전공 하한이 모자라면 기본전공 부족을 남긴다', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 66, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['기본전공 10학점']);
+  });
+
+  it('전공 합계와 기본전공이 둘 다 모자라면 "그중"으로 묶어 한 항목으로 쓴다(두 숫자를 더해 읽지 않게)', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['전공 16학점(그중 기본전공 10학점)']);
+  });
+
+  it('기본전공을 채웠으면 전공 합계 부족만 쓴다(기존 동작)', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 19, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['전공 6학점']);
+  });
+
+  it('교직기본이수처럼 optional인 인증은 졸업 부족 요건에 넣지 않는다', () => {
+    const result = summarizeShortfalls([], [
+      { category: '교직기본이수', satisfied: false, optional: true },
+      { category: '졸업논문', satisfied: false },
+    ]);
+    expect(result).toEqual(['졸업논문']);
+  });
+
+  it('번역 함수를 넘기면 기본전공 묶음 문구도 번역 사전으로 만든다', () => {
+    const dict = { 'grad.shortfallCreditsWithBase': '{category}: {n} credits (including {base}: {m} credits)', 'category.전공': 'Major', 'category.기본전공': 'Major core' };
+    const t = (key, params = {}) => (dict[key] || key).replace(/\{(\w+)\}/g, (_, k) => params[k]);
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [], t)).toEqual(['Major: 16 credits (including Major core: 10 credits)']);
+  });
 });
 
 describe('formatShortfallSentence', () => {
@@ -110,7 +154,15 @@ describe('describeRequirementTrust', () => {
 
   it('확정: 배지만 보이고 사유·추정 표시는 없다', () => {
     const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
-    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false });
+    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false, basisBookletYear: null });
+  });
+
+  it('2025학번 이하: 서버가 준 기준 책자 학년도(basisBookletYear)를 그대로 넘기고, 자료 없음이면 적지 않는다', () => {
+    const reg = { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null, basisBookletYear: 2026 };
+    expect(describeRequirementTrust({ ...base, regulation: reg }).basisBookletYear).toBe(2026);
+    expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0, regulation: { ...reg, confidence: 'NO_DATA' } }).basisBookletYear).toBeNull();
+    // 예전 서버 응답(필드 없음)도 그대로 동작
+    expect(describeRequirementTrust({ ...base, regulation: { ...reg, basisBookletYear: undefined } }).basisBookletYear).toBeNull();
   });
 
   it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {
@@ -148,9 +200,9 @@ describe('describeRequirementTrust', () => {
   });
 
   it('예전 응답(regulation 없음)도 그대로 동작: 배지·사유 없음, 총량 0이면 noData', () => {
-    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false, basisBookletYear: null });
     expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
-    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false, basisBookletYear: null });
   });
 });
 

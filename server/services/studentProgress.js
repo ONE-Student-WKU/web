@@ -32,19 +32,25 @@ function termLabel({ year, semester }) {
  * @param {object} p
  * @param {number} p.admissionYear
  * @param {string} [p.enrollmentType]   GENERAL | TRANSFER_ADMISSION | MAJOR_CHANGE
+ * @param {number|null} [p.transferGrade] 편입한 학년(편입생만). 있으면 admissionYear는 "편입 연도 − 편입 학년 + 1"이라 편입 학기(= admissionYear + transferGrade − 1학년도 1학기)부터 센다
  * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수
  * @param {Array<{year:number, semester:number}>} [p.recordedTerms] 이수 기록의 (학년도, DB 학기 코드). 계절학기(2·4)는 무시한다
  * @param {string} p.today              'YYYY-MM-DD'(KST)
  */
-function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemesters = 0, recordedTerms = [], today }) {
+function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGrade = null, leaveSemesters = 0, recordedTerms = [], today }) {
   if (!admissionYear) return null;
 
   const currentTerm = academicTermOf(today);
   const firstUpcomingIndex = termIndex(currentTerm) + 1;
-  const admissionIndex = termIndex({ year: admissionYear, semester: 1 });
-  const startGrade = enrollmentType === 'TRANSFER_ADMISSION' ? TRANSFER_START_GRADE : 1;
+  const isTransfer = enrollmentType === 'TRANSFER_ADMISSION';
+  const knownTransferGrade = isTransfer && transferGrade != null ? Number(transferGrade) : null;
+  // 편입 학년을 입력한 편입생: 이수 기록은 편입 학기부터 있으므로 그 학기를 기준(첫 학기)으로 세고 그 학년에서 시작한다.
+  // 옛 방식으로 입력한 편입생(학년 없음)은 입력한 해부터 3학년으로 시작한다고 가정한다(기존 동작).
+  const baseYear = knownTransferGrade != null ? admissionYear + knownTransferGrade - 1 : admissionYear;
+  const admissionIndex = termIndex({ year: baseYear, semester: 1 });
+  const startGrade = isTransfer ? (knownTransferGrade ?? TRANSFER_START_GRADE) : 1;
   const flags = [];
-  if (enrollmentType === 'TRANSFER_ADMISSION') flags.push('TRANSFER_GRADE_ASSUMED');
+  if (isTransfer && knownTransferGrade == null) flags.push('TRANSFER_GRADE_ASSUMED');
 
   const recordedIndexes = new Set();
   for (const r of recordedTerms) {
@@ -125,6 +131,7 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
   const progress = computeProgress({
     admissionYear: student.admission_year,
     enrollmentType: student.enrollment_type,
+    transferGrade: student.transfer_grade,
     leaveSemesters: student.leave_semesters,
     recordedTerms: rows.map((r) => ({ year: r.year, semester: r.semester })),
     today,
