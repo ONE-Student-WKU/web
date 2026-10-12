@@ -181,6 +181,15 @@ test('최신 책자 안내 플래그의 범위: 2026 책자에 있는 학과의 
   assert.ok(!noRows.includes('LATEST_BOOKLET_COHORT_TABLE'));
 });
 
+test('"학과 없음" 안내는 학번 범위가 열린 보조 행(교직기본이수·전과/편입 완화·졸업논문)만 있는 학과에도 붙는다', async () => {
+  // 세 학과 모두 2026 책자에 학과 행이 없지만 범위가 열린 보조 행이 있어, 예전에는 "2026에도 있음"으로 오판돼 안내가 빠졌다.
+  for (const [name, year] of [['경영학과', 2023], ['국어국문학과', 2020], ['컴퓨터·소프트웨어공학과', 2019]]) {
+    const codes = flagCodes(await judge(name, year));
+    assert.ok(codes.includes('LATEST_BOOKLET_COHORT_TABLE'), `${name} ${year}: ${codes.join(',')}`);
+    assert.ok(codes.includes('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'), `${name} ${year}: ${codes.join(',')}`);
+  }
+});
+
 // ---------------------------------------------------------------- 자율전공학부
 
 test('자율전공학부: 1학년 과정 행으로 졸업요건을 진단하지 않는다(자료없음 + 배정 학과 안내)', async () => {
@@ -237,6 +246,15 @@ test('졸업인증제 2과목 필수: 같은 요구 항목을 채우는 과목 �
   const cse = cert('졸업인증제', ['기업연계프로젝트1(종합설계1)', '기업연계프로젝트2(종합설계2)'], 2);
   assert.equal(satisfied(cse, [course('기업연계프로젝트1(종합설계1)'), course('기연프2')]), true, '끝 괄호를 뗀 이름·등록된 약칭도 인정(기존 동작)');
   assert.equal(satisfied(cse, [course('기업연계프로젝트1'), course('기연프1')]), false, '1만 두 번 들은 것은 2과목이 아니다');
+});
+
+test('컴소공 졸업인증제는 학번과 관계없이(2017~2025) 학과 규칙 — 기업연계프로젝트1·2 둘 다, 2026 책자 공통 표(셋 중 1)로 덮지 않는다', async () => {
+  for (const year of [2017, 2019, 2022, 2025]) {
+    const certs = diagnosisInputs(await judge('컴퓨터·소프트웨어공학과', year)).certificationRows.filter((r) => r.category === '졸업인증제');
+    assert.equal(certs.length, 1, `${year}: 졸업인증제 행이 하나여야 한다`);
+    assert.equal(certs[0].min_course_count, 2, `${year}`);
+    assert.deepEqual(certs[0].requiredCourses, ['기업연계프로젝트1(종합설계1)', '기업연계프로젝트2(종합설계2)'], `${year}`);
+  }
 });
 
 test('교직기본이수: optional로 표시하고, 과목명은 완전일치로만 본다(포함 비교로 다른 과목과 섞이지 않게)', () => {

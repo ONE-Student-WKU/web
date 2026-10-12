@@ -121,7 +121,8 @@ function buildYearContextNote(yearContext) {
     // 모델이 "2019학번이니 2019 책자"로 답하지 않게, 어느 책자의 표가 지금 기준인지 못박는다.
     if (latestBookYear && applicableCohort < latestBookYear) {
       lines.push(`"${applicableCohort}학번 기준"이란 ${applicableCohort}학년도 책자가 아니라 최신(${latestBookYear}학년도) 교육과정 책자에 실린 "${applicableCohort}학번 적용" 표(학번별 이수기준표·경과조치)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정한다. ` +
-        `${applicableCohort}학년도 책자의 숫자(예: 영역별 교양 기준)는 "입학 당시 기준(이력)"이며 지금 적용되는 값이 아니다. 둘이 다르면 최신 책자의 학번별 표를 따르고, 옛 값은 그렇게 표시해서만 언급하라. 판단 결과·졸업요건 청크의 숫자가 이미 그 표 값이다.`);
+        `${applicableCohort}학년도 책자의 숫자(예: 영역별 교양 기준)는 "입학 당시 기준(이력)"이며 지금 적용되는 값이 아니다. 둘이 다르면 최신 책자의 학번별 표를 따르고, 옛 값은 그렇게 표시해서만 언급하라. 판단 결과·졸업요건 청크의 숫자가 이미 그 표 값이다. ` +
+        `과목 편성(어떤 과목이 몇 학년 몇 학기에 있는지)도 마찬가지다 — 교육과정 근거 제목에 "${applicableCohort}학번에게도 지금 적용되는 이 학과의 가장 최근 편성"이라고 적힌 자료가 이 학생의 편성이니 다른 학번 자료라며 답을 피하지 마라. 이미 들은 과목의 이수구분은 수강신청 당시 기준이다.`);
     }
     if (messageCohorts.length > 0 && profileCohort && messageCohorts[0] !== profileCohort) {
       lines.push(`프로필 학번(${profileCohort}학번)과 질문의 학번(${messageCohorts[0]}학번)이 다르다. 질문의 학번을 기준으로 답하되, 아래 "실제 이수 현황" 수치는 프로필 학번 기준이라는 점을 구분하라.`);
