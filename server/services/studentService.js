@@ -13,6 +13,8 @@ const VALID_ENROLLMENT_TYPES = ['GENERAL', 'TRANSFER_ADMISSION', 'MAJOR_CHANGE']
 const VALID_LANGUAGES = ['ko', 'en'];
 const VALID_MAJOR_CHANGE_GRADES = [1, 2, 3, 4];
 const VALID_MAJOR_CHANGE_SEMESTERS = [1, 2];
+// 편입 학년: 1학년 편입은 학칙상 의학계열(1학년 원칙) 예외뿐이고 입력 화면은 2~4만 받는다(규정 엔진도 2~4 — context.js normalizeInput).
+const VALID_TRANSFER_GRADES = [2, 3, 4];
 
 async function findByEmail(email) {
   const [rows] = await pool.query('SELECT * FROM students WHERE email = ?', [email]);
@@ -55,6 +57,8 @@ function serializeStudent(student) {
     majorChangeGrade: student.major_change_grade,
     majorChangeYear: student.major_change_year,
     majorChangeSemester: student.major_change_semester,
+    // 편입생만 값이 있다(편입한 학년 2~4). 편입 연도는 admissionYear + transferGrade − 1. null이면 옛 방식으로 입력한 편입생이다.
+    transferGrade: student.transfer_grade,
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
@@ -196,14 +200,14 @@ async function findTrackById(id) {
   return rows[0] || null;
 }
 
-async function completeOnboarding(studentId, { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester }) {
+async function completeOnboarding(studentId, { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade }) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
-         major_change_year = ?, major_change_semester = ?, onboarding_completed_at = NOW()
+         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
-      majorChangeYear ?? null, majorChangeSemester ?? null, studentId]
+      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, studentId]
   );
 }
 
@@ -223,6 +227,7 @@ async function updateProfile(studentId, updates) {
     majorChangeGrade: 'major_change_grade',
     majorChangeYear: 'major_change_year',
     majorChangeSemester: 'major_change_semester',
+    transferGrade: 'transfer_grade',
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
@@ -274,6 +279,7 @@ module.exports = {
   VALID_ENROLLMENT_TYPES,
   VALID_MAJOR_CHANGE_GRADES,
   VALID_MAJOR_CHANGE_SEMESTERS,
+  VALID_TRANSFER_GRADES,
   VALID_LANGUAGES,
   serializeStudent,
   recordConsent,

@@ -78,6 +78,33 @@ test('편입생은 3학년에서 시작한다고 가정한다', () => {
   assert.equal(early.upcomingTerms[0].enrolledTermNumber, 2);
 });
 
+test('편입 학년을 입력한 편입생(2026년 3학년 편입 → 2024학번): 편입 학기부터 세고 3학년에서 시작한다, 가정 플래그 없음', () => {
+  // 2026-1에 3학년으로 편입 → 2026-1·2학기를 마치면 다음 학기 2027-1은 재학 3번째 학기이자 4학년 1학기.
+  const noRecords = computeProgress({ admissionYear: 2024, enrollmentType: 'TRANSFER_ADMISSION', transferGrade: 3, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  assert.equal(noRecords.enrolledTermsCompleted, 2);
+  const first = noRecords.upcomingTerms[0];
+  assert.deepEqual([first.year, first.semester, first.grade, first.enrolledTermNumber], [2027, 1, 4, 3]);
+  assert.ok(!noRecords.flags.includes('TRANSFER_GRADE_ASSUMED'));
+  assert.equal(noRecords.source, 'ESTIMATED');
+  // 이수 기록이 편입 학기(2026-1)부터 이어져 있으면 기록으로 센다(편입 전 학기는 본교 기록이 없어도 정상).
+  const withRecords = computeProgress({ admissionYear: 2024, enrollmentType: 'TRANSFER_ADMISSION', transferGrade: 3, leaveSemesters: 0, recordedTerms: [T(2026, 1), T(2026, 3)], today: TODAY });
+  assert.equal(withRecords.source, 'RECORDS');
+  assert.equal(withRecords.needsConfirmation, false);
+  assert.equal(withRecords.upcomingTerms[0].grade, 4);
+});
+
+test('편입 학년을 모르는 옛 편입생은 기존대로 입력한 해부터 3학년으로 시작한다고 가정한다(변화 없음)', () => {
+  const p = computeProgress({ admissionYear: 2026, enrollmentType: 'TRANSFER_ADMISSION', transferGrade: null, leaveSemesters: 0, recordedTerms: [], today: '2026-04-01' });
+  assert.equal(p.upcomingTerms[0].grade, 3);
+  assert.ok(p.flags.includes('TRANSFER_GRADE_ASSUMED'));
+});
+
+test('편입생이 아닌 학생의 transferGrade 값은 학년 계산에 쓰지 않는다', () => {
+  const p = computeProgress({ admissionYear: 2024, enrollmentType: 'GENERAL', transferGrade: 3, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  assert.equal(p.upcomingTerms[0].grade, 4);
+  assert.equal(p.upcomingTerms[0].enrolledTermNumber, 7);
+});
+
 test('방학 중(1~2월)이면 직전 학년도 2학기가 현재 학기고 다음은 새 학년도 1학기', () => {
   const p = computeProgress({ admissionYear: 2022, leaveSemesters: 0, recordedTerms: [], today: '2027-01-15' });
   assert.deepEqual(p.currentTerm, { year: 2026, semester: 2 });

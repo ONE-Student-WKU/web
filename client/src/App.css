@@ -928,6 +928,14 @@ body {
   color: var(--color-text-muted);
 }
 
+/* 어느 책자 기준인지(2025학번 이하는 최신 책자의 학번별 표) — 신뢰도 사유와 같은 톤의 작은 안내 */
+.grad-basis-note {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 .grad-flex-note {
   margin: 8px 0 0;
   font-size: 0.75rem;

@@ -43,6 +43,16 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     expect(screen.queryByText('(추정)')).not.toBeInTheDocument();
     expect(document.querySelector('.grad-trust-reason')).toBeNull();
     expect(screen.getByText(/\/ 140학점/)).toBeInTheDocument();
+    // 2026학번처럼 기준 책자 안내가 없는 응답에는 출처 줄도 없다
+    expect(document.querySelector('.grad-basis-note')).toBeNull();
+  });
+
+  it('2025학번 이하(basisBookletYear=2026): "2026학년도 책자의 학번별 이수기준표 기준" 한 줄을 확정 배지와 함께 보여 준다', async () => {
+    await renderWith(status({ regulation: { ...status().regulation, basisBookletYear: 2026 } }));
+    expect(screen.getByText('확정')).toHaveClass('grad-trust-badge', 'ok');
+    const note = document.querySelector('.grad-basis-note');
+    expect(note).not.toBeNull();
+    expect(note.textContent).toMatch(/2026학년도 교육과정 책자의 학번별 이수기준표 기준/);
   });
 
   it('추정 + 학칙 [별표 4] 불일치: 배지, 총량 "(추정)", 사유 한 줄에 두 값(130·140)', async () => {
@@ -80,6 +90,30 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     expect(document.body.textContent).not.toMatch(/NaN/);
     expect(screen.queryByText('전체 이수학점')).not.toBeInTheDocument();
     expect(screen.queryByText(/과목 관리로 이동/)).not.toBeInTheDocument();
+  });
+
+  it('교직기본이수(optional): 카드에 "교직과정 이수자만 해당" 안내를 붙이고 부족 요건 목록에는 넣지 않는다', async () => {
+    await renderWith(status({
+      categories: categories.map((c) => ({ ...c, earnedCredits: c.requiredCredits })),
+      totalEarnedCredits: 140,
+      certifications: [
+        { category: '졸업논문', description: '졸업논문 합격', requiredCourses: ['졸업(시험·작품)논문'], satisfied: true },
+        { category: '교직기본이수', description: '교직 기본이수 7과목', requiredCourses: ['국어교육론'], satisfied: false, optional: true },
+      ],
+    }));
+    expect(screen.getByText(/교직과정 이수자만 해당해요/)).toBeInTheDocument();
+    expect(document.querySelector('.grad-shortfall-list')).toBeNull();
+    expect(document.querySelector('.grad-shortfall-box.ok')).not.toBeNull();
+  });
+
+  it('편입생의 대학 공통 졸업인증제: "학사편입이면 면제" 안내를 붙이되 부족 요건에는 그대로 남긴다(편입 종류를 모름)', async () => {
+    await renderWith(status({
+      certifications: [
+        { category: '졸업인증제', description: '기본영역 1과목', requiredCourses: ['캡스톤디자인'], satisfied: false, conditionalExemption: 'BACHELOR_TRANSFER' },
+      ],
+    }));
+    expect(screen.getByText(/산업체편입이라면 이 졸업인증제는 면제예요/)).toBeInTheDocument();
+    expect(document.querySelector('.grad-shortfall-list').textContent).toContain('졸업인증제');
   });
 
   it('예전 응답(regulation 필드 없음)도 그대로 동작: 배지·사유 없음', async () => {

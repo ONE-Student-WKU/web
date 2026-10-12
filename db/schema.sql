@@ -20,6 +20,10 @@
 --   - students.major_change_year / major_change_semester (전과생만 해당 — 교양 이수기준은
 --     학년이 아니라 "전과 시점"(2022학년도 2학기 기준 이전/이후)으로 갈리므로
 --     major_change_grade만으로는 판별 불가. 웹정보서비스 실사례로 확인됨, 2026-08-12)
+--   - students.transfer_grade (편입생만 해당 — 편입한 학년 2~4. 교육과정 운영에 관한 규정 제14조③ "편입학생은 편입학한 학년의
+--     입학년도 교육과정을 적용받는다"에 따라 편입생의 admission_year에는 "편입 연도 − 편입 학년 + 1"(같은 학년이던 당초 입학자의
+--     학번)을 저장하고, 편입 연도는 admission_year + transfer_grade − 1로 되돌려 계산한다. NULL이면 옛 방식으로 입력한 편입생이라
+--     학번의 의미와 편입 학년을 모르는 상태 — 규정 판단 엔진이 3학년 편입으로 가정하고 "추정"으로 표시한다)
 --   - students.second_department_id (복수전공 대상 학과. 복수전공+부전공 동시 케이스는
 --     스코프 제외하고 컬럼 하나로 단순화하기로 함)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
@@ -100,6 +104,7 @@ CREATE TABLE IF NOT EXISTS students (
   major_change_year         INT,      -- 전과생만 해당(전과한 연도). 교양 이수기준이 전과 "시점"(2022학년도
                                        -- 2학기 기준 이전/이후)으로 갈리므로 학년만으론 판별 불가. 그 외 NULL
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
+  transfer_grade            TINYINT,  -- 편입생만 해당(편입한 학년 2~4). admission_year = 편입 연도 − transfer_grade + 1. 옛 방식 편입생·그 외 NULL
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어

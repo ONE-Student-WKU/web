@@ -3,6 +3,7 @@ const historyService = require('./curriculumHistoryService');
 const { DERIVED_RULE_CODES } = require('./curriculumKeys');
 const dq = require('./regulationEngine/dataQuality');
 const { loadLatestDataYear } = require('./regulationEngine/dbProvider');
+const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
 
 /**
  * server/services/curriculumContextService.js
@@ -167,12 +168,20 @@ function engineRequirementChunk(department, year, judgment) {
     lines.push(`※ 이 요건 값의 신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}${reasons.length ? ` — ${reasons.join(' / ')}` : ''}`);
   }
   if (rule.value.schedule4) lines.push(schedule4Line(rule.value.schedule4));
+  const basis = (rule.flags || []).find((f) => f.code === 'LATEST_BOOKLET_COHORT_TABLE');
+  if (basis) lines.push(latestBookletBasisLine(year, basis.latestBookletYear));
   const suffix = enrollmentType === 'GENERAL' ? '' : enrollmentType === 'MAJOR_CHANGE' ? ' (전과생 기준)' : ' (편입생 기준)';
   return {
     chunkId: `graduation-${department.id}-${year}`,
     documentTitle: `${department.name} ${year}학번 졸업요건${suffix}`,
     content: `[${year}학번 적용 요건 — ${ENROLLMENT_HEADER[enrollmentType] || ENROLLMENT_HEADER.GENERAL}]\n${lines.join('\n')}`,
   };
+}
+
+// 2025학번 이하의 요건 행은 그 해 책자가 아니라 최신 책자(2026)의 학번별 이수기준표 값이다(원광대는 개편 교육과정을 전 학번에 적용 —
+// 2026 책자 경과조치 가, 교육혁신과 면담 2026-10-12). 모델이 "2019학번이면 2019 책자"로 되돌아가 옛 숫자(예: 교양 40)를 섞지 않게 한 줄 적는다.
+function latestBookletBasisLine(year, latestBookletYear = LATEST_BOOKLET_YEAR) {
+  return `※ 위 값의 출처: ${latestBookletYear}학년도 교육과정 책자의 "${year}학번 적용" 학번별 이수기준표(경과조치). 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${year}학년도 책자의 숫자(영역별 교양 기준 등)는 입학 당시 기준(이력)이며 지금 적용되는 값이 아니다.`;
 }
 
 async function graduationRequirementChunk(department, year, judgment = null) {
@@ -198,6 +207,7 @@ async function graduationRequirementChunk(department, year, judgment = null) {
 
   const resolvedName = await deptName(resolved.departmentId);
   const lines = formatRequirementLines(resolved.rows);
+  if (year < LATEST_BOOKLET_YEAR) lines.push(latestBookletBasisLine(year));
   let lineageNote = '';
   if (resolved.departmentId !== department.id) {
     const src = resolved.viaLineage && resolved.viaLineage.source ? SOURCE_LABEL[resolved.viaLineage.source] : '학과 개편 관계';

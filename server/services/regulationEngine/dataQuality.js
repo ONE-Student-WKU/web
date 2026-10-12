@@ -41,18 +41,18 @@ const UNVERIFIED_REQUIREMENT_PARTS = Object.freeze({
  * match: departmentNames(정확히 일치) 또는 departmentSuffix(이름 끝 일치). area: 영향 영역.
  * 학과명이 특정되지 않은 항목(N-3 도구 기준 학수번호 등)은 과목 단위라 졸업요건 신뢰도에 넣지 않고 note로만 남긴다.
  */
+// 2026-10-12 해소(목록에서 뺌): #260-math-edu(수학교육과 2018·2019 일반선택 42 vs 44), #260-fashion(패션디자인산업학과 2020·2021 자유선택 35 vs 32),
+// #260-edu-2024(사범대 2024 자유선택 32 vs 34, N-6), #260-cse-liberal(컴소공 2017~2021 교양 분할). 네 건 모두 "그 해 책자 vs 시드"의 다툼이었는데,
+// 2025학번 이하의 교양·일반선택은 그 해 책자가 아니라 2026 책자의 학번별 이수기준표가 정한다(교육혁신과 면담, LATEST_BOOKLET_YEAR 주석).
+// 시드를 그 표로 정렬했으므로(scripts/audit/applyLatestBookletCohortTables.js) 옛 책자의 산술 불일치는 더 이상 이 값의 근거가 아니다.
 const PENDING_HOLDS = Object.freeze([
-  { id: '#260-math-edu', years: [2018, 2019], departmentNames: ['수학교육과'], area: 'REQUIREMENTS', note: '수학교육과 일반선택 책자 42 vs 시드 44(책자 산술 불일치)' },
-  { id: '#260-fashion', years: [2020, 2021], departmentNames: ['패션디자인산업학과'], area: 'REQUIREMENTS', note: '패션디자인산업학과 자유선택 책자 35 vs 시드 32(책자 산술 불일치)' },
-  { id: '#260-sw-2021', years: [2021], departmentNames: ['SW융합학과'], area: 'REQUIREMENTS', note: 'SW융합학과 교양·전공·자유 학점 구조(SW연계 학점 포함) 보류' },
-  { id: '#260-edu-2024', years: [2024], departmentSuffix: '교육과', area: 'REQUIREMENTS', note: '사범대 10개 학과 자유선택 책자 32 vs 시드 34, 변경 이력 가짜 변경(N-6)' },
+  { id: '#260-sw-2021', years: [2021], departmentNames: ['SW융합학과'], area: 'REQUIREMENTS', note: 'SW융합학과 교양·전공·자유 학점 구조(SW연계 학점 포함) 보류 — 2026 책자 학번별 전공표가 이 학과를 지목하지 않음' },
   { id: '#260-special-edu', years: [2025, 2026], departmentNames: ['중등특수교육과'], area: 'REQUIREMENTS', note: '중등특수교육과 전공·자유선택 보류' },
   {
     id: '#260-2026-free', years: [2026], area: 'REQUIREMENTS',
     departmentNames: ['의생명공학계열', '그린바이오계열', '스마트농업계열', '푸드테크계열', '디자인융합계열', '창의문화융합계열', '국방기술학과', '한의학과'],
     note: '2026 자유선택·교양 책자 vs 도구 값 불일치(#260 [2026] 1)',
   },
-  { id: '#260-cse-liberal', years: [2017, 2018, 2019, 2020, 2021], departmentNames: ['컴퓨터·소프트웨어공학과'], area: 'REQUIREMENTS', note: '컴소공 교양·일반선택 분할 책자 vs 시드 불일치(R-13)' },
   { id: 'N-1', years: [2022], departmentNames: ['탄소융합공학과'], area: 'MAJOR_COURSES', note: '탄소융합공학과 2022 과목 누락·이름 차이(도구 기준 확인 필요)' },
   { id: 'N-5', years: [2020, 2021, 2022, 2023], departmentNames: ['SW융합학과', '인공지능융합학과', '중등특수교육과'], area: 'ENROLLMENT_OVERRIDE', note: '전과·편입 최소전공 행 없음' },
   { id: 'N-4', years: [2026], departmentNames: ['약학과'], area: 'MAJOR_COURSES', note: '약학과 2026 과목 도구 기준 확인 필요' },

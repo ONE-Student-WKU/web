@@ -27,7 +27,8 @@ test('내 학번 질문: "나는 2021학번인데 졸업요건이 뭐야?" → 2
   assert.equal(c.mode, 'COHORT');
   assert.deepEqual(c.targetYears, [2021]);
   assert.equal(c.applicableCohort, 2021);
-  assert.deepEqual(c.bookYears, [2024], '2021 책자가 없으면 그 뒤 가장 가까운 책자');
+  // 최신 책자가 앞: 학번별 "지금 기준"은 최신 책자의 학번별 이수기준표에 있다(교육혁신과 면담 2026-10-12). 입학 당시 책자(없으면 그 뒤 가장 가까운 책자)는 이력으로 뒤에.
+  assert.deepEqual(c.bookYears, [2026, 2024], '최신 책자 + 2021 책자가 없으면 그 뒤 가장 가까운 책자');
 });
 
 test('프로필 학번: 질문에 연도가 없으면 프로필 학번을 쓴다', () => {
