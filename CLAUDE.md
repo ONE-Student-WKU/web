@@ -18,6 +18,7 @@
 - 시드를 손으로 고치지 말고 표 JSON을 고친 뒤 `node scripts/audit/applyLatestBookletCohortTables.js --apply`를 돌린다. `server/test/graduation.audit.test.js`가 시드와 표가 어긋나면 실패한다.
 - 새 학년도 책자가 들어오면: 그 책자의 학번별 표를 JSON·`db/regulations/교육과정/YYYY_학번별_이수기준표.md`로 옮기고, `server/services/regulationEngine/constants.js`의 `LATEST_BOOKLET_YEAR`를 올리고, 스크립트를 다시 돌린다.
 - 예외: 통폐합·학부 분리로 재학생이 남은 학과는 과목 편성을 구 교육과정으로 운영할 수 있다(경과조치 가 단서). 학점 기준(학번별 표)은 그래도 적용된다. 엔진은 2026 책자에 학과 행이 없는 학과에 `DEPARTMENT_ABSENT_IN_LATEST_BOOKLET`(INFO)을 붙인다.
+- 과목 목록도 같다: 앞으로 들을 과목(진로 로드맵, 챗봇의 "내 학번 기준" 과목 질문)은 입학한 해가 아니라 학과·세부전공의 **가장 최근 편성**(`curriculumService.resolveCourseListYear`)에서 고른다. 통폐합 학과는 그 학과의 마지막 편성이다. 특정 학년도·이력 질문과 이수구분 판정(수강신청 당시 기준)은 학번별 편성을 그대로 쓴다(DECISIONS D-56).
 
 ## 화면 언어(i18n)
 

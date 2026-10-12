@@ -181,6 +181,15 @@ test('최신 책자 안내 플래그의 범위: 2026 책자에 있는 학과의 
   assert.ok(!noRows.includes('LATEST_BOOKLET_COHORT_TABLE'));
 });
 
+test('"학과 없음" 안내는 학번 범위가 열린 보조 행(교직기본이수·전과/편입 완화·졸업논문)만 있는 학과에도 붙는다', async () => {
+  // 세 학과 모두 2026 책자에 학과 행이 없지만 범위가 열린 보조 행이 있어, 예전에는 "2026에도 있음"으로 오판돼 안내가 빠졌다.
+  for (const [name, year] of [['경영학과', 2023], ['국어국문학과', 2020], ['컴퓨터·소프트웨어공학과', 2019]]) {
+    const codes = flagCodes(await judge(name, year));
+    assert.ok(codes.includes('LATEST_BOOKLET_COHORT_TABLE'), `${name} ${year}: ${codes.join(',')}`);
+    assert.ok(codes.includes('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'), `${name} ${year}: ${codes.join(',')}`);
+  }
+});
+
 // ---------------------------------------------------------------- 자율전공학부
 
 test('자율전공학부: 1학년 과정 행으로 졸업요건을 진단하지 않는다(자료없음 + 배정 학과 안내)', async () => {

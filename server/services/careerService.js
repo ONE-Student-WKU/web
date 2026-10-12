@@ -2,6 +2,7 @@ const pool = require('../db');
 const aiClient = require('./aiClient');
 const curriculumService = require('./curriculumService');
 const { hasRecentCrisis } = require('./crisis');
+const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
 
 /**
  * server/services/careerService.js
@@ -213,18 +214,20 @@ async function generateCandidates(studentId, sessionId, student, language = 'ko'
 // 학과·트랙·학번 기준 전체 교육과정에서 이미 이수한 과목명을 뺀, "아직 안 들은 과목" 닫힌
 // 목록을 만든다. AI 로드맵은 이 목록 안에서만 고르게 하고, 목록 밖 응답은 그라운딩
 // 안전망(아래 courseName 매칭)에서 걸러낸다.
+// 앞으로 들을 과목이므로 입학한 해의 편성이 아니라 지금 적용되는 편성(그 학과의 가장 최근 편성)에서 고른다 — 원광대는 개편된
+// 교육과정을 그 전 학번에도 적용해서, 입학 당시 편성에는 이미 폐설된 과목이 남아 있다(curriculumService.resolveCourseListYear).
 async function getRemainingCourses(studentId, student) {
-  const allCourses = await curriculumService.findCourses({
-    departmentId: student.department_id,
-    trackId: student.track_id || undefined,
-    admissionYear: student.admission_year,
-  });
+  const departmentId = student.department_id;
+  const trackId = student.track_id || undefined;
+  const admissionYear = await curriculumService.resolveCourseListYear({ departmentId, trackId, admissionYear: student.admission_year });
+  const allCourses = await curriculumService.findCourses({ departmentId, trackId, admissionYear });
 
   const [completedRows] = await pool.query('SELECT DISTINCT name FROM student_courses WHERE student_id = ?', [studentId]);
-  const completedNames = new Set(completedRows.map((r) => r.name));
+  // 편성표와 학생이 등록한 이름이 띄어쓰기·구두점만 다른 경우가 있어(최신 편성에서 표기가 바뀐 과목 등) 정규화해 비교한다.
+  const completedNameSet = buildCompletedNameSet(completedRows.map((r) => r.name));
 
   return allCourses
-    .filter((c) => !completedNames.has(c.courseName))
+    .filter((c) => !isCompleted(c.courseName, completedNameSet))
     .map((c) => ({ grade: c.grade, semester: c.semester, courseName: c.courseName, category: c.category, credits: c.credits }));
 }
 
@@ -293,4 +296,5 @@ module.exports = {
   generateCandidates,
   confirmCareer,
   groundRoadmapItems,
+  getRemainingCourses,
 };

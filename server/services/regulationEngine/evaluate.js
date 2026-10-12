@@ -256,7 +256,8 @@ function evaluate(ctx, data) {
       reqBasis.push('BOOKLET_2026_TRANSITION_ALL_COHORTS', 'BOOKLET_2026_COHORT_TABLES');
       reqFlags.push(makeFlag('LATEST_BOOKLET_COHORT_TABLE', { latestBookletYear: LATEST_BOOKLET_YEAR }));
       // 최신 책자에 학과 단위 행이 없는 학과(통폐합·개편으로 사라진 이름)는 과목 편성이 구 교육과정으로 남을 수 있다(경과조치 가 단서).
-      if (!(data.rows || []).some((r) => rowAppliesToYear(r, LATEST_BOOKLET_YEAR))) reqFlags.push(makeFlag('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET', { latestBookletYear: LATEST_BOOKLET_YEAR }));
+      // 학번 범위가 열린 보조 행(교직기본이수·전과/편입 완화·졸업논문)만으로 "최신 책자에 있음"으로 보지 않게 핵심 요건 행으로 판정한다.
+      if (!hasCoreRowsForYear(data.rows || [], LATEST_BOOKLET_YEAR)) reqFlags.push(makeFlag('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET', { latestBookletYear: LATEST_BOOKLET_YEAR }));
     }
   }
   reqFlags.push(...textFlagsFor(reqBasis));
