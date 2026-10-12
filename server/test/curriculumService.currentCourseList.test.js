@@ -89,6 +89,33 @@ test('챗봇: 특정 학년도 질문은 그 해 편성을 그대로 준다(적�
   }
 });
 
+test('진로 로드맵: 이수한 옛 과목의 후속 과목(course_lineage)도 이수한 것으로 본다 — 표기 차이·연쇄 변경 포함', () => {
+  const lineage = [
+    { from_name: 'C언어및실습', to_name: 'C언어프로그래밍' },
+    { from_name: 'A과목', to_name: 'B과목' },
+    { from_name: 'B과목', to_name: 'C과목' },
+  ];
+  const names = careerService.withSuccessorNames(['C언어 및 실습', 'A과목', '자료구조'], lineage);
+  assert.ok(names.includes('C언어프로그래밍'), '띄어쓰기가 다른 옛 이름으로 등록해도 후속 과목을 이수로 본다');
+  assert.ok(names.includes('C과목'), '여러 번 바뀐 과목은 끝까지 따라간다');
+  assert.ok(!names.includes('고급프로그래밍언어'), '계보에 없는 과목은 더하지 않는다');
+});
+
+test('수동 과목 계보(db/seed/course_lineage.json)의 옛·새 과목은 실제 편성 자료에 그 학수번호·이름으로 있다', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '..', '..', 'db');
+  const lineage = JSON.parse(fs.readFileSync(path.join(root, 'seed', 'course_lineage.json'), 'utf8'));
+  const cse2022 = JSON.parse(fs.readFileSync(path.join(root, 'curriculum', '_source', '2022_학과별_전공과목_원본.json'), 'utf8'))['컴퓨터·소프트웨어공학과'];
+  const currentMd = fs.readFileSync(path.join(root, 'curriculum', '컴퓨터소프트웨어공학과_교육과정.md'), 'utf8');
+  for (const row of lineage.filter((r) => r.department === '컴퓨터·소프트웨어공학과')) {
+    const fromCode = row.fromCourseKey.replace(/^C:/, '');
+    const toCode = row.toCourseKey.replace(/^C:/, '');
+    assert.ok(cse2022.some((c) => c.courseCode === fromCode && c.courseName === row.fromName), `2022 책자에 ${fromCode} ${row.fromName} 없음`);
+    assert.match(currentMd, new RegExp(`\\| ${toCode} \\| ${row.toName} \\|`), `현재 편성(md)에 ${toCode} ${row.toName} 없음`);
+  }
+});
+
 test('진로 로드맵: 2019학번의 "아직 안 들은 과목"은 2026 편성에서 고르고, 표기만 다른 이수 과목은 빠진다', async () => {
   const [result] = await pool.query(
     `INSERT INTO students (email, name, department_id, admission_year, enrollment_type, onboarding_completed_at)

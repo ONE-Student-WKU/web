@@ -248,6 +248,15 @@ test('졸업인증제 2과목 필수: 같은 요구 항목을 채우는 과목 �
   assert.equal(satisfied(cse, [course('기업연계프로젝트1'), course('기연프1')]), false, '1만 두 번 들은 것은 2과목이 아니다');
 });
 
+test('컴소공 졸업인증제는 학번과 관계없이(2017~2025) 학과 규칙 — 기업연계프로젝트1·2 둘 다, 2026 책자 공통 표(셋 중 1)로 덮지 않는다', async () => {
+  for (const year of [2017, 2019, 2022, 2025]) {
+    const certs = diagnosisInputs(await judge('컴퓨터·소프트웨어공학과', year)).certificationRows.filter((r) => r.category === '졸업인증제');
+    assert.equal(certs.length, 1, `${year}: 졸업인증제 행이 하나여야 한다`);
+    assert.equal(certs[0].min_course_count, 2, `${year}`);
+    assert.deepEqual(certs[0].requiredCourses, ['기업연계프로젝트1(종합설계1)', '기업연계프로젝트2(종합설계2)'], `${year}`);
+  }
+});
+
 test('교직기본이수: optional로 표시하고, 과목명은 완전일치로만 본다(포함 비교로 다른 과목과 섞이지 않게)', () => {
   const teaching = cert('교직기본이수', ['국어교육론', '국어사'], 2);
   const [result] = evaluateCertifications([teaching], [course('국어교육론'), course('국어사회언어학')]);

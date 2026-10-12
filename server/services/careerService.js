@@ -223,12 +223,34 @@ async function getRemainingCourses(studentId, student) {
   const allCourses = await curriculumService.findCourses({ departmentId, trackId, admissionYear });
 
   const [completedRows] = await pool.query('SELECT DISTINCT name FROM student_courses WHERE student_id = ?', [studentId]);
+  const [lineageRows] = await pool.query(
+    'SELECT from_name, to_name FROM course_lineage WHERE from_name IS NOT NULL AND to_name IS NOT NULL AND (department_id = ? OR department_id IS NULL)',
+    [departmentId]
+  );
   // 편성표와 학생이 등록한 이름이 띄어쓰기·구두점만 다른 경우가 있어(최신 편성에서 표기가 바뀐 과목 등) 정규화해 비교한다.
-  const completedNameSet = buildCompletedNameSet(completedRows.map((r) => r.name));
+  const completedNameSet = buildCompletedNameSet(withSuccessorNames(completedRows.map((r) => r.name), lineageRows));
 
   return allCourses
     .filter((c) => !isCompleted(c.courseName, completedNameSet))
     .map((c) => ({ grade: c.grade, semester: c.semester, courseName: c.courseName, category: c.category, credits: c.credits }));
+}
+
+// 최신 편성에는 학수번호까지 바뀐 과목이 있다(예: 컴소공 C언어및실습 → C언어프로그래밍). 이름 비교만으로는 옛 과목을 들은 학생에게
+// 새 과목을 다시 추천하므로, course_lineage(옛 이름 → 새 이름)를 따라 이수한 과목의 후속 이름도 이수한 것으로 본다. 여러 번 바뀐 경우도 끝까지 따라간다.
+function withSuccessorNames(names, lineageRows) {
+  const result = new Set(names);
+  let added = true;
+  while (added) {
+    added = false;
+    const done = buildCompletedNameSet([...result]);
+    for (const { from_name: from, to_name: to } of lineageRows) {
+      if (!result.has(to) && isCompleted(from, done)) {
+        result.add(to);
+        added = true;
+      }
+    }
+  }
+  return [...result];
 }
 
 // AI 로드맵 응답을 교육과정 원본 값으로 접지(grounding)한다 — 목록에 실제로 있는 과목만 남기고, 학년/학기는 AI 응답이
@@ -297,4 +319,5 @@ module.exports = {
   confirmCareer,
   groundRoadmapItems,
   getRemainingCourses,
+  withSuccessorNames,
 };

@@ -14,6 +14,7 @@
  *  - 전공(통합 행, 의약계열): 시드 관례대로 졸업학점 − 교양 (교양이 바뀌면 같이 다시 계산).
  *  - 일반선택: 졸업학점 − 교양 − 전공 (졸업학점은 책자 15쪽 표로 검증만 하고 바꾸지 않는다).
  *  - 졸업인증제 2017~2019학번: 최신 책자의 "2020학번 이전 입학생" 표(가·나 그룹)로 교체. 2020~은 이미 같은 표.
+ *    단, 학과가 따로 더 강하게 정한 졸업인증제(DEPARTMENT_CERTIFICATION_RULES, 예: 컴소공 기업연계프로젝트1·2)는 그대로 둔다.
  * 바꾸지 않는 것: 졸업학점 총계, 전과·편입 완화 행, 졸업논문·교직기본이수 행, 2016학번 이하.
  *
  * 사용법: node scripts/audit/applyLatestBookletCohortTables.js [--apply] [--out report.json]
@@ -33,6 +34,12 @@ const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
 const outIdx = args.indexOf('--out');
 const OUT = outIdx >= 0 ? args[outIdx + 1] : null;
+
+// 학과가 대학 공통 졸업인증제보다 강하게 정한 경우(학과 → 근거). 이 학과의 2017~2019학번 졸업인증제 행은 책자 공통 표로 바꾸지 않는다.
+// 컴소공: 기업연계프로젝트1·2 둘 다 필수 — 학과 공지(computer.wku.ac.kr ?p=2709, ?p=3366)와 과사무실 안내(복수전공 등 예외 외 학번 무관).
+const DEPARTMENT_CERTIFICATION_RULES = {
+  '컴퓨터·소프트웨어공학과': '기업연계프로젝트1·2 둘 다 필수, 학과 공지·과사무실 안내',
+};
 
 const norm = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, '');
 const inCohort = (range, y) => !range || ((range[0] == null || y >= range[0]) && (range[1] == null || y <= range[1]));
@@ -256,7 +263,10 @@ function main({ apply = APPLY, out = OUT, quiet = false } = {}) {
       }
 
       // --- 졸업인증제 2017~2019: 최신 책자의 "2020학번 이전 입학생" 표
-      if (year <= 2019) {
+      // 학과가 따로 더 강하게 정한 졸업인증제는 책자의 대학 공통 표로 덮지 않는다(DEPARTMENT_CERTIFICATION_RULES).
+      if (year <= 2019 && DEPARTMENT_CERTIFICATION_RULES[dept]) {
+        report.special.push({ dept, year, what: `졸업인증제 학과 규칙 유지(${DEPARTMENT_CERTIFICATION_RULES[dept]})` });
+      } else if (year <= 2019) {
         const grp = certificationGroup(tables, dept, college);
         const spec = tables.certification.groups[grp];
         const iCert = rows.findIndex((r) => r.departmentName === dept && r.category === '졸업인증제' && applies(r, year));
