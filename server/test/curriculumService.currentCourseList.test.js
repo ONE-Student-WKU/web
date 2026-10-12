@@ -44,7 +44,7 @@ test('2026 책자에 있는 학과는 2025학번 이하도 2026 편성을 쓰고
 
 test('통폐합·개편으로 2026 편성이 없는 학과는 그 학과의 마지막 편성을 쓴다', async () => {
   assert.equal(await curriculumService.resolveCourseListYear({ departmentId: deptIds.전기공학과, admissionYear: 2019 }), 2025);
-  // 컴소공 편성: ~2019 / 2020 / 2021~2025 — 2017학번도 마지막(2021~2025) 편성
+  // 컴소공 편성: ~2018·2023~2025(2026 조회시스템 기준 구학과 md) / 2019~2022(각 학년도 책자) — 2017학번도 마지막(2023~2025) 편성
   assert.equal(await curriculumService.resolveCourseListYear({ departmentId: deptIds['컴퓨터·소프트웨어공학과'], admissionYear: 2017 }), 2025);
   assert.equal(await curriculumService.resolveCourseListYear({ departmentId: deptIds['컴퓨터·소프트웨어공학과'], admissionYear: 2025 }), 2025);
 });
