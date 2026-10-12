@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>졸업요건 안내 서비스 — 교육과정·졸업요건 문의</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 17mm 20mm 17mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font: 9pt "Noto Sans KR", "Malgun Gothic", sans-serif; color: #888; }
+  }
+  @page :first { @bottom-center { content: none; } }
+
+  :root {
+    --ink: #1f2933;
+    --muted: #5f6b7a;
+    --line: #d9dee5;
+    --soft: #f4f6f9;
+    --accent: #1f4e8c;
+    --accent-soft: #e8eff8;
+    --warn-soft: #fff6e5;
+    --warn-line: #f0c36d;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
+    color: var(--ink);
+    font-size: 10.5pt;
+    line-height: 1.72;
+    margin: 0;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  /* ---------- 표지 ---------- */
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover-top { margin-top: 38mm; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 0.08em; font-size: 10.5pt; }
+  .cover h1 { font-size: 25pt; line-height: 1.35; margin: 10px 0 14px; font-weight: 800; }
+  .cover .sub { font-size: 12pt; color: var(--muted); margin: 0; }
+  .cover .to { margin-top: 26mm; border-top: 2px solid var(--accent); padding-top: 14px; }
+  .cover .to table { border: none; width: auto; }
+  .cover .to td { border: none; padding: 3px 18px 3px 0; font-size: 11pt; vertical-align: top; }
+  .cover .to td:first-child { color: var(--muted); width: 26mm; }
+  .cover-bottom { font-size: 9.5pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+
+  /* ---------- 공통 ---------- */
+  h2.part {
+    page-break-before: always;
+    font-size: 17pt; margin: 0 0 4px; color: var(--accent);
+    border-bottom: 3px solid var(--accent); padding-bottom: 8px;
+  }
+  .part-desc { color: var(--muted); margin: 6px 0 18px; }
+  h2.plain { font-size: 15pt; margin: 0 0 10px; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
+  h3 { font-size: 12.5pt; margin: 0 0 8px; }
+  p { margin: 0 0 8px; }
+  ul, ol { margin: 4px 0 10px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  b, strong { font-weight: 700; }
+  .muted { color: var(--muted); }
+  .small { font-size: 9.2pt; }
+
+  /* ---------- 문의 카드 ---------- */
+  .q { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px 12px; margin: 0 0 16px; break-inside: avoid; }
+  .q.long { break-inside: auto; }
+  .q-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .q-no { background: var(--accent); color: #fff; font-weight: 700; font-size: 9.5pt; border-radius: 4px; padding: 1px 8px; white-space: nowrap; }
+  .q-title { font-size: 12.5pt; font-weight: 700; }
+  .badge-key { background: #c2410c; color: #fff; font-size: 8.5pt; border-radius: 4px; padding: 1px 6px; margin-left: 6px; font-weight: 700; }
+  .label { display: inline-block; font-size: 9pt; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 0 6px; margin: 6px 0 4px; }
+  blockquote { margin: 6px 0 10px; padding: 8px 12px; background: var(--soft); border-left: 3px solid #9aa7b8; font-size: 10pt; }
+  .ask { background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: 6px; padding: 8px 12px; margin: 8px 0 6px; }
+  .ask ol { margin: 2px 0 2px; }
+  .answer { border: 1px dashed #9aa7b8; border-radius: 6px; min-height: 22mm; padding: 6px 10px; margin-top: 8px; color: #9aa7b8; font-size: 9pt; }
+
+  /* ---------- 표 ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.6pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: var(--soft); font-weight: 700; }
+  td.check { width: 22mm; }
+  td.center, th.center { text-align: center; }
+  td.num { white-space: nowrap; }
+
+  /* ---------- 안내 박스 ---------- */
+  .box { background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; margin: 0 0 14px; }
+  .box h3 { color: var(--accent); }
+  .toc { list-style: none; padding-left: 4px; }
+  .toc li { margin: 3px 0; }
+  .toc .grp { font-weight: 700; margin-top: 10px; color: var(--accent); }
+  .toc li:not(.grp) { padding-left: 14px; }
+
+  .principle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 14px; }
+  .principle > div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .principle .t { font-weight: 700; margin-bottom: 4px; }
+  .principle .other { background: var(--soft); }
+  .principle .wku { background: var(--accent-soft); border-color: #b7c9e2; }
+
+  .deptlist { columns: 3; column-gap: 16px; font-size: 9.6pt; padding-left: 30px; }
+  .deptlist li { break-inside: avoid; }
+  .sign { margin-top: 18px; }
+  .sign td { border: 1px solid var(--line); height: 11mm; }
+</style>
+</head>
+<body>
+
+<!-- ======================= 표지 ======================= -->
+<section class="cover">
+  <div class="cover-top">
+    <div class="kicker">교육과정 · 졸업요건 문의</div>
+    <h1>원광대학교 졸업요건 안내 서비스<br>교육과정 기준 확인 요청</h1>
+    <p class="sub">최신 교육과정 책자의 학번별 이수기준표를 기준으로 졸업요건을 안내하기 위한 확인 사항</p>
+    <div class="to">
+      <table>
+        <tr><td>받는 곳</td><td>교육혁신과(교육과정) · 학사지원과(졸업사정)</td></tr>
+        <tr><td>보내는 사람</td><td>원광대학교 재학생 개발팀 &nbsp;(이름 · 연락처: ______________________)</td></tr>
+        <tr><td>작성일</td><td>2026년 10월 12일</td></tr>
+        <tr><td>문의 수</td><td>교육과정 7건 · 졸업사정 6건 · 자료·운영 4건</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="cover-bottom">
+    이 서비스는 학생이 만든 비공식 안내 서비스이며 학교의 공식 졸업사정을 대신하지 않습니다.
+    서비스 안에서도 "확정은 학과·학사지원과 확인"을 계속 안내하고 있습니다.
+  </div>
+</section>
+
+<!-- ======================= 안내 ======================= -->
+<h2 class="plain">이 문서에 대하여</h2>
+
+<div class="box">
+  <h3>문의드리는 이유</h3>
+  <p>저희는 원광대 학생이 자기 학과와 학번에 맞는 졸업요건, 그리고 지금까지 들은 과목으로 무엇이 부족한지를 확인할 수 있는 안내 서비스를 만들고 있습니다.</p>
+  <p style="margin:0">교육혁신과 담당 선생님께서 원광대의 교육과정 운영 방식을 설명해 주셨고, 저희는 그 설명에 맞춰 서비스의 기준을 바꿨습니다. 바꾼 기준이 맞는지, 그리고 책자와 규정만으로는 알 수 없는 부분을 여쭙고자 합니다.</p>
+</div>
+
+<h3>저희가 이해한 원광대 교육과정 운영 방식</h3>
+<div class="principle">
+  <div class="other">
+    <div class="t">일반적인 대학</div>
+    2022학번은 2022학년도 책자를 졸업할 때까지 그대로 따릅니다. 이후 책자가 바뀌어도 상관없습니다.
+  </div>
+  <div class="wku">
+    <div class="t">원광대학교 (저희가 이해한 내용)</div>
+    교육과정이 개편되면 <b>이전 학번에게도 최신 교육과정이 적용</b>됩니다. 학번마다 다른 부분은 <b>최신 책자 안의 학번별 표</b>(경과조치)로 정합니다.
+  </div>
+</div>
+<p>근거로 삼은 2026학년도 교육과정 책자의 문장은 다음과 같습니다.</p>
+<blockquote>
+  "개정된 교양 및 전공의 신 교육과정은 2026학년도부터 전 학년에 적용·시행한다. 다만 교육과정 이수는 입학년도 교육과정 이수 기준에 따른다." <span class="muted">— 15쪽, 교육과정 변경 경과조치 가</span><br>
+  "2026학년도 교육과정 개편에 따라 영역별 미이수자는 영역 구분없이 위 표에 따라 이수한다." <span class="muted">— 35쪽, 학번별 교양 이수기준 표 각주</span>
+</blockquote>
+
+<h3>답변 방법</h3>
+<ul>
+  <li><b>표 안의 질문</b>은 "맞나요?" 칸에 <b>○</b>, 아니면 올바른 내용을 적어 주시면 됩니다.</li>
+  <li><b>나머지 질문</b>은 각 문의 아래 답변란에 편하신 방식으로 적어 주시면 됩니다. 문의 번호만 알려 주셔도 됩니다.</li>
+  <li>한 번에 어려우시면 <b>문의 A-1만이라도</b> 먼저 답해 주시면 큰 도움이 됩니다. 나머지 문의 대부분이 A-1의 답에 따라 정리됩니다.</li>
+  <li>쪽수는 모두 <b>2026학년도 교육과정 책자의 인쇄 쪽수</b>입니다(다른 학년도는 따로 적었습니다).</li>
+</ul>
+
+<h3>용어</h3>
+<table>
+  <tr><th style="width:32mm">용어</th><th>뜻</th></tr>
+  <tr><td>책자</td><td>학년도별 교육과정 PDF 책자. "2026 책자"는 2026학년도 책자입니다.</td></tr>
+  <tr><td>학번별 표</td><td>2026 책자 15~36쪽의 "○○학번 입학생" 표(졸업이수학점, 교양, 전공, 졸업인증제)</td></tr>
+  <tr><td>조회시스템</td><td>학교 홈페이지의 "교육과정 조회" 화면</td></tr>
+  <tr><td>자유선택(일반선택)</td><td>졸업학점에서 교양과 전공을 뺀 나머지. 어떤 과목으로도 채울 수 있는 학점</td></tr>
+</table>
+
+<h3>목차</h3>
+<ul class="toc">
+  <li class="grp">A. 교육과정 설정에 관한 문의 — 교육혁신과</li>
+  <li>A-1. 저희가 이해한 기준이 맞나요? <b>(가장 중요)</b></li>
+  <li>A-2. 학번별 전공 표에 이름이 없는 학과</li>
+  <li>A-3. 2026 책자에 학과 단위로 실려 있지 않은 학과의 과목 편성</li>
+  <li>A-4. 2026학번 졸업인증제 그룹</li>
+  <li>A-5. 책자에 숫자가 없거나 규정과 다른 칸</li>
+  <li>A-6. 책자와 학교 홈페이지가 서로 다른 내용</li>
+  <li>A-7. 학기 중에 바뀌는 내용을 확인하는 방법</li>
+  <li class="grp">B. 졸업사정에 관한 문의 — 학사지원과</li>
+  <li>B-1. 복학생·재입학생에게 적용되는 교육과정</li>
+  <li>B-2. 편입생의 교양 52학점 상한</li>
+  <li>B-3. "저학년에 개설된 과목"의 기준 학년</li>
+  <li>B-4. 편입생의 졸업인증제 면제 구분</li>
+  <li>B-5. 자기계발심층상담 확인 방법</li>
+  <li>B-6. 교직기본이수의 대상</li>
+  <li class="grp">C. 자료와 운영에 관한 부탁</li>
+  <li>C-1. 2026 책자와 조회시스템이 다를 때</li>
+  <li>C-2. 2027학번 자료 공개 시기</li>
+  <li>C-3. 글자로 된 원본 자료</li>
+  <li>C-4. 규정관리시스템 개정일 조회</li>
+  <li class="grp">부록</li>
+  <li>부록 1. 저희가 이미 확인한 내용 (답변 불필요)</li>
+  <li>부록 2. 2026 책자에 학과 단위로 실려 있지 않은 학과 목록</li>
+</ul>
+
+<!-- ======================= A ======================= -->
+<h2 class="part">A. 교육과정 설정에 관한 문의</h2>
+<p class="part-desc">받는 곳: 교육혁신과 · 교육과정과 졸업요건 기준에 관한 질문입니다.</p>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-1</span><span class="q-title">저희가 이해한 기준이 맞나요?</span><span class="badge-key">가장 중요</span></div>
+  <p>앞의 두 문장(15쪽 경과조치 가, 35쪽 각주)을 저희는 아래처럼 이해하고 졸업요건을 계산하고 있습니다. 하나씩 확인해 주세요.</p>
+  <table>
+    <tr><th class="center" style="width:9mm">#</th><th>저희가 이해한 내용</th><th class="center">맞나요?</th></tr>
+    <tr><td class="center">①</td><td>2017~2025학번의 지금 졸업요건(졸업학점·교양 학점·전공 학점)은 <b>입학한 해의 책자가 아니라 2026 책자의 학번별 표</b>를 따릅니다.</td><td class="check"></td></tr>
+    <tr><td class="center">②</td><td>예전 책자에 있던 <b>영역별 교양 기준</b>은 지금은 적용되지 않습니다. 2026 책자 표의 "교양필수 + 영역 구분 없이 N학점"만 채우면 됩니다.</td><td class="check"></td></tr>
+    <tr><td class="center">③</td><td>예를 들어 <b>전기공학과 2019학번</b>의 교양은 2019학년도 책자의 40학점이 아니라, 2026 책자 2019~2021학번 표의 <b>23학점</b>(교양필수 5 + 영역 구분 없이 18)입니다. 줄어든 17학점은 자유선택이 되고, 졸업학점 136은 그대로입니다.</td><td class="check"></td></tr>
+    <tr><td class="center">④</td><td>2017~2019학번의 졸업인증제는 2026 책자의 "2020학번 이전 입학생" 표(17~18쪽)를 따릅니다.</td><td class="check"></td></tr>
+  </table>
+  <p class="small muted">②와 ③에 따라 2017~2021학번 대부분 학과의 교양 요구 학점이 줄고 자유선택이 그만큼 늘어나는 것으로 안내하고 있습니다. 졸업학점 총계는 바뀌지 않습니다.</p>
+  <div class="answer">추가로 알려 주실 내용</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-2</span><span class="q-title">학번별 전공 표에 이름이 없는 학과</span></div>
+  <p>2026 책자의 학번별 전공 이수기준 표(20~25쪽)에 아래 학과는 이름이 없습니다. 그래서 그 학과가 입학한 해 책자의 값을 그대로 쓰고 있습니다. 지금 적용되는 전공 학점이 맞는지 확인해 주세요.</p>
+  <table>
+    <tr><th>학과</th><th>학번</th><th>저희가 쓰는 전공 학점</th><th class="center">맞나요? / 올바른 값</th></tr>
+    <tr><td>자율전공학부</td><td class="num">2023~2026</td><td>9학점(1학년 과정). 졸업요건은 배정받은 학과 기준으로 안내</td><td class="check"></td></tr>
+    <tr><td>수학·정보통계학부</td><td class="num">2017</td><td>69학점</td><td class="check"></td></tr>
+    <tr><td>중등특수교육과</td><td class="num">2017~2020</td><td>80학점</td><td class="check"></td></tr>
+    <tr><td>국제통상학부</td><td class="num">2017~2021</td><td>66학점</td><td class="check"></td></tr>
+    <tr><td>바이오나노화학부</td><td class="num">2017~2021</td><td>69학점</td><td class="check"></td></tr>
+    <tr><td>SW융합학과</td><td class="num">2020 / 2021</td><td>75학점 / 54학점</td><td class="check"></td></tr>
+  </table>
+  <div class="answer">추가로 알려 주실 내용</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-3</span><span class="q-title">2026 책자에 학과 단위로 실려 있지 않은 학과의 과목 편성</span></div>
+  <p>15쪽 경과조치 가에는 다음과 같은 단서가 있습니다.</p>
+  <blockquote>"학과(부) 통폐합 또는 학부 분리로 재학생이 남아 있는 학과(부)는 학과(부) 완성 시까지 한시적으로 구 교육과정으로 운영할 수 있다."</blockquote>
+  <p>저희 자료에서 2026 책자에 학과 이름으로 실려 있지 않은 학과는 <b>55곳</b>입니다. 예를 들어 전기공학과, 전자공학과, 기계공학부, 경영학부, 경제금융학과, 회계세무학과, 패션디자인산업학과, 시각정보디자인학과, 철학과, 화학과, 게임콘텐츠학과 등입니다. 전체 목록은 <b>부록 2</b>에 있습니다.</p>
+  <div class="ask">
+    <ol>
+      <li>이 학과 재학생은 <b>과목 편성</b>(어떤 과목이 개설되고 어떤 과목이 전공인지)을 구 교육과정으로 따르나요, 2026 교육과정으로 따르나요?</li>
+      <li>학과마다 다르다면, 학생은 어디서 확인하면 되나요?</li>
+      <li>학점 기준(A-1의 학번별 표)은 이 학과들에도 똑같이 적용되나요?</li>
+    </ol>
+  </div>
+  <p class="small muted">부록 2의 목록은 학과 이름으로만 대조한 것이라, 2026학년도에 계열로 통합되면서 이름만 바뀐 학과가 섞여 있을 수 있습니다.</p>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-4</span><span class="q-title">2026학번 졸업인증제는 어느 그룹인가요?</span></div>
+  <p>2026 책자(17쪽)와 학교 홈페이지의 졸업인증제 "나" 그룹은 <b>2025학년도 학과 이름</b>으로 적혀 있습니다: 창의공과대학, 농식품융합대학, 반도체·디스플레이학부, 가족아동복지학과, 패션디자인산업학과, 뷰티디자인학부. 2026학년도에 개편된 단과대학과 계열은 어느 그룹에 해당하나요?</p>
+  <table>
+    <tr><th>개편 후 단과대학·계열</th><th class="center" style="width:32mm">저희가 정한 그룹</th><th class="center">맞나요?</th></tr>
+    <tr><td>공과대학, 농생명융합대학 소속 계열, 디자인융합계열, 뷰티디자인학과</td><td class="center">나</td><td class="check"></td></tr>
+    <tr><td>사범대학, 의약 계열</td><td class="center">다</td><td class="check"></td></tr>
+    <tr><td>그 외 단과대학·계열</td><td class="center">가</td><td class="check"></td></tr>
+  </table>
+  <div class="answer">추가로 알려 주실 내용</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-5</span><span class="q-title">책자에 숫자가 없거나 규정과 다른 칸</span></div>
+  <p>아래 칸은 책자에 숫자가 없거나, 책자 숫자가 학칙시행규칙과 다릅니다. 저희가 정한 값이 맞으면 ○, 아니면 올바른 값을 적어 주세요.</p>
+  <table>
+    <tr><th style="width:27mm">학과·학번</th><th>책자에 적힌 내용</th><th>궁금한 점</th><th style="width:30mm">저희가 정한 값</th><th class="center" style="width:20mm">맞나요?</th></tr>
+    <tr>
+      <td>건축학과<br>2024·2025학번</td>
+      <td>전공 칸에 "교육과정에 따라 이수"(숫자 없음), 졸업 160학점. 2026 책자 학번별 전공 표도 "건축학과 교육과정"으로만 적음<br><span class="small muted">2024 책자 31쪽, 2026 책자 22~23쪽</span></td>
+      <td>전공은 몇 학점인가요?</td>
+      <td>2024학번 <b>121</b><br>2025학번 <b>123</b><br><span class="small muted">(160 − 교양)</span></td>
+      <td class="check"></td>
+    </tr>
+    <tr>
+      <td>국방기술학과<br>2026학번</td>
+      <td>전공 66, 일반선택 27<br><span class="small muted">2026 책자 12쪽·20쪽</span></td>
+      <td>학칙시행규칙 제6조 제4항은 국방기술학과를 <b>69학점</b>으로 정합니다. 69학점이면 일반선택은 24학점이 됩니다.</td>
+      <td>책자대로<br>전공 66 / 일반선택 27</td>
+      <td class="check"></td>
+    </tr>
+    <tr>
+      <td>의학과·치의학과·한의학과 (본과)<br>2024·2026학번</td>
+      <td>2024는 교양 0. 2026은 한의학과에만 교양 25, 의학과·치의학과는 빈칸<br><span class="small muted">2024 책자 31쪽, 2026 책자 10쪽</span></td>
+      <td>본과는 교양 없이 전공만 있는 것이 맞나요?</td>
+      <td>교양 없이<br>전공 <b>160</b></td>
+      <td class="check"></td>
+    </tr>
+  </table>
+  <div class="answer">추가로 알려 주실 내용</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-6</span><span class="q-title">책자와 학교 홈페이지가 서로 다른 내용</span></div>
+  <p>같은 내용이 책자와 학교 홈페이지(학사학위수여 안내)에 다르게 적혀 있습니다. 지금은 책자를 따르고 있습니다. 어느 쪽이 맞는지 알려 주세요.</p>
+  <table>
+    <tr><th style="width:30mm">항목</th><th>2026 책자</th><th>학교 홈페이지</th><th class="center" style="width:24mm">맞는 쪽</th></tr>
+    <tr><td>졸업인증제 "다" 그룹</td><td>의과대학, 치과대학, 한의과대학, 약학과, 사범대학<br><span class="small muted">(간호 없음)</span></td><td>의과대학, 치과대학, 한의과대학, <b>간호대학</b>, 약학과, 사범대학</td><td class="check"></td></tr>
+    <tr><td>작업치료학과 졸업학점</td><td>140학점(2024학번까지), 130학점(2025학번부터)</td><td>"140학점 이상 2017학번~ … 작업치료학과"<br><span class="small muted">(학번 구분 없음)</span></td><td class="check"></td></tr>
+  </table>
+  <p class="small muted">지금 안내 중인 값: 간호학과 2026학번 졸업인증제는 "가" 그룹, 작업치료학과 2025학번 졸업학점은 130학점.</p>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">A-7</span><span class="q-title">학기 중에 바뀌는 내용을 확인하는 방법</span></div>
+  <p>교육과정은 1년에 한 번만 바뀌는 것이 아니라 학기 중에도 바뀐다고 들었습니다. 책자는 학년도 초에 한 번 올라오기 때문에, 그 사이 바뀐 내용을 놓치면 학생에게 틀린 안내를 할 수 있습니다.</p>
+  <div class="ask">
+    <ol>
+      <li>학기 중에 바뀌는 내용(경과조치 추가, 졸업요건 완화 등)을 학생이나 저희가 확인할 수 있는 <b>공지 경로</b>가 있나요? (학과 공지, 학사 공지, 규정관리시스템 개정 등)</li>
+      <li>바뀐 내용을 저희가 빨리 반영할 수 있도록 알려 받을 수 있는 방법이 있을까요?</li>
+    </ol>
+  </div>
+  <div class="answer">답변</div>
+</div>
+
+<!-- ======================= B ======================= -->
+<h2 class="part">B. 졸업사정에 관한 문의</h2>
+<p class="part-desc">받는 곳: 학사지원과 · 학생이 졸업요건을 채웠는지 판단하는 기준에 관한 질문입니다.</p>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-1</span><span class="q-title">복학생·재입학생에게 적용되는 교육과정</span></div>
+  <p>두 규정의 범위가 서로 다르게 읽힙니다.</p>
+  <blockquote>
+    「교육과정 운영에 관한 규정」 제14조 제2항: "복학생 및 재입학생은 복학 및 재입학 이후에는 <b>해당 학년의 교육과정</b>을 적용받는다."<br>
+    학칙시행규칙 제5조: "교육과정은 <b>입학 당시의 기준</b>에 따라 이수하되 재학 중 교육과정이 개편된 경우 '제2절 교육과정 개편에 따른 경과조치' 따른다."
+  </blockquote>
+  <div class="ask">
+    예를 들어 <b>2021학번 학생이 2년간 군휴학 후 2025년에 복학</b>했다면, 졸업 학점 기준은
+    <ol>
+      <li>2021학번 표를 따르나요,</li>
+      <li>복학한 학년에 해당하는 학번(예: 2023학번)의 표를 따르나요?</li>
+    </ol>
+  </div>
+  <p class="small muted">군휴학 학생이 많아서 이 기준에 따라 안내가 크게 달라집니다.</p>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-2</span><span class="q-title">편입생에게도 교양 52학점 상한이 있나요?</span></div>
+  <p>학칙시행규칙 부칙(2022.02.25.)은 교양 52학점 상한(초과분은 졸업학점으로 인정하지 않음)을 "<b>2022년 3월 1일 입학자부터</b> 적용한다"고 정합니다.</p>
+  <div class="ask">2022년 3월 이후에 <b>편입학</b>한 학생도 이 "입학자"에 포함되어 상한이 적용되나요?</div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-3</span><span class="q-title">"저학년에 개설된 과목"의 기준 학년</span></div>
+  <p>학칙시행규칙 제13조 제3항은 선택과목이 필수과목으로 바뀐 경우, 그 과목이 "<b>재학 중인 학년</b>보다 저학년에 개설된 경우 이수하지 않아도 된다"고 정합니다.</p>
+  <p>저희는 이 "재학 중인 학년"을 <b>교육과정이 바뀐 해에 그 학생이 다니던 학년</b>으로 읽습니다. 예를 들어 2020학번이 3학년이던 해에 1학년 과목이 필수로 바뀌었다면, 그 학생은 이수하지 않아도 된다고 안내합니다.</p>
+  <div class="ask">이 해석이 맞나요? 아니면 <b>졸업 심사 때의 학년</b>이 기준인가요?</div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-4</span><span class="q-title">편입생의 졸업인증제 면제는 어떻게 구분하나요?</span></div>
+  <p>학교 홈페이지(학사학위수여)는 졸업인증제 제외 대상을 "졸업사정일 기준 만학도(만 50세 이상) 또는 학사편입학자, 산업체편입자, 서남대편입자"로 정합니다. 저희는 편입생에게 "학사편입이면 면제될 수 있다"는 안내만 붙이고 있습니다.</p>
+  <div class="ask">
+    <ol>
+      <li>학생이 자기가 <b>일반편입인지 학사편입인지</b> 확인할 수 있는 곳(학적 화면 등)이 있나요?</li>
+      <li>면제되는 것은 기본영역(전공현장실습·캡스톤디자인·사회봉사 등)뿐이고, <b>학과가 따로 정한 과목</b>(예: 컴퓨터·소프트웨어공학과의 기업연계프로젝트1·2)은 그대로 이수해야 하는 것이 맞나요?</li>
+    </ol>
+  </div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-5</span><span class="q-title">자기계발심층상담은 어떻게 확인하나요?</span></div>
+  <p>2026 책자(17~18쪽)는 자기계발심층상담을 "2020학번부터 8학기 이상, 2016~2019학번 6학기 이상, 편입생 3회 이상, 전과생은 당초 입학 학번에 따름"으로 정하고, 광역단위 계열전공은 "Hug심층진로상담"으로 대체한다고 적고 있습니다. 저희 서비스는 아직 이 항목을 판정하지 못하고 있습니다.</p>
+  <div class="ask">
+    <ol>
+      <li>학생이 자기 상담 이수 기록(횟수·학기)을 확인할 수 있는 화면이 있나요?</li>
+      <li>"8학기 이상"은 매 학기 1회씩이라는 뜻인가요, 합계 8회라는 뜻인가요? 휴학한 학기는 어떻게 세나요?</li>
+    </ol>
+  </div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">B-6</span><span class="q-title">교직기본이수는 교직과정 이수자에게만 해당하나요?</span></div>
+  <p>책자의 학과 표에는 일부 학과(간호학과, 국어국문학과, 경영학과 등)에 "교직기본이수" 과목이 실려 있습니다. 저희는 이것을 <b>교직과정 이수자에게만</b> 해당하는 참고 항목으로 보고, 교직을 이수하지 않는 학생에게는 졸업요건으로 표시하지 않습니다.</p>
+  <table>
+    <tr><th>저희가 이해한 내용</th><th class="center">맞나요?</th></tr>
+    <tr><td>교직기본이수는 교직과정 이수자에게만 해당하고, 교직을 이수하지 않는 학생의 졸업요건은 아니다.</td><td class="check"></td></tr>
+  </table>
+</div>
+
+<!-- ======================= C ======================= -->
+<h2 class="part">C. 자료와 운영에 관한 부탁</h2>
+<p class="part-desc">받는 곳: 교육혁신과 또는 담당 부서 · 정확한 안내를 위해 필요한 자료와 운영 방법에 관한 부탁입니다.</p>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">C-1</span><span class="q-title">2026 책자와 조회시스템이 다를 때는 어느 쪽이 기준인가요?</span></div>
+  <p>지금 적용되는 과목 목록이 2026 교육과정이라면, 2026 책자와 조회시스템의 값이 같아야 합니다. 그런데 몇몇 과목은 두 값이 다릅니다.</p>
+  <table>
+    <tr><th>예시</th><th>2026 책자</th><th>조회시스템</th></tr>
+    <tr><td>원불교학과 정산사상1 (101298)</td><td>3학점 (2024·2025 책자도 3학점)</td><td>2학점</td></tr>
+  </table>
+  <div class="ask">두 값이 다르면 <b>조회시스템(학사 시스템에 등록된 값)</b>을 기준으로 안내하면 되나요?</div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">C-2</span><span class="q-title">2027학번 교육과정·졸업요건 자료는 언제 공개되나요?</span></div>
+  <p>학칙 부칙(2026.04.10.) 제2조 제1항은 "[별표 1] 학과(부), 전공 및 광역계열 입학정원(2027학년도 이후)은 2027년 3월 1일 입학자부터 적용한다"고 정합니다. 2027학번 학생에게 안내하려면 교육과정과 졸업요건 자료가 필요합니다.</p>
+  <div class="ask">2027학번의 교육과정·졸업요건 자료는 언제쯤 볼 수 있나요?</div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">C-3</span><span class="q-title">글자로 된 원본 자료를 받을 수 있을까요?</span></div>
+  <p>2017·2018·2020학년도 책자 PDF는 글자가 깨져 있거나 사진으로만 되어 있어서, 한 장씩 눈으로 읽어 옮겼습니다. 옮기는 과정에서 틀린 곳이 생길 수 있습니다.</p>
+  <p>옛 책자는 지금 졸업요건의 기준은 아닙니다. 하지만 학생이 그 해에 들은 과목의 이수구분(전공·교양 등)을 확인하는 데 쓰입니다. 학칙시행규칙 제13조 제4항은 이수구분을 "수강신청 당시 기준"으로 정합니다.</p>
+  <div class="ask">책자를 만드실 때 쓰신 <b>원본 파일</b>을 받을 수 있을까요? 한글(hwp)·워드·엑셀·글자를 복사할 수 있는 PDF·학사 시스템 목록 등 <b>형식은 상관없고, 사진이 아닌 글자로 된 자료</b>면 됩니다. 특히 2017·2018·2020학년도가 필요합니다.</div>
+  <div class="answer">답변</div>
+</div>
+
+<div class="q">
+  <div class="q-head"><span class="q-no">C-4</span><span class="q-title">규정관리시스템의 개정일을 자동으로 확인해도 될까요?</span></div>
+  <p>규정이 바뀌었는지 빨리 알기 위해, 통합규정관리시스템(rule.wku.ac.kr)의 <b>개정일 목록만 하루 1~2회 조회</b>하는 프로그램을 두고 싶습니다. 본문 전체를 가져가는 것이 아니라, 학칙·학칙시행규칙 등 몇 개 규정의 최신 개정일만 확인합니다.</p>
+  <p>사이트 설정(robots.txt)이 자동 접근을 막고 있어서, 허락 없이는 만들지 않았습니다.</p>
+  <div class="ask">이 정도 조회는 괜찮을까요? 다른 방법(개정 공지 메일 등)을 권하시면 그 방법을 따르겠습니다.</div>
+  <div class="answer">답변</div>
+</div>
+
+<!-- ======================= 부록 ======================= -->
+<h2 class="part">부록 1. 저희가 이미 확인한 내용</h2>
+<p class="part-desc">답변하지 않으셔도 됩니다. 혹시 틀린 내용이 있으면 알려 주세요.</p>
+
+<h3>2026 책자의 학번별 표로 정한 값</h3>
+<table>
+  <tr><th>학과·학번</th><th>지금 안내 중인 값</th><th>근거</th></tr>
+  <tr><td>패션디자인산업학과 2020·2021학번</td><td>교양 23(5+18), 전공 69, 자유선택 38, 졸업 130</td><td>2019~2021학번 교양 표, 2017~2022학번 전공 표</td></tr>
+  <tr><td>경제금융학과 2023~2025학번</td><td>기본전공 15학점 이상, 전공 계 66</td><td>2023~2024학번·2025학번 전공 표 (15/66)</td></tr>
+  <tr><td>수학교육과 2018·2019학번</td><td>교양 23, 전공 69, 일반선택 48, 졸업 140</td><td>2017~2018·2019~2021학번 교양 표</td></tr>
+  <tr><td>사범대학 2022~2024학번</td><td>2022학번 교양 39, 2023·2024학번 교양 37(5+32), 졸업 140</td><td>2022~2024학번 교양 표</td></tr>
+  <tr><td>컴퓨터·소프트웨어공학과 2017~2021학번</td><td>교양 23(5+18), 졸업 136</td><td>창의공과대학 교양 표</td></tr>
+  <tr><td>약학과(2+4년제)</td><td>종교와원불교(3학점, 1학년 1학기), 졸업(시험·작품)논문(4학년 2학기)</td><td>학번별 교양 표의 약학과 행</td></tr>
+</table>
+
+<h3>통합규정관리시스템에서 확인한 내용</h3>
+<ul>
+  <li><b>교양 52학점 상한</b>: 2022년 3월 1일 입학자부터 (학칙시행규칙 부칙 2022.02.25.)</li>
+  <li><b>편입생의 교육과정 기준</b>: 편입학한 학년의 입학년도 교육과정 (교육과정 운영에 관한 규정 제14조 제3항). 예: 2026년 3학년 편입 → 2024학번 기준</li>
+  <li><b>학과 개편</b>(이름 변경·통합·분리·폐지·신설): 학칙 부칙(2016~2025)</li>
+  <li><b>2025학번 연계·복합전공(JST)</b>: 36학점 (다전공이수에 관한 내규 부칙 2025.04.09., 개정 2025.08.29.)</li>
+  <li><b>자율전공학부</b>: 1학년 과정만 운영하고 1학년 말에 학과를 배정, 졸업요건은 배정 학과 기준 (자율전공학부 운영 내규 제2·3조)</li>
+  <li><b>재학생의 소속</b>: 이름만 바뀐 학과는 새 이름 학과 재적생, 폐지·통합 학과는 졸업 시까지 입학 당시 학적 보유, 폐지학과 복학·재입학 유예 4년 (학칙 부칙)</li>
+</ul>
+
+<h3>학교 홈페이지에서 확인한 내용</h3>
+<ul>
+  <li><b>전과생 교양</b>: 2022-1학기 전과생까지는 교양필수 5 + 교양선택 24(영역 구분 없음), 이후 전과생은 입학 학번 기준 (전과 안내)</li>
+  <li><b>편입생 인정학점</b>: 일반계열 64, 창의공과대학·사범대학·간호(2023학번까지)·작업치료 68, 간호(2024학번부터) 64, 의학계열 80, 약학과 76 (편입생 교육과정 안내)</li>
+  <li><b>졸업이수학점</b>: 130 / 136 / 140 / 160 / 232학점 구분 (학사학위수여 안내, 2026 책자 15쪽)</li>
+</ul>
+
+<h2 class="part">부록 2. 2026 책자에 학과 단위로 실려 있지 않은 학과</h2>
+<p class="part-desc">문의 A-3 관련. 저희 자료(2017~2026학년도 책자)에 있는 학과 중 2026 책자에 같은 이름의 학과가 없는 55곳입니다. 학과 이름으로만 대조했기 때문에, 2026학년도에 계열로 통합되며 이름만 바뀐 경우가 섞여 있을 수 있습니다.</p>
+<ol class="deptlist">
+  <li>회계세무학과</li><li>경제금융학과</li><li>행정공공기관학과</li><li>복지·보건학부</li><li>경찰행정학과</li>
+  <li>소방행정학과</li><li>전기공학과</li><li>철도시스템공학부</li><li>전자공학과</li><li>게임콘텐츠학과</li>
+  <li>기계공학부</li><li>건축공학과</li><li>도시공학과</li><li>화학공학과</li><li>건설환경공학과</li>
+  <li>수학·정보통계학부</li><li>경영학부</li><li>농생명바이오계열</li><li>역사문화학과</li><li>문예창작학과</li>
+  <li>원예산업학과</li><li>산림조경학과</li><li>식품생명공학과</li><li>생명환경학과</li><li>금속·주얼리디자인학과</li>
+  <li>시각정보디자인학과</li><li>실내·산업디자인학과</li><li>패션디자인산업학과</li><li>행정·언론학부</li><li>정보통신공학과</li>
+  <li>전자융합공학과</li><li>디지털콘텐츠공학과</li><li>인공지능융합학과</li><li>기계공학과</li><li>스마트자동차공학과</li>
+  <li>기계설계공학과</li><li>도시공학부</li><li>화학융합공학과</li><li>탄소융합공학과</li><li>역사문화학부</li>
+  <li>철학과</li><li>경제학부</li><li>무역학과</li><li>빅데이터·금융통계학부</li><li>화학과</li>
+  <li>반도체·디스플레이학부</li><li>귀금속보석공예과</li><li>디자인학부</li><li>토목환경공학과</li><li>음악과</li>
+  <li>국제통상학부</li><li>생물환경화학과</li><li>응용수학부</li><li>바이오나노화학부</li><li>SW융합학과</li>
+</ol>
+
+<div class="box" style="margin-top:22px">
+  <h3>마치며</h3>
+  <p style="margin:0">바쁘신 중에 긴 문서를 읽어 주셔서 감사합니다. 답변은 이 문서에 직접 적어 주시거나, 문의 번호와 함께 메일로 알려 주셔도 됩니다. 답변을 받으면 서비스에 반영한 뒤, 반영한 내용을 다시 확인받겠습니다.</p>
+</div>
+
+</body>
+</html>
