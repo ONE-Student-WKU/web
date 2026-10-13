@@ -1,6 +1,8 @@
 const pool = require('../db');
 const { CURRENT_CONSENT_VERSION } = require('./consent');
 const { attachColleges } = require('./departmentColleges');
+const { parseLeavePeriods, totalLeaveSemesters, validateLeavePeriods } = require('./leavePeriods');
+const { todayKst } = require('./regulationEngine/context');
 
 /**
  * server/services/studentService.js
@@ -63,6 +65,10 @@ function serializeStudent(student) {
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
+    // 휴학 기간. null이면 아직 휴학 질문에 답하지 않았다는 뜻이고 []는 휴학 없음(server/services/leavePeriods.js).
+    leavePeriods: parseLeavePeriods(student.leave_periods),
+    // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
+    leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
     language: student.language || null,
     // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
@@ -216,6 +222,23 @@ async function recordConsent(studentId, version) {
   await pool.query('UPDATE students SET consented_at = NOW(), consent_version = ? WHERE id = ?', [version, studentId]);
 }
 
+// 휴학 기간 저장(PUT /api/me/leave-periods). 검증은 호출자가 leavePeriods.validateLeavePeriods로 끝낸 값만 넘긴다.
+// 누적 휴학 학기 수(leave_semesters)는 기간의 합계로 같이 채워, 그 값을 쓰는 기존 화면(학년 표시)이 그대로 맞게 한다.
+async function saveLeavePeriods(studentId, periods) {
+  await pool.query('UPDATE students SET leave_periods = ?, leave_semesters = ? WHERE id = ?', [JSON.stringify(periods), totalLeaveSemesters(periods), studentId]);
+}
+
+// 학번·입학 유형·편입 학년이 바뀌어 저장된 휴학 기간이 더 이상 맞지 않으면(예: 입학 전 학기가 됨) 비워서 다시 묻게 한다.
+async function revalidateLeavePeriods(studentId) {
+  const student = await findById(studentId);
+  const periods = parseLeavePeriods(student && student.leave_periods);
+  if (!student || periods === null) return;
+  const { error } = validateLeavePeriods(periods, {
+    admissionYear: student.admission_year, enrollmentType: student.enrollment_type, transferGrade: student.transfer_grade,
+  }, { today: todayKst() });
+  if (error && error !== 'LEAVE_IN_FUTURE') await pool.query('UPDATE students SET leave_periods = NULL WHERE id = ?', [studentId]);
+}
+
 // 프로필 수정(PATCH /api/me) 전용 — 넘어온 필드만 부분 갱신 (courseService.updateMyCourse와 동일한 패턴)
 async function updateProfile(studentId, updates) {
   const columnMap = {
@@ -274,6 +297,8 @@ function excludeLegacyTestAccounts(total) {
 }
 
 module.exports = {
+  saveLeavePeriods,
+  revalidateLeavePeriods,
   LEGACY_TEST_ACCOUNT_COUNT,
   excludeLegacyTestAccounts,
   VALID_ENROLLMENT_TYPES,

@@ -9,6 +9,7 @@ vi.mock('../api/chatApi.js', async (importOriginal) => ({
   getTracks: vi.fn(),
   submitOnboarding: vi.fn(),
   updateProfile: vi.fn(),
+  saveLeavePeriods: vi.fn(),
 }));
 
 import * as api from '../api/chatApi.js';
@@ -57,6 +58,7 @@ const transferUser = (over = {}) => ({
   admissionYear: 2024,
   transferGrade: 3,
   leaveSemesters: 0,
+  leavePeriods: [],
   ...over,
 });
 
@@ -68,15 +70,17 @@ const USER = {
   enrollmentType: 'GENERAL',
   admissionYear: 2021,
   leaveSemesters: 0,
+  leavePeriods: [],
 };
 
-// 요약 화면에는 '저장'이 둘이다(휴학 학기 수 저장, 전체 저장). 전체 저장이 화면 맨 아래 마지막 버튼이다.
+// 요약 화면의 전체 저장 버튼(화면 맨 아래 마지막 '저장').
 const saveButton = () => screen.getAllByRole('button', { name: '저장' }).at(-1);
 
 beforeEach(() => {
   vi.clearAllMocks();
   api.getDepartments.mockResolvedValue([FORMER_DEPT, TRANSFER_DEPT]);
   api.updateProfile.mockResolvedValue({});
+  api.saveLeavePeriods.mockResolvedValue({});
   api.getTracks.mockResolvedValue([]);
 });
 
@@ -149,3 +153,34 @@ describe('편입생: 편입 연도·학년 입력(제14조③ — 학번 = 편�
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ enrollmentType: 'GENERAL', transferGrade: null }));
   });
 });
+
+describe('휴학 기간(휴학 "수"가 아니라 시기를 받는다)', () => {
+  it('휴학 질문에 답하지 않은 계정은 요약의 휴학이 "선택 필요"이고 저장할 수 없다', async () => {
+    render(<Onboarding user={{ ...USER, leavePeriods: null }} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('button', { name: /휴학.*선택 필요/ })).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('휴학 항목에서 "휴학한 적 없어요"를 고르고 저장하면 학적정보 다음에 빈 휴학 기간을 보낸다', async () => {
+    render(<Onboarding user={{ ...USER, leavePeriods: null }} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /휴학.*선택 필요/ }));
+    expect(await screen.findByRole('heading', { name: '휴학한 적이 있나요?' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '휴학한 적 없어요' }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+
+    expect(await screen.findByRole('button', { name: /휴학.*없음/ })).toBeInTheDocument();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalled();
+    expect(api.saveLeavePeriods).toHaveBeenCalledWith([]);
+    expect(api.updateProfile.mock.invocationCallOrder[0]).toBeLessThan(api.saveLeavePeriods.mock.invocationCallOrder[0]);
+  });
+
+  it('저장된 휴학 기간을 요약에 보여 주고, 서버가 겹침으로 거부하면 이유를 알려 준다', async () => {
+    api.saveLeavePeriods.mockRejectedValue(Object.assign(new Error('x'), { code: 'LEAVE_PERIODS_OVERLAP' }));
+    render(<Onboarding user={{ ...USER, leavePeriods: [{ startYear: 2022, startSemester: 2, semesters: 4 }] }} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByText('2022학년도 2학기부터 4학기')).toBeInTheDocument();
+    await userEvent.click(saveButton());
+    expect(await screen.findByText('휴학 기간이 서로 겹쳐요.')).toBeInTheDocument();
+  });
+});
+

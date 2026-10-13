@@ -5,7 +5,7 @@
  * CONSENT_VERSION은 server/services/consent.js의 CURRENT_CONSENT_VERSION과 같은 값이어야 한다 — 서버는 이 값이 같을 때만
  * 동의로 인정한다. 약관이나 방침을 의미 있게 고치면 두 값을 같이 올린다(올리면 이미 동의한 사람도 다시 동의 화면을 본다).
  */
-export const CONSENT_VERSION = '2026-10-07';
+export const CONSENT_VERSION = '2026-10-13';
 
 const STORAGE_KEY = 'consent_version';
 

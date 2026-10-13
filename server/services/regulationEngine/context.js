@@ -58,6 +58,8 @@ function inputFromStudentRow(student, extra = {}) {
         : null,
     // 편입 학년은 편입생이 입력한 경우에만 있다(없으면 엔진이 3학년 편입으로 가정하고 추정 플래그를 남긴다).
     transfer: student.enrollment_type === 'TRANSFER_ADMISSION' ? { grade: student.transfer_grade ?? null } : null,
+    // 휴학 기간(students.leave_periods, JSON). null이면 학생이 아직 답하지 않았다는 뜻 — 해석은 leavePeriods.parseLeavePeriods가 한다.
+    leavePeriods: student.leave_periods ?? null,
     ...extra,
   };
 }
@@ -72,6 +74,7 @@ function inputFromStudentRow(student, extra = {}) {
  *  - majorChange: { grade 1~4, year, semester 1|2 } (전과생만; 값이 없어도 되지만 없으면 플래그)
  *  - transfer: { grade 2~4 } (편입생만)
  *  - restructuring: { year, semester } ("학사구조조정 시점" 해석을 쓸 때만 필요)
+ *  - leavePeriods: 휴학 기간 원시값(선택, null = 모름). 해석은 이것을 쓰는 쪽(applicability)이 leavePeriods.js로 한다
  *  - policy.liberalArtsCutoffTrigger: 'MAJOR_CHANGE_DATE'(기본) | 'RESTRUCTURING_DATE' — 아래 decisions.js 참고
  */
 function normalizeInput(raw, { today } = {}) {
@@ -122,6 +125,7 @@ function normalizeInput(raw, { today } = {}) {
       majorChange,
       transfer: r.enrollmentType === 'TRANSFER_ADMISSION' ? { grade: tr && tr.grade != null ? tr.grade : null } : null,
       restructuring: rs && rs.year != null && rs.semester != null ? { year: rs.year, semester: rs.semester } : null,
+      leavePeriods: r.leavePeriods ?? null,
       policy: { liberalArtsCutoffTrigger: trigger },
       supported: r.admissionYear >= MIN_SUPPORTED_ADMISSION_YEAR,
     },

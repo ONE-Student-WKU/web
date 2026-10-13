@@ -113,6 +113,19 @@ async function ensureStudentTransferGradeColumn(connection) {
   }
 }
 
+// 휴학 기간 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
+// NULL(아직 휴학 질문에 답하지 않음)로 두어 기존 계정은 다음 접속 때 휴학 질문을 한 번 보게 된다(server/services/leavePeriods.js).
+async function ensureStudentLeavePeriodsColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'leave_periods'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.leave_periods 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN leave_periods JSON NULL');
+  }
+}
+
 // 이용약관·개인정보 수집·이용 동의 기록용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL(동의 기록 없음)로 두어 기존 계정은 다음 접속 때 동의 화면을 한 번 보게 된다.
 async function ensureStudentConsentColumns(connection) {
@@ -467,6 +480,7 @@ async function migrate() {
     await ensureStudentLanguageColumn(connection);
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
+    await ensureStudentLeavePeriodsColumn(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);

@@ -13,6 +13,7 @@ import Admin from './pages/Admin.jsx';
 import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
+import LeaveGate from './pages/LeaveGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -311,6 +312,9 @@ function App() {
             onOpenPrivacy={() => setView('privacy')}
             onOpenTerms={() => setView('terms')}
           />
+        ) : user.leaveAnswerRequired && view !== 'onboarding' ? (
+          // 휴학 기간을 받기 전에 온보딩을 마친 계정은 한 번 휴학 질문에 답해야 다른 화면으로 간다(온보딩 수정 화면에서도 답할 수 있다).
+          <LeaveGate user={user} onSaved={(updated) => setUser(updated)} />
         ) : view === 'chat' ? (
           <Chat
             user={user}
@@ -437,7 +441,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && !user.consentRequired && TAB_BAR_VIEWS.has(view) && !textInputFocused && (
+        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && TAB_BAR_VIEWS.has(view) && !textInputFocused && (
           <BottomTabBar
             active={VIEW_TO_TAB[view] || null}
             onOpenHome={() => setView('home')}

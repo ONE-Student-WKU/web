@@ -111,6 +111,10 @@ CREATE TABLE IF NOT EXISTS students (
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
                                                        -- 군복무 등)가 있어 학생이 직접 보정할 수 있게 둠 — 2학기당
                                                        -- 1년으로 환산해 client/src/utils/academic.js에서 학년 계산에 반영.
+                                                       -- 휴학 기간(leave_periods)을 입력한 계정은 그 합계로 자동으로 채운다.
+  leave_periods             JSON NULL,  -- 휴학 기간 [{startYear, startSemester, semesters}]. NULL = 아직 휴학 질문에 답하지 않음,
+                                        -- [] = 휴학 없음. 휴학 "수"만으로는 시기를 몰라 개편 당시 학년(시행규칙 제13조③) 등을
+                                        -- 정확히 못 따져서 둠. 사유는 받지 않는다(server/services/leavePeriods.js).
   language                  VARCHAR(5) NULL,  -- 화면·챗봇 답변 언어('ko' | 'en'). NULL이면 계정에 저장된 선택이 없다는 뜻
   consented_at              TIMESTAMP NULL,    -- 이용약관·개인정보 수집·이용에 동의한 시각
   consent_version           VARCHAR(20) NULL,  -- 동의한 약관 버전(server/services/consent.js). NULL이면 동의 기록 없음
