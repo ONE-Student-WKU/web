@@ -205,6 +205,17 @@ function buildProgressNote(progress) {
   if (progress.needsConfirmation) {
     lines.push('- 이 학년·학기는 확정이 아니다. 학기 계획을 답할 때 이 가정(예: "다음 학기를 N학년 M학기로 보면")을 한 번 밝히고, 맞지 않으면 알려달라고 안내하라.');
   }
+  // 프로필에는 누적 휴학 학기 "수"만 있다. 이수 기록이 이어져 있으면 빈 학기로 휴학 시기를 알 수 있지만(RECORDS),
+  // 추정(ESTIMATED)일 때는 시기를 모른다. 현재 학년 계산에는 수만 있으면 되지만, 개편 당시의 학년(제13조③)이나 복학 시점처럼
+  // 시기에 따라 결론이 갈리는 질문은 모델이 아무 시기나 가정해 단정하지 않도록 먼저 물어보게 한다(입력 항목을 늘리지 않고 대화에서만 쓴다).
+  if (progress.source === 'ESTIMATED' && progress.leaveSemesters > 0) {
+    lines.push(
+      `- 누적 휴학 ${progress.leaveSemesters}학기가 언제였는지는 모른다(다음 수강 학기 계산에는 필요 없다). 답이 휴학 시기에 따라 달라지는 질문이면 단정하지 말고 먼저 "몇 학년 몇 학기에 휴학했는지" 물어라. ` +
+        '예: 선택과목이 필수로 바뀐 과목을 들어야 하는지(학칙시행규칙 제13조 제3항의 "재학 중인 학년"은 교육과정이 바뀐 해의 학년이라 그 전에 휴학했으면 달라진다), ' +
+        '복학·재입학한 시점에 따라 달라지는 처리(폐지·통합된 학과의 복학, 기존 교육과정을 운영하는 기간 등). ' +
+        '학생이 시기를 알려 주면 그 시기로 그 해의 학년을 다시 따져 답하고, 입학년도만으로 계산한 결과와 달라지면 그렇다고 밝혀라.'
+    );
+  }
   lines.push(
     progress.completedCourseNames.length > 0
       ? `- 이미 이수한 과목(성적 미입력 포함, 낙제·재수강으로 대체된 기록 제외) ${progress.completedCourseNames.length}개: ${progress.completedCourseNames.join(', ')}`
