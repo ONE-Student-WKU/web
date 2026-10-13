@@ -167,8 +167,6 @@ export default {
   'grad.trust.NO_DATA': 'No data',
   'grad.trust.schedule4':
     'The Academic Regulations [Appendix 4] list {a} credits, but the curriculum booklet lists {b} credits. Please check with your department or the Academic Affairs Office.',
-  'grad.basis.latestBooklet':
-    'Based on the cohort tables in the {year} curriculum booklet. Wonkwang applies the latest curriculum to every cohort; cohort differences come from the latest booklet’s tables (the numbers may differ from the booklet of your entry year).',
 
   // Course management
   'courses.title': 'Course management',

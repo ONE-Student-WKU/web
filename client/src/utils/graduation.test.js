@@ -154,15 +154,7 @@ describe('describeRequirementTrust', () => {
 
   it('확정: 배지만 보이고 사유·추정 표시는 없다', () => {
     const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
-    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false, basisBookletYear: null });
-  });
-
-  it('2025학번 이하: 서버가 준 기준 책자 학년도(basisBookletYear)를 그대로 넘기고, 자료 없음이면 적지 않는다', () => {
-    const reg = { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null, basisBookletYear: 2026 };
-    expect(describeRequirementTrust({ ...base, regulation: reg }).basisBookletYear).toBe(2026);
-    expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0, regulation: { ...reg, confidence: 'NO_DATA' } }).basisBookletYear).toBeNull();
-    // 예전 서버 응답(필드 없음)도 그대로 동작
-    expect(describeRequirementTrust({ ...base, regulation: { ...reg, basisBookletYear: undefined } }).basisBookletYear).toBeNull();
+    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false });
   });
 
   it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {
@@ -200,9 +192,9 @@ describe('describeRequirementTrust', () => {
   });
 
   it('예전 응답(regulation 없음)도 그대로 동작: 배지·사유 없음, 총량 0이면 noData', () => {
-    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false, basisBookletYear: null });
+    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
     expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
-    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false, basisBookletYear: null });
+    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
   });
 });
 

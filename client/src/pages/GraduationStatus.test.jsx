@@ -43,16 +43,12 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     expect(screen.queryByText('(추정)')).not.toBeInTheDocument();
     expect(document.querySelector('.grad-trust-reason')).toBeNull();
     expect(screen.getByText(/\/ 140학점/)).toBeInTheDocument();
-    // 2026학번처럼 기준 책자 안내가 없는 응답에는 출처 줄도 없다
-    expect(document.querySelector('.grad-basis-note')).toBeNull();
   });
 
-  it('2025학번 이하(basisBookletYear=2026): "2026학년도 책자의 학번별 이수기준표 기준" 한 줄을 확정 배지와 함께 보여 준다', async () => {
+  it('2025학번 이하(basisBookletYear=2026)여도 기준 책자 설명 문구는 보이지 않는다(학생에게는 필요 없는 설명이라 뺐다)', async () => {
     await renderWith(status({ regulation: { ...status().regulation, basisBookletYear: 2026 } }));
     expect(screen.getByText('확정')).toHaveClass('grad-trust-badge', 'ok');
-    const note = document.querySelector('.grad-basis-note');
-    expect(note).not.toBeNull();
-    expect(note.textContent).toMatch(/2026학년도 교육과정 책자의 학번별 이수기준표 기준/);
+    expect(screen.queryByText(/학번별 이수기준표 기준/)).not.toBeInTheDocument();
   });
 
   it('추정 + 학칙 [별표 4] 불일치: 배지, 총량 "(추정)", 사유 한 줄에 두 값(130·140)', async () => {
