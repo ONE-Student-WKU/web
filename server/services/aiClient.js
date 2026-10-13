@@ -191,9 +191,14 @@ function buildProgressNote(progress) {
   if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
 
   const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const periodText = (periods) => (periods.length === 0
+    ? '휴학한 적 없음'
+    : periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', '));
   const sourceText = progress.source === 'RECORDS'
     ? '학생이 과목 관리에 등록한 이수 기록'
-    : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
+    : progress.source === 'PROFILE'
+      ? `학번과 학생이 입력한 휴학 기간(${periodText(progress.leavePeriods)})`
+      : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
   const lines = [
     '이 학생의 수강 진행 상태(코드로 계산한 값이다. 학년·학기를 직접 추정하지 말고 이 값을 써라):',
     `- 오늘 기준 현재 학기: ${progress.currentTerm.year}학년도 ${progress.currentTerm.semester}학기`,

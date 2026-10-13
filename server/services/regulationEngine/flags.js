@@ -62,6 +62,7 @@ const FLAG_CATALOG = {
   CATEGORY_NATURE_UNKNOWN: [L.ESTIMATED, '전공기초·전공심화·전공응용 같은 이수구분이 필수/선택 중 어디에 해당하는지 원문에 정의가 없어, 이 과목들에는 제13조②③을 판단하지 않았어요.'],
   TRANSITION_GRADE_BASIS_AMBIGUOUS: [L.ESTIMATED, '제13조③의 "재학 중인 학년"을 개편 시점 학년으로 볼지 기준일 학년으로 볼지에 따라 이수 여부가 갈리는 과목이 있어요(기본: 개편 시점 학년, 다른 해석은 대안으로 표시).'],
   GRADE_FROM_ADMISSION_YEAR: [L.ESTIMATED, '학년을 입학년도로 계산했어요(휴학·유급·조기졸업은 반영하지 않았어요).'],
+  GRADE_FROM_ADMISSION_AND_LEAVE: [L.ESTIMATED, '학년을 입학년도와 입력한 휴학 기간으로 계산했어요(유급·조기졸업은 반영하지 않았어요).'],
   NEW_REQUIRED_COURSE_NOT_COVERED: [L.ESTIMATED, '입학 후 새로 생긴 필수과목은 제13조②③에 직접 규정이 없어(①은 신 교육과정을 전 학년에 적용) 이수해야 하는지 학과 확인이 필요해요.'],
   CATEGORY_YEAR_BOOK_ASSUMED: [L.ESTIMATED, '"수강신청한 학년도의 이수구분"을 그 학년도 교육과정(그 해 입학생 교육과정표)의 이수구분으로 봤어요.'],
   DEPARTMENT_REORG_CHANGE: [L.ESTIMATED, '학과 개편으로 생긴 과목 변경이 포함돼 있어요. 개편 때 기존 교육과정을 최대 4년 유지할 수 있어(시행규칙 제14조②) 실제 적용은 학과 운영에 따라 달라요.'],

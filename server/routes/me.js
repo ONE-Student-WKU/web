@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
+const { validateLeavePeriods } = require('../services/leavePeriods');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -93,6 +94,10 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
+    // 휴학 기간을 입력한 계정의 휴학 학기 수는 그 기간의 합계라 따로 고칠 수 없다(PUT /api/me/leave-periods로 기간을 고친다).
+    if (leaveSemesters !== undefined && student.leave_periods != null) {
+      return res.status(400).json({ status: 400, code: 'USE_LEAVE_PERIODS', message: null, data: null });
+    }
 
     // majorChangeGrade/Year/Semester는 전과생(MAJOR_CHANGE)일 때만 의미가 있음 — 이번 요청에서
     // 확정되는 enrollmentType(요청에 없으면 기존 값) 기준으로 검증. 교양 이수기준이 "전과 시점"
@@ -179,6 +184,9 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       leaveSemesters,
       language,
     });
+    if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
+      await studentService.revalidateLeavePeriods(req.session.userId);
+    }
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
@@ -186,6 +194,27 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (err.code === 'ER_DUP_ENTRY' && err.sqlMessage?.includes('uq_students_name')) {
       return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
     }
+    next(err);
+  }
+});
+
+// PUT /api/me/leave-periods — 휴학 기간 저장. { periods: [] }는 "휴학한 적 없음"이다.
+// 온보딩 필수 질문과, 기능 도입 전 계정에게 한 번 보여주는 질문 화면이 이 경로를 쓴다(server/services/leavePeriods.js).
+router.put('/me/leave-periods', requireAuth, async (req, res, next) => {
+  try {
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    const { periods, error } = validateLeavePeriods(req.body && req.body.periods, {
+      admissionYear: student.admission_year, enrollmentType: student.enrollment_type, transferGrade: student.transfer_grade,
+    });
+    if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+
+    await studentService.saveLeavePeriods(req.session.userId, periods);
+    const updated = await studentService.findById(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'LEAVE_PERIODS_SAVED', message: null, data: serializeStudent(updated) });
+  } catch (err) {
     next(err);
   }
 });
