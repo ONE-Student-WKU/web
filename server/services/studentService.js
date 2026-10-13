@@ -2,6 +2,7 @@ const pool = require('../db');
 const { CURRENT_CONSENT_VERSION } = require('./consent');
 const { attachColleges } = require('./departmentColleges');
 const { parseLeavePeriods, totalLeaveSemesters, validateLeavePeriods } = require('./leavePeriods');
+const { parseHomeLayout } = require('./homeLayout');
 const { todayKst } = require('./regulationEngine/context');
 
 /**
@@ -69,6 +70,8 @@ function serializeStudent(student) {
     leavePeriods: parseLeavePeriods(student.leave_periods),
     // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
     leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
+    // 홈 화면 편집 설정(하단 바 3칸·카드 순서). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
+    homeLayout: parseHomeLayout(student.home_layout),
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
     language: student.language || null,
     // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
@@ -255,6 +258,7 @@ async function updateProfile(studentId, updates) {
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
     language: 'language',
+    homeLayout: 'home_layout',
   };
 
   const fields = [];
@@ -263,7 +267,8 @@ async function updateProfile(studentId, updates) {
   for (const [key, column] of Object.entries(columnMap)) {
     if (updates[key] !== undefined) {
       fields.push(`${column} = ?`);
-      params.push(updates[key]);
+      // JSON 컬럼은 문자열로 넣는다(null은 그대로 NULL).
+      params.push(key === 'homeLayout' && updates[key] !== null ? JSON.stringify(updates[key]) : updates[key]);
     }
   }
 

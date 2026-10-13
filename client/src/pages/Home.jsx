@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
-import { IconBook, IconChecklist, IconAlertTriangle, IconCheck, IconCompass, IconUsers } from '../components/icons.jsx';
+import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
+import { TAB_ICONS } from '../components/BottomTabBar.jsx';
+import { resolveLayout, visibleCards, TAB_OPTIONS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -29,12 +31,30 @@ export function resetHomeCache() {
   clearCache('home_shortfalls');
 }
 
+// 편집 버튼 첫 안내를 이미 봤는지(브라우저마다 한 번). 저장소가 막혀 있어도 화면은 그대로 동작한다.
+const EDIT_HINT_KEY = 'homeEditHintSeen';
+function readHintSeen() {
+  try {
+    return localStorage.getItem(EDIT_HINT_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+function markHintSeen() {
+  try {
+    localStorage.setItem(EDIT_HINT_KEY, '1');
+  } catch {
+    /* 저장소를 못 쓰면 다음에 다시 보일 뿐이다 */
+  }
+}
+
 /**
  * Home Page Component
  * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여준다. App.jsx가 렌더링하는 공용
  * BottomTabBar는 아이콘 전용이라 텍스트 라벨이 없어서, 각 기능이 뭘 하는 화면인지는
  * 여기 메뉴 카드(텍스트 라벨 포함)를 통해 처음 알게 된다 — 탭바와 기능이 겹치더라도
- * 없애지 않는다.
+ * 없애지 않는다(홈 화면 편집에서도 메뉴는 숨길 수 없고 위치만 바꾼다).
+ * 카드 순서·표시 여부는 사용자의 홈 화면 편집 설정(user.homeLayout, utils/homeLayout.js)을 따른다.
  *
  * Props:
  * - user: object
@@ -45,6 +65,8 @@ export function resetHomeCache() {
  * - onOpenOnboarding: function
  * - onOpenLeaveSettings: function
  * - onOpenProfile: function
+ * - onOpenInquiry: function
+ * - onOpenHomeEdit: function — 헤더의 편집 버튼(홈 화면 편집)
  * - onLogout: function
  */
 function Home({
@@ -59,10 +81,24 @@ function Home({
   onOpenProfile,
   onOpenAdmin,
   onOpenInquiry,
+  onOpenHomeEdit,
   onLogout,
 }) {
   const { t, lang } = useI18n();
   const [status, setStatus] = useState(homeDataCache.status);
+  const [showEditHint, setShowEditHint] = useState(() => !readHintSeen());
+  const layout = resolveLayout(user?.homeLayout);
+  const openView = {
+    courses: onOpenCourses,
+    graduation: onOpenGraduation,
+    career: onOpenCareer,
+    community: onOpenCommunity,
+    inquiry: onOpenInquiry,
+  };
+  const dismissEditHint = () => {
+    markHintSeen();
+    setShowEditHint(false);
+  };
 
   useEffect(() => {
     // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
@@ -105,6 +141,27 @@ function Home({
         <div className="screen-header-left">
           <span className="screen-title">ONE Student</span>
         </div>
+        <div className="home-header-actions">
+          <button
+            type="button"
+            className="home-edit-btn"
+            onClick={() => {
+              dismissEditHint();
+              onOpenHomeEdit();
+            }}
+            aria-label={t('homeEdit.open')}
+          >
+            <IconEdit size={17} />
+          </button>
+          {showEditHint && (
+            <div className="home-edit-hint" role="status">
+              <span>{t('homeEdit.hint')}</span>
+              <button type="button" className="home-edit-hint-close" onClick={dismissEditHint} aria-label={t('homeEdit.hintClose')}>
+                ×
+              </button>
+            </div>
+          )}
+        </div>
         <AccountMenu
           user={user}
           onLogout={onLogout}
@@ -121,15 +178,6 @@ function Home({
           <>
             <div className="skeleton skeleton-text skeleton-greeting" />
             <div className="skeleton skeleton-text skeleton-subgreeting" />
-            <div className="home-card skeleton-card">
-              <div className="skeleton skeleton-text skeleton-label" />
-              <div className="skeleton skeleton-text skeleton-credit" />
-              <div className="skeleton skeleton-bar" />
-            </div>
-            <div className="home-card skeleton-card">
-              <div className="skeleton skeleton-text skeleton-label" />
-              <div className="skeleton skeleton-text skeleton-row" />
-            </div>
           </>
         ) : (
           <>
@@ -147,23 +195,57 @@ function Home({
                 </button>
               )}
             </div>
+          </>
+        )}
 
-            <section className="home-card">
-              <p className="home-card-label">{t('home.creditProgress')}</p>
-              <div className="home-credit-value">
-                <span className="home-credit-number">{earnedCredits}</span>
-                <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
+        {visibleCards(layout).map((card) => {
+          if (card === 'menu') {
+            return (
+              <React.Fragment key="menu">
+                <p className="home-quick-label">{t('home.menu')}</p>
+                <div className="home-quick-actions">
+                  {TAB_OPTIONS.map((view) => {
+                    const Icon = TAB_ICONS[view];
+                    return (
+                      <button key={view} className="home-quick-btn" onClick={openView[view]}>
+                        <Icon />
+                        <span>{t(TAB_LABEL_KEYS[view])}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </React.Fragment>
+            );
+          }
+          // 진행률·부족 요건은 졸업요건 진단 응답이 와야 그릴 수 있다 — 첫 로딩 동안은 그 자리에 스켈레톤.
+          if (isFirstLoad) {
+            return (
+              <div key={card} className="home-card skeleton-card">
+                <div className="skeleton skeleton-text skeleton-label" />
+                <div className="skeleton skeleton-text skeleton-row" />
               </div>
-              <div className="home-progress-track">
-                <div
-                  className="home-progress-fill"
-                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
-                />
-              </div>
-              <p className="grad-remaining-text">{progressPercent}%</p>
-            </section>
-
-            <section className="home-card">
+            );
+          }
+          if (card === 'progress') {
+            return (
+              <section key="progress" className="home-card">
+                <p className="home-card-label">{t('home.creditProgress')}</p>
+                <div className="home-credit-value">
+                  <span className="home-credit-number">{earnedCredits}</span>
+                  <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
+                </div>
+                <div className="home-progress-track">
+                  <div
+                    className="home-progress-fill"
+                    style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                  />
+                </div>
+                <p className="grad-remaining-text">{progressPercent}%</p>
+              </section>
+            );
+          }
+          return (
+            <section key="shortfall" className="home-card">
               <p className="home-card-label">{t('home.shortfall')}</p>
               <div
                 className={
@@ -185,28 +267,8 @@ function Home({
                 </span>
               </div>
             </section>
-          </>
-        )}
-
-        <p className="home-quick-label">{t('home.menu')}</p>
-        <div className="home-quick-actions">
-          <button className="home-quick-btn" onClick={onOpenCourses}>
-            <IconBook />
-            <span>{t('home.courses')}</span>
-          </button>
-          <button className="home-quick-btn" onClick={onOpenGraduation}>
-            <IconChecklist />
-            <span>{t('nav.graduation')}</span>
-          </button>
-          <button className="home-quick-btn" onClick={onOpenCareer}>
-            <IconCompass />
-            <span>{t('nav.career')}</span>
-          </button>
-          <button className="home-quick-btn" onClick={onOpenCommunity}>
-            <IconUsers />
-            <span>{t('nav.community')}</span>
-          </button>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

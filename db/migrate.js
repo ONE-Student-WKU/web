@@ -126,6 +126,18 @@ async function ensureStudentLeavePeriodsColumn(connection) {
   }
 }
 
+// 홈 화면 편집 설정 guard — NULL(기본 배치)로 두어 기존 계정의 화면은 그대로다(server/services/homeLayout.js).
+async function ensureStudentHomeLayoutColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'home_layout'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.home_layout 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN home_layout JSON NULL');
+  }
+}
+
 // 이용약관·개인정보 수집·이용 동의 기록용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL(동의 기록 없음)로 두어 기존 계정은 다음 접속 때 동의 화면을 한 번 보게 된다.
 async function ensureStudentConsentColumns(connection) {
@@ -481,6 +493,7 @@ async function migrate() {
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
+    await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);
