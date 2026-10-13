@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { buildDatasets } = require('../scripts/seedCourseOfferings');
+const { buildDatasets, parseTimeRaw } = require('../scripts/seedCourseOfferings');
 
 /**
  * server/test/seedCourseOfferings.datasets.test.js
@@ -57,4 +57,24 @@ test('전 학과 원본: 모든 항목의 학과·트랙이 앱 학과 목록에
     }
   }
   for (const e of ALL.unmapped) assert.equal(e.department, null);
+});
+
+test('시간 표기: 10교시부터는 "10" 다음에 끝자리만 찍힌다("9101" = 9·10·11) — 한 글자씩 읽어 1교시가 두 번 나오면 안 된다', () => {
+  const slots = (t) => parseTimeRaw(t).map((s) => `${s.day}${s.period}`).join(',');
+  assert.equal(slots('월34화56'), '월3,월4,화5,화6');
+  assert.equal(slots('수3목12'), '수3,목1,목2', '10이 없으면 12는 1·2교시');
+  assert.equal(slots('월910'), '월9,월10');
+  assert.equal(slots('월9101'), '월9,월10,월11');
+  assert.equal(slots('월1012'), '월10,월11,월12');
+  assert.equal(slots('금12345678910'), '금1,금2,금3,금4,금5,금6,금7,금8,금9,금10');
+  assert.equal(slots('토9101'), '', '토·일은 앱 시간표(월~금)에 칸이 없어 나누지 않는다');
+});
+
+test('전 학과 원본의 모든 시간 값은 같은 요일·교시가 두 번 나오지 않는다(uq_course_offering_schedules)', () => {
+  for (const e of ALL.entries) {
+    for (const r of e.rows) {
+      const s = parseTimeRaw(r.time).map((x) => `${x.day}${x.period}`);
+      assert.equal(new Set(s).size, s.length, `${e.printedName} ${r.courseName} [${r.time}]`);
+    }
+  }
 });

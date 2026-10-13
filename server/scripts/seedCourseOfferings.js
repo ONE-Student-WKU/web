@@ -42,6 +42,10 @@ function inferTrackName(courseCode) {
 }
 
 // "월34화56" -> [{day:'월',period:3},{day:'월',period:4},{day:'화',period:5},{day:'화',period:6}]
+// 10교시부터는 학교 시간표 표기가 "10" 다음에 끝자리만 찍힌다: "910" = 9·10, "9101" = 9·10·11, "1012" = 10·11·12
+// (2026-2 전 학과 시간표에서 "9101"은 28건 모두 3학점, "1012"는 4건 모두 3학점, "910"은 12건 모두 2학점 — 교시 수 = 학점).
+// 예전처럼 한 글자씩 읽으면 "9101"이 9·1·0·1교시가 되어 1교시가 두 번 나온다.
+// 토·일은 앱 시간표(월~금)에 칸이 없어 나누지 않는다(원문 time_raw에는 남는다).
 function parseTimeRaw(timeRaw) {
   if (!timeRaw) return [];
   const result = [];
@@ -49,7 +53,16 @@ function parseTimeRaw(timeRaw) {
   let m;
   while ((m = re.exec(timeRaw))) {
     const [, day, digits] = m;
-    for (const ch of digits) result.push({ day, period: Number(ch) });
+    let reachedTen = false;
+    for (let i = 0; i < digits.length; i++) {
+      if (digits[i] === '1' && digits[i + 1] === '0') {
+        result.push({ day, period: 10 });
+        reachedTen = true;
+        i++;
+      } else {
+        result.push({ day, period: reachedTen ? 10 + Number(digits[i]) : Number(digits[i]) });
+      }
+    }
   }
   return result;
 }
@@ -312,4 +325,4 @@ async function run() {
 
 if (require.main === module) run();
 
-module.exports = { buildDatasets, parseDatasetKey };
+module.exports = { buildDatasets, parseDatasetKey, parseTimeRaw };
