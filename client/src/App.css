@@ -3431,6 +3431,25 @@ select.onb-select {
   line-height: 1.5;
 }
 
+.career-roadmap-syllabus {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.career-roadmap-syllabus:hover {
+  text-decoration: underline;
+}
+
+.career-roadmap-note {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
 .career-confirm-loading {
   display: flex;
   flex-direction: column;

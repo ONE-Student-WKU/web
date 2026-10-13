@@ -371,6 +371,8 @@ export default {
   // Career roadmap (shared by the career result screen and Edit account info)
   'career.roadmapGroup': 'Year {grade}, Semester {semester}',
   'career.roadmapEmpty': "We couldn't find any remaining courses to recommend.",
+  'career.roadmapSyllabus': '수업계획서 (Syllabus)',
+  'career.roadmapReasonNote': 'The reasons are written from course names only and may differ from what the course actually covers. Check the 수업계획서 (Syllabus) page for details (pick a section to open it).',
 
   // Onboarding (department and admission year, editing academic info)
   'onb.err.departments': "Couldn't load the department list. Please refresh and try again.",

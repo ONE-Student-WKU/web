@@ -3,6 +3,7 @@ const aiClient = require('./aiClient');
 const curriculumService = require('./curriculumService');
 const { hasRecentCrisis } = require('./crisis');
 const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
+const { syllabusSearchUrl } = require('./syllabusLink');
 
 /**
  * server/services/careerService.js
@@ -72,7 +73,33 @@ async function listRoadmap(sessionId) {
     'SELECT grade, semester, course_name, reason FROM career_roadmap_items WHERE session_id = ? ORDER BY sort_order',
     [sessionId]
   );
-  return rows.map((r) => ({ grade: r.grade, semester: r.semester, courseName: r.course_name, reason: r.reason }));
+  const codes = await courseCodesForSession(sessionId, rows.map((r) => r.course_name));
+  return rows.map((r) => ({
+    grade: r.grade,
+    semester: r.semester,
+    courseName: r.course_name,
+    reason: r.reason,
+    syllabusUrl: syllabusSearchUrl(codes.get(r.course_name), r.semester),
+  }));
+}
+
+// 로드맵 항목에는 학수번호가 저장돼 있지 않아(career_roadmap_items), 보여 줄 때 학생 학과의 편성표에서 과목명으로 찾는다.
+// 이렇게 하면 이미 만들어진 로드맵에도 수업계획서 링크가 붙는다. 같은 이름이 여러 학번 범위에 있으면 가장 최근 편성의 학수번호를 쓴다
+// (로드맵 후보도 가장 최근 편성에서 고른다 — D-56). 못 찾으면 링크 없이 둔다.
+async function courseCodesForSession(sessionId, courseNames) {
+  const codes = new Map();
+  if (courseNames.length === 0) return codes;
+  const [rows] = await pool.query(
+    `SELECT cc.course_name, cc.course_code
+     FROM career_sessions cs
+     JOIN students s ON s.id = cs.student_id
+     JOIN curriculum_courses cc ON cc.department_id = s.department_id
+     WHERE cs.id = ? AND cc.course_name IN (?) AND cc.course_code IS NOT NULL AND cc.course_code <> ''
+     ORDER BY COALESCE(cc.max_admission_year, 9999) DESC, COALESCE(cc.min_admission_year, 0) DESC`,
+    [sessionId, courseNames]
+  );
+  for (const r of rows) if (!codes.has(r.course_name)) codes.set(r.course_name, r.course_code);
+  return codes;
 }
 
 // 세션 하나를 화면이 필요로 하는 형태로 통째로 조립한다 (재진입/새로고침 시 그대로 복원).
