@@ -64,6 +64,38 @@ test('판단 청크: 적용 안 되는 규칙은 빼고, 조건부·판단 불�
   assert.doesNotMatch(c, /정보성/);
 });
 
+// 제13조③(선택→필수) — 일반 학과는 "기본전공 N학점 이상" 하한이라 과목별 "이수 필요"로 말하지 않는다(교육혁신과 면담 2026-10-12).
+const r13 = rule({
+  ruleCode: 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE', basis: { articleRef: 'ENFORCEMENT_RULES:제13조', paragraph: '③' }, critical: false,
+  details: { courses: [{ courseName: '운영체제', exempt: false, alternatives: [] }], newRequired: [{ courseName: '인공지능개론' }] },
+});
+const requirementsWith = (categories, adjustments = []) => ({
+  rules: [{ id: 'REQUIREMENTS', confidence: 'CONFIRMED', value: { totalRequiredCredits: 136, categories, adjustments } }],
+});
+
+test('판단 청크(제13조③): 기본전공 하한이 있는 일반 학과는 바뀐 과목을 "이수 필요"로 세지 않고 하한 기준으로 설명하게 한다', () => {
+  const j = judgment({ rules: [rule(), r13], requirements: requirementsWith([{ category: '전공필수', requiredCredits: 19 }, { category: '전공선택', requiredCredits: 56 }]) });
+  const c = formatJudgmentChunks(j, SUBJECT)[0].content;
+  assert.match(c, /기본전공\(전공필수\) 19학점 이상/);
+  assert.match(c, /운영체제, 인공지능개론/, '선택→필수로 바뀐 과목과 새로 생긴 필수과목을 함께 다룬다');
+  assert.match(c, /"이수 필요"로 말하지 마라/);
+  assert.doesNotMatch(c, /이수 필요 \d+개/);
+});
+
+test('판단 청크(제13조③): 전과·편입 완화로 전공 통합 행만 있으면 전공 총 학점 기준으로 설명하게 한다', () => {
+  const j = judgment({ rules: [rule(), r13], requirements: requirementsWith([{ category: '전공', requiredCredits: 48 }], ['MAJOR_RELAXATION']) });
+  const c = formatJudgmentChunks(j, { ...SUBJECT, enrollmentType: 'MAJOR_CHANGE' })[0].content;
+  assert.match(c, /전공 48학점\(전과·편입 완화 기준\)/);
+  assert.doesNotMatch(c, /이수 필요 \d+개/);
+});
+
+test('판단 청크(제13조③): 교육과정으로 과목이 정해진 학과(의약계열 등 전공 통합 행)는 과목별 판정을 그대로 말한다', () => {
+  const j = judgment({ rules: [rule(), r13], requirements: requirementsWith([{ category: '전공', requiredCredits: 160 }]) });
+  const c = formatJudgmentChunks(j, SUBJECT)[0].content;
+  assert.match(c, /선택→필수로 바뀐 과목\(③\): 1개 — 저학년 개설이라 면제 0개, 이수 필요 1개/);
+  assert.match(c, /입학 후 새로 생긴 필수과목: 1개 — 제13조에 규정이 없어 이수 여부는 학과 확인 필요/);
+});
+
 test('판단 청크: C등급 구간의 "기록 없음(검증 안 됨)"은 "변경 없음"으로 답하지 말라는 지시가 붙는다', () => {
   const j = judgment({
     confidence: 'INSUFFICIENT', confidenceLabel: '자료 불충분(확인 필요)',

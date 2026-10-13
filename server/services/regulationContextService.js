@@ -53,8 +53,25 @@ function articleLabel(rule) {
 
 const names = (items) => items.slice(0, MAX_COURSE_NAMES).map((i) => i.courseName).join(', ') + (items.length > MAX_COURSE_NAMES ? ` 외 ${items.length - MAX_COURSE_NAMES}개` : '');
 
+/**
+ * 이 학생의 전공 요건이 "과목별 이수"가 아니라 "학점 하한"인지(교육혁신과 면담 2026-10-12: 의·치·한·약 외 일반 학과는 전공필수를
+ * 과목으로 강제하지 않고 "기본전공 N학점 이상"만 정한다).
+ *  - BASIC_MINIMUM: 졸업요건에 기본전공(전공필수) 하한 행이 있음 — 일반 학과
+ *  - MAJOR_TOTAL: 전과·편입 완화로 "전공" 통합 행 하나(전공 총 학점) — 일반 학과의 완화 기준
+ *  - null: 그 외 "전공" 통합 행(교육과정에 따라 이수 — 의약계열 등 과목이 정해진 학과)이거나 요건 자료 없음 → 과목별 판정을 그대로 말한다
+ */
+function majorRequirementBasis(requirements) {
+  const rule = requirements && (requirements.rules || []).find((r) => r.id === 'REQUIREMENTS');
+  if (!rule || !rule.value) return null;
+  const basic = rule.value.categories.find((c) => c.category === '전공필수' && Number(c.requiredCredits) > 0);
+  if (basic) return { mode: 'BASIC_MINIMUM', credits: Number(basic.requiredCredits) };
+  const total = rule.value.categories.find((c) => c.category === '전공');
+  if (total && (rule.value.adjustments || []).includes('MAJOR_RELAXATION')) return { mode: 'MAJOR_TOTAL', credits: Number(total.requiredCredits) };
+  return null;
+}
+
 /** 제13조 과목 경과조치 요약(과목이 수백 개일 수 있어 개수 + 예시 몇 개만). */
-function courseTransitionLines(rules) {
+function courseTransitionLines(rules, majorBasis = null) {
   const lines = [];
   const r2 = rules.find((r) => r.ruleCode === 'ENF13_2_REQUIRED_TO_ELECTIVE_OR_ABOLISHED');
   if (r2 && r2.details) {
@@ -64,12 +81,22 @@ function courseTransitionLines(rules) {
   const r3 = rules.find((r) => r.ruleCode === 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
   if (r3 && r3.details) {
     const c = r3.details.courses;
-    if (c.length) {
-      const ambiguous = c.filter((x) => x.alternatives && x.alternatives.length);
-      lines.push(`- 선택→필수로 바뀐 과목(③): ${c.length}개 — 저학년 개설이라 면제 ${c.filter((x) => x.exempt === true).length}개, 이수 필요 ${c.filter((x) => x.exempt === false).length}개, 판단 불가 ${c.filter((x) => x.exempt == null).length}개` +
-        (ambiguous.length ? `; 이 중 ${ambiguous.length}개는 "재학 중인 학년" 해석에 따라 결과가 달라짐(${names(ambiguous)})` : ''));
+    if (majorBasis && (c.length || r3.details.newRequired.length)) {
+      // 일반 학과: 필수(기본전공)로 바뀌거나 새로 생긴 과목도 과목별 이수 의무가 아니라 기본전공(또는 전공 총) 학점에 들어가는 과목이다.
+      // 하한을 이미 채웠으면 상관없고, 못 채웠으면 이 과목을 포함한 전공 과목으로 부족분을 채우면 된다. 학생의 이수 학점은 "실제 이수 현황"에 있다.
+      const changed = [...c, ...r3.details.newRequired];
+      const requirement = majorBasis.mode === 'BASIC_MINIMUM' ? `기본전공(전공필수) ${majorBasis.credits}학점 이상` : `전공 ${majorBasis.credits}학점(전과·편입 완화 기준)`;
+      lines.push(`- 선택→필수로 바뀌었거나 입학 후 새로 생긴 필수과목(③): ${changed.length}개(${names(changed)}) — 이 학생의 전공 요건은 과목별 이수가 아니라 "${requirement}" 하한이다. ` +
+        `이 과목들을 "꼭 들어야 하는 과목"이나 "이수 필요"로 말하지 마라. 하한을 이미 채웠으면 상관없고, 못 채웠으면 이 과목을 포함한 전공 과목으로 부족한 학점을 채우면 된다고 설명하라(이수 학점은 "실제 이수 현황"의 전공 항목을 보라). ` +
+        '이 해석은 학교 확인 중이니 확정이 필요하면 학과 확인을 안내하라.');
+    } else {
+      if (c.length) {
+        const ambiguous = c.filter((x) => x.alternatives && x.alternatives.length);
+        lines.push(`- 선택→필수로 바뀐 과목(③): ${c.length}개 — 저학년 개설이라 면제 ${c.filter((x) => x.exempt === true).length}개, 이수 필요 ${c.filter((x) => x.exempt === false).length}개, 판단 불가 ${c.filter((x) => x.exempt == null).length}개` +
+          (ambiguous.length ? `; 이 중 ${ambiguous.length}개는 "재학 중인 학년" 해석에 따라 결과가 달라짐(${names(ambiguous)})` : ''));
+      }
+      if (r3.details.newRequired.length) lines.push(`- 입학 후 새로 생긴 필수과목: ${r3.details.newRequired.length}개 — 제13조에 규정이 없어 이수 여부는 학과 확인 필요(${names(r3.details.newRequired)})`);
     }
-    if (r3.details.newRequired.length) lines.push(`- 입학 후 새로 생긴 필수과목: ${r3.details.newRequired.length}개 — 제13조에 규정이 없어 이수 여부는 학과 확인 필요(${names(r3.details.newRequired)})`);
   }
   const r4 = rules.find((r) => r.ruleCode === 'ENF13_4_CATEGORY_AT_REGISTRATION');
   if (r4 && r4.details && r4.details.courses.length) lines.push(`- 이수구분이 바뀐 과목(④): ${r4.details.courses.length}개 — 그 과목을 수강한 학년도·학기의 이수구분으로 인정`);
@@ -178,7 +205,7 @@ function formatJudgmentChunks(judgment, subject, articles = {}) {
   }
   const req = requirementLine(judgment.requirements);
   if (req) lines.push(req);
-  const transitions = courseTransitionLines(active);
+  const transitions = courseTransitionLines(active, majorRequirementBasis(judgment.requirements));
   if (transitions.length) lines.push('과목 경과조치(학칙시행규칙 제13조):', ...transitions);
   const hist = historyLine(judgment.history);
   if (hist) lines.push(hist);
