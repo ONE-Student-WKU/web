@@ -336,6 +336,8 @@ export default {
   // 진로 로드맵(진로 탐색 결과와 계정 정보 수정이 같이 쓴다)
   'career.roadmapGroup': '{grade}학년 {semester}학기',
   'career.roadmapEmpty': '추천할 만한 남은 과목을 찾지 못했어요.',
+  'career.roadmapSyllabus': '수업계획서 보기',
+  'career.roadmapReasonNote': '추천 이유는 과목명을 보고 쓴 설명이라 실제 수업 내용과 다를 수 있어요. 정확한 내용은 수업계획서에서 확인하세요(분반을 고르면 열려요).',
 
   // 온보딩(학과·학번 입력, 학적정보 수정)
   'onb.err.departments': '학과 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
