@@ -25,7 +25,8 @@ export function groupRoadmapBySemester(roadmap, t = null) {
  * 확정된 진로에 맞춰 추천된 남은 과목 로드맵을 학기별로 그룹지어 보여준다.
  *
  * Props:
- * - roadmap: [{grade, semester, courseName, reason}]
+ * - roadmap: [{grade, semester, courseName, reason, syllabusUrl}]
+ *   syllabusUrl은 서버가 만든 학교 "수업계획서 조회" 검색 링크(학수번호를 못 찾으면 null — 그때는 링크를 안 그린다).
  */
 function CareerRoadmapList({ roadmap }) {
   const { t } = useI18n();
@@ -37,6 +38,8 @@ function CareerRoadmapList({ roadmap }) {
 
   return (
     <>
+      {/* 추천 이유는 과목명만 보고 쓴 설명이라 실제 수업 내용과 다를 수 있다 — 목록 맨 위에 한 번만 안내하고 각 과목의 계획서 링크로 확인하게 한다. */}
+      <p className="career-roadmap-note">{t('career.roadmapReasonNote')}</p>
       {groups.map((group) => (
         <div key={group.label} className="career-roadmap-group">
           <span className="career-roadmap-label">{group.label}</span>
@@ -44,6 +47,11 @@ function CareerRoadmapList({ roadmap }) {
             <div key={item.courseName} className="home-card career-roadmap-item">
               <span className="career-roadmap-course">{item.courseName}</span>
               {item.reason && <span className="career-roadmap-reason">{item.reason}</span>}
+              {item.syllabusUrl && (
+                <a className="career-roadmap-syllabus" href={item.syllabusUrl} target="_blank" rel="noopener noreferrer">
+                  {t('career.roadmapSyllabus')}
+                </a>
+              )}
             </div>
           ))}
         </div>

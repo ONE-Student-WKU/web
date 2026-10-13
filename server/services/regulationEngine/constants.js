@@ -33,10 +33,47 @@ const LIBERAL_ARTS_CREDIT_CAP = 52;
 // 책자(2026 교육과정 해설 5절): "2021학번까지는 제한이 없고, 2022학번부터는 52학점".
 const LIBERAL_ARTS_CAP_FIRST_COHORT = 2022;
 
+// 졸업요건 진단 대상이 아닌 학과(부): 1학년 과정만 운영하고 1학년 말에 학과를 배정받으며, 졸업요건은 배정 학과 기준이다
+// (자율전공학부 운영 내규 제2·3조 — docs/school-inquiry/학교문의_발송용.md "여쭙지 않는 것").
+const NON_DEGREE_DEPARTMENTS = Object.freeze(['자율전공학부']);
+
+// 편입생 인정학점(전적대학 학점 중 본교 졸업학점으로 인정하는 학점). 학교 홈페이지 편입생 교육과정 "1. 편입생 학점인정"
+// (docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt). 표가 학과 이름이 아니라 대학·계열로 적혀 있어
+// 학과의 졸업학점으로 대학을 가른다: 136학점 = 창의공과대학, 140학점 = 사범대학·간호학과(2023학번까지)·작업치료학과(2024학번까지),
+// 130학점 = 일반계열. 의학계열(학사편입 80, 편입 학년이 1학년 원칙)과 표에 없는 학과(건축학과·한약학과 등)는 단정하지 않는다(null).
+const TRANSFER_RECOGNIZED_CREDITS = Object.freeze({
+  byDepartment: { 약학과: 76, 작업치료학과: 68 },
+  nursing: { department: '간호학과', untilCohort: 2023, before: 68, from: 64 },
+  byGraduationTotal: { 136: 68, 140: 68, 130: 64 },
+  undetermined: ['의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과'],
+});
+
+// 책자 총괄표에 편입·전과 최소전공 숫자가 없을 때 쓰는 규정 값. 학과 이름이 조문에 직접 적힌 것만 둔다
+// (시행규칙 제6조 제1항 제5호 "건축학과(5년제): 66학점"). 2025 책자는 건축학과를 "교육과정 전공이수학점에 따라 이수"로만 적었다.
+const REGULATION_MIN_MAJOR_BY_DEPARTMENT = Object.freeze({ 건축학과: 66 });
+
+// 졸업인증제 "기본영역"으로 학교가 대학 공통으로 정한 과목 묶음(가·나 그룹, 2017~2019학번 나 그룹 1·2과목형).
+// 학사편입학자·산업체편입자 등은 졸업인증제 대상에서 제외되는데(책자 2019~2026 졸업인증제 "<제외>", 학교 홈페이지 학사학위수여),
+// 학과가 따로 지정한 과목(컴소공 기업연계프로젝트1·2 — 학과 공지상 편입생도 필수)은 이 면제와 별개라 여기 묶음과 같은 행에만 면제 안내를 붙인다.
+const GENERIC_CERTIFICATION_COURSE_SETS = Object.freeze([
+  ['사회봉사', '전공현장실습', '캡스톤디자인'],
+  ['기업연계프로젝트', '종합설계', '캡스톤디자인'],
+  ['캡스톤디자인'],
+  ['전공현장실습', '캡스톤디자인'],
+]);
+
 // 4학년 편입생 최소전공 인정학점(학칙시행규칙 제6조③). 학과/계열과 무관한 고정값이다.
 const TRANSFER_4TH_YEAR_MAJOR_MINIMUM = 21;
 // 정원내 학사 편입 학년은 3학년이 원칙(학칙 제36조②). 편입 학년을 모를 때의 기본 가정.
 const DEFAULT_TRANSFER_GRADE = 3;
+
+/**
+ * 시스템이 보유한 가장 최신 교육과정 책자의 학년도. 원광대는 개편된 교육과정을 전 학년에 적용하고(2026 책자 15쪽 경과조치 가),
+ * 학번별 차이는 최신 책자의 "학번별 이수기준표"로 정한다(교육혁신과 면담 2026-10-12). 그래서 2025학번 이하의 졸업요건 행
+ * (curriculum_requirements)은 그 학번이 입학한 해의 책자가 아니라 이 해 책자의 학번별 표 값이다
+ * (scripts/audit/applyLatestBookletCohortTables.js로 정렬). 새 책자가 들어오면 이 값을 올리고 같은 스크립트를 다시 돌린다.
+ */
+const LATEST_BOOKLET_YEAR = 2026;
 
 /**
  * 우리 레포가 "원문"으로 보유한 규정 문서와 그 버전 정보.
@@ -80,6 +117,12 @@ const CITATIONS = Object.freeze({
     articleRef: 'ENFORCEMENT_RULES:제6조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '자연계열, 공학계열 및 예·체능계열: 48학점',
+  },
+  ENF_ART6_1_ARCHITECTURE: {
+    kind: 'ARTICLE', doc: '학칙시행규칙', article: '제6조 제1항 제5호',
+    articleRef: 'ENFORCEMENT_RULES:제6조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
+    file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
+    quote: '건축학과(5년제): 66학점',
   },
   ENF_ART6_3_TRANSFER_4TH: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제6조 제3항',
@@ -168,6 +211,26 @@ const CITATIONS = Object.freeze({
     file: 'docs/school-inquiry/근거_학교홈페이지/전과_2026-10-06.txt',
     quote: '2022-1학기 전과생 까지: 교양필수(5학점), 교양선택(24학점, 영역구분없음)',
   },
+  SITE_TRANSFER_RECOGNIZED_CREDITS: {
+    kind: 'SITE', doc: '학교 홈페이지 편입생 교육과정(2026-10-12 확인)', article: '1. 편입생 학점인정',
+    file: 'docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt',
+    quote: '※ 전적대학 취득학점이 편입학 인정학점보다 적게 취득한 경우 재학중 추가로 이수하여야 함',
+  },
+  SITE_TRANSFER_RELIGION_REQUIRED: {
+    kind: 'SITE', doc: '학교 홈페이지 편입생 교육과정(2026-10-12 확인)', article: '2. 교육과정 이수 — 교양',
+    file: 'docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt',
+    quote: '(본교 및 원광보건대학을 졸업한 편입생을 제외하고“종교와원불교”를 필수로 이수하여야 함)',
+  },
+  SITE_CERTIFICATION_BACHELOR_TRANSFER_EXEMPT: {
+    kind: 'SITE', doc: '학교 홈페이지 학사학위수여(2026-10-06 확인)', article: '3. 졸업인증제 <제외>',
+    file: 'docs/school-inquiry/근거_학교홈페이지/학사학위수여_2026-10-06.txt',
+    quote: '졸업사정일 기준 만학도(만 50세 이상) 또는 학사편입학자, 산업체편입자, 서남대편입자',
+  },
+  REG_CURRICULUM_OP_ART14_TRANSFER_COHORT: {
+    kind: 'SITE', doc: '교육과정 운영에 관한 규정(규정관리시스템 원문 보관본, 2026-10-12 확인)', article: '제14조 제3항',
+    file: 'docs/school-inquiry/근거_규정사이트/교육과정운영규정_제14조_2026-10-12.txt',
+    quote: '편입학생은 편입학한 학년의 입학년도 교육과정을 적용받는다',
+  },
   BOOKLET_2026_RESTRUCTURING_LIBERAL: {
     kind: 'BOOKLET', doc: '2026학년도 교육과정 책자(해설)', article: '소속변경 학생 안내',
     file: 'db/regulations/교육과정/2026_교육과정_해설.md',
@@ -178,8 +241,19 @@ const CITATIONS = Object.freeze({
     article: '2022학번이 2025-2학기에 전과 → 교양필수5+교양선택34(=39학점), 학사지원과 회신으로 정상 적용 확인',
     ref: 'db/regulations/전공선택/전과.md 10절',
   },
+  BOOKLET_2026_TRANSITION_ALL_COHORTS: {
+    kind: 'BOOKLET', doc: '2026학년도 교육과정 책자(해설)', article: '14~15쪽 교육과정 변경 경과조치 가',
+    file: 'db/regulations/교육과정/2026_교육과정_해설.md',
+    quote: '개정된 교양 및 전공의 신 교육과정은 2026학년도부터 전 학년에 적용·시행한다. 다만 교육과정 이수는 입학년도 교육과정 이수 기준에 따른다',
+  },
+  BOOKLET_2026_COHORT_TABLES: {
+    kind: 'BOOKLET', doc: '2026학년도 교육과정 책자 학번별 이수기준표(정리본, 책자 15~36쪽)', article: '학번별 교양·전공·졸업학점 표',
+    file: 'db/regulations/교육과정/2026_학번별_이수기준표.md',
+    quote: '2026학년도 교육과정 개편에 따라 영역별 미이수자는 영역 구분없이 위 표에 따라 이수한다',
+    ref: 'db/curriculum/_source/2026_학번별_이수기준.json',
+  },
   BOOKLET_ROWS: {
-    kind: 'BOOKLET', doc: '학년도별 교육과정 책자 이수학점 총괄표(curriculum_requirements 시드)',
+    kind: 'BOOKLET', doc: '교육과정 책자 이수학점 총괄표(curriculum_requirements 시드) — 2025학번 이하는 2026학년도 책자의 학번별 이수기준표 값(2026-10-12 정렬)',
     article: '학과·학번 범위별 졸업요건 행',
     ref: 'db/seed/curriculum_requirements.json',
   },
@@ -196,8 +270,13 @@ module.exports = {
   LIBERAL_ARTS_FIXED_CREDITS,
   LIBERAL_ARTS_CREDIT_CAP,
   LIBERAL_ARTS_CAP_FIRST_COHORT,
+  NON_DEGREE_DEPARTMENTS,
+  TRANSFER_RECOGNIZED_CREDITS,
+  REGULATION_MIN_MAJOR_BY_DEPARTMENT,
+  GENERIC_CERTIFICATION_COURSE_SETS,
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM,
   DEFAULT_TRANSFER_GRADE,
+  LATEST_BOOKLET_YEAR,
   TEXT_SOURCES,
   CITATIONS,
 };

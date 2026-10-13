@@ -141,6 +141,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
+              {trust.basisBookletYear && (
+                <p className="grad-basis-note">{t('grad.basis.latestBooklet', { year: trust.basisBookletYear })}</p>
+              )}
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"
@@ -257,6 +260,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       <div>
                         <p className="home-card-label">{translateCategory(cert.category, t)}</p>
                         <p className="grad-cert-desc">{cleanRequirementNote(cert.description)}</p>
+                        {cert.optional && <p className="grad-flex-note">{t('grad.certOptionalTeaching')}</p>}
+                        {cert.conditionalExemption === 'BACHELOR_TRANSFER' && <p className="grad-flex-note">{t('grad.certExemptBachelorTransfer')}</p>}
                       </div>
                     </div>
                   </section>

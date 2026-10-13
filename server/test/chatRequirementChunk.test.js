@@ -93,6 +93,16 @@ test('일반 재학생은 예전과 같은 숫자·형식(회귀)', async () => 
   assert.match(g.content, /\[2020학번 적용 요건 — 일반 재학생 기준\]/);
   assert.match(g.content, /졸업학점 합계\(교양\+전공\+일반선택\): 136학점/);
   assert.equal(g.documentTitle, '컴퓨터·소프트웨어공학과 2020학번 졸업요건');
+  // 2025학번 이하: 값의 출처가 최신 책자의 학번별 표라는 한 줄(교육혁신과 면담 2026-10-12). 모델이 2020 책자 숫자와 섞지 않게.
+  assert.match(g.content, /※ 위 값의 출처: 2026학년도 교육과정 책자의 "2020학번 적용" 학번별 이수기준표/);
+  assert.match(g.content, /교양: 교양필수 5학점 \+ 교양선택 18학점 = 23학점/);
+});
+
+test('2026학번(최신 책자 학번)에는 "출처는 최신 책자 학번별 표" 줄을 붙이지 않는다', async () => {
+  const { merged } = await ask(row('공학3계열', 2026), '졸업요건이 뭐야?');
+  const g = gradChunk(merged);
+  assert.match(g.content, /\[2026학번 적용 요건/);
+  assert.doesNotMatch(g.content, /위 값의 출처: 2026학년도 교육과정 책자의/);
 });
 
 // --- 2-4: 본인 학번을 질문에서 말해도 입학유형을 유지(F-3, D-37) ---

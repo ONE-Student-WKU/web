@@ -73,6 +73,9 @@ export default {
 
   // Graduation requirement labels — Korean names from the server mapped to the UI language (raw name if absent).
   'grad.shortfallCredits': '{category}: {n} credits',
+  'grad.shortfallCreditsWithBase': '{category}: {n} credits (including {base}: {m} credits)',
+  'grad.certExemptBachelorTransfer': 'If you transferred with a bachelor’s degree or through the industry-worker track, this certification is waived. Regular transfer students must complete it.',
+  'grad.certOptionalTeaching': 'Applies only to students in the teacher-training program. If you are not in it, this is not counted as a missing graduation requirement.',
   'category.기본전공': 'Major core',
   'category.전공필수': 'Major core',
   'category.전공선택': 'Major elective',
@@ -81,6 +84,8 @@ export default {
   'category.교양선택': 'General ed. (elective)',
   'category.졸업인증제': 'Graduation certification',
   'category.졸업논문': 'Graduation thesis',
+  'category.교직기본이수': 'Core teaching-certificate courses',
+  'category.종교와원불교': 'Religion and Won-Buddhism (required course)',
   'category.일반선택': 'General elective',
 
   // Language switcher (also used before login)
@@ -162,6 +167,8 @@ export default {
   'grad.trust.NO_DATA': 'No data',
   'grad.trust.schedule4':
     'The Academic Regulations [Appendix 4] list {a} credits, but the curriculum booklet lists {b} credits. Please check with your department or the Academic Affairs Office.',
+  'grad.basis.latestBooklet':
+    'Based on the cohort tables in the {year} curriculum booklet. Wonkwang applies the latest curriculum to every cohort; cohort differences come from the latest booklet’s tables (the numbers may differ from the booklet of your entry year).',
 
   // Course management
   'courses.title': 'Course management',
@@ -364,6 +371,8 @@ export default {
   // Career roadmap (shared by the career result screen and Edit account info)
   'career.roadmapGroup': 'Year {grade}, Semester {semester}',
   'career.roadmapEmpty': "We couldn't find any remaining courses to recommend.",
+  'career.roadmapSyllabus': '수업계획서 (Syllabus)',
+  'career.roadmapReasonNote': 'The reasons are written from course names only and may differ from what the course actually covers. Check the 수업계획서 (Syllabus) page for details (pick a section to open it).',
 
   // Onboarding (department and admission year, editing academic info)
   'onb.err.departments': "Couldn't load the department list. Please refresh and try again.",
@@ -391,7 +400,13 @@ export default {
   'onb.year.title': 'What is your admission year?',
   'onb.year.sub': '{dept}: this course structure applies to the {range} cohorts only.',
   'onb.year.label': 'Admission year',
-  'onb.year.transferHint': "Transfer students can't be admitted in the current year, so it is left out.",
+  'onb.transfer.title': 'When and in which year did you transfer?',
+  'onb.transfer.sub': 'Transfer students follow the curriculum of the cohort that entered in the year you transferred into. For example, if you transferred into year 3 in 2026, the 2024 cohort applies.',
+  'onb.transfer.year': 'Year you transferred',
+  'onb.transfer.yearN': '{year}',
+  'onb.transfer.grade': 'Year you transferred into',
+  'onb.transfer.applied': 'Applied cohort: {year}',
+  'onb.transfer.outOfRange': 'There is no data for the {year} cohort in {dept}. Please check the year and grade again. (Supported cohorts: {range})',
   'onb.mc.title': 'When did you change majors?',
   'onb.mc.sub': 'We need this because general education requirements depend on when you changed (year and semester).',
   'onb.mc.year': 'Year of the change',
@@ -410,6 +425,8 @@ export default {
   'onb.summary.type': 'Admission type',
   'onb.summary.track': 'Track',
   'onb.summary.majorChange': 'Major change',
+  'onb.summary.transfer': 'Transfer',
+  'onb.summary.transferValue': 'Year {grade} transfer · {year}',
   'onb.summary.majorChangeValue': 'Year {grade} · {year}, Semester {semester}',
   'onb.summary.leave': 'Semesters on leave',
   'onb.done.title': "You're all set",

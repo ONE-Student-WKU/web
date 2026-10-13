@@ -74,5 +74,6 @@ npm run seed:regulations --workspace=server   # 로컬 DB에 문서 임베딩(Vo
 ## 이 저장소에서 확인하지 못한 것 (대시보드 확인 필요)
 
 - Railway Cron Job의 **Start Command**가 위 4개와 정확히 일치하는지. (`db-reseed.yml` 주석에는 학과별 교육과정 시드(`seed:curriculum-2025` 등)와 연계전공 시드가 파이프라인 목록에 없다는 "미해결" 메모가 있다. 현재 `server/package.json`에는 해당 npm script가 있으니, 목록에 들어갔는지 확인이 필요하다.)
+- `seed:lineage` → `generate:curriculum-changes`(학과 개편 계보·변경 이력 재생성)가 Start Command에 있는지. 졸업요건 시드가 바뀌면(예: 2026-10-12 최신 책자 학번별 표 정렬, DECISIONS D-55) 이걸 다시 돌려야 챗봇의 "변경 이력"이 새 값 기준으로 바뀐다. 없으면 옛 값 기준 이력이 운영에 남는다.
 - 백엔드 서비스의 자동배포 연동 브랜치와 Pre-Deploy Command(`db/migrate.js`)가 실제로 설정돼 있는지. (README와 이슈 #226의 설명을 따른 것이다.)
 - `develop`을 `main`에 올리는 릴리스 절차(PR 방식인지 직접 머지인지).

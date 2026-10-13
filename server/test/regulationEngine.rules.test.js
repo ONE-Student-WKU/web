@@ -48,6 +48,7 @@ test('일반 재학생 2019학번: 136학점, 신뢰도 확정(INFO 플래그는
   assert.equal(rule(r, 'MAJOR_MINIMUM').value.mode, 'FULL');
   assert.equal(rule(r, 'REQUIREMENTS').confidence, 'CONFIRMED');
   assert.ok(codes(r, 'REQUIREMENTS').includes('COHORT_TRANSITION_ADDENDUM_NOT_HELD'), '2026학번 미만은 종전 부칙 미보유를 알린다');
+  assert.ok(codes(r, 'REQUIREMENTS').includes('LATEST_BOOKLET_COHORT_TABLE'), '2026학번 미만의 값은 최신 책자 학번별 표라고 알린다(INFO)');
   // 교양 상한: 2021학번까지는 학교 홈페이지·책자가 "상한 없음" → 확정(조문 문언과의 차이는 INFO 플래그로만 남김, D-51)
   assert.equal(rule(r, 'LIBERAL_ARTS_CAP').value.cap, null);
   assert.equal(rule(r, 'LIBERAL_ARTS_CAP').confidence, 'CONFIRMED');
@@ -167,14 +168,17 @@ test('전과 완화 행이 자료에 없으면 일반 기준으로 계산하되 
 });
 
 // ---------------------------------------------------------------- 편입생
-test('편입생: 편입 학년을 모르면 3학년으로 가정(추정), 총 요구학점은 단정하지 않는다', async () => {
+test('편입생: 편입 학년을 모르면 3학년으로 가정(추정), 총량은 졸업학점 − 인정학점(136학점 학과 = 68)으로 계산하되 확정이 아니다', async () => {
   const r = await resolve({ admissionYear: 2023, enrollmentType: 'TRANSFER_ADMISSION' });
-  assert.equal(rule(r, 'REQUIREMENTS').value.totalRequiredCredits, null);
-  assert.equal(credits(r).전공, 48);
+  // 본교 이수학점 = 136 − 68 = 68 = 전공 48 + 자유선택 20. 교양은 제10조②로 충족한 것으로 보고 "종교와원불교"만 확인한다.
+  assert.equal(rule(r, 'REQUIREMENTS').value.totalRequiredCredits, 68);
+  assert.deepEqual(credits(r), { 전공: 48, 일반선택: 20 });
+  assert.deepEqual(rule(r, 'REQUIREMENTS').value.certifications.map((c) => c.category).sort(), ['졸업논문', '종교와원불교']);
   assert.equal(rule(r, 'MAJOR_MINIMUM').value.transferGrade, 3);
-  for (const code of ['TRANSFER_GRADE_ASSUMED', 'TRANSFER_COHORT_YEAR_UNVERIFIED', 'TRANSFER_TOTAL_UNRESOLVED']) {
+  for (const code of ['TRANSFER_GRADE_ASSUMED', 'TRANSFER_COHORT_YEAR_UNVERIFIED', 'TRANSFER_RECOGNIZED_CREDITS_ASSUMED']) {
     assert.ok(codes(r, 'REQUIREMENTS').includes(code), code);
   }
+  assert.ok(!codes(r, 'REQUIREMENTS').includes('TRANSFER_TOTAL_UNRESOLVED'), '총량을 계산했으면 미해결 플래그를 빼야 한다');
   assert.ok(codes(r, 'LIBERAL_ARTS_BASIS').includes('TRANSFER_LIBERAL_DEEMED_MET'));
   assert.ok(codes(r, 'LIBERAL_ARTS_CAP').includes('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
   assert.equal(r.confidence, 'ESTIMATED');
@@ -184,6 +188,10 @@ test('편입 학년별 전공: 2학년=완화 없음, 3학년=완화 행, 4학�
   const g2 = await resolve({ admissionYear: 2023, enrollmentType: 'TRANSFER_ADMISSION', transfer: { grade: 2 } });
   assert.equal(rule(g2, 'MAJOR_MINIMUM').value.mode, 'FULL');
   assert.equal(credits(g2).전공필수, 19);
+  // 2학년 편입은 제10조②(교양 충족 간주) 대상이 아니다 — 학번표 교양을 그대로 요구하고 총량은 단정하지 않는다.
+  assert.equal(credits(g2).교양선택, 34);
+  assert.ok(!codes(g2, 'LIBERAL_ARTS_BASIS').includes('TRANSFER_LIBERAL_DEEMED_MET'));
+  assert.ok(codes(g2, 'REQUIREMENTS').includes('TRANSFER_TOTAL_UNRESOLVED'));
   assert.ok(!codes(g2, 'REQUIREMENTS').includes('TRANSFER_GRADE_ASSUMED'), '학년을 줬으면 가정 플래그가 없어야 한다');
 
   const g3 = await resolve({ admissionYear: 2023, enrollmentType: 'TRANSFER_ADMISSION', transfer: { grade: 3 } });

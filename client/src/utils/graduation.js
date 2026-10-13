@@ -27,10 +27,13 @@ export function mergeMajorCategories(categories) {
   const elective = categories.find((c) => c.category === MAJOR_ELECTIVE_KEY);
   if (!required || !elective) return categories;
 
+  // 다만 기본전공은 풀과 별개로 지켜야 하는 하한("19학점 이상")이라, 선택전공을 많이 들어 풀이 차도 기본전공이 모자라면
+  // 졸업할 수 없다 — 합치면서 그 부족분까지 지우던 문제(기본전공 9/19인데 "부족 요건 없음")가 있어 따로 실어 둔다.
   const merged = {
     category: MAJOR_MERGED_KEY,
     earnedCredits: required.earnedCredits + elective.earnedCredits,
     requiredCredits: required.requiredCredits + elective.requiredCredits,
+    baseShortfall: Math.max(0, required.requiredCredits - required.earnedCredits),
   };
 
   return categories
@@ -125,14 +128,25 @@ export function summarizeShortfalls(categories, certifications, t = null) {
     // 오해를 주는 문제가 있었다(실사용 확인).
     if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
-    if (missing > 0) {
-      const category = displayCategory(c.category);
+    const category = displayCategory(c.category);
+    const baseShortfall = c.baseShortfall || 0;
+    const base = displayCategory(MAJOR_REQUIRED_KEY);
+    if (missing > 0 && baseShortfall > 0) {
+      items.push(
+        t
+          ? t('grad.shortfallCreditsWithBase', { category: label(category), n: missing, base: label(base), m: baseShortfall })
+          : `${category} ${missing}학점(그중 ${base} ${baseShortfall}학점)`
+      );
+    } else if (missing > 0) {
       items.push(t ? t('grad.shortfallCredits', { category: label(category), n: missing }) : `${category} ${missing}학점`);
+    } else if (baseShortfall > 0) {
+      items.push(t ? t('grad.shortfallCredits', { category: label(base), n: baseShortfall }) : `${base} ${baseShortfall}학점`);
     }
   }
 
+  // optional(교직기본이수 — 교직과정 이수자만 해당)은 졸업 부족 요건에 넣지 않는다. 화면 카드에는 안내 문구와 함께 남는다.
   for (const cert of certifications || []) {
-    if (!cert.satisfied) items.push(label(cert.category));
+    if (!cert.satisfied && !cert.optional) items.push(label(cert.category));
   }
 
   return items;
@@ -186,12 +200,14 @@ function pickTrustReason(regulation, lang) {
 export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
-  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
+  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false, basisBookletYear: null };
   const level = regulation.confidence === 'CONFIRMED' ? 'ok' : regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
   return {
     noData,
     badge: { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
+    // 2025학번 이하: 요건이 최신 책자(2026)의 학번별 이수기준표 값이라는 안내(서버 regulation.basisBookletYear). 자료 없음이면 적지 않는다.
+    basisBookletYear: !noData && regulation.basisBookletYear ? regulation.basisBookletYear : null,
   };
 }

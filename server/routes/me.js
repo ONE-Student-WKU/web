@@ -11,7 +11,7 @@ const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/conse
  *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_LANGUAGES, serializeStudent } = studentService;
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_TRANSFER_GRADES, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
 router.get('/me', requireAuth, async (req, res, next) => {
@@ -55,7 +55,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
       secondDepartmentId, careerCounselingCount, leaveSemesters, language,
     } = req.body;
 
@@ -130,6 +130,21 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'REQUIRED_MAJOR_CHANGE_SEMESTER', message: null, data: null });
     }
 
+    // transferGrade는 편입생(TRANSFER_ADMISSION)일 때만 의미가 있다. 유형을 편입생으로 바꾸는 요청에는 반드시 같이 보내야 하고(학번을
+    // "편입 연도 − 학년 + 1"로 다시 계산해야 하므로), 이미 편입생이면서 옛 방식으로 입력해 값이 없는 계정이 다른 항목만 고칠 때는
+    // 요구하지 않는다(그 계정의 판정은 그대로 "3학년 편입 가정" 추정이다).
+    if (transferGrade !== undefined && transferGrade !== null) {
+      if (effectiveEnrollmentType !== 'TRANSFER_ADMISSION') {
+        return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+      }
+      if (!VALID_TRANSFER_GRADES.includes(Number(transferGrade))) {
+        return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+      }
+    }
+    if (enrollmentType === 'TRANSFER_ADMISSION' && student.enrollment_type !== 'TRANSFER_ADMISSION' && (transferGrade === undefined || transferGrade === null)) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_TRANSFER_GRADE', message: null, data: null });
+    }
+
     if (departmentId !== undefined) {
       const dept = await studentService.findDepartmentById(departmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
@@ -157,6 +172,8 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeGrade,
       majorChangeYear,
       majorChangeSemester,
+      // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
+      transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,

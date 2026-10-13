@@ -48,17 +48,23 @@ async function history(dept, year, message) {
   return s.history;
 }
 
-test('DB: 국어교육과 2023 "교양 학점이 언제 바뀌었어?" — 2024 교양 39→37(N-6 가짜 변경 의심)에 확인 필요 단서', async () => {
+// 2026-10-12: 2025학번 이하 교양·일반선택은 2026 책자 학번별 표 값으로 정렬됐다(교육혁신과 면담). 사범대 2023·2024는 같은 표(교양 37)라
+// 예전 "2024학번부터 39→37" 가짜 변경(N-6)이 사라지고, 2022(39)→2023(37)만 남는다. 보류 단서(⚠)도 더는 붙지 않는다.
+test('DB: 국어교육과 2023 "교양 학점이 언제 바뀌었어?" — N-6 가짜 변경(2024 39→37)이 없고, 남은 변경에 보류 단서가 없다', async () => {
   const chunk = (await history('국어교육과', 2023, '교양 학점이 언제 바뀌었어?')).find((c) => /LIBERAL_TOTAL/.test(c.chunkId));
-  const line = chunk.content.split('\n').find((l) => l.includes('2024학번부터 39학점 → 37학점'));
-  assert.match(line, /⚠ 확인 필요 — .*사범대 10개 학과 자유선택 책자 32 vs 시드 34/);
-  // 판단 보류가 없는 구간(2020·2022 변경)에는 단서가 붙지 않는다
-  assert.doesNotMatch(chunk.content.split('\n').find((l) => l.includes('2022학번부터 27학점 → 39학점')), /⚠/);
+  const lines = chunk.content.split('\n');
+  assert.equal(lines.find((l) => l.includes('2024학번부터')), undefined, `2024학번 변경이 남아 있다: ${chunk.content}`);
+  assert.match(lines[0], /2023학번에 적용되는 교양 이수학점 합계: 37학점 — 이것이 이 학번의 적용 규정이다\.$/);
+  const change = lines.find((l) => l.includes('2023학번부터 39학점 → 37학점'));
+  assert.ok(change, `2022(39)→2023(37) 변경이 있어야 한다: ${chunk.content}`);
+  assert.doesNotMatch(change, /⚠/);
 });
 
-test('DB: 2024학번 본인 값이 판단 보류인 학번의 이력 — 적용 값 줄에도 단서', async () => {
-  const chunk = (await history('국어교육과', 2024, '교양 학점이 언제 바뀌었어?')).find((c) => /LIBERAL_TOTAL/.test(c.chunkId));
-  assert.match(chunk.content.split('\n')[0], /2024학번에 적용되는 교양 이수학점 합계: 37학점.*⚠ 확인 필요 — 이 학번의 자료가 판단 보류 항목이다/);
+test('DB: 옛 보류가 해소된 학번(국어교육과 2024)의 적용 값 줄에는 단서가 없고, 남은 보류(SW융합학과 2021)에는 단서가 붙는다', async () => {
+  const edu = (await history('국어교육과', 2024, '교양 학점이 언제 바뀌었어?')).find((c) => /LIBERAL_TOTAL/.test(c.chunkId));
+  assert.match(edu.content.split('\n')[0], /2024학번에 적용되는 교양 이수학점 합계: 37학점 — 이것이 이 학번의 적용 규정이다\.$/);
+  const sw = (await history('SW융합학과', 2021, '졸업학점이 언제 바뀌었어?')).find((c) => /GRAD_TOTAL/.test(c.chunkId));
+  assert.match(sw.content.split('\n')[0], /⚠ 확인 필요 — 이 학번의 자료가 판단 보류 항목이다\(SW융합학과 교양·전공·자유 학점 구조/);
 });
 
 test('DB: 판단 보류 없는 학과·학번(간호학과 2023)의 졸업학점 이력에는 단서가 붙지 않고 기존 경과조치 문구를 유지', async () => {
@@ -68,9 +74,9 @@ test('DB: 판단 보류 없는 학과·학번(간호학과 2023)의 졸업학점
   assert.match(chunk.content, /경과조치에 따라 달라질 수 있어 단정할 수 없다/);
 });
 
-test('DB: 컴소공 2020은 교양·일반선택 분할 판단 보류(#260)가 걸려 있어 이력 청크도 같은 보류를 따른다(판단 함수와 같은 등급표)', async () => {
+test('DB: 컴소공 2020 교양·일반선택 분할 보류(#260-cse-liberal)는 2026 책자 학번별 표로 해소 — 이력 청크에 보류 단서가 없다(판단 함수와 같은 등급표)', async () => {
   const chunk = (await history('컴퓨터·소프트웨어공학과', 2020, '졸업학점이 언제 바뀌었어?')).find((c) => /GRAD_TOTAL/.test(c.chunkId));
-  assert.match(chunk.content.split(String.fromCharCode(10))[0], /⚠ 확인 필요 — 이 학번의 자료가 판단 보류 항목이다\(컴소공 교양·일반선택 분할/);
+  assert.match(chunk.content.split(String.fromCharCode(10))[0], /2020학번에 적용되는 졸업학점 총계: 136학점 — 이것이 이 학번의 적용 규정이다\.$/);
 });
 
 test('DB: 과목 이력 — 검증 안 된 학년도(전공과목 2017·2018·2020 = C)가 낀 구간의 "변경 없음"은 "기록 없음(검증 안 됨)"', async () => {

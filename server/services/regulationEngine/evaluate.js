@@ -1,4 +1,4 @@
-const { LIBERAL_ARTS_FIXED_CREDITS } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR } = require('./constants');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
   checkEligibility,
@@ -6,6 +6,7 @@ const {
   decideLiberalArtsBasis,
   decideLiberalArtsCap,
   resolveBasis,
+  transferRecognizedCredits,
 } = require('./decisions');
 const { basisTextFlags } = require('./textVersion');
 
@@ -48,20 +49,33 @@ const sum = (rows) => rows.reduce((s, r) => s + Number(r.requiredCredits), 0);
  * 차이 하나: 일반선택 재배분(완화로 비는 만큼 일반선택이 흡수)을 "3·4학년 전과"만이 아니라 전과생 전체에 적용한다
  * — 교양 29학점 고정만 적용되는 1·2학년 전과에서도 총량 보존 원리가 같기 때문(DECISIONS.md 참고).
  */
-function buildRequirementRows(ctx, allYearRows, relaxation, liberal) {
+function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentName = null) {
   const flags = [];
   const adjustments = [];
+  const basis = [];
+  let resolvedTransferTotal = false;
   const generalRows = allYearRows.filter((r) => r.enrollmentType == null);
   let rows = generalRows;
 
+  // 완화 행으로 바꿀 때는 일반 학생의 전공 행을 전부 뺀다. 건축학과(~2024)·의약계열처럼 일반 학생 전공이 "전필/전선"이 아니라
+  // 통합 "전공" 행인 학과에서 그 행을 남겨 두면 "전공 127 + 전공 66"처럼 전공 요건이 두 번 잡혔다(GRADUATION_AUDIT_2026-10-12 6절).
+  const withoutMajorRows = generalRows.filter((r) => !MAJOR_CATEGORIES.includes(r.category));
   if (relaxation.relaxedRows) {
     const overrideRows = allYearRows.filter((r) => r.enrollmentType === ctx.enrollmentType);
     if (overrideRows.length > 0) {
-      rows = [...generalRows.filter((r) => r.category !== '전공필수' && r.category !== '전공선택'), ...overrideRows];
+      rows = [...withoutMajorRows, ...overrideRows];
       adjustments.push('MAJOR_RELAXATION');
     } else if (relaxation.overrideMajorCredits != null) {
-      rows = [...generalRows.filter((r) => r.category !== '전공필수' && r.category !== '전공선택'),
+      rows = [...withoutMajorRows,
         { id: null, category: '전공', requiredCredits: relaxation.overrideMajorCredits, description: '4학년 편입생 최소전공 인정학점(학칙시행규칙 제6조 제3항)', enrollmentType: ctx.enrollmentType, minCourseCount: null, requiredCourses: [] }];
+      adjustments.push('MAJOR_RELAXATION');
+    } else if (REGULATION_MIN_MAJOR_BY_DEPARTMENT[departmentName] != null) {
+      // 책자에 숫자가 없어도 조문에 학과 이름으로 적힌 최소전공이 있으면 그 값을 쓴다(2025학번 건축학과 — 2025 책자는 "교육과정
+      // 전공이수학점에 따라 이수"로만 적음). 예전에는 완화 없이 전액 요구(MAJOR_RELAXATION_ROW_MISSING)로 계산했다.
+      rows = [...withoutMajorRows,
+        { id: null, category: '전공', requiredCredits: REGULATION_MIN_MAJOR_BY_DEPARTMENT[departmentName], description: `${departmentName} 최소전공 인정학점(학칙시행규칙 제6조 제1항 — 책자에 숫자 없음)`, enrollmentType: ctx.enrollmentType, minCourseCount: null, requiredCourses: [] }];
+      flags.push(makeFlag('MAJOR_MINIMUM_FROM_REGULATION', { departmentName }));
+      basis.push('ENF_ART6_1_ARCHITECTURE');
       adjustments.push('MAJOR_RELAXATION');
     } else {
       flags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
@@ -74,6 +88,11 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal) {
   }
 
   if (liberal.mode === 'FIXED_29') {
+    // 학번표 교양이 29보다 적은 학번(2017~2021학번 다수, 23~27학점)에도 29를 요구한다 — 컴퓨터·소프트웨어공학과 졸업요건 공지가
+    // 학번표 23학점인 학번의 2·3학년 전과생에게 "교양필수 5 + 교양 24"를 적고 있다(SOURCE_VERIFICATION_2026-10-12 3절). 알림(INFO)만 남긴다.
+    const cohortLiberal = sum(rows.filter((r) => LIBERAL_CATEGORIES.includes(r.category)));
+    const fixedLiberal = Object.values(LIBERAL_ARTS_FIXED_CREDITS).reduce((s, v) => s + v, 0);
+    if (cohortLiberal < fixedLiberal) flags.push(makeFlag('LIBERAL_FIXED_29_ABOVE_COHORT', { cohortLiberal, fixedLiberal }));
     rows = rows.map((r) => (LIBERAL_ARTS_FIXED_CREDITS[r.category] === undefined ? r : { ...r, requiredCredits: LIBERAL_ARTS_FIXED_CREDITS[r.category] }));
     adjustments.push('LIBERAL_FIXED_29');
   }
@@ -81,14 +100,47 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal) {
   // 일반선택 재배분: "완화 = 총 졸업학점 감소"가 아니라 "전공·교양 최소 기준만 채우면 나머지는 자유"이므로,
   // 비는 만큼을 일반선택이 흡수해 총 요구학점이 일반 재학생(같은 학번)과 같게 유지된다. 편입생은 전적대학 인정학점이
   // 껴 있어 이 원리가 그대로 안 맞으므로(총량 미해결) 적용하지 않는다.
+  // 교양 29학점 고정이 요구를 올려 일반선택이 모자라면(간호·작업치료·예과처럼 일반선택이 0인 학과) 음수 요건 대신 0으로 두고,
+  // 그만큼 총 요구학점이 일반 재학생보다 늘어난 것으로 보인다.
   if (ctx.enrollmentType === 'MAJOR_CHANGE' && adjustments.length > 0) {
     const totalDegreeCredits = sum(generalRows);
     const adjusted = totalDegreeCredits - sum(rows.filter((r) => MAJOR_CATEGORIES.includes(r.category))) - sum(rows.filter((r) => LIBERAL_CATEGORIES.includes(r.category)));
-    rows = rows.map((r) => (r.category === '일반선택' ? { ...r, requiredCredits: adjusted } : r));
+    rows = rows.map((r) => (r.category === '일반선택' ? { ...r, requiredCredits: Math.max(0, adjusted) } : r));
     adjustments.push('GENERAL_ELECTIVE_REBALANCE');
   }
 
-  return { rows, adjustments, flags };
+  // 3·4학년 편입생(시행규칙 제10조②): 교양 영역 기준은 충족한 것으로 보고 "종교와원불교"만 따로 확인한다. 본교에서 들은 교양 학점은
+  // 일반선택(자유선택)으로 센다(graduationService.computeCreditStatus). 예전에는 일반 학생의 교양 39학점을 그대로 요구했다.
+  if (liberal.mode === 'TRANSFER_DEEMED') {
+    rows = [...rows.filter((r) => !LIBERAL_CATEGORIES.includes(r.category)),
+      { id: null, category: '종교와원불교', requiredCredits: 0, description: '편입생 교양: "종교와원불교" 필수 이수(본교·원광보건대학교를 졸업한 편입생은 제외 — 학교 편입생 교육과정 안내, 시행규칙 제10조 제2항)', enrollmentType: ctx.enrollmentType, minCourseCount: 1, requiredCourses: ['종교와원불교'] }];
+    adjustments.push('TRANSFER_LIBERAL_DEEMED');
+
+    // 총량: 졸업학점 − 편입 인정학점 = 본교에서 이수할 학점. 그중 전공 최소학점을 뺀 나머지를 일반선택으로 둔다.
+    // 전공 완화 행이 있을 때만 계산한다 — 완화 행이 없는 학과(의약계열 등)는 "학과의 전공이수학점에 따른다"라 전적대학 학점이 전공에 얼마나
+    // 인정되는지 알 수 없어 총량을 단정하지 않는다.
+    const graduationCredits = sum(generalRows.filter((r) => r.minCourseCount == null));
+    const recognized = adjustments.includes('MAJOR_RELAXATION') ? transferRecognizedCredits(departmentName, ctx.admissionYear, graduationCredits) : null;
+    if (recognized != null) {
+      const majorCredits = sum(rows.filter((r) => MAJOR_CATEGORIES.includes(r.category)));
+      const elective = Math.max(0, graduationCredits - recognized - majorCredits);
+      const electiveRow = { id: null, category: '일반선택', requiredCredits: elective, description: `편입생 자유선택: 졸업학점 ${graduationCredits} − 편입 인정학점 ${recognized} − 전공 ${majorCredits}`, enrollmentType: ctx.enrollmentType, minCourseCount: null, requiredCourses: [] };
+      rows = rows.some((r) => r.category === '일반선택') ? rows.map((r) => (r.category === '일반선택' ? electiveRow : r)) : [...rows, electiveRow];
+      flags.push(makeFlag('TRANSFER_RECOGNIZED_CREDITS_ASSUMED', { graduationCredits, recognized }));
+      basis.push('SITE_TRANSFER_RECOGNIZED_CREDITS');
+      adjustments.push('TRANSFER_RECOGNIZED_CREDITS');
+      resolvedTransferTotal = true;
+    }
+  }
+
+  return { rows, adjustments, flags, basis, resolvedTransferTotal };
+}
+
+// 졸업인증제 행이 대학 공통 기본영역 묶음(constants.GENERIC_CERTIFICATION_COURSE_SETS)과 같은가. 학과 지정 과목(컴소공 기업연계프로젝트1·2 등)은 아니다.
+function isGenericCertificationRow(row) {
+  if (row.category !== '졸업인증제') return false;
+  const key = [...(row.requiredCourses || [])].sort().join('|');
+  return GENERIC_CERTIFICATION_COURSE_SETS.some((set) => [...set].sort().join('|') === key);
 }
 
 function orderCategories(creditRows) {
@@ -153,16 +205,22 @@ function evaluate(ctx, data) {
   const department = data.department || null;
   const yearRows = department ? (data.rows || []).filter((r) => rowAppliesToYear(r, ctx.admissionYear)) : [];
   if (!department) dataFlags.push(makeFlag('DEPARTMENT_NOT_FOUND'));
+  // 1학년 과정만 운영하고 학과를 배정받는 단위(자율전공학부)는 시드에 1학년 이수 기준 행이 있어도 졸업요건이 아니다 —
+  // 그 행으로 진단하면 46~48학점에 "졸업요건 충족"이 나왔다(GRADUATION_AUDIT_2026-10-12 3절).
+  else if (NON_DEGREE_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('NON_DEGREE_DEPARTMENT'));
   // 상한이 열린 행(max=NULL)은 "그 이후 개편이 확인될 때까지 유효"라는 뜻이지 미래 학번에 대한 확인이 아니다. 시스템이 아는
   // 가장 최신 학년도보다 뒤의 학번에는 외삽하지 않는다.
   else if (data.latestDataYear != null && ctx.admissionYear > data.latestDataYear) {
     dataFlags.push(makeFlag('COHORT_BEYOND_LATEST_DATA', { latestDataYear: data.latestDataYear }));
   } else if (!hasCoreRowsForYear(yearRows, ctx.admissionYear)) dataFlags.push(makeFlag('NO_CURRICULUM_ROWS', { candidates: data.candidates || [] }));
 
-  const reqFlags = [...eligibilityFlags, ...dataFlags, ...relaxation.flags, ...liberal.flags];
+  let reqFlags = [...eligibilityFlags, ...dataFlags, ...relaxation.flags, ...liberal.flags];
+  let built = null;
   if (dataFlags.length === 0) {
-    const built = buildRequirementRows(ctx, yearRows, relaxation, liberal);
+    built = buildRequirementRows(ctx, yearRows, relaxation, liberal, department.name);
     reqFlags.push(...built.flags);
+    // 편입 인정학점으로 총량을 계산했으면 "총량 미해결"은 더 이상 사실이 아니다(인정학점 가정은 TRANSFER_RECOGNIZED_CREDITS_ASSUMED가 알린다).
+    if (built.resolvedTransferTotal) reqFlags = reqFlags.filter((f) => f.code !== 'TRANSFER_TOTAL_UNRESOLVED');
     const creditRows = orderCategories(built.rows.filter((r) => r.minCourseCount == null));
     const certRows = built.rows.filter((r) => r.minCourseCount != null);
     const majorRow = creditRows.filter((r) => MAJOR_CATEGORIES.includes(r.category));
@@ -171,25 +229,45 @@ function evaluate(ctx, data) {
       department,
       cohortYear: ctx.admissionYear,
       categories: creditRows.map((r) => ({ category: r.category, requiredCredits: Number(r.requiredCredits), description: r.description ?? null, requiredCourses: r.requiredCourses || [] })),
-      // 편입생은 전적대학 인정학점 때문에 총량을 단정할 수 없다(TRANSFER_TOTAL_UNRESOLVED).
-      totalRequiredCredits: ctx.enrollmentType === 'TRANSFER_ADMISSION' ? null : sum(creditRows),
-      certifications: certRows.map((r) => ({ category: r.category, description: r.description ?? null, minCourseCount: r.minCourseCount, requiredCourses: r.requiredCourses || [] })),
+      // 편입생은 인정학점을 정할 수 있을 때만 총량을 낸다(본교에서 이수할 학점). 못 정하면 null(TRANSFER_TOTAL_UNRESOLVED).
+      totalRequiredCredits: ctx.enrollmentType === 'TRANSFER_ADMISSION' && !built.resolvedTransferTotal ? null : sum(creditRows),
+      certifications: certRows.map((r) => ({
+        category: r.category, description: r.description ?? null, minCourseCount: r.minCourseCount, requiredCourses: r.requiredCourses || [],
+        // 대학 공통 기본영역 행은 학사편입학자 등이 면제다. 편입 종류(학사편입/일반편입)는 입력받지 않으므로 면제로 빼지 않고 안내만 붙인다.
+        ...(ctx.enrollmentType === 'TRANSFER_ADMISSION' && isGenericCertificationRow(r) ? { conditionalExemption: 'BACHELOR_TRANSFER' } : {}),
+      })),
       adjustments: built.adjustments,
     };
   }
 
-  const reqBasis = ['BOOKLET_ROWS', ...relaxation.basis, ...liberal.basis];
+  const reqBasis = ['BOOKLET_ROWS', ...relaxation.basis, ...liberal.basis, ...(built ? built.basis : [])];
+  const certExemption = requirementsValue && requirementsValue.certifications.some((c) => c.conditionalExemption);
+  if (certExemption) {
+    reqBasis.push('SITE_CERTIFICATION_BACHELOR_TRANSFER_EXEMPT');
+    reqFlags.push(makeFlag('CERTIFICATION_BACHELOR_TRANSFER_EXEMPT'));
+  }
   if (dataFlags.some((f) => f.code === 'COHORT_BEYOND_LATEST_DATA')) reqBasis.push('ACAD_ADDENDUM_2026_04_10_ART2_REORG_2027');
-  if (ctx.admissionYear < 2026) {
+  if (ctx.admissionYear < LATEST_BOOKLET_YEAR) {
     reqBasis.push('ENF_ART118_COHORT_TRANSITION', 'ACAD_ADDENDUM_2026_02_05_ART3');
     reqFlags.push(makeFlag('COHORT_TRANSITION_ADDENDUM_NOT_HELD'));
+    // 2025학번 이하의 행은 "그 해 책자"가 아니라 최신 책자의 학번별 이수기준표 값이다(constants.LATEST_BOOKLET_YEAR 주석).
+    // 요건을 실제로 냈을 때만 알린다 — 자료가 없으면(NO_DATA) 어느 표도 쓰지 않았다.
+    if (built) {
+      reqBasis.push('BOOKLET_2026_TRANSITION_ALL_COHORTS', 'BOOKLET_2026_COHORT_TABLES');
+      reqFlags.push(makeFlag('LATEST_BOOKLET_COHORT_TABLE', { latestBookletYear: LATEST_BOOKLET_YEAR }));
+      // 최신 책자에 학과 단위 행이 없는 학과(통폐합·개편으로 사라진 이름)는 과목 편성이 구 교육과정으로 남을 수 있다(경과조치 가 단서).
+      // 학번 범위가 열린 보조 행(교직기본이수·전과/편입 완화·졸업논문)만으로 "최신 책자에 있음"으로 보지 않게 핵심 요건 행으로 판정한다.
+      if (!hasCoreRowsForYear(data.rows || [], LATEST_BOOKLET_YEAR)) reqFlags.push(makeFlag('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET', { latestBookletYear: LATEST_BOOKLET_YEAR }));
+    }
   }
   reqFlags.push(...textFlagsFor(reqBasis));
 
-  const relaxBasis = relaxation.basis;
-  const relaxFlags = [...eligibilityFlags, ...relaxation.flags, ...dataFlags.filter((f) => f.code === 'NO_CURRICULUM_ROWS' || f.code === 'DEPARTMENT_NOT_FOUND')];
+  const fromRegulation = built ? built.flags.filter((f) => f.code === 'MAJOR_MINIMUM_FROM_REGULATION') : [];
+  const relaxBasis = [...relaxation.basis, ...(fromRegulation.length ? ['ENF_ART6_1_ARCHITECTURE'] : [])];
+  const relaxFlags = [...eligibilityFlags, ...relaxation.flags, ...fromRegulation, ...dataFlags.filter((f) => f.code === 'NO_CURRICULUM_ROWS' || f.code === 'DEPARTMENT_NOT_FOUND')]
+    .filter((f) => !(built && built.resolvedTransferTotal && f.code === 'TRANSFER_TOTAL_UNRESOLVED'));
   relaxFlags.push(...textFlagsFor(relaxBasis));
-  if (requirementsValue && requirementsValue.adjustments.length === 0 && relaxation.relaxedRows) relaxFlags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
+  if (requirementsValue && !requirementsValue.adjustments.includes('MAJOR_RELAXATION') && relaxation.relaxedRows) relaxFlags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
 
   const libFlags = [...eligibilityFlags, ...liberal.flags];
   libFlags.push(...textFlagsFor(liberal.basis));

@@ -18,6 +18,9 @@ const { CATEGORY_MAP } = require('../services/categoryMap');
  */
 
 const RAW_SOURCE = path.resolve(__dirname, '..', '..', 'db', 'curriculum', '_source', '전공시간표_2017-2026.json');
+// 전 학과 2026-2학기 시간표(사람이 공개 조회 화면을 직접 조회해 PDF로 저장한 것을 정리, 2026-10-13).
+// 학과·전공(트랙)이 항목마다 명시돼 있다. 같은 학과·학기가 RAW_SOURCE에도 있으면(컴소공·공학3계열 2026-2) 이쪽이 더 최신이라 이쪽을 쓴다.
+const ALL_DEPARTMENTS_SOURCE = path.resolve(__dirname, '..', '..', 'db', 'curriculum', '_source', '전공시간표_2026-2_전학과.json');
 const LEGACY_CATALOG = path.resolve(__dirname, '..', '..', 'db', 'seed', 'courses.json');
 
 // 원문 "구분" 코드 → student_courses.category 매핑은 services/categoryMap.js로 공유
@@ -39,6 +42,10 @@ function inferTrackName(courseCode) {
 }
 
 // "월34화56" -> [{day:'월',period:3},{day:'월',period:4},{day:'화',period:5},{day:'화',period:6}]
+// 10교시부터는 학교 시간표 표기가 "10" 다음에 끝자리만 찍힌다: "910" = 9·10, "9101" = 9·10·11, "1012" = 10·11·12
+// (2026-2 전 학과 시간표에서 "9101"은 28건 모두 3학점, "1012"는 4건 모두 3학점, "910"은 12건 모두 2학점 — 교시 수 = 학점).
+// 예전처럼 한 글자씩 읽으면 "9101"이 9·1·0·1교시가 되어 1교시가 두 번 나온다.
+// 토·일은 앱 시간표(월~금)에 칸이 없어 나누지 않는다(원문 time_raw에는 남는다).
 function parseTimeRaw(timeRaw) {
   if (!timeRaw) return [];
   const result = [];
@@ -46,7 +53,16 @@ function parseTimeRaw(timeRaw) {
   let m;
   while ((m = re.exec(timeRaw))) {
     const [, day, digits] = m;
-    for (const ch of digits) result.push({ day, period: Number(ch) });
+    let reachedTen = false;
+    for (let i = 0; i < digits.length; i++) {
+      if (digits[i] === '1' && digits[i + 1] === '0') {
+        result.push({ day, period: 10 });
+        reachedTen = true;
+        i++;
+      } else {
+        result.push({ day, period: reachedTen ? 10 + Number(digits[i]) : Number(digits[i]) });
+      }
+    }
   }
   return result;
 }
@@ -144,12 +160,20 @@ async function insertOffering(row) {
   }
 }
 
-async function seedScrapedData(byKey) {
-  const deptIdCache = new Map();
-  const trackIdCache = new Map();
-  const touchedDeptYearSem = new Set();
-
-  for (const [key, rows] of Object.entries(byKey)) {
+// 두 원본을 같은 모양의 묶음 목록으로 만든다(순수 함수 — DB 없이 테스트).
+//  - 전 학과 원본: 항목마다 학과·트랙이 있다. 사이트가 같은 학과를 옛 대학·새 대학 아래 둘 다 보여 줘(예: 간호학과 — 의과대학·간호대학)
+//    같은 학과·학기 묶음이 여러 개일 수 있다. 둘 다 그 학과의 실제 개설이라 모두 넣고, 같은 분반의 중복은 insert 단계에서 거른다.
+//  - 옛 원본(컴소공·공학3계열 2017~2026): 같은 학과·학기가 전 학과 원본에 있으면 건너뛴다(전 학과 원본이 더 최신).
+function buildDatasets(legacyByKey, allDepartments) {
+  const datasets = [];
+  const covered = new Set();
+  for (const e of (allDepartments && allDepartments.entries) || []) {
+    const semester = LEGACY_SEMESTER_TO_CURRENT[Number(e.semester)];
+    if (!e.department || !semester) continue;
+    covered.add(`${e.department}|${e.year}|${semester}`);
+    datasets.push({ label: `${e.college || ''} > ${e.printedName}`, departmentName: e.department, trackName: e.track || null, year: e.year, semester, rows: e.rows });
+  }
+  for (const [key, rows] of Object.entries(legacyByKey || {})) {
     const parsed = parseDatasetKey(key);
     if (!parsed) {
       console.warn(`[SKIP] 키 형식을 못 알아봄: ${key}`);
@@ -160,7 +184,19 @@ async function seedScrapedData(byKey) {
       console.warn(`[SKIP] ${key}: 학과 매핑 없음 (${parsed.deptKey})`);
       continue;
     }
+    if (covered.has(`${departmentName}|${parsed.year}|${parsed.semester}`)) continue;
+    datasets.push({ label: key, departmentName, trackName: null, year: parsed.year, semester: parsed.semester, rows });
+  }
+  return datasets;
+}
 
+async function seedScrapedData(datasets) {
+  const deptIdCache = new Map();
+  const trackIdCache = new Map();
+  const touchedDeptYearSem = new Set();
+  const insertedSections = new Set();
+
+  for (const { label: key, departmentName, trackName: fixedTrackName, ...parsed } of datasets) {
     if (!deptIdCache.has(departmentName)) {
       deptIdCache.set(departmentName, await findDepartmentId(departmentName));
     }
@@ -181,13 +217,21 @@ async function seedScrapedData(byKey) {
     }
 
     let count = 0;
-    for (const r of rows) {
-      const trackName = inferTrackName(r.courseCode);
+    for (const r of parsed.rows) {
+      const trackName = fixedTrackName || inferTrackName(r.courseCode);
       const trackCacheKey = `${departmentId}-${trackName}`;
       if (trackName && !trackIdCache.has(trackCacheKey)) {
         trackIdCache.set(trackCacheKey, await findTrackId(departmentId, trackName));
       }
       const trackId = trackName ? trackIdCache.get(trackCacheKey) : null;
+      if (trackName && !trackId) console.warn(`[WARN] ${key}: DB에 트랙 없음 (${departmentName} ${trackName}) — 트랙 없이 넣음`);
+
+      // 같은 분반은 학과와 관계없이 한 번만 넣는다 — uq_course_offerings(연도·학기·학수번호·과목명·분반·교수·시간)에 학과가 없고,
+      // 과목 검색(courseService)도 학과로 거르지 않아 한 분반이 한 행이어야 검색 결과가 겹치지 않는다. 사이트는 같은 분반을
+      // 여러 학과 시간표에 함께 보여 준다(2026-2: 1,852개 중 16개, 대부분 교양 공통 과목·개편 전후 대학의 같은 학과) — 처음 나온 학과에 붙는다.
+      const sectionKey = [parsed.year, parsed.semester, r.courseCode || '', r.courseName.trim(), r.section || '', r.professor || '', r.time || ''].join('|');
+      if (insertedSections.has(sectionKey)) continue;
+      insertedSections.add(sectionKey);
 
       const rawCategory = (r.category || '').trim() || null;
       await insertOffering({
@@ -263,9 +307,10 @@ async function seedLegacyOnlyEntries(latestSemester, deptIdCache) {
 async function run() {
   try {
     const byKey = JSON.parse(fs.readFileSync(RAW_SOURCE, 'utf-8'));
+    const allDepartments = fs.existsSync(ALL_DEPARTMENTS_SOURCE) ? JSON.parse(fs.readFileSync(ALL_DEPARTMENTS_SOURCE, 'utf-8')) : null;
     const latestSemester = findLatestSemester(byKey);
 
-    const { deptIdCache } = await seedScrapedData(byKey);
+    const { deptIdCache } = await seedScrapedData(buildDatasets(byKey, allDepartments));
     const legacyCount = await seedLegacyOnlyEntries(latestSemester, deptIdCache);
     console.log(`[OK] courses.json 전용 보정 항목 이관: ${legacyCount}건 (${latestSemester.year}-${latestSemester.semester}학기로)`);
 
@@ -278,4 +323,6 @@ async function run() {
   }
 }
 
-run();
+if (require.main === module) run();
+
+module.exports = { buildDatasets, parseDatasetKey, parseTimeRaw };

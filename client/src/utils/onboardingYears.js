@@ -19,6 +19,23 @@ export function getYearRange(department, enrollmentType, nowYear = new Date().ge
   return { min, max };
 }
 
+// 편입생이 고를 수 있는 편입 학년. 1학년 편입은 입력 화면에서 받지 않는다(학칙상 의학계열 예외뿐이고 규정 엔진도 2~4를 쓴다).
+export const TRANSFER_GRADES = [2, 3, 4];
+
+// 편입생의 적용 학번 = 편입한 학년의 당초 입학자 학번 = 편입 연도 − 편입 학년 + 1.
+// 근거: 교육과정 운영에 관한 규정 제14조③ "편입학생은 편입학한 학년의 입학년도 교육과정을 적용받는다"
+// (예: 2026년에 3학년으로 편입 → 2024학번). 값이 없으면 null.
+export function transferCohortYear(transferYear, transferGrade) {
+  if (!transferYear || !transferGrade) return null;
+  return transferYear - transferGrade + 1;
+}
+
+// 편입 연도 = 저장된 학번 + 편입 학년 − 1 (transferCohortYear의 역). 옛 방식으로 입력해 편입 학년이 없으면 null.
+export function transferYearOf(admissionYear, transferGrade) {
+  if (!admissionYear || !transferGrade) return null;
+  return admissionYear + transferGrade - 1;
+}
+
 // 개편으로 이름이 바뀐 옛 학과에 붙이는 안내 문구. 옛 학번 학생은 옛 이름을 골라야 하는데 학교 공식 소속명과
 // 달라 헷갈리지 않게 "이후 학과"를 보여준다. 개편 이력이 이름 유사 추정(confirmed=false)이면 "(추정)"을 붙인다.
 // 조사(으로/로)는 받침에 따라 달라 쓰지 않는다. 후속 학과가 없으면 null.
