@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 const { validateLeavePeriods } = require('../services/leavePeriods');
+const { validateHomeLayout } = require('../services/homeLayout');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -57,7 +58,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-      secondDepartmentId, careerCounselingCount, leaveSemesters, language,
+      secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     if (name !== undefined && !name.trim()) {
@@ -94,6 +95,14 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
+    // 홈 화면 편집 설정 — 하단 바 3칸·카드 이름은 정해진 목록에서만 받는다. null은 기본 배치로 되돌리기.
+    let validHomeLayout;
+    if (homeLayout !== undefined) {
+      const { layout, error } = validateHomeLayout(homeLayout);
+      if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+      validHomeLayout = layout;
+    }
+
     // 휴학 기간을 입력한 계정의 휴학 학기 수는 그 기간의 합계라 따로 고칠 수 없다(PUT /api/me/leave-periods로 기간을 고친다).
     if (leaveSemesters !== undefined && student.leave_periods != null) {
       return res.status(400).json({ status: 400, code: 'USE_LEAVE_PERIODS', message: null, data: null });
@@ -183,6 +192,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       careerCounselingCount,
       leaveSemesters,
       language,
+      homeLayout: validHomeLayout,
     });
     if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
       await studentService.revalidateLeavePeriods(req.session.userId);

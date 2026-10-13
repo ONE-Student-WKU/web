@@ -1107,6 +1107,43 @@ body {
   box-shadow: 0 0 0 3px var(--color-accent-bg);
 }
 
+/* 홈 화면 편집 — 헤더의 편집 버튼과 첫 안내 말풍선, 편집 화면의 목록·미리보기 */
+.home-header-actions { position: relative; display: flex; align-items: center; margin-left: auto; margin-right: 6px; }
+.home-edit-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border: none; border-radius: 50%;
+  background: none; color: var(--color-text-muted); cursor: pointer;
+}
+.home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent); }
+.home-edit-hint {
+  position: absolute; top: calc(100% + 6px); right: -40px; z-index: 20;
+  display: flex; align-items: flex-start; gap: 8px; width: 220px;
+  padding: 10px 12px; border-radius: 10px; font-size: 0.8125rem; line-height: 1.4;
+  background: var(--color-accent); color: var(--color-accent-contrast);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
+.home-edit-body { display: flex; flex-direction: column; gap: 14px; }
+.home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
+.home-edit-preview .bottom-tab, .home-edit-preview .bottom-tab-chat { cursor: default; }
+.home-edit-preview-empty { border: 1.5px dashed var(--color-border-strong); }
+.home-edit-group-label { margin: 14px 0 6px; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-muted); }
+.home-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.home-edit-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-card);
+}
+.home-edit-row-name { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.home-edit-row-actions { display: flex; gap: 4px; }
+.home-edit-row-actions button {
+  width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: 8px;
+  background: none; color: var(--color-text-primary); cursor: pointer;
+}
+.home-edit-row-actions button:disabled { opacity: 0.35; cursor: default; }
+.home-edit-locked { font-size: 0.75rem; color: var(--color-text-muted); }
+.home-edit-row .settings-theme-btn { flex: 0 0 auto; width: auto; padding: 6px 14px; }
+.home-edit-row .settings-theme-btn:disabled { opacity: 0.4; cursor: default; }
+
 .bottom-tab-disabled {
   opacity: 0.4;
   cursor: not-allowed;

@@ -17,6 +17,8 @@ import LeaveGate from './pages/LeaveGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
+import HomeEdit from './pages/HomeEdit.jsx';
+import { resolveLayout } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
@@ -24,14 +26,15 @@ import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatAp
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
-// 탭바가 보이는 화면과, view 값 → 활성 탭 매핑. 과목 관리(courses)는 탭이 없어서
-// null — 탭바는 보이되 아무 탭도 강조되지 않는다.
-const TAB_BAR_VIEWS = new Set(['home', 'chat', 'courses', 'graduation', 'career', 'community']);
-const VIEW_TO_TAB = { home: 'home', chat: 'chat', graduation: 'graduation', career: 'career', community: 'community' };
+// 탭바가 보이는 화면. 하단 바 3칸은 사용자가 홈 화면 편집에서 고르므로(utils/homeLayout.js) 고른 화면(예: 문의하기)도 더한다.
+// 탭에 없는 화면(기본 배치의 과목 관리)은 탭바는 보이되 아무 탭도 강조되지 않는다.
+const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', 'community'];
 
-// 하단 탭바가 가리키는 화면들(서로 형제 관계) — 이 화면들끼리 오갈 때는 히스토리를
+// 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 3칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
-const TAB_PEER_VIEWS = new Set(Object.keys(VIEW_TO_TAB));
+function tabPeerViews(user) {
+  return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs]);
+}
 
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
 // SPA라 페이지가 새로고침되지 않아서, 이걸 안 하면 새 계정으로 들어왔을 때 잠깐 이전
@@ -250,7 +253,8 @@ function App() {
     // 홈이 아닌 탭에서 다른 탭으로 이동하는 경우(형제 탭끼리 이동)에는 새로 쌓지 않고
     // 같은 자리를 갱신한다. 홈 → 탭(첫 진입)만 예외적으로 쌓아서, 뒤로가기를 누르면
     // 몇 번을 오갔든 항상 홈으로 한 번에 돌아가게 한다.
-    if (previous !== 'home' && TAB_PEER_VIEWS.has(previous) && TAB_PEER_VIEWS.has(view)) {
+    const peers = tabPeerViews(user);
+    if (previous !== 'home' && peers.has(previous) && peers.has(view)) {
       window.history.replaceState({ view }, '');
       return;
     }
@@ -289,6 +293,11 @@ function App() {
     setJustReauthenticated(false);
     setView('home');
   };
+
+  // 하단 바 3칸(홈 화면 편집 설정)과 그에 따른 탭바 표시 화면·형제 탭.
+  const layoutTabs = resolveLayout(user?.homeLayout).tabs;
+  const tabPeers = tabPeerViews(user);
+  const tabBarVisible = BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view);
 
   return (
     <div className="app-container">
@@ -422,6 +431,15 @@ function App() {
           />
         ) : view === 'inquiry' ? (
           <Inquiry onGoHome={() => setView('home')} />
+        ) : view === 'homeEdit' ? (
+          <HomeEdit
+            user={user}
+            onCancel={() => setView('home')}
+            onSaved={(updated) => {
+              setUser(updated);
+              setView('home');
+            }}
+          />
         ) : (
           <Home
             user={user}
@@ -435,20 +453,18 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onOpenAdmin={() => setView('admin')}
             onOpenInquiry={() => setView('inquiry')}
+            onOpenHomeEdit={() => setView('homeEdit')}
             onOpenLeaveSettings={() => {
               setHighlightLeaveSemesters(true);
               setView('onboarding');
             }}
           />
         )}
-        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && TAB_BAR_VIEWS.has(view) && !textInputFocused && (
+        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && tabBarVisible && !textInputFocused && (
           <BottomTabBar
-            active={VIEW_TO_TAB[view] || null}
-            onOpenHome={() => setView('home')}
-            onOpenGraduation={() => setView('graduation')}
-            onOpenChat={() => setView('chat')}
-            onOpenCareer={() => setView('career')}
-            onOpenCommunity={() => setView('community')}
+            tabs={layoutTabs}
+            active={tabPeers.has(view) ? view : null}
+            onOpen={setView}
             communityBadge={unseenReportCount > 0}
           />
         )}
