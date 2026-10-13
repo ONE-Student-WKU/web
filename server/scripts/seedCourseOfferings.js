@@ -213,8 +213,10 @@ async function seedScrapedData(datasets) {
       const trackId = trackName ? trackIdCache.get(trackCacheKey) : null;
       if (trackName && !trackId) console.warn(`[WARN] ${key}: DB에 트랙 없음 (${departmentName} ${trackName}) — 트랙 없이 넣음`);
 
-      // 같은 학과·학기의 같은 분반은 한 번만(옛 대학·새 대학 양쪽 목록에 같은 분반이 있을 수 있다).
-      const sectionKey = `${departmentId}|${parsed.year}|${parsed.semester}|${r.courseCode || r.courseName}|${r.section || ''}`;
+      // 같은 분반은 학과와 관계없이 한 번만 넣는다 — uq_course_offerings(연도·학기·학수번호·과목명·분반·교수·시간)에 학과가 없고,
+      // 과목 검색(courseService)도 학과로 거르지 않아 한 분반이 한 행이어야 검색 결과가 겹치지 않는다. 사이트는 같은 분반을
+      // 여러 학과 시간표에 함께 보여 준다(2026-2: 1,852개 중 16개, 대부분 교양 공통 과목·개편 전후 대학의 같은 학과) — 처음 나온 학과에 붙는다.
+      const sectionKey = [parsed.year, parsed.semester, r.courseCode || '', r.courseName.trim(), r.section || '', r.professor || '', r.time || ''].join('|');
       if (insertedSections.has(sectionKey)) continue;
       insertedSections.add(sectionKey);
 
