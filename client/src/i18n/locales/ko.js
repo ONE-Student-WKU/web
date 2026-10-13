@@ -177,7 +177,6 @@ export default {
   'grad.trust.INSUFFICIENT': '자료 불충분',
   'grad.trust.NO_DATA': '자료 없음',
   'grad.trust.schedule4': '학칙 [별표 4]는 {a}학점, 교육과정 책자는 {b}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.',
-  'grad.basis.latestBooklet': '{year}학년도 교육과정 책자의 학번별 이수기준표 기준이에요. 원광대는 개편된 교육과정을 모든 학번에 적용하고, 학번별 차이는 최신 책자의 표로 정해요(입학 당시 책자 숫자와 다를 수 있어요).',
 
   // 과목 관리
   'courses.title': '과목 관리',
