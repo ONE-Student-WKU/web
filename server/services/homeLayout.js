@@ -2,21 +2,20 @@
  * server/services/homeLayout.js
  * 홈 화면 편집 설정(students.home_layout) — 검증·해석(순수 함수).
  *
- * { tabs: [하단 바 3칸], cards: { order: [카드 순서], hidden: [숨긴 카드] } }
- *  - 하단 바는 홈(맨 왼쪽)과 챗봇(가운데)이 고정이고, 나머지 3칸만 TAB_OPTIONS에서 고른다.
+ * { tabs: [하단 바 4칸], showTabBar: true | false }
+ *  - 하단 바는 가운데 챗봇 버튼만 고정이고, 나머지 4칸(왼쪽 2·오른쪽 2)을 TAB_OPTIONS에서 고른다. 홈도 고를 수 있다
+ *    (각 화면의 "홈으로" 버튼·챗봇 사이드바로 언제든 홈에 돌아갈 수 있다).
+ *  - showTabBar가 false면 챗봇 버튼을 포함한 하단 바 전체를 모든 화면에서 숨긴다(챗봇을 쓰지 않는 사용자를 위한 선택).
  *  - NULL이면 기본 배치(편집하기 전 화면 그대로).
+ * 홈 카드(이수학점 진행률·부족 요건·메뉴)는 고정이라 설정에 없다.
  * 화면 설정이라 개인정보 수집 항목이 아니다(동의 버전과 무관).
  * client/src/utils/homeLayout.js의 목록과 같은 이름을 써야 한다(서버는 모르는 이름을 거부한다).
  */
 
-const TAB_OPTIONS = ['courses', 'graduation', 'career', 'community', 'inquiry'];
-const TAB_SLOTS = 3;
-const CARD_IDS = ['progress', 'shortfall', 'menu'];
-// 숨길 수 없는 카드 — 메뉴는 모든 기능을 글자 이름과 함께 보여 주는 곳이라(하단 바는 아이콘만) 위치만 바꿀 수 있다.
-const LOCKED_CARDS = ['menu'];
+const TAB_OPTIONS = ['home', 'courses', 'graduation', 'career', 'community', 'inquiry'];
+const TAB_SLOTS = 4;
 
 const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string');
-const hasDuplicates = (arr) => new Set(arr).size !== arr.length;
 
 /** DB 값(JSON 컬럼은 mysql2가 객체로 주지만 문자열일 수도 있다) → 객체 | null. 깨진 값은 null(기본 배치)로 본다. */
 function parseHomeLayout(raw) {
@@ -41,18 +40,12 @@ function validateHomeLayout(input) {
   const fail = { error: 'INVALID_HOME_LAYOUT' };
   if (!input || typeof input !== 'object' || Array.isArray(input)) return fail;
 
-  const { tabs, cards } = input;
-  if (!isStringArray(tabs) || tabs.length !== TAB_SLOTS || hasDuplicates(tabs)) return fail;
+  const { tabs, showTabBar } = input;
+  if (!isStringArray(tabs) || tabs.length !== TAB_SLOTS || new Set(tabs).size !== TAB_SLOTS) return fail;
   if (!tabs.every((t) => TAB_OPTIONS.includes(t))) return fail;
+  if (typeof showTabBar !== 'boolean') return fail;
 
-  if (!cards || typeof cards !== 'object') return fail;
-  const { order, hidden } = cards;
-  if (!isStringArray(order) || !isStringArray(hidden)) return fail;
-  if (hasDuplicates(order) || hasDuplicates(hidden)) return fail;
-  if (!order.every((c) => CARD_IDS.includes(c)) || !hidden.every((c) => order.includes(c))) return fail;
-  if (hidden.some((c) => LOCKED_CARDS.includes(c))) return fail;
-
-  return { layout: { tabs: [...tabs], cards: { order: [...order], hidden: [...hidden] } } };
+  return { layout: { tabs: [...tabs], showTabBar } };
 }
 
-module.exports = { TAB_OPTIONS, TAB_SLOTS, CARD_IDS, LOCKED_CARDS, parseHomeLayout, validateHomeLayout };
+module.exports = { TAB_OPTIONS, TAB_SLOTS, parseHomeLayout, validateHomeLayout };

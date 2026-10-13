@@ -1132,7 +1132,10 @@ body {
   background: none; color: var(--color-text-primary); cursor: pointer;
 }
 .home-edit-row-actions button:disabled { opacity: 0.35; cursor: default; }
-.home-edit-locked { font-size: 0.75rem; color: var(--color-text-muted); }
+.home-edit-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.home-edit-toggle > span { display: flex; flex-direction: column; gap: 2px; }
+.home-edit-toggle .home-card-label { margin: 0; }
+.home-edit-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
 .home-edit-row .settings-theme-btn { flex: 0 0 auto; width: auto; padding: 6px 14px; }
 .home-edit-row .settings-theme-btn:disabled { opacity: 0.4; cursor: default; }
 

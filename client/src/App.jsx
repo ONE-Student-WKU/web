@@ -26,11 +26,11 @@ import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatAp
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
-// 탭바가 보이는 화면. 하단 바 3칸은 사용자가 홈 화면 편집에서 고르므로(utils/homeLayout.js) 고른 화면(예: 문의하기)도 더한다.
-// 탭에 없는 화면(기본 배치의 과목 관리)은 탭바는 보이되 아무 탭도 강조되지 않는다.
+// 탭바가 보이는 화면. 하단 바 4칸은 사용자가 홈 화면 편집에서 고르므로(utils/homeLayout.js) 고른 화면(예: 문의하기)도 더한다.
+// 탭에 없는 화면(기본 배치의 과목 관리)은 탭바는 보이되 아무 탭도 강조되지 않는다. 하단 바를 끈 사용자(showTabBar=false)에게는 어디서도 보이지 않는다.
 const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', 'community'];
 
-// 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 3칸 — 이 화면들끼리 오갈 때는 히스토리를
+// 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 4칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
 function tabPeerViews(user) {
   return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs]);
@@ -294,10 +294,11 @@ function App() {
     setView('home');
   };
 
-  // 하단 바 3칸(홈 화면 편집 설정)과 그에 따른 탭바 표시 화면·형제 탭.
-  const layoutTabs = resolveLayout(user?.homeLayout).tabs;
+  // 하단 바 4칸·켜기/끄기(홈 화면 편집 설정)와 그에 따른 탭바 표시 화면·형제 탭.
+  const homeLayout = resolveLayout(user?.homeLayout);
+  const layoutTabs = homeLayout.tabs;
   const tabPeers = tabPeerViews(user);
-  const tabBarVisible = BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view);
+  const tabBarVisible = homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view));
 
   return (
     <div className="app-container">

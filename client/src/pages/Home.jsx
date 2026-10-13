@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
-import { resolveLayout, visibleCards, TAB_OPTIONS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
+import { MENU_VIEWS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -53,8 +53,7 @@ function markHintSeen() {
  * 대시보드 우선 홈 화면 — 이수학점 요약을 먼저 보여준다. App.jsx가 렌더링하는 공용
  * BottomTabBar는 아이콘 전용이라 텍스트 라벨이 없어서, 각 기능이 뭘 하는 화면인지는
  * 여기 메뉴 카드(텍스트 라벨 포함)를 통해 처음 알게 된다 — 탭바와 기능이 겹치더라도
- * 없애지 않는다(홈 화면 편집에서도 메뉴는 숨길 수 없고 위치만 바꾼다).
- * 카드 순서·표시 여부는 사용자의 홈 화면 편집 설정(user.homeLayout, utils/homeLayout.js)을 따른다.
+ * 없애지 않는다. 카드(진행률·부족 요건·메뉴)는 고정이고, 헤더의 편집 버튼으로 하단 바만 편집한다(HomeEdit.jsx).
  *
  * Props:
  * - user: object
@@ -87,7 +86,6 @@ function Home({
   const { t, lang } = useI18n();
   const [status, setStatus] = useState(homeDataCache.status);
   const [showEditHint, setShowEditHint] = useState(() => !readHintSeen());
-  const layout = resolveLayout(user?.homeLayout);
   const openView = {
     courses: onOpenCourses,
     graduation: onOpenGraduation,
@@ -178,6 +176,15 @@ function Home({
           <>
             <div className="skeleton skeleton-text skeleton-greeting" />
             <div className="skeleton skeleton-text skeleton-subgreeting" />
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-text skeleton-credit" />
+              <div className="skeleton skeleton-bar" />
+            </div>
+            <div className="home-card skeleton-card">
+              <div className="skeleton skeleton-text skeleton-label" />
+              <div className="skeleton skeleton-text skeleton-row" />
+            </div>
           </>
         ) : (
           <>
@@ -195,57 +202,23 @@ function Home({
                 </button>
               )}
             </div>
-          </>
-        )}
 
-        {visibleCards(layout).map((card) => {
-          if (card === 'menu') {
-            return (
-              <React.Fragment key="menu">
-                <p className="home-quick-label">{t('home.menu')}</p>
-                <div className="home-quick-actions">
-                  {TAB_OPTIONS.map((view) => {
-                    const Icon = TAB_ICONS[view];
-                    return (
-                      <button key={view} className="home-quick-btn" onClick={openView[view]}>
-                        <Icon />
-                        <span>{t(TAB_LABEL_KEYS[view])}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </React.Fragment>
-            );
-          }
-          // 진행률·부족 요건은 졸업요건 진단 응답이 와야 그릴 수 있다 — 첫 로딩 동안은 그 자리에 스켈레톤.
-          if (isFirstLoad) {
-            return (
-              <div key={card} className="home-card skeleton-card">
-                <div className="skeleton skeleton-text skeleton-label" />
-                <div className="skeleton skeleton-text skeleton-row" />
+            <section className="home-card">
+              <p className="home-card-label">{t('home.creditProgress')}</p>
+              <div className="home-credit-value">
+                <span className="home-credit-number">{earnedCredits}</span>
+                <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
               </div>
-            );
-          }
-          if (card === 'progress') {
-            return (
-              <section key="progress" className="home-card">
-                <p className="home-card-label">{t('home.creditProgress')}</p>
-                <div className="home-credit-value">
-                  <span className="home-credit-number">{earnedCredits}</span>
-                  <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
-                </div>
-                <div className="home-progress-track">
-                  <div
-                    className="home-progress-fill"
-                    style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
-                  />
-                </div>
-                <p className="grad-remaining-text">{progressPercent}%</p>
-              </section>
-            );
-          }
-          return (
-            <section key="shortfall" className="home-card">
+              <div className="home-progress-track">
+                <div
+                  className="home-progress-fill"
+                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                />
+              </div>
+              <p className="grad-remaining-text">{progressPercent}%</p>
+            </section>
+
+            <section className="home-card">
               <p className="home-card-label">{t('home.shortfall')}</p>
               <div
                 className={
@@ -267,8 +240,21 @@ function Home({
                 </span>
               </div>
             </section>
-          );
-        })}
+          </>
+        )}
+
+        <p className="home-quick-label">{t('home.menu')}</p>
+        <div className="home-quick-actions">
+          {MENU_VIEWS.map((view) => {
+            const Icon = TAB_ICONS[view];
+            return (
+              <button key={view} className="home-quick-btn" onClick={openView[view]}>
+                <Icon />
+                <span>{t(TAB_LABEL_KEYS[view])}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

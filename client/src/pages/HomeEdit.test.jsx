@@ -13,7 +13,7 @@ import HomeEdit from './HomeEdit.jsx';
 
 /**
  * client/src/pages/HomeEdit.test.jsx
- * 홈 화면 편집: 하단 바는 정확히 3칸이어야 저장되고, 기본 배치와 같으면 null로 보낸다. 메뉴 카드는 숨길 수 없다.
+ * 홈 화면 편집: 하단 바 켜기/끄기, 챗봇을 뺀 4칸(홈 포함)은 정확히 4칸이어야 저장되고, 기본 배치와 같으면 null로 보낸다.
  */
 
 const USER = { id: 1, homeLayout: null };
@@ -23,52 +23,53 @@ beforeEach(() => {
   api.updateProfile.mockImplementation(async (payload) => ({ ...USER, homeLayout: payload.homeLayout }));
 });
 
-const selectedList = () => screen.getByText('하단 바에 있는 기능').nextElementSibling;
+const selectedNames = () =>
+  within(screen.getByText('하단 바에 있는 기능').nextElementSibling)
+    .getAllByRole('listitem')
+    .map((li) => li.textContent.replace(/[↑↓✕]/g, ''));
 
 describe('HomeEdit', () => {
-  it('기본 배치가 보이고, 바꾸지 않고 저장하면 null(기본 배치)로 보낸다', async () => {
+  it('기본 배치(홈·졸업요건·진로·커뮤니티, 하단 바 켬)가 보이고, 바꾸지 않고 저장하면 null로 보낸다', async () => {
     const onSaved = vi.fn();
     render(<HomeEdit user={USER} onCancel={() => {}} onSaved={onSaved} />);
-    const names = within(selectedList()).getAllByRole('listitem').map((li) => li.textContent);
-    expect(names[0]).toMatch('졸업요건 진단');
-    expect(names[1]).toMatch('진로 탐색');
-    expect(names[2]).toMatch('커뮤니티');
+    expect(screen.getByRole('switch', { name: /하단 바 사용/ })).toBeChecked();
+    expect(selectedNames()).toEqual(['홈', '졸업요건 진단', '진로 탐색', '커뮤니티']);
 
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(api.updateProfile).toHaveBeenCalledWith({ homeLayout: null });
     expect(onSaved).toHaveBeenCalled();
   });
 
-  it('3칸이 다 차면 더 넣을 수 없고, 하나를 빼면 3칸이 될 때까지 저장할 수 없다', async () => {
+  it('홈을 빼고 다른 기능을 넣을 수 있다 — 4칸이 차야 저장된다', async () => {
     render(<HomeEdit user={USER} onCancel={() => {}} onSaved={() => {}} />);
     expect(screen.getByRole('button', { name: '문의하기 하단 바에 넣기' })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('button', { name: '커뮤니티 하단 바에서 빼기' }));
+    await userEvent.click(screen.getByRole('button', { name: '홈 하단 바에서 빼기' }));
     expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('button', { name: '문의하기 하단 바에 넣기' }));
-    await userEvent.click(screen.getByRole('button', { name: '진로 탐색 위로' }));
+    await userEvent.click(screen.getByRole('button', { name: '과목 관리 하단 바에 넣기' }));
+    await userEvent.click(screen.getByRole('button', { name: '과목 관리 위로' }));
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(api.updateProfile).toHaveBeenCalledWith({
-      homeLayout: { tabs: ['career', 'graduation', 'inquiry'], cards: { order: ['progress', 'shortfall', 'menu'], hidden: [] } },
+      homeLayout: { tabs: ['graduation', 'career', 'courses', 'community'], showTabBar: true },
     });
   });
 
-  it('카드를 숨기고 순서를 바꿀 수 있지만 메뉴는 숨길 수 없다', async () => {
+  it('하단 바를 끄면 칸 편집이 사라지고, 끈 채로 저장된다(덜 찬 칸은 기본 칸으로 채움)', async () => {
     render(<HomeEdit user={USER} onCancel={() => {}} onSaved={() => {}} />);
-    expect(screen.getByText('항상 보여요')).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: '메뉴' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '홈 하단 바에서 빼기' }));
+    await userEvent.click(screen.getByRole('switch', { name: /하단 바 사용/ }));
+    expect(screen.getByText(/챗봇 버튼을 포함한 하단 바가 모든 화면에서 사라져요/)).toBeInTheDocument();
+    expect(screen.queryByText('하단 바에 있는 기능')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('checkbox', { name: '이수학점 진행률' }));
-    await userEvent.click(screen.getByRole('button', { name: '메뉴 위로' }));
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(api.updateProfile).toHaveBeenCalledWith({
-      homeLayout: { tabs: ['graduation', 'career', 'community'], cards: { order: ['progress', 'menu', 'shortfall'], hidden: ['progress'] } },
+      homeLayout: { tabs: ['home', 'graduation', 'career', 'community'], showTabBar: false },
     });
   });
 
-  it('기본값으로 되돌리면 저장한 배치를 지우고(null) 보낸다', async () => {
-    const saved = { tabs: ['courses', 'inquiry', 'career'], cards: { order: ['menu', 'progress', 'shortfall'], hidden: ['shortfall'] } };
+  it('기본값으로 되돌리면 null로 보낸다', async () => {
+    const saved = { tabs: ['courses', 'inquiry', 'career', 'home'], showTabBar: false };
     render(<HomeEdit user={{ ...USER, homeLayout: saved }} onCancel={() => {}} onSaved={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: '기본값으로 되돌리기' }));
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
