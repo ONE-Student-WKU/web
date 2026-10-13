@@ -23,9 +23,14 @@ describe('CareerRoadmapList — 수업계획서 링크', () => {
     expect(links[0]).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  it('추천 이유가 과목명만 보고 쓴 설명이라는 안내를 목록 아래에 보여 준다(빈 목록에는 없음)', () => {
-    const { container, rerender } = render(<CareerRoadmapList roadmap={[{ grade: 1, semester: 1, courseName: 'a', reason: 'b', syllabusUrl: null }]} />);
-    expect(container.querySelector('.career-roadmap-note').textContent).toMatch(/수업계획서/);
+  it('추천 이유가 과목명만 보고 쓴 설명이라는 안내를 목록 맨 위(첫 과목 위)에 한 번만 보여 준다(빈 목록에는 없음)', () => {
+    const { container, rerender } = render(
+      <CareerRoadmapList roadmap={[{ grade: 1, semester: 1, courseName: 'a', reason: 'b', syllabusUrl: null }, { grade: 2, semester: 1, courseName: 'c', reason: 'd', syllabusUrl: null }]} />
+    );
+    const notes = container.querySelectorAll('.career-roadmap-note');
+    expect(notes).toHaveLength(1);
+    expect(notes[0].textContent).toMatch(/수업계획서/);
+    expect(container.firstElementChild).toBe(notes[0]);
     rerender(<CareerRoadmapList roadmap={[]} />);
     expect(container.querySelector('.career-roadmap-note')).toBeNull();
   });

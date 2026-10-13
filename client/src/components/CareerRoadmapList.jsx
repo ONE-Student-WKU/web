@@ -38,6 +38,8 @@ function CareerRoadmapList({ roadmap }) {
 
   return (
     <>
+      {/* 추천 이유는 과목명만 보고 쓴 설명이라 실제 수업 내용과 다를 수 있다 — 목록 맨 위에 한 번만 안내하고 각 과목의 계획서 링크로 확인하게 한다. */}
+      <p className="career-roadmap-note">{t('career.roadmapReasonNote')}</p>
       {groups.map((group) => (
         <div key={group.label} className="career-roadmap-group">
           <span className="career-roadmap-label">{group.label}</span>
@@ -54,8 +56,6 @@ function CareerRoadmapList({ roadmap }) {
           ))}
         </div>
       ))}
-      {/* 추천 이유는 과목명만 보고 쓴 설명이라 실제 수업 내용과 다를 수 있다 — 계획서로 확인하도록 안내한다. */}
-      <p className="career-roadmap-note">{t('career.roadmapReasonNote')}</p>
     </>
   );
 }

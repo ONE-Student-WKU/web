@@ -3447,7 +3447,7 @@ select.onb-select {
   font-size: 0.6875rem;
   color: var(--color-text-muted);
   line-height: 1.5;
-  margin: 4px 0 0;
+  margin: 0 0 12px;
 }
 
 .career-confirm-loading {
