@@ -150,6 +150,28 @@ test('buildProgressNote: 다음 학기·근거·확인 안내·이수 과목이 
   assert.match(buildProgressNote({ ...confirmed, completedCourseNames: [] }), /등록된 과목이 없다/);
 });
 
+test('buildProgressNote: 휴학 시기를 모를 때(추정 + 휴학 있음)만 시기에 따라 갈리는 질문은 먼저 휴학 시기를 묻게 한다', () => {
+  const ask = /몇 학년 몇 학기에 휴학했는지" 물어라/;
+  // 과목을 등록하지 않았고 휴학 4학기 — 시기를 모른다
+  const unknown = computeProgress({ admissionYear: 2022, leaveSemesters: 4, recordedTerms: [], today: TODAY });
+  const note = buildProgressNote({ ...unknown, completedCourseNames: [] });
+  assert.match(note, ask);
+  assert.match(note, /누적 휴학 4학기가 언제였는지는 모른다/);
+  assert.match(note, /제13조 제3항/);
+
+  // 휴학이 없으면 물을 것이 없다
+  const noLeave = computeProgress({ admissionYear: 2022, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  assert.doesNotMatch(buildProgressNote({ ...noLeave, completedCourseNames: [] }), ask);
+
+  // 이수 기록이 이어져 있으면 빈 학기로 시기를 알 수 있다
+  const fromRecords = computeProgress({
+    admissionYear: 2022, leaveSemesters: 4, today: TODAY,
+    recordedTerms: [T(2022, 1), T(2022, 3), T(2025, 1), T(2025, 3), T(2026, 1), T(2026, 3)],
+  });
+  assert.equal(fromRecords.source, 'RECORDS');
+  assert.doesNotMatch(buildProgressNote({ ...fromRecords, completedCourseNames: [] }), ask);
+});
+
 test('buildSystemPrompt: progress를 넘기면 포함하고, 안 넘기면 기존 프롬프트와 같다', () => {
   const base = buildSystemPrompt(null, null, null, 'ko');
   assert.equal(buildSystemPrompt(null, null, null, 'ko', null), base);
