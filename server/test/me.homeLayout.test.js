@@ -67,6 +67,13 @@ test('잘못된 설정은 거부하고 기존 값을 그대로 둔다', async ()
   assert.deepEqual((await getMe()).data.homeLayout, layout);
 });
 
+test('빈 자리(null)가 있는 설정과 메뉴 순서도 저장된다', async () => {
+  const partial = { tabs: [null, 'home', null, null], showTabBar: true, menu: ['inquiry', 'community', 'career', 'graduation', 'courses'] };
+  const res = await patchMe({ homeLayout: partial });
+  assert.equal(res.status, 200);
+  assert.deepEqual((await getMe()).data.homeLayout, partial);
+});
+
 test('null을 보내면 기본 배치로 되돌린다', async () => {
   const res = await patchMe({ homeLayout: null });
   assert.equal(res.status, 200);

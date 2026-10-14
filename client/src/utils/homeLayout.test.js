@@ -8,7 +8,7 @@ import { resolveLayout, isDefaultLayout, DEFAULT_TABS, MENU_VIEWS, isLockedView 
 
 describe('resolveLayout', () => {
   it('저장값이 없으면 지금 화면과 같은 기본 배치(홈·졸업요건 | 챗봇 | 진로·커뮤니티, 하단 바 켬)다', () => {
-    expect(resolveLayout(null)).toEqual({ tabs: DEFAULT_TABS, showTabBar: true });
+    expect(resolveLayout(null)).toEqual({ tabs: DEFAULT_TABS, showTabBar: true, menu: MENU_VIEWS });
     expect(DEFAULT_TABS).toEqual(['home', 'graduation', 'career', 'community']);
   });
 
@@ -16,13 +16,36 @@ describe('resolveLayout', () => {
     expect(resolveLayout({ tabs: ['courses', 'inquiry', 'career', 'graduation'], showTabBar: false })).toEqual({
       tabs: ['courses', 'inquiry', 'career', 'graduation'],
       showTabBar: false,
+      menu: MENU_VIEWS,
     });
   });
 
-  it('하단 바가 4칸이 아니거나 중복·모르는 이름이면 기본 하단 바를 쓴다(이전 형식 3칸 값 포함)', () => {
+  it('빈 자리(null)는 위치 그대로 둔다 — 모두 비운 설정도', () => {
+    expect(resolveLayout({ tabs: [null, 'home', null, 'career'], showTabBar: true }).tabs).toEqual([null, 'home', null, 'career']);
+    expect(resolveLayout({ tabs: [null, null, null, null], showTabBar: true }).tabs).toEqual([null, null, null, null]);
+  });
+
+  it('하단 바가 4자리가 아니거나 중복·모르는 이름이면 기본 하단 바를 쓴다(이전 형식 3칸 값 포함)', () => {
     expect(resolveLayout({ tabs: ['graduation', 'career', 'community'] }).tabs).toEqual(DEFAULT_TABS);
     expect(resolveLayout({ tabs: ['home', 'home', 'career', 'community'] }).tabs).toEqual(DEFAULT_TABS);
     expect(resolveLayout({ tabs: ['chat', 'home', 'career', 'community'] }).tabs).toEqual(DEFAULT_TABS);
+    expect(resolveLayout({ tabs: ['home', null, 'home', null] }).tabs).toEqual(DEFAULT_TABS);
+  });
+});
+
+describe('resolveLayout — 메뉴', () => {
+  it('저장된 카드·순서를 쓴다(뺀 카드·빈 메뉴 포함), 없거나 깨진 값이면 기본 메뉴', () => {
+    const menu = ['inquiry', 'community', 'career', 'graduation', 'courses'];
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu }).menu).toEqual(menu);
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu: ['career', 'inquiry'] }).menu).toEqual(['career', 'inquiry']);
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu: [] }).menu).toEqual([]);
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true }).menu).toEqual(MENU_VIEWS);
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu: ['home', 'career'] }).menu).toEqual(MENU_VIEWS);
+    expect(resolveLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu: ['career', 'career'] }).menu).toEqual(MENU_VIEWS);
+  });
+
+  it('메뉴 순서만 바꿔도 기본 배치가 아니다', () => {
+    expect(isDefaultLayout({ tabs: DEFAULT_TABS, showTabBar: true, menu: [...MENU_VIEWS].reverse() })).toBe(false);
   });
 });
 

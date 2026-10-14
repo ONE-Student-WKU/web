@@ -33,7 +33,7 @@ const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', '
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 4칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
 function tabPeerViews(user) {
-  return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs]);
+  return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs.filter(Boolean)]);
 }
 
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —

@@ -17,11 +17,12 @@ export const TAB_ICONS = {
 /**
  * BottomTabBar Component
  * 앱 전체 화면 하단에 고정되는 5개 아이콘 탭바 — [칸1, 칸2, 챗봇(중앙 강조), 칸3, 칸4].
- * 챗봇만 고정이고, 나머지 4칸은 사용자가 홈 화면 편집에서 고른다(utils/homeLayout.js, 기본: 홈·졸업요건·진로·커뮤니티).
- * 하단 바 전체를 끄는 설정(showTabBar)은 App.jsx가 이 컴포넌트를 그리지 않는 것으로 처리한다.
+ * 챗봇만 고정이고, 나머지 4자리는 사용자가 홈 화면 편집에서 고른다(utils/homeLayout.js, 기본: 홈·졸업요건·진로·커뮤니티).
+ * 빈 자리(null)는 같은 크기의 빈 공간으로 두어 다른 아이콘의 위치가 바뀌지 않게 한다. 4자리가 모두 비면 바 배경·테두리 없이
+ * 가운데 원형 챗봇 버튼만 그린다. 하단 바 전체를 끄는 설정(showTabBar)은 App.jsx가 이 컴포넌트를 그리지 않는 것으로 처리한다.
  *
  * Props:
- * - tabs: [칸1, 칸2, 칸3, 칸4] — 'home' | 'courses' | 'graduation' | 'career' | 'community' | 'inquiry'
+ * - tabs: [자리1, 자리2, 자리3, 자리4] — 'home' | 'courses' | 'graduation' | 'career' | 'community' | 'inquiry' | null(빈 자리)
  * - active: 활성 화면 이름(챗봇·tabs 중 하나) 또는 null
  * - onOpen: function(view)
  * - isLocked: function(view) → boolean (선택) — 학과를 고르지 않아 쓸 수 없는 기능이면 흐리게 보인다(누르면 App이 학과 선택으로 보낸다).
@@ -30,7 +31,8 @@ export const TAB_ICONS = {
 function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityBadge = false }) {
   const { t } = useI18n();
 
-  const tabButton = (view) => {
+  const tabButton = (view, slot) => {
+    if (!view) return <span key={`empty-${slot}`} className="bottom-tab-empty" aria-hidden="true" />;
     const Icon = TAB_ICONS[view];
     const badge = view === 'community' && communityBadge;
     const locked = isLocked(view);
@@ -50,10 +52,12 @@ function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityB
     );
   };
 
+  const chatOnly = tabs.every((v) => !v);
+
   return (
-    <nav className="bottom-tab-bar" aria-label={t('nav.aria')}>
-      {tabButton(tabs[0])}
-      {tabButton(tabs[1])}
+    <nav className={chatOnly ? 'bottom-tab-bar chat-only' : 'bottom-tab-bar'} aria-label={t('nav.aria')}>
+      {!chatOnly && tabButton(tabs[0], 0)}
+      {!chatOnly && tabButton(tabs[1], 1)}
       <button
         type="button"
         className={active === 'chat' ? 'bottom-tab-chat active' : 'bottom-tab-chat'}
@@ -63,8 +67,8 @@ function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityB
       >
         <IconMessageCircle size={20} />
       </button>
-      {tabButton(tabs[2])}
-      {tabButton(tabs[3])}
+      {!chatOnly && tabButton(tabs[2], 2)}
+      {!chatOnly && tabButton(tabs[3], 3)}
     </nav>
   );
 }

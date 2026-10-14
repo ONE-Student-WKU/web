@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
-import { MENU_VIEWS, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
+import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -139,6 +139,8 @@ function Home({
   const isFirstLoad = status === null && !statusFailed;
 
   const gradeLevel = getGradeLevel(user?.admissionYear, user?.leaveSemesters);
+  // 홈 화면 편집에서 고른 메뉴 카드와 순서(utils/homeLayout.js). 모두 뺐으면 메뉴 영역을 그리지 않는다.
+  const menuViews = resolveLayout(user?.homeLayout).menu;
   const earnedCredits = status?.totalEarnedCredits ?? 0;
   const requiredTotal = status?.totalRequiredCredits ?? null;
   const progressPercent = getPercent(earnedCredits, requiredTotal);
@@ -152,7 +154,7 @@ function Home({
         <div className="home-header-actions">
           <button
             type="button"
-            className="home-edit-btn"
+            className={showEditHint ? 'home-edit-btn hinted' : 'home-edit-btn'}
             onClick={() => {
               dismissEditHint();
               onOpenHomeEdit();
@@ -266,23 +268,27 @@ function Home({
           </>
         )}
 
-        <p className="home-quick-label">{t('home.menu')}</p>
-        <div className="home-quick-actions">
-          {MENU_VIEWS.map((view) => {
-            const Icon = TAB_ICONS[view];
-            return (
-              <button
-                key={view}
-                className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
-                onClick={openView[view]}
-                aria-label={isLockedView(view, user) ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) }) : undefined}
-              >
-                <Icon />
-                <span>{t(TAB_LABEL_KEYS[view])}</span>
-              </button>
-            );
-          })}
-        </div>
+        {menuViews.length > 0 && (
+          <>
+            <p className="home-quick-label">{t('home.menu')}</p>
+            <div className="home-quick-actions">
+              {menuViews.map((view) => {
+                const Icon = TAB_ICONS[view];
+                return (
+                  <button
+                    key={view}
+                    className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
+                    onClick={openView[view]}
+                    aria-label={isLockedView(view, user) ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) }) : undefined}
+                  >
+                    <Icon />
+                    <span>{t(TAB_LABEL_KEYS[view])}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
