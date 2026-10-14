@@ -52,4 +52,20 @@ function perUserLimiter({ windowMs, max }) {
   });
 }
 
-module.exports = { securityHeaders, requireStringQuery, perUserLimiter, TOO_MANY };
+// 같은 사용자의 요청을 한 번에 하나씩만 받는다(답을 기다리는 중에 온 요청은 429). AI 호출 라우트의 횟수 상한은
+// "세고 → 저장"이 따로라서, 동시에 여러 개를 보내면 전부 상한 전 숫자를 읽고 통과한다 — 한 사람의 요청을 줄 세워 막는다.
+// 서버 프로세스 하나 안에서만 유효하다(서버를 여러 대로 늘리면 공용 저장소가 필요). 라우트 묶음마다 따로 만들어 쓴다.
+function oneRequestPerUser() {
+  const inFlight = new Set();
+  return (req, res, next) => {
+    const userId = req.session && req.session.userId;
+    if (inFlight.has(userId)) {
+      return res.status(429).json({ status: 429, code: 'REQUEST_IN_PROGRESS', message: null, data: null });
+    }
+    inFlight.add(userId);
+    res.on('close', () => inFlight.delete(userId));
+    next();
+  };
+}
+
+module.exports = { securityHeaders, requireStringQuery, perUserLimiter, oneRequestPerUser };

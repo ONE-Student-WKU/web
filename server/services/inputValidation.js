@@ -32,7 +32,8 @@ function validateNickname(name) {
   const trimmed = name.trim();
   if ([...trimmed].length > NICKNAME_MAX_LENGTH) return 'NAME_TOO_LONG';
   if (INVISIBLE_CHARS.test(trimmed)) return 'INVALID_NAME';
-  const compact = trimmed.replace(/\s+/g, '').toLowerCase();
+  // NFKC: 전각 'ａｄｍｉｎ'처럼 겉보기에 같은 다른 글자를 표준 글자로 바꿔 비교한다(저장값은 바꾸지 않는다).
+  const compact = trimmed.normalize('NFKC').replace(/\s+/g, '').toLowerCase();
   if (RESERVED_NICKNAMES.includes(compact)) return 'INVALID_NAME';
   return null;
 }

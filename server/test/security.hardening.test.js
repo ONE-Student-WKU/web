@@ -117,6 +117,7 @@ test('프로필: 이름·학번·횟수의 타입과 범위를 검사한다(500�
     [{ name: 'user​99' }, 'INVALID_NAME'],
     [{ name: '관리자' }, 'INVALID_NAME'],
     [{ name: ' Admin ' }, 'INVALID_NAME'],
+    [{ name: 'ａｄｍｉｎ' }, 'INVALID_NAME'], // 전각 문자 — 정규화(NFKC) 전에는 예약어 검사를 통과했다
     [{ admissionYear: 1800 }, 'INVALID_ADMISSION_YEAR'],
     [{ admissionYear: [2022] }, 'INVALID_ADMISSION_YEAR'],
     [{ careerCounselingCount: -1 }, 'INVALID_CAREER_COUNSELING_COUNT'],

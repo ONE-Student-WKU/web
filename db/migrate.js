@@ -100,6 +100,19 @@ async function ensureStudentLanguageColumn(connection) {
   }
 }
 
+// 진로 탐색 "추천받기" 상담당 횟수 상한용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
+// 컬럼을 직접 ALTER한다. 기존 상담은 0회에서 시작한다.
+async function ensureCareerCandidateRequestsColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'career_sessions' AND COLUMN_NAME = 'candidate_requests'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] career_sessions.candidate_requests 컬럼 추가...');
+    await connection.query('ALTER TABLE career_sessions ADD COLUMN candidate_requests INT NOT NULL DEFAULT 0');
+  }
+}
+
 // 이용약관·개인정보 수집·이용 동의 기록용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL(동의 기록 없음)로 두어 기존 계정은 다음 접속 때 동의 화면을 한 번 보게 된다.
 async function ensureStudentConsentColumns(connection) {
@@ -464,6 +477,7 @@ async function migrate() {
     await ensureInquiryResolutionNoteColumn(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
+    await ensureCareerCandidateRequestsColumn(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {
