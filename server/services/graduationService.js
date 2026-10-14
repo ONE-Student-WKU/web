@@ -8,6 +8,7 @@ const { CONFIDENCE_LABEL_KO } = require('./regulationEngine/constants');
 const { loadCategoryChanges } = require('./regulationEngine/dbProvider');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch');
+const { counselingRequirement } = require('./counseling');
 
 /**
  * server/services/graduationService.js
@@ -262,6 +263,8 @@ async function getGraduationStatus(studentId) {
     totalEarnedCredits,
     categories,
     certifications,
+    // 자기계발심층상담(졸업인증제) 기준 — 판정하지 않고 기준·확인 경로만 안내한다(counseling.js, D-65). 화면과 챗봇이 같이 쓴다.
+    counseling: counselingRequirement(student),
     regulation: {
       confidence,
       confidenceLabel: confidence === regulation.confidence ? regulation.confidenceLabel : CONFIDENCE_LABEL_KO[confidence],

@@ -120,3 +120,24 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     expect(screen.getByText(/\/ 140학점/)).toBeInTheDocument();
   });
 });
+
+describe("자기계발심층상담 안내(판정하지 않음, DECISIONS D-65)", () => {
+  beforeEach(() => resetGraduationCache && resetGraduationCache());
+  it("학번 기준 횟수와 확인 경로, 세는 방법 확인 중을 보여 주고 부족 요건에는 넣지 않는다", async () => {
+    await renderWith(status({
+      categories: categories.map((c) => ({ ...c, earnedCredits: c.requiredCredits })),
+      totalEarnedCredits: 140,
+      counseling: { required: 8, cohort: "FROM_2020", replacement: null, judged: false },
+    }));
+    expect(screen.getByText("자기계발심층상담")).toBeInTheDocument();
+    expect(screen.getByText("2020학번부터 기준 8학기(회) 이상 상담해야 해요.")).toBeInTheDocument();
+    expect(screen.getByText(/에서 직접 확인해 주세요/)).toBeInTheDocument();
+    expect(screen.getByText(/학교에 확인 중이에요/)).toBeInTheDocument();
+    expect(screen.queryByText(/Hug/)).toBeNull();
+    expect(document.querySelector(".grad-shortfall-box.ok")).not.toBeNull();
+  });
+  it("광역 계열전공은 Hug 심층진로상담 대체를 알린다", async () => {
+    await renderWith(status({ counseling: { required: 8, cohort: "FROM_2020", replacement: "HUG", judged: false } }));
+    expect(screen.getByText(/Hug 심층진로상담으로 대체해요/)).toBeInTheDocument();
+  });
+});

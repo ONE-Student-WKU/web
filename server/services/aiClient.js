@@ -74,6 +74,12 @@ function buildGraduationStatusNote(graduationStatus) {
     )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
+  // 자기계발심층상담은 판정하지 않는다(counseling.js, D-65). 기준과 확인 경로만 안내하게 한다.
+  const counseling = graduationStatus.counseling;
+  const counselingCohort = counseling && { FROM_2020: '2020학번부터', BEFORE_2020: '2016~2019학번', TRANSFER: '편입생' }[counseling.cohort];
+  const counselingLine = counseling
+    ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
+    : null;
 
   // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.
   const regulation = graduationStatus.regulation;
@@ -96,7 +102,7 @@ function buildGraduationStatusNote(graduationStatus) {
 총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (졸업까지 ${remaining}학점 남음)
 카테고리별:
 ${categoryLines}
-${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
+${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
 
 주의:
 - 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다
