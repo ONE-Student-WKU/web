@@ -217,7 +217,8 @@ function Home({
               <section className="home-card">
                 <p className="home-card-label">{t('home.creditProgress')}</p>
                 <p className="home-card-row">{t('home.needOnboarding')}</p>
-                <button className="home-grade-fix-link" onClick={onOpenOnboarding}>
+                {/* 학과를 고르지 않은 계정의 주된 다음 행동이라 작은 글자 링크가 아니라 주 버튼으로 둔다 */}
+                <button className="auth-submit-btn" onClick={onOpenOnboarding}>
                   {t('home.chooseDepartment')}
                 </button>
               </section>
