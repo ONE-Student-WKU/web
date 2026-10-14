@@ -29,6 +29,7 @@ export default {
   // 하단 탭바
   'nav.aria': '주요 화면 이동',
   'nav.home': '홈',
+  'nav.locked': '{name} (학과를 고르면 쓸 수 있어요)',
   'nav.graduation': '졸업요건 진단',
   'nav.chat': '채팅',
   'nav.career': '진로 탐색',
@@ -66,10 +67,12 @@ export default {
   'home.creditsUnit': '학점',
   'home.shortfall': '부족 요건',
   'home.shortfallCheck': '졸업요건 진단에서 확인해보세요.',
+  'home.needOnboarding': '학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.',
+  'home.chooseDepartment': '학과 선택하기',
   'home.allMet': '모든 요건을 충족했어요!',
   'home.menu': '메뉴',
   'homeEdit.open': '홈 화면 편집',
-  'homeEdit.hint': '하단 바를 내게 맞게 바꾸거나 끌 수 있어요',
+  'homeEdit.hint': '홈 화면을 편집할 수 있어요',
   'homeEdit.hintClose': '안내 닫기',
   'homeEdit.title': '홈 화면 편집',
   'homeEdit.cancel': '저장하지 않고 나가기',
@@ -448,6 +451,10 @@ export default {
   'onb.next': '다음',
   'onb.cancel': '취소',
   'onb.later': '나중에 선택하기',
+  'onb.noDept.title': '학과를 선택하지 않으셨어요',
+  'onb.noDept.body': '이대로 하시겠어요? 학번·입학 유형 같은 나머지 질문은 학과를 기준으로 해서 함께 건너뛰어요. 나중에 오른쪽 위 계정 메뉴의 "{menu}"에서 입력할 수 있어요.',
+  'onb.noDept.skip': '이대로 넘어가기',
+  'onb.noDept.choose': '학과 고르기',
 
   // 학과 선택(검색 + 소속 트리)
   'dept.search.placeholder': '학과 이름으로 검색 (예: 컴퓨터, 경영)',

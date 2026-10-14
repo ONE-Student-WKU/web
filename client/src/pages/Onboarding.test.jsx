@@ -184,3 +184,91 @@ describe('휴학 기간(휴학 "수"가 아니라 시기를 받는다)', () => {
   });
 });
 
+
+describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "다음"은 화면 아래에 떠 있음', () => {
+  const NEW_USER = { id: 9, onboardingCompleted: false };
+  const searchAndPick = async (query, name) => {
+    await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), query);
+    await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
+  };
+
+  it('"다음"은 떠 있는 버튼 영역에 있고, 검색 결과를 누르면 그 학과로 바로 다음 질문(입학 유형)으로 간다', async () => {
+    const { container } = render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    expect(container.querySelector('.onb-float-action')).toContainElement(screen.getByRole('button', { name: '다음' }));
+
+    await searchAndPick('국어', '국어국문학과');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+    expect(api.getTracks).toHaveBeenCalledWith(7);
+  });
+
+  it('검색창에 입력하고 엔터를 누르면 맨 위 학과로 바로 다음 질문으로 간다', async () => {
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '국어{enter}');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+    expect(api.getTracks).toHaveBeenCalledWith(7);
+  });
+
+  it('목록에서 학과를 고르고 엔터를 누르면 "다음"을 누른 것처럼 다음 질문으로 간다', async () => {
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /인문대학/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^국어국문학과/ }));
+    expect(screen.getByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument(); // 클릭만으로는 넘어가지 않는다
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+  });
+
+  it('세부전공이 있는 학과는 세부전공 목록을 받은 뒤 세부전공 질문으로 바로 간다', async () => {
+    api.getTracks.mockResolvedValue([{ id: 31, name: '인공지능' }]);
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await searchAndPick('경영학부', '경영학부');
+    expect(await screen.findByRole('heading', { name: '희망하는 세부전공을 선택하세요' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '인공지능' })).toBeInTheDocument();
+  });
+});
+
+describe('학과 선택: 고르지 않고 "다음"을 누르면 그대로 넘어갈지 묻는다', () => {
+  const NEW_USER = { id: 9, onboardingCompleted: false };
+  const pressNextWithoutDepartment = async () => {
+    expect(await screen.findByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    const next = screen.getByRole('button', { name: '다음' });
+    expect(next).toBeEnabled(); // 고르기 전에도 누를 수 있다
+    await userEvent.click(next);
+    return screen.getByRole('dialog', { name: '학과를 선택하지 않으셨어요' });
+  };
+
+  it('"학과 고르기"나 ESC는 창만 닫고 학과 질문에 머문다', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    await pressNextWithoutDepartment();
+    await userEvent.click(screen.getByRole('button', { name: '학과 고르기' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await pressNextWithoutDepartment();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    expect(onSkip).not.toHaveBeenCalled();
+  });
+
+  it('"이대로 넘어가기"는 나중에 선택하기와 같다(뒤의 학적 질문 없이 나가고 아무것도 저장하지 않음)', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    await pressNextWithoutDepartment();
+    await userEvent.click(screen.getByRole('button', { name: '이대로 넘어가기' }));
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    expect(api.submitOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('"나중에 선택하기"는 질문 제목 줄에 있다', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    const title = await screen.findByRole('heading', { name: '어느 학과 소속이에요?' });
+    const later = screen.getByRole('button', { name: '나중에 선택하기' });
+    expect(later.nextElementSibling).toBe(title); // 제목 바로 앞에서 오른쪽으로 띄워(float) 같은 줄에 놓인다
+    await userEvent.click(later);
+    expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+});

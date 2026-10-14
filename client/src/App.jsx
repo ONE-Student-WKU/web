@@ -18,7 +18,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
 import HomeEdit from './pages/HomeEdit.jsx';
-import { resolveLayout } from './utils/homeLayout.js';
+import { resolveLayout, isLockedView } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
@@ -300,6 +300,9 @@ function App() {
   const tabPeers = tabPeerViews(user);
   const tabBarVisible = homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view));
 
+  // 홈 메뉴·하단 바에서 화면을 연다. 학과를 고르지 않은 계정이 학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)을 누르면 학과 선택으로 보낸다.
+  const openView = (next) => setView(isLockedView(next, user) ? 'onboarding' : next);
+
   return (
     <div className="app-container">
       <div className="app-frame">
@@ -445,9 +448,9 @@ function App() {
           <Home
             user={user}
             onLogout={handleLogout}
-            onOpenCourses={() => setView('courses')}
-            onOpenGraduation={() => setView('graduation')}
-            onOpenCareer={() => setView('career')}
+            onOpenCourses={() => openView('courses')}
+            onOpenGraduation={() => openView('graduation')}
+            onOpenCareer={() => openView('career')}
             onOpenCommunity={() => setView('community')}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
@@ -465,7 +468,8 @@ function App() {
           <BottomTabBar
             tabs={layoutTabs}
             active={tabPeers.has(view) ? view : null}
-            onOpen={setView}
+            onOpen={openView}
+            isLocked={(v) => isLockedView(v, user)}
             communityBadge={unseenReportCount > 0}
           />
         )}

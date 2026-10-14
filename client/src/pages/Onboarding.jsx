@@ -80,6 +80,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
+  const [confirmNoDepartment, setConfirmNoDepartment] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -255,9 +256,15 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferGrade: null,
     }));
     setTracks([]);
-    getTracks(dept.id)
+    return getTracks(dept.id)
       .then(setTracks)
       .catch(() => setTracks([]));
+  }
+
+  // 검색 결과에서 학과를 고르거나 목록에서 엔터로 고르면 바로 다음 질문으로 넘어간다("다음"을 따로 누르지 않게). 세부전공 목록을 받은 뒤에 넘어가야
+  // 세부전공이 있는 학과(공학3계열 등)가 "입학 유형"을 잠깐 보였다가 "세부전공"으로 바뀌지 않는다. 요약에서 고치러 왔으면 요약으로 돌아간다.
+  function selectDepartmentAndContinue(dept) {
+    selectDepartment(dept).then(goNext);
   }
 
   // 입학유형을 바꿔도 학번 범위가 실제로는 안 바뀌는 경우가 많다(편입생만 올해 학번이 빠지는
@@ -297,6 +304,26 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     }
     setStepIndex((i) => Math.min(i + 1, path.length - 1));
   }
+  // 학과 단계의 "다음"은 고르기 전에도 누를 수 있다(비활성 버튼이 목록 위에 붕 떠 보였다). 학과 없이 누르면 그대로 넘어갈지 묻는다 —
+  // 뒤의 질문(세부전공·학번·입학 유형 등)은 모두 학과 기준이라 학과 없이는 의미가 없어, 넘어가면 "나중에 선택하기"와 같다(onSkip).
+  function handleNext() {
+    if (current === 'department' && !answers.departmentId) {
+      setConfirmNoDepartment(true);
+      return;
+    }
+    goNext();
+  }
+
+  // 학과 없이 넘어갈지 묻는 창에서 ESC는 "학과 고르기"와 같다 — 창을 닫고 학과 목록으로 돌아간다.
+  useEffect(() => {
+    if (!confirmNoDepartment) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setConfirmNoDepartment(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmNoDepartment]);
+
   function goBack() {
     if (editingFromSummary) {
       setManualStep('summary');
@@ -353,7 +380,6 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   }
 
   const nextDisabled =
-    (current === 'department' && !answers.departmentId) ||
     (current === 'track' && !answers.trackId) ||
     (current === 'enrollmentType' && !answers.enrollmentType) ||
     (current === 'year' && !answers.admissionYear) ||
@@ -388,6 +414,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       <div className="courses-body">
         {loadError && <p className="home-error">{t(loadError)}</p>}
         {submitError && <p className="home-error">{submitError}</p>}
+        {current !== 'done' && !editingFromSummary && (
+          // 홈의 "학년이 다르신가요?"와 같은 모양. 바로 뒤에 오는 질문 제목과 같은 줄 오른쪽에 붙는다(float).
+          <button className="home-grade-fix-link onb-later-link" onClick={onSkip}>
+            {editMode ? t('onb.cancel') : t('onb.later')}
+          </button>
+        )}
 
         {current === 'department' && (
           <>
@@ -400,7 +432,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </div>
             )}
             {departments.length > 0 && (
-              <DepartmentPicker departments={departments} selectedId={answers.departmentId} onSelect={selectDepartment} />
+              <DepartmentPicker
+                departments={departments}
+                selectedId={answers.departmentId}
+                onSelect={selectDepartment}
+                onSelectAndContinue={selectDepartmentAndContinue}
+              />
             )}
           </>
         )}
@@ -693,26 +730,38 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </div>
         )}
 
-        {current === 'summary' ? (
-          <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
-            {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
-          </button>
-        ) : current === 'done' ? (
-          <button className="auth-submit-btn" onClick={onDone}>
-            {t('onb.done.home')}
-          </button>
-        ) : (
-          <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
-            {editingFromSummary ? t('onb.confirm') : t('onb.next')}
-          </button>
-        )}
-
-        {current !== 'done' && !editingFromSummary && (
-          <button className="onb-skip-link" onClick={onSkip}>
-            {editMode ? t('onb.cancel') : t('onb.later')}
-          </button>
-        )}
+        {/* 주 버튼(다음·저장 등)은 내용이 길어도 화면 아래에 떠 있게 한다 — 학과 목록처럼 길어지면 맨 끝까지 내려가야 눌렀다. */}
+        <div className="onb-float-action">
+          {current === 'summary' ? (
+            <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
+              {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
+            </button>
+          ) : current === 'done' ? (
+            <button className="auth-submit-btn" onClick={onDone}>
+              {t('onb.done.home')}
+            </button>
+          ) : (
+            <button className="auth-submit-btn" onClick={handleNext} disabled={nextDisabled}>
+              {editingFromSummary ? t('onb.confirm') : t('onb.next')}
+            </button>
+          )}
+        </div>
       </div>
+
+      {confirmNoDepartment && (
+        <div className="career-confirm-overlay" onClick={() => setConfirmNoDepartment(false)}>
+          <div className="career-confirm-modal" role="dialog" aria-modal="true" aria-label={t('onb.noDept.title')} onClick={(e) => e.stopPropagation()}>
+            <span className="career-confirm-title">{t('onb.noDept.title')}</span>
+            <p className="career-confirm-body">{t('onb.noDept.body', { menu: t('account.editDepartment') })}</p>
+            <button className="auth-submit-btn" onClick={onSkip}>
+              {t('onb.noDept.skip')}
+            </button>
+            <button className="career-confirm-cancel" onClick={() => setConfirmNoDepartment(false)}>
+              {t('onb.noDept.choose')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ export default {
   // Bottom tab bar
   'nav.aria': 'Main navigation',
   'nav.home': 'Home',
+  'nav.locked': '{name} (choose your department to use this)',
   'nav.graduation': 'Graduation check',
   'nav.chat': 'Chat',
   'nav.career': 'Career',
@@ -66,11 +67,13 @@ export default {
   'home.creditsUnit': ' credits',
   'home.shortfall': 'Missing requirements',
   'home.shortfallCheck': 'See the Graduation check screen for details.',
+  'home.needOnboarding': 'Enter your department and admission year to see your credit progress and missing requirements.',
+  'home.chooseDepartment': 'Choose your department',
   'home.shortfallSentence': 'Still missing: {items}.',
   'home.allMet': 'All requirements met!',
   'home.menu': 'Menu',
   'homeEdit.open': 'Edit home screen',
-  'homeEdit.hint': 'You can customize or turn off the bottom bar',
+  'homeEdit.hint': 'You can edit your home screen',
   'homeEdit.hintClose': 'Close tip',
   'homeEdit.title': 'Edit home screen',
   'homeEdit.cancel': 'Leave without saving',
@@ -485,6 +488,10 @@ export default {
   'onb.next': 'Next',
   'onb.cancel': 'Cancel',
   'onb.later': 'Choose later',
+  'onb.noDept.title': "You haven't chosen a department",
+  'onb.noDept.body': 'Continue without one? The remaining questions, such as your admission year and enrollment type, depend on your department, so they will be skipped too. You can fill them in later from "{menu}" in the account menu at the top right.',
+  'onb.noDept.skip': 'Continue without it',
+  'onb.noDept.choose': 'Choose a department',
 
   // Department picker (search + college tree)
   'dept.search.placeholder': 'Search by department name (e.g. 컴퓨터, 경영)',

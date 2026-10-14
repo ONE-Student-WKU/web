@@ -1024,6 +1024,12 @@ body {
   margin-bottom: 16px;
 }
 
+/* 학과를 고르지 않아 아직 쓸 수 없는 기능(utils/homeLayout.js NEEDS_DEPARTMENT) — 누르면 학과 선택으로 간다. */
+.home-quick-btn.locked,
+.bottom-tab.locked {
+  opacity: 0.4;
+}
+
 .home-quick-btn {
   display: flex;
   flex-direction: column;
@@ -1109,7 +1115,8 @@ body {
 .home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent); }
 .home-edit-hint {
   position: absolute; top: calc(100% + 6px); right: -40px; z-index: 20;
-  display: flex; align-items: flex-start; gap: 8px; width: 220px;
+  /* 너비는 문장 길이에 맞춘다(짧은 한국어 안내가 넓은 상자에 떠 보이지 않게). 긴 문장(영어 등)은 최대 너비에서 줄바꿈. */
+  display: flex; align-items: center; gap: 8px; width: max-content; max-width: 240px;
   padding: 10px 12px; border-radius: 10px; font-size: 0.8125rem; line-height: 1.4;
   background: var(--color-accent); color: var(--color-accent-contrast);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
@@ -3155,8 +3162,13 @@ body {
   width: 100%;
 }
 
-.onb-option-card:hover:not(:disabled) { background: var(--color-accent-bg); }
+/* .active: 학과 검색 결과에서 ↑↓로 가리킨 항목 — 마우스를 올린 것과 같은 모양(엔터로 고를 대상) */
+.onb-option-card:hover:not(:disabled),
+.onb-option-card.active { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
+/* 키보드 포커스 표시를 브라우저 기본색(주황 등) 대신 강조색으로 — ↑↓로 학과를 옮길 때 지금 위치를 보여 준다. */
+.onb-option-card:focus-visible,
+.onb-college-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
 .onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
 .onb-option-caption { font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); }
@@ -3282,6 +3294,35 @@ select.onb-select {
 
 .onb-done-title { font-size: 1.125rem; font-weight: 800; margin: 4px 0 0; }
 .onb-done-sub { font-size: 0.875rem; color: var(--color-text-muted); }
+
+/* 온보딩 주 버튼 — 학과 목록처럼 내용이 길어도 버튼만 화면 아래에 떠 있게 한다(배경 칸 없이). 내용이 짧으면 원래처럼 내용 바로 아래.
+   목록 위에 떠 있으므로 비활성 버튼도 반투명(opacity) 대신 불투명한 비활성 색으로 칠해 뒤의 글자가 비치지 않게 한다. */
+.onb-float-action {
+  position: sticky;
+  bottom: 0;
+}
+
+/* 목록 카드 위에 떠 있어 경계가 흐려 보이므로 본문 글자색 경계선을 둔다 — 밝은 테마에선 검은색, 어두운 테마에선 밝은색이라
+   어느 테마에서도 버튼 가장자리가 보인다. 비활성(연한 회청색) 버튼에 검은 선을 두르면 붕 떠 보여서 활성일 때만 둔다. */
+.onb-float-action .auth-submit-btn {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.onb-float-action .auth-submit-btn:not(:disabled) {
+  border: 1.5px solid var(--color-text-primary);
+}
+
+.onb-float-action .auth-submit-btn:disabled {
+  opacity: 1;
+  background: var(--color-accent-disabled);
+}
+
+/* 온보딩 "나중에 선택하기"(학적정보 수정은 "취소") — 질문 제목 줄 오른쪽. 줄 높이를 제목(.onb-q-title 1.25rem × 1.4)과 맞춰 세로 가운데에 온다. */
+.onb-later-link {
+  float: right;
+  margin-left: 12px;
+  line-height: 1.75rem;
+}
 
 .onb-skip-link {
   display: block;

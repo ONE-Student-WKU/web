@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSearch } from './icons.jsx';
 import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
@@ -18,12 +18,25 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - departments: [{ id, name, college, former, collegeOrder, successors, ...요건 학번 범위 }]
  * - selectedId: number | null
  * - onSelect: (department) => void
+ * - onSelectAndContinue: (department) => void (선택) — 검색 결과에서 고를 때와 목록에서 엔터로 고를 때. 없으면 onSelect.
+ *   온보딩은 이걸로 고른 뒤 바로 다음 질문으로 간다("다음"을 누른 것처럼).
  */
-function DepartmentCard({ department, selected, onSelect, showCollege }) {
+function DepartmentCard({ department, selected, active = false, onSelect, showCollege }) {
   const { t } = useI18n();
   const range = getYearRange(department, 'GENERAL');
+  const ref = useRef(null);
+  // 검색 결과를 ↑↓로 옮길 때 가리킨 학과가 화면 밖이면 보이게 스크롤한다.
+  useEffect(() => {
+    if (active) ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [active]);
   return (
-    <button type="button" className={'onb-option-card' + (selected ? ' selected' : '')} onClick={() => onSelect(department)}>
+    <button
+      ref={ref}
+      type="button"
+      data-dept-id={department.id}
+      className={'onb-option-card' + (selected ? ' selected' : '') + (active ? ' active' : '')}
+      onClick={() => onSelect(department)}
+    >
       <span className="onb-option-title">{department.name}</span>
       <span className="onb-option-caption">
         {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
@@ -36,7 +49,7 @@ function DepartmentCard({ department, selected, onSelect, showCollege }) {
   );
 }
 
-function DepartmentPicker({ departments, selectedId, onSelect }) {
+function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContinue = onSelect }) {
   const { t } = useI18n();
   // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -60,6 +73,9 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
 
   const trimmed = query.trim();
   const results = useMemo(() => (trimmed ? searchDepartments(departments, trimmed) : []), [departments, trimmed]);
+  // ↑↓로 가리키는 검색 결과. 검색어가 바뀌면 다시 맨 위(엔터만 치면 맨 위가 골라진다).
+  const [active, setActive] = useState({ query: '', index: 0 });
+  const activeIndex = active.query === trimmed ? active.index : 0;
 
   const dismissSearch = () => {
     deptSearch.reset();
@@ -68,8 +84,24 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
   };
 
   const handleSelectFromSearch = (department) => {
-    onSelect(department);
+    onSelectAndContinue(department);
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
+  };
+
+  // ↑↓: 가리키는 결과를 옮긴다. 엔터(모바일 "검색" 키): 가리킨 결과를 고른다.
+  const handleSearchKeyDown = (e) => {
+    // 한글 조합을 끝내는 키는 건너뛴다 — 브라우저에 따라 엔터가 조합 확정용으로 한 번 더 들어와 두 번 고르게 된다.
+    if (e.nativeEvent.isComposing) return;
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && results.length > 0) {
+      e.preventDefault(); // 입력 칸 커서가 맨 앞/뒤로 튀지 않게
+      const next = activeIndex + (e.key === 'ArrowDown' ? 1 : -1);
+      setActive({ query: trimmed, index: Math.max(0, Math.min(results.length - 1, next)) });
+    } else if (e.key === 'Enter') {
+      // 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있어, 그때는 입력 칸의 지금 값으로 다시 찾아 맨 위를 고른다.
+      const value = e.currentTarget.value.trim();
+      const pick = value === trimmed ? results[activeIndex] : searchDepartments(departments, value)[0];
+      if (pick) handleSelectFromSearch(pick);
+    }
   };
 
   const renderSearchResults = () => {
@@ -79,13 +111,56 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
       <>
         <p className="search-screen-count">{t('dept.search.count', { count: results.length })}</p>
         <div className="onb-option-list">
-          {results.map((d) => (
-            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={handleSelectFromSearch} showCollege />
+          {results.map((d, i) => (
+            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} active={i === activeIndex} onSelect={handleSelectFromSearch} showCollege />
           ))}
         </div>
       </>
     );
   };
+
+  // 학과 목록 키보드 — 화면 어디에 포커스가 있든(처음 들어와 아무것도 안 눌렀을 때 포함) ↑↓로 전체 학과 순서대로 위·아래 학과를 고른다.
+  // 다른 대학 묶음으로 넘어가면 그 묶음만 펼치고 떠난 묶음은 접는다(교학대학 원불교학과 → ↓ → 의과대학 의예과). 처음 ↓는 맨 위 학과.
+  // 학과 카드에서 엔터: 그 학과를 고르고 바로 다음으로("다음"을 누른 것처럼). 처리하지 않으면 브라우저가 페이지만 스크롤했다.
+  // 입력 칸, 검색 화면·확인 창(aria-modal)이 열려 있을 때는 가로채지 않는다 — 검색 결과의 ↑↓·엔터는 handleSearchKeyDown이 맡는다.
+  const rootRef = useRef(null);
+  const [focusId, setFocusId] = useState(null);
+  const allDepartments = hasTree ? groups.flatMap((g) => g.departments) : departments;
+  const groupOf = (department) => groups.find((g) => g.departments.includes(department))?.college;
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
+      if (e.defaultPrevented || e.target.closest?.('input, textarea, select, [aria-modal="true"]')) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      const card = e.target.closest?.('[data-dept-id]');
+      if (e.key === 'Enter') {
+        if (!card || !rootRef.current?.contains(card)) return; // 다른 버튼(다음·묶음 머리 등)의 엔터는 그대로
+        e.preventDefault(); // 버튼 클릭(고르기만)으로 이어지지 않게
+        const department = allDepartments.find((d) => String(d.id) === card.dataset.deptId);
+        if (department) onSelectAndContinue(department);
+        return;
+      }
+      e.preventDefault();
+      const fromId = card && rootRef.current?.contains(card) ? card.dataset.deptId : selectedId;
+      const index = allDepartments.findIndex((d) => String(d.id) === String(fromId));
+      const next = index < 0 ? (e.key === 'ArrowDown' ? allDepartments[0] : null) : allDepartments[index + (e.key === 'ArrowDown' ? 1 : -1)];
+      if (!next) return; // 맨 끝에서는 멈춘다
+      onSelect(next);
+      if (hasTree) setOpenGroups(new Set([groupOf(next)]));
+      setFocusId(next.id);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
+  // 키보드로 옮긴 학과 카드에 포커스를 준다 — 접혀 있던 묶음이 펼쳐진 뒤라야 카드가 있어서 렌더 후에 한다. 떠 있는 "다음" 버튼에 가리지 않게 가운데로.
+  useEffect(() => {
+    if (focusId == null) return;
+    const el = rootRef.current?.querySelector(`[data-dept-id="${focusId}"]`);
+    el?.focus({ preventScroll: true });
+    el?.scrollIntoView?.({ block: 'center' });
+  }, [focusId, openGroups]);
 
   const toggle = (college) =>
     setOpenGroups((prev) => {
@@ -96,7 +171,7 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
     });
 
   return (
-    <div className="onb-dept-picker">
+    <div className="onb-dept-picker" ref={rootRef}>
       <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('dept.search.aria')}>
         <IconSearch />
         <span>{t('dept.search.placeholder')}</span>
@@ -143,7 +218,13 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
       )}
 
       {searchOpen && (
-        <SearchScreen search={deptSearch} onClose={dismissSearch} placeholder={t('dept.search.placeholder')} ariaLabel={t('dept.search.aria')}>
+        <SearchScreen
+          search={deptSearch}
+          onClose={dismissSearch}
+          onKeyDown={handleSearchKeyDown}
+          placeholder={t('dept.search.placeholder')}
+          ariaLabel={t('dept.search.aria')}
+        >
           {renderSearchResults()}
         </SearchScreen>
       )}

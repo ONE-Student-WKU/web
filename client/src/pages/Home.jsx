@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
-import { MENU_VIEWS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
+import { MENU_VIEWS, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -85,6 +85,9 @@ function Home({
 }) {
   const { t, lang } = useI18n();
   const [status, setStatus] = useState(homeDataCache.status);
+  // 진단 결과를 못 받았는지(실패) / 그 이유가 학과·학번 미입력인지 — 못 받았으면 로딩 스켈레톤을 끝내야 한다.
+  const [statusFailed, setStatusFailed] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [showEditHint, setShowEditHint] = useState(() => !readHintSeen());
   const openView = {
     courses: onOpenCourses,
@@ -110,7 +113,14 @@ function Home({
         setStatus(data);
         setHomeCache('status', data);
       })
-      .catch(() => {});
+      .catch((err) => {
+        // 예전엔 실패를 조용히 삼켜 status가 계속 비어 있었고, 그게 "첫 로딩"으로 판정돼 스켈레톤이 끝나지 않았다(학과를 나중에
+        // 선택한 계정은 서버가 ONBOARDING_REQUIRED로 거절). 캐시에 남은 값(다른 계정 등)도 그대로 보이지 않게 비운다.
+        resetHomeCache();
+        setStatus(null);
+        setNeedsOnboarding(err.code === 'ONBOARDING_REQUIRED');
+        setStatusFailed(true);
+      });
   }, []);
 
   // 부족 요건 문구는 화면 언어에 따라 달라져서 완성된 문장이 아니라 서버 응답(status)만 캐시하고
@@ -126,7 +136,7 @@ function Home({
   // 없을 때만 로딩 스켈레톤을 보여주고, 두 번째 방문부터는 직전에 불러온 데이터를 즉시
   // 보여준 뒤 뒤에서 조용히 최신 데이터로 갱신한다. user는 App.jsx가 이미 로딩을 마친
   // 뒤에만 이 화면을 렌더링하므로(authChecked 게이팅) 항상 준비돼 있어 이 판단에서 제외.
-  const isFirstLoad = status === null;
+  const isFirstLoad = status === null && !statusFailed;
 
   const gradeLevel = getGradeLevel(user?.admissionYear, user?.leaveSemesters);
   const earnedCredits = status?.totalEarnedCredits ?? 0;
@@ -203,43 +213,56 @@ function Home({
               )}
             </div>
 
-            <section className="home-card">
-              <p className="home-card-label">{t('home.creditProgress')}</p>
-              <div className="home-credit-value">
-                <span className="home-credit-number">{earnedCredits}</span>
-                <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
-              </div>
-              <div className="home-progress-track">
-                <div
-                  className="home-progress-fill"
-                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
-                />
-              </div>
-              <p className="grad-remaining-text">{progressPercent}%</p>
-            </section>
+            {needsOnboarding ? (
+              <section className="home-card">
+                <p className="home-card-label">{t('home.creditProgress')}</p>
+                <p className="home-card-row">{t('home.needOnboarding')}</p>
+                {/* 학과를 고르지 않은 계정의 주된 다음 행동이라 작은 글자 링크가 아니라 주 버튼으로 둔다 */}
+                <button className="auth-submit-btn" onClick={onOpenOnboarding}>
+                  {t('home.chooseDepartment')}
+                </button>
+              </section>
+            ) : (
+              <>
+              <section className="home-card">
+                <p className="home-card-label">{t('home.creditProgress')}</p>
+                <div className="home-credit-value">
+                  <span className="home-credit-number">{earnedCredits}</span>
+                  <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
+                </div>
+                <div className="home-progress-track">
+                  <div
+                    className="home-progress-fill"
+                    style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                  />
+                </div>
+                <p className="grad-remaining-text">{progressPercent}%</p>
+              </section>
 
-            <section className="home-card">
-              <p className="home-card-label">{t('home.shortfall')}</p>
-              <div
-                className={
-                  shortfalls === null
-                    ? 'home-card-row'
-                    : shortfalls.length > 0
-                      ? 'home-card-row shortfall-danger'
-                      : 'home-card-row shortfall-ok'
-                }
-              >
-                {/* 초록색으로 칠해도 모양 자체가 경고 삼각형이면 "충족했다는데 왜 주의
-                    아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
-                    아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
-                {shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
-                <span>
-                  {shortfalls === null
-                    ? t('home.shortfallCheck')
-                    : formatShortfallSentence(shortfalls, lang) || t('home.allMet')}
-                </span>
-              </div>
-            </section>
+              <section className="home-card">
+                <p className="home-card-label">{t('home.shortfall')}</p>
+                <div
+                  className={
+                    shortfalls === null
+                      ? 'home-card-row'
+                      : shortfalls.length > 0
+                        ? 'home-card-row shortfall-danger'
+                        : 'home-card-row shortfall-ok'
+                  }
+                >
+                  {/* 초록색으로 칠해도 모양 자체가 경고 삼각형이면 "충족했다는데 왜 주의
+                      아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
+                      아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
+                  {shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
+                  <span>
+                    {shortfalls === null
+                      ? t('home.shortfallCheck')
+                      : formatShortfallSentence(shortfalls, lang) || t('home.allMet')}
+                  </span>
+                </div>
+              </section>
+              </>
+            )}
           </>
         )}
 
@@ -248,7 +271,12 @@ function Home({
           {MENU_VIEWS.map((view) => {
             const Icon = TAB_ICONS[view];
             return (
-              <button key={view} className="home-quick-btn" onClick={openView[view]}>
+              <button
+                key={view}
+                className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
+                onClick={openView[view]}
+                aria-label={isLockedView(view, user) ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) }) : undefined}
+              >
                 <Icon />
                 <span>{t(TAB_LABEL_KEYS[view])}</span>
               </button>
