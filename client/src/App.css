@@ -1105,6 +1105,20 @@ body {
   box-shadow: 0 0 0 3px var(--color-accent-bg);
 }
 
+/* 빈 자리 — 아이콘과 같은 크기로 비워 두어 다른 자리의 위치가 그대로다 */
+.bottom-tab-empty { width: 42px; height: 42px; }
+
+/* 4자리가 모두 비면 바 없이 가운데 원형 챗봇 버튼만 남긴다 */
+.bottom-tab-bar.chat-only { justify-content: center; border-top: none; background: transparent; padding-top: 18px; }
+/* 앱 화면에서는 버튼을 내용 위에 띄운다 — 바가 아래 한 줄을 차지하지 않아 좌우로 내용이 보인다(App.jsx의 floating-chat).
+   투명한 바가 아래 내용을 누르는 것을 막지 않게 바는 pointer-events: none, 버튼만 받는다.
+   편집 화면 미리보기의 바는 .app-frame의 바로 아래 자식이 아니라서 영향받지 않는다. */
+.app-frame > .bottom-tab-bar.chat-only { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+.app-frame > .bottom-tab-bar.chat-only .bottom-tab-chat { pointer-events: auto; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+/* 스크롤 끝의 내용이 떠 있는 버튼에 가리지 않게 여백을 둔다(버튼 44px + 아래 여백 10px + 여유) */
+.app-frame.floating-chat .home-body,
+.app-frame.floating-chat .courses-body { padding-bottom: 72px; }
+
 /* 홈 화면 편집 — 헤더의 편집 버튼과 첫 안내 말풍선, 편집 화면의 목록·미리보기 */
 .home-header-actions { position: relative; display: flex; align-items: center; margin-left: auto; margin-right: 6px; }
 .home-edit-btn {
@@ -1128,11 +1142,30 @@ body {
   border-left: 6px solid transparent; border-right: 6px solid transparent;
   border-bottom: 6px solid var(--color-accent);
 }
+/* 안내가 떠 있는 동안 어느 버튼 얘기인지 보이게 편집 버튼을 강조한다 */
+.home-edit-btn.hinted { background: var(--color-accent-bg); color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
 .home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .home-edit-body { display: flex; flex-direction: column; gap: 14px; }
 .home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
-.home-edit-preview .bottom-tab, .home-edit-preview .bottom-tab-chat { cursor: default; }
+.home-edit-preview .bottom-tab-chat { cursor: default; }
 .home-edit-preview-empty { border: 1.5px dashed var(--color-border-strong); }
+/* 자리 옮기기(하단 바 미리보기·메뉴 순서 공통, hooks/useSwapSlots.js) — touch-action: none이라야 모바일에서 끄는 동작이 화면 스크롤로 넘어가지 않는다 */
+.home-edit-slot { touch-action: none; user-select: none; position: relative; cursor: grab; }
+.home-edit-slot.home-edit-preview-empty { cursor: pointer; }
+.home-edit-preview .home-edit-slot:not(.home-edit-preview-empty) { color: var(--color-text-primary); }
+.home-edit-slot.selected { color: var(--color-accent); background: var(--color-accent-bg); box-shadow: 0 0 0 2px var(--color-accent); }
+.home-edit-slot:not(.dragging) { transition: transform 0.12s, box-shadow 0.12s, background 0.12s; }
+/* 끄는 것은 조금 작고 반투명하게(크기는 useSwapSlots의 인라인 transform) — 아래에 깔린 "들어갈 자리" 표시가 가려지지 않게 */
+.home-edit-slot.dragging { z-index: 2; cursor: grabbing; opacity: 0.85; background: var(--color-bg-card); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); }
+/* 놓으면 들어갈 자리 — 점선 대신 강조색 테두리·배경, 살짝 키워서 "여기 들어간다"를 보여 준다 */
+.home-edit-slot.drop-target {
+  background: var(--color-accent-bg); color: var(--color-accent);
+  border-color: transparent; box-shadow: 0 0 0 3px var(--color-accent); transform: scale(1.2);
+}
+.home-edit-menu { margin-top: 10px; }
+.home-edit-menu .home-edit-slot.drop-target { transform: scale(1.04); }
+.home-edit-menu .home-edit-slot.drop-target svg { color: var(--color-accent); }
+
 .home-edit-group-label { margin: 14px 0 6px; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-muted); }
 .home-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .home-edit-row {
@@ -1140,18 +1173,13 @@ body {
   padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-card);
 }
 .home-edit-row-name { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-.home-edit-row-actions { display: flex; gap: 4px; }
-.home-edit-row-actions button {
-  width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: 8px;
-  background: none; color: var(--color-text-primary); cursor: pointer;
-}
-.home-edit-row-actions button:disabled { opacity: 0.35; cursor: default; }
+.home-edit-row { cursor: pointer; }
+.home-edit-row.disabled { opacity: 0.45; cursor: default; }
+.home-edit-row input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
 .home-edit-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
 .home-edit-toggle > span { display: flex; flex-direction: column; gap: 2px; }
 .home-edit-toggle .home-card-label { margin: 0; }
 .home-edit-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
-.home-edit-row .settings-theme-btn { flex: 0 0 auto; width: auto; padding: 6px 14px; }
-.home-edit-row .settings-theme-btn:disabled { opacity: 0.4; cursor: default; }
 
 .bottom-tab-disabled {
   opacity: 0.4;

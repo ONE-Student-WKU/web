@@ -33,7 +33,7 @@ const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', '
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 4칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
 function tabPeerViews(user) {
-  return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs]);
+  return new Set(['home', 'chat', ...resolveLayout(user?.homeLayout).tabs.filter(Boolean)]);
 }
 
 // 로그아웃/계정 삭제 시 화면별 모듈 스코프 캐시(재진입 깜빡임 방지용)를 전부 비운다 —
@@ -298,14 +298,17 @@ function App() {
   const homeLayout = resolveLayout(user?.homeLayout);
   const layoutTabs = homeLayout.tabs;
   const tabPeers = tabPeerViews(user);
-  const tabBarVisible = homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view));
+  // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 채팅 화면에서는 입력창과 겹치므로 그리지 않는다.
+  const chatOnly = layoutTabs.every((v) => !v);
+  const tabBarVisible =
+    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && view === 'chat');
 
   // 홈 메뉴·하단 바에서 화면을 연다. 학과를 고르지 않은 계정이 학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)을 누르면 학과 선택으로 보낸다.
   const openView = (next) => setView(isLockedView(next, user) ? 'onboarding' : next);
 
   return (
     <div className="app-container">
-      <div className="app-frame">
+      <div className={tabBarVisible && chatOnly ? 'app-frame floating-chat' : 'app-frame'}>
         {view === 'privacy' ? (
           <PrivacyPolicy onGoBack={() => setView(user ? 'profile' : 'home')} />
         ) : view === 'terms' ? (

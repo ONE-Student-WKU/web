@@ -38,15 +38,37 @@ describe('Home — 홈 화면 편집 진입', () => {
     }
   });
 
+  it('메뉴 카드는 저장된 순서대로 나온다', async () => {
+    render(<Home user={{ ...USER, homeLayout: { tabs: ['home', 'graduation', 'career', 'community'], showTabBar: true, menu: ['inquiry', 'community', 'career', 'graduation', 'courses'] } }} onOpenHomeEdit={() => {}} />);
+    await screen.findByText('이수학점 진행률');
+    const order = ['문의하기', '커뮤니티', '진로 탐색', '졸업요건 진단', '과목 관리'].map((name) => screen.getByRole('button', { name }));
+    for (let i = 1; i < order.length; i += 1) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it('메뉴 카드는 고른 것만 나오고, 모두 뺐으면 메뉴 영역이 없다', async () => {
+    const layout = (menu) => ({ ...USER, homeLayout: { tabs: ['home', 'graduation', 'career', 'community'], showTabBar: true, menu } });
+    const { unmount } = render(<Home user={layout(['career'])} onOpenHomeEdit={() => {}} />);
+    await screen.findByText('이수학점 진행률');
+    expect(screen.getByRole('button', { name: '진로 탐색' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '과목 관리' })).not.toBeInTheDocument();
+    unmount();
+
+    render(<Home user={layout([])} onOpenHomeEdit={() => {}} />);
+    await screen.findByText('이수학점 진행률');
+    expect(screen.queryByText('메뉴')).not.toBeInTheDocument();
+  });
+
   it('편집 버튼 첫 안내는 한 번 보면 다시 나오지 않고, 버튼을 누르면 편집 화면을 연다', async () => {
     const onOpenHomeEdit = vi.fn();
     const { unmount } = renderHome(onOpenHomeEdit);
-    expect(screen.getByText('홈 화면을 편집할 수 있어요')).toBeInTheDocument();
+    expect(screen.getByText('하단 바와 메뉴를 내게 맞게 바꿀 수 있어요')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '홈 화면 편집' }));
     expect(onOpenHomeEdit).toHaveBeenCalled();
     unmount();
     renderHome();
-    expect(screen.queryByText('홈 화면을 편집할 수 있어요')).not.toBeInTheDocument();
+    expect(screen.queryByText('하단 바와 메뉴를 내게 맞게 바꿀 수 있어요')).not.toBeInTheDocument();
   });
 });
 

@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import { updateProfile } from '../api/chatApi.js';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { IconChevronLeft, IconMessageCircle } from '../components/icons.jsx';
+import useSwapSlots from '../hooks/useSwapSlots.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
-import { resolveLayout, isDefaultLayout, TAB_OPTIONS, TAB_SLOTS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
+import { resolveLayout, isDefaultLayout, TAB_OPTIONS, MENU_VIEWS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
 
 /**
  * HomeEdit Page
- * 홈 화면 편집 — 하단 바를 켜고 끄고, 켰을 때 가운데 챗봇 버튼을 뺀 4칸(홈 포함)을 고른다. 홈 헤더의 편집 버튼으로 들어온다.
- * 하단 바를 끄면 챗봇 버튼까지 모든 화면에서 사라진다(챗봇을 쓰지 않는 사용자를 위한 선택 — 다시 켜면 돌아온다).
+ * 홈 화면 편집 — 홈 메뉴 카드(위)와 하단 바(아래: 켜기·끄기, 챗봇 버튼을 뺀 4자리)를 바꾼다. 홈 헤더의 편집 버튼으로 들어온다.
+ * - 하단 바: 4자리를 다 채우지 않아도 저장된다. 빈 자리는 null로 위치를 지키고, 모두 비우면 바 없이 챗봇 버튼만 남는다.
+ *   기능 목록(한 줄에 하나)의 스위치로 넣고 빼며, 넣으면 첫 빈 자리에 들어가고 빼면 그 자리가 빈 자리가 된다.
+ * - 메뉴: 기능 목록의 스위치로 카드를 넣고 빼며(넣으면 맨 끝, 빼면 뒤 카드가 당겨진다), 순서를 바꾼다. 모두 빼면 홈에 메뉴가 없다.
+ *   하단 바와 따로 정한다(하단 바를 꺼도 메뉴는 홈에 있으니 이 영역은 항상 보인다).
+ * - 자리 옮기기(두 미리보기 공통, hooks/useSwapSlots.js): 끌어서 다른 자리에 놓거나, 누른 뒤 다른 자리를 누르면 두 자리를 맞바꾼다.
+ * 이수학점 진행률·부족 요건 카드는 고정이라 여기서 다루지 않는다. 메뉴와 하단 바를 모두 비워도 막지 않는다(이 화면에서 언제든 되돌린다).
  * 저장하면 계정(students.home_layout)에 남아 기기가 바뀌어도 같다. 기본 배치와 같으면 null로 보내 "편집한 적 없음"과 같게 둔다.
- * 홈 카드(진행률·부족 요건·메뉴)는 고정이라 여기서 다루지 않는다.
  *
  * Props:
  * - user: 현재 학생(homeLayout)
@@ -23,27 +28,46 @@ function HomeEdit({ user, onCancel, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
 
-  const tabsFull = draft.tabs.length >= TAB_SLOTS;
-  const available = TAB_OPTIONS.filter((v) => !draft.tabs.includes(v));
-  // 하단 바를 켰으면 4칸이 다 차야 저장한다. 끈 상태에서는 칸 편집이 보이지 않으니, 덜 찬 칸은 저장할 때 기본 칸으로 채운다.
-  const canSave = !draft.showTabBar || draft.tabs.length === TAB_SLOTS;
+  const filledCount = draft.tabs.filter(Boolean).length;
+  const emptyIndex = draft.tabs.indexOf(null);
 
-  const move = (index, dir) => {
-    const next = [...draft.tabs];
-    const target = index + dir;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    setDraft((d) => ({ ...d, tabs: next }));
+  // draft[key]의 두 자리를 맞바꾼다(하단 바에서 빈 자리와 바꾸면 그 기능이 빈 자리로 옮겨 간다).
+  const swapIn = (key) => (a, b) =>
+    setDraft((d) => {
+      const next = [...d[key]];
+      [next[a], next[b]] = [next[b], next[a]];
+      return { ...d, [key]: next };
+    });
+  const bar = useSwapSlots({ isMovable: (i) => Boolean(draft.tabs[i]), onSwap: swapIn('tabs'), dragScale: 0.8 });
+  const menu = useSwapSlots({ isMovable: () => true, onSwap: swapIn('menu'), dragScale: 0.92 });
+
+  // 하단 바 스위치: 켜면 첫 빈 자리에 넣고, 끄면 그 자리를 비운다.
+  const toggleTab = (view, on) => {
+    bar.clearSelection();
+    setDraft((d) => {
+      const next = [...d.tabs];
+      if (on) {
+        const empty = next.indexOf(null);
+        if (empty === -1) return d;
+        next[empty] = view;
+      } else {
+        next[next.indexOf(view)] = null;
+      }
+      return { ...d, tabs: next };
+    });
   };
-  const setTabs = (tabs) => setDraft((d) => ({ ...d, tabs }));
+
+  // 메뉴 스위치: 켜면 맨 끝에 넣고, 끄면 빼서 뒤 카드가 앞으로 당겨진다(격자라 빈 자리를 두지 않는다).
+  const toggleMenu = (view, on) => {
+    menu.clearSelection();
+    setDraft((d) => ({ ...d, menu: on ? [...d.menu, view] : d.menu.filter((v) => v !== view) }));
+  };
 
   const handleSave = async () => {
-    if (!canSave) return;
     setSaving(true);
     setError(false);
     try {
-      const layout = draft.tabs.length === TAB_SLOTS ? draft : { ...draft, tabs: resolveLayout(null).tabs };
-      onSaved(await updateProfile({ homeLayout: isDefaultLayout(layout) ? null : layout }));
+      onSaved(await updateProfile({ homeLayout: isDefaultLayout(draft) ? null : draft }));
     } catch {
       setError(true);
     } finally {
@@ -51,17 +75,57 @@ function HomeEdit({ user, onCancel, onSaved }) {
     }
   };
 
-  // 미리보기는 하단 바와 같은 모양의 아이콘만 그린다(누를 수 있는 버튼을 숨겨 두면 키보드·화면 읽기에서 문제가 된다). 빈 칸은 점선으로.
-  const slot = (view, key) => {
-    if (!view) return <span key={key} className="bottom-tab home-edit-preview-empty" />;
-    const Icon = TAB_ICONS[view];
+  const nameOf = (view) => (view ? t(TAB_LABEL_KEYS[view]) : t('homeEdit.slot.empty'));
+  const stateClasses = (state) =>
+    [state.selected && 'selected', state.dragging && 'dragging', state.dropTarget && 'drop-target'].filter(Boolean);
+
+  // 하단 바 미리보기 자리 — 하단 바와 같은 모양의 버튼. 빈 자리는 점선.
+  const barSlot = (index) => {
+    const view = draft.tabs[index];
+    const classes = ['bottom-tab', 'home-edit-slot', ...stateClasses(bar.slotState(index))];
+    if (!view) classes.push('home-edit-preview-empty');
+    const Icon = view ? TAB_ICONS[view] : null;
     return (
-      <span key={key} className="bottom-tab">
-        <Icon size={21} />
-      </span>
+      <button
+        key={index}
+        type="button"
+        className={classes.join(' ')}
+        aria-label={t('homeEdit.slot.label', { n: index + 1, name: nameOf(view) })}
+        {...bar.slotProps(index)}
+      >
+        {Icon && <Icon size={21} />}
+      </button>
     );
   };
-  const tabNames = draft.tabs.map((v) => t(TAB_LABEL_KEYS[v]));
+
+  // 기능 목록(한 줄에 하나) — 스위치로 넣고 뺀다. full이면 꺼진 기능은 켤 수 없다.
+  const featureSwitches = (views, selectedViews, onToggle, full = false) => (
+    <>
+      <p className="home-edit-group-label">{t('homeEdit.features')}</p>
+      <ul className="home-edit-list">
+        {views.map((view) => {
+          const Icon = TAB_ICONS[view];
+          const on = selectedViews.includes(view);
+          return (
+            <li key={view}>
+              <label className={on || !full ? 'home-edit-row' : 'home-edit-row disabled'}>
+                <span className="home-edit-row-name">
+                  <Icon size={17} />
+                  {nameOf(view)}
+                </span>
+                <input type="checkbox" role="switch" checked={on} disabled={!on && full} onChange={(e) => onToggle(view, e.target.checked)} />
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+
+  const barHint =
+    bar.selected !== null
+      ? t('homeEdit.tabs.selecting', { name: nameOf(draft.tabs[bar.selected]) })
+      : t(filledCount === 0 ? 'homeEdit.tabs.chatOnly' : 'homeEdit.tabs.move');
 
   return (
     <div className="courses-page">
@@ -75,6 +139,36 @@ function HomeEdit({ user, onCancel, onSaved }) {
       </header>
 
       <div className="courses-body home-edit-body">
+        <section className="home-card">
+          <p className="home-card-label">{t('homeEdit.menu.title')}</p>
+          <p className="settings-field-hint">{t('homeEdit.menu.sub')}</p>
+          <div className={draft.menu.length ? 'home-quick-actions home-edit-menu' : 'home-edit-menu'} role="group" aria-label={t('homeEdit.menu.preview')}>
+            {draft.menu.map((view, index) => {
+              const Icon = TAB_ICONS[view];
+              const classes = ['home-quick-btn', 'home-edit-slot', ...stateClasses(menu.slotState(index))];
+              return (
+                <button
+                  key={view}
+                  type="button"
+                  className={classes.join(' ')}
+                  aria-label={t('homeEdit.menu.label', { n: index + 1, name: nameOf(view) })}
+                  {...menu.slotProps(index)}
+                >
+                  <Icon />
+                  <span>{nameOf(view)}</span>
+                </button>
+              );
+            })}
+          </div>
+          {draft.menu.length === 0 && <p className="settings-field-hint">{t('homeEdit.menu.empty')}</p>}
+          {menu.selected !== null && (
+            <p className="settings-field-hint" aria-live="polite">
+              {t('homeEdit.tabs.selecting', { name: nameOf(draft.menu[menu.selected]) })}
+            </p>
+          )}
+          {featureSwitches(MENU_VIEWS, draft.menu, toggleMenu)}
+        </section>
+
         <section className="home-card">
           <label className="home-edit-toggle">
             <span>
@@ -93,86 +187,40 @@ function HomeEdit({ user, onCancel, onSaved }) {
         {draft.showTabBar && (
           <section className="home-card">
             <p className="home-card-label">{t('homeEdit.tabs.title')}</p>
-            <p className="settings-field-hint">{t('homeEdit.tabs.sub', { count: draft.tabs.length })}</p>
-            <div
-              className="bottom-tab-bar home-edit-preview"
-              role="img"
-              aria-label={t('homeEdit.preview', { left: tabNames.slice(0, 2).join(', '), right: tabNames.slice(2).join(', ') })}
-            >
-              {slot(draft.tabs[0], 's0')}
-              {slot(draft.tabs[1], 's1')}
-              <span className="bottom-tab-chat">
+            <p className="settings-field-hint">{t('homeEdit.tabs.sub', { count: filledCount })}</p>
+            <div className="bottom-tab-bar home-edit-preview" role="group" aria-label={t('homeEdit.preview')}>
+              {barSlot(0)}
+              {barSlot(1)}
+              <span className="bottom-tab-chat" aria-hidden="true">
                 <IconMessageCircle size={20} />
               </span>
-              {slot(draft.tabs[2], 's2')}
-              {slot(draft.tabs[3], 's3')}
+              {barSlot(2)}
+              {barSlot(3)}
             </div>
+            <p className="settings-field-hint" aria-live="polite">
+              {barHint}
+            </p>
 
-            <p className="home-edit-group-label">{t('homeEdit.tabs.selected')}</p>
-            <ul className="home-edit-list">
-              {draft.tabs.map((view, i) => {
-                const Icon = TAB_ICONS[view];
-                const name = t(TAB_LABEL_KEYS[view]);
-                return (
-                  <li key={view} className="home-edit-row">
-                    <span className="home-edit-row-name">
-                      <Icon size={17} />
-                      {name}
-                    </span>
-                    <span className="home-edit-row-actions">
-                      <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('homeEdit.moveUp', { name })}>
-                        ↑
-                      </button>
-                      <button type="button" onClick={() => move(i, 1)} disabled={i === draft.tabs.length - 1} aria-label={t('homeEdit.moveDown', { name })}>
-                        ↓
-                      </button>
-                      <button type="button" onClick={() => setTabs(draft.tabs.filter((v) => v !== view))} aria-label={t('homeEdit.remove', { name })}>
-                        ✕
-                      </button>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {available.length > 0 && (
-              <>
-                <p className="home-edit-group-label">{t('homeEdit.tabs.available')}</p>
-                <ul className="home-edit-list">
-                  {available.map((view) => {
-                    const Icon = TAB_ICONS[view];
-                    const name = t(TAB_LABEL_KEYS[view]);
-                    return (
-                      <li key={view} className="home-edit-row">
-                        <span className="home-edit-row-name">
-                          <Icon size={17} />
-                          {name}
-                        </span>
-                        <button
-                          type="button"
-                          className="settings-theme-btn"
-                          onClick={() => setTabs([...draft.tabs, view])}
-                          disabled={tabsFull}
-                          aria-label={t('homeEdit.add', { name })}
-                        >
-                          {t('homeEdit.addShort')}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {tabsFull && <p className="settings-field-hint">{t('homeEdit.tabs.full')}</p>}
-              </>
-            )}
+            {featureSwitches(TAB_OPTIONS, draft.tabs, toggleTab, emptyIndex === -1)}
+            {emptyIndex === -1 && <p className="settings-field-hint">{t('homeEdit.tabs.full')}</p>}
           </section>
         )}
 
         {error && <p className="home-error">{t('homeEdit.err')}</p>}
 
-        <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving || !canSave}>
+        <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving}>
           {saving ? t('homeEdit.saving') : t('homeEdit.save')}
         </button>
-        <button type="button" className="onb-skip-link" onClick={() => setDraft(resolveLayout(null))} disabled={saving}>
+        <button
+          type="button"
+          className="onb-skip-link"
+          onClick={() => {
+            bar.clearSelection();
+            menu.clearSelection();
+            setDraft(resolveLayout(null));
+          }}
+          disabled={saving}
+        >
           {t('homeEdit.reset')}
         </button>
       </div>
