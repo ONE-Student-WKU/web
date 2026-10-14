@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
-import { MENU_VIEWS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
+import { MENU_VIEWS, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
 import { getGradeLevel } from '../utils/academic.js';
@@ -270,7 +270,12 @@ function Home({
           {MENU_VIEWS.map((view) => {
             const Icon = TAB_ICONS[view];
             return (
-              <button key={view} className="home-quick-btn" onClick={openView[view]}>
+              <button
+                key={view}
+                className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
+                onClick={openView[view]}
+                aria-label={isLockedView(view, user) ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) }) : undefined}
+              >
                 <Icon />
                 <span>{t(TAB_LABEL_KEYS[view])}</span>
               </button>

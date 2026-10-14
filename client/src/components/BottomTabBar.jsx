@@ -24,21 +24,24 @@ export const TAB_ICONS = {
  * - tabs: [칸1, 칸2, 칸3, 칸4] — 'home' | 'courses' | 'graduation' | 'career' | 'community' | 'inquiry'
  * - active: 활성 화면 이름(챗봇·tabs 중 하나) 또는 null
  * - onOpen: function(view)
+ * - isLocked: function(view) → boolean (선택) — 학과를 고르지 않아 쓸 수 없는 기능이면 흐리게 보인다(누르면 App이 학과 선택으로 보낸다).
  * - communityBadge: boolean (선택) — 커뮤니티 칸에 확인하지 않은 신고 처리 결과가 있으면 작은 점을 보여준다(어느 칸에 있든).
  */
-function BottomTabBar({ tabs, active, onOpen, communityBadge = false }) {
+function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityBadge = false }) {
   const { t } = useI18n();
 
   const tabButton = (view) => {
     const Icon = TAB_ICONS[view];
     const badge = view === 'community' && communityBadge;
+    const locked = isLocked(view);
+    const name = badge ? t('nav.communityBadge') : t(TAB_LABEL_KEYS[view]);
     return (
       <button
         key={view}
         type="button"
-        className={active === view ? 'bottom-tab active' : 'bottom-tab'}
+        className={'bottom-tab' + (active === view ? ' active' : '') + (locked ? ' locked' : '')}
         onClick={() => onOpen(view)}
-        aria-label={badge ? t('nav.communityBadge') : t(TAB_LABEL_KEYS[view])}
+        aria-label={locked ? t('nav.locked', { name }) : name}
         aria-current={active === view ? 'page' : undefined}
       >
         <Icon size={21} />

@@ -17,7 +17,7 @@ import Home, { resetHomeCache } from './Home.jsx';
  */
 
 const STATUS = { totalEarnedCredits: 100, totalRequiredCredits: 130, categories: [], certifications: [] };
-const USER = { id: 1, name: '학생', department: '경영학부', admissionYear: 2023, leaveSemesters: 0, homeLayout: null };
+const USER = { id: 1, name: '학생', department: '경영학부', departmentId: 4, admissionYear: 2023, leaveSemesters: 0, homeLayout: null };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -41,12 +41,12 @@ describe('Home — 홈 화면 편집 진입', () => {
   it('편집 버튼 첫 안내는 한 번 보면 다시 나오지 않고, 버튼을 누르면 편집 화면을 연다', async () => {
     const onOpenHomeEdit = vi.fn();
     const { unmount } = renderHome(onOpenHomeEdit);
-    expect(screen.getByText('하단 바를 내게 맞게 바꾸거나 끌 수 있어요')).toBeInTheDocument();
+    expect(screen.getByText('하단 바를 바꿀 수 있어요')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '홈 화면 편집' }));
     expect(onOpenHomeEdit).toHaveBeenCalled();
     unmount();
     renderHome();
-    expect(screen.queryByText('하단 바를 내게 맞게 바꾸거나 끌 수 있어요')).not.toBeInTheDocument();
+    expect(screen.queryByText('하단 바를 바꿀 수 있어요')).not.toBeInTheDocument();
   });
 });
 
@@ -56,7 +56,7 @@ describe('Home — 학과를 아직 고르지 않은 계정(나중에 선택하�
   it('진단이 ONBOARDING_REQUIRED로 거절되면 로딩이 끝나고 학과 선택 안내가 나온다(예전엔 스켈레톤이 끝나지 않았다)', async () => {
     api.getGraduationStatus.mockRejectedValue(onboardingRequired());
     const onOpenOnboarding = vi.fn();
-    const { container } = render(<Home user={{ ...USER, department: null, admissionYear: null }} onOpenOnboarding={onOpenOnboarding} onOpenHomeEdit={() => {}} />);
+    const { container } = render(<Home user={{ ...USER, department: null, departmentId: null, admissionYear: null }} onOpenOnboarding={onOpenOnboarding} onOpenHomeEdit={() => {}} />);
     expect(await screen.findByText('학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.')).toBeInTheDocument();
     expect(container.querySelector('.home-body .skeleton')).toBeNull();
     expect(screen.getByText('학과 정보 없음')).toBeInTheDocument();
@@ -74,5 +74,14 @@ describe('Home — 학과를 아직 고르지 않은 계정(나중에 선택하�
     expect(await screen.findByText('학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.')).toBeInTheDocument();
     expect(screen.queryByText('/ 130학점')).toBeNull();
     expect(sessionStorage.getItem('wku_cache_home_status')).toBeNull();
+  });
+  it('학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)은 메뉴에서 흐리게 보이고, 커뮤니티·문의하기는 그대로다', async () => {
+    api.getGraduationStatus.mockRejectedValue(onboardingRequired());
+    render(<Home user={{ ...USER, department: null, departmentId: null }} onOpenHomeEdit={() => {}} />);
+    await screen.findByText('학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.');
+    for (const name of ['과목 관리', '졸업요건 진단', '진로 탐색']) {
+      expect(screen.getByRole('button', { name: `${name} (학과를 고르면 쓸 수 있어요)` })).toHaveClass('locked');
+    }
+    for (const name of ['커뮤니티', '문의하기']) expect(screen.getByRole('button', { name })).not.toHaveClass('locked');
   });
 });

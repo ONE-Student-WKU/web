@@ -28,6 +28,7 @@ export default {
   // Bottom tab bar
   'nav.aria': 'Main navigation',
   'nav.home': 'Home',
+  'nav.locked': '{name} (choose your department to use this)',
   'nav.graduation': 'Graduation check',
   'nav.chat': 'Chat',
   'nav.career': 'Career',
@@ -72,7 +73,7 @@ export default {
   'home.allMet': 'All requirements met!',
   'home.menu': 'Menu',
   'homeEdit.open': 'Edit home screen',
-  'homeEdit.hint': 'You can customize or turn off the bottom bar',
+  'homeEdit.hint': 'Customize the bottom bar',
   'homeEdit.hintClose': 'Close tip',
   'homeEdit.title': 'Edit home screen',
   'homeEdit.cancel': 'Leave without saving',

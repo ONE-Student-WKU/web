@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveLayout, isDefaultLayout, DEFAULT_TABS, MENU_VIEWS } from './homeLayout.js';
+import { resolveLayout, isDefaultLayout, DEFAULT_TABS, MENU_VIEWS, isLockedView } from './homeLayout.js';
 
 /**
  * client/src/utils/homeLayout.test.js
@@ -35,5 +35,17 @@ describe('isDefaultLayout / MENU_VIEWS', () => {
 
   it('메뉴에는 홈을 뺀 기능 5개가 나온다', () => {
     expect(MENU_VIEWS).toEqual(['courses', 'graduation', 'career', 'community', 'inquiry']);
+  });
+});
+
+describe('isLockedView — 학과가 필요한 기능', () => {
+  it('학과를 고르지 않은 계정만 과목 관리·졸업요건 진단·진로 탐색이 잠기고, 나머지는 열린다', () => {
+    const noDept = { departmentId: null };
+    const withDept = { departmentId: 4 };
+    for (const v of ['courses', 'graduation', 'career']) {
+      expect(isLockedView(v, noDept)).toBe(true);
+      expect(isLockedView(v, withDept)).toBe(false);
+    }
+    for (const v of ['home', 'community', 'inquiry', 'chat']) expect(isLockedView(v, noDept)).toBe(false);
   });
 });

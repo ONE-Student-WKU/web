@@ -1024,6 +1024,12 @@ body {
   margin-bottom: 16px;
 }
 
+/* 학과를 고르지 않아 아직 쓸 수 없는 기능(utils/homeLayout.js NEEDS_DEPARTMENT) — 누르면 학과 선택으로 간다. */
+.home-quick-btn.locked,
+.bottom-tab.locked {
+  opacity: 0.4;
+}
+
 .home-quick-btn {
   display: flex;
   flex-direction: column;

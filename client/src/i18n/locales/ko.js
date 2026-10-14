@@ -29,6 +29,7 @@ export default {
   // 하단 탭바
   'nav.aria': '주요 화면 이동',
   'nav.home': '홈',
+  'nav.locked': '{name} (학과를 고르면 쓸 수 있어요)',
   'nav.graduation': '졸업요건 진단',
   'nav.chat': '채팅',
   'nav.career': '진로 탐색',
@@ -71,7 +72,7 @@ export default {
   'home.allMet': '모든 요건을 충족했어요!',
   'home.menu': '메뉴',
   'homeEdit.open': '홈 화면 편집',
-  'homeEdit.hint': '하단 바를 내게 맞게 바꾸거나 끌 수 있어요',
+  'homeEdit.hint': '하단 바를 바꿀 수 있어요',
   'homeEdit.hintClose': '안내 닫기',
   'homeEdit.title': '홈 화면 편집',
   'homeEdit.cancel': '저장하지 않고 나가기',
