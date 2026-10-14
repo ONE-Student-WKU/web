@@ -47,6 +47,7 @@ const UNVERIFIED_REQUIREMENT_PARTS = Object.freeze({
 // 시드를 그 표로 정렬했으므로(scripts/audit/applyLatestBookletCohortTables.js) 옛 책자의 산술 불일치는 더 이상 이 값의 근거가 아니다.
 const PENDING_HOLDS = Object.freeze([
   { id: '#260-sw-2021', years: [2021], departmentNames: ['SW융합학과'], area: 'REQUIREMENTS', note: 'SW융합학과 교양·전공·자유 학점 구조(SW연계 학점 포함) 보류 — 2026 책자 학번별 전공표가 이 학과를 지목하지 않음' },
+  { id: 'A-5-architecture', years: [2024, 2025], departmentNames: ['건축학과'], area: 'REQUIREMENTS', note: '건축학과 2024·2025학번 전공 학점(121·123)은 책자에 숫자가 없어 졸업학점에서 교양을 뺀 추정값 — 학과 내규라 교육혁신과도 바로 알 수 없다고 답함(서면 답변 A-5, 2026-10-14). 건축학과 확인 필요' },
   { id: '#260-special-edu', years: [2025, 2026], departmentNames: ['중등특수교육과'], area: 'REQUIREMENTS', note: '중등특수교육과 전공·자유선택 보류' },
   {
     id: '#260-2026-free', years: [2026], area: 'REQUIREMENTS',

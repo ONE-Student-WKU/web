@@ -1,4 +1,4 @@
-const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR } = require('./constants');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
   checkEligibility,
@@ -260,6 +260,8 @@ function evaluate(ctx, data) {
       if (!hasCoreRowsForYear(data.rows || [], LATEST_BOOKLET_YEAR)) reqFlags.push(makeFlag('DEPARTMENT_ABSENT_IN_LATEST_BOOKLET', { latestBookletYear: LATEST_BOOKLET_YEAR }));
     }
   }
+  // 학과 내규로 전공 과목을 정하는 학과(constants.BYLAW_MAJOR_DEPARTMENTS) — 숫자는 그대로 두고 학과 확인 안내만 붙인다.
+  if (built && department && BYLAW_MAJOR_DEPARTMENTS.includes(department.name)) reqFlags.push(makeFlag('DEPARTMENT_BYLAW_MAJOR'));
   reqFlags.push(...textFlagsFor(reqBasis));
 
   const fromRegulation = built ? built.flags.filter((f) => f.code === 'MAJOR_MINIMUM_FROM_REGULATION') : [];
