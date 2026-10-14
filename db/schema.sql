@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS students (
   leave_periods             JSON NULL,  -- 휴학 기간 [{startYear, startSemester, semesters}]. NULL = 아직 휴학 질문에 답하지 않음,
                                         -- [] = 휴학 없음. 휴학 "수"만으로는 시기를 몰라 개편 당시 학년(시행규칙 제13조③) 등을
                                         -- 정확히 못 따져서 둠. 사유는 받지 않는다(server/services/leavePeriods.js).
-  home_layout               JSON NULL,  -- 홈 화면 편집 설정 {tabs: [하단 바 3칸], cards: {order, hidden}}. NULL = 기본 배치.
+  home_layout               JSON NULL,  -- 홈 화면 편집 설정 {tabs: [하단 바 4칸], showTabBar}. NULL = 기본 배치.
                                         -- 화면 설정이라 개인정보 수집 항목이 아니다(server/services/homeLayout.js).
   language                  VARCHAR(5) NULL,  -- 화면·챗봇 답변 언어('ko' | 'en'). NULL이면 계정에 저장된 선택이 없다는 뜻
   consented_at              TIMESTAMP NULL,    -- 이용약관·개인정보 수집·이용에 동의한 시각

@@ -70,7 +70,7 @@ function serializeStudent(student) {
     leavePeriods: parseLeavePeriods(student.leave_periods),
     // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
     leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
-    // 홈 화면 편집 설정(하단 바 3칸·카드 순서). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
+    // 홈 화면 편집 설정(하단 바 4칸·하단 바 켜기/끄기). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
     homeLayout: parseHomeLayout(student.home_layout),
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
     language: student.language || null,

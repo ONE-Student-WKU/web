@@ -107,7 +107,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (leaveSemesters !== undefined && !isIntInRange(leaveSemesters, 0, 30)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
-    // 홈 화면 편집 설정 — 하단 바 3칸·카드 이름은 정해진 목록에서만 받는다. null은 기본 배치로 되돌리기.
+    // 홈 화면 편집 설정 — 하단 바 4칸은 정해진 목록에서만, 하단 바 켜기/끄기는 true/false만 받는다. null은 기본 배치로 되돌리기.
     let validHomeLayout;
     if (homeLayout !== undefined) {
       const { layout, error } = validateHomeLayout(homeLayout);

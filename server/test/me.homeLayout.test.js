@@ -47,7 +47,7 @@ const patchMe = async (body) => {
   return { status: res.status, body: await res.json() };
 };
 
-const layout = { tabs: ['courses', 'career', 'inquiry'], cards: { order: ['menu', 'progress', 'shortfall'], hidden: ['shortfall'] } };
+const layout = { tabs: ['courses', 'home', 'career', 'inquiry'], showTabBar: false };
 
 test('편집한 적 없는 계정은 homeLayout이 null(기본 배치)이다', async () => {
   assert.equal((await getMe()).data.homeLayout, null);
@@ -61,7 +61,7 @@ test('저장하면 응답과 이후 GET에 그대로 반영된다', async () => 
 });
 
 test('잘못된 설정은 거부하고 기존 값을 그대로 둔다', async () => {
-  const res = await patchMe({ homeLayout: { ...layout, tabs: ['courses', 'career'] } });
+  const res = await patchMe({ homeLayout: { ...layout, tabs: ['courses', 'career', 'home'] } });
   assert.equal(res.status, 400);
   assert.equal(res.body.code, 'INVALID_HOME_LAYOUT');
   assert.deepEqual((await getMe()).data.homeLayout, layout);

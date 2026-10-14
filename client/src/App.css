@@ -1114,6 +1114,13 @@ body {
   background: var(--color-accent); color: var(--color-accent-contrast);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
+/* 말풍선 꼬리 — 연필 버튼(34px) 중심을 가리킨다. 말풍선 오른쪽 끝이 버튼보다 40px 더 나가 있으므로
+   꼬리의 오른쪽 위치 = 40 + 34/2 − 꼬리 절반(6) = 51px. 말풍선 위치(right)를 바꾸면 같이 맞춘다. */
+.home-edit-hint::before {
+  content: ''; position: absolute; top: -6px; right: 51px;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-bottom: 6px solid var(--color-accent);
+}
 .home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .home-edit-body { display: flex; flex-direction: column; gap: 14px; }
 .home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
@@ -1132,7 +1139,10 @@ body {
   background: none; color: var(--color-text-primary); cursor: pointer;
 }
 .home-edit-row-actions button:disabled { opacity: 0.35; cursor: default; }
-.home-edit-locked { font-size: 0.75rem; color: var(--color-text-muted); }
+.home-edit-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.home-edit-toggle > span { display: flex; flex-direction: column; gap: 2px; }
+.home-edit-toggle .home-card-label { margin: 0; }
+.home-edit-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
 .home-edit-row .settings-theme-btn { flex: 0 0 auto; width: auto; padding: 6px 14px; }
 .home-edit-row .settings-theme-btn:disabled { opacity: 0.4; cursor: default; }
 
