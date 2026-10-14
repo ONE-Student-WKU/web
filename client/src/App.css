@@ -3290,9 +3290,10 @@ select.onb-select {
   bottom: 0;
 }
 
-/* 목록 카드 위에 떠 있어 경계가 흐려 보이므로(특히 연한 비활성 색일 때) 강조색 경계선을 둔다. */
+/* 목록 카드 위에 떠 있어 경계가 흐려 보이므로 경계선을 둔다. 버튼 색(강조색)과 같으면 활성 상태("다음"·"확인")에서 선이 안 보여서
+   강조색을 어둡게 섞은 색을 쓴다 — 활성(진한 파랑)·비활성(연한 파랑) 모두에서 보인다. */
 .onb-float-action .auth-submit-btn {
-  border: 1px solid var(--color-accent);
+  border: 1.5px solid color-mix(in srgb, var(--color-accent) 65%, #000);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
