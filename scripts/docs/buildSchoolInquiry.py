@@ -8,6 +8,7 @@ docs/school-inquiry/학교문의_발송용.md(이슈 #332 본문과 같은 원�
 
   python scripts/docs/buildSchoolInquiry.py --pdf
   python scripts/docs/buildSchoolInquiry.py --pdf --contact "이름 · 전화 · 메일" --out-dir <저장소 밖 폴더>
+  python scripts/docs/buildSchoolInquiry.py --pdf --src docs/school-inquiry/학교문의_후속_발송용.md --name 학교문의_후속_2026-10-14
 """
 import argparse
 import html
@@ -226,7 +227,7 @@ def render(md, contact=None):
     for s in secs:
         if s['level'] == 1:
             toc.append(f'<li class="grp">{inline(s["title"])}</li>')
-        elif s['level'] == 2 and re.match(r'[A-C]-\d', s['title']):
+        elif s['level'] == 2 and re.match(r'[A-D]-\d', s['title']):
             toc.append(f'<li>{inline(s["title"])}</li>')
 
     in_appendix = False
@@ -248,7 +249,7 @@ def render(md, contact=None):
             else:
                 body.append(render_blocks(lines))
         elif s['level'] == 2:
-            m = re.match(r'([A-C]-\d)\. (.+)', t)
+            m = re.match(r'([A-D]-\d)\. (.+)', t)
             if m:
                 no, qt = m.groups()
                 badge = ''
@@ -309,19 +310,21 @@ def main():
     ap.add_argument('--pdf', action='store_true', help='PDF도 만든다')
     ap.add_argument('--contact', help='보내는 사람 연락처(보낼 PDF에만). 저장소 안에 출력하지 않는다')
     ap.add_argument('--out-dir', default=os.path.dirname(SRC))
+    ap.add_argument('--src', default=SRC, help='원문 md (기본: 학교문의_발송용.md)')
+    ap.add_argument('--name', default=NAME, help='출력 파일 이름(확장자 제외)')
     a = ap.parse_args()
     out_dir = os.path.abspath(a.out_dir)
     if a.contact and os.path.commonpath([out_dir, ROOT]) == ROOT:
         sys.exit('--contact를 쓸 때는 --out-dir를 저장소 밖으로 주세요(공개 저장소에 개인정보가 들어가지 않게).')
-    with open(SRC, encoding='utf-8') as f:
+    with open(a.src, encoding='utf-8') as f:
         md = f.read()
     os.makedirs(out_dir, exist_ok=True)
-    html_path = os.path.join(out_dir, NAME + '.html')
+    html_path = os.path.join(out_dir, a.name + '.html')
     with open(html_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(render(md, a.contact))
     print('HTML', html_path)
     if a.pdf:
-        pdf_path = os.path.join(out_dir, NAME + '.pdf')
+        pdf_path = os.path.join(out_dir, a.name + '.pdf')
         to_pdf(html_path, pdf_path)
         print('PDF ', pdf_path)
 
