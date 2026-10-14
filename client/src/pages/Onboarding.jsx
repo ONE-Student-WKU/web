@@ -70,6 +70,21 @@ function SummaryRow({ label, value, editable, onClick }) {
  * - highlightLeaveSemesters: boolean — 홈의 "학년이 다르신가요?" 링크로 들어왔을 때만 true,
  *   요약 화면의 휴학 학기 수 항목에 강조 애니메이션을 준다.
  */
+
+// 세부전공 "없음"이 뜻을 갖는 학과. 약학과는 세부전공이 "2+4년제" 하나뿐인데, 2022학번부터의 6년제 과목은 세부전공 없이(track 없음) 들어 있다.
+// 그래서 "6년제(세부전공 없음)"을 따로 고르게 하고, 고르면 trackId를 null로 보낸다(이슈 #352, DECISIONS D-63).
+const NO_TRACK = 'NONE';
+const NO_TRACK_DEPARTMENTS = {
+  약학과: {
+    nameKey: 'onb.track.pharm6',
+    captionKey: 'onb.track.pharm6.caption',
+    subKey: 'onb.track.pharm.sub',
+    trackCaptionKeys: { '2+4년제': 'onb.track.pharm24.caption' },
+    noTrackFromYear: 2022,
+    checkKey: 'onb.track.pharm24.check',
+  },
+};
+
 function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const { t } = useI18n();
   // 최초 온보딩(회원가입 직후)은 처음부터 순서대로 걷지만, 이미 완료한 사용자가 "학적정보
@@ -92,7 +107,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const [answers, setAnswers] = useState({
     departmentId: editMode ? user.departmentId : null,
-    trackId: editMode ? user.trackId : null,
+    // 세부전공 없음이 뜻을 갖는 학과(약학과 6년제)는 저장된 null을 "없음을 골랐다"로 되살린다.
+    trackId: editMode ? user.trackId ?? (NO_TRACK_DEPARTMENTS[user.department] ? NO_TRACK : null) : null,
     enrollmentType: editMode ? user.enrollmentType : null,
     admissionYear: editMode ? user.admissionYear : null,
     majorChangeYear: editMode ? user.majorChangeYear : null,
@@ -129,6 +145,17 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const selectedDepartment = departments.find((d) => d.id === answers.departmentId) || null;
   const hasTracks = tracks.length > 0;
+  const noTrackOption = selectedDepartment ? NO_TRACK_DEPARTMENTS[selectedDepartment.name] || null : null;
+  const trackChoices = noTrackOption
+    ? [{ id: NO_TRACK, name: t(noTrackOption.nameKey), captionKey: noTrackOption.captionKey }, ...tracks.map((tr) => ({ ...tr, captionKey: noTrackOption.trackCaptionKeys[tr.name] || null }))]
+    : tracks;
+  const selectedTrackName = trackChoices.find((tr) => tr.id === answers.trackId)?.name;
+  // 약학과 2022학번 이후 일반 입학인데 2+4년제를 골랐으면 한 번 더 확인하게 한다(막지는 않는다 — 예외가 있을 수 있다, DECISIONS D-63).
+  const trackCheckKey =
+    noTrackOption && answers.trackId != null && answers.trackId !== NO_TRACK && answers.enrollmentType === 'GENERAL' &&
+    answers.admissionYear >= noTrackOption.noTrackFromYear
+      ? noTrackOption.checkKey
+      : null;
 
   const path = ['department'];
   if (hasTracks) path.push('track');
@@ -350,7 +377,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       departmentId: answers.departmentId,
       admissionYear: answers.admissionYear,
       enrollmentType: answers.enrollmentType,
-      trackId: hasTracks ? answers.trackId : null,
+      trackId: hasTracks && answers.trackId !== NO_TRACK ? answers.trackId : null,
       majorChangeGrade: isMajorChange ? answers.majorChangeGrade : null,
       majorChangeYear: isMajorChange ? answers.majorChangeYear : null,
       majorChangeSemester: isMajorChange ? answers.majorChangeSemester : null,
@@ -445,15 +472,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
         {current === 'track' && (
           <>
             <h2 className="onb-q-title">{t('onb.track.title')}</h2>
-            <p className="onb-q-sub">{t('onb.track.sub')}</p>
+            <p className="onb-q-sub">{t(noTrackOption ? noTrackOption.subKey : 'onb.track.sub')}</p>
             <div className="onb-option-list">
-              {tracks.map((t) => (
+              {trackChoices.map((tr) => (
                 <button
-                  key={t.id}
-                  className={'onb-option-card' + (answers.trackId === t.id ? ' selected' : '')}
-                  onClick={() => setAnswers((a) => ({ ...a, trackId: t.id }))}
+                  key={tr.id}
+                  className={'onb-option-card' + (answers.trackId === tr.id ? ' selected' : '')}
+                  onClick={() => setAnswers((a) => ({ ...a, trackId: tr.id }))}
                 >
-                  <span className="onb-option-title">{t.name}</span>
+                  <span className="onb-option-title">{tr.name}</span>
+                  {tr.captionKey && <span className="onb-option-caption">{t(tr.captionKey)}</span>}
                 </button>
               ))}
             </div>
@@ -689,11 +717,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {hasTracks && (
                 <SummaryRow
                   label={t('onb.summary.track')}
-                  value={tracks.find((t) => t.id === answers.trackId)?.name}
+                  value={selectedTrackName}
                   editable={editMode}
                   onClick={() => setManualStep('track')}
                 />
               )}
+              {trackCheckKey && <p className="onb-hint">{t(trackCheckKey)}</p>}
               {answers.enrollmentType === 'MAJOR_CHANGE' && (
                 <SummaryRow
                   label={t('onb.summary.majorChange')}

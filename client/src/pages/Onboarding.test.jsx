@@ -272,3 +272,48 @@ describe('학과 선택: 고르지 않고 "다음"을 누르면 그대로 넘어
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('약학과: 6년제(세부전공 없음)와 2+4년제를 고른다(#352)', () => {
+  const PHARM_DEPT = {
+    id: 9, name: '약학과', minAdmissionYear: 2017, maxAdmissionYear: 2026, coreMinAdmissionYear: 2017, coreMaxAdmissionYear: 2026,
+    successors: [], college: '약학대학', former: false, collegeOrder: 20,
+  };
+  const pharmUser = (over = {}) => ({ ...USER, departmentId: 9, department: '약학과', admissionYear: 2023, ...over });
+
+  beforeEach(() => {
+    api.getDepartments.mockResolvedValue([FORMER_DEPT, TRANSFER_DEPT, PHARM_DEPT]);
+    api.getTracks.mockResolvedValue([{ id: 51, name: '2+4년제' }]);
+  });
+
+  it('세부전공이 없는 약학과 계정은 요약에 "6년제 (세부전공 없음)"으로 보이고, 저장하면 세부전공을 null로 보낸다', async () => {
+    render(<Onboarding user={pharmUser()} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('button', { name: /세부전공.*6년제 \(세부전공 없음\)/ })).toBeInTheDocument();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 9, trackId: null }));
+  });
+
+  it('세부전공 질문에 6년제와 2+4년제가 설명과 함께 나오고, 6년제를 고르면 세부전공 null로 저장한다', async () => {
+    render(<Onboarding user={pharmUser({ trackId: 51 })} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /세부전공.*2\+4년제/ }));
+    expect(await screen.findByText('2022학번부터 일반 입학한 학생')).toBeInTheDocument();
+    expect(screen.getByText('편입생, 또는 2021학번 이전 입학생')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /6년제 \(세부전공 없음\)/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ trackId: null }));
+  });
+
+  it('2022학번 이후 일반 입학인데 2+4년제를 골랐으면 확인 안내를 띄우되 저장은 막지 않는다', async () => {
+    render(<Onboarding user={pharmUser({ trackId: 51 })} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByText(/편입생이 아니라면 세부전공을 다시 확인해 주세요/)).toBeInTheDocument();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ trackId: 51 }));
+  });
+
+  it('2021학번 이전이면 2+4년제를 골라도 확인 안내가 없다', async () => {
+    render(<Onboarding user={pharmUser({ trackId: 51, admissionYear: 2020 })} onDone={() => {}} onSkip={() => {}} />);
+    await screen.findByRole('button', { name: /세부전공.*2\+4년제/ });
+    expect(screen.queryByText(/편입생이 아니라면 세부전공을 다시 확인해 주세요/)).toBeNull();
+  });
+});

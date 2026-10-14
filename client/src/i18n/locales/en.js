@@ -447,6 +447,11 @@ export default {
   'onb.dept.title': 'Which department are you in?',
   'onb.dept.sub': 'We calculate your graduation requirements based on your department and admission year.',
   'onb.track.title': 'Choose the track you want',
+  'onb.track.pharm.sub': 'The curriculum you follow depends on how you were admitted. Choose the one that applies to you.',
+  'onb.track.pharm6': '6-year program (no track)',
+  'onb.track.pharm6.caption': 'Regular admission from the class of 2022',
+  'onb.track.pharm24.caption': 'Transfer students, or students admitted in 2021 or earlier',
+  'onb.track.pharm24.check': 'Students admitted in 2022 or later through regular admission are usually in the 6-year program. If you are not a transfer student, please check your track again.',
   'onb.track.sub':
     "Your track is finalized when you move up to Year 2. Even if you haven't formally chosen yet, pick the one you prefer now.",
   'onb.type.title': 'What type of student are you?',
