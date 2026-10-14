@@ -82,12 +82,19 @@ test('자료 없는 학과·학번: 다른 행으로 채우지 않고 빈 요건
   assert.ok(codes(s).includes('NO_CURRICULUM_ROWS'));
 });
 
-test('판단 보류 학과(2025 중등특수교육과 전공·자유선택, 이슈 #260): 숫자는 그대로, 신뢰도는 추정', async () => {
-  await setStudent('중등특수교육과', 2025);
+test('판단 보류 학과(2024 건축학과 전공 학점, 교육혁신과 답변 A-5): 숫자는 그대로, 신뢰도는 추정', async () => {
+  await setStudent('건축학과', 2024);
   const s = await getGraduationStatus(studentId);
   assert.ok(s.totalRequiredCredits > 0);
   assert.equal(s.regulation.confidence, 'ESTIMATED');
   assert.ok(codes(s).includes('DATA_PENDING_HOLD'));
+});
+
+test('옛 보류(2025 중등특수교육과 전공 82·자유 21)는 학칙시행규칙으로 확정돼 해소 — 확정', async () => {
+  await setStudent('중등특수교육과', 2025);
+  const s = await getGraduationStatus(studentId);
+  assert.equal(s.totalRequiredCredits, 140);
+  assert.ok(!codes(s).includes('DATA_PENDING_HOLD'));
 });
 
 test('옛 보류(2024 국어교육과 자유선택 32 vs 34)는 2026 책자 학번별 표로 해소 — 확정, 기준 책자 2026 표시', async () => {

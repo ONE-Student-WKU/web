@@ -349,3 +349,28 @@ test('학생 행 → 엔진 입력: 편입생의 transfer_grade가 transfer.grad
   assert.deepEqual(inputFromStudentRow({ ...base, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: null }).transfer, { grade: null });
   assert.equal(inputFromStudentRow({ ...base, enrollment_type: 'GENERAL', transfer_grade: 3 }).transfer, null);
 });
+
+// ---------------------------------------------------------------- 학교 답변 반영(교육혁신과 2026-10-14)
+
+test('A-5: 학과 내규 학과(의·치·한·약·건축)는 전공 과목 학과 확인 안내(INFO)만 붙고, 다른 학과에는 붙지 않는다', async () => {
+  for (const [name, year] of [['의학과', 2026], ['약학과', 2024], ['건축학과', 2026], ['한약학과', 2023]]) {
+    const r = await judge(name, year);
+    const f = r.flags.find((x) => x.code === 'DEPARTMENT_BYLAW_MAJOR');
+    assert.ok(f, `${name} ${year}: ${flagCodes(r).join(',')}`);
+    assert.equal(f.level, 'INFO');
+  }
+  const med = await judge('의학과', 2026);
+  assert.equal(med.confidence, 'CONFIRMED', `INFO 안내는 신뢰도를 낮추지 않는다: ${flagCodes(med).join(',')}`);
+  assert.ok(!flagCodes(await judge('경영학과', 2024)).includes('DEPARTMENT_BYLAW_MAJOR'));
+});
+
+test('A-5: 건축학과 2024·2025학번 전공 학점은 학교 확인 전 추정값이라 판단 보류(추정)로 낮춘다', async () => {
+  for (const year of [2024, 2025]) {
+    const r = await judge('건축학과', year);
+    const hold = r.flags.find((x) => x.code === 'DATA_PENDING_HOLD');
+    assert.ok(hold && JSON.stringify(hold).includes('A-5-architecture'), `${year}: ${flagCodes(r).join(',')}`);
+    assert.notEqual(r.confidence, 'CONFIRMED');
+  }
+  const r2026 = await judge('건축학과', 2026);
+  assert.ok(!JSON.stringify(r2026.flags).includes('A-5-architecture'));
+});

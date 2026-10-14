@@ -37,6 +37,12 @@ const LIBERAL_ARTS_CAP_FIRST_COHORT = 2022;
 // (자율전공학부 운영 내규 제2·3조 — docs/school-inquiry/학교문의_발송용.md "여쭙지 않는 것").
 const NON_DEGREE_DEPARTMENTS = Object.freeze(['자율전공학부']);
 
+// 전공 과목 이수를 학과 내규로 정하는 학과 — 책자 전공 칸이 "교육과정 전공이수학점에 따라 이수"로만 적혀 있고, 교육혁신과도
+// 학과에 물어야 알 수 있다고 답했다(서면 답변 A-5·면담 2026-10-14, docs/school-inquiry/교육혁신과_답변_2026-10-14.md).
+// 졸업학점·전공 총학점은 책자·답변으로 정해져 있으니 신뢰도는 낮추지 않고, 전공 과목은 학과 확인이라는 안내(INFO)만 붙인다.
+// "의·치·한·약"은 학칙시행규칙 제3조 제1항 제2호의 의과·치과·한의과·약학대학 학과다.
+const BYLAW_MAJOR_DEPARTMENTS = Object.freeze(['건축학과', '의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과']);
+
 // 편입생 인정학점(전적대학 학점 중 본교 졸업학점으로 인정하는 학점). 학교 홈페이지 편입생 교육과정 "1. 편입생 학점인정"
 // (docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt). 표가 학과 이름이 아니라 대학·계열로 적혀 있어
 // 학과의 졸업학점으로 대학을 가른다: 136학점 = 창의공과대학, 140학점 = 사범대학·간호학과(2023학번까지)·작업치료학과(2024학번까지),
@@ -271,6 +277,7 @@ module.exports = {
   LIBERAL_ARTS_CREDIT_CAP,
   LIBERAL_ARTS_CAP_FIRST_COHORT,
   NON_DEGREE_DEPARTMENTS,
+  BYLAW_MAJOR_DEPARTMENTS,
   TRANSFER_RECOGNIZED_CREDITS,
   REGULATION_MIN_MAJOR_BY_DEPARTMENT,
   GENERIC_CERTIFICATION_COURSE_SETS,
