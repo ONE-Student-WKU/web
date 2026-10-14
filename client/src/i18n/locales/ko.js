@@ -622,6 +622,7 @@ export default {
   'community.delete': '삭제',
   'community.deleting': '삭제 중...',
   'community.applicantsHeading': '「{title}」에 온 신청자 {count}명',
+  'community.applicantsHeadingWithApplications': '「{title}」에 온 신청자 {count}명 (신청 {applications}건)',
   'community.loading': '불러오는 중...',
   'community.noApplicants': '아직 신청자가 없어요.',
   'community.reapplied': '재신청',

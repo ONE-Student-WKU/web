@@ -32,6 +32,26 @@ const NOTICE_EN = {
   NO_DATA: `※ The system has no regulation data for this student ID and department. Please do not treat the above as confirmed; check with your department or the Academic Affairs Office (학사지원과, 063-850-5228).`,
 };
 
+// 학칙 [별표 4]와 교육과정 책자의 졸업학점이 다른 학생인데 답변이 한쪽 값만 말한 경우(이슈 #304 1번). 위 단서 검사는
+// "확인 필요" 같은 표현이 어디에든(소제목에라도) 있으면 통과라, 본문이 "두 자료가 일치"라고 단정해도 걸러지지 않았다.
+// 말투 대신 숫자로 본다 — 졸업학점을 말했는데(두 값 중 하나라도 "N학점"으로 나옴) 두 값이 다 나오지 않으면 둘 다 밝히는 안내를 덧붙인다.
+function schedule4MismatchOf(judgment) {
+  const rule = judgment.requirements && (judgment.requirements.rules || []).find((r) => r.id === 'REQUIREMENTS');
+  const s4 = rule && rule.value && rule.value.schedule4;
+  return s4 && s4.match === false ? s4 : null;
+}
+
+function mentionsCredits(text, credits, english) {
+  const unit = english ? '\\s*credits?\\b' : '\\s*학점';
+  return new RegExp(`(^|\\D)${credits}${unit}`, 'i').test(text);
+}
+
+function schedule4Notice(s4, english) {
+  return english
+    ? `※ The required graduation credits differ between the university regulations (Schedule 4: ${s4.schedule4Credits} credits) and the curriculum booklet (${s4.bookCredits} credits). Please confirm which applies to you with your department or the Academic Affairs Office (학사지원과, 063-850-5228).`
+    : `※ 졸업학점은 학칙 [별표 4](${s4.schedule4Credits}학점)와 교육과정 책자(${s4.bookCredits}학점)가 서로 달라요. 어느 쪽이 적용되는지 학과 또는 ${ACADEMIC_OFFICE}에 확인해 주세요.`;
+}
+
 /**
  * @param {string} answer  AI 답변
  * @param {{ confidence: string }|null} judgment  이번 질문의 규정 판단 결과(없으면 가드하지 않는다)
@@ -43,6 +63,12 @@ function guardAnswer(answer, judgment, language = 'ko') {
   const english = language === 'en';
   const notice = judgment && (english ? NOTICE_EN : NOTICE)[judgment.confidence];
   if (!notice || !text.trim()) return { answer, guarded: false, reason: null };
+
+  const s4 = schedule4MismatchOf(judgment);
+  if (s4 && [s4.schedule4Credits, s4.bookCredits].filter((c) => mentionsCredits(text, c, english)).length === 1) {
+    return { answer: `${text.trimEnd()}\n\n${schedule4Notice(s4, english)}`, guarded: true, reason: '졸업학점 두 자료 중 한 값만 답함' };
+  }
+
   if (HEDGE_RE.test(text) || (english && HEDGE_RE_EN.test(text))) return { answer, guarded: false, reason: null };
   return { answer: `${text.trimEnd()}\n\n${notice}`, guarded: true, reason: `${judgment.confidence}인데 단서 표현 없음` };
 }
