@@ -203,6 +203,14 @@ describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "�
     expect(api.getTracks).toHaveBeenCalledWith(7);
   });
 
+  it('검색창에 입력하고 엔터를 누르면 맨 위 학과로 바로 다음 질문으로 간다', async () => {
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '국어{enter}');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+    expect(api.getTracks).toHaveBeenCalledWith(7);
+  });
+
   it('세부전공이 있는 학과는 세부전공 목록을 받은 뒤 세부전공 질문으로 바로 간다', async () => {
     api.getTracks.mockResolvedValue([{ id: 31, name: '인공지능' }]);
     render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);

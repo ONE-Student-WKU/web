@@ -73,6 +73,12 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
   };
 
+  // 엔터: 맨 위 결과를 바로 고른다. 입력 칸의 지금 값으로 다시 찾는다 — 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있다.
+  const handleSubmitSearch = (value) => {
+    const top = searchDepartments(departments, value.trim())[0];
+    if (top) handleSelectFromSearch(top);
+  };
+
   const renderSearchResults = () => {
     if (!trimmed) return <p className="search-screen-hint">{t('dept.search.hint')}</p>;
     if (results.length === 0) return <p className="search-screen-hint">{t('dept.search.empty', { query: trimmed })}</p>;
@@ -144,7 +150,13 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
       )}
 
       {searchOpen && (
-        <SearchScreen search={deptSearch} onClose={dismissSearch} placeholder={t('dept.search.placeholder')} ariaLabel={t('dept.search.aria')}>
+        <SearchScreen
+          search={deptSearch}
+          onClose={dismissSearch}
+          onSubmit={handleSubmitSearch}
+          placeholder={t('dept.search.placeholder')}
+          ariaLabel={t('dept.search.aria')}
+        >
           {renderSearchResults()}
         </SearchScreen>
       )}

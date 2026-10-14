@@ -112,6 +112,35 @@ describe('DepartmentPicker', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('검색창에서 엔터를 누르면 맨 위 결과가 바로 선택된다(결과가 없으면 아무 일도 없다)', async () => {
+    const onSelectFromSearch = vi.fn();
+    renderPicker({ onSelectFromSearch });
+    let dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '없는학과{enter}');
+    expect(onSelectFromSearch).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.clear(input);
+    await userEvent.type(input, '경영{enter}'); // 경영계열(이름 시작 일치)이 맨 위, 경영학부가 다음
+    expect(onSelectFromSearch).toHaveBeenCalledTimes(1);
+    expect(onSelectFromSearch).toHaveBeenCalledWith(expect.objectContaining({ id: 3, name: '경영계열' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('한글 조합을 끝내는 엔터(조합 중)는 건너뛰어 두 번 선택되지 않는다', async () => {
+    const onSelectFromSearch = vi.fn();
+    renderPicker({ onSelectFromSearch });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    fireEvent.change(input, { target: { value: '컴퓨터' } });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(onSelectFromSearch).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onSelectFromSearch).toHaveBeenCalledTimes(1);
+    expect(onSelectFromSearch).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));
+  });
+
   it('일치하는 학과가 없으면 안내 문구가 나오고, 뒤로가기 버튼으로 닫으면 검색어가 비워진 채 트리로 돌아간다', async () => {
     renderPicker();
     let dialog = await openSearch();
