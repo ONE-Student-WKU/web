@@ -218,3 +218,14 @@ export function IconUsers({ size = 18 }) {
     </svg>
   );
 }
+
+// 문의하기(하단 바·바로가기) — 원 안의 물음표.
+export function IconHelpCircle({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6" />
+      <line x1="12" y1="17" x2="12" y2="17.01" />
+    </svg>
+  );
+}

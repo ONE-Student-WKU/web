@@ -257,6 +257,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       <div>
                         <p className="home-card-label">{translateCategory(cert.category, t)}</p>
                         <p className="grad-cert-desc">{cleanRequirementNote(cert.description)}</p>
+                        {cert.optional && <p className="grad-flex-note">{t('grad.certOptionalTeaching')}</p>}
+                        {cert.conditionalExemption === 'BACHELOR_TRANSFER' && <p className="grad-flex-note">{t('grad.certExemptBachelorTransfer')}</p>}
                       </div>
                     </div>
                   </section>

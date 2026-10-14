@@ -3,6 +3,8 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
+const { validateLeavePeriods } = require('../services/leavePeriods');
+const { validateHomeLayout } = require('../services/homeLayout');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -12,7 +14,7 @@ const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/conse
  */
 
 const { isIntInRange, validateNickname, isValidAdmissionYear } = require('../services/inputValidation');
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_LANGUAGES, serializeStudent } = studentService;
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_TRANSFER_GRADES, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
 router.get('/me', requireAuth, async (req, res, next) => {
@@ -56,8 +58,8 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester,
-      secondDepartmentId, careerCounselingCount, leaveSemesters, language,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+      secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
@@ -105,6 +107,18 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (leaveSemesters !== undefined && !isIntInRange(leaveSemesters, 0, 30)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
+    // 홈 화면 편집 설정 — 하단 바 3칸·카드 이름은 정해진 목록에서만 받는다. null은 기본 배치로 되돌리기.
+    let validHomeLayout;
+    if (homeLayout !== undefined) {
+      const { layout, error } = validateHomeLayout(homeLayout);
+      if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+      validHomeLayout = layout;
+    }
+
+    // 휴학 기간을 입력한 계정의 휴학 학기 수는 그 기간의 합계라 따로 고칠 수 없다(PUT /api/me/leave-periods로 기간을 고친다).
+    if (leaveSemesters !== undefined && student.leave_periods != null) {
+      return res.status(400).json({ status: 400, code: 'USE_LEAVE_PERIODS', message: null, data: null });
+    }
 
     // majorChangeGrade/Year/Semester는 전과생(MAJOR_CHANGE)일 때만 의미가 있음 — 이번 요청에서
     // 확정되는 enrollmentType(요청에 없으면 기존 값) 기준으로 검증. 교양 이수기준이 "전과 시점"
@@ -142,6 +156,21 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'REQUIRED_MAJOR_CHANGE_SEMESTER', message: null, data: null });
     }
 
+    // transferGrade는 편입생(TRANSFER_ADMISSION)일 때만 의미가 있다. 유형을 편입생으로 바꾸는 요청에는 반드시 같이 보내야 하고(학번을
+    // "편입 연도 − 학년 + 1"로 다시 계산해야 하므로), 이미 편입생이면서 옛 방식으로 입력해 값이 없는 계정이 다른 항목만 고칠 때는
+    // 요구하지 않는다(그 계정의 판정은 그대로 "3학년 편입 가정" 추정이다).
+    if (transferGrade !== undefined && transferGrade !== null) {
+      if (effectiveEnrollmentType !== 'TRANSFER_ADMISSION') {
+        return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+      }
+      if (!VALID_TRANSFER_GRADES.includes(Number(transferGrade))) {
+        return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+      }
+    }
+    if (enrollmentType === 'TRANSFER_ADMISSION' && student.enrollment_type !== 'TRANSFER_ADMISSION' && (transferGrade === undefined || transferGrade === null)) {
+      return res.status(400).json({ status: 400, code: 'REQUIRED_TRANSFER_GRADE', message: null, data: null });
+    }
+
     if (departmentId !== undefined) {
       const dept = await studentService.findDepartmentById(departmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
@@ -169,11 +198,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeGrade,
       majorChangeYear,
       majorChangeSemester,
+      // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
+      transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,
       language,
+      homeLayout: validHomeLayout,
     });
+    if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
+      await studentService.revalidateLeavePeriods(req.session.userId);
+    }
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
@@ -181,6 +216,27 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (err.code === 'ER_DUP_ENTRY' && err.sqlMessage?.includes('uq_students_name')) {
       return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
     }
+    next(err);
+  }
+});
+
+// PUT /api/me/leave-periods — 휴학 기간 저장. { periods: [] }는 "휴학한 적 없음"이다.
+// 온보딩 필수 질문과, 기능 도입 전 계정에게 한 번 보여주는 질문 화면이 이 경로를 쓴다(server/services/leavePeriods.js).
+router.put('/me/leave-periods', requireAuth, async (req, res, next) => {
+  try {
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    const { periods, error } = validateLeavePeriods(req.body && req.body.periods, {
+      admissionYear: student.admission_year, enrollmentType: student.enrollment_type, transferGrade: student.transfer_grade,
+    });
+    if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+
+    await studentService.saveLeavePeriods(req.session.userId, periods);
+    const updated = await studentService.findById(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'LEAVE_PERIODS_SAVED', message: null, data: serializeStudent(updated) });
+  } catch (err) {
     next(err);
   }
 });

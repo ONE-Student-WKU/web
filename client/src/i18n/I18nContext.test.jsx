@@ -106,13 +106,13 @@ describe('설정 화면 언어 선택', () => {
 
 describe('번역 적용', () => {
   it('Provider 없이도(기본값) 한국어로 렌더된다', () => {
-    render(<BottomTabBar active="home" />);
+    render(<BottomTabBar tabs={['graduation', 'career', 'community']} active="home" onOpen={() => {}} />);
     expect(screen.getByRole('button', { name: '졸업요건 진단' })).toBeInTheDocument();
   });
 
   it('영어일 때 하단 탭바 라벨이 영어다', () => {
     localStorage.setItem('language', 'en');
-    render(<LanguageProvider><BottomTabBar active="home" communityBadge /></LanguageProvider>);
+    render(<LanguageProvider><BottomTabBar tabs={['graduation', 'career', 'community']} active="home" onOpen={() => {}} communityBadge /></LanguageProvider>);
     expect(screen.getByRole('button', { name: 'Graduation check' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Community, new notifications' })).toBeInTheDocument();
   });

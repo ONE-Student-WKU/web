@@ -89,6 +89,50 @@ describe('summarizeShortfalls', () => {
     const categories = [{ category: '교양필수', earnedCredits: 10, requiredCredits: 10 }];
     expect(summarizeShortfalls(categories, [{ category: '졸업논문', satisfied: true }])).toEqual([]);
   });
+
+  // GRADUATION_AUDIT_2026-10-12 1절: 기본전공 9/19 + 선택전공 66/56이면 전공 합계(75)는 차지만 기본전공 하한이 모자라
+  // 졸업할 수 없다. 예전에는 합치면서 이 부족분이 사라져 "부족 요건 없음"이 나왔다.
+  it('전공 합계가 차도 기본전공 하한이 모자라면 기본전공 부족을 남긴다', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 66, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['기본전공 10학점']);
+  });
+
+  it('전공 합계와 기본전공이 둘 다 모자라면 "그중"으로 묶어 한 항목으로 쓴다(두 숫자를 더해 읽지 않게)', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['전공 16학점(그중 기본전공 10학점)']);
+  });
+
+  it('기본전공을 채웠으면 전공 합계 부족만 쓴다(기존 동작)', () => {
+    const categories = [
+      { category: '전공필수', earnedCredits: 19, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [])).toEqual(['전공 6학점']);
+  });
+
+  it('교직기본이수처럼 optional인 인증은 졸업 부족 요건에 넣지 않는다', () => {
+    const result = summarizeShortfalls([], [
+      { category: '교직기본이수', satisfied: false, optional: true },
+      { category: '졸업논문', satisfied: false },
+    ]);
+    expect(result).toEqual(['졸업논문']);
+  });
+
+  it('번역 함수를 넘기면 기본전공 묶음 문구도 번역 사전으로 만든다', () => {
+    const dict = { 'grad.shortfallCreditsWithBase': '{category}: {n} credits (including {base}: {m} credits)', 'category.전공': 'Major', 'category.기본전공': 'Major core' };
+    const t = (key, params = {}) => (dict[key] || key).replace(/\{(\w+)\}/g, (_, k) => params[k]);
+    const categories = [
+      { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+      { category: '전공선택', earnedCredits: 50, requiredCredits: 56 },
+    ];
+    expect(summarizeShortfalls(mergeMajorCategories(categories), [], t)).toEqual(['Major: 16 credits (including Major core: 10 credits)']);
+  });
 });
 
 describe('formatShortfallSentence', () => {

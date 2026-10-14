@@ -65,9 +65,9 @@ const SCENARIOS = [
   {
     id: 'E07', title: '컴소공 2018학번 — 컴소공 전공과목 등급 C(2017·2018)',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2018, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED', 'DATA_PENDING_HOLD'] },
-    question: '내 졸업요건이 뭐야?', graduation: { total: 136, confidence: 'ESTIMATED' },
-    why: 'DATA_AUDIT §4 컴소공 열 C + N-8(2017~2022학번 전공과목이 2026 기준 md), #260 컴소공 교양 분할 보류. 졸업 총학점 136은 총괄표 A',
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['HISTORY_NOT_VERIFIED', 'LATEST_BOOKLET_COHORT_TABLE'], notFlags: ['DATA_PENDING_HOLD'] },
+    question: '내 졸업요건이 뭐야?', graduation: { total: 136, confidence: 'CONFIRMED' },
+    why: 'DATA_AUDIT §4 컴소공 열 C + N-8(2017~2022학번 전공과목이 2026 기준 md). 교양 분할 보류(#260-cse-liberal)는 2026 책자 학번별 표(5+18)로 해소(2026-10-12) → 요건 자체는 확정, 졸업 총학점 136은 총괄표 A',
   },
   {
     id: 'E08', title: '컴소공 2017학번 — 컴소공 C 구간(2017·2018은 책자 대조 불가)',
@@ -86,25 +86,25 @@ const SCENARIOS = [
 
   // --- 판단 보류(DATA_AUDIT §2-3, 이슈 #260) ---
   {
-    id: 'E10', title: '수학교육과 2018학번 — 일반선택 책자 42 vs 시드 44(#260)',
+    id: 'E10', title: '수학교육과 2018학번 — 옛 보류(일반선택 42 vs 44)는 2026 책자 학번별 표로 해소, 2018 전공과목 C는 남음',
     input: { department: '수학교육과', admissionYear: 2018, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD'] },
-    question: '졸업하려면 일반선택 몇 학점이야?', graduation: { confidence: 'ESTIMATED', holdFlag: true },
-    why: '책자 산술 불일치(27+69+42=138≠140) — 어느 값이 맞는지 학교 확인 전',
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['LATEST_BOOKLET_COHORT_TABLE'], notFlags: ['DATA_PENDING_HOLD'] },
+    question: '졸업하려면 일반선택 몇 학점이야?', graduation: { total: 140, confidence: 'CONFIRMED' },
+    why: '2018 책자의 산술 불일치(27+69+42=138≠140)는 더 이상 근거가 아니다 — 지금 적용되는 값은 2026 책자 학번별 표(교양 23, 전공 69 → 일반선택 48). 전공과목 2018 C는 그대로',
   },
   {
-    id: 'E11', title: '수학교육과 2019학번 — 같은 보류(#260)',
+    id: 'E11', title: '수학교육과 2019학번 — 같은 해소, 2020 전공과목 C 구간',
     input: { department: '수학교육과', admissionYear: 2019, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD'] },
-    graduation: { confidence: 'ESTIMATED', holdFlag: true },
-    why: '2019 자동 대조에서 책자값 재현, 시드 44 유지 — 판단 보류',
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['LATEST_BOOKLET_COHORT_TABLE'], notFlags: ['DATA_PENDING_HOLD'] },
+    graduation: { total: 140, confidence: 'CONFIRMED' },
+    why: '2026 책자 학번별 표(2019~2021학번 사범대 교양 23) 적용. 전공과목 2020 C로 과목 판단은 자료 불충분',
   },
   {
-    id: 'E12', title: '패션디자인산업학과 2020학번 — 자유선택 책자 35 vs 시드 32(#260)',
+    id: 'E12', title: '패션디자인산업학과 2020학번 — 옛 보류(자유선택 35 vs 32) 해소, 2020 전공과목 C + 개편 계보 추정',
     input: { department: '패션디자인산업학과', admissionYear: 2020, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD', 'LINEAGE_NAME_MATCH'] },
-    question: '내 졸업요건 알려줘', graduation: { confidence: 'ESTIMATED', holdFlag: true },
-    why: '책자 산술 불일치(29+69+35=133≠130) + 2020 전공과목 C + 디자인융합계열 개편 계보가 이름 일치 추정',
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['LINEAGE_NAME_MATCH', 'LATEST_BOOKLET_COHORT_TABLE', 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'], notFlags: ['DATA_PENDING_HOLD'] },
+    question: '내 졸업요건 알려줘', graduation: { total: 130, confidence: 'CONFIRMED' },
+    why: '2026 책자 학번별 표(2019~2021학번 조형예술디자인대 교양 23, 전공 69 → 자유선택 38). 2020 전공과목 C + 디자인융합계열 개편 계보가 이름 일치 추정. 2026 책자에 학과 행이 없어 과목 편성은 구 교육과정일 수 있음',
   },
   {
     id: 'E13', title: 'SW융합학과 2021학번 — 교양·전공·자유 구조 보류(#260)',
@@ -114,11 +114,11 @@ const SCENARIOS = [
     why: 'SW연계 학점이 포함된 구조(교양 31·전공 54·자유 3) 판단 보류',
   },
   {
-    id: 'E14', title: '국어교육과 2024학번 — 사범대 자유선택 32 vs 34, 변경 이력 가짜 변경(N-6)',
+    id: 'E14', title: '국어교육과 2024학번 — 옛 보류(사범대 자유선택 32 vs 34, N-6)는 2026 책자 학번별 표로 해소',
     input: { department: '국어교육과', admissionYear: 2024, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD'] },
-    question: '2023학번이랑 졸업요건이 달라진 이유가 뭐야?', graduation: { confidence: 'ESTIMATED', holdFlag: true },
-    why: '책자 37+69+32=138≠140, 시드가 잔여값 34로 보정 → 2023→2024 "교양 39→37, 일반선택 32→34"가 실제 개정인지 미확인',
+    expected: { confidence: 'ESTIMATED', flags: ['LATEST_BOOKLET_COHORT_TABLE'], notFlags: ['DATA_PENDING_HOLD'] },
+    question: '2023학번이랑 졸업요건이 달라?', graduation: { total: 140, confidence: 'CONFIRMED' },
+    why: '2026 책자 학번별 표는 2022~2024학번 사범대 교양 37(5+32)·졸업 140·전공 69 → 일반선택 34. 2023학번도 같은 표라 "2023→2024 가짜 변경"(N-6)이 사라졌다. 추정인 이유는 2026 전공과목 B',
   },
   {
     id: 'E15', title: '중등특수교육과 2025학번 — 전공·자유선택 보류(#260)',
@@ -161,8 +161,8 @@ const SCENARIOS = [
     id: 'E20', title: '컴소공 2021학번, 2022-1학기 2학년 전과 — 교양 29학점 고정 갈래',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 2, year: 2022, semester: 1 } },
     expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['COURSE_DATA_GRADE_B'], notFlags: ['HISTORY_NOT_VERIFIED', 'LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
-    question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'ESTIMATED' },
-    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 컴소공 2021은 2021 책자 컴소공 표로 분리해 B등급(추정)이다. 총량 136은 D-07(재배분)',
+    question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'CONFIRMED' },
+    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 엔진이 추정인 이유는 컴소공 2021 전공과목 B등급(과목 판단). 진단(요건 값)은 확정 — 예전엔 교양 분할 보류(#260-cse-liberal)로 추정이었는데 2026 책자 학번별 표로 해소(2026-10-12). 총량 136은 D-07(재배분)',
   },
   {
     id: 'E21', title: '컴소공 2022학번, 2024-2학기 3학년 전과 — 최소전공 완화',
@@ -172,11 +172,11 @@ const SCENARIOS = [
     why: '요건(전공 완화, 시행규칙 제8조①)은 확정이고, 컴소공 2022는 2022 책자 컴소공 표로 분리해 B등급 → 과목 경과조치는 추정',
   },
   {
-    id: 'E22', title: '컴소공 2023학번 편입 — 편입 학년·총학점 미확정',
+    id: 'E22', title: '컴소공 2023학번 편입 — 편입 학년 가정, 총학점은 인정학점 가정으로 계산(확정 아님)',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2023, enrollmentType: 'TRANSFER_ADMISSION' },
-    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['TRANSFER_GRADE_ASSUMED', 'TRANSFER_TOTAL_UNRESOLVED'] },
+    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['TRANSFER_GRADE_ASSUMED', 'TRANSFER_RECOGNIZED_CREDITS_ASSUMED', 'TRANSFER_COHORT_YEAR_UNVERIFIED'] },
     question: '편입생 졸업까지 몇 학점 남았어?', graduation: { confidence: 'ESTIMATED', totalDefinitive: false },
-    why: 'RULE_AUDIT D-4: 편입생 적용 학번·총학점 미확인, 편입 학년 미저장(3학년 가정)',
+    why: 'RULE_AUDIT D-4 → SOURCE_VERIFICATION_2026-10-12: 인정학점(창의공대 68)은 학교 편입생 안내로 정해졌지만 전적대학 취득학점에 따라 달라지고, 편입 학년(3학년 가정)·입력 학번의 의미(제14조③)는 입력이 없다',
   },
   {
     id: 'E23', title: '원예산업학과 2023학번 — 제13조③ "재학 중인 학년" 해석에 따라 결과가 갈리는 과목',
@@ -250,6 +250,13 @@ const SCENARIOS = [
     expected: { confidence: 'NO_DATA', flags: ['NO_CURRICULUM_ROWS', 'DEPARTMENT_IS_SUCCESSOR_OF_COHORT'] },
     question: '졸업학점 몇이야?', graduation: { total: 0, confidence: 'NO_DATA' },
     why: '공학3계열은 2026학번부터. 다른 학과(컴소공) 값으로 대신 단정하지 않음',
+  },
+  {
+    id: 'E34', title: '전기공학과 2019학번 — 2026 책자 학번별 표 적용(교양 23, 2019 책자의 40이 아님), 2026 책자에 학과 행 없음',
+    input: { department: '전기공학과', admissionYear: 2019, enrollmentType: 'GENERAL' },
+    expected: { confidence: 'INSUFFICIENT', review: NEEDS_HUMAN_REVIEW, flags: ['LATEST_BOOKLET_COHORT_TABLE', 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'] },
+    question: '교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'CONFIRMED' },
+    why: '교육혁신과 면담(2026-10-12): 최신 책자가 전 학번에 적용, 학번별 차이는 2026 책자 학번별 표(창의공대 2019~2021학번 교양 5+18). 자료 불충분인 이유는 전공과목 2020 C 구간(과목 판단). 요건 숫자 자체는 확정',
   },
   {
     id: 'E30', title: '없는 학과 — 판단 대상 없음',

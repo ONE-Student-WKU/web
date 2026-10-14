@@ -1,6 +1,7 @@
 const { CONFIDENCE, CONFIDENCE_LABEL_KO } = require('./constants');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const { normalizeInput } = require('./context');
+const { parseLeavePeriods, gradeAtYearStart } = require('../leavePeriods');
 const { checkEligibility } = require('./decisions');
 const { evaluate } = require('./evaluate');
 const dq = require('./dataQuality');
@@ -221,16 +222,19 @@ const HANDLERS = {
     const courses = [];
     const added = [];
     let ambiguous = false;
+    // "재학 중인 학년"은 휴학한 학기를 빼고 센다. 학생이 휴학 기간을 입력했으면 그 값으로, 아니면(null) 입학년도만으로 계산한다.
+    const leave = parseLeavePeriods(h.ctx.leavePeriods);
+    const gradeInput = { admissionYear: h.ctx.admissionYear, enrollmentType: h.ctx.enrollmentType, transferGrade: h.ctx.transfer ? h.ctx.transfer.grade : null };
     for (const c of h.effective) {
       if (c.field === 'existence' && c.changeType === 'ADDED' && nature(parseExistenceValue(c.newValue).category) === 'REQUIRED') {
         added.push(courseItem(c, [...courseChangeFlags(c, h.deptName, h.ctx.asOfTerm), makeFlag('NEW_REQUIRED_COURSE_NOT_COVERED')], { kind: 'NEW_REQUIRED', exempt: null }));
         continue;
       }
       if (!(c.field === 'category' && c.changeType === 'CHANGED' && nature(c.oldValue) === 'ELECTIVE' && nature(c.newValue) === 'REQUIRED')) continue;
-      const flags = [...courseChangeFlags(c, h.deptName, h.ctx.asOfTerm), makeFlag('GRADE_FROM_ADMISSION_YEAR')];
+      const flags = [...courseChangeFlags(c, h.deptName, h.ctx.asOfTerm), makeFlag(leave == null ? 'GRADE_FROM_ADMISSION_YEAR' : 'GRADE_FROM_ADMISSION_AND_LEAVE')];
       if (c.offeredGradeSource === 'NEAREST_SNAPSHOT') flags.push(makeFlag('OFFERED_GRADE_FROM_NEAREST_SNAPSHOT'));
-      const gradeAtRevision = c.toYear - h.ctx.admissionYear + 1;
-      const gradeAtAsOf = h.asOfYear - h.ctx.admissionYear + 1;
+      const gradeAtRevision = gradeAtYearStart(gradeInput, c.toYear, leave);
+      const gradeAtAsOf = gradeAtYearStart(gradeInput, h.asOfYear, leave);
       if (c.offeredGrade == null) {
         courses.push(courseItem(c, [...flags, makeFlag('OFFERED_GRADE_UNKNOWN')], { kind: 'ELECTIVE_TO_REQUIRED', offeredGrade: null, exempt: null }));
         continue;

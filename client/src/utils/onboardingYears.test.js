@@ -1,10 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { getYearRange, describeSuccessors } from './onboardingYears.js';
+import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from './onboardingYears.js';
 
 const NOW = 2026;
 
 // 경영학과: 전공·교양 요건은 2023~2025학번, 졸업인증제 행이 2020~2025라 넓은 범위는 2020부터.
 const MANAGEMENT = { minAdmissionYear: 2020, maxAdmissionYear: 2025, coreMinAdmissionYear: 2023, coreMaxAdmissionYear: 2025 };
+
+describe('편입생 적용 학번(교육과정 운영에 관한 규정 제14조③)', () => {
+  it('편입 연도 − 편입 학년 + 1 = 같은 학년이던 당초 입학자의 학번', () => {
+    expect(transferCohortYear(2026, 3)).toBe(2024);
+    expect(transferCohortYear(2026, 2)).toBe(2025);
+    expect(transferCohortYear(2026, 4)).toBe(2023);
+  });
+
+  it('둘 중 하나라도 없으면 null', () => {
+    expect(transferCohortYear(null, 3)).toBeNull();
+    expect(transferCohortYear(2026, null)).toBeNull();
+  });
+
+  it('저장된 학번 + 학년 − 1로 편입 연도를 되돌리고, 옛 방식(학년 없음)이면 null', () => {
+    expect(transferYearOf(2024, 3)).toBe(2026);
+    expect(transferYearOf(transferCohortYear(2025, 4), 4)).toBe(2025);
+    expect(transferYearOf(2024, null)).toBeNull();
+  });
+
+  it('고를 수 있는 편입 학년은 2~4', () => {
+    expect(TRANSFER_GRADES).toEqual([2, 3, 4]);
+  });
+});
 
 describe('getYearRange', () => {
   it('일반 재학생은 교양·전공 요건이 있는 학번 범위만 고른다', () => {

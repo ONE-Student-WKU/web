@@ -3,6 +3,7 @@ const { extractAskedYears } = require('./yearContext');
 const historyService = require('./curriculumHistoryService');
 const { OFFERING_SEMESTER, regularSemesterToOfferingCode, offeringCodeLabel } = require('./termCode');
 const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
+const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
 
 /**
  * server/services/curriculumService.js
@@ -69,6 +70,29 @@ async function findCourses({ courseName, grade, semester, departmentId, trackId,
     departmentName: r.department_name,
     trackName: r.track_name,
   }));
+}
+
+// 이 학번 학생에게 "지금" 적용되는 과목 편성표의 학번을 정한다(과목 목록은 학번별 행으로 들어 있다).
+// 원광대는 개편된 교육과정을 그 전 학번에도 적용하므로(2026 책자 경과조치 가, 교육혁신과 면담 2026-10-12) 입학한 해의 편성이 아니라
+// 그 학과·세부전공의 가장 최근 편성이 기준이다. 2026 책자에 있는 학과는 2026 편성, 통폐합·개편으로 2026 행이 없는 학과는
+// "학과 완성 시까지 구 교육과정으로 운영"(같은 경과조치의 단서)이므로 그 학과의 마지막 편성(예: 컴소공 2021~2025 행)이 된다.
+// 이력·비교 질문("2019학년도 교육과정")은 이 함수를 쓰지 않고 그 해 편성을 그대로 본다. 학번별 행 자체는 이수구분 판정(수강 당시 기준)·
+// 변경 이력 생성이 쓰므로 데이터는 그대로 두고 조회할 학번만 바꾼다.
+async function resolveCourseListYear({ departmentId, trackId, admissionYear } = {}) {
+  if (!departmentId || !admissionYear || admissionYear >= LATEST_BOOKLET_YEAR) return admissionYear;
+  const conditions = ['department_id = ?'];
+  const params = [LATEST_BOOKLET_YEAR, departmentId];
+  if (trackId) {
+    conditions.push('track_id = ?');
+    params.push(trackId);
+  }
+  const [[row]] = await pool.query(
+    `SELECT MAX(COALESCE(max_admission_year, ?)) AS last_year FROM curriculum_courses WHERE ${conditions.join(' AND ')}`,
+    params
+  );
+  const lastYear = row && row.last_year != null ? Math.min(Number(row.last_year), LATEST_BOOKLET_YEAR) : null;
+  // 편성이 없거나 마지막 편성이 입학보다 앞서면(자료 공백) 예전처럼 입학 학번으로 조회한다.
+  return lastYear != null && lastYear > admissionYear ? lastYear : admissionYear;
 }
 
 // (?<!\d): "2022학년도"의 마지막 '2'가 "2학년"으로 오매칭되는 걸 막는다 — 4자리 연도 표기
@@ -229,12 +253,16 @@ function formatChunk(row) {
   const cohortLabel = row.minAdmissionYear || row.maxAdmissionYear
     ? ` [${row.minAdmissionYear ?? ''}~${row.maxAdmissionYear ?? ''}학번]`
     : '';
+  // 입학 학번과 다른 학번 범위의 편성을 쓴 경우(resolveCourseListYear) — 모델이 "내 학번 자료가 아니다"라고 답을 피하지 않게 적용 관계를 적는다.
+  const appliedLabel = row.appliedCohort
+    ? ` (${row.appliedCohort}학번에게도 지금 적용되는 이 학과의 가장 최근 편성 — 원광대는 개편된 교육과정을 모든 학번에 적용)`
+    : '';
 
   return {
     // 학번 범위(버전)까지 chunkId에 넣는다 — 같은 과목이 2024·2025·2026에 각각 있을 때 서로 다른 청크로 구분돼야 하고,
     // 인용 출처(chunkId)가 어느 해 자료인지도 남는다.
     chunkId: `curriculum-${row.departmentName}-${row.trackName || ''}-${row.minAdmissionYear ?? ''}~${row.maxAdmissionYear ?? ''}-${row.grade}-${row.semester}-${row.courseCode || row.courseName}`,
-    documentTitle: `${row.departmentName}${trackLabel} 교육과정${cohortLabel}`,
+    documentTitle: `${row.departmentName}${trackLabel} 교육과정${cohortLabel}${appliedLabel}`,
     content: `${row.grade}학년 ${row.semester}학기 — 구분: ${row.category}, 교과목: ${row.courseName}${codeLabel}${enLabel}, ${creditsLabel}${remarksLabel}`,
   };
 }
@@ -296,19 +324,25 @@ async function lookupFromMessage(message, student, yearContext = null) {
   if (mentionedCourseNames.length === 0 && !gradeSemester) return [];
 
   const years = resolveQueryYears(message, student, yearContext);
+  // "내 학번 기준" 질문만 지금 적용되는 편성(resolveCourseListYear)으로 바꾼다. 특정 학년도·비교·이력 질문은 그 해 편성을 묻는 것이다.
+  const useCurrentList = !yearContext || yearContext.mode === 'COHORT';
   const results = [];
   for (const year of years) {
+    const courseYear = year && useCurrentList
+      ? await resolveCourseListYear({ departmentId: student?.department_id, trackId: student?.track_id, admissionYear: year })
+      : year;
     const baseFilter = {
       departmentId: student?.department_id || undefined,
       trackId: student?.track_id || undefined,
-      admissionYear: year || undefined,
+      admissionYear: courseYear || undefined,
     };
     const queries = mentionedCourseNames.map((courseName) => findCoursesWithLineage({ courseName, ...baseFilter }));
     if (gradeSemester) {
       queries.push(findCoursesWithLineage({ grade: gradeSemester.grade, semester: gradeSemester.semester, ...baseFilter }));
     }
     const rows = (await Promise.all(queries)).flat();
-    results.push(...(year ? rows : collapseToLatestVersion(rows)));
+    const tagged = courseYear !== year ? rows.map((r) => ({ ...r, appliedCohort: year })) : rows;
+    results.push(...(year ? tagged : collapseToLatestVersion(tagged)));
   }
 
   const seen = new Set();
@@ -693,6 +727,7 @@ async function lookupMicroDegreesFromMessage(message) {
 
 module.exports = {
   findCourses,
+  resolveCourseListYear,
   extractGradeSemester,
   lookupFromMessage,
   findMentionedCourseNames,

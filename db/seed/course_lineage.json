@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "fromCourseKey": "C:374001",
+    "toCourseKey": "C:374142",
+    "fromName": "C언어및실습",
+    "toName": "C언어프로그래밍",
+    "department": "컴퓨터·소프트웨어공학과",
+    "relation": "REPLACE",
+    "effectiveYear": 2023,
+    "note": "같은 1학년 1학기 기본전공 3학점, 학수번호·이름만 바뀜. 2022 책자 → 2026 교육과정 조회(구학과) 대조. 실제 전환 학년도는 2023~2026 사이 미확인 — 우리 데이터 경계(2023~2025 구간) 기준"
+  },
+  {
+    "fromCourseKey": "C:374003",
+    "toCourseKey": "C:374143",
+    "fromName": "고급프로그래밍언어및실습",
+    "toName": "고급프로그래밍언어",
+    "department": "컴퓨터·소프트웨어공학과",
+    "relation": "REPLACE",
+    "effectiveYear": 2023,
+    "note": "같은 1학년 2학기 기본전공 3학점, 학수번호·이름만 바뀜. 2022 책자 → 2026 교육과정 조회(구학과) 대조. 실제 전환 학년도는 2023~2026 사이 미확인"
+  },
+  {
+    "fromCourseKey": "C:374018",
+    "toCourseKey": "C:374144",
+    "fromName": "윈도우프로그래밍실습",
+    "toName": "윈도우프로그래밍",
+    "department": "컴퓨터·소프트웨어공학과",
+    "relation": "REPLACE",
+    "effectiveYear": 2023,
+    "note": "같은 2학년 2학기 기본전공, 학점 1 → 2. 2022 책자 → 2026 교육과정 조회(구학과) 대조. 실제 전환 학년도는 2023~2026 사이 미확인"
+  },
+  {
+    "fromCourseKey": "C:373074",
+    "toCourseKey": "C:374074",
+    "fromName": "해킹및방어기술",
+    "toName": "해킹과방어기술",
+    "department": "컴퓨터·소프트웨어공학과",
+    "relation": "REPLACE",
+    "effectiveYear": 2023,
+    "note": "같은 4학년 1학기 선택전공 3학점, 학수번호(373074 → 374074)·이름 표기만 바뀜. 2022 책자 → 2026 교육과정 조회(구학과) 대조. 실제 전환 학년도는 2023~2026 사이 미확인"
+  }
+]

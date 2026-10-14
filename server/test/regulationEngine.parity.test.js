@@ -4,6 +4,7 @@ const pool = require('../db');
 const { getGraduationStatus } = require('../services/graduationService');
 const { resolveRegulation } = require('../services/regulationEngine');
 const { loadData } = require('../services/regulationEngine/dbProvider');
+const { NON_DEGREE_DEPARTMENTS } = require('../services/regulationEngine/constants');
 
 /**
  * server/test/regulationEngine.parity.test.js
@@ -35,6 +36,9 @@ before(async () => {
      WHERE r.category IN ('교양필수', '교양선택', '전공필수', '전공선택', '전공') AND r.enrollment_type IS NULL
      GROUP BY d.id, d.name`
   );
+  // 자율전공학부처럼 졸업요건 진단 대상이 아닌 학과(1학년 과정 행만 있음)는 엔진이 의도적으로 요건 값을 만들지 않는다
+  // (NON_DEGREE_DEPARTMENT, GRADUATION_AUDIT_2026-10-12 3절) — graduation.audit.test.js가 따로 검증한다.
+  departments = departments.filter((d) => !NON_DEGREE_DEPARTMENTS.includes(d.name));
 });
 
 after(async () => {

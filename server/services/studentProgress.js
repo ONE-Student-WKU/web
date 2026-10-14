@@ -2,6 +2,7 @@ const pool = require('../db');
 const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 const { academicTermOf, termIndex, todayKst } = require('./regulationEngine/context');
 const { offeringCodeToRegularSemester } = require('./termCode');
+const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
 
 /**
  * server/services/studentProgress.js
@@ -12,7 +13,8 @@ const { offeringCodeToRegularSemester } = require('./termCode');
  * 재학 학기 수(enrolledBefore: 다음 학기 직전까지 등록해 다닌 정규 학기 수)를 구하는 방법:
  *  1) RECORDS  — 과목 관리에 등록한 이수 기록이 입학 학기부터 이어져 있으면, 기록이 있는 정규 학기 수를 센다.
  *                기록이 없는 중간 학기는 휴학으로 본다(휴학 시기를 따로 입력받지 않기 위한 설계).
- *  2) ESTIMATED — 기록이 입학 학기부터가 아니면(과목을 일부만 등록한 학생) 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수.
+ *  2) PROFILE  — 기록이 입학 학기부터가 아니고, 학생이 휴학 질문에 답했으면(leave_periods가 [] 또는 기간) 입학 이후 경과 학기 − 그 기간의 휴학 학기 수.
+ *  3) ESTIMATED — 휴학 질문에 아직 답하지 않은 계정(leave_periods NULL)은 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수(시기를 모름).
  * 학년 = 시작 학년(편입생 3, 그 외 1) + floor(재학 학기 수 / 2), 최대 4(그 이상은 초과학기).
  */
 
@@ -32,19 +34,26 @@ function termLabel({ year, semester }) {
  * @param {object} p
  * @param {number} p.admissionYear
  * @param {string} [p.enrollmentType]   GENERAL | TRANSFER_ADMISSION | MAJOR_CHANGE
- * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수
+ * @param {number|null} [p.transferGrade] 편입한 학년(편입생만). 있으면 admissionYear는 "편입 연도 − 편입 학년 + 1"이라 편입 학기(= admissionYear + transferGrade − 1학년도 1학기)부터 센다
+ * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수(휴학 기간을 모를 때만 쓴다)
+ * @param {Array|null} [p.leavePeriods] 학생이 입력한 휴학 기간(leavePeriods.js). null이면 아직 답하지 않음
  * @param {Array<{year:number, semester:number}>} [p.recordedTerms] 이수 기록의 (학년도, DB 학기 코드). 계절학기(2·4)는 무시한다
  * @param {string} p.today              'YYYY-MM-DD'(KST)
  */
-function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemesters = 0, recordedTerms = [], today }) {
+function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGrade = null, leaveSemesters = 0, leavePeriods = null, recordedTerms = [], today }) {
   if (!admissionYear) return null;
 
   const currentTerm = academicTermOf(today);
   const firstUpcomingIndex = termIndex(currentTerm) + 1;
-  const admissionIndex = termIndex({ year: admissionYear, semester: 1 });
-  const startGrade = enrollmentType === 'TRANSFER_ADMISSION' ? TRANSFER_START_GRADE : 1;
+  const isTransfer = enrollmentType === 'TRANSFER_ADMISSION';
+  const knownTransferGrade = isTransfer && transferGrade != null ? Number(transferGrade) : null;
+  // 편입 학년을 입력한 편입생: 이수 기록은 편입 학기부터 있으므로 그 학기를 기준(첫 학기)으로 세고 그 학년에서 시작한다.
+  // 옛 방식으로 입력한 편입생(학년 없음)은 입력한 해부터 3학년으로 시작한다고 가정한다(기존 동작).
+  const baseYear = knownTransferGrade != null ? admissionYear + knownTransferGrade - 1 : admissionYear;
+  const admissionIndex = termIndex({ year: baseYear, semester: 1 });
+  const startGrade = isTransfer ? (knownTransferGrade ?? TRANSFER_START_GRADE) : 1;
   const flags = [];
-  if (enrollmentType === 'TRANSFER_ADMISSION') flags.push('TRANSFER_GRADE_ASSUMED');
+  if (isTransfer && knownTransferGrade == null) flags.push('TRANSFER_GRADE_ASSUMED');
 
   const recordedIndexes = new Set();
   for (const r of recordedTerms) {
@@ -54,7 +63,11 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemes
     if (index < firstUpcomingIndex) recordedIndexes.add(index);
   }
 
-  const leave = Math.max(0, Number(leaveSemesters) || 0);
+  // 휴학 기간을 알면 다음 학기 전까지 쉰 학기만 센다(다음 학기 휴학처럼 앞으로의 휴학은 지금까지의 재학 학기에 넣지 않는다).
+  const knownLeave = leavePeriods != null;
+  const leave = knownLeave
+    ? countLeaveBetween(leavePeriods, admissionIndex, firstUpcomingIndex)
+    : Math.max(0, Number(leaveSemesters) || 0);
   const estimated = Math.max(0, firstUpcomingIndex - admissionIndex - leave);
   const recordsCoverAdmission = recordedIndexes.size > 0 && Math.min(...recordedIndexes) <= admissionIndex;
 
@@ -70,6 +83,10 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemes
     enrolledBefore = consistent ? estimated : recordedIndexes.size;
     if (!consistent) flags.push('RECORDS_LEAVE_MISMATCH');
     needsConfirmation = !consistent;
+  } else if (knownLeave) {
+    enrolledBefore = estimated;
+    source = 'PROFILE';
+    needsConfirmation = false;
   } else {
     enrolledBefore = estimated;
     source = 'ESTIMATED';
@@ -97,6 +114,7 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', leaveSemes
     flags,
     enrolledTermsCompleted: enrolledBefore,
     leaveSemesters: leave,
+    leavePeriods: knownLeave ? leavePeriods : null,
     upcomingTerms,
   };
 }
@@ -125,7 +143,9 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
   const progress = computeProgress({
     admissionYear: student.admission_year,
     enrollmentType: student.enrollment_type,
+    transferGrade: student.transfer_grade,
     leaveSemesters: student.leave_semesters,
+    leavePeriods: parseLeavePeriods(student.leave_periods),
     recordedTerms: rows.map((r) => ({ year: r.year, semester: r.semester })),
     today,
   });

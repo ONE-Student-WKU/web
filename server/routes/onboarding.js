@@ -9,7 +9,7 @@ const { isIntInRange, isValidAdmissionYear } = require('../services/inputValidat
  * 근거: 위키 API-설계 1.3 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
-const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS } = studentService;
+const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_TRANSFER_GRADES } = studentService;
 
 // GET /api/onboarding/departments
 router.get('/departments', async (req, res, next) => {
@@ -38,7 +38,7 @@ router.get('/tracks', async (req, res, next) => {
 // POST /api/onboarding
 router.post('/', requireAuth, async (req, res, next) => {
   try {
-    const { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester } = req.body;
+    const { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade } = req.body;
 
     if (!departmentId) return res.status(400).json({ status: 400, code: 'REQUIRED_DEPARTMENT_ID', message: null, data: null });
     if (!admissionYear) return res.status(400).json({ status: 400, code: 'REQUIRED_ADMISSION_YEAR', message: null, data: null });
@@ -85,6 +85,19 @@ router.post('/', requireAuth, async (req, res, next) => {
       }
     }
 
+    // transferGrade: 편입생(TRANSFER_ADMISSION)만 필수. 이때 admissionYear는 "편입 연도 − 편입 학년 + 1"(편입한 학년의 당초 입학자 학번)이다
+    // (교육과정 운영에 관한 규정 제14조③). 그 외 유형이면 의미 없는 값이라 거부한다.
+    if (enrollmentType === 'TRANSFER_ADMISSION') {
+      if (transferGrade === undefined || transferGrade === null) {
+        return res.status(400).json({ status: 400, code: 'REQUIRED_TRANSFER_GRADE', message: null, data: null });
+      }
+      if (!VALID_TRANSFER_GRADES.includes(Number(transferGrade))) {
+        return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+      }
+    } else if (transferGrade !== undefined && transferGrade !== null) {
+      return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
+    }
+
     // trackId: 광역단위 학과(공학3계열)에서만 선택 가능 — 선택한 학과 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
       const track = await studentService.findTrackById(trackId);
@@ -99,7 +112,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     }
 
     await studentService.completeOnboarding(req.session.userId, {
-      departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester,
+      departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
     });
 
     return res.status(200).json({
@@ -111,6 +124,7 @@ router.post('/', requireAuth, async (req, res, next) => {
         majorChangeGrade: majorChangeGrade ?? null,
         majorChangeYear: majorChangeYear ?? null,
         majorChangeSemester: majorChangeSemester ?? null,
+        transferGrade: transferGrade ?? null,
       },
     });
   } catch (err) {

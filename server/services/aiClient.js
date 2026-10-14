@@ -49,6 +49,7 @@ function buildStudentProfileNote(student) {
 
   return `이 학생의 프로필 — ${parts.join(', ')}.
 근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
+여기서 "이 학번 기준"은 최신 교육과정 책자에 실린 "${student.admission_year}학번 적용" 표(학번별 이수기준표)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${student.admission_year}학년도 책자의 숫자는 입학 당시 기준(이력)일 뿐이다.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
 "정확히 이 학번 기준 자료는 못 찾았다"고 분명히 밝혀라 — 다른 학번 기준을 이 학생에게 그대로 적용해 단정적으로 답하지 마라.`;
 }
@@ -64,7 +65,13 @@ function buildGraduationStatusNote(graduationStatus) {
   const { totalEarnedCredits, totalRequiredCredits, categories, certifications } = graduationStatus;
   const categoryLines = categories.map((c) => `  - ${c.category}: ${c.earnedCredits}/${c.requiredCredits}학점`).join('\n');
   const certLines = certifications
-    .map((c) => `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`)
+    .map((c) =>
+      c.optional
+        ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 교직과정 이수자만 해당하는 참고 항목이다. 교직을 이수하지 않는 학생에게 졸업 부족 요건으로 말하지 마라 (${c.description})`
+        : c.conditionalExemption === 'BACHELOR_TRANSFER'
+          ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 학사편입학자·산업체편입자는 이 대학 공통 졸업인증제가 면제다. 미충족이면 일반편입인지 학사편입인지 먼저 물어보고 단정하지 마라 (${c.description})`
+          : `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`
+    )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
 
@@ -79,7 +86,7 @@ function buildGraduationStatusNote(graduationStatus) {
     caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유:\n${reasons.join('\n')}`);
   }
   if (regulation && regulation.totalDefinitive === false) {
-    caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다. 카테고리별 기준 위주로 설명하라.');
+    caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다(학교 기준 인정학점을 뺀 "본교에서 이수할 학점"으로 계산했을 수 있다). 카테고리별 기준 위주로 설명하라.');
   }
 
   return `이 학생의 실제 이수 현황(학생이 과목 관리 화면에 직접 등록한 데이터 기준) — 근거
@@ -105,11 +112,18 @@ ${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
 // 정해짐)과 규정의 "변경 이력"(그 뒤 해에 바뀐 내용)을 섞지 않고, 서로 다른 해의 수치를 한 문장에 합치지 않게 한다.
 function buildYearContextNote(yearContext) {
   if (!yearContext) return null;
-  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears, questionIntent } = yearContext;
+  const { mode, askedYears, messageCohorts, applicableCohort, profileCohort, cohortSource, targetYears, questionIntent, latestBookYear } = yearContext;
   const lines = [];
 
   if (applicableCohort) {
     lines.push(`이 질문에서 학생에게 적용되는 교육과정은 ${applicableCohort}학번 기준이다${cohortSource === 'message' ? '(질문에서 직접 말한 학번)' : '(프로필 학번)'}.`);
+    // 원광대는 개편된 교육과정을 전 학년에 적용하고 학번별 차이는 최신 책자의 학번별 이수기준표로 정한다(2026 책자 경과조치 가, 교육혁신과 면담 2026-10-12).
+    // 모델이 "2019학번이니 2019 책자"로 답하지 않게, 어느 책자의 표가 지금 기준인지 못박는다.
+    if (latestBookYear && applicableCohort < latestBookYear) {
+      lines.push(`"${applicableCohort}학번 기준"이란 ${applicableCohort}학년도 책자가 아니라 최신(${latestBookYear}학년도) 교육과정 책자에 실린 "${applicableCohort}학번 적용" 표(학번별 이수기준표·경과조치)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정한다. ` +
+        `${applicableCohort}학년도 책자의 숫자(예: 영역별 교양 기준)는 "입학 당시 기준(이력)"이며 지금 적용되는 값이 아니다. 둘이 다르면 최신 책자의 학번별 표를 따르고, 옛 값은 그렇게 표시해서만 언급하라. 판단 결과·졸업요건 청크의 숫자가 이미 그 표 값이다. ` +
+        `과목 편성(어떤 과목이 몇 학년 몇 학기에 있는지)도 마찬가지다 — 교육과정 근거 제목에 "${applicableCohort}학번에게도 지금 적용되는 이 학과의 가장 최근 편성"이라고 적힌 자료가 이 학생의 편성이니 다른 학번 자료라며 답을 피하지 마라. 이미 들은 과목의 이수구분은 수강신청 당시 기준이다.`);
+    }
     if (messageCohorts.length > 0 && profileCohort && messageCohorts[0] !== profileCohort) {
       lines.push(`프로필 학번(${profileCohort}학번)과 질문의 학번(${messageCohorts[0]}학번)이 다르다. 질문의 학번을 기준으로 답하되, 아래 "실제 이수 현황" 수치는 프로필 학번 기준이라는 점을 구분하라.`);
     }
@@ -132,8 +146,8 @@ function buildYearContextNote(yearContext) {
 
   lines.push(
     '연도 처리 원칙:\n' +
-      '- 졸업학점 등 학번별 이수기준은 입학학번의 기준표 값으로 답한다. 그러나 이후 해의 변경("이후 변경" 항목)이 이 학번에 적용되는지는 경과조치에 따라 달라지므로 "적용되지 않는다"고 단정하지 마라 — 학칙시행규칙 제13조(①신 교육과정은 공포일부터 전 학년 적용 ②필수→선택 변경·폐설 과목은 이수하지 않아도 됨 ③선택→필수 변경은 재학 학년보다 저학년 개설이면 이수하지 않아도 됨 ④이수구분은 수강신청 당시 기준)를 근거로 조건을 설명하고, 확정이 필요하면 학과·학사지원과 확인을 안내하라.\n' +
-      '- 근거 문서에 학번/학년도 표기가 있는 수치는 그 해 것이다. 서로 다른 해의 수치를 섞어 하나의 답으로 만들지 마라.\n' +
+      '- 졸업학점 등 학번별 이수기준은 "그 학번에 적용되는 표"(최신 책자의 학번별 이수기준표) 값으로 답한다. 과목 단위의 이후 변경("이후 변경" 항목)이 이 학번에 적용되는지는 경과조치에 따라 달라지므로 "적용되지 않는다"고 단정하지 마라 — 학칙시행규칙 제13조(①신 교육과정은 공포일부터 전 학년 적용 ②필수→선택 변경·폐설 과목은 이수하지 않아도 됨 ③선택→필수 변경은 재학 학년보다 저학년 개설이면 이수하지 않아도 됨 ④이수구분은 수강신청 당시 기준)를 근거로 조건을 설명하고, 확정이 필요하면 학과·학사지원과 확인을 안내하라.\n' +
+      '- 근거 문서에 학번/학년도 표기가 있는 수치는 그 표기의 것이다. "○○학년도 책자"의 수치와 "○○학번 적용" 표의 수치는 다른 것이니(앞은 그 해 책자, 뒤는 그 학번에 지금 적용되는 기준) 서로 다른 해·표의 수치를 섞어 하나의 답으로 만들지 마라.\n' +
       '- 근거에 해당 학번 자료가 "없음"이라고 되어 있으면 다른 해 값으로 추정해 단정하지 말고 자료가 없다고 밝혀라.\n' +
       '- 변경 이유는 근거에 적혀 있을 때만 설명하고, 없으면 이유는 기록에 없다고 답하라. "(이름 일치로 추정)"이라고 표시된 학과 개편 관계는 추정임을 함께 밝혀라.'
   );
@@ -177,9 +191,14 @@ function buildProgressNote(progress) {
   if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
 
   const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const periodText = (periods) => (periods.length === 0
+    ? '휴학한 적 없음'
+    : periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', '));
   const sourceText = progress.source === 'RECORDS'
     ? '학생이 과목 관리에 등록한 이수 기록'
-    : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
+    : progress.source === 'PROFILE'
+      ? `학번과 학생이 입력한 휴학 기간(${periodText(progress.leavePeriods)})`
+      : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
   const lines = [
     '이 학생의 수강 진행 상태(코드로 계산한 값이다. 학년·학기를 직접 추정하지 말고 이 값을 써라):',
     `- 오늘 기준 현재 학기: ${progress.currentTerm.year}학년도 ${progress.currentTerm.semester}학기`,
@@ -190,6 +209,17 @@ function buildProgressNote(progress) {
   if (flagTexts.length) lines.push(`- 계산 참고: ${flagTexts.join('; ')}`);
   if (progress.needsConfirmation) {
     lines.push('- 이 학년·학기는 확정이 아니다. 학기 계획을 답할 때 이 가정(예: "다음 학기를 N학년 M학기로 보면")을 한 번 밝히고, 맞지 않으면 알려달라고 안내하라.');
+  }
+  // 프로필에는 누적 휴학 학기 "수"만 있다. 이수 기록이 이어져 있으면 빈 학기로 휴학 시기를 알 수 있지만(RECORDS),
+  // 추정(ESTIMATED)일 때는 시기를 모른다. 현재 학년 계산에는 수만 있으면 되지만, 개편 당시의 학년(제13조③)이나 복학 시점처럼
+  // 시기에 따라 결론이 갈리는 질문은 모델이 아무 시기나 가정해 단정하지 않도록 먼저 물어보게 한다(입력 항목을 늘리지 않고 대화에서만 쓴다).
+  if (progress.source === 'ESTIMATED' && progress.leaveSemesters > 0) {
+    lines.push(
+      `- 누적 휴학 ${progress.leaveSemesters}학기가 언제였는지는 모른다(다음 수강 학기 계산에는 필요 없다). 답이 휴학 시기에 따라 달라지는 질문이면 단정하지 말고 먼저 "몇 학년 몇 학기에 휴학했는지" 물어라. ` +
+        '예: 선택과목이 필수로 바뀐 과목을 들어야 하는지(학칙시행규칙 제13조 제3항의 "재학 중인 학년"은 교육과정이 바뀐 해의 학년이라 그 전에 휴학했으면 달라진다), ' +
+        '복학·재입학한 시점에 따라 달라지는 처리(폐지·통합된 학과의 복학, 기존 교육과정을 운영하는 기간 등). ' +
+        '학생이 시기를 알려 주면 그 시기로 그 해의 학년을 다시 따져 답하고, 입학년도만으로 계산한 결과와 달라지면 그렇다고 밝혀라.'
+    );
   }
   lines.push(
     progress.completedCourseNames.length > 0
@@ -416,6 +446,7 @@ const CAREER_ROADMAP_SYSTEM_PROMPT = `너는 대학생에게 진로에 맞는 �
 반드시 사용자가 제공하는 "남은 교육과정 목록"에 있는 과목 중에서만 골라야 한다 — 목록에 없는
 과목명을 지어내면 절대 안 된다. 이 학생이 목표 진로에 다가가는 데 도움이 될 과목을 4~8개 추천하라.
 목표 진로와 직접 연결되는 과목이 적으면 4개를 억지로 채우지 말고 관련도가 높은 순으로 최소 2~3개를 골라라(빈 배열은 안 된다). 목표 진로가 이 학생의 학과와 거리가 멀어도 응답을 비우지 마라 — 그 진로에서 학과 지식을 활용하는 방식(예: 요리사라면 주방 자동화, 외식 플랫폼, 메뉴·재고 데이터 관리)을 떠올려 거기에 도움이 될 과목을 골라라. reason에는 과목이 진로와 이어지는 지점이나 도움이 될 기초 역량을 솔직하게 적고, 없는 연관을 꾸며내지 마라.
+너는 과목명과 학년·학기·구분·학점만 알고 실제 수업 내용(다루는 주제·도구·과제)은 모른다. reason에 "이 과목에서 ○○을 배운다", "○○ 실습을 한다"처럼 수업 내용을 단정하지 말고, 과목명에서 무리 없이 읽히는 분야가 이 진로에 왜 도움이 되는지 위주로 써라(학생은 화면의 수업계획서 링크로 실제 내용을 확인한다).
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라(courseName은 목록에 있는
 과목명과 정확히 똑같이 써라):
 [{"grade": 3, "semester": 2, "courseName": "목록에 있는 정확한 과목명", "reason": "이 진로에 왜 도움이 되는지 1문장"}]`;
