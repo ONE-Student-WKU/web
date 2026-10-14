@@ -211,6 +211,15 @@ describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "�
     expect(api.getTracks).toHaveBeenCalledWith(7);
   });
 
+  it('목록에서 학과를 고르고 엔터를 누르면 "다음"을 누른 것처럼 다음 질문으로 간다', async () => {
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /인문대학/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^국어국문학과/ }));
+    expect(screen.getByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument(); // 클릭만으로는 넘어가지 않는다
+    await userEvent.keyboard('{Enter}');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+  });
+
   it('세부전공이 있는 학과는 세부전공 목록을 받은 뒤 세부전공 질문으로 바로 간다', async () => {
     api.getTracks.mockResolvedValue([{ id: 31, name: '인공지능' }]);
     render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);

@@ -18,7 +18,8 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - departments: [{ id, name, college, former, collegeOrder, successors, ...요건 학번 범위 }]
  * - selectedId: number | null
  * - onSelect: (department) => void
- * - onSelectFromSearch: (department) => void (선택) — 검색 결과에서 고를 때. 없으면 onSelect. 온보딩은 이걸로 고른 뒤 바로 다음 질문으로 간다.
+ * - onSelectAndContinue: (department) => void (선택) — 검색 결과에서 고를 때와 목록에서 엔터로 고를 때. 없으면 onSelect.
+ *   온보딩은 이걸로 고른 뒤 바로 다음 질문으로 간다("다음"을 누른 것처럼).
  */
 function DepartmentCard({ department, selected, active = false, onSelect, showCollege }) {
   const { t } = useI18n();
@@ -48,7 +49,7 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
   );
 }
 
-function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearch = onSelect }) {
+function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContinue = onSelect }) {
   const { t } = useI18n();
   // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -83,7 +84,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
   };
 
   const handleSelectFromSearch = (department) => {
-    onSelectFromSearch(department);
+    onSelectAndContinue(department);
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
   };
 
@@ -119,14 +120,19 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
   };
 
   // 목록에서 학과 카드에 포커스가 있을 때 ↑↓: 화면에 보이는(펼친 묶음의) 학과 순서대로 바로 위·아래 학과를 고르고 포커스도 옮긴다.
-  // 처리하지 않으면 브라우저가 페이지만 스크롤한다. 맨 끝에서는 멈춘다. 검색 화면 결과의 ↑↓는 handleSearchKeyDown이 따로 맡는다.
+  // 처리하지 않으면 브라우저가 페이지만 스크롤한다. 맨 끝에서는 멈춘다. 엔터: 그 학과를 고르고 바로 다음으로("다음"을 누른 것처럼).
+  // 검색 화면 결과의 ↑↓·엔터는 handleSearchKeyDown이 따로 맡는다.
   const visibleDepartments = hasTree ? groups.filter((g) => openGroups.has(g.college)).flatMap((g) => g.departments) : departments;
   const handleListKeyDown = (e) => {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
     const card = e.target.closest('[data-dept-id]');
     if (!card) return; // 대학 묶음 머리 등 학과 카드가 아닌 곳은 그대로
-    e.preventDefault();
+    e.preventDefault(); // 엔터는 버튼 클릭(고르기만)으로도 이어지므로 막는다
     const index = visibleDepartments.findIndex((d) => String(d.id) === card.dataset.deptId);
+    if (e.key === 'Enter') {
+      if (index >= 0) onSelectAndContinue(visibleDepartments[index]);
+      return;
+    }
     const next = visibleDepartments[index + (e.key === 'ArrowDown' ? 1 : -1)];
     if (!next) return;
     onSelect(next);

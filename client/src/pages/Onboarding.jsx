@@ -261,9 +261,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       .catch(() => setTracks([]));
   }
 
-  // 검색 결과에서 학과를 고르면 바로 다음 질문으로 넘어간다(긴 목록으로 돌아가 "다음"을 찾지 않게). 세부전공 목록을 받은 뒤에 넘어가야
+  // 검색 결과에서 학과를 고르거나 목록에서 엔터로 고르면 바로 다음 질문으로 넘어간다("다음"을 따로 누르지 않게). 세부전공 목록을 받은 뒤에 넘어가야
   // 세부전공이 있는 학과(공학3계열 등)가 "입학 유형"을 잠깐 보였다가 "세부전공"으로 바뀌지 않는다. 요약에서 고치러 왔으면 요약으로 돌아간다.
-  function selectDepartmentFromSearch(dept) {
+  function selectDepartmentAndContinue(dept) {
     selectDepartment(dept).then(goNext);
   }
 
@@ -436,7 +436,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 departments={departments}
                 selectedId={answers.departmentId}
                 onSelect={selectDepartment}
-                onSelectFromSearch={selectDepartmentFromSearch}
+                onSelectAndContinue={selectDepartmentAndContinue}
               />
             )}
           </>
