@@ -68,6 +68,28 @@ describe('DepartmentPicker', () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 3, name: '경영계열' }));
   });
 
+  it('목록에서 학과 카드에 포커스를 두고 ↑↓를 누르면 펼친 묶음을 넘나들며 위·아래 학과를 고른다(끝에서는 멈춤)', async () => {
+    const { onSelect } = renderPicker();
+    await userEvent.click(screen.getByRole('button', { name: /공과대학/ }));
+    await userEvent.click(screen.getByRole('button', { name: /경상대학/ }));
+    // 보이는 순서: 공학3계열, 컴퓨터·소프트웨어공학과(공과대학) → 경영계열, 경영학부(경상대학)
+    await userEvent.click(screen.getByRole('button', { name: /^공학3계열/ }));
+    onSelect.mockClear();
+
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}');
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 3, name: '경영계열' })); // 다른 대학 묶음으로 넘어감
+    expect(screen.getByRole('button', { name: /^경영계열/ })).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowUp}');
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 2 }));
+
+    onSelect.mockClear();
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}'); // 경영계열 → 경영학부 → (끝) 그대로
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 4 }));
+    expect(screen.getByRole('button', { name: /^경영학부/ })).toHaveFocus();
+  });
+
   it('이미 고른 학과가 있으면(학적정보 수정) 그 학과의 대학 묶음이 처음부터 펼쳐져 있다', () => {
     renderPicker({ selectedId: 2 });
     expect(screen.getByRole('button', { name: /공과대학/ })).toHaveAttribute('aria-expanded', 'true');

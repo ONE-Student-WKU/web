@@ -32,6 +32,7 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
     <button
       ref={ref}
       type="button"
+      data-dept-id={department.id}
       className={'onb-option-card' + (selected ? ' selected' : '') + (active ? ' active' : '')}
       onClick={() => onSelect(department)}
     >
@@ -117,6 +118,21 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
     );
   };
 
+  // 목록에서 학과 카드에 포커스가 있을 때 ↑↓: 화면에 보이는(펼친 묶음의) 학과 순서대로 바로 위·아래 학과를 고르고 포커스도 옮긴다.
+  // 처리하지 않으면 브라우저가 페이지만 스크롤한다. 맨 끝에서는 멈춘다. 검색 화면 결과의 ↑↓는 handleSearchKeyDown이 따로 맡는다.
+  const visibleDepartments = hasTree ? groups.filter((g) => openGroups.has(g.college)).flatMap((g) => g.departments) : departments;
+  const handleListKeyDown = (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const card = e.target.closest('[data-dept-id]');
+    if (!card) return; // 대학 묶음 머리 등 학과 카드가 아닌 곳은 그대로
+    e.preventDefault();
+    const index = visibleDepartments.findIndex((d) => String(d.id) === card.dataset.deptId);
+    const next = visibleDepartments[index + (e.key === 'ArrowDown' ? 1 : -1)];
+    if (!next) return;
+    onSelect(next);
+    e.currentTarget.querySelector(`[data-dept-id="${next.id}"]`)?.focus();
+  };
+
   const toggle = (college) =>
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -133,7 +149,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
       </button>
 
       {hasTree ? (
-        <div className="onb-college-tree">
+        <div className="onb-college-tree" onKeyDown={handleListKeyDown}>
           {groups.map((g) => {
             const open = openGroups.has(g.college);
             return (
@@ -165,7 +181,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
           })}
         </div>
       ) : (
-        <div className="onb-option-list">
+        <div className="onb-option-list" onKeyDown={handleListKeyDown}>
           {departments.map((d) => (
             <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />
           ))}
