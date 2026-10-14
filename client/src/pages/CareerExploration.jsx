@@ -97,6 +97,8 @@ const FIXED_QUESTIONS = [
 ];
 
 const FIXED_MESSAGE_COUNT = FIXED_QUESTIONS.length * 2;
+// 상담 한 번의 자유 대화 상한 — 서버(server/services/careerService.js MAX_FREE_TURNS)와 같은 값. 다 쓰면 입력창 대신 추천받기 안내를 보여준다.
+const MAX_FREE_TURNS = 15;
 
 // "모르겠어요" 답변의 저장값 — 서버 저장과 parseFixedAnswersFromMessages의 역파싱이 같은 문자열에 의존하므로 화면 언어와 무관하게 고정.
 const SKIPPED_ANSWER = '(잘 모르겠어요, 건너뜀)';
@@ -245,6 +247,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       setStage('chat');
     } catch (err) {
       if (err.code === 'ONBOARDING_REQUIRED') setOnboardingRequired(true);
+      else if (err.code === 'CAREER_DAILY_SESSION_LIMIT') setError(t('career.err.dailySessionLimit'));
       else setError(t('career.err.start'));
     } finally {
       setStartingChat(false);
@@ -294,7 +297,12 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     try {
       const res = await sendCareerMessage(sessionId, text, lang);
       setMessages(res.messages);
-    } catch {
+    } catch (err) {
+      if (err.code === 'CAREER_TURN_LIMIT') {
+        setMessages((prev) => prev.slice(0, -1));
+        setError(t('career.turnLimit'));
+        return;
+      }
       setMessages((prev) => [...prev, { role: 'assistant', content: t('chat.error') }]);
     } finally {
       setSending(false);
@@ -315,6 +323,8 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     } catch (err) {
       if (err.code === 'CAREER_CANDIDATES_EMPTY') {
         setError(t('career.err.candidatesEmpty'));
+      } else if (err.code === 'CAREER_CANDIDATE_LIMIT') {
+        setError(t('career.err.candidateLimit'));
       } else if (err.code === 'CAREER_CRISIS_DETECTED') {
         // 위기 신호가 있는 대화는 후보 대신 도움 안내를 보여준다(서버가 AI를 부르지 않고 막음).
         setError({ key: 'career.err.crisis', support: true });
@@ -367,6 +377,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   // 과목 추가의 "한 번에 채우려면?" 말풍선과 같은 패턴. 자유 대화 메시지 4개(사용자+AI
   // 2턴) 이상 쌓이면 보여주고, 후보를 이미 받았으면(chat 단계를 벗어나면) 자연히 사라진다.
   const showRecommendHint = stage === 'chat' && messages.length - FIXED_MESSAGE_COUNT >= 4;
+  const turnLimitReached = messages.filter((m) => m.role === 'user').length >= FIXED_QUESTIONS.length + MAX_FREE_TURNS;
 
   return (
     <div className="courses-page">
@@ -522,6 +533,9 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                   </div>
                 </div>
               )}
+              {turnLimitReached && (
+                <p className="career-support-note" role="status">{t('career.turnLimit')}</p>
+              )}
               <div ref={bottomRef} />
             </div>
           </div>
@@ -561,7 +575,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         )}
       </div>
 
-      {stage === 'chat' && (
+      {stage === 'chat' && !turnLimitReached && (
         <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={setInputFocused} />
       )}
 

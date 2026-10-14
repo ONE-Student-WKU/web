@@ -24,6 +24,7 @@ const communityRoutes = require('./routes/community');
 const emailRelayRoutes = require('./routes/emailRelay');
 const inquiriesRoutes = require('./routes/inquiries');
 const { trackActivity } = require('./middleware/activityTracker');
+const { securityHeaders, requireStringQuery } = require('./middleware/security');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
@@ -44,6 +45,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
 }
 
 // Middlewares
+app.use(securityHeaders);
 // CLIENT_ORIGIN 미설정 시(로컬 개발 등) 기존과 동일하게 모든 origin을 허용함.
 app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 // verify로 원문 바이트를 req.rawBody에 같이 담아둔다 — 대부분의 라우트는 파싱된 req.body만
@@ -52,6 +54,7 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 // 미리 잡아둔다.
 app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString('utf8'); } }));
 app.use(express.urlencoded({ extended: true }));
+app.use(requireStringQuery);
 
 // 기존 mysql2 커넥션 풀을 그대로 재사용 — 세션 전용 DB 접속 정보를 따로 두지 않는다.
 // createDatabaseTable: false — sessions 테이블은 db/schema.sql + db/migrate.js로 직접

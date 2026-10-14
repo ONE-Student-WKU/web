@@ -742,6 +742,7 @@ CREATE TABLE IF NOT EXISTS career_sessions (
   student_id        INT NOT NULL,
   status            ENUM('IN_PROGRESS', 'CANDIDATES_READY', 'CONFIRMED') NOT NULL DEFAULT 'IN_PROGRESS',
   confirmed_career  VARCHAR(100),
+  candidate_requests INT NOT NULL DEFAULT 0,  -- 이 상담에서 "추천받기"를 쓴 횟수(상한 server/services/careerService.js)
   created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
