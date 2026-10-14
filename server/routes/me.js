@@ -11,6 +11,7 @@ const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/conse
  *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
+const { isIntInRange, validateNickname, isValidAdmissionYear } = require('../services/inputValidation');
 const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
@@ -59,8 +60,19 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       secondDepartmentId, careerCounselingCount, leaveSemesters, language,
     } = req.body;
 
-    if (name !== undefined && !name.trim()) {
+    // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
+    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
+    }
+    if (name !== undefined) {
+      const nameError = validateNickname(name);
+      if (nameError) return res.status(400).json({ status: 400, code: nameError, message: null, data: null });
+    }
+    if (admissionYear !== undefined && !isValidAdmissionYear(admissionYear)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_ADMISSION_YEAR', message: null, data: null });
+    }
+    if (careerCounselingCount !== undefined && !isIntInRange(careerCounselingCount, 0, 1000)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CAREER_COUNSELING_COUNT', message: null, data: null });
     }
 
     // 닉네임 사칭/도용 방지 — students.name의 UNIQUE 제약(db/schema.sql)이 최종 방어선이고,
@@ -90,7 +102,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'INVALID_LANGUAGE', message: null, data: null });
     }
 
-    if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
+    if (leaveSemesters !== undefined && !isIntInRange(leaveSemesters, 0, 30)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
     }
 

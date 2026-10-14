@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const careerService = require('../services/careerService');
 const studentService = require('../services/studentService');
 const { parseLanguage } = require('../services/language');
+const { perUserLimiter } = require('../middleware/security');
 
 /**
  * Routes for 진로 탐색 (상담형) — /api/career
@@ -11,6 +12,32 @@ const { parseLanguage } = require('../services/language');
  */
 
 router.use(requireAuth);
+
+// 이 라우터의 AI 호출 라우트(고정 답변 제출·자유 대화·후보 생성·확정)는 챗봇(하루 20회)과 달리 횟수 제한이 없어서, 로그인만 하면
+// 스크립트로 Claude 호출을 무제한으로 일으켜 API 비용을 태울 수 있었다. 사람이 정상적으로 상담하는 속도보다 훨씬 넉넉하게
+// 사용자당 시간당 횟수를 묶는다(상담 한 번이 대략 10~20회 호출). 필요하면 이 숫자만 조정한다.
+const aiCallLimiter = perUserLimiter({ windowMs: 60 * 60 * 1000, max: 120 });
+
+// 입력 길이 상한 — 대화 한 턴, 고정 질문/답변 한 건. 제한이 없으면 요청 본문 한도(100KB)까지 매 호출의 프롬프트에 그대로 실려
+// 비용이 불어난다. 고정 답변은 보기 몇 개를 쉼표로 이은 짧은 문자열이다.
+const CONTENT_MAX_LENGTH = 2000;
+const FIXED_ANSWER_MAX_ITEMS = 10;
+const FIXED_TEXT_MAX_LENGTH = 1000;
+
+function isValidFixedAnswers(fixedAnswers) {
+  return (
+    Array.isArray(fixedAnswers) &&
+    fixedAnswers.length > 0 &&
+    fixedAnswers.length <= FIXED_ANSWER_MAX_ITEMS &&
+    fixedAnswers.every(
+      (a) =>
+        a &&
+        typeof a.question === 'string' &&
+        a.question.length <= FIXED_TEXT_MAX_LENGTH &&
+        (a.answer === undefined || a.answer === null || (typeof a.answer === 'string' && a.answer.length <= FIXED_TEXT_MAX_LENGTH))
+    )
+  );
+}
 
 // 학과 정보가 없으면 커리큘럼 기반 로드맵을 만들 수 없어 온보딩부터 요구한다
 // (graduationService.getGraduationStatus의 ONBOARDING_REQUIRED와 동일한 패턴).
@@ -69,10 +96,10 @@ router.post('/sessions', async (req, res, next) => {
 });
 
 // POST /api/career/sessions/:id/fixed-answers
-router.post('/sessions/:id/fixed-answers', async (req, res, next) => {
+router.post('/sessions/:id/fixed-answers', aiCallLimiter, async (req, res, next) => {
   try {
     const { fixedAnswers } = req.body;
-    if (!Array.isArray(fixedAnswers) || fixedAnswers.length === 0) {
+    if (!isValidFixedAnswers(fixedAnswers)) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_FIXED_ANSWERS', message: null, data: null });
     }
 
@@ -94,7 +121,7 @@ router.post('/sessions/:id/fixed-answers', async (req, res, next) => {
 router.patch('/sessions/:id/fixed-answers', async (req, res, next) => {
   try {
     const { fixedAnswers } = req.body;
-    if (!Array.isArray(fixedAnswers) || fixedAnswers.length === 0) {
+    if (!isValidFixedAnswers(fixedAnswers)) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_FIXED_ANSWERS', message: null, data: null });
     }
 
@@ -109,10 +136,13 @@ router.patch('/sessions/:id/fixed-answers', async (req, res, next) => {
 });
 
 // POST /api/career/sessions/:id/messages — 자유 대화 한 턴
-router.post('/sessions/:id/messages', async (req, res, next) => {
+router.post('/sessions/:id/messages', aiCallLimiter, async (req, res, next) => {
   try {
     const { content } = req.body;
     if (!content) return res.status(400).json({ status: 400, code: 'REQUIRED_CONTENT', message: null, data: null });
+    if (typeof content !== 'string' || content.length > CONTENT_MAX_LENGTH) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CONTENT', message: null, data: null });
+    }
 
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
@@ -128,7 +158,7 @@ router.post('/sessions/:id/messages', async (req, res, next) => {
 });
 
 // POST /api/career/sessions/:id/candidates — 대화 종합해 진로 후보 생성
-router.post('/sessions/:id/candidates', async (req, res, next) => {
+router.post('/sessions/:id/candidates', aiCallLimiter, async (req, res, next) => {
   try {
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;
@@ -151,10 +181,13 @@ router.post('/sessions/:id/candidates', async (req, res, next) => {
 });
 
 // POST /api/career/sessions/:id/confirm — 진로 확정 + 로드맵 생성
-router.post('/sessions/:id/confirm', async (req, res, next) => {
+router.post('/sessions/:id/confirm', aiCallLimiter, async (req, res, next) => {
   try {
     const { careerName } = req.body;
     if (!careerName) return res.status(400).json({ status: 400, code: 'REQUIRED_CAREER_NAME', message: null, data: null });
+    if (typeof careerName !== 'string' || careerName.length > 200) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CAREER_NAME', message: null, data: null });
+    }
 
     const student = await requireOnboardedStudent(req, res);
     if (!student) return;

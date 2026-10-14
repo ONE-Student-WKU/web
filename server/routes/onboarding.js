@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const { isIntInRange, isValidAdmissionYear } = require('../services/inputValidation');
 
 /**
  * Routes for Onboarding (/api/onboarding)
@@ -44,6 +45,13 @@ router.post('/', requireAuth, async (req, res, next) => {
     if (!enrollmentType) return res.status(400).json({ status: 400, code: 'REQUIRED_ENROLLMENT_TYPE', message: null, data: null });
     if (!VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
+    }
+    // 학과·학번은 졸업요건 진단의 기준이 되는 값이다. 타입/범위를 안 보면 없는 학과 id는 DB 오류(500)로, 엉뚱한 학번은 그대로 저장된다.
+    if (!isIntInRange(departmentId, 1, 2147483647) || !(await studentService.findDepartmentById(departmentId))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
+    }
+    if (!isValidAdmissionYear(admissionYear)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_ADMISSION_YEAR', message: null, data: null });
     }
 
     // majorChangeGrade/Year/Semester: 전과생(MAJOR_CHANGE)만 필수, 그 외 유형이면 애초에 의미가 없는 값이므로 거부.

@@ -308,6 +308,8 @@ export default {
   'profile.err.nameRequired': '이름을 입력해주세요.',
   'profile.err.duplicateName': '이미 사용 중인 닉네임이에요.',
   'profile.err.reservedName': '"user숫자" 형식은 자동 배정용이라 쓸 수 없어요.',
+  'profile.err.nameInvalid': '쓸 수 없는 닉네임이에요. 보이지 않는 글자나 운영진으로 오해할 수 있는 이름은 사용할 수 없어요.',
+  'profile.err.nameTooLong': '닉네임은 50자 이하로 입력해주세요.',
   'profile.err.saveFailed': '저장에 실패했어요.',
   'profile.career': '확정한 진로',
   'profile.roadmapShow': '로드맵 보기',

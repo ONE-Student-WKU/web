@@ -339,6 +339,8 @@ export default {
   'profile.err.nameRequired': 'Please enter a name.',
   'profile.err.duplicateName': 'That nickname is already taken.',
   'profile.err.reservedName': 'Names like "user123" are reserved for automatic assignment and cannot be used.',
+  'profile.err.nameInvalid': 'This nickname cannot be used. Invisible characters and names that could be mistaken for staff are not allowed.',
+  'profile.err.nameTooLong': 'Nickname must be 50 characters or fewer.',
   'profile.err.saveFailed': 'Failed to save.',
   'profile.career': 'Confirmed career',
   'profile.roadmapShow': 'View roadmap',

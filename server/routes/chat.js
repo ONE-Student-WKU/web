@@ -27,6 +27,12 @@ const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatCon
 const HISTORY_LIMIT = 10;
 // 사용자당 1일 채팅 한도(임베딩+Claude 호출 비용 상한 목적). 자정(서버 시각) 리셋.
 const DAILY_MESSAGE_LIMIT = 20;
+// 질문 한 건의 최대 길이. 제한이 없으면 요청 본문 한도(100KB)까지 통째로 임베딩·Claude 호출에 들어가 하루 20번 한도 안에서도
+// 비용과 응답 시간이 크게 불어난다. 실제 질문은 수십~수백 자라 정상 사용에는 걸리지 않는다.
+const MESSAGE_MAX_LENGTH = 2000;
+// 같은 사용자가 답변을 기다리는 중에 또 보낸 요청을 막는 표시. 하루 한도는 "세고 → 저장"이 따로라서 동시에 여러 개를 쏘면
+// 전부 한도 전 숫자를 읽고 통과한다(한도 우회). 서버 한 대 안에서만 유효하지만, 한 사용자가 한 번에 한 질문씩만 처리되게 하는 데는 충분하다.
+const inFlightUsers = new Set();
 
 // "비공식 참고용" 문구는 화면에 고정으로 표시하기로 하고 시스템 프롬프트에서도 넣지 말라고
 // 지시했는데, 예전 대화(이 문구가 이미 여러 번 등장한 이력)를 history로 넘기면 모델이 지시보다
@@ -66,17 +72,27 @@ router.get('/conversations/current', async (req, res, next) => {
 // 질문 임베딩 → regulation_chunks 코사인 유사도 검색 → Claude Haiku 4.5로 답변 생성 → 출처 포함 응답.
 // 관련 청크를 하나도 못 찾으면 AI 호출 없이 바로 안내 문구를 반환한다.
 router.post('/messages', async (req, res, next) => {
+  let releaseInFlight = () => {};
   try {
     const { conversationId, message } = req.body;
     const language = parseLanguage(req.body.language);
 
     if (!conversationId) return res.status(400).json({ status: 400, code: 'REQUIRED_CONVERSATION_ID', message: null, data: null });
     if (!message) return res.status(400).json({ status: 400, code: 'REQUIRED_MESSAGE', message: null, data: null });
+    if (typeof message !== 'string' || message.length > MESSAGE_MAX_LENGTH) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MESSAGE', message: null, data: null });
+    }
 
     const conversation = await regulationService.findConversationById(req.session.userId, conversationId);
     if (!conversation) {
       return res.status(404).json({ status: 404, code: 'CONVERSATION_NOT_FOUND', message: null, data: null });
     }
+
+    if (inFlightUsers.has(req.session.userId)) {
+      return res.status(429).json({ status: 429, code: 'CHAT_REQUEST_IN_PROGRESS', message: null, data: null });
+    }
+    inFlightUsers.add(req.session.userId);
+    releaseInFlight = () => inFlightUsers.delete(req.session.userId);
 
     const todayMessageCount = await regulationService.countTodayUserMessages(req.session.userId);
     if (todayMessageCount >= DAILY_MESSAGE_LIMIT) {
@@ -199,6 +215,8 @@ router.post('/messages', async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  } finally {
+    releaseInFlight();
   }
 });
 

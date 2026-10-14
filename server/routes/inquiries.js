@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const inquiryService = require('../services/inquiryService');
+const { perUserLimiter } = require('../middleware/security');
 
 /**
  * server/routes/inquiries.js
@@ -23,7 +24,10 @@ function isValidContent(content) {
 }
 
 // POST /api/inquiries — 문의 작성.
-router.post('/', async (req, res, next) => {
+// 문의 도배 방지 — 관리자 문의함이 가득 차는 것을 막는다.
+const inquiryWriteLimiter = perUserLimiter({ windowMs: 60 * 60 * 1000, max: 20 });
+
+router.post('/', inquiryWriteLimiter, async (req, res, next) => {
   try {
     const title = typeof req.body.title === 'string' ? req.body.title.trim() : req.body.title;
     const content = typeof req.body.content === 'string' ? req.body.content.trim() : req.body.content;
