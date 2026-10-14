@@ -80,6 +80,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
+  const [confirmNoDepartment, setConfirmNoDepartment] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -303,6 +304,26 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     }
     setStepIndex((i) => Math.min(i + 1, path.length - 1));
   }
+  // 학과 단계의 "다음"은 고르기 전에도 누를 수 있다(비활성 버튼이 목록 위에 붕 떠 보였다). 학과 없이 누르면 그대로 넘어갈지 묻는다 —
+  // 뒤의 질문(세부전공·학번·입학 유형 등)은 모두 학과 기준이라 학과 없이는 의미가 없어, 넘어가면 "나중에 선택하기"와 같다(onSkip).
+  function handleNext() {
+    if (current === 'department' && !answers.departmentId) {
+      setConfirmNoDepartment(true);
+      return;
+    }
+    goNext();
+  }
+
+  // 학과 없이 넘어갈지 묻는 창에서 ESC는 "학과 고르기"와 같다 — 창을 닫고 학과 목록으로 돌아간다.
+  useEffect(() => {
+    if (!confirmNoDepartment) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setConfirmNoDepartment(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmNoDepartment]);
+
   function goBack() {
     if (editingFromSummary) {
       setManualStep('summary');
@@ -359,7 +380,6 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   }
 
   const nextDisabled =
-    (current === 'department' && !answers.departmentId) ||
     (current === 'track' && !answers.trackId) ||
     (current === 'enrollmentType' && !answers.enrollmentType) ||
     (current === 'year' && !answers.admissionYear) ||
@@ -394,6 +414,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       <div className="courses-body">
         {loadError && <p className="home-error">{t(loadError)}</p>}
         {submitError && <p className="home-error">{submitError}</p>}
+        {current !== 'done' && !editingFromSummary && (
+          // 홈의 "학년이 다르신가요?"와 같은 모양. 바로 뒤에 오는 질문 제목과 같은 줄 오른쪽에 붙는다(float).
+          <button className="home-grade-fix-link onb-later-link" onClick={onSkip}>
+            {editMode ? t('onb.cancel') : t('onb.later')}
+          </button>
+        )}
 
         {current === 'department' && (
           <>
@@ -715,18 +741,27 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {t('onb.done.home')}
             </button>
           ) : (
-            <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
+            <button className="auth-submit-btn" onClick={handleNext} disabled={nextDisabled}>
               {editingFromSummary ? t('onb.confirm') : t('onb.next')}
             </button>
           )}
         </div>
-
-        {current !== 'done' && !editingFromSummary && (
-          <button className="onb-skip-link" onClick={onSkip}>
-            {editMode ? t('onb.cancel') : t('onb.later')}
-          </button>
-        )}
       </div>
+
+      {confirmNoDepartment && (
+        <div className="career-confirm-overlay" onClick={() => setConfirmNoDepartment(false)}>
+          <div className="career-confirm-modal" role="dialog" aria-modal="true" aria-label={t('onb.noDept.title')} onClick={(e) => e.stopPropagation()}>
+            <span className="career-confirm-title">{t('onb.noDept.title')}</span>
+            <p className="career-confirm-body">{t('onb.noDept.body', { menu: t('account.editDepartment') })}</p>
+            <button className="auth-submit-btn" onClick={onSkip}>
+              {t('onb.noDept.skip')}
+            </button>
+            <button className="career-confirm-cancel" onClick={() => setConfirmNoDepartment(false)}>
+              {t('onb.noDept.choose')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

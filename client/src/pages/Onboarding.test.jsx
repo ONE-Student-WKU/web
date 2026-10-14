@@ -219,3 +219,47 @@ describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "�
     expect(screen.getByRole('button', { name: '인공지능' })).toBeInTheDocument();
   });
 });
+
+describe('학과 선택: 고르지 않고 "다음"을 누르면 그대로 넘어갈지 묻는다', () => {
+  const NEW_USER = { id: 9, onboardingCompleted: false };
+  const pressNextWithoutDepartment = async () => {
+    expect(await screen.findByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    const next = screen.getByRole('button', { name: '다음' });
+    expect(next).toBeEnabled(); // 고르기 전에도 누를 수 있다
+    await userEvent.click(next);
+    return screen.getByRole('dialog', { name: '학과를 선택하지 않으셨어요' });
+  };
+
+  it('"학과 고르기"나 ESC는 창만 닫고 학과 질문에 머문다', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    await pressNextWithoutDepartment();
+    await userEvent.click(screen.getByRole('button', { name: '학과 고르기' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await pressNextWithoutDepartment();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    expect(onSkip).not.toHaveBeenCalled();
+  });
+
+  it('"이대로 넘어가기"는 나중에 선택하기와 같다(뒤의 학적 질문 없이 나가고 아무것도 저장하지 않음)', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    await pressNextWithoutDepartment();
+    await userEvent.click(screen.getByRole('button', { name: '이대로 넘어가기' }));
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    expect(api.submitOnboarding).not.toHaveBeenCalled();
+  });
+
+  it('"나중에 선택하기"는 질문 제목 줄에 있다', async () => {
+    const onSkip = vi.fn();
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={onSkip} />);
+    const title = await screen.findByRole('heading', { name: '어느 학과 소속이에요?' });
+    const later = screen.getByRole('button', { name: '나중에 선택하기' });
+    expect(later.nextElementSibling).toBe(title); // 제목 바로 앞에서 오른쪽으로 띄워(float) 같은 줄에 놓인다
+    await userEvent.click(later);
+    expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+});

@@ -448,6 +448,10 @@ export default {
   'onb.next': '다음',
   'onb.cancel': '취소',
   'onb.later': '나중에 선택하기',
+  'onb.noDept.title': '학과를 선택하지 않으셨어요',
+  'onb.noDept.body': '이대로 하시겠어요? 학번·입학 유형 같은 나머지 질문은 학과를 기준으로 해서 함께 건너뛰어요. 나중에 오른쪽 위 계정 메뉴의 "{menu}"에서 입력할 수 있어요.',
+  'onb.noDept.skip': '이대로 넘어가기',
+  'onb.noDept.choose': '학과 고르기',
 
   // 학과 선택(검색 + 소속 트리)
   'dept.search.placeholder': '학과 이름으로 검색 (예: 컴퓨터, 경영)',

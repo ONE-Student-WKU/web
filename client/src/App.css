@@ -3293,15 +3293,25 @@ select.onb-select {
 }
 
 /* 목록 카드 위에 떠 있어 경계가 흐려 보이므로 본문 글자색 경계선을 둔다 — 밝은 테마에선 검은색, 어두운 테마에선 밝은색이라
-   어느 테마에서도 버튼 가장자리가 보인다. */
+   어느 테마에서도 버튼 가장자리가 보인다. 비활성(연한 회청색) 버튼에 검은 선을 두르면 붕 떠 보여서 활성일 때만 둔다. */
 .onb-float-action .auth-submit-btn {
-  border: 1.5px solid var(--color-text-primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.onb-float-action .auth-submit-btn:not(:disabled) {
+  border: 1.5px solid var(--color-text-primary);
 }
 
 .onb-float-action .auth-submit-btn:disabled {
   opacity: 1;
   background: var(--color-accent-disabled);
+}
+
+/* 온보딩 "나중에 선택하기"(학적정보 수정은 "취소") — 질문 제목 줄 오른쪽. 줄 높이를 제목(.onb-q-title 1.25rem × 1.4)과 맞춰 세로 가운데에 온다. */
+.onb-later-link {
+  float: right;
+  margin-left: 12px;
+  line-height: 1.75rem;
 }
 
 .onb-skip-link {

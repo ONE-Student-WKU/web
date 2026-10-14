@@ -485,6 +485,10 @@ export default {
   'onb.next': 'Next',
   'onb.cancel': 'Cancel',
   'onb.later': 'Choose later',
+  'onb.noDept.title': "You haven't chosen a department",
+  'onb.noDept.body': 'Continue without one? The remaining questions, such as your admission year and enrollment type, depend on your department, so they will be skipped too. You can fill them in later from "{menu}" in the account menu at the top right.',
+  'onb.noDept.skip': 'Continue without it',
+  'onb.noDept.choose': 'Choose a department',
 
   // Department picker (search + college tree)
   'dept.search.placeholder': 'Search by department name (e.g. 컴퓨터, 경영)',
