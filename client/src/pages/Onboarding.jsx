@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
-import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
+import { IconChevronLeft, IconEdit, IconSearch } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
@@ -80,6 +80,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
+  const [deptSearchOpen, setDeptSearchOpen] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -255,9 +256,15 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferGrade: null,
     }));
     setTracks([]);
-    getTracks(dept.id)
+    return getTracks(dept.id)
       .then(setTracks)
       .catch(() => setTracks([]));
+  }
+
+  // 검색 결과에서 학과를 고르면 바로 다음 질문으로 넘어간다(긴 목록으로 돌아가 "다음"을 찾지 않게). 세부전공 목록을 받은 뒤에 넘어가야
+  // 세부전공이 있는 학과(공학3계열 등)가 "입학 유형"을 잠깐 보였다가 "세부전공"으로 바뀌지 않는다. 요약에서 고치러 왔으면 요약으로 돌아간다.
+  function selectDepartmentFromSearch(dept) {
+    selectDepartment(dept).then(goNext);
   }
 
   // 입학유형을 바꿔도 학번 범위가 실제로는 안 바뀌는 경우가 많다(편입생만 올해 학번이 빠지는
@@ -400,7 +407,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </div>
             )}
             {departments.length > 0 && (
-              <DepartmentPicker departments={departments} selectedId={answers.departmentId} onSelect={selectDepartment} />
+              <DepartmentPicker
+                departments={departments}
+                selectedId={answers.departmentId}
+                onSelect={selectDepartment}
+                searchOpen={deptSearchOpen}
+                onCloseSearch={() => setDeptSearchOpen(false)}
+                onSelectFromSearch={selectDepartmentFromSearch}
+              />
             )}
           </>
         )}
@@ -693,25 +707,34 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </div>
         )}
 
-        {current === 'summary' ? (
-          <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
-            {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
-          </button>
-        ) : current === 'done' ? (
-          <button className="auth-submit-btn" onClick={onDone}>
-            {t('onb.done.home')}
-          </button>
-        ) : (
-          <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
-            {editingFromSummary ? t('onb.confirm') : t('onb.next')}
-          </button>
-        )}
+        {/* 아래 버튼 영역은 화면 아래에 고정한다 — 학과 목록처럼 내용이 길어져도 "다음"과 학과 검색을 내려가 찾지 않고 바로 누를 수 있게. */}
+        <div className="onb-actions">
+          {current === 'department' && departments.length > 0 && (
+            <button type="button" className="search-entry" onClick={() => setDeptSearchOpen(true)} aria-label={t('dept.search.aria')}>
+              <IconSearch />
+              <span>{t('dept.search.placeholder')}</span>
+            </button>
+          )}
+          {current === 'summary' ? (
+            <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
+              {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
+            </button>
+          ) : current === 'done' ? (
+            <button className="auth-submit-btn" onClick={onDone}>
+              {t('onb.done.home')}
+            </button>
+          ) : (
+            <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
+              {editingFromSummary ? t('onb.confirm') : t('onb.next')}
+            </button>
+          )}
 
-        {current !== 'done' && !editingFromSummary && (
-          <button className="onb-skip-link" onClick={onSkip}>
-            {editMode ? t('onb.cancel') : t('onb.later')}
-          </button>
-        )}
+          {current !== 'done' && !editingFromSummary && (
+            <button className="onb-skip-link" onClick={onSkip}>
+              {editMode ? t('onb.cancel') : t('onb.later')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

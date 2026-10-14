@@ -184,3 +184,32 @@ describe('휴학 기간(휴학 "수"가 아니라 시기를 받는다)', () => {
   });
 });
 
+
+describe('학과 선택: 아래 버튼 영역의 학과 검색 → 고르면 바로 다음 질문', () => {
+  const NEW_USER = { id: 9, onboardingCompleted: false };
+  const searchAndPick = async (query, name) => {
+    await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), query);
+    await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
+  };
+
+  it('검색 버튼은 "다음"과 같은 아래 버튼 영역에 있고, 검색 결과를 누르면 그 학과로 바로 다음 질문(입학 유형)으로 간다', async () => {
+    const { container } = render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
+    const actions = container.querySelector('.onb-actions');
+    expect(actions).toContainElement(await screen.findByRole('button', { name: '학과 검색' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: '다음' }));
+
+    await searchAndPick('국어', '국어국문학과');
+    expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
+    expect(api.getTracks).toHaveBeenCalledWith(7);
+  });
+
+  it('세부전공이 있는 학과는 세부전공 목록을 받은 뒤 세부전공 질문으로 바로 간다', async () => {
+    api.getTracks.mockResolvedValue([{ id: 31, name: '인공지능' }]);
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await searchAndPick('경영학부', '경영학부');
+    expect(await screen.findByRole('heading', { name: '희망하는 세부전공을 선택하세요' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '인공지능' })).toBeInTheDocument();
+  });
+});

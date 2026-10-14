@@ -3283,6 +3283,20 @@ select.onb-select {
 .onb-done-title { font-size: 1.125rem; font-weight: 800; margin: 4px 0 0; }
 .onb-done-sub { font-size: 0.875rem; color: var(--color-text-muted); }
 
+/* 온보딩 아래 버튼 영역(학과 검색·다음·나중에) — 학과 목록처럼 내용이 길어도 화면 아래에 붙어 있게 한다. 내용이 짧으면 원래처럼
+   내용 바로 아래에 놓인다. .courses-body의 안쪽 여백(16px)까지 덮어야 뒤의 목록이 비쳐 보이지 않는다. */
+.onb-actions {
+  position: sticky;
+  bottom: -16px;
+  margin: 0 -16px -16px;
+  padding: 2px 16px 16px;
+  background: var(--color-bg-frame);
+}
+
+.onb-actions .search-entry {
+  margin: 12px 0 0;
+}
+
 .onb-skip-link {
   display: block;
   margin: 16px auto 0;

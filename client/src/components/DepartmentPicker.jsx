@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { IconSearch } from './icons.jsx';
 import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
 import useSearchInput from '../hooks/useSearchInput.js';
@@ -9,15 +8,18 @@ import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
  * DepartmentPicker
- * 온보딩·학적정보 수정의 학과 선택 — 맨 위 검색창 모양 진입 버튼 + "소속(단과대학) → 학과" 트리.
+ * 온보딩·학적정보 수정의 학과 선택 — "소속(단과대학) → 학과" 트리 + 검색 화면.
  * 검색은 과목·커뮤니티 검색처럼 별도 전체 화면(SearchScreen)에서 하고, 일치하는 학과만 한 줄 목록(소속 표시)으로 보여준다.
- * 검색 결과에서 학과를 고르면 검색 화면이 닫히고, 트리에서 그 학과가 든 묶음이 펼쳐진 채 선택 표시가 된다.
+ * 검색 진입 버튼은 부모가 화면 아래 버튼 영역에 둔다(목록이 길어져도 누르기 쉽게) — 열고 닫는 상태도 부모가 갖는다.
+ * 검색 결과에서 학과를 고르면 검색 화면이 닫히고 onSelectFromSearch가 불린다(온보딩은 고른 뒤 바로 다음 단계로 간다).
  * 소속 정보를 못 받은 경우(서버가 college를 안 내려주는 배포 순서, 자료 읽기 실패)에는 기존처럼 평평한 목록이 된다.
  *
  * Props:
  * - departments: [{ id, name, college, former, collegeOrder, successors, ...요건 학번 범위 }]
  * - selectedId: number | null
- * - onSelect: (department) => void
+ * - onSelect: (department) => void — 트리에서 고를 때
+ * - searchOpen: boolean / onCloseSearch: () => void — 검색 화면 열림 상태(부모 소유)
+ * - onSelectFromSearch: (department) => void — 검색 결과에서 고를 때
  */
 function DepartmentCard({ department, selected, onSelect, showCollege }) {
   const { t } = useI18n();
@@ -36,10 +38,9 @@ function DepartmentCard({ department, selected, onSelect, showCollege }) {
   );
 }
 
-function DepartmentPicker({ departments, selectedId, onSelect }) {
+function DepartmentPicker({ departments, selectedId, onSelect, searchOpen, onCloseSearch, onSelectFromSearch }) {
   const { t } = useI18n();
   // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
-  const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const deptSearch = useSearchInput(setQuery);
   const groups = useMemo(() => groupDepartmentsByCollege(departments), [departments]);
@@ -64,12 +65,12 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
   const dismissSearch = () => {
     deptSearch.reset();
     setQuery('');
-    setSearchOpen(false);
+    onCloseSearch();
   };
 
   const handleSelectFromSearch = (department) => {
-    onSelect(department);
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
+    onSelectFromSearch(department);
   };
 
   const renderSearchResults = () => {
@@ -97,11 +98,6 @@ function DepartmentPicker({ departments, selectedId, onSelect }) {
 
   return (
     <div className="onb-dept-picker">
-      <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('dept.search.aria')}>
-        <IconSearch />
-        <span>{t('dept.search.placeholder')}</span>
-      </button>
-
       {hasTree ? (
         <div className="onb-college-tree">
           {groups.map((g) => {

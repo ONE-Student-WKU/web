@@ -246,10 +246,13 @@ describe('온보딩 / 학과 선택', () => {
 
   it('학과 선택: 검색 안내, 학번 범위가 영어다', async () => {
     const other = { ...DEPT, id: 5, name: '원불교학과', college: '교학대학', former: false, successors: [], maxAdmissionYear: null, coreMaxAdmissionYear: null };
-    renderEn(<DepartmentPicker departments={[DEPT, other]} selectedId={null} onSelect={() => {}} />);
+    const props = { departments: [DEPT, other], selectedId: null, onSelect: () => {}, onCloseSearch: () => {}, onSelectFromSearch: () => {} };
+    const { rerender } = renderEn(<DepartmentPicker {...props} searchOpen={false} />);
     await userEvent.click(screen.getByRole('button', { name: /경상대학/ }));
     expect(screen.getByText(/2020–2022 cohorts/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Search departments' }));
+    // 검색 진입 버튼은 온보딩의 아래 버튼 영역에 있다(Onboarding.test.jsx) — 여기서는 열린 검색 화면의 문구만 본다.
+    rerender(<LanguageProvider><DepartmentPicker {...props} searchOpen /></LanguageProvider>);
+    expect(screen.getByRole('dialog', { name: 'Search departments' })).toBeInTheDocument();
     expect(screen.getByText(/Type any part of the department name/)).toBeInTheDocument();
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search departments' }), 'zzz');
     expect(await screen.findByText(/No department matches "zzz"/)).toBeInTheDocument();
