@@ -4,6 +4,8 @@
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
+const { currentStandingOf } = require('./studentProgress');
+
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -22,29 +24,28 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 
-// client/src/utils/academic.js의 getGradeLevel과 동일한 공식(2학기당 1년 보정) — 서버는
-// 브라우저 모듈을 못 불러오니 그대로 옮겨둠. 둘 중 하나만 고치면 어긋나므로 같이 수정할 것.
-function getCurrentGrade(admissionYear, leaveSemesters) {
-  if (!admissionYear) return null;
-  const currentYear = new Date().getFullYear();
-  const leaveYears = Math.floor((leaveSemesters || 0) / 2);
-  return Math.min(4, Math.max(1, currentYear - admissionYear - leaveYears + 1));
+// 지금 학년·학기 한 줄. 계산은 studentProgress 한 곳에서 한다(이슈 #318) — 챗봇은 이수 기록까지 넣은 progress.current를,
+// 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
+function describeStanding(standing) {
+  if (!standing) return null;
+  const base = standing.extended ? `수업연한을 넘긴 초과 ${standing.extraTerms}학기` : `${standing.grade}학년 ${standing.gradeSemester}학기`;
+  return `${base}(재학 ${standing.enrolledTermNumber}번째 학기${standing.onLeave ? ', 지금은 휴학 중' : ''})`;
 }
 
 // 근거 문서(RAG 검색 결과)는 학번별로 기준이 갈리는 표를 그대로 담고 있을 수 있는데, 정작
 // 모델은 "이 학생이 몇 학번인지" 전혀 모른 채 답을 골라야 했다 — 그래서 22학번 학생에게
 // 2026학번 표를 그대로 답하는 문제가 실사용으로 확인됨. 학생 프로필(온보딩 정보)을 시스템
 // 프롬프트에 명시해 반드시 이 학생 학번 기준을 우선 적용하도록 못박는다.
-function buildStudentProfileNote(student) {
+function buildStudentProfileNote(student, progress = null) {
   if (!student || !student.admission_year) return null;
 
-  const grade = getCurrentGrade(student.admission_year, student.leave_semesters);
+  const standing = describeStanding((progress && progress.current) || currentStandingOf(student));
   const parts = [
     `학과: ${student.department_name || '미상'}`,
     `입학년도: ${student.admission_year}학번`,
     student.track_name ? `세부전공: ${student.track_name}` : null,
     `입학유형: ${ENROLLMENT_TYPE_LABEL[student.enrollment_type] || '미상'}`,
-    grade ? `현재 학년: ${grade}학년 (누적 휴학 ${student.leave_semesters || 0}학기 반영)` : null,
+    standing ? `현재: ${standing}` : null,
   ].filter(Boolean);
 
   return `이 학생의 프로필 — ${parts.join(', ')}.
@@ -233,7 +234,7 @@ function buildSystemPrompt(student, graduationStatus, yearContext = null, langua
   const parts = [
     SYSTEM_PROMPT,
     EVIDENCE_PRIORITY_NOTE,
-    buildStudentProfileNote(student),
+    buildStudentProfileNote(student, progress),
     buildYearContextNote(yearContext),
     buildGraduationStatusNote(graduationStatus),
     buildProgressNote(progress),
@@ -466,11 +467,11 @@ const CAREER_FOLLOWUP_STYLE_REMINDER = `답변 형식 확인: 첫 문장은 학�
 function buildCareerStudentNote(student, completedCourses) {
   if (!student) return null;
 
-  const grade = getCurrentGrade(student.admission_year, student.leave_semesters);
+  const standing = describeStanding(currentStandingOf(student));
   const parts = [
     `학과: ${student.department_name || '미상'}`,
     student.track_name ? `세부전공: ${student.track_name}` : null,
-    grade ? `현재 학년: ${grade}학년` : null,
+    standing ? `현재: ${standing}` : null,
   ].filter(Boolean);
 
   const nameInstruction = student.name

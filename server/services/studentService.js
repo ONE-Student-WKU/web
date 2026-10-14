@@ -4,6 +4,7 @@ const { attachColleges } = require('./departmentColleges');
 const { parseLeavePeriods, totalLeaveSemesters, validateLeavePeriods } = require('./leavePeriods');
 const { parseHomeLayout } = require('./homeLayout');
 const { todayKst } = require('./regulationEngine/context');
+const { currentStandingOf } = require('./studentProgress');
 
 /**
  * server/services/studentService.js
@@ -68,6 +69,9 @@ function serializeStudent(student) {
     leaveSemesters: student.leave_semesters,
     // 휴학 기간. null이면 아직 휴학 질문에 답하지 않았다는 뜻이고 []는 휴학 없음(server/services/leavePeriods.js).
     leavePeriods: parseLeavePeriods(student.leave_periods),
+    // 지금 학년·학기(방학이면 직전 학기). 홈 화면이 따로 계산하지 않고 이 값을 보여 준다 — studentProgress.currentStandingOf(이슈 #318).
+    // { grade, gradeSemester, extended, extraTerms, onLeave, year, semester, enrolledTermNumber, source } | null
+    academicStanding: currentStandingOf(student),
     // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
     leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
     // 홈 화면 편집 설정(하단 바 4칸·하단 바 켜기/끄기). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
