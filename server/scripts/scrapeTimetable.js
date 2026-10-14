@@ -11,7 +11,18 @@ const iconv = require('iconv-lite');
  * course_offerings(server/scripts/seedCourseOfferings.js)의 원본 데이터 — 매 학기 수강신청이
  * 끝나고 시간표가 확정되면 이 스크립트를 다시 돌려 원본을 갱신하고, seedCourseOfferings.js로
  * DB에 반영하면 된다. 서버 부하 방지를 위해 요청 사이 400ms 딜레이를 둔다.
+ *
+ * 실행 금지(2026-10-14): 학교가 학교 사이트 자동 접근을 허락하지 않았다(교육혁신과 서면 답변 C-4 —
+ * docs/school-inquiry/교육혁신과_답변_2026-10-14.md). 웹정보서비스 자동 조회(C-5)는 답이 없어 같은 취지로 본다.
+ * 그래서 이 파일은 실행하면 요청을 하나도 보내지 않고 바로 멈춘다. 시간표는 사람이 화면을 조회해 저장한다.
+ * 학교가 조건을 붙여 허락하면 그 조건(요청 간격·표시·시간대)을 이 파일에 반영한 뒤 아래 가드를 지운다.
  */
+
+console.error(
+  '[scrape:timetable] 실행하지 않습니다 — 학교가 학교 사이트 자동 접근을 허락하지 않았습니다(교육혁신과 답변 2026-10-14, C-4).\n' +
+    '시간표는 웹정보서비스 화면을 사람이 조회해 저장해 주세요. 자세한 내용: docs/school-inquiry/교육혁신과_답변_2026-10-14.md'
+);
+process.exit(1);
 
 const BASE_URL = 'https://intra.wku.ac.kr/SWupis/V005/Service/Stud/Capab/timeTableByDept.jsp';
 const OUT_FILE = path.resolve(__dirname, '..', '..', 'db', 'curriculum', '_source', '전공시간표_2017-2026.json');
