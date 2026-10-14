@@ -107,3 +107,23 @@ describe('Home — 학과를 아직 고르지 않은 계정(나중에 선택하�
     for (const name of ['커뮤니티', '문의하기']) expect(screen.getByRole('button', { name })).not.toHaveClass('locked');
   });
 });
+
+describe('Home — 지금 학년·학기는 서버 값(academicStanding)을 그대로 보여 준다(#318)', () => {
+  const standing = (over) => ({ grade: 2, gradeSemester: 2, extended: false, extraTerms: 0, onLeave: false, enrolledTermNumber: 4, ...over });
+  it('학년과 학기를 함께 보여 준다', async () => {
+    render(<Home user={{ ...USER, academicStanding: standing() }} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('2학년 2학기')).toBeInTheDocument();
+  });
+  it('휴학 중이면 함께 알리고, 수업연한을 넘기면 초과 학기로 보여 준다', async () => {
+    const { unmount } = render(<Home user={{ ...USER, academicStanding: standing({ onLeave: true }) }} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('2학년 2학기 · 휴학 중')).toBeInTheDocument();
+    unmount();
+    render(<Home user={{ ...USER, academicStanding: standing({ grade: 4, gradeSemester: null, extended: true, extraTerms: 2 }) }} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('초과 2학기')).toBeInTheDocument();
+  });
+  it('서버 값이 없으면(학번 미입력) 학년을 표시하지 않는다', async () => {
+    render(<Home user={{ ...USER, academicStanding: null }} onOpenHomeEdit={() => {}} />);
+    await screen.findByText(/경영학부/);
+    expect(screen.queryByText(/학년/)).toBeNull();
+  });
+});

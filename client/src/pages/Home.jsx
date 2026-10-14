@@ -5,7 +5,6 @@ import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
-import { getGradeLevel } from '../utils/academic.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -138,7 +137,13 @@ function Home({
   // 뒤에만 이 화면을 렌더링하므로(authChecked 게이팅) 항상 준비돼 있어 이 판단에서 제외.
   const isFirstLoad = status === null && !statusFailed;
 
-  const gradeLevel = getGradeLevel(user?.admissionYear, user?.leaveSemesters);
+  // 지금 학년·학기는 서버가 계산해 내려준다(studentService.serializeStudent의 academicStanding, 이슈 #318) — 화면에서 따로 계산하지 않는다.
+  const standing = user?.academicStanding || null;
+  const gradeLabel = !standing
+    ? null
+    : standing.extended
+      ? t('home.gradeExtended', { n: standing.extraTerms })
+      : t(standing.onLeave ? 'home.gradeTermOnLeave' : 'home.gradeTerm', { grade: standing.grade, semester: standing.gradeSemester });
   // 홈 화면 편집에서 고른 메뉴 카드와 순서(utils/homeLayout.js). 모두 뺐으면 메뉴 영역을 그리지 않는다.
   const menuViews = resolveLayout(user?.homeLayout).menu;
   const earnedCredits = status?.totalEarnedCredits ?? 0;
@@ -205,10 +210,10 @@ function Home({
               <p className="home-subgreeting">
                 {user?.department || t('home.noDepartment')}
                 {/* 학년은 한 덩어리로 — 좁은 화면에서 "4 / 학년"처럼 학년 중간에서 줄이 끊기지 않게 한다. */}
-                {gradeLevel ? ' ' : ''}
-                {gradeLevel ? <span className="nowrap-unit">{t('home.gradeLevel', { grade: gradeLevel })}</span> : null}
+                {gradeLabel ? ' ' : ''}
+                {gradeLabel ? <span className="nowrap-unit">{gradeLabel}</span> : null}
               </p>
-              {gradeLevel && (
+              {gradeLabel && (
                 <button className="home-grade-fix-link" onClick={onOpenLeaveSettings}>
                   {t('home.gradeFix')}
                 </button>
