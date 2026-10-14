@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const { requireNotFullySanctioned, requireNotWritingSanctioned } = require('../middleware/sanction');
 const communityService = require('../services/communityService');
 const sanctionService = require('../services/sanctionService');
+const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
 
 /**
@@ -19,9 +20,17 @@ router.use(requireAuth);
 // 다시 조회하지 않고 재사용한다.
 router.use(requireNotFullySanctioned);
 
+// 글·신청·신고·수락/반려처럼 DB에 쓰는 요청은 사용자당 횟수를 묶는다. 제한이 없으면 글을 수천 개 올려 관리자 승인 대기열을
+// 가득 채우거나 신고/신청으로 다른 사용자를 괴롭히는 도배가 가능했다(정상 사용은 10분에 몇 건 수준).
+router.use((req, res, next) => (req.method === 'GET' ? next() : communityWriteLimiter(req, res, next)));
+
+const communityWriteLimiter = perUserLimiter({ windowMs: 10 * 60 * 1000, max: 40 });
+
 const TITLE_MAX_LENGTH = 20;
 const BODY_MAX_LENGTH = 1000;
 const REPORT_REASON_MAX_LENGTH = 500;
+const APPLY_MESSAGE_MAX_LENGTH = 1000;
+const REJECT_REASON_MAX_LENGTH = 500;
 const VALID_CATEGORIES = ['study', 'project'];
 
 function isValidTitle(title) {
@@ -283,7 +292,7 @@ router.post('/:id/report', (req, res, next) => handleReport(req, res, next, 'pos
 router.post('/:id/apply', requireNotWritingSanctioned, async (req, res, next) => {
   try {
     const message = typeof req.body.message === 'string' ? req.body.message.trim() : req.body.message;
-    if (!message) {
+    if (!message || typeof message !== 'string' || message.length > APPLY_MESSAGE_MAX_LENGTH) {
       return res.status(400).json({ status: 400, code: 'INVALID_MESSAGE', message: null, data: null });
     }
 
@@ -373,6 +382,9 @@ router.post('/applications/:id/report', async (req, res, next) => {
 router.post('/applications/:id/reject', async (req, res, next) => {
   try {
     const reason = typeof req.body.reason === 'string' && req.body.reason.trim() ? req.body.reason.trim() : null;
+    if (reason && reason.length > REJECT_REASON_MAX_LENGTH) {
+      return res.status(400).json({ status: 400, code: 'INVALID_REASON', message: null, data: null });
+    }
     const decided = await communityService.decideApplication(req.params.id, req.session.userId, 'rejected', reason);
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });

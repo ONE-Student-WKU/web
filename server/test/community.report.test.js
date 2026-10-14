@@ -154,3 +154,36 @@ test('API: 글쓴이가 자기 글에 달린 신청을 신고하는 것은 되�
   // 글쓴이가 이미 서비스 레벨 테스트에서 이 신청을 신고했으므로 API는 중복(409) — 소유권 검사는 통과했다는 뜻
   assert.equal((await post(`/api/community/applications/${applicationId}/report`, authorId, { reason: '글쓴이' })).status, 409);
 });
+
+test('비공개 글(승인 대기·반려)은 신고 대상이 아니다 — 신고로 남의 비공개 글 제목이 내 신고 내역에 드러나면 안 된다', async () => {
+  const hidden = [];
+  for (const status of ['pending', 'rejected']) {
+    const id = await communityService.createPost(authorId, { title: `비공개${status}`, body: '본문', category: 'study', capacity: null });
+    await pool.query('UPDATE community_posts SET status = ? WHERE id = ?', [status, id]);
+    hidden.push(id);
+  }
+  sessionUserId = otherReporterId;
+  for (const id of hidden) {
+    const res = await fetch(`${baseUrl}/api/community/${id}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: '신고' }),
+    });
+    assert.equal(res.status, 404, `글 ${id}`);
+    assert.equal((await reportsOf(otherReporterId, 'post', id)).length, 0);
+  }
+  const mine = await communityService.listMyReports(otherReporterId);
+  assert.ok(mine.every((r) => !String(r.targetTitle).startsWith('비공개')));
+});
+
+test('동시 신청: 같은 사람이 같은 글에 동시에 여러 번 신청해도 대기 중 신청은 1건만 생긴다', async () => {
+  const applicant = await makeStudent('burst');
+  try {
+    const results = await Promise.all(Array.from({ length: 8 }, () => communityService.applyToPost(post2Id, applicant, '동시 신청')));
+    const [rows] = await pool.query('SELECT id FROM community_applications WHERE post_id = ? AND applicant_id = ?', [post2Id, applicant]);
+    assert.equal(rows.length, 1);
+    assert.equal(results.filter((r) => r.ok).length, 1);
+  } finally {
+    await pool.query('DELETE FROM students WHERE id = ?', [applicant]);
+  }
+});

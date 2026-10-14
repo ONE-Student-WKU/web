@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
+const { oneRequestPerUser } = require('../middleware/security');
 const embeddingClient = require('../services/embeddingClient');
 const aiClient = require('../services/aiClient');
 const regulationService = require('../services/regulationService');
@@ -27,6 +28,9 @@ const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatCon
 const HISTORY_LIMIT = 10;
 // 사용자당 1일 채팅 한도(임베딩+Claude 호출 비용 상한 목적). 자정(서버 시각) 리셋.
 const DAILY_MESSAGE_LIMIT = 20;
+// 질문 한 건의 최대 길이. 제한이 없으면 요청 본문 한도(100KB)까지 통째로 임베딩·Claude 호출에 들어가 하루 20번 한도 안에서도
+// 비용과 응답 시간이 크게 불어난다. 실제 질문은 수십~수백 자라 정상 사용에는 걸리지 않는다.
+const MESSAGE_MAX_LENGTH = 2000;
 
 // "비공식 참고용" 문구는 화면에 고정으로 표시하기로 하고 시스템 프롬프트에서도 넣지 말라고
 // 지시했는데, 예전 대화(이 문구가 이미 여러 번 등장한 이력)를 history로 넘기면 모델이 지시보다
@@ -65,13 +69,17 @@ router.get('/conversations/current', async (req, res, next) => {
 // POST /api/chat/messages
 // 질문 임베딩 → regulation_chunks 코사인 유사도 검색 → Claude Haiku 4.5로 답변 생성 → 출처 포함 응답.
 // 관련 청크를 하나도 못 찾으면 AI 호출 없이 바로 안내 문구를 반환한다.
-router.post('/messages', async (req, res, next) => {
+// 하루 한도는 "세고 → 저장"이 따로라 동시 요청으로 넘을 수 있어, 같은 사용자의 질문은 한 번에 하나씩만 처리한다.
+router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
   try {
     const { conversationId, message } = req.body;
     const language = parseLanguage(req.body.language);
 
     if (!conversationId) return res.status(400).json({ status: 400, code: 'REQUIRED_CONVERSATION_ID', message: null, data: null });
     if (!message) return res.status(400).json({ status: 400, code: 'REQUIRED_MESSAGE', message: null, data: null });
+    if (typeof message !== 'string' || message.length > MESSAGE_MAX_LENGTH) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MESSAGE', message: null, data: null });
+    }
 
     const conversation = await regulationService.findConversationById(req.session.userId, conversationId);
     if (!conversation) {

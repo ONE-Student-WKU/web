@@ -62,16 +62,27 @@ async function verifyLoginToken(email, code, purpose = 'login') {
   const token = rows[0];
   if (!token) return { ok: false, reason: 'NOT_FOUND' };
 
-  if (token.attempts >= MAX_ATTEMPTS) {
-    return { ok: false, reason: 'TOO_MANY_ATTEMPTS' };
-  }
+  // 시도 횟수는 "읽고 → 비교하고 → 올리는" 세 단계가 아니라 한 문장으로 먼저 차지한다. 따로 하면 동시에 보낸
+  // 요청들이 전부 "아직 0번 틀렸다"를 읽고 통과해서 상한(MAX_ATTEMPTS)이 없는 것과 같아진다(6자리 코드를 대입 가능).
+  // 상한을 넘었으면 이 UPDATE가 아무 행도 바꾸지 못하고, 코드가 맞든 틀리든 비교하지 않고 거절한다.
+  const [claim] = await pool.query(
+    'UPDATE email_login_tokens SET attempts = attempts + 1 WHERE id = ? AND consumed_at IS NULL AND attempts < ?',
+    [token.id, MAX_ATTEMPTS]
+  );
+  if (claim.affectedRows === 0) return { ok: false, reason: 'TOO_MANY_ATTEMPTS' };
 
-  if (token.code_hash !== hashCode(code)) {
-    await pool.query('UPDATE email_login_tokens SET attempts = attempts + 1 WHERE id = ?', [token.id]);
+  const expected = Buffer.from(token.code_hash, 'hex');
+  const actual = Buffer.from(hashCode(String(code)), 'hex');
+  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
     return { ok: false, reason: 'INVALID_CODE' };
   }
 
-  await pool.query('UPDATE email_login_tokens SET consumed_at = NOW() WHERE id = ?', [token.id]);
+  // 같은 코드를 동시에 두 번 보내도 한쪽만 성공해야 한다(1회용).
+  const [consume] = await pool.query(
+    'UPDATE email_login_tokens SET consumed_at = NOW() WHERE id = ? AND consumed_at IS NULL',
+    [token.id]
+  );
+  if (consume.affectedRows === 0) return { ok: false, reason: 'NOT_FOUND' };
   return { ok: true };
 }
 

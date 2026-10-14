@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { updateProfile } from '../api/chatApi.js';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
-import { IconChevronLeft, IconHome, IconMessageCircle } from '../components/icons.jsx';
+import { IconChevronLeft, IconMessageCircle } from '../components/icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
-import {
-  resolveLayout,
-  isDefaultLayout,
-  TAB_OPTIONS,
-  TAB_SLOTS,
-  TAB_LABEL_KEYS,
-  CARD_LABEL_KEYS,
-  LOCKED_CARDS,
-} from '../utils/homeLayout.js';
+import { resolveLayout, isDefaultLayout, TAB_OPTIONS, TAB_SLOTS, TAB_LABEL_KEYS } from '../utils/homeLayout.js';
 
 /**
  * HomeEdit Page
- * 홈 화면 편집 — 하단 바 3칸(홈·챗봇은 고정)과 홈 카드의 표시·순서를 고른다. 홈 헤더의 편집 버튼으로 들어온다.
- * 저장하면 계정(students.home_layout)에 남아 기기가 바뀌어도 같은 홈이 보인다. 기본 배치와 같으면 null로 보내
- * "편집한 적 없음"과 같게 둔다(나중에 기본값이 바뀌면 따라간다). 메뉴 카드는 모든 기능을 글자로 보여 주는 곳이라 숨길 수 없다.
+ * 홈 화면 편집 — 하단 바를 켜고 끄고, 켰을 때 가운데 챗봇 버튼을 뺀 4칸(홈 포함)을 고른다. 홈 헤더의 편집 버튼으로 들어온다.
+ * 하단 바를 끄면 챗봇 버튼까지 모든 화면에서 사라진다(챗봇을 쓰지 않는 사용자를 위한 선택 — 다시 켜면 돌아온다).
+ * 저장하면 계정(students.home_layout)에 남아 기기가 바뀌어도 같다. 기본 배치와 같으면 null로 보내 "편집한 적 없음"과 같게 둔다.
+ * 홈 카드(진행률·부족 요건·메뉴)는 고정이라 여기서 다루지 않는다.
  *
  * Props:
  * - user: 현재 학생(homeLayout)
@@ -32,25 +25,25 @@ function HomeEdit({ user, onCancel, onSaved }) {
 
   const tabsFull = draft.tabs.length >= TAB_SLOTS;
   const available = TAB_OPTIONS.filter((v) => !draft.tabs.includes(v));
+  // 하단 바를 켰으면 4칸이 다 차야 저장한다. 끈 상태에서는 칸 편집이 보이지 않으니, 덜 찬 칸은 저장할 때 기본 칸으로 채운다.
+  const canSave = !draft.showTabBar || draft.tabs.length === TAB_SLOTS;
 
-  const move = (list, index, dir) => {
-    const next = [...list];
+  const move = (index, dir) => {
+    const next = [...draft.tabs];
     const target = index + dir;
-    if (target < 0 || target >= next.length) return list;
+    if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    return next;
+    setDraft((d) => ({ ...d, tabs: next }));
   };
   const setTabs = (tabs) => setDraft((d) => ({ ...d, tabs }));
-  const setCards = (cards) => setDraft((d) => ({ ...d, cards: { ...d.cards, ...cards } }));
-  const toggleCard = (id) =>
-    setCards({ hidden: draft.cards.hidden.includes(id) ? draft.cards.hidden.filter((c) => c !== id) : [...draft.cards.hidden, id] });
 
   const handleSave = async () => {
-    if (draft.tabs.length !== TAB_SLOTS) return;
+    if (!canSave) return;
     setSaving(true);
     setError(false);
     try {
-      onSaved(await updateProfile({ homeLayout: isDefaultLayout(draft) ? null : draft }));
+      const layout = draft.tabs.length === TAB_SLOTS ? draft : { ...draft, tabs: resolveLayout(null).tabs };
+      onSaved(await updateProfile({ homeLayout: isDefaultLayout(layout) ? null : layout }));
     } catch {
       setError(true);
     } finally {
@@ -68,6 +61,7 @@ function HomeEdit({ user, onCancel, onSaved }) {
       </span>
     );
   };
+  const tabNames = draft.tabs.map((v) => t(TAB_LABEL_KEYS[v]));
 
   return (
     <div className="courses-page">
@@ -82,134 +76,100 @@ function HomeEdit({ user, onCancel, onSaved }) {
 
       <div className="courses-body home-edit-body">
         <section className="home-card">
-          <p className="home-card-label">{t('homeEdit.tabs.title')}</p>
-          <p className="settings-field-hint">{t('homeEdit.tabs.sub', { count: draft.tabs.length })}</p>
-          <div
-            className="bottom-tab-bar home-edit-preview"
-            role="img"
-            aria-label={t('homeEdit.preview', { tabs: draft.tabs.map((v) => t(TAB_LABEL_KEYS[v])).join(', ') })}
-          >
-            <span className="bottom-tab">
-              <IconHome size={21} />
+          <label className="home-edit-toggle">
+            <span>
+              <span className="home-card-label">{t('homeEdit.showTabBar')}</span>
+              <span className="settings-field-hint">{t(draft.showTabBar ? 'homeEdit.showTabBar.on' : 'homeEdit.showTabBar.off')}</span>
             </span>
-            {slot(draft.tabs[0], 's0')}
-            <span className="bottom-tab-chat">
-              <IconMessageCircle size={20} />
-            </span>
-            {slot(draft.tabs[1], 's1')}
-            {slot(draft.tabs[2], 's2')}
-          </div>
-
-          <p className="home-edit-group-label">{t('homeEdit.tabs.selected')}</p>
-          <ul className="home-edit-list">
-            {draft.tabs.map((view, i) => {
-              const Icon = TAB_ICONS[view];
-              const name = t(TAB_LABEL_KEYS[view]);
-              return (
-                <li key={view} className="home-edit-row">
-                  <span className="home-edit-row-name">
-                    <Icon size={17} />
-                    {name}
-                  </span>
-                  <span className="home-edit-row-actions">
-                    <button type="button" onClick={() => setTabs(move(draft.tabs, i, -1))} disabled={i === 0} aria-label={t('homeEdit.moveUp', { name })}>
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTabs(move(draft.tabs, i, 1))}
-                      disabled={i === draft.tabs.length - 1}
-                      aria-label={t('homeEdit.moveDown', { name })}
-                    >
-                      ↓
-                    </button>
-                    <button type="button" onClick={() => setTabs(draft.tabs.filter((v) => v !== view))} aria-label={t('homeEdit.remove', { name })}>
-                      ✕
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-
-          {available.length > 0 && (
-            <>
-              <p className="home-edit-group-label">{t('homeEdit.tabs.available')}</p>
-              <ul className="home-edit-list">
-                {available.map((view) => {
-                  const Icon = TAB_ICONS[view];
-                  const name = t(TAB_LABEL_KEYS[view]);
-                  return (
-                    <li key={view} className="home-edit-row">
-                      <span className="home-edit-row-name">
-                        <Icon size={17} />
-                        {name}
-                      </span>
-                      <button
-                        type="button"
-                        className="settings-theme-btn"
-                        onClick={() => setTabs([...draft.tabs, view])}
-                        disabled={tabsFull}
-                        aria-label={t('homeEdit.add', { name })}
-                      >
-                        {t('homeEdit.addShort')}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              {tabsFull && <p className="settings-field-hint">{t('homeEdit.tabs.full')}</p>}
-            </>
-          )}
+            <input
+              type="checkbox"
+              role="switch"
+              checked={draft.showTabBar}
+              onChange={(e) => setDraft((d) => ({ ...d, showTabBar: e.target.checked }))}
+            />
+          </label>
         </section>
 
-        <section className="home-card">
-          <p className="home-card-label">{t('homeEdit.cards.title')}</p>
-          <p className="settings-field-hint">{t('homeEdit.cards.sub')}</p>
-          <ul className="home-edit-list">
-            {draft.cards.order.map((id, i) => {
-              const name = t(CARD_LABEL_KEYS[id]);
-              const locked = LOCKED_CARDS.includes(id);
-              return (
-                <li key={id} className="home-edit-row">
-                  {locked ? (
+        {draft.showTabBar && (
+          <section className="home-card">
+            <p className="home-card-label">{t('homeEdit.tabs.title')}</p>
+            <p className="settings-field-hint">{t('homeEdit.tabs.sub', { count: draft.tabs.length })}</p>
+            <div
+              className="bottom-tab-bar home-edit-preview"
+              role="img"
+              aria-label={t('homeEdit.preview', { left: tabNames.slice(0, 2).join(', '), right: tabNames.slice(2).join(', ') })}
+            >
+              {slot(draft.tabs[0], 's0')}
+              {slot(draft.tabs[1], 's1')}
+              <span className="bottom-tab-chat">
+                <IconMessageCircle size={20} />
+              </span>
+              {slot(draft.tabs[2], 's2')}
+              {slot(draft.tabs[3], 's3')}
+            </div>
+
+            <p className="home-edit-group-label">{t('homeEdit.tabs.selected')}</p>
+            <ul className="home-edit-list">
+              {draft.tabs.map((view, i) => {
+                const Icon = TAB_ICONS[view];
+                const name = t(TAB_LABEL_KEYS[view]);
+                return (
+                  <li key={view} className="home-edit-row">
                     <span className="home-edit-row-name">
+                      <Icon size={17} />
                       {name}
-                      <span className="home-edit-locked">{t('homeEdit.cards.always')}</span>
                     </span>
-                  ) : (
-                    <label className="home-edit-row-name">
-                      <input type="checkbox" checked={!draft.cards.hidden.includes(id)} onChange={() => toggleCard(id)} />
-                      {name}
-                    </label>
-                  )}
-                  <span className="home-edit-row-actions">
-                    <button
-                      type="button"
-                      onClick={() => setCards({ order: move(draft.cards.order, i, -1) })}
-                      disabled={i === 0}
-                      aria-label={t('homeEdit.moveUp', { name })}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCards({ order: move(draft.cards.order, i, 1) })}
-                      disabled={i === draft.cards.order.length - 1}
-                      aria-label={t('homeEdit.moveDown', { name })}
-                    >
-                      ↓
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                    <span className="home-edit-row-actions">
+                      <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('homeEdit.moveUp', { name })}>
+                        ↑
+                      </button>
+                      <button type="button" onClick={() => move(i, 1)} disabled={i === draft.tabs.length - 1} aria-label={t('homeEdit.moveDown', { name })}>
+                        ↓
+                      </button>
+                      <button type="button" onClick={() => setTabs(draft.tabs.filter((v) => v !== view))} aria-label={t('homeEdit.remove', { name })}>
+                        ✕
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {available.length > 0 && (
+              <>
+                <p className="home-edit-group-label">{t('homeEdit.tabs.available')}</p>
+                <ul className="home-edit-list">
+                  {available.map((view) => {
+                    const Icon = TAB_ICONS[view];
+                    const name = t(TAB_LABEL_KEYS[view]);
+                    return (
+                      <li key={view} className="home-edit-row">
+                        <span className="home-edit-row-name">
+                          <Icon size={17} />
+                          {name}
+                        </span>
+                        <button
+                          type="button"
+                          className="settings-theme-btn"
+                          onClick={() => setTabs([...draft.tabs, view])}
+                          disabled={tabsFull}
+                          aria-label={t('homeEdit.add', { name })}
+                        >
+                          {t('homeEdit.addShort')}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {tabsFull && <p className="settings-field-hint">{t('homeEdit.tabs.full')}</p>}
+              </>
+            )}
+          </section>
+        )}
 
         {error && <p className="home-error">{t('homeEdit.err')}</p>}
 
-        <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving || draft.tabs.length !== TAB_SLOTS}>
+        <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving || !canSave}>
           {saving ? t('homeEdit.saving') : t('homeEdit.save')}
         </button>
         <button type="button" className="onb-skip-link" onClick={() => setDraft(resolveLayout(null))} disabled={saving}>

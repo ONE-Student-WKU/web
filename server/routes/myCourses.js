@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const courseService = require('../services/courseService');
+const { isIntInRange } = require('../services/inputValidation');
 const {
   parseCourseListPdf,
   parseFullTranscriptText,
@@ -52,6 +53,11 @@ const pdfUpload = multer({
  */
 
 router.use(requireAuth);
+
+// 연도/학기는 SQL 조건과 정렬 기준으로 쓰이는 값이라 숫자 하나여야 한다(배열·객체가 오면 mysql2가 SQL 조각으로 펼친다).
+// 학기 코드는 1=1학기, 2=여름, 3=2학기, 4=겨울(db/schema.sql student_courses.semester).
+const isValidYear = (v) => isIntInRange(v, 1990, 2100);
+const isValidSemesterCode = (v) => isIntInRange(v, 1, 4);
 
 // GET /api/my-courses/semesters
 // 성적 입력 여부와 무관하게 수강 기록이 있는 학기 전부 반환 (화면의 학기 탭 목록용).
@@ -125,6 +131,11 @@ router.post('/', async (req, res, next) => {
 
     if (!year) return res.status(400).json({ status: 400, code: 'REQUIRED_YEAR', message: null, data: null });
     if (!semester) return res.status(400).json({ status: 400, code: 'REQUIRED_SEMESTER', message: null, data: null });
+    if (!isValidYear(year)) return res.status(400).json({ status: 400, code: 'INVALID_YEAR', message: null, data: null });
+    if (!isValidSemesterCode(semester)) return res.status(400).json({ status: 400, code: 'INVALID_SEMESTER', message: null, data: null });
+    if (courseId !== undefined && courseId !== null && !isIntInRange(courseId, 1, 2147483647)) {
+      return res.status(404).json({ status: 404, code: 'COURSE_NOT_FOUND', message: null, data: null });
+    }
 
     if (courseId) {
       const course = await courseService.findCourseById(courseId);
@@ -133,6 +144,9 @@ router.post('/', async (req, res, next) => {
       }
     } else {
       if (!name) return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
+      if (typeof name !== 'string' || name.length > 100) {
+        return res.status(400).json({ status: 400, code: 'ROW_NAME_TOO_LONG', message: null, data: { name: typeof name === 'string' ? name : null } });
+      }
       // credits는 0(졸업논문 등 P/F, 졸업학점에 합산 안 되는 과목)도 유효한 값이라 `!credits`로
       // 검사하면 안 된다 — 0이 falsy라 "입력 안 함"으로 오판해 졸업논문을 아예 등록할 수 없는
       // 문제가 있었다(실사용 확인). undefined/null/빈 문자열만 "안 보냄"으로 취급한다.
@@ -142,7 +156,7 @@ router.post('/', async (req, res, next) => {
       // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9). 이 범위를
       // 벗어나면 DB INSERT 단계에서 원인 불명 500으로 터져서 사용자가 이유를 알 수 없었다
       // (실사용 확인) — /import/confirm과 동일한 검증을 여기도 추가.
-      if (!(credits >= 0 && credits <= 9.9)) {
+      if (typeof credits === 'object' || !(credits >= 0 && credits <= 9.9)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: null });
       }
       if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
@@ -219,7 +233,9 @@ router.post('/import/pdf', pdfImportLimiter, pdfUpload.single('file'), async (re
     return res.status(200).json({ status: 200, code: 'PDF_IMPORT_PARSE_SUCCESS', message: null, data: result });
   } catch (err) {
     if (err instanceof PdfImportLimitExceededError) return res.status(429).json(PDF_IMPORT_LIMIT_RESPONSE);
-    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
+    // 파서·내부 오류 문구(라이브러리 메시지, 경로 등)는 응답에 싣지 않고 서버 로그로만 남긴다 — 화면은 code만 보고 안내한다.
+    console.error('[my-courses import] parse failed:', err && err.message);
+    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: null, data: null });
   }
 });
 
@@ -284,7 +300,9 @@ router.post('/import/text', pdfImportLimiter, async (req, res, next) => {
     });
   } catch (err) {
     if (err instanceof PdfImportLimitExceededError) return res.status(429).json(PDF_IMPORT_LIMIT_RESPONSE);
-    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: err.message, data: null });
+    // 파서·내부 오류 문구(라이브러리 메시지, 경로 등)는 응답에 싣지 않고 서버 로그로만 남긴다 — 화면은 code만 보고 안내한다.
+    console.error('[my-courses import] parse failed:', err && err.message);
+    return res.status(422).json({ status: 422, code: 'PDF_PARSE_FAILED', message: null, data: null });
   }
 });
 
@@ -299,6 +317,10 @@ router.post('/import/confirm', async (req, res, next) => {
     if (!Array.isArray(rows) || rows.length === 0) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_ROWS', message: null, data: null });
     }
+    // 전체성적조회 한 번에 나오는 과목 수보다 훨씬 넉넉한 상한 — 행마다 INSERT가 나가므로 상한이 없으면 큰 배열 하나로 DB를 오래 붙잡는다.
+    if (rows.length > 500 || rows.some((row) => !row || typeof row !== 'object')) {
+      return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
+    }
 
     for (const row of rows) {
       // credits는 0(졸업논문 등 P/F 과목)도 유효한 값이라 다른 필드처럼 `!row.credits`로 한
@@ -309,6 +331,9 @@ router.post('/import/confirm', async (req, res, next) => {
       }
       if (!courseService.VALID_CATEGORIES.includes(row.category)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+      }
+      if (typeof row.name !== 'string' || !isValidYear(row.year) || !isValidSemesterCode(row.semester) || typeof row.credits === 'object') {
+        return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
       }
       if (row.letterGrade !== undefined && row.letterGrade !== null && !courseService.LETTER_GRADES.includes(row.letterGrade)) {
         return res.status(400).json({ status: 400, code: 'INVALID_LETTER_GRADE', message: null, data: null });
@@ -346,6 +371,14 @@ router.patch('/:id', async (req, res, next) => {
     // 외엔 아무 값도 저장할 수 없게 된다.
     if (letterGrade !== undefined && letterGrade !== null && !courseService.LETTER_GRADES.includes(letterGrade)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LETTER_GRADE', message: null, data: null });
+    }
+
+    // 세부 점수는 비우기(null)이거나 0~999.99 사이 숫자여야 한다(DECIMAL(5,2)). 객체/배열은 SQL 조각으로 펼쳐지므로 거절한다.
+    for (const key of ['midterm', 'final', 'attendanceScore', 'assignment', 'etc']) {
+      const v = req.body[key];
+      if (v !== undefined && v !== null && !(typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 999.99)) {
+        return res.status(400).json({ status: 400, code: 'INVALID_SCORE', message: null, data: null });
+      }
     }
 
     const existing = await courseService.findMyCourseById(req.session.userId, req.params.id);
