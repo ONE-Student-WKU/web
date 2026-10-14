@@ -66,6 +66,8 @@ export default {
   'home.creditsUnit': ' credits',
   'home.shortfall': 'Missing requirements',
   'home.shortfallCheck': 'See the Graduation check screen for details.',
+  'home.needOnboarding': 'Enter your department and admission year to see your credit progress and missing requirements.',
+  'home.chooseDepartment': 'Choose your department',
   'home.shortfallSentence': 'Still missing: {items}.',
   'home.allMet': 'All requirements met!',
   'home.menu': 'Menu',

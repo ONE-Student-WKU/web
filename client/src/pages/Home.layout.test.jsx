@@ -49,3 +49,30 @@ describe('Home — 홈 화면 편집 진입', () => {
     expect(screen.queryByText('하단 바를 내게 맞게 바꾸거나 끌 수 있어요')).not.toBeInTheDocument();
   });
 });
+
+describe('Home — 학과를 아직 고르지 않은 계정(나중에 선택하기)', () => {
+  const onboardingRequired = () => Object.assign(new Error('ONBOARDING_REQUIRED'), { code: 'ONBOARDING_REQUIRED', status: 400 });
+
+  it('진단이 ONBOARDING_REQUIRED로 거절되면 로딩이 끝나고 학과 선택 안내가 나온다(예전엔 스켈레톤이 끝나지 않았다)', async () => {
+    api.getGraduationStatus.mockRejectedValue(onboardingRequired());
+    const onOpenOnboarding = vi.fn();
+    const { container } = render(<Home user={{ ...USER, department: null, admissionYear: null }} onOpenOnboarding={onOpenOnboarding} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.')).toBeInTheDocument();
+    expect(container.querySelector('.home-body .skeleton')).toBeNull();
+    expect(screen.getByText('학과 정보 없음')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '학과 선택하기' }));
+    expect(onOpenOnboarding).toHaveBeenCalledTimes(1);
+  });
+
+  it('캐시에 남은 이전 값(다른 계정 등)은 진단이 거절되면 지우고 보여 주지 않는다', async () => {
+    const { unmount } = renderHome(); // 정상 계정으로 한 번 받아 캐시가 채워진 상태
+    expect(await screen.findByText('/ 130학점')).toBeInTheDocument();
+    unmount();
+
+    api.getGraduationStatus.mockRejectedValue(onboardingRequired());
+    renderHome();
+    expect(await screen.findByText('학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.')).toBeInTheDocument();
+    expect(screen.queryByText('/ 130학점')).toBeNull();
+    expect(sessionStorage.getItem('wku_cache_home_status')).toBeNull();
+  });
+});

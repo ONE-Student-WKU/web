@@ -66,6 +66,8 @@ export default {
   'home.creditsUnit': '학점',
   'home.shortfall': '부족 요건',
   'home.shortfallCheck': '졸업요건 진단에서 확인해보세요.',
+  'home.needOnboarding': '학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.',
+  'home.chooseDepartment': '학과 선택하기',
   'home.allMet': '모든 요건을 충족했어요!',
   'home.menu': '메뉴',
   'homeEdit.open': '홈 화면 편집',
