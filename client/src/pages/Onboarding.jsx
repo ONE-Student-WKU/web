@@ -536,6 +536,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             {describeSuccessors(selectedDepartment, t) && (
               <p className="onb-q-sub onb-q-sub-note">{describeSuccessors(selectedDepartment, t)}</p>
             )}
+            {/* 개편 전 학과: 폐지·통합돼도 소속변경을 하지 않았으면 그 학과 소속이 유지된다(학칙 부칙·학교 소속변경 안내, 교육혁신과 답변 A-3).
+                학생에게는 "학적" 같은 행정 용어 대신 풀어 쓴다. */}
+            {selectedDepartment?.former && <p className="onb-q-sub onb-q-sub-note">{t('onb.year.formerHint')}</p>}
             <div className="onb-field-group">
               <label className="onb-field-label">{t('onb.year.label')}</label>
               <select
