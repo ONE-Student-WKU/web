@@ -128,6 +128,38 @@ describe('DepartmentPicker', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
+  it('↑↓로 가리키는 결과를 옮기고 엔터로 그 학과를 고른다(처음엔 맨 위, 끝에서는 더 안 움직임)', async () => {
+    const onSelectFromSearch = vi.fn();
+    renderPicker({ onSelectFromSearch });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.type(input, '경영'); // 결과: 경영계열, 경영학부
+    const card = (name) => within(dialog).getByRole('button', { name: new RegExp(`^${name}`) });
+    expect(card('경영계열')).toHaveClass('active');
+
+    await userEvent.keyboard('{ArrowUp}'); // 맨 위에서 위로 — 그대로
+    expect(card('경영계열')).toHaveClass('active');
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}'); // 맨 아래에서 아래로 — 그대로
+    expect(card('경영학부')).toHaveClass('active');
+    expect(card('경영계열')).not.toHaveClass('active');
+    expect(input).toHaveValue('경영'); // 방향키가 입력 칸 글자를 건드리지 않는다
+
+    await userEvent.keyboard('{Enter}');
+    expect(onSelectFromSearch).toHaveBeenCalledTimes(1);
+    expect(onSelectFromSearch).toHaveBeenCalledWith(expect.objectContaining({ id: 4, name: '경영학부' }));
+  });
+
+  it('검색어를 바꾸면 가리키는 결과가 다시 맨 위로 돌아간다', async () => {
+    renderPicker();
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.type(input, '경영');
+    await userEvent.keyboard('{ArrowDown}');
+    expect(within(dialog).getByRole('button', { name: /^경영학부/ })).toHaveClass('active');
+    await userEvent.type(input, '계열');
+    expect(within(dialog).getByRole('button', { name: /^경영계열/ })).toHaveClass('active');
+  });
+
   it('한글 조합을 끝내는 엔터(조합 중)는 건너뛰어 두 번 선택되지 않는다', async () => {
     const onSelectFromSearch = vi.fn();
     renderPicker({ onSelectFromSearch });

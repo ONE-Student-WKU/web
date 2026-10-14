@@ -3155,7 +3155,9 @@ body {
   width: 100%;
 }
 
-.onb-option-card:hover:not(:disabled) { background: var(--color-accent-bg); }
+/* .active: 학과 검색 결과에서 ↑↓로 가리킨 항목 — 마우스를 올린 것과 같은 모양(엔터로 고를 대상) */
+.onb-option-card:hover:not(:disabled),
+.onb-option-card.active { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
 .onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
@@ -3290,10 +3292,10 @@ select.onb-select {
   bottom: 0;
 }
 
-/* 목록 카드 위에 떠 있어 경계가 흐려 보이므로 경계선을 둔다. 버튼 색(강조색)과 같으면 활성 상태("다음"·"확인")에서 선이 안 보여서
-   강조색을 어둡게 섞은 색을 쓴다 — 활성(진한 파랑)·비활성(연한 파랑) 모두에서 보인다. */
+/* 목록 카드 위에 떠 있어 경계가 흐려 보이므로 본문 글자색 경계선을 둔다 — 밝은 테마에선 검은색, 어두운 테마에선 밝은색이라
+   어느 테마에서도 버튼 가장자리가 보인다. */
 .onb-float-action .auth-submit-btn {
-  border: 1.5px solid color-mix(in srgb, var(--color-accent) 65%, #000);
+  border: 1.5px solid var(--color-text-primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSearch } from './icons.jsx';
 import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
@@ -20,11 +20,21 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - onSelect: (department) => void
  * - onSelectFromSearch: (department) => void (선택) — 검색 결과에서 고를 때. 없으면 onSelect. 온보딩은 이걸로 고른 뒤 바로 다음 질문으로 간다.
  */
-function DepartmentCard({ department, selected, onSelect, showCollege }) {
+function DepartmentCard({ department, selected, active = false, onSelect, showCollege }) {
   const { t } = useI18n();
   const range = getYearRange(department, 'GENERAL');
+  const ref = useRef(null);
+  // 검색 결과를 ↑↓로 옮길 때 가리킨 학과가 화면 밖이면 보이게 스크롤한다.
+  useEffect(() => {
+    if (active) ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [active]);
   return (
-    <button type="button" className={'onb-option-card' + (selected ? ' selected' : '')} onClick={() => onSelect(department)}>
+    <button
+      ref={ref}
+      type="button"
+      className={'onb-option-card' + (selected ? ' selected' : '') + (active ? ' active' : '')}
+      onClick={() => onSelect(department)}
+    >
       <span className="onb-option-title">{department.name}</span>
       <span className="onb-option-caption">
         {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
@@ -61,6 +71,9 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
 
   const trimmed = query.trim();
   const results = useMemo(() => (trimmed ? searchDepartments(departments, trimmed) : []), [departments, trimmed]);
+  // ↑↓로 가리키는 검색 결과. 검색어가 바뀌면 다시 맨 위(엔터만 치면 맨 위가 골라진다).
+  const [active, setActive] = useState({ query: '', index: 0 });
+  const activeIndex = active.query === trimmed ? active.index : 0;
 
   const dismissSearch = () => {
     deptSearch.reset();
@@ -73,10 +86,20 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
   };
 
-  // 엔터: 맨 위 결과를 바로 고른다. 입력 칸의 지금 값으로 다시 찾는다 — 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있다.
-  const handleSubmitSearch = (value) => {
-    const top = searchDepartments(departments, value.trim())[0];
-    if (top) handleSelectFromSearch(top);
+  // ↑↓: 가리키는 결과를 옮긴다. 엔터(모바일 "검색" 키): 가리킨 결과를 고른다.
+  const handleSearchKeyDown = (e) => {
+    // 한글 조합을 끝내는 키는 건너뛴다 — 브라우저에 따라 엔터가 조합 확정용으로 한 번 더 들어와 두 번 고르게 된다.
+    if (e.nativeEvent.isComposing) return;
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && results.length > 0) {
+      e.preventDefault(); // 입력 칸 커서가 맨 앞/뒤로 튀지 않게
+      const next = activeIndex + (e.key === 'ArrowDown' ? 1 : -1);
+      setActive({ query: trimmed, index: Math.max(0, Math.min(results.length - 1, next)) });
+    } else if (e.key === 'Enter') {
+      // 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있어, 그때는 입력 칸의 지금 값으로 다시 찾아 맨 위를 고른다.
+      const value = e.currentTarget.value.trim();
+      const pick = value === trimmed ? results[activeIndex] : searchDepartments(departments, value)[0];
+      if (pick) handleSelectFromSearch(pick);
+    }
   };
 
   const renderSearchResults = () => {
@@ -86,8 +109,8 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
       <>
         <p className="search-screen-count">{t('dept.search.count', { count: results.length })}</p>
         <div className="onb-option-list">
-          {results.map((d) => (
-            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={handleSelectFromSearch} showCollege />
+          {results.map((d, i) => (
+            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} active={i === activeIndex} onSelect={handleSelectFromSearch} showCollege />
           ))}
         </div>
       </>
@@ -153,7 +176,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectFromSearc
         <SearchScreen
           search={deptSearch}
           onClose={dismissSearch}
-          onSubmit={handleSubmitSearch}
+          onKeyDown={handleSearchKeyDown}
           placeholder={t('dept.search.placeholder')}
           ariaLabel={t('dept.search.aria')}
         >
