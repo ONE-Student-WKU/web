@@ -468,6 +468,7 @@ export default {
     "Your track is finalized when you move up to Year 2. Even if you haven't formally chosen yet, pick the one you prefer now.",
   'onb.type.title': 'What type of student are you?',
   'onb.type.sub': 'The minimum major credits can differ depending on how you were admitted.',
+  'onb.year.formerHint': "Even if your department was renamed or merged into another department or division, choose this one unless you applied to change your affiliation. Your graduation requirements will be based on this department.",
   'onb.year.title': 'What is your admission year?',
   'onb.year.sub': '{dept}: this course structure applies to the {range} cohorts only.',
   'onb.year.label': 'Admission year',

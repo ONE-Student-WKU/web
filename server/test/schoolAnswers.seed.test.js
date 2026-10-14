@@ -28,6 +28,14 @@ test('A-4: 개편된 2026 학과·계열의 졸업인증제 그룹이 확정 값
     }
   }
   assert.match(cert2026('디자인융합계열')[0].description, /학교에 확인/);
+  // 디자인융합계열은 가·나 그룹을 단정하지 않고 두 그룹의 기본영역 과목을 모두 인정한다(D-66). 2020~2025학번 행도 같다.
+  const design = SEED.filter((r) => r.departmentName === '디자인융합계열' && r.category === '졸업인증제');
+  assert.equal(design.length, 2);
+  for (const row of design) {
+    assert.match(row.description, /학교에 확인/);
+    assert.deepEqual([...row.requiredCourses].sort(), ['기업연계프로젝트', '사회봉사', '전공현장실습', '종합설계', '캡스톤디자인'].sort());
+    assert.equal(row.minCourseCount, 1);
+  }
 });
 
 test('A-6: 간호학과는 졸업인증제 "다" 그룹이라 2026학번에도 기본영역 행이 없다', () => {
