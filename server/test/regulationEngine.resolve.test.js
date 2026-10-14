@@ -299,10 +299,11 @@ test('졸업요건(파트 1 evaluate) 결과에 데이터 등급을 칸별로 �
   assert.equal(req.value.totalConfidence, 'CONFIRMED');
   assert.deepEqual(req.value.categories.map((c) => [c.category, c.confidence]), [['교양필수', 'ESTIMATED'], ['교양선택', 'ESTIMATED'], ['전공필수', 'CONFIRMED'], ['전공선택', 'CONFIRMED'], ['일반선택', 'CONFIRMED']]);
 
-  // 2026-10-12: 사범대 2024 보류(#260-edu-2024)는 2026 책자 학번별 표로 해소돼 빠졌다. 남아 있는 보류(중등특수교육과 2025·2026 전공·자유선택)로 검사한다.
-  const edu = { id: 12, name: '중등특수교육과' };
-  const rows2025 = rows.map((r) => ({ ...r, minAdmissionYear: 2025, maxAdmissionYear: 2025 }));
-  const held = resolveApplicableRules(input({ admissionYear: 2025, departmentId: 12 }), base({ department: edu, requirements: { ...reqData(edu), rows: rows2025 } }));
+  // 2026-10-12: 사범대 2024 보류(#260-edu-2024)는 2026 책자 학번별 표로, 2026-10-14: 중등특수교육과 보류(#260-special-edu)는 학칙시행규칙으로 해소돼 빠졌다.
+  // 남아 있는 보류(건축학과 2024·2025 전공 학점, A-5-architecture)로 검사한다.
+  const edu = { id: 12, name: '건축학과' };
+  const rows2025 = rows.map((r) => ({ ...r, minAdmissionYear: 2024, maxAdmissionYear: 2024 }));
+  const held = resolveApplicableRules(input({ admissionYear: 2024, departmentId: 12 }), base({ department: edu, requirements: { ...reqData(edu), rows: rows2025 } }));
   const heldReq = held.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   assert.equal(heldReq.confidence, 'ESTIMATED');
   assert.ok(heldReq.flags.some((f) => f.code === 'DATA_PENDING_HOLD'));

@@ -45,13 +45,15 @@ const UNVERIFIED_REQUIREMENT_PARTS = Object.freeze({
 // #260-edu-2024(사범대 2024 자유선택 32 vs 34, N-6), #260-cse-liberal(컴소공 2017~2021 교양 분할). 네 건 모두 "그 해 책자 vs 시드"의 다툼이었는데,
 // 2025학번 이하의 교양·일반선택은 그 해 책자가 아니라 2026 책자의 학번별 이수기준표가 정한다(교육혁신과 면담, LATEST_BOOKLET_YEAR 주석).
 // 시드를 그 표로 정렬했으므로(scripts/audit/applyLatestBookletCohortTables.js) 옛 책자의 산술 불일치는 더 이상 이 값의 근거가 아니다.
+// 2026-10-14 해소(목록에서 뺌): #260-special-edu(중등특수교육과 2025·2026 — 학칙시행규칙 전공 82(2025-08-29. 개정)와 졸업 140으로 자유 21 확정,
+// 시드도 82·21, docs/school-inquiry/규정사이트_확인결과_2026-10-06.md), #260-2026-free의 국방기술학과(전공 66·일반선택 27)·한의학과(본과 교양 없이
+// 전공 160) — 교육혁신과 서면 답변 A-5(2026-10-14)와 시드가 같다. 계열 6곳은 이수유형(학칙시행규칙 제7조)을 아직 반영하지 않은 근사치라(#242) 남긴다.
 const PENDING_HOLDS = Object.freeze([
   { id: '#260-sw-2021', years: [2021], departmentNames: ['SW융합학과'], area: 'REQUIREMENTS', note: 'SW융합학과 교양·전공·자유 학점 구조(SW연계 학점 포함) 보류 — 2026 책자 학번별 전공표가 이 학과를 지목하지 않음' },
   { id: 'A-5-architecture', years: [2024, 2025], departmentNames: ['건축학과'], area: 'REQUIREMENTS', note: '건축학과 2024·2025학번 전공 학점(121·123)은 책자에 숫자가 없어 졸업학점에서 교양을 뺀 추정값 — 학과 내규라 교육혁신과도 바로 알 수 없다고 답함(서면 답변 A-5, 2026-10-14). 건축학과 확인 필요' },
-  { id: '#260-special-edu', years: [2025, 2026], departmentNames: ['중등특수교육과'], area: 'REQUIREMENTS', note: '중등특수교육과 전공·자유선택 보류' },
   {
     id: '#260-2026-free', years: [2026], area: 'REQUIREMENTS',
-    departmentNames: ['의생명공학계열', '그린바이오계열', '스마트농업계열', '푸드테크계열', '디자인융합계열', '창의문화융합계열', '국방기술학과', '한의학과'],
+    departmentNames: ['의생명공학계열', '그린바이오계열', '스마트농업계열', '푸드테크계열', '디자인융합계열', '창의문화융합계열'],
     note: '2026 자유선택·교양 책자 vs 도구 값 불일치(#260 [2026] 1)',
   },
   { id: 'N-1', years: [2022], departmentNames: ['탄소융합공학과'], area: 'MAJOR_COURSES', note: '탄소융합공학과 2022 과목 누락·이름 차이(도구 기준 확인 필요)' },
