@@ -5,6 +5,7 @@ const { parseLeavePeriods, totalLeaveSemesters, validateLeavePeriods } = require
 const { parseHomeLayout } = require('./homeLayout');
 const { todayKst } = require('./regulationEngine/context');
 const { currentStandingOf } = require('./studentProgress');
+const { isTeacherCollegeDepartment, parseTeachingCourse } = require('./teachingCourse');
 
 /**
  * server/services/studentService.js
@@ -63,6 +64,10 @@ function serializeStudent(student) {
     majorChangeSemester: student.major_change_semester,
     // 편입생만 값이 있다(편입한 학년 2~4). 편입 연도는 admissionYear + transferGrade − 1. null이면 옛 방식으로 입력한 편입생이다.
     transferGrade: student.transfer_grade,
+    // 편입생만 값이 있다: 편입할 때 인정받은 전적대학 학점. null이면 입력하지 않아 학교 표의 인정학점으로 가정한다.
+    transferRecognizedCredits: student.transfer_recognized_credits ?? null,
+    // 교직과정 이수 여부. true = 이수 중, false = 이수 안 함(사범대 교직 포기 포함), null = 답하지 않음(server/services/teachingCourse.js).
+    teachingCourse: parseTeachingCourse(student.teaching_course),
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
@@ -175,6 +180,21 @@ async function listDepartments() {
      WHERE dl.from_department_id IS NOT NULL AND dl.to_department_id <> dl.from_department_id
      ORDER BY dl.effective_year, td.name`
   );
+  // 교직기본이수 행의 학번 범위를 학과별로 합친다(min/max가 null이면 그쪽으로 열린 범위).
+  const [teachingRows] = await pool.query(
+    "SELECT department_id, min_admission_year, max_admission_year FROM curriculum_requirements WHERE category = '교직기본이수' AND enrollment_type IS NULL"
+  );
+  const teachingYearsByDept = new Map();
+  for (const t of teachingRows) {
+    const cur = teachingYearsByDept.get(t.department_id);
+    if (!cur) {
+      teachingYearsByDept.set(t.department_id, { min: t.min_admission_year, max: t.max_admission_year });
+    } else {
+      cur.min = cur.min === null || t.min_admission_year === null ? null : Math.min(cur.min, t.min_admission_year);
+      cur.max = cur.max === null || t.max_admission_year === null ? null : Math.max(cur.max, t.max_admission_year);
+    }
+  }
+
   const successorsByFrom = new Map();
   for (const e of lineageRows) {
     const list = successorsByFrom.get(e.from_id) || [];
@@ -192,6 +212,9 @@ async function listDepartments() {
     coreMinAdmissionYear: r.core_min_admission_year,
     coreMaxAdmissionYear: r.core_max_admission_year,
     successors: successorsByFrom.get(r.id) || [],
+    // 교직과정: 교직기본이수 요건 행이 있는 학번 범위(없으면 null — 교직 질문을 보이지 않는다). 사범대학이면 "이수 중"을 미리 고른다.
+    teachingCourseYears: teachingYearsByDept.get(r.id) || null,
+    teacherCollege: isTeacherCollegeDepartment(r.name),
   }));
   // 소속 대학(트리 화면용). 학칙 [별표 1] 2026학년도 표 기준이고, 자료를 못 읽으면 college=null로 평평한 목록이 된다.
   return attachColleges(departments);
@@ -213,14 +236,19 @@ async function findTrackById(id) {
   return rows[0] || null;
 }
 
-async function completeOnboarding(studentId, { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade }) {
+async function completeOnboarding(studentId, {
+  departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+  transferRecognizedCredits, teachingCourse,
+}) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
-         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, onboarding_completed_at = NOW()
+         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
+         onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
-      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, studentId]
+      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, transferRecognizedCredits ?? null,
+      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), studentId]
   );
 }
 
@@ -258,6 +286,8 @@ async function updateProfile(studentId, updates) {
     majorChangeYear: 'major_change_year',
     majorChangeSemester: 'major_change_semester',
     transferGrade: 'transfer_grade',
+    transferRecognizedCredits: 'transfer_recognized_credits',
+    teachingCourse: 'teaching_course',
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
@@ -272,7 +302,9 @@ async function updateProfile(studentId, updates) {
     if (updates[key] !== undefined) {
       fields.push(`${column} = ?`);
       // JSON 컬럼은 문자열로 넣는다(null은 그대로 NULL).
-      params.push(key === 'homeLayout' && updates[key] !== null ? JSON.stringify(updates[key]) : updates[key]);
+      // 교직 이수 여부는 TINYINT(1)이라 true/false를 1/0으로 넣는다.
+      if (key === 'teachingCourse' && updates[key] !== null) params.push(Number(updates[key]));
+      else params.push(key === 'homeLayout' && updates[key] !== null ? JSON.stringify(updates[key]) : updates[key]);
     }
   }
 

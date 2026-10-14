@@ -581,3 +581,25 @@
   - 학사편입학자·만학도 등의 졸업인증제 제외(B-4)는 이 안내에 반영하지 않았다.
   - B-5 답이 오면: 학생 입력(학기별 체크 또는 횟수)과 판정을 붙이고, 이 안내 문구를 고친다(#367 3번).
 - **위치**: `server/services/counseling.js`, `graduationService.getGraduationStatus`(`counseling`), `aiClient.buildGraduationStatusNote`, `client/src/pages/GraduationStatus.jsx`.
+
+## D-67 교직과정 이수 여부와 편입 인정학점을 학생에게 받는다 — 사범대학은 "이수 중"을 미리 고르고 포기를 고를 수 있다
+- **상황**:
+  - 교직기본이수는 교직과정 이수자만의 요건이라, 이수 여부를 몰라 모든 학생에게 "참고" 항목으로만 보여 줬다.
+  - 편입생의 졸업 총학점은 학교 홈페이지 표의 인정학점으로 가정해 계산했다(`TRANSFER_RECOGNIZED_CREDITS_ASSUMED`).
+  - 두 값 모두 학생은 알지만 서비스는 모르는 값이다. 새 개인정보 항목이지만 실사용자가 없는 지금 넣기로 했다(2026-10-15).
+- **근거**: 2026 교육과정 책자 Ⅳ장 교직과정 이수 안내(`db/regulations/교직/2026_교직과정_이수안내.md`), 학칙 제56조.
+  - 사범대학은 선발 없이 교직을 이수하고(교원자격 기준 1호 "사범대학 졸업자"), 교직포기각서로 포기할 수 있다("사범대학 2·3·4학년 재학생(교직포기자 제외)").
+  - 교직과정 설치 학과는 1학년 성적으로 선발한다. 편입생과 3학년 전과생은 교직과정을 이수할 수 없다.
+- **결정**:
+  - `students.teaching_course`(1/0/NULL)와 `students.transfer_recognized_credits`(편입생만)를 둔다. 둘 다 온보딩과 학과·학번 수정 화면에서 받는다.
+  - 교직 질문은 그 학번에 교직기본이수 요건 행이 있는 학과에만 보인다. 편입생과 3학년 이상 전과생에게는 묻지 않고 서버도 거절한다(`teachingCourse.js`).
+  - 사범대학(책자 교직 표의 11개 학과, 개편 전 교육학과 포함)은 "이수하고 있어요"를 미리 골라 두고, 포기한 학생이 바꾼다.
+  - 교직 "이수 중"이면 교직기본이수를 실제 요건으로 판정하고, "이수 안 함"이면 결과에서 뺀다. 답하지 않았으면 지금처럼 참고 항목이다.
+  - 편입 인정학점을 입력하면 학교 표 대신 그 값으로 총학점을 계산하고, 추정(ESTIMATED) 대신 안내(INFO) `TRANSFER_RECOGNIZED_CREDITS_ENTERED`를 붙인다. 화면의 "총학점 확정" 표시도 따라 바뀐다.
+  - 개인정보처리방침 수집 항목에 두 값을 넣고 동의 버전을 `2026-10-15`로 올렸다(기존 계정도 다음 접속 때 다시 동의).
+- **단점·다시 볼 조건**:
+  - 사범대학 시드에는 졸업인증제 행이 없다(기본영역을 교직으로 대체). 교직을 포기한 사범대 학생에게는 `TEACHER_COLLEGE_TEACHING_DROPPED`(추정) 안내만 붙고, 대신 채워야 할 기본영역 과목은 판정하지 않는다(#367).
+  - 학과가 바뀌면 이전 교직 답을 지워 다시 묻는다. 전과 학년이 3학년 이상으로 바뀌어도 지운다.
+  - 전공 완화 행이 없는 학과(의약계열 등)는 인정학점을 입력해도 전공·일반선택을 나눌 수 없어 총학점을 계속 단정하지 않는다.
+  - 학생이 잘못 입력한 인정학점은 검증할 방법이 없다. 0~160 정수만 받는다.
+- **위치**: `server/services/teachingCourse.js`, `routes/onboarding.js`, `routes/me.js`, `studentService`(`listDepartments`의 `teachingCourseYears`·`teacherCollege`), `regulationEngine/context.js`·`evaluate.js`·`flags.js`, `graduationService.evaluateCertifications`, `client/src/pages/Onboarding.jsx`, `PrivacyPolicy.jsx`, `db/migrate.js`.

@@ -5,6 +5,7 @@ const { getGraduationStatus } = require('../services/graduationService');
 const { resolveRegulation } = require('../services/regulationEngine');
 const { loadData } = require('../services/regulationEngine/dbProvider');
 const { NON_DEGREE_DEPARTMENTS } = require('../services/regulationEngine/constants');
+const { canTakeTeachingCourse } = require('../services/teachingCourse');
 
 /**
  * server/test/regulationEngine.parity.test.js
@@ -69,7 +70,10 @@ async function compare(label, dept, admissionYear, enrollmentType, mc, { skipTot
   const req = engine.rules.find((r) => r.id === 'REQUIREMENTS');
   assert.ok(req.value, `${label}: 엔진이 요건 값을 못 만들었어요 (${req.flags.map((f) => f.code)})`);
   assert.deepEqual(pairs(req.value.categories), pairs(legacy.categories.map((c) => ({ category: c.category, requiredCredits: c.requiredCredits }))), `${label}: 카테고리별 요구학점`);
-  assert.deepEqual(certPairs(req.value.certifications), certPairs(legacy.certifications), `${label}: 졸업논문/인증제 요건`);
+  // 교직기본이수는 진단이 학생의 교직 여부로 거른다(D-67): 편입생·3학년 이상 전과생은 교직을 이수할 수 없어 진단에서 빠진다.
+  const teachingAllowed = canTakeTeachingCourse({ enrollmentType, majorChangeGrade: mc ? mc.grade : null });
+  const engineCerts = req.value.certifications.filter((c) => teachingAllowed || c.category !== '교직기본이수');
+  assert.deepEqual(certPairs(engineCerts), certPairs(legacy.certifications), `${label}: 졸업논문/인증제 요건`);
   if (!skipTotal) assert.equal(req.value.totalRequiredCredits, legacy.totalRequiredCredits, `${label}: 총 요구학점`);
 }
 

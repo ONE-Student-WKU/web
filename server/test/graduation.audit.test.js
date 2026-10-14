@@ -265,6 +265,16 @@ test('교직기본이수: optional로 표시하고, 과목명은 완전일치로
   assert.equal(evaluateCertifications([cert('졸업논문', ['졸업(시험·작품)논문'])], [])[0].optional, undefined);
 });
 
+test('교직기본이수: 교직 "이수 중"이면 실제 요건, "이수 안 함"이면 결과에서 빠지고, 답하지 않았으면 참고(optional)로 남는다(D-67)', () => {
+  const rows = [cert('교직기본이수', ['국어교육론'], 1), cert('졸업논문', ['졸업(시험·작품)논문'])];
+  const taking = evaluateCertifications(rows, [], { teachingCourse: true });
+  assert.equal(taking.find((c) => c.category === '교직기본이수').optional, undefined);
+  const notTaking = evaluateCertifications(rows, [], { teachingCourse: false });
+  assert.deepEqual(notTaking.map((c) => c.category), ['졸업논문']);
+  const unanswered = evaluateCertifications(rows, [], { teachingCourse: null });
+  assert.equal(unanswered.find((c) => c.category === '교직기본이수').optional, true);
+});
+
 // ---------------------------------------------------------------- 편입생(SOURCE_VERIFICATION_2026-10-12 3·4절)
 
 test('컴소공 2023학번 3학년 편입: 본교 이수 68 = 전공 48 + 자유 20, 교양은 "종교와원불교"만, 학과 지정 졸업인증(기업연계1·2)은 면제 안내 없음', async () => {
@@ -342,12 +352,25 @@ test('편입 4학년: 학생이 4학년 편입이라고 입력하면 최소전�
   assert.deepEqual(creditRows.filter((r) => r.category === '전공').map((r) => Number(r.required_credits)), [21]);
 });
 
-test('학생 행 → 엔진 입력: 편입생의 transfer_grade가 transfer.grade로 넘어가고, 다른 유형은 null이다', () => {
+test('학생 행 → 엔진 입력: 편입생의 transfer_grade·transfer_recognized_credits가 transfer로 넘어가고, 다른 유형은 null이다', () => {
   const { inputFromStudentRow } = require('../services/regulationEngine');
   const base = { admission_year: 2024, department_id: 1 };
-  assert.deepEqual(inputFromStudentRow({ ...base, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3 }).transfer, { grade: 3 });
-  assert.deepEqual(inputFromStudentRow({ ...base, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: null }).transfer, { grade: null });
-  assert.equal(inputFromStudentRow({ ...base, enrollment_type: 'GENERAL', transfer_grade: 3 }).transfer, null);
+  assert.deepEqual(inputFromStudentRow({ ...base, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3, transfer_recognized_credits: 65 }).transfer, { grade: 3, recognizedCredits: 65 });
+  assert.deepEqual(inputFromStudentRow({ ...base, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: null }).transfer, { grade: null, recognizedCredits: null });
+  assert.equal(inputFromStudentRow({ ...base, enrollment_type: 'GENERAL', transfer_grade: 3, transfer_recognized_credits: 65 }).transfer, null);
+});
+
+test('편입 인정학점을 입력하면 그 값으로 총량을 계산하고 "가정" 대신 "입력값" 안내(INFO)가 붙는다(D-67)', async () => {
+  const assumed = await judge('컴퓨터·소프트웨어공학과', 2023, 'TRANSFER_ADMISSION', { transfer: { grade: 3 } });
+  const entered = await judge('컴퓨터·소프트웨어공학과', 2023, 'TRANSFER_ADMISSION', { transfer: { grade: 3, recognizedCredits: 60 } });
+  assert.ok(flagCodes(entered).includes('TRANSFER_RECOGNIZED_CREDITS_ENTERED'));
+  assert.ok(!flagCodes(entered).includes('TRANSFER_RECOGNIZED_CREDITS_ASSUMED'));
+  const total = (r) => diagnosisInputs(r).creditRows.reduce((s, row) => s + Number(row.required_credits), 0);
+  const elective = (r) => diagnosisInputs(r).creditRows.find((row) => row.category === '일반선택');
+  const assumedRecognized = assumed.flags.find((f) => f.code === 'TRANSFER_RECOGNIZED_CREDITS_ASSUMED').recognized;
+  // 인정학점이 줄어든 만큼 본교에서 이수할 일반선택이 늘어난다(전공 최소학점은 그대로).
+  assert.equal(Number(elective(entered).required_credits) - Number(elective(assumed).required_credits), assumedRecognized - 60);
+  assert.equal(total(entered) - total(assumed), assumedRecognized - 60);
 });
 
 // ---------------------------------------------------------------- 학교 답변 반영(교육혁신과 2026-10-14)

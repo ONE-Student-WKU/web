@@ -318,3 +318,68 @@ describe('약학과: 6년제(세부전공 없음)와 2+4년제를 고른다(#352
     expect(screen.queryByText(/편입생이 아니라면 세부전공을 다시 확인해 주세요/)).toBeNull();
   });
 });
+
+describe('교직과정 이수 여부·편입 인정학점(D-67)', () => {
+  // 교직기본이수 요건이 있는 학과. 사범대학은 "이수하고 있어요"를 미리 고른다.
+  const TEACHER_DEPT = {
+    id: 9, name: '국어교육과', minAdmissionYear: 2017, maxAdmissionYear: null, coreMinAdmissionYear: 2017, coreMaxAdmissionYear: null,
+    successors: [], college: '사범대학', former: false, collegeOrder: 16, teachingCourseYears: { min: null, max: null }, teacherCollege: true,
+  };
+  const TEACHING_DEPT = { ...TRANSFER_DEPT, teachingCourseYears: { min: null, max: null }, teacherCollege: false };
+  const teacherUser = (over = {}) => ({ ...USER, departmentId: 9, department: '국어교육과', admissionYear: 2023, teachingCourse: null, ...over });
+
+  beforeEach(() => {
+    api.getDepartments.mockResolvedValue([FORMER_DEPT, TEACHING_DEPT, TEACHER_DEPT]);
+  });
+
+  it('사범대학 계정은 답하지 않았어도 "이수하고 있어요"가 골라져 있고, 저장하면 교직 이수로 보낸다', async () => {
+    render(<Onboarding user={teacherUser()} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /교직과정/ });
+    expect(row).toHaveTextContent('이수하고 있어요');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ teachingCourse: true }));
+  });
+
+  it('사범대학 학생은 교직 포기를 고를 수 있다(안내도 사범대학용)', async () => {
+    render(<Onboarding user={teacherUser()} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /교직과정/ }));
+    expect(await screen.findByText(/교직포기각서를 내서 교직을 포기했다면/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /이수하지 않아요/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ teachingCourse: false }));
+  });
+
+  it('교직과정 설치 학과의 일반 학생은 답하기 전에는 "선택 필요"이고 저장할 수 없다', async () => {
+    render(<Onboarding user={{ ...USER, departmentId: 7, admissionYear: 2022, teachingCourse: null }} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /교직과정/ });
+    expect(row).toHaveTextContent('선택 필요');
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('교직 요건이 없는 학과와 편입생에게는 교직 질문이 없고, 교직 여부를 null로 보낸다', async () => {
+    render(<Onboarding user={transferUser()} onDone={() => {}} onSkip={() => {}} />);
+    await screen.findByText('2026년 3학년 편입');
+    expect(screen.queryByRole('button', { name: /교직과정/ })).toBeNull();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ teachingCourse: null, transferRecognizedCredits: null }));
+  });
+
+  it('편입생은 인정학점을 비워 둘 수 있고, 입력하면 그 값을 보낸다(160 초과는 확인할 수 없다)', async () => {
+    render(<Onboarding user={transferUser()} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('button', { name: /편입 인정학점/ })).toHaveTextContent('입력 안 함 (학교 기준으로 계산)');
+
+    await userEvent.click(screen.getByRole('button', { name: /편입 인정학점/ }));
+    const input = await screen.findByLabelText('편입할 때 인정받은 학점 (선택)');
+    await userEvent.type(input, '200');
+    expect(screen.getByText('0~160 사이의 숫자만 입력할 수 있어요.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '확인' })).toBeDisabled();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '65');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('button', { name: /편입 인정학점/ })).toHaveTextContent('65학점');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ transferRecognizedCredits: 65 }));
+  });
+});

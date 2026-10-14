@@ -39,7 +39,7 @@ describe('개인정보처리방침', () => {
 
   it('개인정보 보호책임자와 시행일이 있다', () => {
     render(<PrivacyPolicy onGoBack={() => {}} />);
-    expect(screen.getByText(/시행일: 2026년 10월 13일/)).toBeInTheDocument();
+    expect(screen.getByText(/시행일: 2026년 10월 15일/)).toBeInTheDocument();
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);
   });
 });

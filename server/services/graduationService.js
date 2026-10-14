@@ -9,6 +9,7 @@ const { loadCategoryChanges } = require('./regulationEngine/dbProvider');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch');
 const { counselingRequirement } = require('./counseling');
+const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
 
 /**
  * server/services/graduationService.js
@@ -72,7 +73,8 @@ function sumByCategory(rows) {
 // 요구 과목이 정확한 과목명 목록이라(예: 국어사 vs 국어사회언어학) 포함 비교를 쓰면 다른 과목과 섞이므로 그대로 완전일치.
 const CONTAINS_MATCH_CATEGORIES = new Set(['졸업인증제']);
 // 교직기본이수는 교원자격(교직과정 이수자) 요건이지 모든 학생의 졸업요건이 아니다(시행규칙 제11조 → 교원양성과정 운영 내규).
-// 학생이 교직 이수자인지는 아직 입력받지 않으므로, 결과에 싣되 optional로 표시해 화면·챗봇이 졸업 부족 요건에 넣지 않게 한다.
+// 학생이 교직과정 이수 여부(students.teaching_course)에 답하지 않았으면 결과에 싣되 optional로 표시해 화면·챗봇이 졸업 부족 요건에
+// 넣지 않게 한다. "이수 중"이면 실제 요건으로, "이수 안 함"이면 결과에서 뺀다(D-67).
 const OPTIONAL_CERTIFICATION_CATEGORIES = new Set(['교직기본이수']);
 
 // 이수로 인정되는 성적인가. 졸업논문은 P/F 과목으로 편성되지만 시행규칙 제62조 제5항·제124조 제2항은 A·B·C(불합격 F)로
@@ -89,9 +91,13 @@ function isPassingRow(row, { requireGrade }) {
  * [전공현장실습, 캡스톤디자인]을 캡스톤디자인1·2 두 과목만으로 채운 것처럼 보일 수 있었다.
  * @param {Array<{ category, description, min_course_count, requiredCourses }>} certificationRows
  * @param {Array<{ name, letter_grade }>} courseRows 학생의 모든 수강 기록(재수강 이전 기록 포함 — 한 번이라도 합격했으면 충족)
+ * @param {{ teachingCourse?: boolean|null }} [options] 교직과정 이수 여부(true/false/null = 답하지 않음)
  */
-function evaluateCertifications(certificationRows, courseRows) {
-  return certificationRows.map((row) => {
+function evaluateCertifications(certificationRows, courseRows, { teachingCourse = null } = {}) {
+  const rows = teachingCourse === false
+    ? certificationRows.filter((row) => !OPTIONAL_CERTIFICATION_CATEGORIES.has(row.category))
+    : certificationRows;
+  return rows.map((row) => {
     const { requiredCourses } = row;
     const contains = CONTAINS_MATCH_CATEGORIES.has(row.category);
     const passedNames = courseRows
@@ -107,7 +113,7 @@ function evaluateCertifications(certificationRows, courseRows) {
       description: row.description,
       requiredCourses,
       satisfied: satisfiedItems.length >= row.min_course_count,
-      ...(OPTIONAL_CERTIFICATION_CATEGORIES.has(row.category) ? { optional: true } : {}),
+      ...(OPTIONAL_CERTIFICATION_CATEGORIES.has(row.category) && teachingCourse !== true ? { optional: true } : {}),
       // 학사편입학자 등은 면제인 대학 공통 졸업인증제(편입 종류를 입력받지 않아 부족 요건에는 남기고 안내만 붙인다).
       ...(row.conditionalExemption ? { conditionalExemption: row.conditionalExemption } : {}),
     };
@@ -246,7 +252,6 @@ async function getGraduationStatus(studentId) {
     ...(registration.adjusted.length ? [makeFlag('REGISTRATION_CATEGORY_APPLIED')] : []),
     ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
   ];
-  const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(registrationFlags)]);
 
   const { totalRequiredCredits, totalEarnedCredits, categories } = computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap);
 
@@ -254,7 +259,16 @@ async function getGraduationStatus(studentId) {
   const [allCourseRows] = certificationRows.length
     ? await pool.query('SELECT name, letter_grade FROM student_courses WHERE student_id = ?', [studentId])
     : [[]];
-  const certifications = evaluateCertifications(certificationRows, allCourseRows);
+  // 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 "이수 안 함"과 같다(교직기본이수를 참고 항목으로도 보이지 않는다).
+  const teachingAllowed = canTakeTeachingCourse({ enrollmentType: student.enrollment_type, majorChangeGrade: student.major_change_grade });
+  const teachingCourse = teachingAllowed ? parseTeachingCourse(student.teaching_course) : false;
+  const certifications = evaluateCertifications(certificationRows, allCourseRows, { teachingCourse });
+  // 사범대학은 졸업인증제 기본영역을 교직으로 대체한 것으로 시드에 행이 없다. 교직을 포기했다고 답하면 그 가정이 깨진다(D-67).
+  const teachingFlags = teachingAllowed && teachingCourse === false && isTeacherCollegeDepartment(student.department_name)
+    ? [makeFlag('TEACHER_COLLEGE_TEACHING_DROPPED')]
+    : [];
+  const extraFlags = [...registrationFlags, ...teachingFlags];
+  const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(extraFlags)]);
 
   // regulation: 이 진단의 근거 신뢰도와 사유(엔진 플래그). 화면·챗봇이 "확정/추정/자료없음"을 표시하는 데 쓴다.
   // 기존 필드(totalRequiredCredits/totalEarnedCredits/categories/certifications)는 모양이 그대로라 기존 화면은 영향이 없다.
@@ -268,7 +282,7 @@ async function getGraduationStatus(studentId) {
     regulation: {
       confidence,
       confidenceLabel: confidence === regulation.confidence ? regulation.confidenceLabel : CONFIDENCE_LABEL_KO[confidence],
-      flags: [...(regulation.flags || []), ...registrationFlags].map((f) => ({ code: f.code, level: f.level, message: f.message })),
+      flags: [...(regulation.flags || []), ...extraFlags].map((f) => ({ code: f.code, level: f.level, message: f.message })),
       // 제13조④: 입력한 이수구분과 수강 학년도 기준 이수구분이 달라 학점을 옮긴 과목(adjusted)과, 필수/선택 해석이 없어 옮기지 않은 과목(unresolved).
       registrationCategory: { adjusted: registration.adjusted, unresolved: registration.unresolved },
       liberalArtsCap: { applied: liberalArtsCap, engineValue: capRule && capRule.value ? capRule.value.cap : null },
