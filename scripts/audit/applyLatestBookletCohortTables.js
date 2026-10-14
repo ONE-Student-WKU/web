@@ -41,6 +41,18 @@ const DEPARTMENT_CERTIFICATION_RULES = {
   '컴퓨터·소프트웨어공학과': '기업연계프로젝트1·2 둘 다 필수, 학과 공지·과사무실 안내',
 };
 
+// 학번별 전공표에 이름이 없어 입학한 해 책자의 전공 학점을 쓰는 학과 중, 학교가 그 값이 맞다고 확인한 것(학과 → [첫 학번, 끝 학번, 학점]).
+// 교육혁신과 서면 답변(2026-10-14, A-2)에서 6행 모두 O — docs/school-inquiry/교육혁신과_답변_2026-10-14.md. 시드가 이 값과 다르면 계속 미검증으로 남긴다.
+const SCHOOL_CONFIRMED_MAJOR = {
+  자율전공학부: [[2023, 2026, 9]],
+  '수학·정보통계학부': [[2017, 2017, 69]],
+  중등특수교육과: [[2017, 2020, 80]],
+  국제통상학부: [[2017, 2021, 66]],
+  바이오나노화학부: [[2017, 2021, 69]],
+  SW융합학과: [[2020, 2020, 75], [2021, 2021, 54]],
+};
+const schoolConfirmedMajor = (dept, year) => (SCHOOL_CONFIRMED_MAJOR[dept] || []).find(([from, to]) => year >= from && year <= to)?.[2] ?? null;
+
 const norm = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, '');
 const inCohort = (range, y) => !range || ((range[0] == null || y >= range[0]) && (range[1] == null || y <= range[1]));
 
@@ -224,7 +236,9 @@ function main({ apply = APPLY, out = OUT, quiet = false } = {}) {
 
       // --- 전공
       let newMajor = curMajor;
-      if (!maj || maj.missing) {
+      if ((!maj || maj.missing) && schoolConfirmedMajor(dept, year) === curMajor) {
+        report.special.push({ dept, year, what: `전공 ${curMajor}(학번별 전공표에 없음 — 교육혁신과 답변 2026-10-14 A-2로 확인)` });
+      } else if (!maj || maj.missing) {
         report.unverified.push({ dept, year, college, what: `전공(학번별 전공표가 이 학과를 지목하지 않음, 시드 ${curMajor})` });
       } else if (maj.special === 'CURRICULUM' || maj.special === 'PHARM' || maj.special === 'REQUIRED_INCLUDED_69' || maj.special === 'SPECIAL_EDU_82' || maj.special === 'TRACK_TYPE') {
         if (maj.total != null && curMajor !== maj.total && curMajorMerged != null) {
