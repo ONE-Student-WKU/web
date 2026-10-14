@@ -1110,6 +1110,14 @@ body {
 
 /* 4자리가 모두 비면 바 없이 가운데 원형 챗봇 버튼만 남긴다 */
 .bottom-tab-bar.chat-only { justify-content: center; border-top: none; background: transparent; padding-top: 18px; }
+/* 앱 화면에서는 버튼을 내용 위에 띄운다 — 바가 아래 한 줄을 차지하지 않아 좌우로 내용이 보인다(App.jsx의 floating-chat).
+   투명한 바가 아래 내용을 누르는 것을 막지 않게 바는 pointer-events: none, 버튼만 받는다.
+   편집 화면 미리보기의 바는 .app-frame의 바로 아래 자식이 아니라서 영향받지 않는다. */
+.app-frame > .bottom-tab-bar.chat-only { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+.app-frame > .bottom-tab-bar.chat-only .bottom-tab-chat { pointer-events: auto; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+/* 스크롤 끝의 내용이 떠 있는 버튼에 가리지 않게 여백을 둔다(버튼 44px + 아래 여백 10px + 여유) */
+.app-frame.floating-chat .home-body,
+.app-frame.floating-chat .courses-body { padding-bottom: 72px; }
 
 /* 홈 화면 편집 — 헤더의 편집 버튼과 첫 안내 말풍선, 편집 화면의 목록·미리보기 */
 .home-header-actions { position: relative; display: flex; align-items: center; margin-left: auto; margin-right: 6px; }
