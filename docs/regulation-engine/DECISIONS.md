@@ -569,3 +569,15 @@
   - 수업연한 목록(`PROGRAM_YEARS`)에 없는 학과는 4년으로 센다. 학칙 제25조가 바뀌면 고친다.
   - 홈 화면(프로필 계산)과 챗봇(이수 기록 반영)이 다를 수 있다. 기록과 휴학 입력이 어긋날 때뿐이고, 그때 챗봇은 `RECORDS_LEAVE_MISMATCH`로 확인을 요청한다.
 - **위치**: `server/services/studentProgress.js`(`computeProgress`, `currentStandingOf`, `PROGRAM_YEARS`), `studentService.serializeStudent`, `aiClient.describeStanding`, `client/src/pages/Home.jsx`.
+
+## D-65 자기계발심층상담은 판정하지 않고, 학생별 기준과 확인 경로만 화면·챗봇에 안내한다 — 학교 답변(B-5) 후 입력·판정 추가
+- **상황**: 졸업인증제의 자기계발심층상담은 모든 학생의 졸업요건인데 진단이 다루지 않았다(`career_counseling_count` 칸만 있음). 상담 기록은 웹정보서비스(로그인 후) 상담일지에만 있어 읽을 수 없고, 세는 방법(학기마다 1회인지 합계 횟수인지, 휴학 학기)은 책자 17쪽 "8학기 이상"과 21쪽·홈페이지 "8회 이상"이 달라 학사지원과에 물어 둔 상태다(후속 문의 B-5, 2026-10-14).
+- **결정**:
+  - 서버 `counseling.js`가 학생별 기준(2020학번부터 8, 2016~2019학번 6, 편입생 3, 전과생은 당초 입학 학번, 광역 계열전공은 Hug 심층진로상담 대체)을 계산해 졸업진단 결과(`counseling`)에 담는다.
+  - 화면(졸업요건의 졸업인증제 부분)과 챗봇(`buildGraduationStatusNote`)이 이 값 하나로 안내한다. 판정은 하지 않고, 확인 경로(웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인))와 "세는 방법은 학교 확인 중"을 함께 밝힌다.
+  - 부족 요건 요약에는 넣지 않는다. 챗봇에는 충족·미충족을 말하지 말라고 지시한다.
+- **단점·다시 볼 조건**:
+  - 학생이 "8회"로 이해해 한 학기에 몰아서 상담할 수 있다. 문구에 "학기마다 1회인지 확인 중"을 밝혀 줄인다.
+  - 학사편입학자·만학도 등의 졸업인증제 제외(B-4)는 이 안내에 반영하지 않았다.
+  - B-5 답이 오면: 학생 입력(학기별 체크 또는 횟수)과 판정을 붙이고, 이 안내 문구를 고친다(#367 3번).
+- **위치**: `server/services/counseling.js`, `graduationService.getGraduationStatus`(`counseling`), `aiClient.buildGraduationStatusNote`, `client/src/pages/GraduationStatus.jsx`.
