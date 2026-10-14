@@ -43,23 +43,11 @@ describe('departmentTree 순수 함수', () => {
   });
 });
 
-// 검색 진입 버튼과 열림 상태는 부모(온보딩의 아래 버튼 영역)가 갖는다 — 테스트에서는 이 작은 부모가 그 역할을 한다.
-function PickerWithSearchEntry(props) {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <>
-      <button type="button" onClick={() => setOpen(true)}>학과 검색</button>
-      <DepartmentPicker {...props} searchOpen={open} onCloseSearch={() => setOpen(false)} />
-    </>
-  );
-}
-
 describe('DepartmentPicker', () => {
   const renderPicker = (props = {}) => {
     const onSelect = vi.fn();
-    const onSelectFromSearch = vi.fn();
-    render(<PickerWithSearchEntry departments={DEPARTMENTS} selectedId={null} onSelect={onSelect} onSelectFromSearch={onSelectFromSearch} {...props} />);
-    return { onSelect, onSelectFromSearch };
+    render(<DepartmentPicker departments={DEPARTMENTS} selectedId={null} onSelect={onSelect} {...props} />);
+    return { onSelect };
   };
 
   it('처음에는 대학 묶음만 보이고 학과는 접혀 있다, 묶음을 누르면 그 대학의 학과가 펼쳐진다', async () => {
@@ -105,14 +93,23 @@ describe('DepartmentPicker', () => {
     expect(within(dialog).queryByRole('button', { name: /경상대학/ })).toBeNull(); // 결과 화면에는 트리가 없다
   });
 
-  it('검색 결과에서 학과를 누르면 onSelectFromSearch가 불리고(부모가 바로 다음 단계로 넘김) 검색 화면이 닫힌다', async () => {
-    const { onSelect, onSelectFromSearch } = renderPicker();
+  it('검색 결과에서 학과를 누르면 onSelect가 불리고 검색 화면이 닫힌다', async () => {
+    const { onSelect } = renderPicker();
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '경영학부');
+    await userEvent.click(within(dialog).getByRole('button', { name: /경영학부/ }));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('onSelectFromSearch를 주면(온보딩: 고른 뒤 바로 다음 질문) 검색 결과에서 고를 때 onSelect 대신 그것이 불린다', async () => {
+    const onSelectFromSearch = vi.fn();
+    const { onSelect } = renderPicker({ onSelectFromSearch });
     const dialog = await openSearch();
     await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '경영학부');
     await userEvent.click(within(dialog).getByRole('button', { name: /경영학부/ }));
     expect(onSelectFromSearch).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
     expect(onSelect).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('일치하는 학과가 없으면 안내 문구가 나오고, 뒤로가기 버튼으로 닫으면 검색어가 비워진 채 트리로 돌아간다', async () => {

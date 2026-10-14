@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
-import { IconChevronLeft, IconEdit, IconSearch } from '../components/icons.jsx';
+import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
@@ -80,7 +80,6 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
-  const [deptSearchOpen, setDeptSearchOpen] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -411,8 +410,6 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 departments={departments}
                 selectedId={answers.departmentId}
                 onSelect={selectDepartment}
-                searchOpen={deptSearchOpen}
-                onCloseSearch={() => setDeptSearchOpen(false)}
                 onSelectFromSearch={selectDepartmentFromSearch}
               />
             )}
@@ -707,14 +704,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </div>
         )}
 
-        {/* 아래 버튼 영역은 화면 아래에 고정한다 — 학과 목록처럼 내용이 길어져도 "다음"과 학과 검색을 내려가 찾지 않고 바로 누를 수 있게. */}
-        <div className="onb-actions">
-          {current === 'department' && departments.length > 0 && (
-            <button type="button" className="search-entry" onClick={() => setDeptSearchOpen(true)} aria-label={t('dept.search.aria')}>
-              <IconSearch />
-              <span>{t('dept.search.placeholder')}</span>
-            </button>
-          )}
+        {/* 주 버튼(다음·저장 등)은 내용이 길어도 화면 아래에 떠 있게 한다 — 학과 목록처럼 길어지면 맨 끝까지 내려가야 눌렀다. */}
+        <div className="onb-float-action">
           {current === 'summary' ? (
             <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
               {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
@@ -728,13 +719,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {editingFromSummary ? t('onb.confirm') : t('onb.next')}
             </button>
           )}
-
-          {current !== 'done' && !editingFromSummary && (
-            <button className="onb-skip-link" onClick={onSkip}>
-              {editMode ? t('onb.cancel') : t('onb.later')}
-            </button>
-          )}
         </div>
+
+        {current !== 'done' && !editingFromSummary && (
+          <button className="onb-skip-link" onClick={onSkip}>
+            {editMode ? t('onb.cancel') : t('onb.later')}
+          </button>
+        )}
       </div>
     </div>
   );

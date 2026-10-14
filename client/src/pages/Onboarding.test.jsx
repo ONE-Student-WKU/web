@@ -185,7 +185,7 @@ describe('휴학 기간(휴학 "수"가 아니라 시기를 받는다)', () => {
 });
 
 
-describe('학과 선택: 아래 버튼 영역의 학과 검색 → 고르면 바로 다음 질문', () => {
+describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "다음"은 화면 아래에 떠 있음', () => {
   const NEW_USER = { id: 9, onboardingCompleted: false };
   const searchAndPick = async (query, name) => {
     await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
@@ -193,12 +193,10 @@ describe('학과 선택: 아래 버튼 영역의 학과 검색 → 고르면 바
     await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
   };
 
-  it('검색 버튼은 "다음"과 같은 아래 버튼 영역에 있고, 검색 결과를 누르면 그 학과로 바로 다음 질문(입학 유형)으로 간다', async () => {
+  it('"다음"은 떠 있는 버튼 영역에 있고, 검색 결과를 누르면 그 학과로 바로 다음 질문(입학 유형)으로 간다', async () => {
     const { container } = render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
     expect(await screen.findByRole('heading', { name: '어느 학과 소속이에요?' })).toBeInTheDocument();
-    const actions = container.querySelector('.onb-actions');
-    expect(actions).toContainElement(await screen.findByRole('button', { name: '학과 검색' }));
-    expect(actions).toContainElement(screen.getByRole('button', { name: '다음' }));
+    expect(container.querySelector('.onb-float-action')).toContainElement(screen.getByRole('button', { name: '다음' }));
 
     await searchAndPick('국어', '국어국문학과');
     expect(await screen.findByRole('heading', { name: '어떤 유형으로 재학 중이에요?' })).toBeInTheDocument();
