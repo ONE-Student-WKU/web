@@ -98,6 +98,9 @@ describe('학적정보 수정(Onboarding) 화면', () => {
 
     expect(await screen.findByRole('heading', { name: '몇 학번이에요?' })).toBeInTheDocument();
     expect(screen.getByText('이후 학과(추정): 경영계열')).toBeInTheDocument();
+    // 개편 전 학과면 "소속을 옮기지 않았다면 이 학과" 안내(학적 같은 행정 용어는 쓰지 않는다)
+    expect(screen.getByText(/소속을 옮기는 신청을 따로 하지 않았다면 이 학과를 고르면 돼요/)).toBeInTheDocument();
+    expect(screen.queryByText(/학적/)).toBeNull();
     expect(screen.getByRole('option', { name: '2021학번' })).toBeInTheDocument();
   });
 });
