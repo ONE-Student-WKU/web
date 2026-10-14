@@ -597,6 +597,7 @@ function Community({
 
   const renderDetail = () => {
     const post = selectedPost;
+    const applicantPeople = applicants.filter((a) => !a.hasAppliedBefore).length;
     return (
       <div className="community-detail">
         {errorText && <p className="home-error">{errorText}</p>}
@@ -691,7 +692,10 @@ function Community({
             </div>
 
             <p className="community-section-label">
-              {t('community.applicantsHeading', { title: post.title, count: applicants.length })}
+              {/* 신청자는 사람 수로 센다 — 반려 후 재신청한 건(hasAppliedBefore)은 같은 사람이라 빼고, 건수가 다를 때만 함께 보여준다. */}
+              {applicantPeople === applicants.length
+                ? t('community.applicantsHeading', { title: post.title, count: applicantPeople })
+                : t('community.applicantsHeadingWithApplications', { title: post.title, count: applicantPeople, applications: applicants.length })}
             </p>
             {applicantsLoading ? (
               <p className="courses-manual-hint">{t('community.loading')}</p>

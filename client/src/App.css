@@ -2342,6 +2342,18 @@ body {
   color: var(--color-danger);
 }
 
+/* 신청자 카드(이슈 #304 3-1): 거부 사유 칸이 카드와 같은 배경이라 칸이 안 보였고, <p> 기본 아래 여백 때문에 아래 「신고하기」와
+   간격이 크게 벌어졌다. 「신고하기」는 반대로 위 요소에 붙어 있었다 — 카드 안 다른 칸들과 같은 8px 간격으로 맞춘다.
+   거부 사유 칸은 지원자 쪽 "내 신청" 상자에도 쓰이는데 그쪽은 배경·간격이 달라 신청자 카드 안에서만 바꾼다. */
+.community-applicant-card .community-reject-message {
+  margin-bottom: 0;
+  background: var(--color-bg-card);
+}
+
+.community-applicant-card > .community-outline-btn {
+  margin-top: 8px;
+}
+
 .community-reject-message-input {
   width: 100%;
   margin-top: 8px;

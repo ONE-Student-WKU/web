@@ -53,3 +53,36 @@ test('빈 답변·문자열이 아닌 값은 건드리지 않는다', () => {
 test('알 수 없는 신뢰도 값이면 건드리지 않는다', () => {
   assert.equal(guardAnswer('답변입니다.', j('WEIRD')).guarded, false);
 });
+
+// 학칙 [별표 4]와 책자의 졸업학점이 다른 학생(예: 간호학과 2023학번 — 별표 4 ③표 130, 책자 140)의 판단 모양.
+const mismatch = {
+  confidence: 'ESTIMATED',
+  requirements: { rules: [{ id: 'REQUIREMENTS', value: { schedule4: { match: false, schedule4Credits: 130, bookCredits: 140 } } }] },
+};
+
+test('졸업학점이 두 자료에서 다른데 한 값만 말하면(단서 표현이 있어도) 두 값을 밝히는 안내를 덧붙인다 — 이슈 #304 1번', () => {
+  // 실제로 나온 답변: "확인 필요 사항" 소제목 때문에 기존 단서 검사는 통과했지만 본문은 "일치"로 단정했다.
+  const answer = '교육과정 책자 기준: 140학점\n신뢰도 및 확인 필요 사항\n\n두 자료가 일치합니다. 2023학번 간호학과의 졸업학점은 140학점입니다.';
+  const r = guardAnswer(answer, mismatch);
+  assert.equal(r.guarded, true);
+  assert.ok(r.answer.startsWith(answer), '본문 보존');
+  assert.match(r.answer, /130학점/);
+  assert.match(r.answer, /140학점/);
+  assert.match(r.answer, /학사지원과\(063-850-5228\)/);
+});
+
+test('두 값을 모두 밝힌 답변이나 졸업학점을 말하지 않은 답변은 덧붙이지 않는다', () => {
+  const both = '학칙 [별표 4]는 130학점, 교육과정 책자는 140학점으로 서로 달라요. 학사지원과에 확인해 주세요.';
+  assert.equal(guardAnswer(both, mismatch).guarded, false);
+  const unrelated = '수강신청은 학기 시작 전 정해진 기간에 해요. 정확한 일정은 학사지원과에 확인해 주세요.';
+  assert.equal(guardAnswer(unrelated, mismatch).guarded, false);
+});
+
+test('영어 답변도 같은 기준(credits)으로 본다', () => {
+  const one = 'Your graduation requirement is 140 credits. Please confirm with the Academic Affairs Office (학사지원과).';
+  const r = guardAnswer(one, mismatch, 'en');
+  assert.equal(r.guarded, true);
+  assert.match(r.answer, /130 credits/);
+  const both = 'The regulations list 130 credits while the curriculum booklet lists 140 credits. Please confirm with the Academic Affairs Office.';
+  assert.equal(guardAnswer(both, mismatch, 'en').guarded, false);
+});

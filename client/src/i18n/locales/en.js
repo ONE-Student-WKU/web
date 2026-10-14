@@ -656,6 +656,7 @@ export default {
   'community.delete': 'Delete',
   'community.deleting': 'Deleting...',
   'community.applicantsHeading': 'Applicants for "{title}": {count}',
+  'community.applicantsHeadingWithApplications': 'Applicants for "{title}": {count} ({applications} applications)',
   'community.loading': 'Loading...',
   'community.noApplicants': 'No applicants yet.',
   'community.reapplied': 'Re-applied',
