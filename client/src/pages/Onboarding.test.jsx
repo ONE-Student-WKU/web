@@ -296,7 +296,8 @@ describe('약학과: 6년제(세부전공 없음)와 2+4년제를 고른다(#352
     render(<Onboarding user={pharmUser({ trackId: 51 })} onDone={() => {}} onSkip={() => {}} />);
     await userEvent.click(await screen.findByRole('button', { name: /세부전공.*2\+4년제/ }));
     expect(await screen.findByText('2022학번부터 일반 입학한 학생')).toBeInTheDocument();
-    expect(screen.getByText('편입생, 또는 2021학번 이전 입학생')).toBeInTheDocument();
+    expect(screen.getByText('편입생 (2+4년제 교육과정)')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '어느 교육과정이에요?' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /6년제 \(세부전공 없음\)/ }));
     await userEvent.click(screen.getByRole('button', { name: '확인' }));

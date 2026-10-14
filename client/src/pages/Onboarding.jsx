@@ -78,6 +78,7 @@ const NO_TRACK_DEPARTMENTS = {
   약학과: {
     nameKey: 'onb.track.pharm6',
     captionKey: 'onb.track.pharm6.caption',
+    titleKey: 'onb.track.pharm.title',
     subKey: 'onb.track.pharm.sub',
     trackCaptionKeys: { '2+4년제': 'onb.track.pharm24.caption' },
     noTrackFromYear: 2022,
@@ -471,7 +472,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {current === 'track' && (
           <>
-            <h2 className="onb-q-title">{t('onb.track.title')}</h2>
+            <h2 className="onb-q-title">{t(noTrackOption ? noTrackOption.titleKey : 'onb.track.title')}</h2>
             <p className="onb-q-sub">{t(noTrackOption ? noTrackOption.subKey : 'onb.track.sub')}</p>
             <div className="onb-option-list">
               {trackChoices.map((tr) => (
