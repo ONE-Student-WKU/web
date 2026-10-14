@@ -119,25 +119,48 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
     );
   };
 
-  // 목록에서 학과 카드에 포커스가 있을 때 ↑↓: 화면에 보이는(펼친 묶음의) 학과 순서대로 바로 위·아래 학과를 고르고 포커스도 옮긴다.
-  // 처리하지 않으면 브라우저가 페이지만 스크롤한다. 맨 끝에서는 멈춘다. 엔터: 그 학과를 고르고 바로 다음으로("다음"을 누른 것처럼).
-  // 검색 화면 결과의 ↑↓·엔터는 handleSearchKeyDown이 따로 맡는다.
-  const visibleDepartments = hasTree ? groups.filter((g) => openGroups.has(g.college)).flatMap((g) => g.departments) : departments;
-  const handleListKeyDown = (e) => {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
-    const card = e.target.closest('[data-dept-id]');
-    if (!card) return; // 대학 묶음 머리 등 학과 카드가 아닌 곳은 그대로
-    e.preventDefault(); // 엔터는 버튼 클릭(고르기만)으로도 이어지므로 막는다
-    const index = visibleDepartments.findIndex((d) => String(d.id) === card.dataset.deptId);
-    if (e.key === 'Enter') {
-      if (index >= 0) onSelectAndContinue(visibleDepartments[index]);
-      return;
-    }
-    const next = visibleDepartments[index + (e.key === 'ArrowDown' ? 1 : -1)];
-    if (!next) return;
-    onSelect(next);
-    e.currentTarget.querySelector(`[data-dept-id="${next.id}"]`)?.focus();
-  };
+  // 학과 목록 키보드 — 화면 어디에 포커스가 있든(처음 들어와 아무것도 안 눌렀을 때 포함) ↑↓로 전체 학과 순서대로 위·아래 학과를 고른다.
+  // 다른 대학 묶음으로 넘어가면 그 묶음만 펼치고 떠난 묶음은 접는다(교학대학 원불교학과 → ↓ → 의과대학 의예과). 처음 ↓는 맨 위 학과.
+  // 학과 카드에서 엔터: 그 학과를 고르고 바로 다음으로("다음"을 누른 것처럼). 처리하지 않으면 브라우저가 페이지만 스크롤했다.
+  // 입력 칸, 검색 화면·확인 창(aria-modal)이 열려 있을 때는 가로채지 않는다 — 검색 결과의 ↑↓·엔터는 handleSearchKeyDown이 맡는다.
+  const rootRef = useRef(null);
+  const [focusId, setFocusId] = useState(null);
+  const allDepartments = hasTree ? groups.flatMap((g) => g.departments) : departments;
+  const groupOf = (department) => groups.find((g) => g.departments.includes(department))?.college;
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
+      if (e.defaultPrevented || e.target.closest?.('input, textarea, select, [aria-modal="true"]')) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      const card = e.target.closest?.('[data-dept-id]');
+      if (e.key === 'Enter') {
+        if (!card || !rootRef.current?.contains(card)) return; // 다른 버튼(다음·묶음 머리 등)의 엔터는 그대로
+        e.preventDefault(); // 버튼 클릭(고르기만)으로 이어지지 않게
+        const department = allDepartments.find((d) => String(d.id) === card.dataset.deptId);
+        if (department) onSelectAndContinue(department);
+        return;
+      }
+      e.preventDefault();
+      const fromId = card && rootRef.current?.contains(card) ? card.dataset.deptId : selectedId;
+      const index = allDepartments.findIndex((d) => String(d.id) === String(fromId));
+      const next = index < 0 ? (e.key === 'ArrowDown' ? allDepartments[0] : null) : allDepartments[index + (e.key === 'ArrowDown' ? 1 : -1)];
+      if (!next) return; // 맨 끝에서는 멈춘다
+      onSelect(next);
+      if (hasTree) setOpenGroups(new Set([groupOf(next)]));
+      setFocusId(next.id);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
+  // 키보드로 옮긴 학과 카드에 포커스를 준다 — 접혀 있던 묶음이 펼쳐진 뒤라야 카드가 있어서 렌더 후에 한다. 떠 있는 "다음" 버튼에 가리지 않게 가운데로.
+  useEffect(() => {
+    if (focusId == null) return;
+    const el = rootRef.current?.querySelector(`[data-dept-id="${focusId}"]`);
+    el?.focus({ preventScroll: true });
+    el?.scrollIntoView?.({ block: 'center' });
+  }, [focusId, openGroups]);
 
   const toggle = (college) =>
     setOpenGroups((prev) => {
@@ -148,14 +171,14 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
     });
 
   return (
-    <div className="onb-dept-picker">
+    <div className="onb-dept-picker" ref={rootRef}>
       <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('dept.search.aria')}>
         <IconSearch />
         <span>{t('dept.search.placeholder')}</span>
       </button>
 
       {hasTree ? (
-        <div className="onb-college-tree" onKeyDown={handleListKeyDown}>
+        <div className="onb-college-tree">
           {groups.map((g) => {
             const open = openGroups.has(g.college);
             return (
@@ -187,7 +210,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
           })}
         </div>
       ) : (
-        <div className="onb-option-list" onKeyDown={handleListKeyDown}>
+        <div className="onb-option-list">
           {departments.map((d) => (
             <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />
           ))}

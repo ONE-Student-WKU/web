@@ -41,12 +41,12 @@ describe('Home — 홈 화면 편집 진입', () => {
   it('편집 버튼 첫 안내는 한 번 보면 다시 나오지 않고, 버튼을 누르면 편집 화면을 연다', async () => {
     const onOpenHomeEdit = vi.fn();
     const { unmount } = renderHome(onOpenHomeEdit);
-    expect(screen.getByText('하단 바를 바꿀 수 있어요')).toBeInTheDocument();
+    expect(screen.getByText('홈 화면을 편집할 수 있어요')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '홈 화면 편집' }));
     expect(onOpenHomeEdit).toHaveBeenCalled();
     unmount();
     renderHome();
-    expect(screen.queryByText('하단 바를 바꿀 수 있어요')).not.toBeInTheDocument();
+    expect(screen.queryByText('홈 화면을 편집할 수 있어요')).not.toBeInTheDocument();
   });
 });
 

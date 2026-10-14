@@ -1115,7 +1115,8 @@ body {
 .home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent); }
 .home-edit-hint {
   position: absolute; top: calc(100% + 6px); right: -40px; z-index: 20;
-  display: flex; align-items: flex-start; gap: 8px; width: 220px;
+  /* 너비는 문장 길이에 맞춘다(짧은 한국어 안내가 넓은 상자에 떠 보이지 않게). 긴 문장(영어 등)은 최대 너비에서 줄바꿈. */
+  display: flex; align-items: center; gap: 8px; width: max-content; max-width: 240px;
   padding: 10px 12px; border-radius: 10px; font-size: 0.8125rem; line-height: 1.4;
   background: var(--color-accent); color: var(--color-accent-contrast);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
@@ -3166,7 +3167,8 @@ body {
 .onb-option-card.active { background: var(--color-accent-bg); }
 .onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
 /* 키보드 포커스 표시를 브라우저 기본색(주황 등) 대신 강조색으로 — ↑↓로 학과를 옮길 때 지금 위치를 보여 준다. */
-.onb-option-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.onb-option-card:focus-visible,
+.onb-college-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
 .onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
 .onb-option-caption { font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); }

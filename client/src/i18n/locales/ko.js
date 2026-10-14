@@ -72,7 +72,7 @@ export default {
   'home.allMet': '모든 요건을 충족했어요!',
   'home.menu': '메뉴',
   'homeEdit.open': '홈 화면 편집',
-  'homeEdit.hint': '하단 바를 바꿀 수 있어요',
+  'homeEdit.hint': '홈 화면을 편집할 수 있어요',
   'homeEdit.hintClose': '안내 닫기',
   'homeEdit.title': '홈 화면 편집',
   'homeEdit.cancel': '저장하지 않고 나가기',

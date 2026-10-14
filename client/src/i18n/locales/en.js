@@ -73,7 +73,7 @@ export default {
   'home.allMet': 'All requirements met!',
   'home.menu': 'Menu',
   'homeEdit.open': 'Edit home screen',
-  'homeEdit.hint': 'Customize the bottom bar',
+  'homeEdit.hint': 'You can edit your home screen',
   'homeEdit.hintClose': 'Close tip',
   'homeEdit.title': 'Edit home screen',
   'homeEdit.cancel': 'Leave without saving',
