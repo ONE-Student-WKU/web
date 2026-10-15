@@ -8,7 +8,9 @@
 #
 # 판단(크론 명령은 저장소 밖 Railway 설정에 있어서, 각 시딩 스크립트가 찍는 문구로 본다):
 #  - 실패: 어떤 단계든 "…실패:"(시딩 실패:, 규정 시딩 실패:, [db:migrate] 실패: 등) 또는 npm의 "npm error"가 보이면 → 종료 코드 1
-#  - 성공: "규정 임베딩 시딩 완료"가 보인 뒤, 뒤 단계가 실패하지 않는지 GRACE_POLLS번 더 확인하고 → 종료 코드 0
+#  - 성공: 마지막 단계(seed:regulation-articles)의 완료 문구 "regulation_versions N / regulation_articles N / …건 시딩"이 보인 뒤,
+#          혹시 뒤에 단계가 더 붙었을 때를 대비해 GRACE_POLLS번 더 확인하고 → 종료 코드 0
+#          (18단계 "규정 임베딩 시딩 완료"는 마지막이 아니다 — 크론 19단계 순서는 docs/deployment.md "실행 순서와 각 단계의 완료 문구")
 #  - 시간 초과: TIMEOUT_SECONDS 안에 둘 다 없으면 → 종료 코드 1
 #
 # 환경변수: RAILWAY_SERVICE(필수), LOG_FILE(기본 reseed.log), TIMEOUT_SECONDS(기본 3300), POLL_SECONDS(기본 30), GRACE_POLLS(기본 4),
@@ -22,7 +24,7 @@ POLL_SECONDS="${POLL_SECONDS:-30}"
 GRACE_POLLS="${GRACE_POLLS:-4}"
 RAILWAY_BIN="${RAILWAY_BIN:-railway}"
 
-SUCCESS_MARKER='규정 임베딩 시딩 완료'
+SUCCESS_MARKER='regulation_versions [0-9]+ / regulation_articles [0-9]+'
 FAILURE_PATTERN='실패:|npm error'
 
 fetch_logs() {
@@ -31,7 +33,7 @@ fetch_logs() {
 }
 
 has_failure() { grep -Eq "$FAILURE_PATTERN" "$LOG_FILE"; }
-has_success() { grep -Fq "$SUCCESS_MARKER" "$LOG_FILE"; }
+has_success() { grep -Eq "$SUCCESS_MARKER" "$LOG_FILE"; }
 
 start=$(date +%s)
 grace_left=-1
@@ -45,17 +47,17 @@ while :; do
   if has_success; then
     if [ "$grace_left" -lt 0 ]; then
       grace_left=$GRACE_POLLS
-      echo "규정 임베딩 완료를 확인했습니다. 뒤 단계가 실패하지 않는지 ${GRACE_POLLS}번 더 확인합니다."
+      echo "마지막 단계(조문 구조 시딩) 완료를 확인했습니다. 실패 기록이 뒤늦게 나오지 않는지 ${GRACE_POLLS}번 더 확인합니다."
     fi
     if [ "$grace_left" -eq 0 ]; then
-      echo "재시딩 성공: 규정 임베딩 완료, 실패 기록 없음."
+      echo "재시딩 성공: 마지막 단계까지 완료, 실패 기록 없음."
       exit 0
     fi
     grace_left=$((grace_left - 1))
   fi
   elapsed=$(( $(date +%s) - start ))
   if [ "$elapsed" -ge "$TIMEOUT_SECONDS" ]; then
-    echo "::error::${TIMEOUT_SECONDS}초 안에 '${SUCCESS_MARKER}'가 나오지 않았습니다. 크론 명령에 규정 단계가 있는지, 아직 실행 중인지 확인하세요."
+    echo "::error::${TIMEOUT_SECONDS}초 안에 마지막 단계(seed:regulation-articles) 완료 문구가 나오지 않았습니다. 크론 명령 끝에 그 단계가 있는지, 아직 실행 중인지 확인하세요."
     exit 1
   fi
   echo "기다리는 중… (${elapsed}초 경과, 로그 $(wc -l < "$LOG_FILE")줄)"
