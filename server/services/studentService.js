@@ -7,6 +7,7 @@ const { todayKst } = require('./regulationEngine/context');
 const { currentStandingOf } = require('./studentProgress');
 const { isTeacherCollegeDepartment, parseTeachingCourse } = require('./teachingCourse');
 const { isBroadSeriesStudent } = require('./majorTrackType');
+const { secondMajorTypeOf } = require('./secondMajor');
 
 /**
  * server/services/studentService.js
@@ -73,6 +74,8 @@ function serializeStudent(student) {
     majorTrackType: student.major_track_type || null,
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
+    // 다전공 구분(DOUBLE 복수전공·MINOR 부전공). 학과가 없으면 null(server/services/secondMajor.js).
+    secondMajorType: secondMajorTypeOf(student),
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
     // 휴학 기간. null이면 아직 휴학 질문에 답하지 않았다는 뜻이고 []는 휴학 없음(server/services/leavePeriods.js).
@@ -296,6 +299,7 @@ async function updateProfile(studentId, updates) {
     teachingCourse: 'teaching_course',
     majorTrackType: 'major_track_type',
     secondDepartmentId: 'second_department_id',
+    secondMajorType: 'second_major_type',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
     language: 'language',

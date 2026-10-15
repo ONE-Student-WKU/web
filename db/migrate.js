@@ -139,6 +139,19 @@ async function ensureStudentMajorTrackTypeColumn(connection) {
   }
 }
 
+// 다전공 구분 guard — 복수전공·부전공을 함께 받게 되면서(#378 G-1) 제2전공 학과(second_department_id)가 어느 쪽인지 남긴다.
+// NULL로 두면 기존 행은 복수전공으로 본다(이 칸을 처음 만들 때 "복수전공 학과"로 받았다).
+async function ensureStudentSecondMajorTypeColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'second_major_type'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.second_major_type 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN second_major_type VARCHAR(16) NULL AFTER second_department_id');
+  }
+}
+
 // 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
 // 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
 async function ensureStudentCourseMajorAreaColumn(connection) {
@@ -550,6 +563,7 @@ async function migrate() {
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
+    await ensureStudentSecondMajorTypeColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);

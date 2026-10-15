@@ -425,3 +425,33 @@ describe('광역 계열전공 이수유형(#378 결정 3-1 A)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorTrackType: null }));
   });
 });
+
+describe('다전공(복수전공·부전공, #378 G-1)', () => {
+  it('요약에 "다전공: 하지 않아요"가 보이고, 부전공과 학과를 고르면 그 값을 보낸다(주전공 학과는 목록에 없다)', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /다전공/ });
+    expect(row).toHaveTextContent('하지 않아요');
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole('button', { name: /^부전공/ }));
+    expect(screen.getByRole('button', { name: '확인' })).toBeDisabled();
+    const group = screen.queryByRole('button', { name: /인문대학/ });
+    if (group) await userEvent.click(group);
+    expect(screen.queryByRole('button', { name: /^경영학부/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /^국어국문학과/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('button', { name: /다전공/ })).toHaveTextContent('부전공 · 국어국문학과');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: 7, secondMajorType: 'MINOR' }));
+  });
+
+  it('"하지 않아요"로 바꾸면 학과도 지워서 보낸다', async () => {
+    render(<Onboarding user={{ ...USER, secondDepartmentId: 7, secondMajorType: 'DOUBLE' }} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /다전공/ });
+    expect(row).toHaveTextContent('복수전공 · 국어국문학과');
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole('button', { name: /하지 않아요/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: null, secondMajorType: null }));
+  });
+});
