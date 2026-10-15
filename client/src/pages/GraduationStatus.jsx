@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -63,7 +63,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : [];
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas) : [];
+  const termShortage = registrationTermShortage(status, shortfalls);
   const groups = status ? buildRequirementGroups(status.categories, status.majorAreaCredits) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
@@ -153,6 +154,18 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </p>
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
+              )}
+              {/* 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기만 알린다. 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2). */}
+              {status.registrationTerms && (
+                termShortage > 0 ? (
+                  <p className="grad-trust-reason">{t('grad.registrationShort', { n: termShortage })}</p>
+                ) : (
+                  <p className="grad-flex-note">
+                    {t('grad.registrationTerms', { registered: status.registrationTerms.registered, required: status.registrationTerms.required })}
+                    {status.registrationTerms.earlyGraduation && ` ${t('grad.registrationEarly', { n: status.registrationTerms.earlyGraduation })}`}
+                    {status.registrationTerms.estimated && ` ${t('grad.registrationEstimated')}`}
+                  </p>
+                )
               )}
             </section>
 
@@ -268,6 +281,36 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   </p>
                 )}
                 <p className="grad-flex-note">{t('grad.electiveEarned', { n: groups.liberalArts.electiveEarnedCredits })}</p>
+                {/* 2025학번부터: 교양기초 영역별 학점과 교양선택 영역 개수(서버 liberalElectiveAreas.js, #378 H-1). 영역을 모르는 학점은 어느 영역에도 넣지 않는다. */}
+                {status.liberalElectiveAreas && (
+                  <>
+                    <p className="grad-flex-note">{t('grad.liberalAreaBasis')}</p>
+                    {status.liberalElectiveAreas.foundation.map((a) => (
+                      <div className="grad-subcheck-row" key={a.area}>
+                        <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {a.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">{t('grad.liberalFoundationArea', { area: translateCategory(a.area, t), earned: a.earned, required: a.required })}</p>
+                      </div>
+                    ))}
+                    {status.liberalElectiveAreas.electives && (
+                      <div className="grad-subcheck-row">
+                        <span className={status.liberalElectiveAreas.electives.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {status.liberalElectiveAreas.electives.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">
+                          {t('grad.liberalElectiveAreas', {
+                            covered: status.liberalElectiveAreas.electives.coveredAreaCount,
+                            required: status.liberalElectiveAreas.electives.requiredAreaCount,
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {status.liberalElectiveAreas.unknownCredits > 0 && (
+                      <p className="grad-flex-note">{t('grad.liberalAreaUnknown', { n: status.liberalElectiveAreas.unknownCredits })}</p>
+                    )}
+                  </>
+                )}
               </section>
             )}
 

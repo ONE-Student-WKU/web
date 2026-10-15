@@ -128,7 +128,8 @@ export function translateCategory(raw, t) {
 
 // t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
 // 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
-export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null) {
+// liberalElectiveAreas: 2025학번부터의 교양기초 영역별 학점·교양선택 영역 개수(서버 liberalElectiveAreas.js, #378 H-1).
+export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null, liberalElectiveAreas = null) {
   const items = [];
   // 광역 계열전공은 "그중 기본전공 N학점" 대신 이수구분별 학점(기초·심화·응용)으로 알린다(아래).
   if (majorAreaCredits) categories = (categories || []).map((c) => ({ ...c, baseShortfall: 0 }));
@@ -163,6 +164,20 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
     if (n > 0) items.push(t ? t('grad.shortfallMajorArea', { area: label(a.area), n }) : `${a.area}전공 ${n}학점`);
   }
 
+  // 교양기초 영역별 학점과 교양선택 영역 개수 — 모자란 것만. 영역을 모르는 교양 학점은 어느 영역에도 넣지 않았다(서버).
+  if (liberalElectiveAreas) {
+    const short = liberalElectiveAreas.foundation.filter((a) => a.earned < a.required);
+    if (short.length > 0) {
+      const parts = short.map((a) => (t ? t('grad.shortfallFoundationAreaItem', { area: label(a.area), n: a.required - a.earned }) : `${a.area} ${a.required - a.earned}학점`));
+      items.push(t ? t('grad.shortfallFoundationAreas', { items: parts.join('·') }) : `교양기초 영역(${parts.join('·')})`);
+    }
+    const e = liberalElectiveAreas.electives;
+    if (e && !e.satisfied) {
+      const n = e.requiredAreaCount - e.coveredAreaCount;
+      items.push(t ? t('grad.shortfallElectiveAreas', { n }) : `교양선택 영역 ${n}개`);
+    }
+  }
+
   // 교양필수 영역(건학이념·대학생활·전공탐색과진로)을 아직 듣지 않았으면 학점과 따로 알린다 — 학점을 채웠어도 영역 과목이
   // 빠지면 미충족이다(서버 liberalRequiredAreas.js). 과목명은 서버 데이터라 번역하지 않는다.
   for (const area of missingLiberalAreas(categories)) {
@@ -176,6 +191,15 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
   }
 
   return items;
+}
+
+// 졸업사정 등록기간(시행규칙 제118조 제1호)이 모자란 학기 수 — 학점·요건을 다 채웠을 때만 센다(#378 H-2 결정 A: 그 전에는
+// 정보로만 보여 주고 강조하지 않는다). 모자라지 않거나 강조할 때가 아니면 0.
+export function registrationTermShortage(status, shortfalls) {
+  const terms = status && status.registrationTerms;
+  if (!terms || !shortfalls || shortfalls.length > 0) return 0;
+  if (status.totalEarnedCredits < status.totalRequiredCredits) return 0;
+  return Math.max(0, terms.required - terms.registered);
 }
 
 // summarizeShortfalls 결과를 "OO, OO가 부족해요." 문장으로 조립 — 마지막 항목의 받침 유무에
