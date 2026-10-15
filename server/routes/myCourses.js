@@ -4,6 +4,9 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { perUserLimiter } = require('../middleware/security');
 const courseService = require('../services/courseService');
+const studentService = require('../services/studentService');
+const { COUNTED_MAJORS } = require('../services/secondMajorCredits');
+const { resolveCourseCounting } = require('../services/courseCounting');
 const { isIntInRange } = require('../services/inputValidation');
 const {
   parseCourseListPdf,
@@ -101,7 +104,11 @@ router.get('/retake-eligible', async (req, res, next) => {
 router.get('/', async (req, res, next) => {
   try {
     const { year, semester } = req.query;
-    const data = await courseService.listMyCourses(req.session.userId, { year, semester });
+    const rows = await courseService.listMyCourses(req.session.userId, { year, semester });
+    const student = await studentService.findById(req.session.userId);
+    // 전과생(전과 전 과목)이나 다전공 학생이면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
+    const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
+    const data = rows.map(({ countedMajorChoice, ...r }) => (counting ? { ...r, countedMajor: counting.byId.get(r.id).counted, countedMajorAuto: counting.byId.get(r.id).auto } : r));
     res.status(200).json({ status: 200, code: 'MY_COURSES_SUCCESS', message: null, data });
   } catch (err) {
     next(err);
@@ -357,7 +364,11 @@ router.post('/import/confirm', async (req, res, next) => {
 // PATCH /api/my-courses/:id
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { letterGrade } = req.body;
+    const { letterGrade, countedMajor } = req.body;
+    // 다전공 학생이 과목을 어느 전공으로 셀지 고친 값(#378 결정 4-3). null은 "자동으로 되돌리기"다.
+    if (countedMajor !== undefined && countedMajor !== null && !COUNTED_MAJORS.includes(countedMajor)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_COUNTED_MAJOR', message: null, data: null });
+    }
     // null은 "성적 미입력으로 되돌리기"라는 유효한 값이다 — undefined(필드 자체를 안 보냄)와
     // 구분해야 하는데, `null in GRADE_POINT_MAP`이 항상 false라 이걸 걸러내지 못하고
     // "성적 저장 실패"로 잘못 막고 있었다(실사용 확인).

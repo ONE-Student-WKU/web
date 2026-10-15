@@ -42,7 +42,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   try {
     const {
       departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-      transferRecognizedCredits, teachingCourse, majorTrackType,
+      transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
     } = req.body;
 
     if (!departmentId) return res.status(400).json({ status: 400, code: 'REQUIRED_DEPARTMENT_ID', message: null, data: null });
@@ -80,6 +80,9 @@ router.post('/', requireAuth, async (req, res, next) => {
         return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_SEMESTER', message: null, data: null });
       }
     } else {
+      if (majorChangeRecognition !== undefined && majorChangeRecognition !== null) {
+        return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_RECOGNITION', message: null, data: null });
+      }
       if (majorChangeGrade !== undefined && majorChangeGrade !== null) {
         return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_GRADE', message: null, data: null });
       }
@@ -89,6 +92,11 @@ router.post('/', requireAuth, async (req, res, next) => {
       if (majorChangeSemester !== undefined && majorChangeSemester !== null) {
         return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_SEMESTER', message: null, data: null });
       }
+    }
+
+    // 전과생 전공학점 인정 신청 여부(선택, true/false — D-77).
+    if (majorChangeRecognition !== undefined && majorChangeRecognition !== null && typeof majorChangeRecognition !== 'boolean') {
+      return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_RECOGNITION', message: null, data: null });
     }
 
     // transferGrade: 편입생(TRANSFER_ADMISSION)만 필수. 이때 admissionYear는 "편입 연도 − 편입 학년 + 1"(편입한 학년의 당초 입학자 학번)이다
@@ -126,7 +134,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 
     await studentService.completeOnboarding(req.session.userId, {
       departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-      transferRecognizedCredits, teachingCourse, majorTrackType,
+      transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
     });
 
     return res.status(200).json({

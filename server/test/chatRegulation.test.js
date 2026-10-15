@@ -222,3 +222,17 @@ test('근거 충돌: 요건 자료가 없으면(requirements 없음) 충돌을 �
   assert.deepEqual(evidenceConflicts({ requirements: null }), []);
   assert.deepEqual(evidenceConflicts({ requirements: { rules: [] } }), []);
 });
+
+test('다전공 학생이 자기 제2전공 학과를 말한 질문은 본인 기준으로 판단한다(#378 G-2 — 예전에는 "경영학과 2022학번 일반 재학생"을 판단했다)', async () => {
+  const { resolveJudgmentSubject } = require('../services/regulationContextService');
+  const student = { department_id: D['컴퓨터·소프트웨어공학과'], department_name: '컴퓨터·소프트웨어공학과', admission_year: 2022, enrollment_type: 'GENERAL', second_department_id: D['경영학과'], second_major_type: 'DOUBLE' };
+  const message = '나 경영학과 복수전공인데 몇 학점 남았어?';
+  const yearContext = resolveYearContext({ message, profileCohort: 2022, availableBookYears: [2022, 2023, 2024, 2025, 2026] });
+  const subject = await resolveJudgmentSubject({ message, student, yearContext });
+  assert.equal(subject.departmentName, '컴퓨터·소프트웨어공학과');
+  assert.equal(subject.hypothetical, false);
+  assert.equal(subject.input.secondMajorType, 'DOUBLE', '본인 프로필(다전공 포함)로 판단한다');
+  // 다전공이 아닌 학생이 다른 학과를 말하면 예전처럼 그 학과(가정)다.
+  const other = await resolveJudgmentSubject({ message: '경영학과 졸업요건 알려줘', student: { ...student, second_department_id: null }, yearContext });
+  assert.equal(other.departmentName === '컴퓨터·소프트웨어공학과', false);
+});

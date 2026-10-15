@@ -7,6 +7,7 @@ const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
 const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 const { validateMajorTrackType, isBroadSeriesStudent } = require('../services/majorTrackType');
+const { validateSecondMajor } = require('../services/secondMajor');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -60,8 +61,8 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
-      secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, majorChangeRecognition, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
+      secondDepartmentId, secondMajorType, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
@@ -157,6 +158,11 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (effectiveEnrollmentType === 'MAJOR_CHANGE' && majorChangeSemester === undefined && student.major_change_semester === null) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_MAJOR_CHANGE_SEMESTER', message: null, data: null });
     }
+    // 전과생 전공학점 인정 신청 여부(true/false/null, D-77). 전과생이 아니면 받지 않는다.
+    if (majorChangeRecognition !== undefined && majorChangeRecognition !== null
+      && (typeof majorChangeRecognition !== 'boolean' || effectiveEnrollmentType !== 'MAJOR_CHANGE')) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_RECOGNITION', message: null, data: null });
+    }
 
     // transferGrade는 편입생(TRANSFER_ADMISSION)일 때만 의미가 있다. 유형을 편입생으로 바꾸는 요청에는 반드시 같이 보내야 하고(학번을
     // "편입 연도 − 학년 + 1"로 다시 계산해야 하므로), 이미 편입생이면서 옛 방식으로 입력해 값이 없는 계정이 다른 항목만 고칠 때는
@@ -200,6 +206,18 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       const dept = await studentService.findDepartmentById(secondDepartmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
     }
+    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 학과를 지우면 구분도 지운다.
+    const effectiveSecondDepartmentId = secondDepartmentId !== undefined ? secondDepartmentId : student.second_department_id;
+    const secondMajorError = validateSecondMajor(
+      { secondDepartmentId, secondMajorType },
+      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId }
+    );
+    if (secondMajorError) return res.status(400).json({ status: 400, code: secondMajorError, message: null, data: null });
+    // 학과만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    let effectiveSecondMajorType; // undefined = 바꾸지 않음
+    if (effectiveSecondDepartmentId == null) effectiveSecondMajorType = null;
+    else if (secondMajorType !== undefined) effectiveSecondMajorType = secondMajorType || 'DOUBLE';
+    else if (secondDepartmentId !== undefined) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
 
     // trackId: 이번 요청에서 확정되는 departmentId(요청에 없으면 기존 값) 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
@@ -219,12 +237,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeGrade,
       majorChangeYear,
       majorChangeSemester,
+      // 전과생이 아닌 유형으로 바꾸면 인정 신청 답도 지운다.
+      majorChangeRecognition: enrollmentType !== undefined && enrollmentType !== 'MAJOR_CHANGE'
+        ? null
+        : majorChangeRecognition === undefined || majorChangeRecognition === null ? majorChangeRecognition : Number(majorChangeRecognition),
       // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
       transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
       transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
       teachingCourse: clearTeaching ? null : teachingCourse,
       majorTrackType: clearTrackType ? null : majorTrackType,
       secondDepartmentId,
+      secondMajorType: effectiveSecondMajorType,
       careerCounselingCount,
       leaveSemesters,
       language,

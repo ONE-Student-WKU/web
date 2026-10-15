@@ -73,4 +73,41 @@ function guardAnswer(answer, judgment, language = 'ko') {
   return { answer: `${text.trimEnd()}\n\n${notice}`, guarded: true, reason: `${judgment.confidence}인데 단서 표현 없음` };
 }
 
-module.exports = { guardAnswer, HEDGE_RE, HEDGE_RE_EN, NOTICE, NOTICE_EN };
+// 전화번호(지역번호부터, 예: 063-850-5228). 근거 문서와 코드에 적힌 번호인지 숫자만 떼어 비교한다.
+const PHONE_RE = /(?<!\d)0\d{1,2}[-.)\s]{1,2}\d{3,4}[-.\s]\d{4}(?!\d)/g;
+// 코드가 직접 안내하는 번호(위 안내문·규정 판단 근거) — 근거 문서에 없어도 맞는 번호다.
+const KNOWN_PHONE_NUMBERS = [ACADEMIC_OFFICE];
+const digitsOf = (text) => text.replace(/\D/g, '');
+
+const PHONE_REMOVED_NOTICE = {
+  ko: '※ 근거 자료에서 확인되지 않은 전화번호는 답변에서 뺐어요. 부서 연락처는 학교 홈페이지에서 확인해 주세요.',
+  en: '※ Phone numbers that could not be found in the source material were removed from this answer. Please check department contacts on the university website.',
+};
+
+/**
+ * 근거에 없는 전화번호를 지운다(2026-10-15 점검 — 모델이 "학사지원과(063-850-5092)"처럼 자료 어디에도 없는 번호를 지어냈다). 순수 함수.
+ * 프롬프트로 "근거에 있는 번호만 안내하라"고 이미 지시하지만 지키지 않은 답변이 나와서, 번호는 코드로 확인한다.
+ * 번호만 빼고 부서명은 남긴다("학사지원과(063-…)에" → "학사지원과에"). 지운 번호가 있으면 안내 한 줄을 덧붙인다.
+ * @param {string} answer
+ * @param {string[]} sourceTexts  이번 답변의 근거 문서 내용
+ * @param {'ko'|'en'} [language]
+ * @returns {{ answer: string, removed: string[] }}
+ */
+function removeUnverifiedPhoneNumbers(answer, sourceTexts, language = 'ko') {
+  const text = typeof answer === 'string' ? answer : '';
+  const allowed = new Set([...KNOWN_PHONE_NUMBERS, ...(sourceTexts || [])].flatMap((t) => (String(t || '').match(PHONE_RE) || []).map(digitsOf)));
+  const removed = (text.match(PHONE_RE) || []).filter((n) => !allowed.has(digitsOf(n)));
+  if (removed.length === 0) return { answer, removed };
+
+  let out = text;
+  for (const n of new Set(removed)) {
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out
+      .replace(new RegExp(`\\s*\\(\\s*${esc}\\s*\\)`, 'g'), '') // 학사지원과(번호) → 학사지원과
+      .replace(new RegExp(`\\s*[,·]\\s*${esc}`, 'g'), '') // (학사지원과, 번호) → (학사지원과)
+      .replace(new RegExp(`\\s*${esc}`, 'g'), ''); // 학사지원과 번호로 → 학사지원과로
+  }
+  return { answer: `${out.trimEnd()}\n\n${PHONE_REMOVED_NOTICE[language === 'en' ? 'en' : 'ko']}`, removed };
+}
+
+module.exports = { guardAnswer, removeUnverifiedPhoneNumbers, HEDGE_RE, HEDGE_RE_EN, NOTICE, NOTICE_EN, PHONE_REMOVED_NOTICE };

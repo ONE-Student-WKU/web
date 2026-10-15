@@ -100,6 +100,48 @@ function buildGraduationStatusNote(graduationStatus) {
   const majorAreaLine = areaCredits
     ? `광역 계열전공(학칙시행규칙 제7조) — 이수유형: ${TRACK_LABEL[graduationStatus.majorTrackType] || '학생이 아직 알려 주지 않음'}. 이수구분별 전공 학점: ${areaCredits.areas.map((a) => `${a.area}전공 ${a.earned}/${a.required}학점`).join(', ')}${areaCredits.unknownCredits ? `. 구분(기초·심화·응용)을 알 수 없는 전공 ${areaCredits.unknownCredits}학점은 어느 구분에도 넣지 않았다 — 부족하다고 단정하지 말고 성적표로 다시 가져오거나 학과에 확인하라고 안내하라` : ''}.`
     : null;
+  // 교양기초 영역별 학점·교양선택 영역 개수(2025학번부터, liberalElectiveAreas.js). 영역을 모르는 교양 학점은 어느 영역에도 넣지 않았다.
+  const liberal = graduationStatus.liberalElectiveAreas;
+  // 실제 AI 확인(2026-10-15 로컬)에서 한 줄로 주면 교양기초 영역(AI와디지털 등)을 교양선택 영역으로 섞어 말해서, 두 묶음을 줄을 나눠 준다.
+  const foundationShort = liberal ? liberal.foundation.filter((a) => a.earned < a.required) : [];
+  const electiveAreas = liberal && liberal.electives;
+  const liberalAreaLine = liberal
+    ? [
+      '교양 영역(2025학번부터, 교육과정 책자 교양 이수학점 기준) — 교양기초와 교양선택은 서로 다른 영역 묶음이다. 섞어 말하지 마라.',
+      `  - 교양기초(5개 영역마다 정해진 학점 이상): ${liberal.foundation.map((a) => `${a.area} ${a.earned}/${a.required}학점`).join(', ')} → ${foundationShort.length ? `모자란 영역: ${foundationShort.map((a) => `${a.area} ${a.required - a.earned}학점`).join(', ')}` : '모두 충족'}`,
+      electiveAreas
+        ? `  - 교양선택(인문과사회·자연과환경·문화와예술·취업과실무 4개 영역 중 ${electiveAreas.requiredAreaCount}개 이상): 이수한 영역 ${electiveAreas.coveredAreaCount}개(${electiveAreas.areas.filter((a) => a.earned > 0).map((a) => a.area).join('·') || '없음'}) → ${electiveAreas.satisfied ? '충족' : `${electiveAreas.requiredAreaCount - electiveAreas.coveredAreaCount}개 영역 더 필요`}`
+        : '  - 교양선택: 이 학과는 영역 개수 조건이 없다.',
+      liberal.unknownCredits ? `  - 개설현황에서 영역을 찾지 못한 교양 ${liberal.unknownCredits}학점은 어느 영역에도 넣지 않았다 — 그 학점 때문에 영역이 부족하다고 단정하지 말고, 과목명이 책자 표기와 같은지 확인하라고 안내하라.` : null,
+    ].filter(Boolean).join('\n')
+    : null;
+  // 다전공(복수전공·부전공, secondMajorCredits.js) — 제2전공 학점과 복수전공 졸업논문2. 과목은 개설 학과·편성표로 자동으로 나눴다.
+  const second = graduationStatus.secondMajor;
+  const secondLabel = second && (second.type === 'MINOR' ? '부전공' : '복수전공');
+  // 실제 AI 확인(2026-10-16 로컬)에서 주전공 최소전공(위 "전공" 행)을 "자료에 없다"고 하거나, 근거 문서의 일반 재학생 전공 학점(전필+전선)을
+  // 복수전공 기준과 섞어 말해서, 두 숫자를 이 줄에 직접 적는다.
+  const primaryMajorRow = categories.find((c) => c.category === '전공');
+  const secondMajorLine = second
+    ? [
+      `다전공: ${secondLabel} ${second.department} — 제2전공 ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 ${secondLabel} 기준)${second.thesis ? `, 복수전공 졸업논문(졸업논문2) ${second.thesis.satisfied ? '통과' : '미통과'}` : ''}.`,
+      second.type === 'DOUBLE'
+        ? `  - 복수전공 이수학생은 주전공도 최소전공 인정학점이면 된다(시행규칙 제8조 제1항).${primaryMajorRow ? ` 주전공 전공 기준은 ${primaryMajorRow.requiredCredits}학점이고 지금 ${primaryMajorRow.earnedCredits}학점이다(위 카테고리의 "전공" 행).` : ''} 주전공·복수전공 요건을 모두 채워야 졸업한다.`
+        : '  - 부전공은 부전공 지정 교과목을 포함해 21학점 이상이다(다전공이수에 관한 내규 제5조). 지정 교과목은 판정하지 않으니 부전공 학과 확인을 안내하라. 부전공을 유지하면 부전공 요건도 채워야 졸업한다(취소하고 졸업할 수도 있다).',
+      '  - 근거 문서에 나오는 학과의 전공 학점(전공필수+전공선택 합계)은 그 학과 일반 재학생 기준이다. 복수전공·부전공 기준이 아니니 위 숫자로 답하라.',
+      '  - 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이다. 과목은 개설 학과와 학과 편성표로 자동으로 나눴고, 두 학과에 모두 있는 과목은 주전공으로 두었다 — 다르면 과목 관리에서 과목마다 바꿀 수 있다고 안내하라. 같은 과목을 두 전공에 중복 인정하는지는 학교 기준을 확인하지 못했으니 단정하지 마라.',
+    ].join('\n')
+    : null;
+  // 전과생의 전과 전 전공 과목(D-77) — 일반선택으로 셌고, 같은 과목은 인정 신청을 했을 때만 전공선택이다.
+  const prior = graduationStatus.priorMajorCourses;
+  const sumCredits = (list) => list.reduce((s, c) => s + c.credits, 0);
+  const priorLine = prior && (prior.demoted.length || prior.recognized.length)
+    ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 과목 관리에서 과목마다 바꿀 수 있다고 알려라.`
+    : null;
+  // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
+  const terms = graduationStatus.registrationTerms;
+  const registrationLine = terms
+    ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라.`
+    : null;
   const counselingLine = counseling
     ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
     : null;
@@ -128,6 +170,10 @@ ${categoryLines}
 ${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
 ${designatedLine || ''}
 ${majorAreaLine || ''}
+${liberalAreaLine || ''}
+${secondMajorLine || ''}
+${priorLine || ''}
+${registrationLine || ''}
 
 주의:
 - 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다

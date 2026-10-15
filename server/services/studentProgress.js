@@ -22,11 +22,13 @@ const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
 
 // 수업연한(학칙 제25조 제1항): 학사과정 4년이 원칙이고 건축학과 5년, 의·치·한의예(학)과(예과 2 + 본과 4)와 약학과 6년.
 // 예과·본과가 학과로 나뉘어 있어도 학년은 입학부터 이어서 센다(예: 본과 1학년 = 3학년).
+// 2026학번부터의 2년제 전문학사 학과(졸업 75학점, 2026 책자 15쪽)는 2년이다.
 const DEFAULT_PROGRAM_YEARS = 4;
 const PROGRAM_YEARS = Object.freeze({
   건축학과: 5,
   의예과: 6, 의학과: 6, 치의예과: 6, 치의학과: 6, 한의예과: 6, 한의학과: 6,
   약학과: 6,
+  외식조리과: 2, 미용피부관리과: 2, 호텔관광과: 2, 웰니스케어과: 2, 부사관과: 2,
 });
 const programYearsOf = (departmentName) => PROGRAM_YEARS[departmentName] || DEFAULT_PROGRAM_YEARS;
 const TRANSFER_START_GRADE = 3; // 규정 엔진도 편입생을 3학년으로 가정한다(TRANSFER_GRADE_ASSUMED)
@@ -176,6 +178,43 @@ function currentStandingOf(student, { today = todayKst() } = {}) {
   return progress && progress.current ? { ...progress.current, source: progress.source } : null;
 }
 
+// 조기졸업자는 6학기 이상 등록하면 된다(시행규칙 제118조 제1호 단서, 학칙 제25조 제5항). 4년제 과정에만 안내한다.
+const EARLY_GRADUATION_TERMS = 6;
+// 조기졸업을 신청할 수 없는 학과(시행규칙 제126조 제2항 제6호): 의과대학, 치과대학, 한의과대학, 약학대학, 간호대학, 건축학과, 보건계열 9개 학과.
+// 전과생·편입생(제4호)도 신청할 수 없다. 재입학생(제4호)과 학사구조조정 소속변경자(제5호)는 입력받지 않아 가려내지 못한다.
+const EARLY_GRADUATION_RESTRICTED_DEPARTMENTS = new Set([
+  '의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과', '간호학과', '건축학과',
+  '작업치료학과', '임상병리학과', '물리치료학과', '방사선학과', '치기공학과', '치위생학과', '응급구조학과', '안경광학과',
+]);
+function canGraduateEarly(student, programYears) {
+  if (programYears !== DEFAULT_PROGRAM_YEARS) return false; // 전문학사(제7호)·5·6년제
+  if (student.enrollment_type === 'MAJOR_CHANGE' || student.enrollment_type === 'TRANSFER_ADMISSION') return false;
+  return !EARLY_GRADUATION_RESTRICTED_DEPARTMENTS.has(student.department_name);
+}
+
+/**
+ * 졸업사정의 등록기간(시행규칙 제118조 제1호: 수업연한 이상 등록한 자)을 셀 등록 학기 수(#378 H-2, 결정 A). 프로필만으로 센다(홈과 같은 값).
+ * - 휴학한 학기는 등록 학기가 아니다(재학 학기 수 = 경과 학기 − 휴학).
+ * - 편입생은 편입 학년 앞의 학기를 등록한 것으로 본다(3학년 편입이면 4학기 + 편입 뒤 재학 학기).
+ * - 지금 다니는 학기도 등록한 학기로 센다.
+ * @returns {{ registered, required, earlyGraduation: number|null, estimated: boolean } | null}
+ */
+function registrationTermsOf(student, { today = todayKst() } = {}) {
+  const standing = currentStandingOf(student, { today });
+  if (!standing) return null;
+  const isTransfer = student.enrollment_type === 'TRANSFER_ADMISSION';
+  const startGrade = isTransfer ? (student.transfer_grade != null ? Number(student.transfer_grade) : TRANSFER_START_GRADE) : 1;
+  const programYears = programYearsOf(student.department_name);
+  return {
+    registered: standing.enrolledTermNumber + (startGrade - 1) * 2,
+    required: programYears * 2,
+    // 조기졸업 6학기는 신청할 수 있는 학생에게만 안내한다(제126조 제2항 — 2026-10-16 규정 대조에서 찾음).
+    earlyGraduation: canGraduateEarly(student, programYears) ? EARLY_GRADUATION_TERMS : null,
+    // 휴학 기간을 아직 답하지 않은 계정은 누적 휴학 학기 수로만 센 값이다(시기를 모름).
+    estimated: standing.source === 'ESTIMATED',
+  };
+}
+
 /** 이수 과목명 목록(중복 제거). 낙제(F·NP)와 재수강으로 대체된 이전 기록은 뺀다 — 졸업요건 계산(graduationService)과 같은 기준. */
 function completedCourseNames(rows, supersededIds = new Set()) {
   const names = [];
@@ -213,4 +252,4 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
   return { ...progress, completedCourseNames: completedCourseNames(rows, supersededIds) };
 }
 
-module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel, currentStandingOf, programYearsOf, PROGRAM_YEARS };
+module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel, currentStandingOf, registrationTermsOf, programYearsOf, PROGRAM_YEARS };

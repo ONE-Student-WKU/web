@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -63,7 +63,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : [];
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas, status.secondMajor) : [];
+  const termShortage = registrationTermShortage(status, shortfalls);
   const groups = status ? buildRequirementGroups(status.categories, status.majorAreaCredits) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
@@ -154,6 +155,18 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
               )}
+              {/* 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기만 알린다. 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2). */}
+              {status.registrationTerms && (
+                termShortage > 0 ? (
+                  <p className="grad-trust-reason">{t('grad.registrationShort', { n: termShortage })}</p>
+                ) : (
+                  <p className="grad-flex-note">
+                    {t('grad.registrationTerms', { registered: status.registrationTerms.registered, required: status.registrationTerms.required })}
+                    {status.registrationTerms.earlyGraduation && ` ${t('grad.registrationEarly', { n: status.registrationTerms.earlyGraduation })}`}
+                    {status.registrationTerms.estimated && ` ${t('grad.registrationEstimated')}`}
+                  </p>
+                )
+              )}
             </section>
 
             <p className="home-quick-label">{t('grad.sectionMajorLiberal')}</p>
@@ -198,6 +211,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-subcheck-label">{groups.major.baseSatisfied ? t('grad.baseMet') : t('grad.baseUnmet')}</p>
                   </div>
                 )}
+                {/* 전과생: 전과 전 학과 전공 과목은 일반선택, 같은 과목은 인정 신청 시 전공선택(시행규칙 제3조 제4항·제115조, D-77) */}
+                {status.priorMajorCourses && (status.priorMajorCourses.demoted.length > 0 || status.priorMajorCourses.recognized.length > 0) && (
+                  <p className="grad-flex-note">
+                    {t('grad.prior.demoted', { n: status.priorMajorCourses.demoted.reduce((s, c) => s + c.credits, 0) })}
+                    {status.priorMajorCourses.recognized.length > 0
+                      ? ` ${t('grad.prior.recognized', { n: status.priorMajorCourses.recognized.reduce((s, c) => s + c.credits, 0) })}`
+                      : ` ${t(status.priorMajorCourses.recognitionApplied ? 'grad.prior.appliedNone' : 'grad.prior.notApplied')}`}
+                  </p>
+                )}
                 {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
                 {status.majorAreaCredits && (
                   <>
@@ -215,6 +237,47 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-flex-note">{t('grad.majorTrackType', { type: status.majorTrackType ? t(`trackType.${status.majorTrackType}`) : t('grad.majorTrackTypeNone') })}</p>
                   </>
                 )}
+              </section>
+            )}
+
+            {/* 다전공(복수전공·부전공, #378 G-2): 제2전공 학점과 복수전공 졸업논문2. 과목은 개설 학과·편성표로 자동으로 나누고 과목 관리에서 고칠 수 있다. */}
+            {status.secondMajor && (
+              <section className="home-card">
+                <div className="grad-category-row">
+                  <p className="home-card-label">
+                    {t('grad.secondMajor.title', { type: t(`grad.secondMajor.${status.secondMajor.type}`), department: status.secondMajor.department })}
+                  </p>
+                  {status.secondMajor.required != null && (
+                    <span className={status.secondMajor.earned >= status.secondMajor.required ? 'grad-category-value satisfied' : 'grad-category-value'}>
+                      {t('grad.groupCredits', {
+                        earned: status.secondMajor.earned,
+                        required: status.secondMajor.required,
+                        percent: getPercent(status.secondMajor.earned, status.secondMajor.required),
+                      })}
+                    </span>
+                  )}
+                </div>
+                {status.secondMajor.required != null && (
+                  <div className="home-progress-track">
+                    <div
+                      className="home-progress-fill"
+                      style={{
+                        width: `${getPercent(status.secondMajor.earned, status.secondMajor.required)}%`,
+                        backgroundColor: getProgressColor(getPercent(status.secondMajor.earned, status.secondMajor.required)),
+                      }}
+                    />
+                  </div>
+                )}
+                <p className="grad-flex-note">{t(`grad.secondMajor.basis.${status.secondMajor.basis}`, { n: status.secondMajor.required })}</p>
+                {status.secondMajor.thesis && (
+                  <div className="grad-subcheck-row">
+                    <span className={status.secondMajor.thesis.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                      {status.secondMajor.thesis.satisfied && <IconCheck size={11} />}
+                    </span>
+                    <p className="grad-subcheck-label">{t(status.secondMajor.thesis.satisfied ? 'grad.secondMajor.thesisMet' : 'grad.secondMajor.thesisUnmet')}</p>
+                  </div>
+                )}
+                <p className="grad-flex-note">{t('grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}</p>
               </section>
             )}
 
@@ -268,6 +331,38 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   </p>
                 )}
                 <p className="grad-flex-note">{t('grad.electiveEarned', { n: groups.liberalArts.electiveEarnedCredits })}</p>
+                {/* 2025학번부터: 교양기초 영역별 학점과 교양선택 영역 개수(서버 liberalElectiveAreas.js, #378 H-1). 영역을 모르는 학점은 어느 영역에도 넣지 않는다. */}
+                {status.liberalElectiveAreas && (
+                  <>
+                    <p className="grad-flex-note">{t('grad.liberalAreaBasis')}</p>
+                    {/* 외국인 유학생은 교양필수를 뺀 교양을 영역 구분 없이 이수한다(2026 책자, 심의 후 확정). 국적은 받지 않아 안내만 한다. */}
+                    <p className="grad-flex-note">{t('grad.liberalAreaForeign')}</p>
+                    {status.liberalElectiveAreas.foundation.map((a) => (
+                      <div className="grad-subcheck-row" key={a.area}>
+                        <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {a.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">{t('grad.liberalFoundationArea', { area: translateCategory(a.area, t), earned: a.earned, required: a.required })}</p>
+                      </div>
+                    ))}
+                    {status.liberalElectiveAreas.electives && (
+                      <div className="grad-subcheck-row">
+                        <span className={status.liberalElectiveAreas.electives.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {status.liberalElectiveAreas.electives.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">
+                          {t('grad.liberalElectiveAreas', {
+                            covered: status.liberalElectiveAreas.electives.coveredAreaCount,
+                            required: status.liberalElectiveAreas.electives.requiredAreaCount,
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {status.liberalElectiveAreas.unknownCredits > 0 && (
+                      <p className="grad-flex-note">{t('grad.liberalAreaUnknown', { n: status.liberalElectiveAreas.unknownCredits })}</p>
+                    )}
+                  </>
+                )}
               </section>
             )}
 
@@ -343,7 +438,11 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   ))}
                 </ul>
               ) : (
-                <p>{t('home.allMet')}</p>
+                <p>
+                  {uncheckedRequirementKeys(status).length > 0
+                    ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
+                    : t('home.allMet')}
+                </p>
               )}
             </section>
           </>

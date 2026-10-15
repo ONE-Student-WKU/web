@@ -139,6 +139,45 @@ async function ensureStudentMajorTrackTypeColumn(connection) {
   }
 }
 
+// 전과생 전공학점 인정 신청 여부 guard(D-77) — 전과 전에 들은 과목이 전과한 학과의 같은 과목이면 신청한 학생만 전공선택으로 인정한다
+// (학교 전과 안내 11절, 시행규칙 제115조). NULL은 답하지 않음(신청 안 한 것으로 본다).
+async function ensureStudentMajorChangeRecognitionColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'major_change_recognition'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.major_change_recognition 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN major_change_recognition TINYINT(1) NULL AFTER major_change_semester');
+  }
+}
+
+// 다전공 구분 guard — 복수전공·부전공을 함께 받게 되면서(#378 G-1) 제2전공 학과(second_department_id)가 어느 쪽인지 남긴다.
+// NULL로 두면 기존 행은 복수전공으로 본다(이 칸을 처음 만들 때 "복수전공 학과"로 받았다).
+async function ensureStudentSecondMajorTypeColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'second_major_type'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.second_major_type 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN second_major_type VARCHAR(16) NULL AFTER second_department_id');
+  }
+}
+
+// 다전공 학생이 과목을 어느 전공으로 셀지 직접 고른 값 guard(#378 G-2, 결정 4-3). NULL = 자동(개설 학과·편성표로 정한다,
+// server/services/secondMajorCredits.js). PRIMARY·SECOND는 학생이 예외로 고친 값이다.
+async function ensureStudentCourseCountedMajorColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_courses' AND COLUMN_NAME = 'counted_major'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] student_courses.counted_major 컬럼 추가...');
+    await connection.query('ALTER TABLE student_courses ADD COLUMN counted_major VARCHAR(16) NULL AFTER major_area');
+  }
+}
+
 // 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
 // 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
 async function ensureStudentCourseMajorAreaColumn(connection) {
@@ -550,7 +589,10 @@ async function migrate() {
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
+    await ensureStudentSecondMajorTypeColumn(connection);
+    await ensureStudentMajorChangeRecognitionColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
+    await ensureStudentCourseCountedMajorColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);

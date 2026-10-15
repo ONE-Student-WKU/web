@@ -254,3 +254,43 @@ test('챗봇 프로필 줄은 계산된 지금 학기를 쓴다(옛 "N학년(누
   assert.match(prompt, /현재: 2학년 2학기\(재학 4번째 학기\)/);
   assert.doesNotMatch(prompt, /누적 휴학 \d+학기 반영/);
 });
+
+const { registrationTermsOf } = require('../services/studentProgress');
+
+test('등록 학기(졸업사정 등록기간, 시행규칙 제118조 제1호 — #378 H-2): 지금 학기까지 센 재학 학기, 4년제는 8학기·조기졸업 6학기', () => {
+  const r = registrationTermsOf({ admission_year: 2023, enrollment_type: 'GENERAL', leave_periods: '[]', department_name: '경영학과' }, { today: TODAY });
+  assert.deepEqual(r, { registered: 8, required: 8, earlyGraduation: 6, estimated: false });
+});
+
+test('등록 학기: 휴학한 학기는 빼고, 휴학 시기를 모르면 추정으로 표시한다', () => {
+  const leave = JSON.stringify([{ startYear: 2024, startSemester: 1, semesters: 2 }]);
+  assert.equal(registrationTermsOf({ admission_year: 2023, enrollment_type: 'GENERAL', leave_periods: leave, department_name: '경영학과' }, { today: TODAY }).registered, 6);
+  const unknown = registrationTermsOf({ admission_year: 2023, enrollment_type: 'GENERAL', leave_periods: null, leave_semesters: 2, department_name: '경영학과' }, { today: TODAY });
+  assert.equal(unknown.registered, 6);
+  assert.equal(unknown.estimated, true);
+});
+
+test('등록 학기: 편입생은 편입 학년 앞의 학기를 등록한 것으로 센다(3학년 편입 = 4학기 + 편입 뒤 재학 학기)', () => {
+  // 2025년 3학년 편입 → admission_year는 "편입 연도 − 편입 학년 + 1" = 2023. 2025-1 ~ 2026-2 재학 4학기 + 앞의 4학기.
+  const r = registrationTermsOf({ admission_year: 2023, enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3, leave_periods: '[]', department_name: '경영학과' }, { today: TODAY });
+  assert.equal(r.registered, 8);
+});
+
+test('등록 학기: 수업연한이 다른 학과 — 건축학과 10학기, 약학과 12학기(조기졸업 안내 없음), 2년제 4학기', () => {
+  const of = (department_name) => registrationTermsOf({ admission_year: 2026, enrollment_type: 'GENERAL', leave_periods: '[]', department_name }, { today: TODAY });
+  assert.deepEqual([of('건축학과').required, of('건축학과').earlyGraduation], [10, null]);
+  assert.equal(of('약학과').required, 12);
+  assert.deepEqual([of('외식조리과').required, of('외식조리과').registered], [4, 2]);
+});
+
+test('등록 학기: 입학 학기 전이거나 학번이 없으면 null', () => {
+  assert.equal(registrationTermsOf({ admission_year: null }, { today: TODAY }), null);
+});
+
+test('조기졸업 안내는 신청할 수 있는 학생에게만 — 전과생·편입생·의약·간호·보건계열·건축학과는 제한(시행규칙 제126조 제2항)', () => {
+  const of = (over) => registrationTermsOf({ admission_year: 2024, enrollment_type: 'GENERAL', leave_periods: '[]', department_name: '경영학과', ...over }, { today: TODAY }).earlyGraduation;
+  assert.equal(of({}), 6);
+  assert.equal(of({ enrollment_type: 'MAJOR_CHANGE', major_change_grade: 2 }), null);
+  assert.equal(of({ enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3, admission_year: 2023 }), null);
+  for (const d of ['간호학과', '물리치료학과', '한약학과', '건축학과']) assert.equal(of({ department_name: d }), null, d);
+});

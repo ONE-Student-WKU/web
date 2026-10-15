@@ -296,6 +296,12 @@ async function resolveJudgmentSubject({ message, student, yearContext }) {
     const chain = await getDepartmentChain(student.department_id);
     if (chain.departmentIds.includes(department.id)) department = (await resolveDepartment('', student)) || department;
   }
+  // 다전공 학생이 자기 제2전공 학과를 말한 질문("경영학과 복수전공인데 몇 학점 남았어?")도 본인 기준이다. 제2전공 요건은 이수 현황(secondMajor)에
+  // 따로 있다. 언급된 학과를 그대로 쓰면 "경영학과 2022학번 일반 재학생"처럼 이 학생과 무관한 조합을 판단했다(2026-10-16 로컬 확인, #378 G-2).
+  if (department.source === 'message' && student && student.second_department_id != null && department.id !== student.department_id) {
+    const second = await getDepartmentChain(student.second_department_id);
+    if (second.departmentIds.includes(department.id)) department = (await resolveDepartment('', student)) || department;
+  }
   // "20학번인데 …"처럼 본인 학번·학과를 질문에서 말해도, 프로필과 같은 학번·학과면 본인 질문이다 — 출처(message/profile)가 아니라
   // 값으로 비교한다. 예전에는 출처가 message면 가정(일반 재학생)으로 바뀌어 전과·편입 정보가 사라졌다(F-3).
   const isProfile = Boolean(student && student.department_id != null && student.department_id === department.id && student.admission_year === cohort);

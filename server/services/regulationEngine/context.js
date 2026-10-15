@@ -1,4 +1,5 @@
 const { ENROLLMENT_TYPES, MIN_SUPPORTED_ADMISSION_YEAR } = require('./constants');
+const { secondMajorTypeOf } = require('../secondMajor');
 
 /**
  * server/services/regulationEngine/context.js
@@ -65,6 +66,8 @@ function inputFromStudentRow(student, extra = {}) {
     leavePeriods: student.leave_periods ?? null,
     // 광역 계열전공 이수유형(students.major_track_type). null = 묻지 않음/답하지 않음(services/majorTrackType.js).
     majorTrackType: student.major_track_type ?? null,
+    // 다전공 구분(DOUBLE 복수전공·MINOR 부전공, services/secondMajor.js). 복수전공이면 주전공도 최소전공 인정학점 기준이다(시행규칙 제8조 제1항).
+    secondMajorType: secondMajorTypeOf(student),
     ...extra,
   };
 }
@@ -135,6 +138,7 @@ function normalizeInput(raw, { today } = {}) {
       restructuring: rs && rs.year != null && rs.semester != null ? { year: rs.year, semester: rs.semester } : null,
       leavePeriods: r.leavePeriods ?? null,
       majorTrackType: ['DOUBLE_MAJOR', 'INTENSIVE', 'CONVERGENCE', 'UNDECIDED'].includes(r.majorTrackType) ? r.majorTrackType : null,
+      secondMajorType: ['DOUBLE', 'MINOR'].includes(r.secondMajorType) ? r.secondMajorType : null,
       policy: { liberalArtsCutoffTrigger: trigger },
       supported: r.admissionYear >= MIN_SUPPORTED_ADMISSION_YEAR,
     },

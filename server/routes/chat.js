@@ -12,7 +12,7 @@ const studentProgressService = require('../services/studentProgress');
 const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
 const curriculumContextService = require('../services/curriculumContextService');
-const { guardAnswer } = require('../services/answerGuard');
+const { guardAnswer, removeUnverifiedPhoneNumbers } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
 const { parseLanguage } = require('../services/language');
 const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatConstants');
@@ -197,8 +197,13 @@ router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
     }
 
     const rawAnswer = await aiClient.getAIChatResponse(message, relevantChunks, history, student, graduationStatus, yearContext, language, progress);
-    // 신뢰도가 확정이 아닌데 단서(추정·확인 필요 등)가 하나도 없는 답변에는 안내문을 덧붙인다(answerGuard.js, D-49).
-    const answer = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment, language).answer;
+    // 신뢰도가 확정이 아닌데 단서(추정·확인 필요 등)가 하나도 없는 답변에는 안내문을 덧붙이고(answerGuard.js, D-49), 근거에 없는
+    // 전화번호는 지운다(모델이 번호를 지어낸 적이 있다). 번호 안내문의 "확인해 주세요"가 단서로 읽히지 않게 단서 검사를 먼저 한다.
+    const guarded = guardAnswer(rawAnswer, regulationJudgment && regulationJudgment.judgment, language).answer;
+    const phoneCheck = removeUnverifiedPhoneNumbers(guarded, relevantChunks.map((c) => c.content), language);
+    // 지운 번호는 학교 부서 번호(공개 정보)라 그대로 남긴다 — 자주 지워지는 번호가 실제 부서 번호면 근거 문서에 넣을지 판단한다.
+    if (phoneCheck.removed.length) console.info('[chat] 근거에 없는 전화번호를 지웠어요:', phoneCheck.removed.join(', '));
+    const answer = phoneCheck.answer;
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,

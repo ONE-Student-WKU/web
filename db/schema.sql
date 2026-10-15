@@ -24,8 +24,8 @@
 --     입학년도 교육과정을 적용받는다"에 따라 편입생의 admission_year에는 "편입 연도 − 편입 학년 + 1"(같은 학년이던 당초 입학자의
 --     학번)을 저장하고, 편입 연도는 admission_year + transfer_grade − 1로 되돌려 계산한다. NULL이면 옛 방식으로 입력한 편입생이라
 --     학번의 의미와 편입 학년을 모르는 상태 — 규정 판단 엔진이 3학년 편입으로 가정하고 "추정"으로 표시한다)
---   - students.second_department_id (복수전공 대상 학과. 복수전공+부전공 동시 케이스는
---     스코프 제외하고 컬럼 하나로 단순화하기로 함)
+--   - students.second_department_id / second_major_type (다전공 대상 학과와 구분 — DOUBLE 복수전공, MINOR 부전공.
+--     제2전공은 하나만 받는다(#378 결정 4-2 A). 구분이 NULL인 옛 행은 복수전공으로 본다(server/services/secondMajor.js))
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
 --     원문엔 없고 교육과정 책자 각주에만 있는 요건 — 세션별 로그는 안 남기고 총 횟수만 카운트)
 --   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
@@ -104,12 +104,14 @@ CREATE TABLE IF NOT EXISTS students (
   major_change_year         INT,      -- 전과생만 해당(전과한 연도). 교양 이수기준이 전과 "시점"(2022학년도
                                        -- 2학기 기준 이전/이후)으로 갈리므로 학년만으론 판별 불가. 그 외 NULL
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
+  major_change_recognition  TINYINT(1) NULL,  -- 전과생만 해당: 전과생 전공학점 인정 신청을 했는가(1/0). NULL = 답하지 않음(신청 안 한 것으로 본다, D-77)
   transfer_grade            TINYINT,  -- 편입생만 해당(편입한 학년 2~4). admission_year = 편입 연도 − transfer_grade + 1. 옛 방식 편입생·그 외 NULL
   transfer_recognized_credits SMALLINT NULL,  -- 편입생만 해당: 편입할 때 인정받은 전적대학 학점. NULL = 입력 안 함(학교 표의 인정학점으로 가정)
   teaching_course           TINYINT(1) NULL,  -- 교직과정 이수 여부. 1 = 이수 중, 0 = 이수 안 함(사범대 교직 포기 포함), NULL = 답하지 않음.
                                                -- 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 NULL(server/services/teachingCourse.js)
   major_track_type          VARCHAR(16) NULL,  -- 광역 계열전공 이수유형(시행규칙 제7조 제2항): DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED, NULL = 묻지 않음.
-  second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
+  second_department_id      INT,      -- 다전공(복수전공·부전공) 대상 학과. 안 하면 NULL. 제2전공은 하나만(복수전공+부전공 동시는 스코프 제외)
+  second_major_type         VARCHAR(16) NULL,  -- 다전공 구분: DOUBLE(복수전공)·MINOR(부전공). NULL + 학과 있음 = 옛 행(복수전공으로 봄)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
@@ -255,6 +257,7 @@ CREATE TABLE IF NOT EXISTS student_courses (
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
   major_area        ENUM('기초', '심화', '응용') NULL,  -- 광역 계열전공 과목의 원래 이수구분(시행규칙 제7조 제3항). NULL = 모름(편성표 과목명으로 찾는다)
+  counted_major     VARCHAR(16) NULL,  -- 다전공 학생이 이 과목을 어느 전공으로 셀지 고친 값(PRIMARY·SECOND). NULL = 자동(services/secondMajorCredits.js)
   year              INT NOT NULL,
   semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
                                         -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —

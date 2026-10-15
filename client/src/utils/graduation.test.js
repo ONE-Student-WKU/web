@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -274,5 +274,73 @@ describe('광역 계열전공 이수구분별 학점(#378 E-3)', () => {
     const raw = [{ category: '전공필수', earnedCredits: 0, requiredCredits: 36 }, { category: '전공선택', earnedCredits: 21, requiredCredits: 36 }];
     expect(buildRequirementGroups(raw, majorAreaCredits).major.baseSatisfied).toBeNull();
     expect(buildRequirementGroups(raw).major.baseSatisfied).toBe(false);
+  });
+});
+
+describe('교양 영역(#378 H-1)', () => {
+  const liberal = {
+    foundation: [
+      { area: '생명존중', required: 4, earned: 4, satisfied: true },
+      { area: 'AI와디지털', required: 3, earned: 6, satisfied: true },
+      { area: '논리와표현', required: 3, earned: 0, satisfied: false },
+      { area: '글로벌의사소통', required: 3, earned: 1, satisfied: false },
+      { area: '과학과기술', required: 3, earned: 3, satisfied: true },
+    ],
+    electives: { requiredAreaCount: 3, areas: [], coveredAreaCount: 1, satisfied: false },
+    unknownCredits: 0,
+    satisfied: false,
+  };
+
+  it('모자란 교양기초 영역은 한 항목으로 묶고, 교양선택은 더 들어야 할 영역 수를 알린다', () => {
+    expect(summarizeShortfalls([], [], null, null, liberal)).toEqual(['교양기초 영역(논리와표현 3학점·글로벌의사소통 2학점)', '교양선택 영역 2개']);
+    const en = summarizeShortfalls([], [], (k, p) => translate('en', k, p), null, liberal);
+    expect(en).toEqual(['Foundation general ed. areas (Logic and expression 3 credits·Global communication 2 credits)', '2 more elective general ed. area(s)']);
+  });
+
+  it('다 채웠거나 영역 기준이 없으면(2024학번 이하 등) 항목을 넣지 않는다', () => {
+    const done = { ...liberal, foundation: liberal.foundation.map((a) => ({ ...a, earned: a.required, satisfied: true })), electives: null, satisfied: true };
+    expect(summarizeShortfalls([], [], null, null, done)).toEqual([]);
+    expect(summarizeShortfalls([], [], null, null, null)).toEqual([]);
+  });
+});
+
+describe('등록 학기(#378 H-2)', () => {
+  const status = (registered, earned = 130) => ({ totalEarnedCredits: earned, totalRequiredCredits: 130, registrationTerms: { registered, required: 8, earlyGraduation: 6, estimated: false } });
+
+  it('학점·요건을 다 채웠는데 학기가 모자랄 때만 모자란 학기 수를 낸다', () => {
+    expect(registrationTermShortage(status(6), [])).toBe(2);
+    expect(registrationTermShortage(status(8), [])).toBe(0);
+  });
+
+  it('부족 요건이 있거나 학점이 모자라면 강조하지 않는다(정보로만 보여 준다)', () => {
+    expect(registrationTermShortage(status(6), ['교양필수 3학점'])).toBe(0);
+    expect(registrationTermShortage(status(6, 120), [])).toBe(0);
+    expect(registrationTermShortage({ totalEarnedCredits: 130, totalRequiredCredits: 130 }, [])).toBe(0);
+  });
+});
+
+describe('다전공(#378 G-2)', () => {
+  const second = { type: 'DOUBLE', department: '경영학과', required: 51, earned: 9, thesis: { satisfied: false } };
+
+  it('제2전공 학점과 복수전공 졸업논문을 부족 요건에 넣는다', () => {
+    expect(summarizeShortfalls([], [], null, null, null, second)).toEqual(['복수전공(경영학과) 42학점', '복수전공 졸업논문']);
+    const en = summarizeShortfalls([], [], (k, p) => translate('en', k, p), null, null, second);
+    expect(en).toEqual(['Double major (경영학과): 42 credits', 'Double major graduation thesis']);
+  });
+
+  it('부전공은 졸업논문이 없고, 기준을 모르면 학점은 넣지 않는다', () => {
+    expect(summarizeShortfalls([], [], null, null, null, { type: 'MINOR', department: '국어국문학과', required: 21, earned: 21, thesis: null })).toEqual([]);
+    expect(summarizeShortfalls([], [], null, null, null, { ...second, required: null })).toEqual(['복수전공 졸업논문']);
+  });
+});
+
+describe('판정하지 않는 요건(2026-10-16 규정 대조)', () => {
+  it('상담·지정 과목·부전공 지정 교과목·전공융합형 MD를 학생이 직접 확인할 항목으로 모은다', () => {
+    expect(uncheckedRequirementKeys(null)).toEqual([]);
+    expect(uncheckedRequirementKeys({ counseling: { required: 8 } })).toEqual(['home.unchecked.counseling']);
+    expect(uncheckedRequirementKeys({
+      counseling: { required: 8 }, designatedMajorCourses: { courses: [] }, secondMajor: { type: 'MINOR' }, majorTrackType: 'CONVERGENCE',
+    })).toEqual(['home.unchecked.counseling', 'home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
+    expect(uncheckedRequirementKeys({ secondMajor: { type: 'DOUBLE' }, majorTrackType: 'INTENSIVE' })).toEqual([]);
   });
 });
