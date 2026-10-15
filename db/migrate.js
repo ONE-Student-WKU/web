@@ -204,10 +204,9 @@ async function ensureNameUniqueConstraint(connection) {
     `SELECT name, COUNT(*) AS count FROM students WHERE name IS NOT NULL GROUP BY name HAVING COUNT(*) > 1`
   );
   if (dupes.length > 0) {
-    console.warn(
-      '[db:migrate] students.name 중복이 있어 uq_students_name 제약을 건너뜁니다. 중복 닉네임:',
-      dupes.map((d) => d.name).join(', ')
-    );
+    // 닉네임 값은 출력하지 않는다 — 실명인 경우가 많고, 이 로그는 재시딩 워크플로를 거쳐 공개 저장소의 GitHub Actions 로그에 남는다(#378).
+    // 누구의 닉네임인지는 운영 DB에서 같은 쿼리로 직접 조회한다.
+    console.warn(`[db:migrate] students.name 중복이 ${dupes.length}개 있어 uq_students_name 제약을 건너뜁니다(닉네임 값은 개인정보라 출력하지 않음).`);
     return;
   }
 
@@ -545,7 +544,12 @@ async function migrate() {
   }
 }
 
-migrate().catch((err) => {
-  console.error('[db:migrate] 실패:', err);
-  process.exitCode = 1;
-});
+// 직접 실행할 때만 마이그레이션한다(배포 Pre-Deploy와 db:migrate는 `node db/migrate.js`로 직접 실행). 테스트는 가드 함수만 불러 쓴다.
+if (require.main === module) {
+  migrate().catch((err) => {
+    console.error('[db:migrate] 실패:', err);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { ensureNameUniqueConstraint };
