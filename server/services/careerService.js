@@ -1,5 +1,6 @@
 const pool = require('../db');
 const aiClient = require('./aiClient');
+const { buildAnswersUpdate, currentFixedAnswers, historyForAi, diffFixedAnswers } = require('./careerAnswerUpdates');
 const curriculumService = require('./curriculumService');
 const { hasRecentCrisis } = require('./crisis');
 const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
@@ -159,26 +160,30 @@ async function getCompletedCourses(studentId) {
   return rows.map((r) => ({ name: r.name, category: r.category }));
 }
 
-// 채팅이 시작된 뒤에도 처음 고정 질문 답변을 고칠 수 있게 한다 — 이미 나눈 자유 대화는
-// 그대로 두고, 다음에 보낼 메시지부터 AI가 새 답변을 참고하도록 한다(합의된 설계). 고정
-// 질문 블록은 항상 세션 맨 앞에 (assistant 질문, user 답변) 쌍으로 저장돼 있으므로, 그
-// 안에서 답변(user) 메시지만 id 순서를 그대로 유지한 채 내용을 갱신한다 — 지우고 다시
-// 넣으면 auto-increment id가 뒤로 밀려 대화 순서가 흐트러진다.
-async function updateFixedAnswers(studentId, sessionId, fixedAnswers) {
+// 채팅이 시작된 뒤 처음 고정 질문 답변을 고친다(이슈 #245, #378 결정 14-1 C·14-2 A·14-3 A — careerAnswerUpdates.js).
+// 원래 답은 덮어쓰지 않고 바뀐 내용을 학생 메시지 하나로 기록한 뒤, AI가 바로 한 번 응답한다.
+//  - CONTINUE: 지금까지의 대화에 이어서, 바뀐 답을 반영한 응답
+//  - RESTART: 같은 상담 안에서 그 기록 이후를 새 대화로 보고, 바뀐 답으로 첫 질문을 다시 받는다(이전 대화는 지우지 않는다)
+// 기록 메시지는 학생 메시지라 자유 대화 한도에 들어간다. 바뀐 답이 없으면 아무것도 하지 않는다(AI 호출 없음).
+async function updateFixedAnswers(studentId, sessionId, fixedAnswers, mode, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
-  const [rows] = await pool.query('SELECT id, role FROM career_messages WHERE session_id = ? ORDER BY id', [sessionId]);
-  const fixedBlockSize = fixedAnswers.length * 2;
-  if (rows.length < fixedBlockSize) {
+  const messages = await listMessages(sessionId);
+  if (messages.length < fixedAnswers.length * 2) {
     throw Object.assign(new Error('FIXED_ANSWERS_NOT_FOUND'), { code: 'FIXED_ANSWERS_NOT_FOUND' });
   }
 
-  for (let i = 0; i < fixedAnswers.length; i++) {
-    const answerRow = rows[i * 2 + 1]; // (질문, 답변) 쌍이라 홀수 인덱스가 항상 답변(user)
-    if (answerRow.role !== 'user') continue;
-    await pool.query('UPDATE career_messages SET content = ? WHERE id = ?', [fixedAnswers[i].answer, answerRow.id]);
-  }
+  const changes = diffFixedAnswers(currentFixedAnswers(messages, FIXED_QUESTION_COUNT), fixedAnswers);
+  if (changes.length === 0) return messages;
+
+  const userCount = messages.filter((m) => m.role === 'user').length;
+  if (userCount >= FIXED_QUESTION_COUNT + MAX_FREE_TURNS) throw Object.assign(new Error('CAREER_TURN_LIMIT'), { code: 'CAREER_TURN_LIMIT' });
+
+  await saveMessage(sessionId, 'user', buildAnswersUpdate(mode, changes, fixedAnswers.map((a) => a.answer)));
+  const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
+  const followUp = await aiClient.getCareerFollowUp(historyForAi(history, FIXED_QUESTION_COUNT), student, completedCourses, language);
+  await saveMessage(sessionId, 'assistant', followUp);
 
   return listMessages(sessionId);
 }
@@ -221,7 +226,7 @@ async function postMessage(studentId, sessionId, content, student, language = 'k
 
   await saveMessage(sessionId, 'user', content);
   const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
-  const followUp = await aiClient.getCareerFollowUp(history, student, completedCourses, language);
+  const followUp = await aiClient.getCareerFollowUp(historyForAi(history, FIXED_QUESTION_COUNT), student, completedCourses, language);
   await saveMessage(sessionId, 'assistant', followUp);
 
   return listMessages(sessionId);
@@ -251,7 +256,7 @@ async function generateCandidates(studentId, sessionId, student, language = 'ko'
   // 사용자가 이해할 수 있는 CAREER_CANDIDATES_EMPTY로 수렴시킨다.
   let candidates;
   try {
-    candidates = await aiClient.generateCareerCandidates(history, student, completedCourses, language);
+    candidates = await aiClient.generateCareerCandidates(historyForAi(history, FIXED_QUESTION_COUNT), student, completedCourses, language);
   } catch {
     candidates = [];
   }
