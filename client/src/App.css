@@ -3719,6 +3719,10 @@ select.onb-select {
 .chat-bubble .md-table th { font-weight: bold; white-space: nowrap; }
 .chat-bubble .message-text.md > :first-child { margin-top: 0; }
 .chat-bubble .message-text.md > :last-child { margin-bottom: 0; }
+/* 근거 발췌문(ChatBubble의 근거 목록)은 답변보다 작고 옅게 — 답변과 같은 렌더러를 쓰되 근거 목록의 글자 크기·색을 따른다 */
+.chat-bubble .message-citations .message-text { font-size: inherit; color: inherit; margin: 2px 0 6px; }
+.chat-bubble .message-citations .md-heading { font-size: inherit; margin: 4px 0 2px; }
+.chat-bubble .message-citations .md-table { font-size: 0.75rem; }
 
 /* 신고 처리 결과 알림 점(하단 탭바 커뮤니티 아이콘, 커뮤니티 "내 신고" 탭) + 내 신고 내역 카드 */
 .bottom-tab { position: relative; }

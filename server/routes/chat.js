@@ -16,6 +16,7 @@ const { guardAnswer, removeUnverifiedPhoneNumbers } = require('../services/answe
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
 const { parseLanguage } = require('../services/language');
 const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatConstants');
+const { makeExcerpt } = require('../services/citationExcerpt');
 
 /**
  * Routes for Chat and AI Interactions (/api/chat)
@@ -207,7 +208,7 @@ router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
     const citedChunks = relevantChunks.map((c) => ({
       chunkId: c.chunkId,
       documentTitle: c.documentTitle,
-      excerpt: c.content.length > 150 ? `${c.content.slice(0, 150)}...` : c.content,
+      excerpt: makeExcerpt(c.content),
     }));
 
     await regulationService.saveMessage(conversationId, {
