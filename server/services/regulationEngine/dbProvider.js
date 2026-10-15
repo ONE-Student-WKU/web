@@ -1,6 +1,7 @@
 const pool = require('../../db');
 const { getDepartmentChain, describeRuleForCohort } = require('../curriculumHistoryService');
-const { hasCoreRowsForYear } = require('./evaluate');
+const { hasCoreRowsForYear, rowAppliesToYear } = require('./evaluate');
+const { buildNewDepartmentCohortRows } = require('./newDepartmentCohort');
 const { summarizeVersions } = require('./textVersion');
 const { resolveOfferedGrade, lineageCandidateKeys } = require('./offeredGrade');
 const { dbDateToIso } = require('./context');
@@ -138,16 +139,28 @@ async function loadData(ctx, { withHistory = true } = {}) {
   const textVersions = await loadTextVersions();
   if (!department) return { department: null, rows: [], latestDataYear, candidates: [], history: null, textVersions };
 
-  const rows = await loadRequirementRows(department.id);
+  let rows = await loadRequirementRows(department.id);
   const beyondLatest = ctx.admissionYear > latestDataYear;
-  const hasRows = hasCoreRowsForYear(rows, ctx.admissionYear) && !beyondLatest;
+  let hasRows = hasCoreRowsForYear(rows, ctx.admissionYear) && !beyondLatest;
+  // 학과가 생기기 전 학번의 전과생(예: 2021학번 → 2023년 신설 경영학과, #378): 학과 첫 학번 행과 2026 책자 학번별 표로 그 학번 행을 만든다.
+  // 엔진은 cohortFallback이 있으면 "추정"으로 표시한다(newDepartmentCohort.js). 변경 이력은 만든 행에 맞지 않아 싣지 않는다.
+  let cohortFallback = null;
+  if (!hasRows && !beyondLatest && ctx.enrollmentType === 'MAJOR_CHANGE') {
+    const built = buildNewDepartmentCohortRows(rows, department.name, ctx.admissionYear);
+    if (built) {
+      rows = [...rows.filter((r) => !rowAppliesToYear(r, ctx.admissionYear)), ...built.rows];
+      cohortFallback = built.fallback;
+      hasRows = true;
+    }
+  }
   return {
     department,
     rows,
     latestDataYear,
     candidates: hasRows || beyondLatest ? [] : await loadCandidates(department.id, ctx.admissionYear),
-    history: hasRows && withHistory ? await loadHistory(department.id, ctx.admissionYear) : null,
+    history: hasRows && !cohortFallback && withHistory ? await loadHistory(department.id, ctx.admissionYear) : null,
     textVersions,
+    cohortFallback,
   };
 }
 

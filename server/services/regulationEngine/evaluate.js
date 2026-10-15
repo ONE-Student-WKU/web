@@ -271,6 +271,14 @@ function evaluate(ctx, data) {
   }
   // 학과 내규로 전공 과목을 정하는 학과(constants.BYLAW_MAJOR_DEPARTMENTS) — 숫자는 그대로 두고 학과 확인 안내만 붙인다.
   if (built && department && BYLAW_MAJOR_DEPARTMENTS.includes(department.name)) reqFlags.push(makeFlag('DEPARTMENT_BYLAW_MAJOR'));
+  // 학과가 생기기 전 학번의 전과생 — dbProvider가 학과 첫 학번 행과 학번별 표로 만든 행이다(newDepartmentCohort.js, #378).
+  // 전공 학점은 첫 학번 값이라 추정이고, 교양·졸업학점을 표에서 못 찾았으면 그것도 첫 학번 값이라 따로 알린다.
+  if (built && data.cohortFallback) {
+    const fb = data.cohortFallback;
+    reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT', { firstCohort: fb.firstCohort, college: fb.college }));
+    if (!fb.liberalFromTable || !fb.graduationFromTable) reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_LIBERAL_ASSUMED', { firstCohort: fb.firstCohort }));
+    reqBasis.push('ENF_ART5_COHORT_BASIS');
+  }
   reqFlags.push(...textFlagsFor(reqBasis));
 
   const fromRegulation = built ? built.flags.filter((f) => f.code === 'MAJOR_MINIMUM_FROM_REGULATION') : [];

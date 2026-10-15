@@ -613,3 +613,26 @@
   - 전공 완화 행이 없는 학과(의약계열 등)는 인정학점을 입력해도 전공·일반선택을 나눌 수 없어 총학점을 계속 단정하지 않는다.
   - 학생이 잘못 입력한 인정학점은 검증할 방법이 없다. 0~160 정수만 받는다.
 - **위치**: `server/services/teachingCourse.js`, `routes/onboarding.js`, `routes/me.js`, `studentService`(`listDepartments`의 `teachingCourseYears`·`teacherCollege`), `regulationEngine/context.js`·`evaluate.js`·`flags.js`, `graduationService.evaluateCertifications`, `client/src/pages/Onboarding.jsx`, `PrivacyPolicy.jsx`, `db/migrate.js`.
+
+## D-68 학과가 생기기 전 학번의 전과생은 학과 첫 학번 전공 학점과 입학 학번의 학번별 표로 요건을 만들고 "추정"으로 표시한다 — 학교 답변 후 확정
+- **상황**:
+  - 전과생은 옮긴 학과의 **입학 학번** 기준을 따른다(학칙시행규칙 제5조. 22학번이 25년에 전과하면 그 학과의 22학번 요건).
+  - 시드에는 학과가 생긴 학번부터만 행이 있다. 그래서 학과가 생기기 전 학번의 전과생은 엔진이 "자료 없음"으로 끝났다. 예: 2021학번 → 2023년 신설 경영학과. 로컬 기준 26개 학과 74개 조합이었다.
+  - 홈은 이걸 "모든 요건을 충족했어요!"로 보여 줬다(#386에서 홈 표시는 따로 고침).
+- **근거**:
+  - 학칙시행규칙 제5조, 제8조(1·2학년 전과는 일반과 같고 3·4학년 전과는 최소전공), 제118조(졸업논문 합격·졸업인증제는 모든 졸업자. 전과생 학년별 예외 없음).
+  - 2026 책자 졸업인증제 제외 대상(만학도·학사편입 등)에 전과생이 없다. 자기계발심층상담은 "전과생은 당초 입학 학번에 따름"이다.
+  - 2026 책자 학번별 표에는 그 학번의 그 학과 **전공** 줄이 없다(학과가 없던 학번). 교양·졸업학점은 대학 단위라 찾을 수 있다.
+- **결정** (2026-10-15, A안):
+  - 데이터 계층(`dbProvider.loadData`)에서 전과생이고 그 학번 행이 없으면, 학과 첫 학번 행을 바탕으로 그 학번 행을 만든다(`newDepartmentCohort.js`).
+  - 교양·졸업학점은 2026 책자 학번별 표의 **입학 학번** 값을 쓴다. 대학은 학과 첫 학번의 소속 대학이다.
+  - 전공 학점은 학과 **첫 학번** 값으로 추정한다. 3·4학년 전과의 최소전공(전과 완화 행)도 첫 학번 값이다.
+  - 졸업논문·졸업인증제는 학과 기준이다. 학생 학번에 이미 맞는 행(예: 2020학번부터 걸친 졸업인증제)이 있으면 그 행을 쓴다.
+  - 엔진은 `MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT`(추정)를 붙인다. 표에서 대학을 못 찾으면(신설 대학 이름 등) 교양·졸업학점도 첫 학번 값이고 `MAJOR_CHANGE_COHORT_LIBERAL_ASSUMED`(추정)를 더 붙인다.
+  - 학번별 표 찾기 코드는 audit 스크립트에서 `regulationEngine/cohortTables.js`로 옮겨 두 곳이 같이 쓴다.
+- **단점·다시 볼 조건**:
+  - 1·2학년 전과의 전공 학점이 첫 학번 값이 맞는지는 책자에 없다. #378 다음 문의 후보로 남겼다.
+  - 교양까지 추정인 조합이 남는다(로컬 기준 23개). 동물보건·의료상담·안전보건학과 2020~21, 행정공공기관학과, 국방기술학과, 농생명바이오계열, 디자인융합계열이다. 옛 대학 이름과 잇는 근거가 생기면 줄인다.
+  - 만든 행에는 교육과정 변경 이력을 싣지 않는다.
+- **확인**: `server/test/regulationEngine.coverage.test.js`가 온보딩에서 고를 수 있는 모든 (학과, 학번, 입학 유형) 약 2,000개 조합에서 "자료 없음"이 자율전공학부(일부러 진단 안 함)뿐인지 본다. 새 공백이 생기면 실패한다.
+- **위치**: `server/services/regulationEngine/newDepartmentCohort.js`, `cohortTables.js`, `dbProvider.js`, `evaluate.js`, `flags.js`, `scripts/audit/applyLatestBookletCohortTables.js`, `server/test/newDepartmentCohort.test.js`.
