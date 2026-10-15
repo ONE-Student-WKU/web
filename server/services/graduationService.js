@@ -339,8 +339,8 @@ async function buildSecondMajorStatus(student, secondCourses, courseMajors, allC
  * 전과 전 과목 중 일반선택으로 바뀐 과목(시행규칙 제3조 제4항)과 인정 신청으로 전공선택이 된 과목(제115조). 화면·챗봇 안내용(D-77).
  */
 function summarizePriorMajorCourses(student, courses, byId) {
-  // 학생이 일반선택으로 고친 과목도 일반선택 목록에 넣는다.
-  const reasonOf = (r) => r.reason || (r.counted === 'GENERAL' ? 'DEMOTED' : null);
+  // 학생이 일반선택으로 고친 과목도 일반선택 목록에 넣는다. 제2전공으로 센 과목은 제2전공 카드에만 보인다.
+  const reasonOf = (r) => (r.counted === 'SECOND' ? null : r.reason || (r.counted === 'GENERAL' ? 'DEMOTED' : null));
   const pick = (reason) => courses.filter((c) => reasonOf(byId.get(c.id)) === reason)
     .map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), auto: byId.get(c.id).auto }));
   return {
