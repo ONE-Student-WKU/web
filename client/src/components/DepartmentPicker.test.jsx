@@ -68,6 +68,59 @@ describe('DepartmentPicker', () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 3, name: '경영계열' }));
   });
 
+  it('아무것도 안 누른 처음에 ↓를 누르면 맨 위 대학이 펼쳐지며 그 첫 학과가 골라진다', async () => {
+    const { onSelect } = renderPicker();
+    await userEvent.keyboard('{ArrowDown}');
+    // 대학 순서: 교학대학(원불교학과) → 공과대학 → 경상대학 → 이전 학과
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 5, name: '원불교학과' }));
+    expect(screen.getByRole('button', { name: /교학대학/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /^원불교학과/ })).toHaveFocus();
+  });
+
+  it('↑↓는 전체 학과 순서로 움직이고, 다른 대학으로 넘어가면 그 대학만 펼치고 떠난 대학은 접는다(끝에서는 멈춤)', async () => {
+    const { onSelect } = renderPicker();
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}'); // 원불교학과 → 공학3계열(공과대학)
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 1, name: '공학3계열' }));
+    expect(screen.getByRole('button', { name: /교학대학/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /공과대학/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /^공학3계열/ })).toHaveFocus();
+
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}'); // → 컴퓨터·소프트웨어공학과 → 경영계열(경상대학)
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 3, name: '경영계열' }));
+    expect(screen.getByRole('button', { name: /공과대학/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /경상대학/ })).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.keyboard('{ArrowUp}');
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 2 }));
+
+    onSelect.mockClear();
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}'); // → 경영계열 → 경영학부 → 교육학과(이전 학과, 맨 끝) → 그대로
+    expect(onSelect).toHaveBeenCalledTimes(3);
+    expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ id: 6, name: '교육학과' }));
+  });
+
+  it('검색 화면이 열려 있으면 목록 방향키는 가로채지 않는다(검색 결과의 ↑↓가 따로 처리)', async () => {
+    const { onSelect } = renderPicker();
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '경영');
+    await userEvent.keyboard('{ArrowDown}');
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(within(dialog).getByRole('button', { name: /^경영학부/ })).toHaveClass('active');
+  });
+
+  it('목록에서 엔터를 누르면 포커스된 학과로 onSelectAndContinue("다음"을 누른 것처럼)가 불린다', async () => {
+    const onSelectAndContinue = vi.fn();
+    const { onSelect } = renderPicker({ onSelectAndContinue });
+    await userEvent.click(screen.getByRole('button', { name: /경상대학/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^경영계열/ }));
+    expect(onSelect).toHaveBeenCalledTimes(1); // 클릭은 고르기만
+    expect(onSelectAndContinue).not.toHaveBeenCalled();
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+    expect(onSelectAndContinue).toHaveBeenCalledTimes(1);
+    expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 4, name: '경영학부' }));
+    expect(onSelect).toHaveBeenCalledTimes(2); // ↓로 고른 것 1번 — 엔터가 버튼 클릭으로 한 번 더 고르지 않는다
+  });
+
   it('이미 고른 학과가 있으면(학적정보 수정) 그 학과의 대학 묶음이 처음부터 펼쳐져 있다', () => {
     renderPicker({ selectedId: 2 });
     expect(screen.getByRole('button', { name: /공과대학/ })).toHaveAttribute('aria-expanded', 'true');
@@ -100,6 +153,77 @@ describe('DepartmentPicker', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: /경영학부/ }));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('onSelectAndContinue를 주면(온보딩: 고른 뒤 바로 다음 질문) 검색 결과에서 고를 때 onSelect 대신 그것이 불린다', async () => {
+    const onSelectAndContinue = vi.fn();
+    const { onSelect } = renderPicker({ onSelectAndContinue });
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '경영학부');
+    await userEvent.click(within(dialog).getByRole('button', { name: /경영학부/ }));
+    expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 4 }));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('검색창에서 엔터를 누르면 맨 위 결과가 바로 선택된다(결과가 없으면 아무 일도 없다)', async () => {
+    const onSelectAndContinue = vi.fn();
+    renderPicker({ onSelectAndContinue });
+    let dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '없는학과{enter}');
+    expect(onSelectAndContinue).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.clear(input);
+    await userEvent.type(input, '경영{enter}'); // 경영계열(이름 시작 일치)이 맨 위, 경영학부가 다음
+    expect(onSelectAndContinue).toHaveBeenCalledTimes(1);
+    expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 3, name: '경영계열' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('↑↓로 가리키는 결과를 옮기고 엔터로 그 학과를 고른다(처음엔 맨 위, 끝에서는 더 안 움직임)', async () => {
+    const onSelectAndContinue = vi.fn();
+    renderPicker({ onSelectAndContinue });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.type(input, '경영'); // 결과: 경영계열, 경영학부
+    const card = (name) => within(dialog).getByRole('button', { name: new RegExp(`^${name}`) });
+    expect(card('경영계열')).toHaveClass('active');
+
+    await userEvent.keyboard('{ArrowUp}'); // 맨 위에서 위로 — 그대로
+    expect(card('경영계열')).toHaveClass('active');
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}'); // 맨 아래에서 아래로 — 그대로
+    expect(card('경영학부')).toHaveClass('active');
+    expect(card('경영계열')).not.toHaveClass('active');
+    expect(input).toHaveValue('경영'); // 방향키가 입력 칸 글자를 건드리지 않는다
+
+    await userEvent.keyboard('{Enter}');
+    expect(onSelectAndContinue).toHaveBeenCalledTimes(1);
+    expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 4, name: '경영학부' }));
+  });
+
+  it('검색어를 바꾸면 가리키는 결과가 다시 맨 위로 돌아간다', async () => {
+    renderPicker();
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    await userEvent.type(input, '경영');
+    await userEvent.keyboard('{ArrowDown}');
+    expect(within(dialog).getByRole('button', { name: /^경영학부/ })).toHaveClass('active');
+    await userEvent.type(input, '계열');
+    expect(within(dialog).getByRole('button', { name: /^경영계열/ })).toHaveClass('active');
+  });
+
+  it('한글 조합을 끝내는 엔터(조합 중)는 건너뛰어 두 번 선택되지 않는다', async () => {
+    const onSelectAndContinue = vi.fn();
+    renderPicker({ onSelectAndContinue });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    fireEvent.change(input, { target: { value: '컴퓨터' } });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(onSelectAndContinue).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onSelectAndContinue).toHaveBeenCalledTimes(1);
+    expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));
   });
 
   it('일치하는 학과가 없으면 안내 문구가 나오고, 뒤로가기 버튼으로 닫으면 검색어가 비워진 채 트리로 돌아간다', async () => {

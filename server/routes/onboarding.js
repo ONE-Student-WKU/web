@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const { isIntInRange, isValidAdmissionYear } = require('../services/inputValidation');
+const { validateTeachingAndTransferCredits } = require('../services/teachingCourse');
 
 /**
  * Routes for Onboarding (/api/onboarding)
@@ -37,13 +39,23 @@ router.get('/tracks', async (req, res, next) => {
 // POST /api/onboarding
 router.post('/', requireAuth, async (req, res, next) => {
   try {
-    const { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade } = req.body;
+    const {
+      departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+      transferRecognizedCredits, teachingCourse,
+    } = req.body;
 
     if (!departmentId) return res.status(400).json({ status: 400, code: 'REQUIRED_DEPARTMENT_ID', message: null, data: null });
     if (!admissionYear) return res.status(400).json({ status: 400, code: 'REQUIRED_ADMISSION_YEAR', message: null, data: null });
     if (!enrollmentType) return res.status(400).json({ status: 400, code: 'REQUIRED_ENROLLMENT_TYPE', message: null, data: null });
     if (!VALID_ENROLLMENT_TYPES.includes(enrollmentType)) {
       return res.status(400).json({ status: 400, code: 'INVALID_ENROLLMENT_TYPE', message: null, data: null });
+    }
+    // 학과·학번은 졸업요건 진단의 기준이 되는 값이다. 타입/범위를 안 보면 없는 학과 id는 DB 오류(500)로, 엉뚱한 학번은 그대로 저장된다.
+    if (!isIntInRange(departmentId, 1, 2147483647) || !(await studentService.findDepartmentById(departmentId))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
+    }
+    if (!isValidAdmissionYear(admissionYear)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_ADMISSION_YEAR', message: null, data: null });
     }
 
     // majorChangeGrade/Year/Semester: 전과생(MAJOR_CHANGE)만 필수, 그 외 유형이면 애초에 의미가 없는 값이므로 거부.
@@ -90,6 +102,10 @@ router.post('/', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'INVALID_TRANSFER_GRADE', message: null, data: null });
     }
 
+    // 교직과정 이수 여부(편입생·3학년 이상 전과생은 이수 불가)와 편입 인정학점(편입생만). 둘 다 선택 항목이다.
+    const extrasError = validateTeachingAndTransferCredits({ teachingCourse, transferRecognizedCredits }, { enrollmentType, majorChangeGrade });
+    if (extrasError) return res.status(400).json({ status: 400, code: extrasError, message: null, data: null });
+
     // trackId: 광역단위 학과(공학3계열)에서만 선택 가능 — 선택한 학과 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
       const track = await studentService.findTrackById(trackId);
@@ -105,6 +121,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 
     await studentService.completeOnboarding(req.session.userId, {
       departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+      transferRecognizedCredits, teachingCourse,
     });
 
     return res.status(200).json({
@@ -117,6 +134,8 @@ router.post('/', requireAuth, async (req, res, next) => {
         majorChangeYear: majorChangeYear ?? null,
         majorChangeSemester: majorChangeSemester ?? null,
         transferGrade: transferGrade ?? null,
+        transferRecognizedCredits: transferRecognizedCredits ?? null,
+        teachingCourse: teachingCourse ?? null,
       },
     });
   } catch (err) {

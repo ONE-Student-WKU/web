@@ -81,6 +81,25 @@ test('제13조③: 선택→필수로 바뀐 과목은 재학 학년보다 저�
   assert.ok(codes(r).includes('GRADE_FROM_ADMISSION_YEAR'));
 });
 
+test('제13조③: 휴학 기간을 입력하면 개편 당시 학년을 휴학을 빼고 계산해 면제 판단이 바뀐다', () => {
+  // 2023학번, 2025 개편, 2학년 개설 과목. 휴학을 모르면 개편 당시 3학년 → 면제.
+  const data = base({ courseChanges: [change({ field: 'category', changeType: 'CHANGED', oldValue: '전공선택', newValue: '전공필수', fromYear: 2024, toYear: 2025, offeredGrade: 2 })] });
+  const unknown = rule(resolveApplicableRules(input(), data), 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
+  assert.deepEqual([unknown.details.courses[0].gradeAtRevision, unknown.details.courses[0].exempt], [3, true]);
+  assert.ok(codes(unknown).includes('GRADE_FROM_ADMISSION_YEAR'));
+
+  // 2024학년도 1·2학기를 휴학했으면 개편 당시(2025-1) 2학년 → 저학년 개설이 아니라 이수 대상.
+  const known = rule(resolveApplicableRules(input({ leavePeriods: [{ startYear: 2024, startSemester: 1, semesters: 2 }] }), data), 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
+  assert.deepEqual([known.details.courses[0].gradeAtRevision, known.details.courses[0].exempt], [2, false]);
+  assert.ok(codes(known).includes('GRADE_FROM_ADMISSION_AND_LEAVE'));
+  assert.ok(!codes(known).includes('GRADE_FROM_ADMISSION_YEAR'));
+
+  // 휴학 없음으로 답한 계정([])은 입학년도 계산과 같은 결과지만 "입력값 기준"으로 표시한다.
+  const none = rule(resolveApplicableRules(input({ leavePeriods: [] }), data), 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
+  assert.deepEqual([none.details.courses[0].gradeAtRevision, none.details.courses[0].exempt], [3, true]);
+  assert.ok(codes(none).includes('GRADE_FROM_ADMISSION_AND_LEAVE'));
+});
+
 test('제13조③: "재학 중인 학년" 해석(개편 시점 vs 기준일)에 따라 갈리면 두 결과를 모두 내고 플래그를 남긴다', () => {
   // 2023학번, 2024 개편(개편 시점 2학년), 기준일 2026(4학년). 3학년 개설 과목: 개편 시점 기준 이수, 기준일 기준 면제.
   const data = base({ courseChanges: [change({ field: 'category', changeType: 'CHANGED', oldValue: '전공선택', newValue: '전공필수', toYear: 2024, offeredGrade: 3 })] });
@@ -280,10 +299,11 @@ test('졸업요건(파트 1 evaluate) 결과에 데이터 등급을 칸별로 �
   assert.equal(req.value.totalConfidence, 'CONFIRMED');
   assert.deepEqual(req.value.categories.map((c) => [c.category, c.confidence]), [['교양필수', 'ESTIMATED'], ['교양선택', 'ESTIMATED'], ['전공필수', 'CONFIRMED'], ['전공선택', 'CONFIRMED'], ['일반선택', 'CONFIRMED']]);
 
-  // 2026-10-12: 사범대 2024 보류(#260-edu-2024)는 2026 책자 학번별 표로 해소돼 빠졌다. 남아 있는 보류(중등특수교육과 2025·2026 전공·자유선택)로 검사한다.
-  const edu = { id: 12, name: '중등특수교육과' };
-  const rows2025 = rows.map((r) => ({ ...r, minAdmissionYear: 2025, maxAdmissionYear: 2025 }));
-  const held = resolveApplicableRules(input({ admissionYear: 2025, departmentId: 12 }), base({ department: edu, requirements: { ...reqData(edu), rows: rows2025 } }));
+  // 2026-10-12: 사범대 2024 보류(#260-edu-2024)는 2026 책자 학번별 표로, 2026-10-14: 중등특수교육과 보류(#260-special-edu)는 학칙시행규칙으로 해소돼 빠졌다.
+  // 남아 있는 보류(건축학과 2024·2025 전공 학점, A-5-architecture)로 검사한다.
+  const edu = { id: 12, name: '건축학과' };
+  const rows2025 = rows.map((r) => ({ ...r, minAdmissionYear: 2024, maxAdmissionYear: 2024 }));
+  const held = resolveApplicableRules(input({ admissionYear: 2024, departmentId: 12 }), base({ department: edu, requirements: { ...reqData(edu), rows: rows2025 } }));
   const heldReq = held.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   assert.equal(heldReq.confidence, 'ESTIMATED');
   assert.ok(heldReq.flags.some((f) => f.code === 'DATA_PENDING_HOLD'));

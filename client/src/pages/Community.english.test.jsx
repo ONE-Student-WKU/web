@@ -125,6 +125,8 @@ describe('커뮤니티 영어 화면', () => {
     api.getMyCommunityPosts.mockResolvedValue([{ ...post(), status: 'approved', applicationCount: 1, pendingApplicationCount: 1 }]);
     api.getCommunityPost.mockResolvedValue(detail({ isMine: true }));
     api.getCommunityApplicants.mockResolvedValue([
+      // 서버는 이 글의 신청을 전부 내려주고 같은 사람의 두 번째부터 hasAppliedBefore를 붙인다 — 재신청이면 앞선 신청도 목록에 있다.
+      { id: 10, applicant: '민수', message: '처음 신청', status: 'rejected', createdAt: '2026-09-01T00:00:00.000Z', hasAppliedBefore: false },
       { id: 11, applicant: '민수', message: '열심히 할게요', status: 'pending', createdAt: '2026-09-02T00:00:00.000Z', hasAppliedBefore: true },
       { id: 12, applicant: '하나', message: '질문 있어요', status: 'rejected', rejectReason: '시간이 안 맞아요', createdAt: '2026-09-02T00:00:00.000Z' },
     ]);
@@ -133,7 +135,7 @@ describe('커뮤니티 영어 화면', () => {
     expect(await screen.findByText('1 applications waiting for review')).toBeInTheDocument();
     await userEvent.click((await screen.findByText('알고리즘 스터디')).closest('button'));
 
-    expect(await screen.findByText('Applicants for "알고리즘 스터디": 2')).toBeInTheDocument();
+    expect(await screen.findByText('Applicants for "알고리즘 스터디": 2 (3 applications)')).toBeInTheDocument();
     expect(screen.getByText('열심히 할게요')).toBeInTheDocument();
     expect(screen.getByText('Re-applied')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();

@@ -1,6 +1,11 @@
 const pool = require('../db');
 const { CURRENT_CONSENT_VERSION } = require('./consent');
 const { attachColleges } = require('./departmentColleges');
+const { parseLeavePeriods, totalLeaveSemesters, validateLeavePeriods } = require('./leavePeriods');
+const { parseHomeLayout } = require('./homeLayout');
+const { todayKst } = require('./regulationEngine/context');
+const { currentStandingOf } = require('./studentProgress');
+const { isTeacherCollegeDepartment, parseTeachingCourse } = require('./teachingCourse');
 
 /**
  * server/services/studentService.js
@@ -59,10 +64,23 @@ function serializeStudent(student) {
     majorChangeSemester: student.major_change_semester,
     // 편입생만 값이 있다(편입한 학년 2~4). 편입 연도는 admissionYear + transferGrade − 1. null이면 옛 방식으로 입력한 편입생이다.
     transferGrade: student.transfer_grade,
+    // 편입생만 값이 있다: 편입할 때 인정받은 전적대학 학점. null이면 입력하지 않아 학교 표의 인정학점으로 가정한다.
+    transferRecognizedCredits: student.transfer_recognized_credits ?? null,
+    // 교직과정 이수 여부. true = 이수 중, false = 이수 안 함(사범대 교직 포기 포함), null = 답하지 않음(server/services/teachingCourse.js).
+    teachingCourse: parseTeachingCourse(student.teaching_course),
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
+    // 휴학 기간. null이면 아직 휴학 질문에 답하지 않았다는 뜻이고 []는 휴학 없음(server/services/leavePeriods.js).
+    leavePeriods: parseLeavePeriods(student.leave_periods),
+    // 지금 학년·학기(방학이면 직전 학기). 홈 화면이 따로 계산하지 않고 이 값을 보여 준다 — studentProgress.currentStandingOf(이슈 #318).
+    // { grade, gradeSemester, extended, extraTerms, onLeave, year, semester, enrolledTermNumber, source } | null
+    academicStanding: currentStandingOf(student),
+    // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
+    leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
+    // 홈 화면 편집 설정(하단 바 4칸·하단 바 켜기/끄기). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
+    homeLayout: parseHomeLayout(student.home_layout),
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
     language: student.language || null,
     // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
@@ -162,6 +180,21 @@ async function listDepartments() {
      WHERE dl.from_department_id IS NOT NULL AND dl.to_department_id <> dl.from_department_id
      ORDER BY dl.effective_year, td.name`
   );
+  // 교직기본이수 행의 학번 범위를 학과별로 합친다(min/max가 null이면 그쪽으로 열린 범위).
+  const [teachingRows] = await pool.query(
+    "SELECT department_id, min_admission_year, max_admission_year FROM curriculum_requirements WHERE category = '교직기본이수' AND enrollment_type IS NULL"
+  );
+  const teachingYearsByDept = new Map();
+  for (const t of teachingRows) {
+    const cur = teachingYearsByDept.get(t.department_id);
+    if (!cur) {
+      teachingYearsByDept.set(t.department_id, { min: t.min_admission_year, max: t.max_admission_year });
+    } else {
+      cur.min = cur.min === null || t.min_admission_year === null ? null : Math.min(cur.min, t.min_admission_year);
+      cur.max = cur.max === null || t.max_admission_year === null ? null : Math.max(cur.max, t.max_admission_year);
+    }
+  }
+
   const successorsByFrom = new Map();
   for (const e of lineageRows) {
     const list = successorsByFrom.get(e.from_id) || [];
@@ -179,6 +212,9 @@ async function listDepartments() {
     coreMinAdmissionYear: r.core_min_admission_year,
     coreMaxAdmissionYear: r.core_max_admission_year,
     successors: successorsByFrom.get(r.id) || [],
+    // 교직과정: 교직기본이수 요건 행이 있는 학번 범위(없으면 null — 교직 질문을 보이지 않는다). 사범대학이면 "이수 중"을 미리 고른다.
+    teachingCourseYears: teachingYearsByDept.get(r.id) || null,
+    teacherCollege: isTeacherCollegeDepartment(r.name),
   }));
   // 소속 대학(트리 화면용). 학칙 [별표 1] 2026학년도 표 기준이고, 자료를 못 읽으면 college=null로 평평한 목록이 된다.
   return attachColleges(departments);
@@ -200,20 +236,42 @@ async function findTrackById(id) {
   return rows[0] || null;
 }
 
-async function completeOnboarding(studentId, { departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade }) {
+async function completeOnboarding(studentId, {
+  departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+  transferRecognizedCredits, teachingCourse,
+}) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
-         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, onboarding_completed_at = NOW()
+         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
+         onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
-      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, studentId]
+      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, transferRecognizedCredits ?? null,
+      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), studentId]
   );
 }
 
 // 이용약관·개인정보 수집·이용 동의를 기록한다(동의 시각 + 동의한 버전).
 async function recordConsent(studentId, version) {
   await pool.query('UPDATE students SET consented_at = NOW(), consent_version = ? WHERE id = ?', [version, studentId]);
+}
+
+// 휴학 기간 저장(PUT /api/me/leave-periods). 검증은 호출자가 leavePeriods.validateLeavePeriods로 끝낸 값만 넘긴다.
+// 누적 휴학 학기 수(leave_semesters)는 기간의 합계로 같이 채워, 그 값을 쓰는 기존 화면(학년 표시)이 그대로 맞게 한다.
+async function saveLeavePeriods(studentId, periods) {
+  await pool.query('UPDATE students SET leave_periods = ?, leave_semesters = ? WHERE id = ?', [JSON.stringify(periods), totalLeaveSemesters(periods), studentId]);
+}
+
+// 학번·입학 유형·편입 학년이 바뀌어 저장된 휴학 기간이 더 이상 맞지 않으면(예: 입학 전 학기가 됨) 비워서 다시 묻게 한다.
+async function revalidateLeavePeriods(studentId) {
+  const student = await findById(studentId);
+  const periods = parseLeavePeriods(student && student.leave_periods);
+  if (!student || periods === null) return;
+  const { error } = validateLeavePeriods(periods, {
+    admissionYear: student.admission_year, enrollmentType: student.enrollment_type, transferGrade: student.transfer_grade,
+  }, { today: todayKst() });
+  if (error && error !== 'LEAVE_IN_FUTURE') await pool.query('UPDATE students SET leave_periods = NULL WHERE id = ?', [studentId]);
 }
 
 // 프로필 수정(PATCH /api/me) 전용 — 넘어온 필드만 부분 갱신 (courseService.updateMyCourse와 동일한 패턴)
@@ -228,10 +286,13 @@ async function updateProfile(studentId, updates) {
     majorChangeYear: 'major_change_year',
     majorChangeSemester: 'major_change_semester',
     transferGrade: 'transfer_grade',
+    transferRecognizedCredits: 'transfer_recognized_credits',
+    teachingCourse: 'teaching_course',
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
     language: 'language',
+    homeLayout: 'home_layout',
   };
 
   const fields = [];
@@ -240,7 +301,10 @@ async function updateProfile(studentId, updates) {
   for (const [key, column] of Object.entries(columnMap)) {
     if (updates[key] !== undefined) {
       fields.push(`${column} = ?`);
-      params.push(updates[key]);
+      // JSON 컬럼은 문자열로 넣는다(null은 그대로 NULL).
+      // 교직 이수 여부는 TINYINT(1)이라 true/false를 1/0으로 넣는다.
+      if (key === 'teachingCourse' && updates[key] !== null) params.push(Number(updates[key]));
+      else params.push(key === 'homeLayout' && updates[key] !== null ? JSON.stringify(updates[key]) : updates[key]);
     }
   }
 
@@ -274,6 +338,8 @@ function excludeLegacyTestAccounts(total) {
 }
 
 module.exports = {
+  saveLeavePeriods,
+  revalidateLeavePeriods,
   LEGACY_TEST_ACCOUNT_COUNT,
   excludeLegacyTestAccounts,
   VALID_ENROLLMENT_TYPES,

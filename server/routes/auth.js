@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const { OAuth2Client } = require('google-auth-library');
 const router = express.Router();
 const studentService = require('../services/studentService');
@@ -207,9 +208,30 @@ const requestCodeLimiter = rateLimit({
   message: RATE_LIMIT_RESPONSE,
 });
 
+// 형식 검사는 일부러 단순하게 두되, 메일 헤더/주소 목록으로 해석될 수 있는 문자(< > , ; : " ' \ ( ) [ ] 제어문자)와
+// DB 컬럼(255자)을 넘는 길이는 거른다. 예전 정규식은 `x<a@b.com>` 같은 값도 통과시켜서, 발송 서비스가 이를 "표시이름 + 주소"로
+// 읽어 다른 주소로 코드를 보내면서 DB에는 이상한 문자열이 이메일로 가입되는 일이 가능했다.
+const EMAIL_PART = '[^\\s@<>,;:"\'\\\\()\\[\\]\\x00-\\x1f\\x7f]+';
+const EMAIL_RE = new RegExp(`^${EMAIL_PART}@${EMAIL_PART}\\.${EMAIL_PART}$`);
+
 function isValidEmail(email) {
-  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return typeof email === 'string' && email.length <= 254 && EMAIL_RE.test(email);
 }
+
+// 인증코드 확인 시도 제한 — 코드 한 개당 5회 상한(emailAuthService.MAX_ATTEMPTS)에 더해, 같은 이메일을 대상으로 한
+// 확인 요청 자체를 묶는다. 새 코드를 계속 받아 가며 시도 횟수를 리셋하는 우회를 늦춘다. 키는 IP가 아니라 대상 이메일이라
+// (IP는 프록시 뒤에서 여럿이 같은 값으로 보일 수 있다) 다른 사람의 로그인에는 영향이 없다.
+const verifyCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+  keyGenerator: (req) => {
+    const email = req.body && typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    return email ? `email:${email}` : ipKeyGenerator(req.ip);
+  },
+});
 
 // 이메일당 반복 요청 방지 — 위 IP 레이트리밋만으로는 IP를 바꿔가며 특정 이메일에 인증코드
 // 메일을 계속 보내는 어뷰징(메일 폭탄)을 못 막는다. 아무 이메일이든(도메인 제한 없음, 소유
@@ -255,7 +277,7 @@ router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
 // POST /api/auth/email/verify — 코드 확인 → 세션 발급. 신규/기존 계정 매칭은 구글 콜백과
 // 동일한 findByEmail 기반 — 이미 구글로 가입한 이메일이면 그 기존 행에 그대로 로그인된다
 // (oauth_provider/oauth_id는 구글 전용으로 유지, 여기선 건드리지 않음).
-router.post('/email/verify', async (req, res, next) => {
+router.post('/email/verify', verifyCodeLimiter, async (req, res, next) => {
   try {
     // 이메일 앱에서 코드를 복사해 붙여넣을 때 앞뒤 공백/줄바꿈이 섞여 들어오는 경우가 있어
     // (눈으로는 똑같아 보여도 해시 비교가 실패함), 클라이언트 trim과 별개로 서버에서도

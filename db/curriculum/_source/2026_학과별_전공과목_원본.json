@@ -287,7 +287,8 @@
       "category": "전공필수",
       "courseCode": "101298",
       "courseName": "정산사상1",
-      "credits": "3",
+      "credits": "2",
+      "creditsSource": "책자는 3학점이지만 웹정보서비스 조회시스템(과목 마스터)은 2학점. 둘이 다르면 조회시스템이 기준(교육혁신과 서면 답변 2026-10-14, C-1)",
       "courseNameEn": "Jeongsan's Thought 1"
     },
     {

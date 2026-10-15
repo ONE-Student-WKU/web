@@ -200,14 +200,12 @@ function pickTrustReason(regulation, lang) {
 export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
-  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false, basisBookletYear: null };
+  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
   const level = regulation.confidence === 'CONFIRMED' ? 'ok' : regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
   return {
     noData,
     badge: { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
-    // 2025학번 이하: 요건이 최신 책자(2026)의 학번별 이수기준표 값이라는 안내(서버 regulation.basisBookletYear). 자료 없음이면 적지 않는다.
-    basisBookletYear: !noData && regulation.basisBookletYear ? regulation.basisBookletYear : null,
   };
 }

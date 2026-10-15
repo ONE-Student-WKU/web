@@ -12,7 +12,21 @@ const { syllabusSearchUrl } = require('./syllabusLink');
  * 로드맵을 구성한다(career_roadmap_items — curriculum_courses에 실제로 있는 과목만 저장).
  */
 
+// 상담 한 번의 크기 — 화면의 "3~5분만 대화하고 추천받기" 흐름(보통 자유 대화 6~10번)보다 넉넉하게 잡은 상한이다.
+// 매 AI 호출에 그 상담의 대화 전체가 실리므로, 이 상한이 곧 호출 한 번의 크기와 상담 한 번의 호출 수를 묶는다.
+// 횟수 검사는 "세고 → 저장"이라 같은 사용자의 동시 요청은 라우트(routes/career.js)가 한 번에 하나씩만 받는다.
+const FIXED_QUESTION_COUNT = 5; // client/src/pages/CareerExploration.jsx의 FIXED_QUESTIONS 개수
+const MAX_FREE_TURNS = 15;
+const MAX_CANDIDATE_REQUESTS = 3;
+const MAX_SESSIONS_PER_DAY = 3; // "다시 진단하기"로 새 상담을 열어 위 상한을 피하지 못하게
+
 async function createSession(studentId) {
+  const [[{ count }]] = await pool.query(
+    'SELECT COUNT(*) AS count FROM career_sessions WHERE student_id = ? AND created_at >= CURDATE()',
+    [studentId]
+  );
+  if (count >= MAX_SESSIONS_PER_DAY) throw Object.assign(new Error('CAREER_DAILY_SESSION_LIMIT'), { code: 'CAREER_DAILY_SESSION_LIMIT' });
+
   const [result] = await pool.query('INSERT INTO career_sessions (student_id) VALUES (?)', [studentId]);
   return result.insertId;
 }
@@ -175,6 +189,16 @@ async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student, l
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
 
+  // 처음 제출은 상담당 한 번이다. 대화가 시작된 뒤 다시 받으면 같은 답이 기록에 계속 쌓여 AI 호출이 커진다(수정은 PATCH).
+  // 단, 이전 제출이 고정 답변만 저장하고 AI 단계에서 실패한 경우(같은 질문 쌍만 있고 AI 질문은 없음)는 재시도로 보고 다시 받는다.
+  const existing = await listMessages(sessionId);
+  if (existing.length > 0) {
+    const isFailedSubmitRetry =
+      existing.length === fixedAnswers.length * 2 && fixedAnswers.every((a, i) => existing[i * 2].content === a.question);
+    if (!isFailedSubmitRetry) throw Object.assign(new Error('FIXED_ANSWERS_ALREADY_SUBMITTED'), { code: 'FIXED_ANSWERS_ALREADY_SUBMITTED' });
+    await pool.query('DELETE FROM career_messages WHERE session_id = ?', [sessionId]);
+  }
+
   for (const { question, answer } of fixedAnswers) {
     await saveMessage(sessionId, 'assistant', question);
     await saveMessage(sessionId, 'user', answer || '(잘 모르겠어요, 건너뜀)');
@@ -191,6 +215,9 @@ async function submitFixedAnswers(studentId, sessionId, fixedAnswers, student, l
 async function postMessage(studentId, sessionId, content, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
+
+  const [[{ count }]] = await pool.query("SELECT COUNT(*) AS count FROM career_messages WHERE session_id = ? AND role = 'user'", [sessionId]);
+  if (count >= FIXED_QUESTION_COUNT + MAX_FREE_TURNS) throw Object.assign(new Error('CAREER_TURN_LIMIT'), { code: 'CAREER_TURN_LIMIT' });
 
   await saveMessage(sessionId, 'user', content);
   const [history, completedCourses] = await Promise.all([listMessages(sessionId), getCompletedCourses(studentId)]);
@@ -211,6 +238,13 @@ async function generateCandidates(studentId, sessionId, student, language = 'ko'
   if (hasRecentCrisis(history)) {
     throw Object.assign(new Error('CAREER_CRISIS_DETECTED'), { code: 'CAREER_CRISIS_DETECTED' });
   }
+  // 추천받기는 상담당 MAX_CANDIDATE_REQUESTS번. 후보를 못 만든 시도(CAREER_CANDIDATES_EMPTY — 대화가 부족함)는 되돌려 준다.
+  const [claim] = await pool.query(
+    'UPDATE career_sessions SET candidate_requests = candidate_requests + 1 WHERE id = ? AND candidate_requests < ?',
+    [sessionId, MAX_CANDIDATE_REQUESTS]
+  );
+  if (claim.affectedRows === 0) throw Object.assign(new Error('CAREER_CANDIDATE_LIMIT'), { code: 'CAREER_CANDIDATE_LIMIT' });
+
   const completedCourses = await getCompletedCourses(studentId);
   // 정보가 아주 적을 때 모델이 JSON 대신 되묻는 문장을 낼 수 있어(프롬프트로 최대한
   // 막아뒀지만 100% 보장은 안 됨) 파싱 실패도 "후보 없음"과 동일하게 다뤄, 500 대신
@@ -222,6 +256,7 @@ async function generateCandidates(studentId, sessionId, student, language = 'ko'
     candidates = [];
   }
   if (!Array.isArray(candidates) || candidates.length === 0) {
+    await pool.query('UPDATE career_sessions SET candidate_requests = candidate_requests - 1 WHERE id = ?', [sessionId]);
     throw Object.assign(new Error('CAREER_CANDIDATES_EMPTY'), { code: 'CAREER_CANDIDATES_EMPTY' });
   }
 
@@ -304,6 +339,8 @@ function groundRoadmapItems(roadmap, remainingCourses) {
 async function confirmCareer(studentId, sessionId, careerName, student, language = 'ko') {
   const session = await findSessionRow(studentId, sessionId);
   if (!session) throw Object.assign(new Error('SESSION_NOT_FOUND'), { code: 'SESSION_NOT_FOUND' });
+  // 확정(로드맵 AI 호출)은 추천을 받을 때마다 한 번 — 이미 확정했으면 다시 추천받아야 한다.
+  if (session.status !== 'CANDIDATES_READY') throw Object.assign(new Error('CAREER_NOT_READY_TO_CONFIRM'), { code: 'CAREER_NOT_READY_TO_CONFIRM' });
 
   const candidates = await listCandidates(sessionId);
   const chosen = candidates.find((c) => c.careerName === careerName);

@@ -150,9 +150,74 @@ test('buildProgressNote: 다음 학기·근거·확인 안내·이수 과목이 
   assert.match(buildProgressNote({ ...confirmed, completedCourseNames: [] }), /등록된 과목이 없다/);
 });
 
+test('buildProgressNote: 휴학 시기를 모를 때(추정 + 휴학 있음)만 시기에 따라 갈리는 질문은 먼저 휴학 시기를 묻게 한다', () => {
+  const ask = /몇 학년 몇 학기에 휴학했는지" 물어라/;
+  // 과목을 등록하지 않았고 휴학 4학기 — 시기를 모른다
+  const unknown = computeProgress({ admissionYear: 2022, leaveSemesters: 4, recordedTerms: [], today: TODAY });
+  const note = buildProgressNote({ ...unknown, completedCourseNames: [] });
+  assert.match(note, ask);
+  assert.match(note, /누적 휴학 4학기가 언제였는지는 모른다/);
+  assert.match(note, /제13조 제3항/);
+
+  // 휴학이 없으면 물을 것이 없다
+  const noLeave = computeProgress({ admissionYear: 2022, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  assert.doesNotMatch(buildProgressNote({ ...noLeave, completedCourseNames: [] }), ask);
+
+  // 이수 기록이 이어져 있으면 빈 학기로 시기를 알 수 있다
+  const fromRecords = computeProgress({
+    admissionYear: 2022, leaveSemesters: 4, today: TODAY,
+    recordedTerms: [T(2022, 1), T(2022, 3), T(2025, 1), T(2025, 3), T(2026, 1), T(2026, 3)],
+  });
+  assert.equal(fromRecords.source, 'RECORDS');
+  assert.doesNotMatch(buildProgressNote({ ...fromRecords, completedCourseNames: [] }), ask);
+});
+
 test('buildSystemPrompt: progress를 넘기면 포함하고, 안 넘기면 기존 프롬프트와 같다', () => {
   const base = buildSystemPrompt(null, null, null, 'ko');
   assert.equal(buildSystemPrompt(null, null, null, 'ko', null), base);
   const p = computeProgress({ admissionYear: 2022, leaveSemesters: 4, recordedTerms: [], today: TODAY });
   assert.match(buildSystemPrompt(null, null, null, 'ko', { ...p, completedCourseNames: [] }), /수강 진행 상태/);
+});
+
+// ---------------------------------------------------------------- 지금 학년·학기 하나로 모으기(#318, DECISIONS D-64)
+const { currentStandingOf, programYearsOf } = require('../services/studentProgress');
+const standing = (o) => {
+  const c = computeProgress(o).current;
+  return c && [c.grade, c.gradeSemester, c.extended, c.extraTerms, c.onLeave, c.enrolledTermNumber];
+};
+
+test('#318 예시: 휴학 1학기면 한 학년 높게 나오지 않고, 1월(방학)에는 직전 학기를 보여 준다', () => {
+  // 2024학번, 2025-2 휴학 1학기, 2026-04-10 → 재학 4번째 학기 = 2학년 2학기(옛 공식은 3학년)
+  assert.deepEqual(standing({ admissionYear: 2024, leavePeriods: [{ startYear: 2025, startSemester: 2, semesters: 1 }], today: '2026-04-10' }), [2, 2, false, 0, false, 4]);
+  // 2024학번, 휴학 없음, 2026-01-15(겨울방학) → 직전 학기 2학년 2학기(옛 공식은 1월 1일에 3학년)
+  assert.deepEqual(standing({ admissionYear: 2024, leavePeriods: [], today: '2026-01-15' }), [2, 2, false, 0, false, 4]);
+});
+
+test('#318 예시: 수업연한을 넘기면 "초과 N학기", 건축학과(5년)·약학과(6년)는 수업연한까지 학년으로 센다(학칙 제25조)', () => {
+  assert.deepEqual(standing({ admissionYear: 2022, leavePeriods: [], today: TODAY }), [4, null, true, 2, false, 10]);
+  assert.deepEqual(standing({ admissionYear: 2022, leavePeriods: [], today: TODAY, programYears: 5 }), [5, 2, false, 0, false, 10]);
+  assert.deepEqual(standing({ admissionYear: 2021, leavePeriods: [], today: TODAY, programYears: 6 }), [6, 2, false, 0, false, 12]);
+  assert.equal(programYearsOf('건축학과'), 5);
+  assert.equal(programYearsOf('의학과'), 6);
+  assert.equal(programYearsOf('약학과'), 6);
+  assert.equal(programYearsOf('경영학과'), 4);
+});
+
+test('지금 학기가 휴학이면 마지막으로 다닌 학기와 함께 휴학 중으로 표시하고, 입학 전이면 없다', () => {
+  assert.deepEqual(standing({ admissionYear: 2025, leavePeriods: [{ startYear: 2026, startSemester: 2, semesters: 1 }], today: TODAY }), [2, 1, false, 0, true, 3]);
+  assert.equal(computeProgress({ admissionYear: 2027, leavePeriods: [], today: TODAY }).current, null);
+});
+
+test('currentStandingOf: DB 행(학생)만으로 계산하고 학과 수업연한을 쓴다 — 홈 화면·로그인 응답용', () => {
+  const s = currentStandingOf({ admission_year: 2022, enrollment_type: 'GENERAL', leave_periods: '[]', leave_semesters: 0, department_name: '건축학과' }, { today: TODAY });
+  assert.deepEqual([s.grade, s.gradeSemester, s.extended, s.source], [5, 2, false, 'PROFILE']);
+  assert.equal(currentStandingOf({ admission_year: null }, { today: TODAY }), null);
+});
+
+test('챗봇 프로필 줄은 계산된 지금 학기를 쓴다(옛 "N학년(누적 휴학 반영)" 공식이 아니다)', () => {
+  const student = { admission_year: 2024, enrollment_type: 'GENERAL', leave_periods: '[{"startYear":2025,"startSemester":2,"semesters":1}]', leave_semesters: 1, department_name: '경영학과' };
+  const progress = computeProgress({ admissionYear: 2024, leavePeriods: [{ startYear: 2025, startSemester: 2, semesters: 1 }], today: '2026-04-10' });
+  const prompt = buildSystemPrompt(student, null, null, 'ko', { ...progress, completedCourseNames: [] });
+  assert.match(prompt, /현재: 2학년 2학기\(재학 4번째 학기\)/);
+  assert.doesNotMatch(prompt, /누적 휴학 \d+학기 반영/);
 });

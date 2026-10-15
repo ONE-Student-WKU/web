@@ -100,6 +100,19 @@ async function ensureStudentLanguageColumn(connection) {
   }
 }
 
+// 진로 탐색 "추천받기" 상담당 횟수 상한용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
+// 컬럼을 직접 ALTER한다. 기존 상담은 0회에서 시작한다.
+async function ensureCareerCandidateRequestsColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'career_sessions' AND COLUMN_NAME = 'candidate_requests'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] career_sessions.candidate_requests 컬럼 추가...');
+    await connection.query('ALTER TABLE career_sessions ADD COLUMN candidate_requests INT NOT NULL DEFAULT 0');
+  }
+}
+
 // 편입생의 편입 학년 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
 // NULL(옛 방식으로 입력한 편입생·편입생이 아닌 계정)로 두어 기존 계정의 판정은 그대로다(규정 판단 엔진이 3학년 편입으로 가정하고 추정으로 표시).
 async function ensureStudentTransferGradeColumn(connection) {
@@ -110,6 +123,49 @@ async function ensureStudentTransferGradeColumn(connection) {
   if (cols.length === 0) {
     console.log('[db:migrate] students.transfer_grade 컬럼 추가...');
     await connection.query('ALTER TABLE students ADD COLUMN transfer_grade TINYINT NULL');
+  }
+}
+
+// 교직과정 이수 여부·편입 인정학점 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
+// NULL(답하지 않음)로 두어 기존 계정의 판정은 그대로다(교직기본이수는 참고 항목, 편입 총량은 학교 표의 인정학점으로 가정).
+async function ensureStudentTeachingAndTransferCreditColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME IN ('teaching_course', 'transfer_recognized_credits')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('transfer_recognized_credits')) {
+    console.log('[db:migrate] students.transfer_recognized_credits 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN transfer_recognized_credits SMALLINT NULL AFTER transfer_grade');
+  }
+  if (!existing.has('teaching_course')) {
+    console.log('[db:migrate] students.teaching_course 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN teaching_course TINYINT(1) NULL AFTER transfer_recognized_credits');
+  }
+}
+
+// 휴학 기간 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
+// NULL(아직 휴학 질문에 답하지 않음)로 두어 기존 계정은 다음 접속 때 휴학 질문을 한 번 보게 된다(server/services/leavePeriods.js).
+async function ensureStudentLeavePeriodsColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'leave_periods'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.leave_periods 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN leave_periods JSON NULL');
+  }
+}
+
+// 홈 화면 편집 설정 guard — NULL(기본 배치)로 두어 기존 계정의 화면은 그대로다(server/services/homeLayout.js).
+async function ensureStudentHomeLayoutColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'home_layout'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.home_layout 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN home_layout JSON NULL');
   }
 }
 
@@ -467,6 +523,9 @@ async function migrate() {
     await ensureStudentLanguageColumn(connection);
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
+    await ensureStudentTeachingAndTransferCreditColumns(connection);
+    await ensureStudentLeavePeriodsColumn(connection);
+    await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);
@@ -478,6 +537,7 @@ async function migrate() {
     await ensureInquiryResolutionNoteColumn(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
+    await ensureCareerCandidateRequestsColumn(connection);
 
     console.log('[db:migrate] 완료 — 모든 테이블이 최신 상태입니다.');
   } finally {

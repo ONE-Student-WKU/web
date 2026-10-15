@@ -311,26 +311,45 @@ async function closePost(id, authorId) {
 // 호출부(routes/community.js)가 getPostById로 먼저 확인한다.
 const MAX_APPLICATIONS_PER_POST = 3;
 
+// 확인과 INSERT를 한 트랜잭션에 넣고 신청자 학생 행을 FOR UPDATE로 잠근다(createReport와 같은 방식) — 따로 하면 동시에
+// 보낸 신청들이 전부 "아직 신청 안 함"을 읽고 통과해 대기 중 신청이 여러 건 생기고 3회 상한도 넘었다.
 async function applyToPost(postId, applicantId, message) {
-  const [existing] = await pool.query(
-    "SELECT id FROM community_applications WHERE post_id = ? AND applicant_id = ? AND status IN ('pending', 'accepted') LIMIT 1",
-    [postId, applicantId]
-  );
-  if (existing.length > 0) return { ok: false, reason: 'DUPLICATE_APPLICATION' };
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query('SELECT id FROM students WHERE id = ? FOR UPDATE', [applicantId]);
+    const [existing] = await conn.query(
+      "SELECT id FROM community_applications WHERE post_id = ? AND applicant_id = ? AND status IN ('pending', 'accepted') LIMIT 1",
+      [postId, applicantId]
+    );
+    if (existing.length > 0) {
+      await conn.rollback();
+      return { ok: false, reason: 'DUPLICATE_APPLICATION' };
+    }
 
-  // 반려 후 재신청이 무제한이면 글쓴이를 계속 괴롭히는 용도로 악용될 수 있어, 한 글당 총
-  // 신청 횟수(상태 무관 — 대기/수락/반려 전부 포함)를 3회로 제한한다.
-  const [[{ count }]] = await pool.query(
-    'SELECT COUNT(*) AS count FROM community_applications WHERE post_id = ? AND applicant_id = ?',
-    [postId, applicantId]
-  );
-  if (count >= MAX_APPLICATIONS_PER_POST) return { ok: false, reason: 'APPLICATION_LIMIT_REACHED' };
+    // 반려 후 재신청이 무제한이면 글쓴이를 계속 괴롭히는 용도로 악용될 수 있어, 한 글당 총
+    // 신청 횟수(상태 무관 — 대기/수락/반려 전부 포함)를 3회로 제한한다.
+    const [[{ count }]] = await conn.query(
+      'SELECT COUNT(*) AS count FROM community_applications WHERE post_id = ? AND applicant_id = ?',
+      [postId, applicantId]
+    );
+    if (count >= MAX_APPLICATIONS_PER_POST) {
+      await conn.rollback();
+      return { ok: false, reason: 'APPLICATION_LIMIT_REACHED' };
+    }
 
-  const [result] = await pool.query(
-    "INSERT INTO community_applications (post_id, applicant_id, message, status) VALUES (?, ?, ?, 'pending')",
-    [postId, applicantId, message]
-  );
-  return { ok: true, id: result.insertId };
+    const [result] = await conn.query(
+      "INSERT INTO community_applications (post_id, applicant_id, message, status) VALUES (?, ?, ?, 'pending')",
+      [postId, applicantId, message]
+    );
+    await conn.commit();
+    return { ok: true, id: result.insertId };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 내가 낸 신청 전체 — 수락된 건만 글쓴이 연락처를 같이 내려준다(매칭 성사 시에만 공개).
@@ -529,7 +548,9 @@ async function createReport(reporterId, targetType, targetId, reason) {
   let targetBody = null;
 
   if (targetType === 'post') {
-    const [rows] = await pool.query('SELECT author_id, title, body FROM community_posts WHERE id = ?', [targetId]);
+    // 공개(승인된) 글만 신고 대상이다. 상태를 안 보면 남의 비공개 글(승인 대기·반려)도 id만으로 신고할 수 있고, 신고에 저장된
+    // 제목이 "내 신고 내역"으로 그대로 보여 비공개 글 제목이 드러났다.
+    const [rows] = await pool.query("SELECT author_id, title, body FROM community_posts WHERE id = ? AND status = 'approved'", [targetId]);
     if (rows.length === 0) return { ok: false, reason: 'INVALID_TARGET' };
     reportedStudentId = rows[0].author_id;
     targetTitle = rows[0].title;

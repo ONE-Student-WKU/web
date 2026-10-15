@@ -2,6 +2,7 @@ const pool = require('../db');
 const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 const { academicTermOf, termIndex, todayKst } = require('./regulationEngine/context');
 const { offeringCodeToRegularSemester } = require('./termCode');
+const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
 
 /**
  * server/services/studentProgress.js
@@ -12,11 +13,22 @@ const { offeringCodeToRegularSemester } = require('./termCode');
  * 재학 학기 수(enrolledBefore: 다음 학기 직전까지 등록해 다닌 정규 학기 수)를 구하는 방법:
  *  1) RECORDS  — 과목 관리에 등록한 이수 기록이 입학 학기부터 이어져 있으면, 기록이 있는 정규 학기 수를 센다.
  *                기록이 없는 중간 학기는 휴학으로 본다(휴학 시기를 따로 입력받지 않기 위한 설계).
- *  2) ESTIMATED — 기록이 입학 학기부터가 아니면(과목을 일부만 등록한 학생) 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수.
- * 학년 = 시작 학년(편입생 3, 그 외 1) + floor(재학 학기 수 / 2), 최대 4(그 이상은 초과학기).
+ *  2) PROFILE  — 기록이 입학 학기부터가 아니고, 학생이 휴학 질문에 답했으면(leave_periods가 [] 또는 기간) 입학 이후 경과 학기 − 그 기간의 휴학 학기 수.
+ *  3) ESTIMATED — 휴학 질문에 아직 답하지 않은 계정(leave_periods NULL)은 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수(시기를 모름).
+ * 학년 = 시작 학년(편입생 3, 그 외 1) + floor(재학 학기 수 / 2), 최대는 학과의 수업연한(그 이상은 초과학기).
+ * 홈 화면·챗봇·진로 상담의 "현재 학년"도 이 계산 하나를 쓴다(이슈 #318, DECISIONS D-64) — 화면은 이수 기록 없이 프로필(휴학 기간)로,
+ * 챗봇은 이수 기록까지 넣어 부른다.
  */
 
-const MAX_GRADE = 4;
+// 수업연한(학칙 제25조 제1항): 학사과정 4년이 원칙이고 건축학과 5년, 의·치·한의예(학)과(예과 2 + 본과 4)와 약학과 6년.
+// 예과·본과가 학과로 나뉘어 있어도 학년은 입학부터 이어서 센다(예: 본과 1학년 = 3학년).
+const DEFAULT_PROGRAM_YEARS = 4;
+const PROGRAM_YEARS = Object.freeze({
+  건축학과: 5,
+  의예과: 6, 의학과: 6, 치의예과: 6, 치의학과: 6, 한의예과: 6, 한의학과: 6,
+  약학과: 6,
+});
+const programYearsOf = (departmentName) => PROGRAM_YEARS[departmentName] || DEFAULT_PROGRAM_YEARS;
 const TRANSFER_START_GRADE = 3; // 규정 엔진도 편입생을 3학년으로 가정한다(TRANSFER_GRADE_ASSUMED)
 const UPCOMING_TERM_COUNT = 2;
 
@@ -33,11 +45,13 @@ function termLabel({ year, semester }) {
  * @param {number} p.admissionYear
  * @param {string} [p.enrollmentType]   GENERAL | TRANSFER_ADMISSION | MAJOR_CHANGE
  * @param {number|null} [p.transferGrade] 편입한 학년(편입생만). 있으면 admissionYear는 "편입 연도 − 편입 학년 + 1"이라 편입 학기(= admissionYear + transferGrade − 1학년도 1학기)부터 센다
- * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수
+ * @param {number} [p.leaveSemesters]   프로필의 누적 휴학 학기 수(휴학 기간을 모를 때만 쓴다)
+ * @param {Array|null} [p.leavePeriods] 학생이 입력한 휴학 기간(leavePeriods.js). null이면 아직 답하지 않음
  * @param {Array<{year:number, semester:number}>} [p.recordedTerms] 이수 기록의 (학년도, DB 학기 코드). 계절학기(2·4)는 무시한다
  * @param {string} p.today              'YYYY-MM-DD'(KST)
+ * @param {number} [p.programYears]     학과의 수업연한(programYearsOf). 학년 표시의 최대값이고, 넘으면 초과학기
  */
-function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGrade = null, leaveSemesters = 0, recordedTerms = [], today }) {
+function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGrade = null, leaveSemesters = 0, leavePeriods = null, recordedTerms = [], today, programYears = DEFAULT_PROGRAM_YEARS }) {
   if (!admissionYear) return null;
 
   const currentTerm = academicTermOf(today);
@@ -60,7 +74,11 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
     if (index < firstUpcomingIndex) recordedIndexes.add(index);
   }
 
-  const leave = Math.max(0, Number(leaveSemesters) || 0);
+  // 휴학 기간을 알면 다음 학기 전까지 쉰 학기만 센다(다음 학기 휴학처럼 앞으로의 휴학은 지금까지의 재학 학기에 넣지 않는다).
+  const knownLeave = leavePeriods != null;
+  const leave = knownLeave
+    ? countLeaveBetween(leavePeriods, admissionIndex, firstUpcomingIndex)
+    : Math.max(0, Number(leaveSemesters) || 0);
   const estimated = Math.max(0, firstUpcomingIndex - admissionIndex - leave);
   const recordsCoverAdmission = recordedIndexes.size > 0 && Math.min(...recordedIndexes) <= admissionIndex;
 
@@ -76,24 +94,48 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
     enrolledBefore = consistent ? estimated : recordedIndexes.size;
     if (!consistent) flags.push('RECORDS_LEAVE_MISMATCH');
     needsConfirmation = !consistent;
+  } else if (knownLeave) {
+    enrolledBefore = estimated;
+    source = 'PROFILE';
+    needsConfirmation = false;
   } else {
     enrolledBefore = estimated;
     source = 'ESTIMATED';
     needsConfirmation = true;
   }
 
+  const maxGrade = programYears;
+  // 수업연한을 넘긴 학기는 "초과 N학기"로 센다(수업연한까지는 학년·학기, 그 뒤는 초과학기).
+  const standingOf = (enrolledTermNumber) => {
+    const rawGrade = startGrade + Math.floor((enrolledTermNumber - 1) / 2);
+    const extended = rawGrade > maxGrade;
+    const termsBeforeExtension = (maxGrade - startGrade + 1) * 2;
+    return {
+      grade: Math.min(maxGrade, rawGrade),
+      gradeSemester: extended ? null : ((enrolledTermNumber - 1) % 2) + 1,
+      extended,
+      extraTerms: extended ? enrolledTermNumber - termsBeforeExtension : 0,
+    };
+  };
+
   const upcomingTerms = [];
   for (let i = 0; i < UPCOMING_TERM_COUNT; i++) {
     const enrolled = enrolledBefore + i;
-    const rawGrade = startGrade + Math.floor(enrolled / 2);
+    const s = standingOf(enrolled + 1);
     upcomingTerms.push({
       ...termFromIndex(firstUpcomingIndex + i),
-      grade: Math.min(MAX_GRADE, rawGrade),
+      grade: s.grade,
       enrolledTermNumber: enrolled + 1,
-      extended: rawGrade > MAX_GRADE,
+      extended: s.extended,
     });
   }
   if (upcomingTerms.some((t) => t.extended)) flags.push('EXTENDED_TERM');
+
+  // 지금 학기(방학이면 직전 학기 — academicTermOf가 1~2월을 전년도 2학기, 7~8월을 1학기로 본다, DECISIONS D-64).
+  // 재학 학기 수(enrolledBefore)는 지금 학기까지 센 값이라 그대로 "지금 몇 번째 학기"다. 지금 학기가 휴학이면 onLeave.
+  const currentIndex = termIndex(currentTerm);
+  const onLeave = knownLeave && currentIndex >= admissionIndex && countLeaveBetween(leavePeriods, currentIndex, currentIndex + 1) > 0;
+  const current = enrolledBefore > 0 ? { ...currentTerm, enrolledTermNumber: enrolledBefore, onLeave, ...standingOf(enrolledBefore) } : null;
 
   return {
     today,
@@ -103,8 +145,29 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
     flags,
     enrolledTermsCompleted: enrolledBefore,
     leaveSemesters: leave,
+    leavePeriods: knownLeave ? leavePeriods : null,
+    programYears,
+    current,
     upcomingTerms,
   };
+}
+
+/**
+ * 이수 기록 없이 프로필(학번·입학 유형·편입 학년·휴학 기간)만으로 지금 학년·학기를 계산한다. 로그인·/api/me 응답(studentService.serializeStudent)처럼
+ * DB를 더 읽지 않아야 하는 곳에서 쓴다. 챗봇은 이수 기록까지 넣은 getStudentProgress를 쓴다.
+ */
+function currentStandingOf(student, { today = todayKst() } = {}) {
+  if (!student || !student.admission_year) return null;
+  const progress = computeProgress({
+    admissionYear: student.admission_year,
+    enrollmentType: student.enrollment_type,
+    transferGrade: student.transfer_grade,
+    leaveSemesters: student.leave_semesters,
+    leavePeriods: parseLeavePeriods(student.leave_periods),
+    today,
+    programYears: programYearsOf(student.department_name),
+  });
+  return progress && progress.current ? { ...progress.current, source: progress.source } : null;
 }
 
 /** 이수 과목명 목록(중복 제거). 낙제(F·NP)와 재수강으로 대체된 이전 기록은 뺀다 — 졸업요건 계산(graduationService)과 같은 기준. */
@@ -133,8 +196,10 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
     enrollmentType: student.enrollment_type,
     transferGrade: student.transfer_grade,
     leaveSemesters: student.leave_semesters,
+    leavePeriods: parseLeavePeriods(student.leave_periods),
     recordedTerms: rows.map((r) => ({ year: r.year, semester: r.semester })),
     today,
+    programYears: programYearsOf(student.department_name),
   });
   if (!progress) return null;
 
@@ -142,4 +207,4 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
   return { ...progress, completedCourseNames: completedCourseNames(rows, supersededIds) };
 }
 
-module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel };
+module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel, currentStandingOf, programYearsOf, PROGRAM_YEARS };

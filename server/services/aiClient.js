@@ -4,6 +4,8 @@
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
+const { currentStandingOf } = require('./studentProgress');
+
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -22,29 +24,28 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 
-// client/src/utils/academic.js의 getGradeLevel과 동일한 공식(2학기당 1년 보정) — 서버는
-// 브라우저 모듈을 못 불러오니 그대로 옮겨둠. 둘 중 하나만 고치면 어긋나므로 같이 수정할 것.
-function getCurrentGrade(admissionYear, leaveSemesters) {
-  if (!admissionYear) return null;
-  const currentYear = new Date().getFullYear();
-  const leaveYears = Math.floor((leaveSemesters || 0) / 2);
-  return Math.min(4, Math.max(1, currentYear - admissionYear - leaveYears + 1));
+// 지금 학년·학기 한 줄. 계산은 studentProgress 한 곳에서 한다(이슈 #318) — 챗봇은 이수 기록까지 넣은 progress.current를,
+// 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
+function describeStanding(standing) {
+  if (!standing) return null;
+  const base = standing.extended ? `수업연한을 넘긴 초과 ${standing.extraTerms}학기` : `${standing.grade}학년 ${standing.gradeSemester}학기`;
+  return `${base}(재학 ${standing.enrolledTermNumber}번째 학기${standing.onLeave ? ', 지금은 휴학 중' : ''})`;
 }
 
 // 근거 문서(RAG 검색 결과)는 학번별로 기준이 갈리는 표를 그대로 담고 있을 수 있는데, 정작
 // 모델은 "이 학생이 몇 학번인지" 전혀 모른 채 답을 골라야 했다 — 그래서 22학번 학생에게
 // 2026학번 표를 그대로 답하는 문제가 실사용으로 확인됨. 학생 프로필(온보딩 정보)을 시스템
 // 프롬프트에 명시해 반드시 이 학생 학번 기준을 우선 적용하도록 못박는다.
-function buildStudentProfileNote(student) {
+function buildStudentProfileNote(student, progress = null) {
   if (!student || !student.admission_year) return null;
 
-  const grade = getCurrentGrade(student.admission_year, student.leave_semesters);
+  const standing = describeStanding((progress && progress.current) || currentStandingOf(student));
   const parts = [
     `학과: ${student.department_name || '미상'}`,
     `입학년도: ${student.admission_year}학번`,
     student.track_name ? `세부전공: ${student.track_name}` : null,
     `입학유형: ${ENROLLMENT_TYPE_LABEL[student.enrollment_type] || '미상'}`,
-    grade ? `현재 학년: ${grade}학년 (누적 휴학 ${student.leave_semesters || 0}학기 반영)` : null,
+    standing ? `현재: ${standing}` : null,
   ].filter(Boolean);
 
   return `이 학생의 프로필 — ${parts.join(', ')}.
@@ -74,6 +75,12 @@ function buildGraduationStatusNote(graduationStatus) {
     )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
+  // 자기계발심층상담은 판정하지 않는다(counseling.js, D-65). 기준과 확인 경로만 안내하게 한다.
+  const counseling = graduationStatus.counseling;
+  const counselingCohort = counseling && { FROM_2020: '2020학번부터', BEFORE_2020: '2016~2019학번', TRANSFER: '편입생' }[counseling.cohort];
+  const counselingLine = counseling
+    ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
+    : null;
 
   // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.
   const regulation = graduationStatus.regulation;
@@ -96,7 +103,7 @@ function buildGraduationStatusNote(graduationStatus) {
 총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (졸업까지 ${remaining}학점 남음)
 카테고리별:
 ${categoryLines}
-${certLines ? `졸업논문·졸업인증제:\n${certLines}` : ''}
+${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
 
 주의:
 - 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다
@@ -191,9 +198,14 @@ function buildProgressNote(progress) {
   if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
 
   const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const periodText = (periods) => (periods.length === 0
+    ? '휴학한 적 없음'
+    : periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', '));
   const sourceText = progress.source === 'RECORDS'
     ? '학생이 과목 관리에 등록한 이수 기록'
-    : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
+    : progress.source === 'PROFILE'
+      ? `학번과 학생이 입력한 휴학 기간(${periodText(progress.leavePeriods)})`
+      : `학번과 누적 휴학 학기 수(${progress.leaveSemesters}학기)로 한 추정 — 이수 기록이 입학 학기부터 이어져 있지 않다`;
   const lines = [
     '이 학생의 수강 진행 상태(코드로 계산한 값이다. 학년·학기를 직접 추정하지 말고 이 값을 써라):',
     `- 오늘 기준 현재 학기: ${progress.currentTerm.year}학년도 ${progress.currentTerm.semester}학기`,
@@ -204,6 +216,17 @@ function buildProgressNote(progress) {
   if (flagTexts.length) lines.push(`- 계산 참고: ${flagTexts.join('; ')}`);
   if (progress.needsConfirmation) {
     lines.push('- 이 학년·학기는 확정이 아니다. 학기 계획을 답할 때 이 가정(예: "다음 학기를 N학년 M학기로 보면")을 한 번 밝히고, 맞지 않으면 알려달라고 안내하라.');
+  }
+  // 프로필에는 누적 휴학 학기 "수"만 있다. 이수 기록이 이어져 있으면 빈 학기로 휴학 시기를 알 수 있지만(RECORDS),
+  // 추정(ESTIMATED)일 때는 시기를 모른다. 현재 학년 계산에는 수만 있으면 되지만, 개편 당시의 학년(제13조③)이나 복학 시점처럼
+  // 시기에 따라 결론이 갈리는 질문은 모델이 아무 시기나 가정해 단정하지 않도록 먼저 물어보게 한다(입력 항목을 늘리지 않고 대화에서만 쓴다).
+  if (progress.source === 'ESTIMATED' && progress.leaveSemesters > 0) {
+    lines.push(
+      `- 누적 휴학 ${progress.leaveSemesters}학기가 언제였는지는 모른다(다음 수강 학기 계산에는 필요 없다). 답이 휴학 시기에 따라 달라지는 질문이면 단정하지 말고 먼저 "몇 학년 몇 학기에 휴학했는지" 물어라. ` +
+        '예: 선택과목이 필수로 바뀐 과목을 들어야 하는지(학칙시행규칙 제13조 제3항의 "재학 중인 학년"은 교육과정이 바뀐 해의 학년이라 그 전에 휴학했으면 달라진다), ' +
+        '복학·재입학한 시점에 따라 달라지는 처리(폐지·통합된 학과의 복학, 기존 교육과정을 운영하는 기간 등). ' +
+        '학생이 시기를 알려 주면 그 시기로 그 해의 학년을 다시 따져 답하고, 입학년도만으로 계산한 결과와 달라지면 그렇다고 밝혀라.'
+    );
   }
   lines.push(
     progress.completedCourseNames.length > 0
@@ -217,7 +240,7 @@ function buildSystemPrompt(student, graduationStatus, yearContext = null, langua
   const parts = [
     SYSTEM_PROMPT,
     EVIDENCE_PRIORITY_NOTE,
-    buildStudentProfileNote(student),
+    buildStudentProfileNote(student, progress),
     buildYearContextNote(yearContext),
     buildGraduationStatusNote(graduationStatus),
     buildProgressNote(progress),
@@ -450,11 +473,11 @@ const CAREER_FOLLOWUP_STYLE_REMINDER = `답변 형식 확인: 첫 문장은 학�
 function buildCareerStudentNote(student, completedCourses) {
   if (!student) return null;
 
-  const grade = getCurrentGrade(student.admission_year, student.leave_semesters);
+  const standing = describeStanding(currentStandingOf(student));
   const parts = [
     `학과: ${student.department_name || '미상'}`,
     student.track_name ? `세부전공: ${student.track_name}` : null,
-    grade ? `현재 학년: ${grade}학년` : null,
+    standing ? `현재: ${standing}` : null,
   ].filter(Boolean);
 
   const nameInstruction = student.name

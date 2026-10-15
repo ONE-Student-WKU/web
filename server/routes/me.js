@@ -3,6 +3,9 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
+const { validateLeavePeriods } = require('../services/leavePeriods');
+const { validateHomeLayout } = require('../services/homeLayout');
+const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -11,6 +14,7 @@ const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/conse
  *   비밀번호 변경 엔드포인트는 폐지됐고 DELETE /me의 재확인 방식도 바뀜. 위키 갱신 필요)
  */
 
+const { isIntInRange, validateNickname, isValidAdmissionYear } = require('../services/inputValidation');
 const { VALID_ENROLLMENT_TYPES, VALID_MAJOR_CHANGE_GRADES, VALID_MAJOR_CHANGE_SEMESTERS, VALID_TRANSFER_GRADES, VALID_LANGUAGES, serializeStudent } = studentService;
 
 // GET /api/me
@@ -55,12 +59,23 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-      secondDepartmentId, careerCounselingCount, leaveSemesters, language,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse,
+      secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
-    if (name !== undefined && !name.trim()) {
+    // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
+    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_NAME', message: null, data: null });
+    }
+    if (name !== undefined) {
+      const nameError = validateNickname(name);
+      if (nameError) return res.status(400).json({ status: 400, code: nameError, message: null, data: null });
+    }
+    if (admissionYear !== undefined && !isValidAdmissionYear(admissionYear)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_ADMISSION_YEAR', message: null, data: null });
+    }
+    if (careerCounselingCount !== undefined && !isIntInRange(careerCounselingCount, 0, 1000)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CAREER_COUNSELING_COUNT', message: null, data: null });
     }
 
     // 닉네임 사칭/도용 방지 — students.name의 UNIQUE 제약(db/schema.sql)이 최종 방어선이고,
@@ -90,8 +105,20 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'INVALID_LANGUAGE', message: null, data: null });
     }
 
-    if (leaveSemesters !== undefined && (!Number.isInteger(Number(leaveSemesters)) || Number(leaveSemesters) < 0)) {
+    if (leaveSemesters !== undefined && !isIntInRange(leaveSemesters, 0, 30)) {
       return res.status(400).json({ status: 400, code: 'INVALID_LEAVE_SEMESTERS', message: null, data: null });
+    }
+    // 홈 화면 편집 설정 — 하단 바 4칸은 정해진 목록에서만, 하단 바 켜기/끄기는 true/false만 받는다. null은 기본 배치로 되돌리기.
+    let validHomeLayout;
+    if (homeLayout !== undefined) {
+      const { layout, error } = validateHomeLayout(homeLayout);
+      if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+      validHomeLayout = layout;
+    }
+
+    // 휴학 기간을 입력한 계정의 휴학 학기 수는 그 기간의 합계라 따로 고칠 수 없다(PUT /api/me/leave-periods로 기간을 고친다).
+    if (leaveSemesters !== undefined && student.leave_periods != null) {
+      return res.status(400).json({ status: 400, code: 'USE_LEAVE_PERIODS', message: null, data: null });
     }
 
     // majorChangeGrade/Year/Semester는 전과생(MAJOR_CHANGE)일 때만 의미가 있음 — 이번 요청에서
@@ -145,6 +172,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'REQUIRED_TRANSFER_GRADE', message: null, data: null });
     }
 
+    // 교직과정 이수 여부·편입 인정학점 — 이번 요청으로 확정되는 입학 유형·전과 학년 기준으로 검증한다.
+    const effectiveMajorChangeGrade = majorChangeGrade !== undefined ? majorChangeGrade : student.major_change_grade;
+    const extrasError = validateTeachingAndTransferCredits(
+      { teachingCourse, transferRecognizedCredits },
+      { enrollmentType: effectiveEnrollmentType, majorChangeGrade: effectiveMajorChangeGrade }
+    );
+    if (extrasError) return res.status(400).json({ status: 400, code: extrasError, message: null, data: null });
+    // 학과나 유형이 바뀌어 교직을 이수할 수 없게 되거나 학과가 바뀌면, 함께 보내지 않은 이전 답은 남기지 않는다(다시 묻는다).
+    const clearTeaching = teachingCourse === undefined
+      && ((departmentId !== undefined && String(departmentId) !== String(student.department_id)) || !canTakeTeachingCourse({ enrollmentType: effectiveEnrollmentType, majorChangeGrade: effectiveMajorChangeGrade }));
+
     if (departmentId !== undefined) {
       const dept = await studentService.findDepartmentById(departmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
@@ -174,11 +212,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeSemester,
       // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
       transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
+      transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
+      teachingCourse: clearTeaching ? null : teachingCourse,
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,
       language,
+      homeLayout: validHomeLayout,
     });
+    if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
+      await studentService.revalidateLeavePeriods(req.session.userId);
+    }
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
@@ -186,6 +230,27 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (err.code === 'ER_DUP_ENTRY' && err.sqlMessage?.includes('uq_students_name')) {
       return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
     }
+    next(err);
+  }
+});
+
+// PUT /api/me/leave-periods — 휴학 기간 저장. { periods: [] }는 "휴학한 적 없음"이다.
+// 온보딩 필수 질문과, 기능 도입 전 계정에게 한 번 보여주는 질문 화면이 이 경로를 쓴다(server/services/leavePeriods.js).
+router.put('/me/leave-periods', requireAuth, async (req, res, next) => {
+  try {
+    const student = await studentService.findById(req.session.userId);
+    if (!student) {
+      return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
+    }
+    const { periods, error } = validateLeavePeriods(req.body && req.body.periods, {
+      admissionYear: student.admission_year, enrollmentType: student.enrollment_type, transferGrade: student.transfer_grade,
+    });
+    if (error) return res.status(400).json({ status: 400, code: error, message: null, data: null });
+
+    await studentService.saveLeavePeriods(req.session.userId, periods);
+    const updated = await studentService.findById(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'LEAVE_PERIODS_SAVED', message: null, data: serializeStudent(updated) });
+  } catch (err) {
     next(err);
   }
 });

@@ -141,9 +141,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
-              {trust.basisBookletYear && (
-                <p className="grad-basis-note">{t('grad.basis.latestBooklet', { year: trust.basisBookletYear })}</p>
-              )}
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"
@@ -248,7 +245,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </section>
             )}
 
-            {status.certifications.length > 0 && (
+            {(status.certifications.length > 0 || status.counseling) && (
               <>
                 <p className="home-quick-label">{t('grad.sectionCerts')}</p>
                 {status.certifications.map((cert) => (
@@ -266,6 +263,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     </div>
                   </section>
                 ))}
+                {/* 자기계발심층상담: 판정하지 않고 기준·확인 경로만 안내한다(서버 counseling.js, DECISIONS D-65). 부족 요건 요약에는 넣지 않는다. */}
+                {status.counseling && (
+                  <section className="home-card">
+                    <div className="grad-cert-row">
+                      <span className="grad-cert-check" aria-hidden="true" />
+                      <div>
+                        <p className="home-card-label">{t('grad.counseling.title')}</p>
+                        <p className="grad-cert-desc">
+                          {t('grad.counseling.need', { n: status.counseling.required, cohort: t(`grad.counseling.cohort.${status.counseling.cohort}`) })}
+                        </p>
+                        {status.counseling.replacement === 'HUG' && <p className="grad-flex-note">{t('grad.counseling.hug')}</p>}
+                        <p className="grad-flex-note">{t('grad.counseling.notJudged')}</p>
+                        <p className="grad-flex-note">{t('grad.counseling.countingPending')}</p>
+                      </div>
+                    </div>
+                  </section>
+                )}
               </>
             )}
 

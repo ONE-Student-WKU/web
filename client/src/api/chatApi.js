@@ -59,6 +59,9 @@ export const getMe = () => apiRequest('/me');
 
 export const updateProfile = (payload) => apiRequest('/me', { method: 'PATCH', body: JSON.stringify(payload) });
 
+// 휴학 기간 저장 — []는 "휴학한 적 없음". 응답은 갱신된 학생 정보다(server/routes/me.js).
+export const saveLeavePeriods = (periods) => apiRequest('/me/leave-periods', { method: 'PUT', body: JSON.stringify({ periods }) });
+
 export const deleteAccount = () => apiRequest('/me', { method: 'DELETE' });
 
 export const getDepartments = () => apiRequest('/onboarding/departments');

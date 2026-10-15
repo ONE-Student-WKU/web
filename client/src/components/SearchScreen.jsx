@@ -15,13 +15,14 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - onClose: function — 화면이 닫힐 때(뒤로가기 버튼, 시스템 뒤로가기) 호출. 부모는 이 화면을 렌더하지 않으면 된다.
  *   부모가 스스로 닫을 때는 closeSearchScreen()을 부르면 같은 경로(히스토리 한 칸 되돌리기 → onClose)를 탄다.
  * - placeholder / ariaLabel: string
+ * - onKeyDown: (event) => void (선택) — 입력 칸의 키 입력(학과 검색: ↑↓로 결과 이동, 엔터·모바일 "검색" 키로 선택).
  * - hidden: boolean (선택) — 닫지 않고 잠깐 숨긴다(검색 결과에서 글 상세로 갔다가 돌아오면 검색 결과가 그대로 남아 있게)
  *
  * 열릴 때는 오른쪽에서 슬라이드해 들어온다(화면이 갑자기 바뀌는 느낌 방지). 숨겼다가 다시 보일 때는 슬라이드가 다시 재생되지
  * 않도록, 슬라이드 클래스는 처음 한 번만 붙였다가 애니메이션이 끝나면 뗀다.
  * - children: 결과 영역
  */
-function SearchScreen({ search, onClose, placeholder, ariaLabel, hidden = false, children }) {
+function SearchScreen({ search, onClose, placeholder, ariaLabel, onKeyDown, hidden = false, children }) {
   const { t } = useI18n();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -81,6 +82,7 @@ function SearchScreen({ search, onClose, placeholder, ariaLabel, hidden = false,
             placeholder={placeholder}
             aria-label={ariaLabel}
             autoComplete="off"
+            onKeyDown={onKeyDown}
           />
           {search.value && (
             <button

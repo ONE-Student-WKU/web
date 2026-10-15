@@ -135,6 +135,21 @@ describe('받은 신청이 어느 글인지 알아보기', () => {
     expect(await screen.findByText('「프로젝트 팀원」에 온 신청자 1명')).toBeInTheDocument();
     expect(screen.getByText(/2026\.09\.03 · 「프로젝트 팀원」/)).toBeInTheDocument();
   });
+
+  it('한 사람이 반려 후 재신청하면 신청자는 사람 수로, 신청 건수는 따로 보인다(이슈 #304 3-2)', async () => {
+    api.getMyCommunityPosts.mockResolvedValue([myPost({ id: 7, title: '프로젝트 팀원', applicationCount: 4, pendingApplicationCount: 0 })]);
+    api.getCommunityPost.mockResolvedValue(detail({ id: 7, title: '프로젝트 팀원' }));
+    const app = (id, applicant, hasAppliedBefore) => ({
+      id, message: '신청', status: 'rejected', createdAt: '2026-09-03T00:00:00.000Z', applicant, hasAppliedBefore, contactEmail: null, rejectReason: null,
+    });
+    // 같은 사람이 3번(첫 신청 + 재신청 2번), 다른 사람이 1번 — 신청 4건, 신청자 2명.
+    api.getCommunityApplicants.mockResolvedValue([app(1, '지원자', false), app(2, '지원자', true), app(3, '지원자', true), app(4, 'user40', false)]);
+    render(<Community {...baseProps} />);
+    await userEvent.click(screen.getByRole('button', { name: '내가 쓴 글' }));
+    await userEvent.click(await screen.findByText('프로젝트 팀원'));
+
+    expect(await screen.findByText('「프로젝트 팀원」에 온 신청자 2명 (신청 4건)')).toBeInTheDocument();
+  });
 });
 
 describe('제재 중 글 수정', () => {

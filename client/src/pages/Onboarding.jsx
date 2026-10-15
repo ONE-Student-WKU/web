@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { getDepartments, getTracks, submitOnboarding, updateProfile } from '../api/chatApi.js';
+import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
+import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
+// 휴학은 다음 학기 것까지 받는다 — 2학기(9월~)에는 다음 학기가 다음 학년도 1학기다.
+const LEAVE_LAST_YEAR = new Date().getMonth() >= 8 ? NOW_YEAR + 1 : NOW_YEAR;
 
 function isTransferAvailable(department) {
   const range = getYearRange(department, 'TRANSFER_ADMISSION');
@@ -17,6 +20,24 @@ function isTransferAvailable(department) {
 function getMajorChangeGradeRange(admissionYear, majorChangeYear) {
   const naive = majorChangeYear - admissionYear + 1;
   return { min: Math.max(1, naive - 2), max: Math.min(4, naive), naive };
+}
+
+// 교직과정 질문을 보일지: 학과에 교직기본이수 요건이 있는 학번이고, 편입생·3학년 이상 전과생이 아니어야 한다(책자 교직과정 이수 안내,
+// 서버 services/teachingCourse.js와 같은 규칙, DECISIONS D-67).
+function isTeachingCourseAvailable(department, { enrollmentType, majorChangeGrade, admissionYear }) {
+  const years = department?.teachingCourseYears;
+  if (!years || admissionYear == null) return false;
+  if ((years.min != null && admissionYear < years.min) || (years.max != null && admissionYear > years.max)) return false;
+  if (enrollmentType === 'TRANSFER_ADMISSION') return false;
+  if (enrollmentType === 'MAJOR_CHANGE' && majorChangeGrade >= 3) return false;
+  return true;
+}
+
+// 편입 인정학점 입력칸(선택). 비워 두면 학교 기준 인정학점으로 계산한다. 0~160 정수만 받는다(서버 MAX_TRANSFER_RECOGNIZED_CREDITS).
+function parseRecognizedCredits(text) {
+  if (text === '') return { value: null, valid: true };
+  if (!/^\d+$/.test(text) || Number(text) > 160) return { value: null, valid: false };
+  return { value: Number(text), valid: true };
 }
 
 function range(min, max) {
@@ -67,6 +88,22 @@ function SummaryRow({ label, value, editable, onClick }) {
  * - highlightLeaveSemesters: boolean — 홈의 "학년이 다르신가요?" 링크로 들어왔을 때만 true,
  *   요약 화면의 휴학 학기 수 항목에 강조 애니메이션을 준다.
  */
+
+// 세부전공 "없음"이 뜻을 갖는 학과. 약학과는 세부전공이 "2+4년제" 하나뿐인데, 2022학번부터의 6년제 과목은 세부전공 없이(track 없음) 들어 있다.
+// 그래서 "6년제(세부전공 없음)"을 따로 고르게 하고, 고르면 trackId를 null로 보낸다(이슈 #352, DECISIONS D-63).
+const NO_TRACK = 'NONE';
+const NO_TRACK_DEPARTMENTS = {
+  약학과: {
+    nameKey: 'onb.track.pharm6',
+    captionKey: 'onb.track.pharm6.caption',
+    titleKey: 'onb.track.pharm.title',
+    subKey: 'onb.track.pharm.sub',
+    trackCaptionKeys: { '2+4년제': 'onb.track.pharm24.caption' },
+    noTrackFromYear: 2022,
+    checkKey: 'onb.track.pharm24.check',
+  },
+};
+
 function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const { t } = useI18n();
   // 최초 온보딩(회원가입 직후)은 처음부터 순서대로 걷지만, 이미 완료한 사용자가 "학적정보
@@ -77,6 +114,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const [departments, setDepartments] = useState(cachedDepartments || []);
   const [departmentsLoading, setDepartmentsLoading] = useState(cachedDepartments === null);
   const [tracks, setTracks] = useState([]);
+  const [confirmNoDepartment, setConfirmNoDepartment] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,7 +126,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const [answers, setAnswers] = useState({
     departmentId: editMode ? user.departmentId : null,
-    trackId: editMode ? user.trackId : null,
+    // 세부전공 없음이 뜻을 갖는 학과(약학과 6년제)는 저장된 null을 "없음을 골랐다"로 되살린다.
+    trackId: editMode ? user.trackId ?? (NO_TRACK_DEPARTMENTS[user.department] ? NO_TRACK : null) : null,
     enrollmentType: editMode ? user.enrollmentType : null,
     admissionYear: editMode ? user.admissionYear : null,
     majorChangeYear: editMode ? user.majorChangeYear : null,
@@ -98,6 +137,11 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // 옛 방식으로 입력한 편입생은 transferGrade가 없어 둘 다 null — 요약 화면에서 "선택 필요"로 보여 다시 입력하게 한다.
     transferGrade: editMode ? user.transferGrade ?? null : null,
     transferYear: editMode ? transferYearOf(user.admissionYear, user.transferGrade) : null,
+    // 편입할 때 인정받은 학점(선택, 입력칸 글자 그대로). 교직과정 이수 여부(true/false/null = 답하지 않음).
+    transferRecognizedInput: editMode && user.transferRecognizedCredits != null ? String(user.transferRecognizedCredits) : '',
+    teachingCourse: editMode ? user.teachingCourse ?? null : null,
+    // 휴학 기간(LeavePeriodsEditor의 draft). 기능 도입 전 계정은 user.leavePeriods가 null이라 "선택 필요"로 시작한다.
+    leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
   });
 
   useEffect(() => {
@@ -123,13 +167,27 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
   const selectedDepartment = departments.find((d) => d.id === answers.departmentId) || null;
   const hasTracks = tracks.length > 0;
+  const noTrackOption = selectedDepartment ? NO_TRACK_DEPARTMENTS[selectedDepartment.name] || null : null;
+  const trackChoices = noTrackOption
+    ? [{ id: NO_TRACK, name: t(noTrackOption.nameKey), captionKey: noTrackOption.captionKey }, ...tracks.map((tr) => ({ ...tr, captionKey: noTrackOption.trackCaptionKeys[tr.name] || null }))]
+    : tracks;
+  const selectedTrackName = trackChoices.find((tr) => tr.id === answers.trackId)?.name;
+  // 약학과 2022학번 이후 일반 입학인데 2+4년제를 골랐으면 한 번 더 확인하게 한다(막지는 않는다 — 예외가 있을 수 있다, DECISIONS D-63).
+  const trackCheckKey =
+    noTrackOption && answers.trackId != null && answers.trackId !== NO_TRACK && answers.enrollmentType === 'GENERAL' &&
+    answers.admissionYear >= noTrackOption.noTrackFromYear
+      ? noTrackOption.checkKey
+      : null;
 
   const path = ['department'];
   if (hasTracks) path.push('track');
   const isTransfer = answers.enrollmentType === 'TRANSFER_ADMISSION';
   path.push('enrollmentType', isTransfer ? 'transfer' : 'year');
   if (answers.enrollmentType === 'MAJOR_CHANGE') path.push('majorChange');
-  path.push('summary', 'done');
+  const teachingAvailable = isTeachingCourseAvailable(selectedDepartment, answers);
+  if (teachingAvailable) path.push('teaching');
+  path.push('leave', 'summary', 'done');
+  const recognized = parseRecognizedCredits(answers.transferRecognizedInput);
 
   // manualStep이 있으면(요약 화면에서 특정 질문으로 점프한 상태) 선형 stepIndex보다 우선한다.
   const current = manualStep || path[Math.min(stepIndex, path.length - 1)];
@@ -149,6 +207,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
+
+  // 사범대학은 선발 없이 교직과정을 이수하므로 "이수하고 있어요"를 미리 골라 둔다. 교직을 포기한 학생은 직접 바꾼다(D-67).
+  useEffect(() => {
+    if (teachingAvailable && selectedDepartment?.teacherCollege && answers.teachingCourse === null) {
+      setAnswers((a) => ({ ...a, teachingCourse: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teachingAvailable, selectedDepartment]);
 
   // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
@@ -248,11 +314,19 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeGrade: null,
       transferYear: null,
       transferGrade: null,
+      // 교직 답은 학과마다 다르다(사범대학이면 위 이펙트가 다시 "이수 중"을 골라 둔다).
+      teachingCourse: null,
     }));
     setTracks([]);
-    getTracks(dept.id)
+    return getTracks(dept.id)
       .then(setTracks)
       .catch(() => setTracks([]));
+  }
+
+  // 검색 결과에서 학과를 고르거나 목록에서 엔터로 고르면 바로 다음 질문으로 넘어간다("다음"을 따로 누르지 않게). 세부전공 목록을 받은 뒤에 넘어가야
+  // 세부전공이 있는 학과(공학3계열 등)가 "입학 유형"을 잠깐 보였다가 "세부전공"으로 바뀌지 않는다. 요약에서 고치러 왔으면 요약으로 돌아간다.
+  function selectDepartmentAndContinue(dept) {
+    selectDepartment(dept).then(goNext);
   }
 
   // 입학유형을 바꿔도 학번 범위가 실제로는 안 바뀌는 경우가 많다(편입생만 올해 학번이 빠지는
@@ -292,36 +366,32 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     }
     setStepIndex((i) => Math.min(i + 1, path.length - 1));
   }
+  // 학과 단계의 "다음"은 고르기 전에도 누를 수 있다(비활성 버튼이 목록 위에 붕 떠 보였다). 학과 없이 누르면 그대로 넘어갈지 묻는다 —
+  // 뒤의 질문(세부전공·학번·입학 유형 등)은 모두 학과 기준이라 학과 없이는 의미가 없어, 넘어가면 "나중에 선택하기"와 같다(onSkip).
+  function handleNext() {
+    if (current === 'department' && !answers.departmentId) {
+      setConfirmNoDepartment(true);
+      return;
+    }
+    goNext();
+  }
+
+  // 학과 없이 넘어갈지 묻는 창에서 ESC는 "학과 고르기"와 같다 — 창을 닫고 학과 목록으로 돌아간다.
+  useEffect(() => {
+    if (!confirmNoDepartment) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setConfirmNoDepartment(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmNoDepartment]);
+
   function goBack() {
     if (editingFromSummary) {
       setManualStep('summary');
       return;
     }
     setStepIndex((i) => Math.max(i - 1, 0));
-  }
-
-  // 휴학 학기 수는 학과/학번 등과 서로 의존하는 값이 아니라 완전히 독립적이라, 마법사
-  // 흐름에 끼워 넣지 않고 요약 화면에서 바로 입력받아 그 자리에서 저장한다(개인정보
-  // 수정 페이지의 기존 UI/저장 방식을 그대로 재사용 — 신규 온보딩 POST는 이 필드를
-  // 받지 않아 요약 화면 재진입(editMode) 때만 노출한다).
-  const [leaveSemesters, setLeaveSemesters] = useState(String(user?.leaveSemesters ?? 0));
-  const [leaveSemestersSaved, setLeaveSemestersSaved] = useState(false);
-  const [leaveSemestersError, setLeaveSemestersError] = useState(null);
-
-  async function handleSaveLeaveSemesters() {
-    setLeaveSemestersError(null);
-    setLeaveSemestersSaved(false);
-    const value = Number(leaveSemesters);
-    if (!Number.isInteger(value) || value < 0) {
-      setLeaveSemestersError(t('onb.leaveError'));
-      return;
-    }
-    try {
-      await updateProfile({ leaveSemesters: value });
-      setLeaveSemestersSaved(true);
-    } catch {
-      setLeaveSemestersError(t('profile.err.saveFailed'));
-    }
   }
 
   const summaryIncomplete =
@@ -331,7 +401,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (hasTracks && !answers.trackId) ||
     (answers.enrollmentType === 'MAJOR_CHANGE' &&
       !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
-    (isTransfer && !(answers.transferYear && answers.transferGrade));
+    (isTransfer && !(answers.transferYear && answers.transferGrade && recognized.valid)) ||
+    (teachingAvailable && answers.teachingCourse === null) ||
+    periodsFromDraft(answers.leaveDraft) === null;
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -341,11 +413,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       departmentId: answers.departmentId,
       admissionYear: answers.admissionYear,
       enrollmentType: answers.enrollmentType,
-      trackId: hasTracks ? answers.trackId : null,
+      trackId: hasTracks && answers.trackId !== NO_TRACK ? answers.trackId : null,
       majorChangeGrade: isMajorChange ? answers.majorChangeGrade : null,
       majorChangeYear: isMajorChange ? answers.majorChangeYear : null,
       majorChangeSemester: isMajorChange ? answers.majorChangeSemester : null,
       transferGrade: isTransfer ? answers.transferGrade : null,
+      transferRecognizedCredits: isTransfer ? recognized.value : null,
+      teachingCourse: teachingAvailable ? answers.teachingCourse : null,
     };
     try {
       if (user?.onboardingCompleted) {
@@ -353,22 +427,31 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       } else {
         await submitOnboarding(payload);
       }
-      setManualStep(null);
-      setStepIndex(path.indexOf('done'));
     } catch {
       setSubmitError(t('onb.err.save'));
+      setSubmitting(false);
+      return;
+    }
+    // 휴학 기간은 학번·편입 학년이 저장된 뒤에 보낸다(서버가 "입학 전 학기인지"를 그 값으로 검사한다).
+    try {
+      await saveLeavePeriods(periodsFromDraft(answers.leaveDraft));
+      setManualStep(null);
+      setStepIndex(path.indexOf('done'));
+    } catch (err) {
+      setSubmitError(t(leaveErrorKey(err.code)));
     } finally {
       setSubmitting(false);
     }
   }
 
   const nextDisabled =
-    (current === 'department' && !answers.departmentId) ||
     (current === 'track' && !answers.trackId) ||
     (current === 'enrollmentType' && !answers.enrollmentType) ||
     (current === 'year' && !answers.admissionYear) ||
-    (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid)) ||
-    (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade));
+    (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
+    (current === 'teaching' && answers.teachingCourse === null) ||
+    (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
+    (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
   const transferAvailable = selectedDepartment ? isTransferAvailable(selectedDepartment) : true;
 
@@ -397,6 +480,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       <div className="courses-body">
         {loadError && <p className="home-error">{t(loadError)}</p>}
         {submitError && <p className="home-error">{submitError}</p>}
+        {current !== 'done' && !editingFromSummary && (
+          // 홈의 "학년이 다르신가요?"와 같은 모양. 바로 뒤에 오는 질문 제목과 같은 줄 오른쪽에 붙는다(float).
+          <button className="home-grade-fix-link onb-later-link" onClick={onSkip}>
+            {editMode ? t('onb.cancel') : t('onb.later')}
+          </button>
+        )}
 
         {current === 'department' && (
           <>
@@ -409,23 +498,29 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </div>
             )}
             {departments.length > 0 && (
-              <DepartmentPicker departments={departments} selectedId={answers.departmentId} onSelect={selectDepartment} />
+              <DepartmentPicker
+                departments={departments}
+                selectedId={answers.departmentId}
+                onSelect={selectDepartment}
+                onSelectAndContinue={selectDepartmentAndContinue}
+              />
             )}
           </>
         )}
 
         {current === 'track' && (
           <>
-            <h2 className="onb-q-title">{t('onb.track.title')}</h2>
-            <p className="onb-q-sub">{t('onb.track.sub')}</p>
+            <h2 className="onb-q-title">{t(noTrackOption ? noTrackOption.titleKey : 'onb.track.title')}</h2>
+            <p className="onb-q-sub">{t(noTrackOption ? noTrackOption.subKey : 'onb.track.sub')}</p>
             <div className="onb-option-list">
-              {tracks.map((t) => (
+              {trackChoices.map((tr) => (
                 <button
-                  key={t.id}
-                  className={'onb-option-card' + (answers.trackId === t.id ? ' selected' : '')}
-                  onClick={() => setAnswers((a) => ({ ...a, trackId: t.id }))}
+                  key={tr.id}
+                  className={'onb-option-card' + (answers.trackId === tr.id ? ' selected' : '')}
+                  onClick={() => setAnswers((a) => ({ ...a, trackId: tr.id }))}
                 >
-                  <span className="onb-option-title">{t.name}</span>
+                  <span className="onb-option-title">{tr.name}</span>
+                  {tr.captionKey && <span className="onb-option-caption">{t(tr.captionKey)}</span>}
                 </button>
               ))}
             </div>
@@ -479,6 +574,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             {describeSuccessors(selectedDepartment, t) && (
               <p className="onb-q-sub onb-q-sub-note">{describeSuccessors(selectedDepartment, t)}</p>
             )}
+            {/* 개편 전 학과: 폐지·통합돼도 소속변경을 하지 않았으면 그 학과 소속이 유지된다(학칙 부칙·학교 소속변경 안내, 교육혁신과 답변 A-3).
+                학생에게는 "학적" 같은 행정 용어 대신 풀어 쓴다. */}
+            {selectedDepartment?.former && <p className="onb-q-sub onb-q-sub-note">{t('onb.year.formerHint')}</p>}
             <div className="onb-field-group">
               <label className="onb-field-label">{t('onb.year.label')}</label>
               <select
@@ -546,6 +644,44 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 </p>
               )}
             </div>
+            <div className="onb-field-group">
+              <label className="onb-field-label" htmlFor="onb-recognized">{t('onb.transfer.recognized')}</label>
+              <input
+                id="onb-recognized"
+                className="onb-select"
+                type="text"
+                inputMode="numeric"
+                placeholder={t('onb.transfer.recognizedPlaceholder')}
+                value={answers.transferRecognizedInput}
+                onChange={(e) => setAnswers((a) => ({ ...a, transferRecognizedInput: e.target.value.trim() }))}
+              />
+              <p className="onb-hint">{t(recognized.valid ? 'onb.transfer.recognizedHint' : 'onb.transfer.recognizedInvalid')}</p>
+            </div>
+          </>
+        )}
+
+        {current === 'teaching' && (
+          <>
+            <h2 className="onb-q-title">{t('onb.teaching.title')}</h2>
+            <p className="onb-q-sub">{t(selectedDepartment?.teacherCollege ? 'onb.teaching.subTeacherCollege' : 'onb.teaching.sub')}</p>
+            <div className="onb-option-list">
+              <button
+                className={'onb-option-card' + (answers.teachingCourse === true ? ' selected' : '')}
+                onClick={() => setAnswers((a) => ({ ...a, teachingCourse: true }))}
+              >
+                <span className="onb-option-title">{t('onb.teaching.yes')}</span>
+                <span className="onb-option-caption">{t('onb.teaching.yes.caption')}</span>
+              </button>
+              <button
+                className={'onb-option-card' + (answers.teachingCourse === false ? ' selected' : '')}
+                onClick={() => setAnswers((a) => ({ ...a, teachingCourse: false }))}
+              >
+                <span className="onb-option-title">{t('onb.teaching.no')}</span>
+                <span className="onb-option-caption">
+                  {t(selectedDepartment?.teacherCollege ? 'onb.teaching.no.captionTeacherCollege' : 'onb.teaching.no.caption')}
+                </span>
+              </button>
+            </div>
           </>
         )}
 
@@ -608,6 +744,19 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
+        {current === 'leave' && (
+          <>
+            <h2 className="onb-q-title">{t('leave.title')}</h2>
+            <p className="onb-q-sub">{t('leave.sub')}</p>
+            <LeavePeriodsEditor
+              draft={answers.leaveDraft}
+              onChange={(leaveDraft) => setAnswers((a) => ({ ...a, leaveDraft }))}
+              firstYear={(isTransfer ? answers.transferYear : answers.admissionYear) || NOW_YEAR}
+              lastYear={LEAVE_LAST_YEAR}
+            />
+          </>
+        )}
+
         {current === 'summary' && (
           <>
             <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
@@ -645,14 +794,27 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   onClick={() => setManualStep('transfer')}
                 />
               )}
+              {isTransfer && (
+                <SummaryRow
+                  label={t('onb.summary.recognized')}
+                  value={
+                    recognized.value != null
+                      ? t('onb.summary.recognizedValue', { credits: recognized.value })
+                      : recognized.valid ? t('onb.summary.recognizedNone') : null
+                  }
+                  editable={editMode}
+                  onClick={() => setManualStep('transfer')}
+                />
+              )}
               {hasTracks && (
                 <SummaryRow
                   label={t('onb.summary.track')}
-                  value={tracks.find((t) => t.id === answers.trackId)?.name}
+                  value={selectedTrackName}
                   editable={editMode}
                   onClick={() => setManualStep('track')}
                 />
               )}
+              {trackCheckKey && <p className="onb-hint">{t(trackCheckKey)}</p>}
               {answers.enrollmentType === 'MAJOR_CHANGE' && (
                 <SummaryRow
                   label={t('onb.summary.majorChange')}
@@ -669,34 +831,22 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   onClick={() => setManualStep('majorChange')}
                 />
               )}
-              {editMode && (
-                <div
-                  className={
-                    'onb-summary-row' + (leaveHighlightArmed ? ' settings-highlight' : '')
-                  }
-                  style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
-                >
-                  <span className="onb-summary-key">{t('onb.summary.leave')}</span>
-                  <div className="settings-inline-field">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      className="onb-select"
-                      value={leaveSemesters}
-                      onChange={(e) => {
-                        setLeaveSemesters(e.target.value);
-                        setLeaveSemestersSaved(false);
-                      }}
-                    />
-                    <button type="button" className="settings-theme-btn" onClick={handleSaveLeaveSemesters}>
-                      {t('profile.save')}
-                    </button>
-                  </div>
-                  {leaveSemestersError && <p className="home-error">{leaveSemestersError}</p>}
-                  {leaveSemestersSaved && <p className="settings-field-hint">{t('profile.saved')}</p>}
-                </div>
+              {teachingAvailable && (
+                <SummaryRow
+                  label={t('onb.summary.teaching')}
+                  value={answers.teachingCourse === null ? null : t(answers.teachingCourse ? 'onb.teaching.yes' : 'onb.teaching.no')}
+                  editable={editMode}
+                  onClick={() => setManualStep('teaching')}
+                />
               )}
+              <div className={leaveHighlightArmed ? 'settings-highlight' : undefined}>
+                <SummaryRow
+                  label={t('onb.summary.leave')}
+                  value={describeLeave(periodsFromDraft(answers.leaveDraft), t)}
+                  editable={editMode}
+                  onClick={() => setManualStep('leave')}
+                />
+              </div>
             </div>
           </>
         )}
@@ -709,26 +859,38 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </div>
         )}
 
-        {current === 'summary' ? (
-          <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
-            {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
-          </button>
-        ) : current === 'done' ? (
-          <button className="auth-submit-btn" onClick={onDone}>
-            {t('onb.done.home')}
-          </button>
-        ) : (
-          <button className="auth-submit-btn" onClick={goNext} disabled={nextDisabled}>
-            {editingFromSummary ? t('onb.confirm') : t('onb.next')}
-          </button>
-        )}
-
-        {current !== 'done' && !editingFromSummary && (
-          <button className="onb-skip-link" onClick={onSkip}>
-            {editMode ? t('onb.cancel') : t('onb.later')}
-          </button>
-        )}
+        {/* 주 버튼(다음·저장 등)은 내용이 길어도 화면 아래에 떠 있게 한다 — 학과 목록처럼 길어지면 맨 끝까지 내려가야 눌렀다. */}
+        <div className="onb-float-action">
+          {current === 'summary' ? (
+            <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
+              {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
+            </button>
+          ) : current === 'done' ? (
+            <button className="auth-submit-btn" onClick={onDone}>
+              {t('onb.done.home')}
+            </button>
+          ) : (
+            <button className="auth-submit-btn" onClick={handleNext} disabled={nextDisabled}>
+              {editingFromSummary ? t('onb.confirm') : t('onb.next')}
+            </button>
+          )}
+        </div>
       </div>
+
+      {confirmNoDepartment && (
+        <div className="career-confirm-overlay" onClick={() => setConfirmNoDepartment(false)}>
+          <div className="career-confirm-modal" role="dialog" aria-modal="true" aria-label={t('onb.noDept.title')} onClick={(e) => e.stopPropagation()}>
+            <span className="career-confirm-title">{t('onb.noDept.title')}</span>
+            <p className="career-confirm-body">{t('onb.noDept.body', { menu: t('account.editDepartment') })}</p>
+            <button className="auth-submit-btn" onClick={onSkip}>
+              {t('onb.noDept.skip')}
+            </button>
+            <button className="career-confirm-cancel" onClick={() => setConfirmNoDepartment(false)}>
+              {t('onb.noDept.choose')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

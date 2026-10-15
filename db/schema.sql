@@ -105,12 +105,21 @@ CREATE TABLE IF NOT EXISTS students (
                                        -- 2학기 기준 이전/이후)으로 갈리므로 학년만으론 판별 불가. 그 외 NULL
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
   transfer_grade            TINYINT,  -- 편입생만 해당(편입한 학년 2~4). admission_year = 편입 연도 − transfer_grade + 1. 옛 방식 편입생·그 외 NULL
+  transfer_recognized_credits SMALLINT NULL,  -- 편입생만 해당: 편입할 때 인정받은 전적대학 학점. NULL = 입력 안 함(학교 표의 인정학점으로 가정)
+  teaching_course           TINYINT(1) NULL,  -- 교직과정 이수 여부. 1 = 이수 중, 0 = 이수 안 함(사범대 교직 포기 포함), NULL = 답하지 않음.
+                                               -- 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 NULL(server/services/teachingCourse.js)
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
                                                        -- 군복무 등)가 있어 학생이 직접 보정할 수 있게 둠 — 2학기당
                                                        -- 1년으로 환산해 client/src/utils/academic.js에서 학년 계산에 반영.
+                                                       -- 휴학 기간(leave_periods)을 입력한 계정은 그 합계로 자동으로 채운다.
+  leave_periods             JSON NULL,  -- 휴학 기간 [{startYear, startSemester, semesters}]. NULL = 아직 휴학 질문에 답하지 않음,
+                                        -- [] = 휴학 없음. 휴학 "수"만으로는 시기를 몰라 개편 당시 학년(시행규칙 제13조③) 등을
+                                        -- 정확히 못 따져서 둠. 사유는 받지 않는다(server/services/leavePeriods.js).
+  home_layout               JSON NULL,  -- 홈 화면 편집 설정 {tabs: [하단 바 4칸], showTabBar}. NULL = 기본 배치.
+                                        -- 화면 설정이라 개인정보 수집 항목이 아니다(server/services/homeLayout.js).
   language                  VARCHAR(5) NULL,  -- 화면·챗봇 답변 언어('ko' | 'en'). NULL이면 계정에 저장된 선택이 없다는 뜻
   consented_at              TIMESTAMP NULL,    -- 이용약관·개인정보 수집·이용에 동의한 시각
   consent_version           VARCHAR(20) NULL,  -- 동의한 약관 버전(server/services/consent.js). NULL이면 동의 기록 없음
@@ -736,6 +745,7 @@ CREATE TABLE IF NOT EXISTS career_sessions (
   student_id        INT NOT NULL,
   status            ENUM('IN_PROGRESS', 'CANDIDATES_READY', 'CONFIRMED') NOT NULL DEFAULT 'IN_PROGRESS',
   confirmed_career  VARCHAR(100),
+  candidate_requests INT NOT NULL DEFAULT 0,  -- 이 상담에서 "추천받기"를 쓴 횟수(상한 server/services/careerService.js)
   created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

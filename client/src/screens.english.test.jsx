@@ -222,7 +222,7 @@ describe('온보딩 / 학과 선택', () => {
     former: true,
     collegeOrder: 12,
   };
-  const USER = { id: 1, onboardingCompleted: true, departmentId: 4, trackId: null, enrollmentType: 'GENERAL', admissionYear: 2021, leaveSemesters: 0 };
+  const USER = { id: 1, onboardingCompleted: true, departmentId: 4, trackId: null, enrollmentType: 'GENERAL', admissionYear: 2021, leaveSemesters: 0, leavePeriods: [] };
 
   it('학적정보 수정 요약이 영어이고, 학과 이름은 그대로 한국어다', async () => {
     api.getDepartments.mockResolvedValue([DEPT]);
@@ -231,7 +231,8 @@ describe('온보딩 / 학과 선택', () => {
     expect(screen.getByText('경영학부')).toBeInTheDocument();
     expect(screen.getByText('2021 cohort')).toBeInTheDocument();
     expect(screen.getByText('Regular student')).toBeInTheDocument();
-    expect(screen.getByText('Semesters on leave')).toBeInTheDocument();
+    expect(screen.getByText('Leave of absence')).toBeInTheDocument();
+    expect(screen.getByText('None')).toBeInTheDocument();
   });
 
   it('학번 단계가 영어로 그려지고 이후 학과 안내도 영어다', async () => {
