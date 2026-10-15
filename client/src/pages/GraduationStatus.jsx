@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -211,6 +211,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-subcheck-label">{groups.major.baseSatisfied ? t('grad.baseMet') : t('grad.baseUnmet')}</p>
                   </div>
                 )}
+                {/* 전과생: 전과 전 학과 전공 과목은 일반선택, 같은 과목은 인정 신청 시 전공선택(시행규칙 제3조 제4항·제115조, D-77) */}
+                {status.priorMajorCourses && (status.priorMajorCourses.demoted.length > 0 || status.priorMajorCourses.recognized.length > 0) && (
+                  <p className="grad-flex-note">
+                    {t('grad.prior.demoted', { n: status.priorMajorCourses.demoted.reduce((s, c) => s + c.credits, 0) })}
+                    {status.priorMajorCourses.recognized.length > 0
+                      ? ` ${t('grad.prior.recognized', { n: status.priorMajorCourses.recognized.reduce((s, c) => s + c.credits, 0) })}`
+                      : ` ${t(status.priorMajorCourses.recognitionApplied ? 'grad.prior.appliedNone' : 'grad.prior.notApplied')}`}
+                  </p>
+                )}
                 {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
                 {status.majorAreaCredits && (
                   <>
@@ -326,6 +335,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {status.liberalElectiveAreas && (
                   <>
                     <p className="grad-flex-note">{t('grad.liberalAreaBasis')}</p>
+                    {/* 외국인 유학생은 교양필수를 뺀 교양을 영역 구분 없이 이수한다(2026 책자, 심의 후 확정). 국적은 받지 않아 안내만 한다. */}
+                    <p className="grad-flex-note">{t('grad.liberalAreaForeign')}</p>
                     {status.liberalElectiveAreas.foundation.map((a) => (
                       <div className="grad-subcheck-row" key={a.area}>
                         <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
@@ -427,7 +438,11 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   ))}
                 </ul>
               ) : (
-                <p>{t('home.allMet')}</p>
+                <p>
+                  {uncheckedRequirementKeys(status).length > 0
+                    ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
+                    : t('home.allMet')}
+                </p>
               )}
             </section>
           </>

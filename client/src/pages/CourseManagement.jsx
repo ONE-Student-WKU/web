@@ -152,6 +152,8 @@ function formatSchedule(schedule, tr) {
  */
 // 다전공 학생이 어느 전공으로 셀지 고를 수 있는 과목 구분(서버 secondMajorCredits.js의 후보와 같다). 교양은 늘 주전공이다.
 const COUNTED_MAJOR_CATEGORIES = new Set(['전공필수', '전공선택', '전공', '일반선택']);
+// 전과생이 "전공으로 인정 / 일반선택"을 고를 수 있는 과목 구분(서버 priorMajorCourses.js와 같다).
+const MAJOR_CATEGORIES = new Set(['전공필수', '전공선택', '전공']);
 
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   // 이 파일은 콜백 인자 이름으로 t(학기 탭, 시간표 칸 등)를 많이 써서 번역 함수는 tr로 받는다.
@@ -759,10 +761,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const errorText = error && (typeof error === 'object' ? tr(error.key) : error);
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
   // 다전공 학생의 과목별 전공 표시 — 제2전공 학과 이름과 구분은 졸업요건 진단 응답(status.secondMajor)에서 가져온다.
-  const countedMajorLabel = (major) =>
-    major === 'SECOND'
-      ? tr(`courses.countedMajor.SECOND.${status?.secondMajor?.type || 'DOUBLE'}`, { department: status?.secondMajor?.department || '' })
-      : tr('courses.countedMajor.PRIMARY');
+  // 전과생은 전과 전 전공 과목을 "전공으로 인정 / 일반선택"으로 고친다(D-77). 다전공이면 "주전공 / 제2전공"(D-76).
+  const hasSecondMajor = Boolean(status?.secondMajor);
+  const isMajorChange = user?.enrollmentType === 'MAJOR_CHANGE';
+  const countedMajorLabel = (major) => {
+    if (major === 'SECOND') return tr(`courses.countedMajor.SECOND.${status?.secondMajor?.type || 'DOUBLE'}`, { department: status?.secondMajor?.department || '' });
+    if (major === 'GENERAL') return tr('courses.countedMajor.GENERAL');
+    return tr(isMajorChange && !hasSecondMajor ? 'courses.countedMajor.PRIMARY.majorChange' : 'courses.countedMajor.PRIMARY');
+  };
+  const showCountedMajor = (c) =>
+    Boolean(c.countedMajor) &&
+    ((hasSecondMajor && COUNTED_MAJOR_CATEGORIES.has(c.category)) || (isMajorChange && MAJOR_CATEGORIES.has(c.category)) || c.countedMajor !== 'PRIMARY');
 
   // 카탈로그 검색 화면의 본문 — 검색 전에는 안내, 결과가 없으면 그 사실을, 있으면 전체 높이로 목록을 보여준다.
   const renderCatalogResults = () => {
@@ -995,7 +1004,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
                 </p>
                 {/* 다전공 학생만(서버가 countedMajor를 붙인 경우) — 전공·일반선택 과목, 또는 이미 제2전공으로 센 과목 */}
-                {c.countedMajor && (COUNTED_MAJOR_CATEGORIES.has(c.category) || c.countedMajor === 'SECOND') && (
+                {showCountedMajor(c) && (
                   <select
                     className="courses-major-select"
                     aria-label={tr('courses.countedMajor.label')}
@@ -1004,7 +1013,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   >
                     <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajor) })}</option>
                     <option value="PRIMARY">{countedMajorLabel('PRIMARY')}</option>
-                    <option value="SECOND">{countedMajorLabel('SECOND')}</option>
+                    {isMajorChange && <option value="GENERAL">{countedMajorLabel('GENERAL')}</option>}
+                    {hasSecondMajor && <option value="SECOND">{countedMajorLabel('SECOND')}</option>}
                   </select>
                 )}
               </div>

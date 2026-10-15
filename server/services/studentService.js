@@ -64,6 +64,8 @@ function serializeStudent(student) {
     majorChangeGrade: student.major_change_grade,
     majorChangeYear: student.major_change_year,
     majorChangeSemester: student.major_change_semester,
+    // 전과생 전공학점 인정 신청을 했는가(true/false, null = 답하지 않음). 전과생만 값이 있다(D-77).
+    majorChangeRecognition: student.major_change_recognition == null ? null : Number(student.major_change_recognition) === 1,
     // 편입생만 값이 있다(편입한 학년 2~4). 편입 연도는 admissionYear + transferGrade − 1. null이면 옛 방식으로 입력한 편입생이다.
     transferGrade: student.transfer_grade,
     // 편입생만 값이 있다: 편입할 때 인정받은 전적대학 학점. null이면 입력하지 않아 학교 표의 인정학점으로 가정한다.
@@ -247,16 +249,18 @@ async function findTrackById(id) {
 
 async function completeOnboarding(studentId, {
   departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-  transferRecognizedCredits, teachingCourse, majorTrackType,
+  transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
 }) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
-         major_change_year = ?, major_change_semester = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
+         major_change_year = ?, major_change_semester = ?, major_change_recognition = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
          major_track_type = ?, onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
-      majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, transferRecognizedCredits ?? null,
+      majorChangeYear ?? null, majorChangeSemester ?? null,
+      majorChangeRecognition === undefined || majorChangeRecognition === null ? null : Number(majorChangeRecognition),
+      transferGrade ?? null, transferRecognizedCredits ?? null,
       teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), majorTrackType ?? null, studentId]
   );
 }
@@ -294,6 +298,7 @@ async function updateProfile(studentId, updates) {
     majorChangeGrade: 'major_change_grade',
     majorChangeYear: 'major_change_year',
     majorChangeSemester: 'major_change_semester',
+    majorChangeRecognition: 'major_change_recognition',
     transferGrade: 'transfer_grade',
     transferRecognizedCredits: 'transfer_recognized_credits',
     teachingCourse: 'teaching_course',
