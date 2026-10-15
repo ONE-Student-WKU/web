@@ -6,6 +6,7 @@ const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/conse
 const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
 const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
+const { validateMajorTrackType, isBroadSeriesStudent } = require('../services/majorTrackType');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -59,7 +60,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
       secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
@@ -183,10 +184,18 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const clearTeaching = teachingCourse === undefined
       && ((departmentId !== undefined && String(departmentId) !== String(student.department_id)) || !canTakeTeachingCourse({ enrollmentType: effectiveEnrollmentType, majorChangeGrade: effectiveMajorChangeGrade }));
 
+    let effectiveDepartmentName = student.department_name;
     if (departmentId !== undefined) {
       const dept = await studentService.findDepartmentById(departmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
+      effectiveDepartmentName = dept.name;
     }
+    // 광역 계열전공 이수유형 — 이번 요청으로 확정되는 학과·학번 기준. 계열 학생이 아니게 되거나 학과가 바뀌면 함께 보내지 않은 이전 답은 지운다(다시 묻는다).
+    const trackTypeTarget = { departmentName: effectiveDepartmentName, admissionYear: admissionYear !== undefined ? admissionYear : student.admission_year };
+    const trackTypeError = validateMajorTrackType(majorTrackType, trackTypeTarget);
+    if (trackTypeError) return res.status(400).json({ status: 400, code: trackTypeError, message: null, data: null });
+    const clearTrackType = majorTrackType === undefined
+      && ((departmentId !== undefined && String(departmentId) !== String(student.department_id)) || !isBroadSeriesStudent(trackTypeTarget));
     if (secondDepartmentId !== undefined && secondDepartmentId !== null) {
       const dept = await studentService.findDepartmentById(secondDepartmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
@@ -214,6 +223,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
       transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
       teachingCourse: clearTeaching ? null : teachingCourse,
+      majorTrackType: clearTrackType ? null : majorTrackType,
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,

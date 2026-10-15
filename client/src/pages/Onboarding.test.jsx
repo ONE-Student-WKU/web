@@ -386,3 +386,42 @@ describe('교직과정 이수 여부·편입 인정학점(D-67)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ transferRecognizedCredits: 65 }));
   });
 });
+
+describe('광역 계열전공 이수유형(#378 결정 3-1 A)', () => {
+  const SERIES_DEPT = {
+    id: 11, name: '공학1계열', minAdmissionYear: 2026, maxAdmissionYear: null, coreMinAdmissionYear: 2026, coreMaxAdmissionYear: null,
+    successors: [], college: '공과대학', former: false, collegeOrder: 11,
+  };
+  const seriesUser = (over = {}) => ({ ...USER, departmentId: 11, department: '공학1계열', admissionYear: 2026, majorTrackType: null, ...over });
+
+  beforeEach(() => {
+    api.getDepartments.mockResolvedValue([FORMER_DEPT, TRANSFER_DEPT, SERIES_DEPT]);
+  });
+
+  it('계열 학생은 답하기 전에는 "선택 필요"라 저장할 수 없고, 고르면 그 값을 보낸다', async () => {
+    render(<Onboarding user={seriesUser()} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /전공 이수유형/ });
+    expect(row).toHaveTextContent('선택 필요');
+    expect(saveButton()).toBeDisabled();
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole('button', { name: /전공심화형/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorTrackType: 'INTENSIVE' }));
+  });
+
+  it('"아직 안 정했어요"도 답으로 저장한다', async () => {
+    render(<Onboarding user={seriesUser({ majorTrackType: 'UNDECIDED' })} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('button', { name: /전공 이수유형/ })).toHaveTextContent('아직 안 정했어요');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorTrackType: 'UNDECIDED' }));
+  });
+
+  it('계열이 아닌 학과에는 이수유형 질문이 없고 null로 보낸다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    await screen.findByRole('button', { name: /학과/ });
+    expect(screen.queryByRole('button', { name: /전공 이수유형/ })).toBeNull();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorTrackType: null }));
+  });
+});

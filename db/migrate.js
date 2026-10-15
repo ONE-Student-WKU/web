@@ -126,6 +126,19 @@ async function ensureStudentTransferGradeColumn(connection) {
   }
 }
 
+// 광역 계열전공 이수유형 guard(시행규칙 제7조 제2항 — 복수전공형·전공심화형·전공융합형, #378 결정 3-1 A). NULL = 아직 묻지 않음
+// (계열 학생의 기존 계정은 다음 접속 때 한 번 묻는다 — server/services/majorTrackType.js).
+async function ensureStudentMajorTrackTypeColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'major_track_type'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.major_track_type 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN major_track_type VARCHAR(16) NULL AFTER teaching_course');
+  }
+}
+
 // 교직과정 이수 여부·편입 인정학점 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
 // NULL(답하지 않음)로 두어 기존 계정의 판정은 그대로다(교직기본이수는 참고 항목, 편입 총량은 학교 표의 인정학점으로 가정).
 async function ensureStudentTeachingAndTransferCreditColumns(connection) {
@@ -523,6 +536,7 @@ async function migrate() {
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentTeachingAndTransferCreditColumns(connection);
+    await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);
