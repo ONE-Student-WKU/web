@@ -40,7 +40,8 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
       <span className="onb-option-title">{department.name}</span>
       <span className="onb-option-caption">
         {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
-        {department.maxAdmissionYear ? t('dept.cohortRange', { min: range.min, max: range.max }) : t('dept.cohortSingle', { min: range.min })}
+        {/* 한 해뿐인 학과는 "2026~2026학번"이 아니라 "2026학번"(#378) */}
+        {department.maxAdmissionYear && range.max !== range.min ? t('dept.cohortRange', { min: range.min, max: range.max }) : t('dept.cohortSingle', { min: range.min })}
         {showCollege && department.college && ` · ${department.college}${department.former ? ` (${t('dept.former')})` : ''}`}
         {showCollege && !department.college && department.former && ` · ${t('dept.formerClosed')}`}
       </span>

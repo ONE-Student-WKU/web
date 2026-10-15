@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from './onboardingYears.js';
+import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from './onboardingYears.js';
 
 const NOW = 2026;
 
@@ -73,5 +73,14 @@ describe('describeSuccessors', () => {
   it('후속 학과가 여럿이면 모두 나열한다(분리)', () => {
     const d = { successors: [{ name: '사회복지학과', confirmed: false }, { name: '보건행정학과', confirmed: false }] };
     expect(describeSuccessors(d)).toBe('이후 학과(추정): 사회복지학과, 보건행정학과');
+  });
+});
+
+describe('formatCohortRange(#378 운영 점검)', () => {
+  it('한 해뿐이면 "2026~2026"이 아니라 "2026", 여러 해면 "2017~2022", 끝이 없으면 시작만', () => {
+    expect(formatCohortRange({ min: 2026, max: 2026 })).toBe('2026');
+    expect(formatCohortRange({ min: 2017, max: 2022 })).toBe('2017~2022');
+    expect(formatCohortRange({ min: 2024, max: null })).toBe('2024');
+    expect(formatCohortRange(null)).toBe('');
   });
 });

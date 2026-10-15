@@ -270,3 +270,19 @@ describe('DepartmentPicker', () => {
     expect(within(dialog).getByText('검색 결과 1개')).toBeInTheDocument();
   });
 });
+
+describe('DepartmentPicker — 학번 범위 표시(#378 운영 점검)', () => {
+  it('한 해뿐인 학과는 "2026~2026학번"이 아니라 "2026학번", 여러 해면 범위로 보여 준다', async () => {
+    const departments = [
+      dept(11, '뷰티디자인학과', { minAdmissionYear: 2026, maxAdmissionYear: 2026, coreMinAdmissionYear: 2026, coreMaxAdmissionYear: 2026 }),
+      dept(12, '디자인학부', { minAdmissionYear: 2017, maxAdmissionYear: 2022, coreMinAdmissionYear: 2017, coreMaxAdmissionYear: 2022 }),
+    ];
+    render(<DepartmentPicker departments={departments} selectedId={null} onSelect={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: '학과 검색' }));
+    const dialog = screen.getByRole('dialog', { name: '학과 검색' });
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), '디자인');
+    expect(within(dialog).getByRole('button', { name: /^뷰티디자인학과/ })).toHaveTextContent('2026학번');
+    expect(within(dialog).getByRole('button', { name: /^뷰티디자인학과/ })).not.toHaveTextContent('2026~2026');
+    expect(within(dialog).getByRole('button', { name: /^디자인학부/ })).toHaveTextContent('2017~2022학번');
+  });
+});

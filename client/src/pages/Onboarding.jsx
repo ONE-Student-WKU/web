@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
-import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, TRANSFER_GRADES } from '../utils/onboardingYears.js';
+import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -568,7 +568,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             <p className="onb-q-sub">
               {t('onb.year.sub', {
                 dept: selectedDepartment?.name,
-                range: `${yearRange?.min}${yearRange?.max ? `~${yearRange.max}` : ''}`,
+                range: formatCohortRange(yearRange),
               })}
             </p>
             {describeSuccessors(selectedDepartment, t) && (
@@ -639,7 +639,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   {t('onb.transfer.outOfRange', {
                     dept: selectedDepartment?.name,
                     year: transferCohort,
-                    range: `${yearRange?.min}~${yearRange?.max}`,
+                    range: formatCohortRange(yearRange),
                   })}
                 </p>
               )}

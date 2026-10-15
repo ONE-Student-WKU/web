@@ -135,7 +135,13 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
   // 재학 학기 수(enrolledBefore)는 지금 학기까지 센 값이라 그대로 "지금 몇 번째 학기"다. 지금 학기가 휴학이면 onLeave.
   const currentIndex = termIndex(currentTerm);
   const onLeave = knownLeave && currentIndex >= admissionIndex && countLeaveBetween(leavePeriods, currentIndex, currentIndex + 1) > 0;
-  const current = enrolledBefore > 0 ? { ...currentTerm, enrolledTermNumber: enrolledBefore, onLeave, ...standingOf(enrolledBefore) } : null;
+  // 입학하자마자 휴학해 아직 다닌 학기가 없으면 학년은 없고 "휴학 중"만 알린다(grade: null). 예전에는 null이라 홈에서 학년 줄과
+  // "학년이 다르신가요?" 링크가 같이 사라졌다(2026-10-15 운영 점검, #378).
+  const current = enrolledBefore > 0
+    ? { ...currentTerm, enrolledTermNumber: enrolledBefore, onLeave, ...standingOf(enrolledBefore) }
+    : onLeave
+      ? { ...currentTerm, enrolledTermNumber: 0, onLeave: true, grade: null, gradeSemester: null, extended: false, extraTerms: 0 }
+      : null;
 
   return {
     today,
