@@ -100,7 +100,7 @@ test('쿼리스트링에 배열·객체가 오면 400 (SQL 조각으로 펼쳐�
 });
 
 test('이메일 형식: 주소 목록/표시이름으로 해석될 수 있는 값은 거절한다', async () => {
-  // 코드 발송 라우트는 IP당 10분 5회 제한(requestCodeLimiter)이 있어 5개까지만 시도한다.
+  // 코드 발송 라우트는 이메일당 10분 5회 제한(requestCodeLimiter)이 있다 — 서로 다른 값 5개라 걸리지 않는다.
   for (const email of ['x<a@b.com>', 'a@b.com,c@d.com', '"a"@b.com', 'a@b.com\r\nBcc:x@y.z', `${'a'.repeat(250)}@b.com`]) {
     const res = await call('POST', '/api/auth/email/request', { email, consent: CURRENT_CONSENT_VERSION });
     assert.equal(res.status, 400, String(email));

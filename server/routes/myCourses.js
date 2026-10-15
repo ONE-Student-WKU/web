@@ -1,8 +1,8 @@
 const express = require('express');
 const multer = require('multer');
-const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
+const { perUserLimiter } = require('../middleware/security');
 const courseService = require('../services/courseService');
 const { isIntInRange } = require('../services/inputValidation');
 const {
@@ -17,21 +17,13 @@ const {
 // 튀는 것을 막는 안전장치일 뿐, 정상 사용에는 걸리지 않는다.
 const PASTED_TEXT_MAX_LENGTH = 50000;
 
-// 초과 시 응답 포맷 — auth.js의 RATE_LIMIT_RESPONSE와 동일한 이유(클라이언트 apiRequest의
-// res.json() 파싱이 순수 텍스트 응답에 실패하는 문제를 피함).
-const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
-
 // PDF는 multer가 파일 전체를 프로세스 메모리에 올린 뒤(memoryStorage) 파싱까지 하는 무거운
 // 요청이라, 동시/반복 업로드 개수에 제한이 없으면 여러 명이 몰릴 때 메모리 압박으로 이어질
-// 수 있다. IP당 이 정도면 정상적인 재시도(파싱 실패 후 다시 시도 등)는 충분히 허용하면서도
+// 수 있다. 한 사람당 이 정도면 정상적인 재시도(파싱 실패 후 다시 시도 등)는 충분히 허용하면서도
 // 남용은 막는다. multer보다 앞에 둬서, 제한에 걸린 요청은 파일을 메모리에 올리기도 전에 막는다.
-const pdfImportLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10분
-  max: 10,                   // IP당 10분에 10회
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: RATE_LIMIT_RESPONSE,
-});
+// 로그인한 계정 단위로 센다 — 예전에는 IP 단위였는데 운영에서는 서버가 보는 IP가 학생이 아니라 Vercel 주소라
+// 모든 학생이 "10분에 10회"를 나눠 썼다(#378 배포 담당 확인, 2026-10-15). 이 라우터는 전부 requireAuth 뒤라 세션이 있다.
+const pdfImportLimiter = perUserLimiter({ windowMs: 10 * 60 * 1000, max: 10 });
 
 // 메모리 저장만(디스크에 남기지 않음) — 이수과목확인리스트 PDF는 학사정보라 파싱 즉시 버린다.
 // mimetype만 보면 모바일에서 자주 실패한다 — 카카오톡으로 받은 파일이나 일부 앱 공유

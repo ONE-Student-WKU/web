@@ -199,10 +199,29 @@ router.get('/google/callback', async (req, res, next) => {
 // 않고도 프로젝트 표준 JSON 포맷을 그대로 낼 수 있다.
 const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
 
-// IP당 반복 요청 방지 — 스팸/어뷰징 방지 목적.
+// 코드 발송 요청 제한 — 대상 이메일(로그인 화면) 또는 로그인한 계정(탈퇴 재인증) 단위로 10분에 5회.
+// 예전에는 IP 단위였는데, 운영은 학생 → Vercel → Railway 순서로 프록시를 두 번 거쳐 서버가 보는 IP가 학생이 아니라
+// Vercel 주소였다(#378 배포 담당 확인, 2026-10-15). 그래서 모든 학생이 "10분에 5회"를 나눠 써, 가입·로그인이 몰리면
+// 정상 학생이 막힐 수 있었다. 이메일 단위로 세면 다른 사람의 로그인에 영향이 없다(verifyCodeLimiter와 같은 방식).
 const requestCodeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10분
-  max: 5,                    // IP당 10분에 5회
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: RATE_LIMIT_RESPONSE,
+  keyGenerator: (req) => {
+    const email = req.body && typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    if (email) return `email:${email}`;
+    if (req.session && req.session.userId) return `u${req.session.userId}`;
+    return ipKeyGenerator(req.ip);
+  },
+});
+
+// 이메일을 바꿔 가며 아무 주소로나 코드를 보내는 남용(발송량)을 막는 넉넉한 안전장치. IP 단위라 지금 운영에서는 사실상
+// 전체 합계 상한으로 동작한다 — 정상적인 가입 몰림(10분에 100건)은 넘지 않을 값으로 둔다. 실제 학생 IP를 읽게 되면 IP별 상한이 된다.
+const requestCodeIpBackstop = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: RATE_LIMIT_RESPONSE,
@@ -253,7 +272,7 @@ async function guardResend(email, purpose, res) {
 
 // POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
 // 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
-router.post('/email/request', requestCodeLimiter, async (req, res, next) => {
+router.post('/email/request', requestCodeIpBackstop, requestCodeLimiter, async (req, res, next) => {
   try {
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : req.body.email;
     if (!isValidEmail(email)) {
@@ -331,7 +350,7 @@ router.post('/email/verify', verifyCodeLimiter, async (req, res, next) => {
 // 대상이 아니다(oauth_id로 로그인 방식 판별). 인증 대상 이메일은 요청 본문이 아니라 항상
 // 세션의 본인 계정 이메일로 고정 — 다른 사람 이메일로 코드를 보내게 하는 경로를 만들지
 // 않기 위함.
-router.post('/email/delete-reauth/request', requireAuth, requestCodeLimiter, async (req, res, next) => {
+router.post('/email/delete-reauth/request', requireAuth, requestCodeIpBackstop, requestCodeLimiter, async (req, res, next) => {
   try {
     const student = await studentService.findById(req.session.userId);
     if (!student) {
