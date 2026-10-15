@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from '../utils/onboardingYears.js';
+import { isBroadSeriesStudent } from '../utils/majorTrackType.js';
+import MajorTrackTypeOptions from '../components/MajorTrackTypeOptions.jsx';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -140,6 +142,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // 편입할 때 인정받은 학점(선택, 입력칸 글자 그대로). 교직과정 이수 여부(true/false/null = 답하지 않음).
     transferRecognizedInput: editMode && user.transferRecognizedCredits != null ? String(user.transferRecognizedCredits) : '',
     teachingCourse: editMode ? user.teachingCourse ?? null : null,
+    // 광역 계열전공 이수유형(DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED). 계열 학과의 2025학번 이후만 묻는다.
+    majorTrackType: editMode ? user.majorTrackType ?? null : null,
     // 휴학 기간(LeavePeriodsEditor의 draft). 기능 도입 전 계정은 user.leavePeriods가 null이라 "선택 필요"로 시작한다.
     leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
   });
@@ -186,6 +190,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   if (answers.enrollmentType === 'MAJOR_CHANGE') path.push('majorChange');
   const teachingAvailable = isTeachingCourseAvailable(selectedDepartment, answers);
   if (teachingAvailable) path.push('teaching');
+  // 광역 계열전공은 이수유형에 따라 전공 학점 기준이 달라진다(학칙시행규칙 제7조 제2항, #378 결정 3-1 A).
+  const trackTypeAvailable = isBroadSeriesStudent(selectedDepartment?.name, answers.admissionYear);
+  if (trackTypeAvailable) path.push('trackType');
   path.push('leave', 'summary', 'done');
   const recognized = parseRecognizedCredits(answers.transferRecognizedInput);
 
@@ -403,6 +410,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
     (isTransfer && !(answers.transferYear && answers.transferGrade && recognized.valid)) ||
     (teachingAvailable && answers.teachingCourse === null) ||
+    (trackTypeAvailable && answers.majorTrackType === null) ||
     periodsFromDraft(answers.leaveDraft) === null;
 
   async function handleSubmit() {
@@ -420,6 +428,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferGrade: isTransfer ? answers.transferGrade : null,
       transferRecognizedCredits: isTransfer ? recognized.value : null,
       teachingCourse: teachingAvailable ? answers.teachingCourse : null,
+      majorTrackType: trackTypeAvailable ? answers.majorTrackType : null,
     };
     try {
       if (user?.onboardingCompleted) {
@@ -450,6 +459,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'year' && !answers.admissionYear) ||
     (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
     (current === 'teaching' && answers.teachingCourse === null) ||
+    (current === 'trackType' && answers.majorTrackType === null) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
     (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
@@ -685,6 +695,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
+        {current === 'trackType' && (
+          <>
+            <h2 className="onb-q-title">{t('trackType.title')}</h2>
+            <p className="onb-q-sub">{t('trackType.sub')}</p>
+            <MajorTrackTypeOptions value={answers.majorTrackType} onChange={(v) => setAnswers((a) => ({ ...a, majorTrackType: v }))} />
+          </>
+        )}
+
         {current === 'majorChange' && (
           <>
             <h2 className="onb-q-title">{t('onb.mc.title')}</h2>
@@ -837,6 +855,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   value={answers.teachingCourse === null ? null : t(answers.teachingCourse ? 'onb.teaching.yes' : 'onb.teaching.no')}
                   editable={editMode}
                   onClick={() => setManualStep('teaching')}
+                />
+              )}
+              {trackTypeAvailable && (
+                <SummaryRow
+                  label={t('onb.summary.trackType')}
+                  value={answers.majorTrackType === null ? null : t(`trackType.${answers.majorTrackType}`)}
+                  editable={editMode}
+                  onClick={() => setManualStep('trackType')}
                 />
               )}
               <div className={leaveHighlightArmed ? 'settings-highlight' : undefined}>

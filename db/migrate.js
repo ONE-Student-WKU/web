@@ -126,6 +126,19 @@ async function ensureStudentTransferGradeColumn(connection) {
   }
 }
 
+// 광역 계열전공 이수유형 guard(시행규칙 제7조 제2항 — 복수전공형·전공심화형·전공융합형, #378 결정 3-1 A). NULL = 아직 묻지 않음
+// (계열 학생의 기존 계정은 다음 접속 때 한 번 묻는다 — server/services/majorTrackType.js).
+async function ensureStudentMajorTrackTypeColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'major_track_type'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.major_track_type 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN major_track_type VARCHAR(16) NULL AFTER teaching_course');
+  }
+}
+
 // 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
 // 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
 async function ensureStudentCourseMajorAreaColumn(connection) {
@@ -536,6 +549,7 @@ async function migrate() {
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentTeachingAndTransferCreditColumns(connection);
+    await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);

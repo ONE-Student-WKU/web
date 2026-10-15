@@ -14,6 +14,7 @@ import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
 import LeaveGate from './pages/LeaveGate.jsx';
+import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
@@ -331,6 +332,9 @@ function App() {
         ) : user.leaveAnswerRequired && view !== 'onboarding' ? (
           // 휴학 기간을 받기 전에 온보딩을 마친 계정은 한 번 휴학 질문에 답해야 다른 화면으로 간다(온보딩 수정 화면에서도 답할 수 있다).
           <LeaveGate user={user} onSaved={(updated) => setUser(updated)} />
+        ) : user.trackTypeAnswerRequired && view !== 'onboarding' ? (
+          // 이수유형을 받기 전에 온보딩을 마친 광역 계열전공 계정은 한 번 이수유형을 골라야 다른 화면으로 간다(#378 결정 3-4 A).
+          <TrackTypeGate onSaved={(updated) => setUser(updated)} />
         ) : view === 'chat' ? (
           <Chat
             user={user}
@@ -467,7 +471,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && tabBarVisible && !textInputFocused && (
+        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && tabBarVisible && !textInputFocused && (
           <BottomTabBar
             tabs={layoutTabs}
             active={tabPeers.has(view) ? view : null}
