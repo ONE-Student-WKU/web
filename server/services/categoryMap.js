@@ -39,4 +39,14 @@ const CATEGORY_MAP = {
   교직: '일반선택',
 };
 
-module.exports = { CATEGORY_MAP };
+// 광역 계열전공 과목의 원래 이수구분(기초·심화·응용). category는 5종으로 합쳐 저장해 이 구분이 사라지므로 따로 남긴다
+// (student_courses.major_area — 시행규칙 제7조 제3항 이수구분별 학점 판정, #378 결정 3-3 A).
+// 원문 구분 코드(성적표·개설과목: "기초" 등)와 교육과정 편성표의 구분("전공기초" 등) 둘 다 받는다. 의약계열의 "전기"(전공기초)는
+// 광역 계열전공의 기초전공이 아니라 넣지 않는다.
+const MAJOR_AREA_MAP = {
+  기초: '기초', 심화: '심화', 응용: '응용',
+  전공기초: '기초', 전공심화: '심화', 전공응용: '응용',
+};
+const majorAreaOf = (raw) => MAJOR_AREA_MAP[String(raw || '').trim()] || null;
+
+module.exports = { CATEGORY_MAP, MAJOR_AREA_MAP, majorAreaOf };

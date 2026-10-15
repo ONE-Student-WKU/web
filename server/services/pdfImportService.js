@@ -1,5 +1,5 @@
 const { PDFParse } = require('pdf-parse');
-const { CATEGORY_MAP } = require('./categoryMap');
+const { CATEGORY_MAP, majorAreaOf } = require('./categoryMap');
 const { extractCourseListRows, extractFullTranscriptRows } = require('./aiClient');
 
 /**
@@ -142,6 +142,8 @@ async function parseCourseListText(rawText, { beforeAiCall } = {}) {
     rows.push({
       rawCategory,
       category: CATEGORY_MAP[rawCategory] || null,
+      // 광역 계열전공의 기초·심화·응용(시행규칙 제7조 제3항) — category가 전공선택으로 합쳐도 원래 구분을 남긴다.
+      majorArea: majorAreaOf(rawCategory),
       name,
       year: Number(item.year),
       semester: Number(item.semester),
@@ -314,6 +316,8 @@ function finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnin
     rows.push({
       rawCategory,
       category: CATEGORY_MAP[rawCategory] || null,
+      // 광역 계열전공의 기초·심화·응용(시행규칙 제7조 제3항) — category가 전공선택으로 합쳐도 원래 구분을 남긴다.
+      majorArea: majorAreaOf(rawCategory),
       name,
       year: Number(item.year),
       semester: Number(item.semester),
