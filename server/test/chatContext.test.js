@@ -180,6 +180,15 @@ test('연도가 나와도 졸업요건 질문에는 그 해 개설과목 목록�
   assert.ok(off.structured.offering.every((c) => /2024학년도/.test(c.documentTitle)));
 });
 
+test('mergeChunks: 직전 질문의 변경 이력은 이번 이력 바로 뒤에 들어가고, 같은 청크는 한 번만 들어간다(#378)', () => {
+  const yearContext = { bookYears: [] };
+  const h = (id) => ({ chunkId: id, documentTitle: id, content: id });
+  const structured = { regulation: [], graduation: [], history: [h('history-a')], curriculum: [], requirement: [], offering: [], linkedMajor: [], microDegree: [] };
+  const merged = mergeChunks({ structured, previousHistory: [h('history-a'), h('history-prev')], previousCitedChunks: [h(7)], freshChunks: [], yearContext });
+  assert.deepEqual(merged.map((c) => c.chunkId), ['history-a', 'history-prev', 7]);
+  assert.deepEqual(mergeChunks({ structured, yearContext }).map((c) => c.chunkId), ['history-a'], 'previousHistory를 안 주면 예전과 같다');
+});
+
 test('mergeChunks: 직전 turn의 다른 해 책자 청크는 이번 질문의 학년도와 섞이지 않는다', async () => {
   const student = STUDENTS()[3][1];
   const { yearContext, structured } = await ask(student, '2026학년도 졸업요건이 뭐야?');

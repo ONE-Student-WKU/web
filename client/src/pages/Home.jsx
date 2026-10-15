@@ -142,7 +142,8 @@ function Home({
   const gradeLabel = !standing
     ? null
     : standing.extended
-      ? t('home.gradeExtended', { n: standing.extraTerms })
+      // 초과 학기에 휴학한 학생도 "휴학 중"을 보여 준다(예전에는 초과 학기면 휴학 여부를 보지 않았다, #378).
+      ? t(standing.onLeave ? 'home.gradeExtendedOnLeave' : 'home.gradeExtended', { n: standing.extraTerms })
       : t(standing.onLeave ? 'home.gradeTermOnLeave' : 'home.gradeTerm', { grade: standing.grade, semester: standing.gradeSemester });
   // 홈 화면 편집에서 고른 메뉴 카드와 순서(utils/homeLayout.js). 모두 뺐으면 메뉴 영역을 그리지 않는다.
   const menuViews = resolveLayout(user?.homeLayout).menu;
