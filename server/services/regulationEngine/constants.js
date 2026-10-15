@@ -58,6 +58,14 @@ const TRANSFER_RECOGNIZED_CREDITS = Object.freeze({
 // (시행규칙 제6조 제1항 제5호 "건축학과(5년제): 66학점"). 2025 책자는 건축학과를 "교육과정 전공이수학점에 따라 이수"로만 적었다.
 const REGULATION_MIN_MAJOR_BY_DEPARTMENT = Object.freeze({ 건축학과: 66 });
 
+// 광역 계열전공(학칙시행규칙 제7조, #378 E-3). 제3항: 이수구분별 학점 — 경상대학 경영계열은 기초 18·심화 12·응용 6, 그 외 계열은 12·15·9.
+// 제2항 제3호 전공융합형은 총 72학점(마이크로디그리 2개 각 12학점 포함 — 2026 책자 19~20쪽 "주전공 48 + 타전공 MD 2개")이라 주전공은 48학점이다.
+const BROAD_SERIES_AREA_MINIMUMS = Object.freeze({
+  경영계열: Object.freeze({ 기초: 18, 심화: 12, 응용: 6 }),
+  default: Object.freeze({ 기초: 12, 심화: 15, 응용: 9 }),
+});
+const CONVERGENCE_MAIN_MAJOR_CREDITS = 48;
+
 // 졸업인증제 "기본영역"으로 학교가 대학 공통으로 정한 과목 묶음(가·나 그룹, 2017~2019학번 나 그룹 1·2과목형).
 // 학사편입학자·산업체편입자 등은 졸업인증제 대상에서 제외되는데(책자 2019~2026 졸업인증제 "<제외>", 학교 홈페이지 학사학위수여),
 // 학과가 따로 지정한 과목(컴소공 기업연계프로젝트1·2 — 학과 공지상 편입생도 필수)은 이 면제와 별개라 여기 묶음과 같은 행에만 면제 안내를 붙인다.
@@ -117,6 +125,12 @@ const CITATIONS = Object.freeze({
     articleRef: 'ENFORCEMENT_RULES:제5조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
     file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
     quote: '교육과정은 입학 당시의 기준에 따라 이수하되',
+  },
+  ENF_ART7_BROAD_SERIES: {
+    kind: 'ARTICLE', doc: '학칙시행규칙', article: '제7조',
+    articleRef: 'ENFORCEMENT_RULES:제7조', // 판본 판단(textVersion.js)이 조문의 개정 표시·시행일을 찾는 키
+    file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
+    quote: '광역계열 소속 학생은 다음 각호의 유형 중 하나를 선택하여 전공 교육과정을 이수한다.',
   },
   ENF_ART6_1_MIN_MAJOR: {
     kind: 'ARTICLE', doc: '학칙시행규칙', article: '제6조 제1항 제4호',
@@ -280,6 +294,8 @@ module.exports = {
   BYLAW_MAJOR_DEPARTMENTS,
   TRANSFER_RECOGNIZED_CREDITS,
   REGULATION_MIN_MAJOR_BY_DEPARTMENT,
+  BROAD_SERIES_AREA_MINIMUMS,
+  CONVERGENCE_MAIN_MAJOR_CREDITS,
   GENERIC_CERTIFICATION_COURSE_SETS,
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM,
   DEFAULT_TRANSFER_GRADE,

@@ -43,6 +43,7 @@ const engineInput = (s) => ({
   admissionYear: s.input.admissionYear,
   enrollmentType: s.input.enrollmentType,
   majorChange: s.input.majorChange,
+  majorTrackType: s.input.majorTrackType,
   asOfDate: s.input.asOfDate || DEFAULT_AS_OF,
 });
 // students 테이블 행 모양(챗봇·졸업진단은 학생 행을 받는다)
@@ -54,6 +55,7 @@ const studentRow = (s) => ({
   major_change_grade: s.input.majorChange ? s.input.majorChange.grade : null,
   major_change_year: s.input.majorChange ? s.input.majorChange.year : null,
   major_change_semester: s.input.majorChange ? s.input.majorChange.semester : null,
+  major_track_type: s.input.majorTrackType || null,
 });
 
 test('평가 세트 구성: 20~35개, 판단 보류(#260)·C등급 구간·자료 없음 포함, EVAL_SET.md에 전부 기록', () => {
@@ -129,8 +131,8 @@ for (const s of SCENARIOS) {
       const g = s.graduation;
       const row = studentRow(s);
       await pool.query(
-        'UPDATE students SET department_id = ?, admission_year = ?, enrollment_type = ?, major_change_grade = ?, major_change_year = ?, major_change_semester = ? WHERE id = ?',
-        [row.department_id, row.admission_year, row.enrollment_type, row.major_change_grade, row.major_change_year, row.major_change_semester, studentId]
+        'UPDATE students SET department_id = ?, admission_year = ?, enrollment_type = ?, major_change_grade = ?, major_change_year = ?, major_change_semester = ?, major_track_type = ? WHERE id = ?',
+        [row.department_id, row.admission_year, row.enrollment_type, row.major_change_grade, row.major_change_year, row.major_change_semester, row.major_track_type, studentId]
       );
       const status = await getGraduationStatus(studentId);
       if (g.total !== undefined) assert.equal(status.totalRequiredCredits, g.total, `${s.id}: 총 요구학점`);

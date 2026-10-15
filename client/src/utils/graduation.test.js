@@ -249,3 +249,30 @@ describe('교양필수 영역(#378 결정 1-1 A)', () => {
     expect(formatShortfallSentence(['전공 66학점(그중 기본전공 24학점)'])).toBe('전공 66학점(그중 기본전공 24학점)이 부족해요.');
   });
 });
+
+describe('광역 계열전공 이수구분별 학점(#378 E-3)', () => {
+  const majorAreaCredits = {
+    areas: [
+      { area: '기초', required: 12, earned: 12, satisfied: true },
+      { area: '심화', required: 15, earned: 9, satisfied: false },
+      { area: '응용', required: 9, earned: 0, satisfied: false },
+    ],
+    unknownCredits: 3,
+    satisfied: false,
+  };
+  // 계열 과목은 모두 전공선택으로 저장돼 전공필수(기본전공) 풀이 0이다
+  const categories = [
+    { category: '전공', earnedCredits: 21, requiredCredits: 72, baseShortfall: 36 },
+  ];
+
+  it('"그중 기본전공 36학점" 대신 모자란 구분을 알린다', () => {
+    expect(summarizeShortfalls(categories, [], null, majorAreaCredits)).toEqual(['전공 51학점', '심화전공 6학점', '응용전공 9학점']);
+    expect(summarizeShortfalls(categories, [], (k, p) => translate('en', k, p), majorAreaCredits)).toContain('Advanced major: 6 credits');
+  });
+
+  it('기본전공 충족 표시는 감추고, 구분별 학점이 없으면 예전과 같다', () => {
+    const raw = [{ category: '전공필수', earnedCredits: 0, requiredCredits: 36 }, { category: '전공선택', earnedCredits: 21, requiredCredits: 36 }];
+    expect(buildRequirementGroups(raw, majorAreaCredits).major.baseSatisfied).toBeNull();
+    expect(buildRequirementGroups(raw).major.baseSatisfied).toBe(false);
+  });
+});

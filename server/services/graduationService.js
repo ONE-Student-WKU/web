@@ -10,6 +10,7 @@ const { getDepartmentChain } = require('./curriculumHistoryService');
 const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch');
 const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
+const { majorAreaOf } = require('./categoryMap');
 const { loadDesignatedMajorCourses, DESIGNATED_MAJOR_COURSE_DEPARTMENTS } = require('./designatedMajorCourses');
 const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
 
@@ -51,7 +52,7 @@ async function fetchCountedCourses(studentId) {
   // 재수강으로 대체된 이전 학기 기록(courseService.getSupersededCourseIds — 같은 과목명 중
   // 최신 학기 것만 남김)도 여기서 같이 제외해야 카테고리별 이수학점이 중복 집계되지 않는다.
   const supersededIds = await getSupersededCourseIds(studentId);
-  let sql = `SELECT id, name, category, credits, year, semester
+  let sql = `SELECT id, name, category, credits, year, semester, major_area
      FROM student_courses
      WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))`;
   const params = [studentId, FAILING_GRADES];
@@ -61,6 +62,39 @@ async function fetchCountedCourses(studentId) {
   }
   const [rows] = await pool.query(sql, params);
   return rows;
+}
+
+/**
+ * 광역 계열전공의 이수구분별 학점(시행규칙 제7조 제3항 — 기초·심화·응용, #378 E-3). 순수 함수.
+ * 과목의 구분은 저장된 원래 구분(student_courses.major_area — 성적표·개설과목)을 먼저 쓰고, 없으면(직접입력·옛 기록) 학과 편성표에서
+ * 과목명으로 찾는다(결정 3-3 A). 둘 다 없으면 "구분을 모르는 학점"으로 따로 센다 — 어느 구분에도 넣지 않는다.
+ * @param {{ 기초, 심화, 응용 }} minimums  엔진이 낸 최소 학점
+ * @param {Array<{ name, category, credits, major_area }>} courses  졸업 학점으로 세는 과목(재수강 이전 기록·F 제외)
+ * @param {Map<string, string>} areaByName  편성표 과목명(정규화) → 구분
+ */
+function computeMajorAreaCredits(minimums, courses, areaByName) {
+  const earned = { 기초: 0, 심화: 0, 응용: 0 };
+  let unknownCredits = 0;
+  for (const c of courses) {
+    if (c.category !== '전공필수' && c.category !== '전공선택') continue;
+    const area = c.major_area || areaByName.get(normalizeCourseName(c.name)) || null;
+    if (area && area in earned) earned[area] += Number(c.credits);
+    else unknownCredits += Number(c.credits);
+  }
+  const areas = Object.keys(earned).map((area) => ({ area, required: minimums[area], earned: earned[area], satisfied: earned[area] >= minimums[area] }));
+  return { areas, unknownCredits, satisfied: areas.every((a) => a.satisfied) };
+}
+
+/** 학과 편성표의 과목명 → 구분(기초·심화·응용). 같은 이름이 여러 학번에 있으면 처음 찾은 구분. */
+async function loadMajorAreaByName(departmentId) {
+  const [rows] = await pool.query('SELECT course_name, category FROM curriculum_courses WHERE department_id = ?', [departmentId]);
+  const map = new Map();
+  for (const r of rows) {
+    const area = majorAreaOf(r.category);
+    const key = normalizeCourseName(r.course_name);
+    if (area && !map.has(key)) map.set(key, area);
+  }
+  return map;
 }
 
 function sumByCategory(rows) {
@@ -270,6 +304,11 @@ async function getGraduationStatus(studentId) {
     const areas = evaluateLiberalRequiredAreas(c.requiredCourses, passedNames);
     return areas ? { ...c, areas } : c;
   });
+  // 광역 계열전공이면 기초·심화·응용 학점을 센다(엔진이 최소 학점을 냈을 때만 — 완화 받은 전과·편입은 null).
+  const areaMinimums = requirementsRule && requirementsRule.value ? requirementsRule.value.majorAreaMinimums : null;
+  const majorAreaCredits = areaMinimums
+    ? computeMajorAreaCredits(areaMinimums, countedCourses, await loadMajorAreaByName(student.department_id))
+    : null;
   // 시행규칙 제9조 제1호 학과(의·치·한의·약·간호·응급구조·보건의료 7개 학과)의 지정 전공 과목 — 판정하지 않고 편성표 목록만 안내한다.
   const designatedMajorCourses = await loadDesignatedMajorCourses(student, passedNames);
   // 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 "이수 안 함"과 같다(교직기본이수를 참고 항목으로도 보이지 않는다).
@@ -294,6 +333,10 @@ async function getGraduationStatus(studentId) {
     counseling: counselingRequirement(student),
     // 지정 전공 과목 안내(시행규칙 제9조 제1호 학과만, 그 외 null) — designatedMajorCourses.js
     designatedMajorCourses,
+    // 광역 계열전공의 이수구분별 학점(시행규칙 제7조 제3항) { areas: [{ area, required, earned, satisfied }], unknownCredits, satisfied } | null
+    majorAreaCredits,
+    // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.
+    majorTrackType: student.major_track_type || null,
     regulation: {
       confidence,
       confidenceLabel: confidence === regulation.confidence ? regulation.confidenceLabel : CONFIDENCE_LABEL_KO[confidence],
@@ -311,4 +354,4 @@ async function getGraduationStatus(studentId) {
   };
 }
 
-module.exports = { getGraduationStatus, computeCreditStatus, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis };
+module.exports = { getGraduationStatus, computeCreditStatus, computeMajorAreaCredits, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis };

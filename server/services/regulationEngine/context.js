@@ -63,6 +63,8 @@ function inputFromStudentRow(student, extra = {}) {
       : null,
     // 휴학 기간(students.leave_periods, JSON). null이면 학생이 아직 답하지 않았다는 뜻 — 해석은 leavePeriods.parseLeavePeriods가 한다.
     leavePeriods: student.leave_periods ?? null,
+    // 광역 계열전공 이수유형(students.major_track_type). null = 묻지 않음/답하지 않음(services/majorTrackType.js).
+    majorTrackType: student.major_track_type ?? null,
     ...extra,
   };
 }
@@ -132,6 +134,7 @@ function normalizeInput(raw, { today } = {}) {
         : null,
       restructuring: rs && rs.year != null && rs.semester != null ? { year: rs.year, semester: rs.semester } : null,
       leavePeriods: r.leavePeriods ?? null,
+      majorTrackType: ['DOUBLE_MAJOR', 'INTENSIVE', 'CONVERGENCE', 'UNDECIDED'].includes(r.majorTrackType) ? r.majorTrackType : null,
       policy: { liberalArtsCutoffTrigger: trigger },
       supported: r.admissionYear >= MIN_SUPPORTED_ADMISSION_YEAR,
     },

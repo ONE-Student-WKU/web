@@ -27,10 +27,11 @@ const SCENARIOS = [
   },
   {
     id: 'E02', title: '공학3계열 2026학번 일반 — 130학점',
-    input: { department: '공학3계열', admissionYear: 2026, enrollmentType: 'GENERAL' },
+    // 광역 계열전공은 이수유형에 따라 주전공 학점이 달라 유형을 답하지 않으면 추정이다(시행규칙 제7조, #378 E-3). 이 시나리오는 전공심화형으로 답한 학생.
+    input: { department: '공학3계열', admissionYear: 2026, enrollmentType: 'GENERAL', majorTrackType: 'INTENSIVE' },
     expected: { confidence: 'CONFIRMED', rules: { ACAD_SCHED4_1_FROM_2026: 'APPLIES' } },
     question: '졸업하려면 몇 학점 들어야 해?', graduation: { total: 130, confidence: 'CONFIRMED' },
-    why: '2026 총괄표 A(공학3계열 130), 경과조치 대상 없음',
+    why: '2026 총괄표 A(공학3계열 130), 경과조치 대상 없음, 전공심화형(시드의 계열 전공 행 기준)',
   },
   {
     id: 'E03', title: '간호학과 2025학번 일반 — [별표 4] ②, 2026 개편이 아직 이 학번 교육과정을 바꾸지 않음',

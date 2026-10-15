@@ -664,3 +664,37 @@
   - `server/services/liberalRequiredAreas.js`, `designatedMajorCourses.js`, `graduationService.js`, `aiClient.js`
   - `client/src/utils/graduation.js`·`korean.js`, `pages/GraduationStatus.jsx`
   - `db/seed/curriculum_requirements.json`(공학3계열 졸업인증제 1행)
+
+## D-70 광역 계열전공은 이수유형별 주전공 학점과 기초·심화·응용 최소 학점으로 판정한다 (#378 E 브랜치)
+- **상황**:
+  - 광역 계열전공(2025학번 이후 "…계열") 전공을 "전공필수 36 + 전공선택 나머지"(전공심화형 기준)로 근사했다.
+  - 학칙시행규칙 제7조의 **이수유형**(제2항)과 **이수구분별 학점**(제3항)을 보지 않았다.
+  - 계열 과목은 기초·심화·응용이 모두 "전공선택"으로 저장돼, 전공필수 풀(기본전공 36)이 채워지지 않았다. 그래서 늘 "그중 기본전공 36학점 부족"이었다.
+- **근거**:
+  - 제7조 제2항(복수전공형 전공별 36, 전공심화형 제6조 제4항 계열별, 전공융합형 총 72), 제3항(경영계열 기초 18·심화 12·응용 6, 그 외 12·15·9, 전공융합형은 마이크로디그리 2개 각 12 포함).
+  - 2026 책자 19~20쪽(전공융합형 = 주전공 48 + 타전공 MD 2개).
+- **결정** (2026-10-15, 3-1~3-5 A):
+  - **E-1**: `student_courses.major_area`(기초·심화·응용)를 저장한다. 성적표 원문 구분, 개설과목 `raw_category`에서 가져온다. 직접입력·옛 기록은 NULL이다.
+  - **E-2**: `students.major_track_type`(DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED)를 온보딩·학과·학번 수정에서 받는다.
+    - 기존 계열 계정은 한 번 묻는다(`TrackTypeGate`).
+    - 개인정보처리방침과 동의 버전을 2026-10-16으로 올렸다.
+  - **E-3 (주전공)**: 엔진이 유형에 따라 주전공 학점을 바꾼다(전공필수 36은 그대로).
+    - 전공심화형은 시드 그대로다.
+    - 복수전공형은 36(전공선택 0), 전공융합형은 48(전공선택 12)이다.
+    - 아직 안 정했으면 36(기초·심화·응용 최소만)이다.
+    - 줄어든 만큼은 일반선택으로 옮겨 졸업학점은 그대로 둔다.
+    - 복수전공형·전공융합형·미정·미응답은 추정 플래그를 붙인다(제2전공·마이크로디그리 미판정, 유형 미정).
+  - **E-3 (이수구분)**: 졸업진단이 전공 과목의 기초·심화·응용 학점을 센다(`computeMajorAreaCredits`).
+    - 구분은 저장된 값 → 학과 편성표 과목명 순으로 찾고, 둘 다 없으면 "구분을 모르는 학점"으로 따로 보여 준다(어느 구분에도 넣지 않음).
+    - 모자란 구분은 부족 요건에 넣는다.
+    - 계열 학생에게는 "기본전공 충족" 표시와 "그중 기본전공 N학점"을 이 값으로 바꾼다.
+  - 전과·편입 완화(최소전공 행)를 받은 경우는 유형·이수구분을 적용하지 않는다(별도 기준).
+- **단점·다시 볼 조건**:
+  - 제2전공 36학점(복수전공형)과 마이크로디그리 2개(전공융합형)는 판정하지 않는다. 다전공(G)에서 한다(결정 3-5 A).
+  - 편성표에 없는 이름으로 직접 입력한 전공 과목은 구분을 몰라 따로 센다. 성적표로 다시 가져오면 채워진다.
+  - 학생이 과목의 이수구분을 교양 등으로 바꿔도 `major_area`는 남지만, 판정은 전공 과목만 센다.
+  - "이름이 '계열'로 끝나는 학과의 2025학번 이후"라는 대상 규칙은 2027 개편 때 다시 본다.
+- **위치**:
+  - 서버: `server/services/majorTrackType.js`, `categoryMap.js`(majorAreaOf), `courseService.js`, `pdfImportService.js`, `regulationEngine/evaluate.js`·`constants.js`·`flags.js`·`context.js`, `graduationService.js`, `aiClient.js`
+  - 화면: `client/src/pages/Onboarding.jsx`·`TrackTypeGate.jsx`·`GraduationStatus.jsx`, `utils/graduation.js`
+  - DB: `db/migrate.js`

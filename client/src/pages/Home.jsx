@@ -126,7 +126,7 @@ function Home({
   // 매 렌더에서 조립한다 — 언어를 바꿨을 때 이전 언어로 만든 문구가 캐시에 남지 않게.
   // status가 아직 없으면(첫 로딩/실패) null — 카드에 기존 안내 문구를 그대로 둔다.
   const shortfalls = useMemo(
-    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t) : null),
+    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : null),
     [status, t]
   );
 
