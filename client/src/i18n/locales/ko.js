@@ -64,6 +64,7 @@ export default {
   'home.gradeTerm': '{grade}학년 {semester}학기',
   'home.gradeTermOnLeave': '{grade}학년 {semester}학기 · 휴학 중',
   'home.gradeExtended': '초과 {n}학기',
+  'home.gradeExtendedOnLeave': '초과 {n}학기 · 휴학 중',
   'home.gradeFix': '학년이 다르신가요?',
   'home.creditProgress': '이수학점 진행률',
   'home.creditsWithTotal': ' / {total}학점',

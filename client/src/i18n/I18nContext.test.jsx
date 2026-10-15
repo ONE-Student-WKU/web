@@ -47,6 +47,17 @@ describe('translate', () => {
     expect(translate('en', 'home.greeting', {})).toBe('Welcome, {name}');
   });
 
+  it('자리표시자 뒤의 조사 "은(는)"을 값의 받침에 맞게 고른다(#378 — "디자인학부은(는)")', () => {
+    const sub = (dept) => translate('ko', 'onb.year.sub', { dept, range: '2017~2022' });
+    expect(sub('디자인학부')).toBe('디자인학부는 2017~2022학번만 이 이수구조를 따라요.');
+    expect(sub('국어교육과')).toBe('국어교육과는 2017~2022학번만 이 이수구조를 따라요.');
+    expect(sub('공학3계열')).toBe('공학3계열은 2017~2022학번만 이 이수구조를 따라요.');
+    // 마지막 글자가 한글이 아니면 받침을 알 수 없어 원래 표기를 둔다.
+    expect(sub('JST공유대학(A)')).toBe('JST공유대학(A)은(는) 2017~2022학번만 이 이수구조를 따라요.');
+    // 영어 문구에는 조사가 없어 그대로다.
+    expect(translate('en', 'onb.year.sub', { dept: 'Dept', range: '2017~2022' })).not.toMatch(/은|는/);
+  });
+
   it('영어 사전은 한국어 사전에 없는 키를 갖지 않는다(번역 키 오타 방지)', () => {
     // 영어 전용으로 두는 키 — category.*는 서버가 내려주는 한국어 항목명 매핑, home.shortfallSentence는
     // 한국어에선 조사(이/가) 때문에 코드(formatShortfallSentence)가 직접 문장을 만들어 사전에 없다.
