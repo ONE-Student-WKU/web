@@ -126,6 +126,24 @@ async function ensureStudentTransferGradeColumn(connection) {
   }
 }
 
+// 교직과정 이수 여부·편입 인정학점 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
+// NULL(답하지 않음)로 두어 기존 계정의 판정은 그대로다(교직기본이수는 참고 항목, 편입 총량은 학교 표의 인정학점으로 가정).
+async function ensureStudentTeachingAndTransferCreditColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME IN ('teaching_course', 'transfer_recognized_credits')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('transfer_recognized_credits')) {
+    console.log('[db:migrate] students.transfer_recognized_credits 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN transfer_recognized_credits SMALLINT NULL AFTER transfer_grade');
+  }
+  if (!existing.has('teaching_course')) {
+    console.log('[db:migrate] students.teaching_course 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN teaching_course TINYINT(1) NULL AFTER transfer_recognized_credits');
+  }
+}
+
 // 휴학 기간 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
 // NULL(아직 휴학 질문에 답하지 않음)로 두어 기존 계정은 다음 접속 때 휴학 질문을 한 번 보게 된다(server/services/leavePeriods.js).
 async function ensureStudentLeavePeriodsColumn(connection) {
@@ -505,6 +523,7 @@ async function migrate() {
     await ensureStudentLanguageColumn(connection);
     await ensureStudentConsentColumns(connection);
     await ensureStudentTransferGradeColumn(connection);
+    await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);

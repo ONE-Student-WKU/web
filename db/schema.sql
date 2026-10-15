@@ -105,6 +105,9 @@ CREATE TABLE IF NOT EXISTS students (
                                        -- 2학기 기준 이전/이후)으로 갈리므로 학년만으론 판별 불가. 그 외 NULL
   major_change_semester     TINYINT,  -- 전과생만 해당(전과한 학기, 1 또는 2). 그 외 NULL
   transfer_grade            TINYINT,  -- 편입생만 해당(편입한 학년 2~4). admission_year = 편입 연도 − transfer_grade + 1. 옛 방식 편입생·그 외 NULL
+  transfer_recognized_credits SMALLINT NULL,  -- 편입생만 해당: 편입할 때 인정받은 전적대학 학점. NULL = 입력 안 함(학교 표의 인정학점으로 가정)
+  teaching_course           TINYINT(1) NULL,  -- 교직과정 이수 여부. 1 = 이수 중, 0 = 이수 안 함(사범대 교직 포기 포함), NULL = 답하지 않음.
+                                               -- 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 NULL(server/services/teachingCourse.js)
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어

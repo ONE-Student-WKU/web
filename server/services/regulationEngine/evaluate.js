@@ -120,14 +120,23 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     // 전공 완화 행이 있을 때만 계산한다 — 완화 행이 없는 학과(의약계열 등)는 "학과의 전공이수학점에 따른다"라 전적대학 학점이 전공에 얼마나
     // 인정되는지 알 수 없어 총량을 단정하지 않는다.
     const graduationCredits = sum(generalRows.filter((r) => r.minCourseCount == null));
-    const recognized = adjustments.includes('MAJOR_RELAXATION') ? transferRecognizedCredits(departmentName, ctx.admissionYear, graduationCredits) : null;
+    // 학생이 편입할 때 인정받은 학점을 입력했으면 그 값을 쓰고(가정 아님), 없으면 학교 표의 인정학점으로 가정한다.
+    const entered = ctx.transfer && ctx.transfer.recognizedCredits != null ? ctx.transfer.recognizedCredits : null;
+    const recognized = adjustments.includes('MAJOR_RELAXATION')
+      ? (entered != null ? entered : transferRecognizedCredits(departmentName, ctx.admissionYear, graduationCredits))
+      : null;
     if (recognized != null) {
       const majorCredits = sum(rows.filter((r) => MAJOR_CATEGORIES.includes(r.category)));
       const elective = Math.max(0, graduationCredits - recognized - majorCredits);
       const electiveRow = { id: null, category: '일반선택', requiredCredits: elective, description: `편입생 자유선택: 졸업학점 ${graduationCredits} − 편입 인정학점 ${recognized} − 전공 ${majorCredits}`, enrollmentType: ctx.enrollmentType, minCourseCount: null, requiredCourses: [] };
       rows = rows.some((r) => r.category === '일반선택') ? rows.map((r) => (r.category === '일반선택' ? electiveRow : r)) : [...rows, electiveRow];
-      flags.push(makeFlag('TRANSFER_RECOGNIZED_CREDITS_ASSUMED', { graduationCredits, recognized }));
-      basis.push('SITE_TRANSFER_RECOGNIZED_CREDITS');
+      if (entered != null) {
+        // 학생 입력값이라 문서 근거(basis)는 붙이지 않는다.
+        flags.push(makeFlag('TRANSFER_RECOGNIZED_CREDITS_ENTERED', { graduationCredits, recognized }));
+      } else {
+        flags.push(makeFlag('TRANSFER_RECOGNIZED_CREDITS_ASSUMED', { graduationCredits, recognized }));
+        basis.push('SITE_TRANSFER_RECOGNIZED_CREDITS');
+      }
       adjustments.push('TRANSFER_RECOGNIZED_CREDITS');
       resolvedTransferTotal = true;
     }

@@ -27,6 +27,8 @@ const FLAG_CATALOG = {
   TRANSFER_COHORT_YEAR_UNVERIFIED: [L.ESTIMATED, '편입생은 "편입학한 학년의 입학년도 교육과정"을 따라요(교육과정 운영에 관한 규정 제14조 제3항 — 예: 2026년에 3학년으로 편입했다면 2024학번 기준). 입력한 학번을 그 학번으로 보고 계산했어요. 편입한 해의 학번을 입력했다면 결과가 달라요.'],
   TRANSFER_TOTAL_UNRESOLVED: [L.ESTIMATED, '편입생은 전적대학 인정학점이 있어 졸업에 필요한 총 학점을 단정할 수 없어요(전공 최소학점 등 개별 기준만 안내해요).'],
   TRANSFER_RECOGNIZED_CREDITS_ASSUMED: [L.ESTIMATED, '전적대학 학점 중 학교 기준 인정학점을 빼고, 본교에서 이수할 학점만 계산했어요(학교 홈페이지 편입생 교육과정). 전적대학 취득학점이 인정학점보다 적으면 그만큼 본교에서 더 이수해야 해요. 과목 관리에는 본교에서 들은 과목만 등록해 주세요.'],
+  TRANSFER_RECOGNIZED_CREDITS_ENTERED: [L.INFO, '입력한 편입 인정학점을 빼고, 본교에서 이수할 학점만 계산했어요. 과목 관리에는 본교에서 들은 과목만 등록해 주세요.'],
+  TEACHER_COLLEGE_TEACHING_DROPPED: [L.ESTIMATED, '사범대학 학생은 교직 이수자로 보고 졸업인증제 기본영역을 교직(교육봉사활동·교육실습)으로 대체했어요. 교직을 포기했다면 졸업인증제 기본영역을 따로 채워야 할 수 있어요. 학과에 확인해 주세요.'],
   RESTRUCTURING_DATE_MISSING: [L.NO_DATA, '"학사구조조정 시점" 해석으로 판단하려면 구조조정 시점(연도·학기)이 필요한데 입력되지 않았어요.'],
 
   // --- 데이터 ---

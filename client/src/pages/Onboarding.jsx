@@ -22,6 +22,24 @@ function getMajorChangeGradeRange(admissionYear, majorChangeYear) {
   return { min: Math.max(1, naive - 2), max: Math.min(4, naive), naive };
 }
 
+// 교직과정 질문을 보일지: 학과에 교직기본이수 요건이 있는 학번이고, 편입생·3학년 이상 전과생이 아니어야 한다(책자 교직과정 이수 안내,
+// 서버 services/teachingCourse.js와 같은 규칙, DECISIONS D-67).
+function isTeachingCourseAvailable(department, { enrollmentType, majorChangeGrade, admissionYear }) {
+  const years = department?.teachingCourseYears;
+  if (!years || admissionYear == null) return false;
+  if ((years.min != null && admissionYear < years.min) || (years.max != null && admissionYear > years.max)) return false;
+  if (enrollmentType === 'TRANSFER_ADMISSION') return false;
+  if (enrollmentType === 'MAJOR_CHANGE' && majorChangeGrade >= 3) return false;
+  return true;
+}
+
+// 편입 인정학점 입력칸(선택). 비워 두면 학교 기준 인정학점으로 계산한다. 0~160 정수만 받는다(서버 MAX_TRANSFER_RECOGNIZED_CREDITS).
+function parseRecognizedCredits(text) {
+  if (text === '') return { value: null, valid: true };
+  if (!/^\d+$/.test(text) || Number(text) > 160) return { value: null, valid: false };
+  return { value: Number(text), valid: true };
+}
+
 function range(min, max) {
   if (max < min) return [];
   return Array.from({ length: max - min + 1 }, (_, i) => max - i);
@@ -119,6 +137,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // 옛 방식으로 입력한 편입생은 transferGrade가 없어 둘 다 null — 요약 화면에서 "선택 필요"로 보여 다시 입력하게 한다.
     transferGrade: editMode ? user.transferGrade ?? null : null,
     transferYear: editMode ? transferYearOf(user.admissionYear, user.transferGrade) : null,
+    // 편입할 때 인정받은 학점(선택, 입력칸 글자 그대로). 교직과정 이수 여부(true/false/null = 답하지 않음).
+    transferRecognizedInput: editMode && user.transferRecognizedCredits != null ? String(user.transferRecognizedCredits) : '',
+    teachingCourse: editMode ? user.teachingCourse ?? null : null,
     // 휴학 기간(LeavePeriodsEditor의 draft). 기능 도입 전 계정은 user.leavePeriods가 null이라 "선택 필요"로 시작한다.
     leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
   });
@@ -163,7 +184,10 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   const isTransfer = answers.enrollmentType === 'TRANSFER_ADMISSION';
   path.push('enrollmentType', isTransfer ? 'transfer' : 'year');
   if (answers.enrollmentType === 'MAJOR_CHANGE') path.push('majorChange');
+  const teachingAvailable = isTeachingCourseAvailable(selectedDepartment, answers);
+  if (teachingAvailable) path.push('teaching');
   path.push('leave', 'summary', 'done');
+  const recognized = parseRecognizedCredits(answers.transferRecognizedInput);
 
   // manualStep이 있으면(요약 화면에서 특정 질문으로 점프한 상태) 선형 stepIndex보다 우선한다.
   const current = manualStep || path[Math.min(stepIndex, path.length - 1)];
@@ -183,6 +207,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
+
+  // 사범대학은 선발 없이 교직과정을 이수하므로 "이수하고 있어요"를 미리 골라 둔다. 교직을 포기한 학생은 직접 바꾼다(D-67).
+  useEffect(() => {
+    if (teachingAvailable && selectedDepartment?.teacherCollege && answers.teachingCourse === null) {
+      setAnswers((a) => ({ ...a, teachingCourse: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teachingAvailable, selectedDepartment]);
 
   // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
@@ -282,6 +314,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeGrade: null,
       transferYear: null,
       transferGrade: null,
+      // 교직 답은 학과마다 다르다(사범대학이면 위 이펙트가 다시 "이수 중"을 골라 둔다).
+      teachingCourse: null,
     }));
     setTracks([]);
     return getTracks(dept.id)
@@ -367,7 +401,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (hasTracks && !answers.trackId) ||
     (answers.enrollmentType === 'MAJOR_CHANGE' &&
       !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
-    (isTransfer && !(answers.transferYear && answers.transferGrade)) ||
+    (isTransfer && !(answers.transferYear && answers.transferGrade && recognized.valid)) ||
+    (teachingAvailable && answers.teachingCourse === null) ||
     periodsFromDraft(answers.leaveDraft) === null;
 
   async function handleSubmit() {
@@ -383,6 +418,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeYear: isMajorChange ? answers.majorChangeYear : null,
       majorChangeSemester: isMajorChange ? answers.majorChangeSemester : null,
       transferGrade: isTransfer ? answers.transferGrade : null,
+      transferRecognizedCredits: isTransfer ? recognized.value : null,
+      teachingCourse: teachingAvailable ? answers.teachingCourse : null,
     };
     try {
       if (user?.onboardingCompleted) {
@@ -411,7 +448,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'track' && !answers.trackId) ||
     (current === 'enrollmentType' && !answers.enrollmentType) ||
     (current === 'year' && !answers.admissionYear) ||
-    (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid)) ||
+    (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
+    (current === 'teaching' && answers.teachingCourse === null) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
     (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
@@ -606,6 +644,44 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 </p>
               )}
             </div>
+            <div className="onb-field-group">
+              <label className="onb-field-label" htmlFor="onb-recognized">{t('onb.transfer.recognized')}</label>
+              <input
+                id="onb-recognized"
+                className="onb-select"
+                type="text"
+                inputMode="numeric"
+                placeholder={t('onb.transfer.recognizedPlaceholder')}
+                value={answers.transferRecognizedInput}
+                onChange={(e) => setAnswers((a) => ({ ...a, transferRecognizedInput: e.target.value.trim() }))}
+              />
+              <p className="onb-hint">{t(recognized.valid ? 'onb.transfer.recognizedHint' : 'onb.transfer.recognizedInvalid')}</p>
+            </div>
+          </>
+        )}
+
+        {current === 'teaching' && (
+          <>
+            <h2 className="onb-q-title">{t('onb.teaching.title')}</h2>
+            <p className="onb-q-sub">{t(selectedDepartment?.teacherCollege ? 'onb.teaching.subTeacherCollege' : 'onb.teaching.sub')}</p>
+            <div className="onb-option-list">
+              <button
+                className={'onb-option-card' + (answers.teachingCourse === true ? ' selected' : '')}
+                onClick={() => setAnswers((a) => ({ ...a, teachingCourse: true }))}
+              >
+                <span className="onb-option-title">{t('onb.teaching.yes')}</span>
+                <span className="onb-option-caption">{t('onb.teaching.yes.caption')}</span>
+              </button>
+              <button
+                className={'onb-option-card' + (answers.teachingCourse === false ? ' selected' : '')}
+                onClick={() => setAnswers((a) => ({ ...a, teachingCourse: false }))}
+              >
+                <span className="onb-option-title">{t('onb.teaching.no')}</span>
+                <span className="onb-option-caption">
+                  {t(selectedDepartment?.teacherCollege ? 'onb.teaching.no.captionTeacherCollege' : 'onb.teaching.no.caption')}
+                </span>
+              </button>
+            </div>
           </>
         )}
 
@@ -718,6 +794,18 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   onClick={() => setManualStep('transfer')}
                 />
               )}
+              {isTransfer && (
+                <SummaryRow
+                  label={t('onb.summary.recognized')}
+                  value={
+                    recognized.value != null
+                      ? t('onb.summary.recognizedValue', { credits: recognized.value })
+                      : recognized.valid ? t('onb.summary.recognizedNone') : null
+                  }
+                  editable={editMode}
+                  onClick={() => setManualStep('transfer')}
+                />
+              )}
               {hasTracks && (
                 <SummaryRow
                   label={t('onb.summary.track')}
@@ -741,6 +829,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   }
                   editable={editMode}
                   onClick={() => setManualStep('majorChange')}
+                />
+              )}
+              {teachingAvailable && (
+                <SummaryRow
+                  label={t('onb.summary.teaching')}
+                  value={answers.teachingCourse === null ? null : t(answers.teachingCourse ? 'onb.teaching.yes' : 'onb.teaching.no')}
+                  editable={editMode}
+                  onClick={() => setManualStep('teaching')}
                 />
               )}
               <div className={leaveHighlightArmed ? 'settings-highlight' : undefined}>

@@ -57,7 +57,10 @@ function inputFromStudentRow(student, extra = {}) {
         ? { grade: student.major_change_grade ?? null, year: student.major_change_year ?? null, semester: student.major_change_semester ?? null }
         : null,
     // 편입 학년은 편입생이 입력한 경우에만 있다(없으면 엔진이 3학년 편입으로 가정하고 추정 플래그를 남긴다).
-    transfer: student.enrollment_type === 'TRANSFER_ADMISSION' ? { grade: student.transfer_grade ?? null } : null,
+    // 편입 인정학점(students.transfer_recognized_credits)도 학생이 입력했을 때만 있다. 없으면 학교 표의 인정학점으로 가정한다.
+    transfer: student.enrollment_type === 'TRANSFER_ADMISSION'
+      ? { grade: student.transfer_grade ?? null, recognizedCredits: student.transfer_recognized_credits ?? null }
+      : null,
     // 휴학 기간(students.leave_periods, JSON). null이면 학생이 아직 답하지 않았다는 뜻 — 해석은 leavePeriods.parseLeavePeriods가 한다.
     leavePeriods: student.leave_periods ?? null,
     ...extra,
@@ -72,7 +75,7 @@ function inputFromStudentRow(student, extra = {}) {
  *  - departmentId 또는 departmentName 중 하나(필수), trackId(선택)
  *  - asOfDate(선택, 'YYYY-MM-DD', 기본 = 오늘(KST))
  *  - majorChange: { grade 1~4, year, semester 1|2 } (전과생만; 값이 없어도 되지만 없으면 플래그)
- *  - transfer: { grade 2~4 } (편입생만)
+ *  - transfer: { grade 2~4, recognizedCredits(선택, 편입할 때 인정받은 학점) } (편입생만)
  *  - restructuring: { year, semester } ("학사구조조정 시점" 해석을 쓸 때만 필요)
  *  - leavePeriods: 휴학 기간 원시값(선택, null = 모름). 해석은 이것을 쓰는 쪽(applicability)이 leavePeriods.js로 한다
  *  - policy.liberalArtsCutoffTrigger: 'MAJOR_CHANGE_DATE'(기본) | 'RESTRUCTURING_DATE' — 아래 decisions.js 참고
@@ -96,6 +99,7 @@ function normalizeInput(raw, { today } = {}) {
   }
   const tr = r.transfer || null;
   if (tr && tr.grade != null && !(isInt(tr.grade) && tr.grade >= 2 && tr.grade <= 4)) errors.push('transfer.grade는 2~4여야 해요');
+  if (tr && tr.recognizedCredits != null && !(isInt(tr.recognizedCredits) && tr.recognizedCredits >= 0)) errors.push('transfer.recognizedCredits는 0 이상의 정수여야 해요');
   const rs = r.restructuring || null;
   if (rs) {
     if (rs.year != null && !isInt(rs.year)) errors.push('restructuring.year는 정수여야 해요');
@@ -123,7 +127,9 @@ function normalizeInput(raw, { today } = {}) {
       asOfDate,
       asOfTerm: academicTermOf(asOfDate),
       majorChange,
-      transfer: r.enrollmentType === 'TRANSFER_ADMISSION' ? { grade: tr && tr.grade != null ? tr.grade : null } : null,
+      transfer: r.enrollmentType === 'TRANSFER_ADMISSION'
+        ? { grade: tr && tr.grade != null ? tr.grade : null, recognizedCredits: tr && tr.recognizedCredits != null ? tr.recognizedCredits : null }
+        : null,
       restructuring: rs && rs.year != null && rs.semester != null ? { year: rs.year, semester: rs.semester } : null,
       leavePeriods: r.leavePeriods ?? null,
       policy: { liberalArtsCutoffTrigger: trigger },

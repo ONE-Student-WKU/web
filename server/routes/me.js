@@ -5,6 +5,7 @@ const studentService = require('../services/studentService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
+const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -58,7 +59,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse,
       secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
@@ -171,6 +172,17 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'REQUIRED_TRANSFER_GRADE', message: null, data: null });
     }
 
+    // 교직과정 이수 여부·편입 인정학점 — 이번 요청으로 확정되는 입학 유형·전과 학년 기준으로 검증한다.
+    const effectiveMajorChangeGrade = majorChangeGrade !== undefined ? majorChangeGrade : student.major_change_grade;
+    const extrasError = validateTeachingAndTransferCredits(
+      { teachingCourse, transferRecognizedCredits },
+      { enrollmentType: effectiveEnrollmentType, majorChangeGrade: effectiveMajorChangeGrade }
+    );
+    if (extrasError) return res.status(400).json({ status: 400, code: extrasError, message: null, data: null });
+    // 학과나 유형이 바뀌어 교직을 이수할 수 없게 되거나 학과가 바뀌면, 함께 보내지 않은 이전 답은 남기지 않는다(다시 묻는다).
+    const clearTeaching = teachingCourse === undefined
+      && ((departmentId !== undefined && String(departmentId) !== String(student.department_id)) || !canTakeTeachingCourse({ enrollmentType: effectiveEnrollmentType, majorChangeGrade: effectiveMajorChangeGrade }));
+
     if (departmentId !== undefined) {
       const dept = await studentService.findDepartmentById(departmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENT_ID', message: null, data: null });
@@ -200,6 +212,8 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeSemester,
       // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
       transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
+      transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
+      teachingCourse: clearTeaching ? null : teachingCourse,
       secondDepartmentId,
       careerCounselingCount,
       leaveSemesters,
