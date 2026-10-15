@@ -108,7 +108,14 @@ function certificationGroup(tables, departmentName, college) {
 let cachedCollegeByYear;
 /** 학년도별 소속 대학. 한 번만 읽는다. */
 function loadCollegeByYear() {
-  if (cachedCollegeByYear === undefined) cachedCollegeByYear = readCollegeByYear();
+  if (cachedCollegeByYear !== undefined) return cachedCollegeByYear;
+  try {
+    cachedCollegeByYear = readCollegeByYear();
+  } catch (err) {
+    // 현황표를 못 읽으면 대학을 모르는 것으로 둔다 — 신설 학과 전과생 행은 첫 학번 값으로 만들어지고 추정으로 표시된다.
+    console.error('[cohortTables] 학년도별 대학·학과 현황표를 읽지 못했어요:', err.message);
+    cachedCollegeByYear = {};
+  }
   return cachedCollegeByYear;
 }
 
