@@ -292,6 +292,23 @@ const LATER_CHANGE_NOTICE =
   '③선택과목이 필수과목으로 바뀌었을 때 재학 중인 학년보다 저학년에 개설된 경우 이수하지 않아도 됨 ④이수구분이 바뀐 과목은 수강신청한 학년도·학기의 이수구분을 따름), ' +
   '제118조(졸업 이수학점의 학번별 경과조치는 학칙 부칙을 따름 — 해당 종전 부칙 원문은 확인되지 않음). 확정이 필요하면 학과 또는 학사지원과 확인이 필요하다';
 
+/**
+ * 학점 변경 목록 → 학번 구간별 값 한 줄(예: "~2019학번 25학점, 2020~2021학번 27학점, 2022학번 39학점, 2023학번~ 37학점"). 순수 함수.
+ * 변경 목록만 주면 모델이 구간을 직접 계산하다 앞선 변경을 빼먹었다 — 국어교육과 2023 "교양 학점이 언제 바뀌었어?"에
+ * "2022학번까지 39학점"이라고 답함(2021학번 이전은 다른 값, 2026-10-15 운영 점검 #378). 신설·폐지가 섞이면 구간을 단정하지 않는다(null).
+ */
+function rangesLine(changes, unit = '학점') {
+  const list = [...changes].sort((a, b) => a.toYear - b.toYear);
+  if (list.length === 0 || list.some((c) => c.changeType !== 'CHANGED')) return null;
+  const label = (from, to) => (from == null ? `~${to}학번` : to == null ? `${from}학번~` : from === to ? `${from}학번` : `${from}~${to}학번`);
+  const parts = [`${label(null, list[0].fromYear)} ${list[0].oldValue}${unit}`];
+  list.forEach((c, i) => {
+    const next = list[i + 1];
+    parts.push(`${label(c.toYear, next ? next.fromYear : null)} ${c.newValue}${unit}`);
+  });
+  return parts.join(', ');
+}
+
 async function ruleHistoryChunk(department, code, cohort) {
   const r = await historyService.describeRuleForCohort({ departmentId: department.id, category: code, admissionYear: cohort });
   if (!r) return null;
@@ -308,6 +325,10 @@ async function ruleHistoryChunk(department, code, cohort) {
   const field = (list) => list.filter((c) => c.field === 'required_credits' || c.changeType !== 'CHANGED');
   const earlier = field(r.earlierChanges);
   const later = field(r.laterChanges);
+  const ranges = rangesLine([...earlier, ...later]);
+  if (ranges) {
+    lines.push(`학번 구간별 ${label}(아래 변경을 정리한 것이다. 학번별로 언제 얼마였는지 답할 때는 이 구간을 빠짐없이 그대로 써라): ${ranges}`);
+  }
   const latest = await loadLatestDataYear();
   // "변경 없음"은 비교한 해의 자료가 검증됐을 때만 말할 수 있다 — 검증 안 된 학년도가 끼면 "기록 없음(검증 안 됨)".
   const noChange = (from, to, text) => {
@@ -437,6 +458,7 @@ module.exports = {
   lookupChangeHistory,
   mentionedCourseNames,
   LATER_CHANGE_NOTICE,
+  rangesLine,
   schedule4Line,
   requirementChangeCaveat,
   unverifiedYearsIn,

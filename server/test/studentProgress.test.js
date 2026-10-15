@@ -68,6 +68,16 @@ test('휴학 없는 23학번은 2027-1이 재학 9번째 학기라 정규 4학�
   assert.ok(p.flags.includes('EXTENDED_TERM'));
 });
 
+test('4학년 2학기 학생: 진행 상태에 "지금 학년·학기"가 있고, 초과학기 표시는 다음 학기 이야기라고 못박는다(#378)', () => {
+  // 2026-10-15 운영 점검: 23학번(지금 4학년 2학기)에게 챗봇이 "현재 초과학기 재학 중"이라고 답했다. "정규 4학년을 넘긴 초과학기다"라는
+  // 주어 없는 참고 문장을 지금 상태로 읽은 것이다.
+  const p = computeProgress({ admissionYear: 2023, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  const note = buildProgressNote({ ...p, completedCourseNames: [] });
+  assert.match(note, /지금 학년·학기: 4학년 2학기\(재학 8번째 학기\)/);
+  assert.match(note, /지금 학기가 초과학기라는 뜻이 아니다/);
+  assert.doesNotMatch(note, /정규 4학년을 넘긴 초과학기다/);
+});
+
 test('편입생은 3학년에서 시작한다고 가정한다', () => {
   const p = computeProgress({ admissionYear: 2025, enrollmentType: 'TRANSFER_ADMISSION', leaveSemesters: 0, recordedTerms: [], today: TODAY });
   // 2025-1 ~ 2026-2 = 4학기 → 3 + 2 = 5학년이 아니라 최대 4, 초과학기
@@ -170,6 +180,14 @@ test('buildProgressNote: 휴학 시기를 모를 때(추정 + 휴학 있음)만 
   });
   assert.equal(fromRecords.source, 'RECORDS');
   assert.doesNotMatch(buildProgressNote({ ...fromRecords, completedCourseNames: [] }), ask);
+});
+
+test('buildSystemPrompt: 메뉴 경로를 지어내지 않고, 이전 답변을 이번 근거에 없다는 이유만으로 뒤집지 않게 지시한다(#378)', () => {
+  const sys = buildSystemPrompt(null, null, null, 'ko');
+  assert.match(sys, /웹정보서비스 → 정보서비스 → 교육과정조회 →\s*교육과정조회\(학과별\)/);
+  assert.match(sys, /근거에 없는 메뉴 이름을\s*지어내지 마라/);
+  // 로컬 재현(2026-10-15): 변경 이력을 맞게 답한 다음 질문에서 "이전 답변은 근거 없는 추정이었다"고 스스로 정정했다.
+  assert.match(sys, /이번 근거에 없다는 이유만으로 이전 답변이 틀렸다거나 추정이었다고 정정하지 말고/);
 });
 
 test('buildSystemPrompt: progress를 넘기면 포함하고, 안 넘기면 기존 프롬프트와 같다', () => {

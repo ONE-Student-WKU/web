@@ -11,6 +11,7 @@ const graduationService = require('../services/graduationService');
 const studentProgressService = require('../services/studentProgress');
 const { resolveYearContext } = require('../services/yearContext');
 const { assembleStructuredChunks, mergeChunks } = require('../services/chatContextService');
+const curriculumContextService = require('../services/curriculumContextService');
 const { guardAnswer } = require('../services/answerGuard');
 const { lookupRegulationJudgment } = require('../services/regulationContextService');
 const { parseLanguage } = require('../services/language');
@@ -148,7 +149,18 @@ router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
     // "1학년 2학기에 뭐 있어?" 같은 나열형 질문은 top-K 유사도로는 일부가 누락되고, 연도별 값은 유사도로 구분할 수 없다.
     // RAG는 학칙 같은 비정형 문서만 대상이며, 교육과정 책자 문서는 질문에서 정한 책자 학년도(yearContext.bookYears)만 검색한다.
     const isCompare = yearContext.mode === 'COMPARE';
-    const [freshChunks, structured] = await Promise.all([
+    // 직전 질문이 변경 이력(코드로 계산한 근거)을 썼다면 이번에도 같은 이력을 함께 준다. previousCitedChunks는 규정 문서 조각만 이어 줘서,
+    // 주제를 바꾼 다음 질문에서 모델이 "근거 문서에 변경 이력이 없다"며 앞 답과 어긋나게 말했다(2026-10-15 로컬 재현, #378). DB 조회만 한다.
+    const previousHistoryChunks = lastUserMessage
+      ? curriculumContextService
+        .lookupChangeHistory({
+          message: lastUserMessage.content,
+          student,
+          yearContext: resolveYearContext({ message: lastUserMessage.content, profileCohort: student?.admission_year ?? null, availableBookYears }),
+        })
+        .catch(() => [])
+      : Promise.resolve([]);
+    const [freshChunks, structured, previousHistory] = await Promise.all([
       regulationService.findRelevantChunks(queryEmbedding, {
         bookYears: yearContext.bookYears,
         topK: isCompare ? 7 : undefined,
@@ -163,12 +175,13 @@ router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
         regulationJudgment,
         progress,
       }),
+      previousHistoryChunks,
     ]);
 
     // 직전 turn이 인용했던 근거를 이번 turn에도 유지 — "방금 답변 출처 알려줘" 같은 후속
     // 질문은 검색 쿼리가 미묘하게 달라져 다른(약한) 청크가 뽑히는 경우가 있는데, 그러면
     // 모델이 방금 그 근거를 못 찾겠다며 스스로 답을 부정하는 부작용이 생긴다.
-    const relevantChunks = mergeChunks({ structured, previousCitedChunks, freshChunks, yearContext });
+    const relevantChunks = mergeChunks({ structured, previousHistory, previousCitedChunks, freshChunks, yearContext });
 
     if (relevantChunks.length === 0) {
       const notFound = language === 'en' ? NOT_FOUND_MESSAGE_EN : NOT_FOUND_MESSAGE;

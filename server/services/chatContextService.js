@@ -52,7 +52,8 @@ function duplicatesJudgedArticle(chunk, articleChunks) {
 
 // 구조화 근거 + 직전 turn 인용 + RAG 검색 결과를 하나의 목록으로 합친다(chunkId 중복 제거).
 // 직전 turn 청크 중 다른 해 책자의 것은 이번 질문의 학년도와 섞이지 않도록 뺀다.
-function mergeChunks({ structured, previousCitedChunks = [], freshChunks = [], yearContext }) {
+// previousHistory: 직전 질문으로 다시 만든 변경 이력 청크(routes/chat.js). 이번 질문의 이력 바로 뒤에 두고, 같은 청크는 한 번만 넣는다.
+function mergeChunks({ structured, previousHistory = [], previousCitedChunks = [], freshChunks = [], yearContext }) {
   const allowedBookYears = new Set(yearContext.bookYears);
   const previous = previousCitedChunks.filter((c) => c.bookYear == null || allowedBookYears.size === 0 || allowedBookYears.has(c.bookYear));
   const regulation = structured.regulation || [];
@@ -65,6 +66,7 @@ function mergeChunks({ structured, previousCitedChunks = [], freshChunks = [], y
     ...regulation,
     ...structured.graduation,
     ...structured.history,
+    ...previousHistory,
     ...structured.curriculum,
     ...structured.requirement,
     // 개설 − 이수 목록이 개설 목록보다 먼저: 같은 학기의 "아직 안 들은 과목"이 모델에 먼저 보이게(remaining이 없는 호출도 있다).
