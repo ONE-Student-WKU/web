@@ -63,7 +63,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas) : [];
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas, status.secondMajor) : [];
   const termShortage = registrationTermShortage(status, shortfalls);
   const groups = status ? buildRequirementGroups(status.categories, status.majorAreaCredits) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
@@ -228,6 +228,47 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-flex-note">{t('grad.majorTrackType', { type: status.majorTrackType ? t(`trackType.${status.majorTrackType}`) : t('grad.majorTrackTypeNone') })}</p>
                   </>
                 )}
+              </section>
+            )}
+
+            {/* 다전공(복수전공·부전공, #378 G-2): 제2전공 학점과 복수전공 졸업논문2. 과목은 개설 학과·편성표로 자동으로 나누고 과목 관리에서 고칠 수 있다. */}
+            {status.secondMajor && (
+              <section className="home-card">
+                <div className="grad-category-row">
+                  <p className="home-card-label">
+                    {t('grad.secondMajor.title', { type: t(`grad.secondMajor.${status.secondMajor.type}`), department: status.secondMajor.department })}
+                  </p>
+                  {status.secondMajor.required != null && (
+                    <span className={status.secondMajor.earned >= status.secondMajor.required ? 'grad-category-value satisfied' : 'grad-category-value'}>
+                      {t('grad.groupCredits', {
+                        earned: status.secondMajor.earned,
+                        required: status.secondMajor.required,
+                        percent: getPercent(status.secondMajor.earned, status.secondMajor.required),
+                      })}
+                    </span>
+                  )}
+                </div>
+                {status.secondMajor.required != null && (
+                  <div className="home-progress-track">
+                    <div
+                      className="home-progress-fill"
+                      style={{
+                        width: `${getPercent(status.secondMajor.earned, status.secondMajor.required)}%`,
+                        backgroundColor: getProgressColor(getPercent(status.secondMajor.earned, status.secondMajor.required)),
+                      }}
+                    />
+                  </div>
+                )}
+                <p className="grad-flex-note">{t(`grad.secondMajor.basis.${status.secondMajor.basis}`, { n: status.secondMajor.required })}</p>
+                {status.secondMajor.thesis && (
+                  <div className="grad-subcheck-row">
+                    <span className={status.secondMajor.thesis.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                      {status.secondMajor.thesis.satisfied && <IconCheck size={11} />}
+                    </span>
+                    <p className="grad-subcheck-label">{t(status.secondMajor.thesis.satisfied ? 'grad.secondMajor.thesisMet' : 'grad.secondMajor.thesisUnmet')}</p>
+                  </div>
+                )}
+                <p className="grad-flex-note">{t('grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}</p>
               </section>
             )}
 

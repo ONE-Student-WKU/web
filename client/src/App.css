@@ -1606,6 +1606,18 @@ body {
   flex-shrink: 0;
 }
 
+/* 다전공 학생의 과목별 전공 선택(#378 G-2) — 과목 이름 아래 작게 둔다 */
+.courses-major-select {
+  margin-top: 4px;
+  max-width: 100%;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-frame);
+  color: var(--color-text-secondary);
+}
+
 .courses-delete-btn {
   background: none;
   border: none;
