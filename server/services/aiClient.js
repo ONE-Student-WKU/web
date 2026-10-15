@@ -20,7 +20,10 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 것과 모르는 것을 먼저 명확히 구분한 뒤 간결하게 답하라. 근거 문서 안에 여러 부서 전화번호가
 들어있어도 답변에서는 이 질문과 가장 관련 있는 부서 번호 하나만 제시하라 — 여러 번호를
 나열하면 학생이 어디로 전화해야 할지 헷갈린다. 비공식 참고용이라는 안내 문구는 화면에
-별도로 표시되니 답변에 반복해서 넣지 마라.`;
+별도로 표시되니 답변에 반복해서 넣지 마라.
+웹정보서비스(인트라넷) 메뉴 경로를 안내할 때는 근거 문서에 적힌 경로를 글자 그대로 쓰고, 근거에 없는 메뉴 이름을
+지어내지 마라. 과목 편성(교육과정)을 직접 확인하는 경로는 "웹정보서비스 → 정보서비스 → 교육과정조회 →
+교육과정조회(학과별)"이다(교육혁신과 답변 2026-10-14).`;
 
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 
@@ -189,7 +192,9 @@ function buildLanguageNote(language) {
 const PROGRESS_FLAG_NOTE = {
   TRANSFER_GRADE_ASSUMED: '편입생이라 편입 학년을 3학년으로 가정했다',
   RECORDS_LEAVE_MISMATCH: '프로필의 누적 휴학 학기 수와 이수 기록의 빈 학기가 맞지 않는다(기록 기준으로 계산)',
-  EXTENDED_TERM: '정규 4학년을 넘긴 초과학기다',
+  // 다음 수강 학기 중 하나라도 수업연한을 넘기면 붙는다. 주어 없이 "초과학기다"라고만 쓰면 모델이 "지금 초과학기"로 읽어서
+  // 4학년 2학기 학생에게 "현재 초과학기 재학 중"이라고 답했다(2026-10-15 운영 점검, #378). 그래서 무엇이 초과학기인지 못박는다.
+  EXTENDED_TERM: '위 "다음에 수강신청할 학기" 중 수업연한(학과의 정규 학기 수)을 넘긴 학기가 있다(그 학기는 초과학기). 지금 학기가 초과학기라는 뜻이 아니다 — 지금 학년·학기는 위 "지금 학년·학기" 값이다',
 };
 
 // studentProgress.getStudentProgress() 결과를 시스템 프롬프트에 심는다. "현재 N학년"이라는 한 줄만 주면 모델이 학기를 즉흥으로
@@ -209,6 +214,8 @@ function buildProgressNote(progress) {
   const lines = [
     '이 학생의 수강 진행 상태(코드로 계산한 값이다. 학년·학기를 직접 추정하지 말고 이 값을 써라):',
     `- 오늘 기준 현재 학기: ${progress.currentTerm.year}학년도 ${progress.currentTerm.semester}학기`,
+    // 지금 학년·학기를 이 블록 안에도 적어, 아래 "다음 학기"·"초과학기" 정보와 섞어 읽지 않게 한다.
+    ...(progress.current ? [`- 지금 학년·학기: ${describeStanding(progress.current)}`] : []),
     `- 다음에 수강신청할 학기: ${progress.upcomingTerms.map(termLine).join(', 그다음 ')}`,
     `- 계산 근거: ${sourceText}. 지금까지 정규 ${progress.enrolledTermsCompleted}학기를 마쳤다.`,
   ];

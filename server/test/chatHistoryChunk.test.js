@@ -58,6 +58,19 @@ test('DB: 국어교육과 2023 "교양 학점이 언제 바뀌었어?" — N-6 �
   const change = lines.find((l) => l.includes('2023학번부터 39학점 → 37학점'));
   assert.ok(change, `2022(39)→2023(37) 변경이 있어야 한다: ${chunk.content}`);
   assert.doesNotMatch(change, /⚠/);
+  // 구간 정리 줄: 모델이 "2022학번까지 39학점"처럼 앞선 변경을 빼먹지 않게 구간을 미리 적어 준다(#378).
+  const ranges = lines.find((l) => l.startsWith('학번 구간별'));
+  assert.ok(ranges, `구간 정리 줄이 있어야 한다: ${chunk.content}`);
+  assert.match(ranges, /2022학번 39학점, 2023학번~ 37학점$/);
+  assert.match(ranges, /^학번 구간별 교양 이수학점 합계\(.*\): ~\d{4}학번 \d+학점, /);
+});
+
+test('rangesLine: 변경 목록을 학번 구간으로 정리하고, 신설·폐지가 섞이면 단정하지 않는다', () => {
+  const { rangesLine } = require('../services/curriculumContextService');
+  const C = (fromYear, toYear, oldValue, newValue) => ({ changeType: 'CHANGED', fromYear, toYear, oldValue, newValue });
+  assert.equal(rangesLine([C(2022, 2023, 39, 37), C(2019, 2020, 25, 27), C(2021, 2022, 27, 39)]), '~2019학번 25학점, 2020~2021학번 27학점, 2022학번 39학점, 2023학번~ 37학점');
+  assert.equal(rangesLine([]), null);
+  assert.equal(rangesLine([C(2019, 2020, 25, 27), { changeType: 'ADDED', toYear: 2021 }]), null);
 });
 
 test('DB: 옛 보류가 해소된 학번(국어교육과 2024)의 적용 값 줄에는 단서가 없고, 남은 보류(SW융합학과 2021)에는 단서가 붙는다', async () => {

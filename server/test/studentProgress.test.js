@@ -68,6 +68,16 @@ test('휴학 없는 23학번은 2027-1이 재학 9번째 학기라 정규 4학�
   assert.ok(p.flags.includes('EXTENDED_TERM'));
 });
 
+test('4학년 2학기 학생: 진행 상태에 "지금 학년·학기"가 있고, 초과학기 표시는 다음 학기 이야기라고 못박는다(#378)', () => {
+  // 2026-10-15 운영 점검: 23학번(지금 4학년 2학기)에게 챗봇이 "현재 초과학기 재학 중"이라고 답했다. "정규 4학년을 넘긴 초과학기다"라는
+  // 주어 없는 참고 문장을 지금 상태로 읽은 것이다.
+  const p = computeProgress({ admissionYear: 2023, leaveSemesters: 0, recordedTerms: [], today: TODAY });
+  const note = buildProgressNote({ ...p, completedCourseNames: [] });
+  assert.match(note, /지금 학년·학기: 4학년 2학기\(재학 8번째 학기\)/);
+  assert.match(note, /지금 학기가 초과학기라는 뜻이 아니다/);
+  assert.doesNotMatch(note, /정규 4학년을 넘긴 초과학기다/);
+});
+
 test('편입생은 3학년에서 시작한다고 가정한다', () => {
   const p = computeProgress({ admissionYear: 2025, enrollmentType: 'TRANSFER_ADMISSION', leaveSemesters: 0, recordedTerms: [], today: TODAY });
   // 2025-1 ~ 2026-2 = 4학기 → 3 + 2 = 5학년이 아니라 최대 4, 초과학기
