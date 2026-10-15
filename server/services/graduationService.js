@@ -9,6 +9,8 @@ const { loadCategoryChanges } = require('./regulationEngine/dbProvider');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch');
 const { counselingRequirement } = require('./counseling');
+const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
+const { loadDesignatedMajorCourses, DESIGNATED_MAJOR_COURSE_DEPARTMENTS } = require('./designatedMajorCourses');
 const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
 
 /**
@@ -253,12 +255,23 @@ async function getGraduationStatus(studentId) {
     ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
   ];
 
-  const { totalRequiredCredits, totalEarnedCredits, categories } = computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap);
+  const { totalRequiredCredits, totalEarnedCredits, categories: creditCategories } = computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap);
 
-  // 졸업논문·졸업인증제 판정은 재수강 이전 기록까지 모든 수강 기록으로 본다(한 번이라도 합격했으면 충족).
-  const [allCourseRows] = certificationRows.length
+  // 졸업논문·졸업인증제·교양필수 영역 판정은 재수강 이전 기록까지 모든 수강 기록으로 본다(한 번이라도 합격했으면 충족).
+  const needsAllCourses = certificationRows.length > 0 || creditCategories.some((c) => c.category === '교양필수')
+    || DESIGNATED_MAJOR_COURSE_DEPARTMENTS.includes(student.department_name);
+  const [allCourseRows] = needsAllCourses
     ? await pool.query('SELECT name, letter_grade FROM student_courses WHERE student_id = ?', [studentId])
     : [[]];
+  // 교양필수는 학점 합계만으로는 모자라다 — 영역(건학이념·대학생활·전공탐색과진로) 과목을 실제로 들었는지 함께 싣는다(liberalRequiredAreas.js).
+  const passedNames = allCourseRows.filter((c) => isPassingRow(c, { requireGrade: false })).map((c) => c.name);
+  const categories = creditCategories.map((c) => {
+    if (c.category !== '교양필수') return c;
+    const areas = evaluateLiberalRequiredAreas(c.requiredCourses, passedNames);
+    return areas ? { ...c, areas } : c;
+  });
+  // 시행규칙 제9조 제1호 학과(의·치·한의·약·간호·응급구조·보건의료 7개 학과)의 지정 전공 과목 — 판정하지 않고 편성표 목록만 안내한다.
+  const designatedMajorCourses = await loadDesignatedMajorCourses(student, passedNames);
   // 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 "이수 안 함"과 같다(교직기본이수를 참고 항목으로도 보이지 않는다).
   const teachingAllowed = canTakeTeachingCourse({ enrollmentType: student.enrollment_type, majorChangeGrade: student.major_change_grade });
   const teachingCourse = teachingAllowed ? parseTeachingCourse(student.teaching_course) : false;
@@ -279,6 +292,8 @@ async function getGraduationStatus(studentId) {
     certifications,
     // 자기계발심층상담(졸업인증제) 기준 — 판정하지 않고 기준·확인 경로만 안내한다(counseling.js, D-65). 화면과 챗봇이 같이 쓴다.
     counseling: counselingRequirement(student),
+    // 지정 전공 과목 안내(시행규칙 제9조 제1호 학과만, 그 외 null) — designatedMajorCourses.js
+    designatedMajorCourses,
     regulation: {
       confidence,
       confidenceLabel: confidence === regulation.confidence ? regulation.confidenceLabel : CONFIDENCE_LABEL_KO[confidence],

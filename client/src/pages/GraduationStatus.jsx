@@ -241,6 +241,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     {groups.liberalArts.requiredSatisfied ? t('grad.liberalRequiredMet') : t('grad.liberalRequiredUnmet')}
                   </p>
                 </div>
+                {groups.liberalArts.missingAreas.length > 0 && (
+                  <p className="grad-flex-note">
+                    {t('grad.liberalAreasMissing', {
+                      items: groups.liberalArts.missingAreas
+                        .map((a) => t('grad.shortfallLiberalArea', { area: translateCategory(a.area, t), courses: a.missing.join('·') }))
+                        .join(', '),
+                    })}
+                  </p>
+                )}
                 <p className="grad-flex-note">{t('grad.electiveEarned', { n: groups.liberalArts.electiveEarnedCredits })}</p>
               </section>
             )}
@@ -281,6 +290,31 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   </section>
                 )}
               </>
+            )}
+
+            {/* 학칙시행규칙 제9조 제1호 학과(의·치·한의·약·간호·응급구조·보건의료)의 지정 전공 과목 — 어떤 과목이 지정인지는 학과 내규라
+                판정하지 않고 편성표의 전공기초·전공필수 목록과 학과 확인 안내만 보여 준다(서버 designatedMajorCourses.js). 부족 요건 요약에는 넣지 않는다. */}
+            {status.designatedMajorCourses && status.designatedMajorCourses.courses.length > 0 && (
+              <section className="home-card">
+                <p className="home-card-label">{t('grad.designated.title')}</p>
+                <p className="grad-cert-desc">{t('grad.designated.note', { year: status.designatedMajorCourses.courseListYear })}</p>
+                <details className="grad-designated">
+                  <summary className="grad-flex-note">
+                    {t('grad.designated.summary', {
+                      n: status.designatedMajorCourses.courses.length,
+                      m: status.designatedMajorCourses.courses.filter((c) => c.taken).length,
+                    })}
+                  </summary>
+                  <ul className="grad-designated-list">
+                    {status.designatedMajorCourses.courses.map((c) => (
+                      <li key={c.courseName}>
+                        {c.taken && <IconCheck size={11} />} {c.courseName}
+                        <span className="grad-flex-note"> · {t('home.gradeLevel', { grade: c.grade })} · {translateCategory(c.category, t)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </section>
             )}
 
             <section className={shortfalls.length > 0 ? 'grad-shortfall-box' : 'grad-shortfall-box ok'}>

@@ -1005,6 +1005,22 @@ body {
   margin-bottom: 0;
 }
 
+/* 학과 지정 전공 과목 안내(시행규칙 제9조) — 목록이 길어(학과에 따라 수십 과목) 접어 둔다 */
+.grad-designated summary {
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.grad-designated-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.grad-designated-list li {
+  margin-bottom: 4px;
+}
+
 .grad-shortfall-box.ok {
   background: color-mix(in srgb, var(--color-success) 15%, var(--color-bg-card));
   border-color: var(--color-success);
