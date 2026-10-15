@@ -139,6 +139,19 @@ async function ensureStudentMajorTrackTypeColumn(connection) {
   }
 }
 
+// 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
+// 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
+async function ensureStudentCourseMajorAreaColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_courses' AND COLUMN_NAME = 'major_area'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] student_courses.major_area 컬럼 추가...');
+    await connection.query("ALTER TABLE student_courses ADD COLUMN major_area ENUM('기초', '심화', '응용') NULL AFTER category");
+  }
+}
+
 // 교직과정 이수 여부·편입 인정학점 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로 컬럼을 직접 ALTER한다.
 // NULL(답하지 않음)로 두어 기존 계정의 판정은 그대로다(교직기본이수는 참고 항목, 편입 총량은 학교 표의 인정학점으로 가정).
 async function ensureStudentTeachingAndTransferCreditColumns(connection) {
@@ -537,6 +550,7 @@ async function migrate() {
     await ensureStudentTransferGradeColumn(connection);
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
+    await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);
