@@ -196,7 +196,11 @@ async function seedScrapedData(datasets) {
   const touchedDeptYearSem = new Set();
   const insertedSections = new Set();
 
-  for (const { label: key, departmentName, trackName: fixedTrackName, ...parsed } of datasets) {
+  // 1단계: 이번에 넣을 (학과, 연도, 학기)의 기존 행을 넣기 전에 모두 지운다.
+  // uq_course_offerings에는 학과가 없어서, 학과 차례가 올 때마다 지우면 재시딩(두 번째 실행부터)에서 아직 안 지운 다른 학과의
+  // 같은 분반 행(이전 실행에서 그 학과에 붙은 행)과 부딪혀 Duplicate entry로 실패했다. 이 실패로 재시딩 크론이 이 단계에서 멈춰
+  // 뒤의 규정 재임베딩이 2026-10-13부터 실행되지 않았다(#375).
+  for (const { label: key, departmentName, year, semester } of datasets) {
     if (!deptIdCache.has(departmentName)) {
       deptIdCache.set(departmentName, await findDepartmentId(departmentName));
     }
@@ -205,16 +209,16 @@ async function seedScrapedData(datasets) {
       console.warn(`[SKIP] ${key}: DB에 학과 없음 (${departmentName})`);
       continue;
     }
+    const touchKey = `${departmentId}-${year}-${semester}`;
+    if (touchedDeptYearSem.has(touchKey)) continue;
+    await pool.query('DELETE FROM course_offerings WHERE department_id = ? AND year = ? AND semester = ?', [departmentId, year, semester]);
+    touchedDeptYearSem.add(touchKey);
+  }
 
-    const touchKey = `${departmentId}-${parsed.year}-${parsed.semester}`;
-    if (!touchedDeptYearSem.has(touchKey)) {
-      await pool.query('DELETE FROM course_offerings WHERE department_id = ? AND year = ? AND semester = ?', [
-        departmentId,
-        parsed.year,
-        parsed.semester,
-      ]);
-      touchedDeptYearSem.add(touchKey);
-    }
+  // 2단계: 넣는다.
+  for (const { label: key, departmentName, trackName: fixedTrackName, ...parsed } of datasets) {
+    const departmentId = deptIdCache.get(departmentName);
+    if (!departmentId) continue;
 
     let count = 0;
     for (const r of parsed.rows) {
@@ -325,4 +329,4 @@ async function run() {
 
 if (require.main === module) run();
 
-module.exports = { buildDatasets, parseDatasetKey, parseTimeRaw };
+module.exports = { buildDatasets, parseDatasetKey, parseTimeRaw, seedScrapedData };
