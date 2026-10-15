@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const careerService = require('../services/careerService');
+const { UPDATE_MODES } = require('../services/careerAnswerUpdates');
 const studentService = require('../services/studentService');
 const { parseLanguage } = require('../services/language');
 const { oneRequestPerUser } = require('../middleware/security');
@@ -121,20 +122,30 @@ router.post('/sessions/:id/fixed-answers', oneAtATime, async (req, res, next) =>
   }
 });
 
-// PATCH /api/career/sessions/:id/fixed-answers — 채팅 시작 후 처음 답변 수정 (AI 재호출 없음,
-// 이미 나눈 대화는 그대로 두고 다음 대화부터 반영)
+// PATCH /api/career/sessions/:id/fixed-answers — 채팅 시작 후 처음 답변 수정(이슈 #245). mode: CONTINUE(이어서 대화) | RESTART(처음부터 다시).
+// 원래 답은 남기고 바뀐 내용을 기록한 뒤 AI가 한 번 응답한다(careerAnswerUpdates.js). 바뀐 답이 없으면 AI를 부르지 않는다.
 router.patch('/sessions/:id/fixed-answers', oneAtATime, async (req, res, next) => {
   try {
     const { fixedAnswers } = req.body;
     if (!isValidFixedAnswers(fixedAnswers)) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_FIXED_ANSWERS', message: null, data: null });
     }
+    const mode = req.body.mode === undefined ? 'CONTINUE' : req.body.mode;
+    if (!UPDATE_MODES.includes(mode)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_UPDATE_MODE', message: null, data: null });
+    }
 
-    const messages = await careerService.updateFixedAnswers(req.session.userId, req.params.id, fixedAnswers);
+    const student = await requireOnboardedStudent(req, res);
+    if (!student) return;
+
+    const messages = await careerService.updateFixedAnswers(req.session.userId, req.params.id, fixedAnswers, mode, student, parseLanguage(req.body.language));
     res.status(200).json({ status: 200, code: 'CAREER_FIXED_ANSWERS_UPDATED', message: null, data: { messages } });
   } catch (err) {
     if (err.code === 'SESSION_NOT_FOUND' || err.code === 'FIXED_ANSWERS_NOT_FOUND') {
       return res.status(404).json({ status: 404, code: err.code, message: null, data: null });
+    }
+    if (err.code === 'CAREER_TURN_LIMIT') {
+      return res.status(409).json({ status: 409, code: err.code, message: null, data: null });
     }
     next(err);
   }

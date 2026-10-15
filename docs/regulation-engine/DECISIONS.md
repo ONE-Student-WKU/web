@@ -698,3 +698,24 @@
   - 서버: `server/services/majorTrackType.js`, `categoryMap.js`(majorAreaOf), `courseService.js`, `pdfImportService.js`, `regulationEngine/evaluate.js`·`constants.js`·`flags.js`·`context.js`, `graduationService.js`, `aiClient.js`
   - 화면: `client/src/pages/Onboarding.jsx`·`TrackTypeGate.jsx`·`GraduationStatus.jsx`, `utils/graduation.js`
   - DB: `db/migrate.js`
+
+## D-71 진로 탐색 처음 답변을 고치면 원래 답은 남기고 바뀐 내용을 기록하며, "이어서 대화"·"처음부터 다시"를 학생이 고른다 (이슈 #245, #378 F 브랜치)
+- **상황**:
+  - 처음 답변을 고치면 대화 맨 앞의 고정 답변을 덮어쓰기만 했다.
+    - AI 반응이 없어 반영됐는지 알 수 없었다.
+    - AI는 학생이 생각을 바꾼 걸 몰랐다. 뒤의 질문들은 옛 답 기준이라 앞뒤가 어긋났다.
+- **결정** (2026-10-15, 14-1 C·14-2 A·14-3 A):
+  - 저장할 때 학생이 **이어서 대화하기**(CONTINUE) 또는 **처음부터 다시 시작**(RESTART)을 고른다.
+  - 원래 답은 덮어쓰지 않는다. 바뀐 내용(질문·이전 답·새 답)과 지금 답 전체를 **학생 메시지 하나로 기록**한다. 내용은 표식 `[[FIXED_ANSWERS_UPDATE]]` + JSON이다.
+    - 화면은 표식을 읽어 번역된 안내 한 줄로 보여 준다.
+    - AI에게는 "이전 답은 취소하고 새 답으로 바꿨다: 「질문」 이전 → 새" 한국어 문장으로 보낸다.
+    - 실제 AI 확인에서 두 답을 둘 다 학생 생각으로 읽은 적이 있어 "취소"를 분명히 적었다.
+  - 기록 직후 AI가 한 번 응답한다.
+    - CONTINUE는 기존 대화에 이어서 응답한다.
+    - RESTART는 고정 질문 블록(새 답)만 보고 첫 질문을 다시 한다. 이전 대화는 지우지 않고 화면·AI에서 감춘다.
+  - 기록 메시지는 학생 메시지라 상담당 자유 대화 한도(15번)에 들어간다. 새 상담으로는 세지 않는다. "다시 시작"을 반복해도 한도를 넘지 못한다.
+  - 바뀐 답이 없으면 아무것도 하지 않는다(AI 호출 없음).
+- **단점·다시 볼 조건**:
+  - 기록이 여러 번 쌓이면 AI가 "다시 돌아가셨네요"처럼 앞선 기록을 섞어 말할 때가 있다. 문제가 되면 이전 기록 문장을 줄인다.
+  - RESTART로 감춘 이전 대화는 학생이 다시 볼 방법이 없다(서버에는 남는다).
+- **위치**: `server/services/careerAnswerUpdates.js`, `careerService.js`(updateFixedAnswers·postMessage·generateCandidates), `routes/career.js`, `client/src/pages/CareerExploration.jsx`, `api/chatApi.js`.
