@@ -115,6 +115,22 @@ function buildGraduationStatusNote(graduationStatus) {
       liberal.unknownCredits ? `  - 개설현황에서 영역을 찾지 못한 교양 ${liberal.unknownCredits}학점은 어느 영역에도 넣지 않았다 — 그 학점 때문에 영역이 부족하다고 단정하지 말고, 과목명이 책자 표기와 같은지 확인하라고 안내하라.` : null,
     ].filter(Boolean).join('\n')
     : null;
+  // 다전공(복수전공·부전공, secondMajorCredits.js) — 제2전공 학점과 복수전공 졸업논문2. 과목은 개설 학과·편성표로 자동으로 나눴다.
+  const second = graduationStatus.secondMajor;
+  const secondLabel = second && (second.type === 'MINOR' ? '부전공' : '복수전공');
+  // 실제 AI 확인(2026-10-16 로컬)에서 주전공 최소전공(위 "전공" 행)을 "자료에 없다"고 하거나, 근거 문서의 일반 재학생 전공 학점(전필+전선)을
+  // 복수전공 기준과 섞어 말해서, 두 숫자를 이 줄에 직접 적는다.
+  const primaryMajorRow = categories.find((c) => c.category === '전공');
+  const secondMajorLine = second
+    ? [
+      `다전공: ${secondLabel} ${second.department} — 제2전공 ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 ${secondLabel} 기준)${second.thesis ? `, 복수전공 졸업논문(졸업논문2) ${second.thesis.satisfied ? '통과' : '미통과'}` : ''}.`,
+      second.type === 'DOUBLE'
+        ? `  - 복수전공 이수학생은 주전공도 최소전공 인정학점이면 된다(시행규칙 제8조 제1항).${primaryMajorRow ? ` 주전공 전공 기준은 ${primaryMajorRow.requiredCredits}학점이고 지금 ${primaryMajorRow.earnedCredits}학점이다(위 카테고리의 "전공" 행).` : ''} 주전공·복수전공 요건을 모두 채워야 졸업한다.`
+        : '  - 부전공은 부전공 지정 교과목을 포함해 21학점 이상이다(다전공이수에 관한 내규 제5조). 지정 교과목은 판정하지 않으니 부전공 학과 확인을 안내하라. 부전공을 유지하면 부전공 요건도 채워야 졸업한다(취소하고 졸업할 수도 있다).',
+      '  - 근거 문서에 나오는 학과의 전공 학점(전공필수+전공선택 합계)은 그 학과 일반 재학생 기준이다. 복수전공·부전공 기준이 아니니 위 숫자로 답하라.',
+      '  - 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이다. 과목은 개설 학과와 학과 편성표로 자동으로 나눴고, 두 학과에 모두 있는 과목은 주전공으로 두었다 — 다르면 과목 관리에서 과목마다 바꿀 수 있다고 안내하라. 같은 과목을 두 전공에 중복 인정하는지는 학교 기준을 확인하지 못했으니 단정하지 마라.',
+    ].join('\n')
+    : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
   const registrationLine = terms
@@ -149,6 +165,7 @@ ${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, c
 ${designatedLine || ''}
 ${majorAreaLine || ''}
 ${liberalAreaLine || ''}
+${secondMajorLine || ''}
 ${registrationLine || ''}
 
 주의:

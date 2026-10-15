@@ -83,6 +83,26 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     }
   }
 
+  // 복수전공 이수학생은 주전공도 최소전공 인정학점 이상이면 된다(시행규칙 제8조 제1항, #378 G-2). 전과·편입 완화와 같은 기준이라
+  // 학과·학번의 3·4학년 전과 완화 행(최소전공)을 쓴다. 이미 완화를 받았으면 그대로이고, 광역 계열전공은 이수유형(복수전공형 36학점,
+  // 제7조 제2항)으로 따로 정한다.
+  if (ctx.secondMajorType === 'DOUBLE' && !adjustments.includes('MAJOR_RELAXATION') && !isBroadSeriesStudent({ departmentName, admissionYear: ctx.admissionYear })) {
+    const minimumRows = allYearRows.filter((r) => r.enrollmentType === 'MAJOR_CHANGE' && MAJOR_CATEGORIES.includes(r.category));
+    const minimum = minimumRows.length > 0
+      ? minimumRows.map((r) => ({ ...r, description: '복수전공 이수학생 주전공 최소전공 인정학점(학칙시행규칙 제8조 제1항)' }))
+      : REGULATION_MIN_MAJOR_BY_DEPARTMENT[departmentName] != null
+        ? [{ id: null, category: '전공', requiredCredits: REGULATION_MIN_MAJOR_BY_DEPARTMENT[departmentName], description: `${departmentName} 최소전공 인정학점(학칙시행규칙 제6조 제1항 — 책자에 숫자 없음)`, enrollmentType: 'MAJOR_CHANGE', minCourseCount: null, requiredCourses: [] }]
+        : null;
+    if (minimum) {
+      rows = [...rows.filter((r) => !MAJOR_CATEGORIES.includes(r.category)), ...minimum];
+      adjustments.push('DOUBLE_MAJOR_MINIMUM');
+      flags.push(makeFlag('DOUBLE_MAJOR_PRIMARY_MINIMUM'));
+      basis.push('ENF_ART8_1_RELAXATION', 'ENF_ART6_1_MIN_MAJOR');
+    } else {
+      flags.push(makeFlag('DOUBLE_MAJOR_MINIMUM_ROW_MISSING'));
+    }
+  }
+
   if (relaxation.overrideMajorCredits != null) {
     rows = rows.map((r) => (r.category === '전공' ? { ...r, requiredCredits: relaxation.overrideMajorCredits } : r));
     adjustments.push('TRANSFER_4TH_MAJOR_21');
@@ -103,7 +123,7 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
   // 껴 있어 이 원리가 그대로 안 맞으므로(총량 미해결) 적용하지 않는다.
   // 교양 29학점 고정이 요구를 올려 일반선택이 모자라면(간호·작업치료·예과처럼 일반선택이 0인 학과) 음수 요건 대신 0으로 두고,
   // 그만큼 총 요구학점이 일반 재학생보다 늘어난 것으로 보인다.
-  if (ctx.enrollmentType === 'MAJOR_CHANGE' && adjustments.length > 0) {
+  if ((ctx.enrollmentType === 'MAJOR_CHANGE' && adjustments.length > 0) || adjustments.includes('DOUBLE_MAJOR_MINIMUM')) {
     const totalDegreeCredits = sum(generalRows);
     const adjusted = totalDegreeCredits - sum(rows.filter((r) => MAJOR_CATEGORIES.includes(r.category))) - sum(rows.filter((r) => LIBERAL_CATEGORIES.includes(r.category)));
     rows = rows.map((r) => (r.category === '일반선택' ? { ...r, requiredCredits: Math.max(0, adjusted) } : r));

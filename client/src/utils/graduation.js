@@ -129,7 +129,8 @@ export function translateCategory(raw, t) {
 // t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
 // 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
 // liberalElectiveAreas: 2025학번부터의 교양기초 영역별 학점·교양선택 영역 개수(서버 liberalElectiveAreas.js, #378 H-1).
-export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null, liberalElectiveAreas = null) {
+// secondMajor: 다전공(복수전공·부전공) 판정(서버 secondMajorCredits.js, #378 G-2).
+export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null, liberalElectiveAreas = null, secondMajor = null) {
   const items = [];
   // 광역 계열전공은 "그중 기본전공 N학점" 대신 이수구분별 학점(기초·심화·응용)으로 알린다(아래).
   if (majorAreaCredits) categories = (categories || []).map((c) => ({ ...c, baseShortfall: 0 }));
@@ -183,6 +184,14 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
   for (const area of missingLiberalAreas(categories)) {
     const courses = area.missing.join('·');
     items.push(t ? t('grad.shortfallLiberalArea', { area: label(area.area), courses }) : `${area.area} 영역(${courses})`);
+  }
+
+  // 제2전공 학점과 복수전공 졸업논문2. 기준을 모르면(required null) 학점은 부족으로 넣지 않는다(진단 카드에서 안내).
+  if (secondMajor) {
+    const type = t ? t(`grad.secondMajor.${secondMajor.type}`) : secondMajor.type === 'MINOR' ? '부전공' : '복수전공';
+    const n = secondMajor.required != null ? secondMajor.required - secondMajor.earned : 0;
+    if (n > 0) items.push(t ? t('grad.shortfallSecondMajor', { type, department: secondMajor.department, n }) : `${type}(${secondMajor.department}) ${n}학점`);
+    if (secondMajor.thesis && !secondMajor.thesis.satisfied) items.push(t ? t('grad.shortfallSecondThesis', { type }) : `${type} 졸업논문`);
   }
 
   // optional(교직기본이수 — 교직과정 이수자만 해당)은 졸업 부족 요건에 넣지 않는다. 화면 카드에는 안내 문구와 함께 남는다.

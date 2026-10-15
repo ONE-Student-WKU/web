@@ -231,6 +231,8 @@ function mapMyCourseRow(row, supersededIds) {
     etc: numOrNull(row.etc),
     letterGrade: row.letter_grade,
     supersededByRetake: supersededIds.has(row.id),
+    // 다전공 학생이 고친 전공(PRIMARY·SECOND, null = 자동). 응답에는 routes/myCourses.js가 판정한 countedMajor로 바꿔 싣는다.
+    countedMajorChoice: row.counted_major ?? null,
   };
 }
 
@@ -267,7 +269,7 @@ async function listMyCourses(studentId, { year, semester }) {
   // professor는 카탈로그에 연결된 경우에만 채워짐.
   let sql = `
     SELECT sc.id, sc.course_id, sc.name, sc.credits, sc.category, c.professor, sc.year, sc.semester,
-           sc.midterm, sc.final, sc.attendance_score, sc.assignment, sc.etc, sc.letter_grade
+           sc.midterm, sc.final, sc.attendance_score, sc.assignment, sc.etc, sc.letter_grade, sc.counted_major
     FROM student_courses sc
     LEFT JOIN course_offerings c ON c.id = sc.course_id
     WHERE sc.student_id = ?`;
@@ -421,6 +423,11 @@ async function updateMyCourse(studentId, id, updates) {
       fields.push(`${column} = ?`);
       params.push(updates[key]);
     }
+  }
+
+  if (updates.countedMajor !== undefined) {
+    fields.push('counted_major = ?');
+    params.push(updates.countedMajor);
   }
 
   if (updates.letterGrade !== undefined) {

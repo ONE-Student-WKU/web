@@ -152,6 +152,19 @@ async function ensureStudentSecondMajorTypeColumn(connection) {
   }
 }
 
+// 다전공 학생이 과목을 어느 전공으로 셀지 직접 고른 값 guard(#378 G-2, 결정 4-3). NULL = 자동(개설 학과·편성표로 정한다,
+// server/services/secondMajorCredits.js). PRIMARY·SECOND는 학생이 예외로 고친 값이다.
+async function ensureStudentCourseCountedMajorColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_courses' AND COLUMN_NAME = 'counted_major'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] student_courses.counted_major 컬럼 추가...');
+    await connection.query('ALTER TABLE student_courses ADD COLUMN counted_major VARCHAR(16) NULL AFTER major_area');
+  }
+}
+
 // 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
 // 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
 async function ensureStudentCourseMajorAreaColumn(connection) {
@@ -565,6 +578,7 @@ async function migrate() {
     await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentSecondMajorTypeColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
+    await ensureStudentCourseCountedMajorColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
     await ensureNameUniqueConstraint(connection);

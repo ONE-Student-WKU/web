@@ -12,6 +12,9 @@ const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
 const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
 const { registrationTermsOf } = require('./studentProgress');
+const { secondMajorTypeOf } = require('./secondMajor');
+const { loadCourseMajors, secondMajorRequirement, hasSecondThesis, isRestrictedCombination } = require('./secondMajorCredits');
+const { isBroadSeriesStudent } = require('./majorTrackType');
 const { majorAreaOf } = require('./categoryMap');
 const { loadDesignatedMajorCourses, DESIGNATED_MAJOR_COURSE_DEPARTMENTS } = require('./designatedMajorCourses');
 const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
@@ -54,7 +57,7 @@ async function fetchCountedCourses(studentId) {
   // 재수강으로 대체된 이전 학기 기록(courseService.getSupersededCourseIds — 같은 과목명 중
   // 최신 학기 것만 남김)도 여기서 같이 제외해야 카테고리별 이수학점이 중복 집계되지 않는다.
   const supersededIds = await getSupersededCourseIds(studentId);
-  let sql = `SELECT id, name, category, credits, year, semester, major_area
+  let sql = `SELECT id, name, category, credits, year, semester, major_area, counted_major
      FROM student_courses
      WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))`;
   const params = [studentId, FAILING_GRADES];
@@ -261,6 +264,55 @@ function computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap) {
   return { totalRequiredCredits, totalEarnedCredits, categories };
 }
 
+/**
+ * 제2전공 요건과 이수 현황(#378 G-2). 복수전공 최소전공은 제2전공 학과·같은 학번의 3·4학년 전과 기준(최소전공 인정학점)을 엔진으로 구한다 —
+ * 시행규칙 제8조 제1항이 복수전공 이수학생과 전과생을 같은 기준으로 묶는다. 학과가 생기기 전 학번이면 엔진이 첫 학번 값으로 추정한다(D-68).
+ */
+async function buildSecondMajorStatus(student, secondCourses, courseMajors, allCourseRows) {
+  const type = secondMajorTypeOf(student);
+  const broadSeriesDoubleMajorTrack = type === 'DOUBLE' && student.major_track_type === 'DOUBLE_MAJOR'
+    && isBroadSeriesStudent({ departmentName: student.department_name, admissionYear: student.admission_year });
+  let minimumMajorCredits = null;
+  let minimumEstimated = false;
+  if (type === 'DOUBLE' && !broadSeriesDoubleMajorTrack) {
+    const judged = await resolveRequirementsForStudent({
+      admissionYear: student.admission_year, enrollmentType: 'MAJOR_CHANGE', departmentId: student.second_department_id,
+      majorChange: { grade: 3, year: null, semester: null },
+    });
+    const rule = (judged.rules || []).find((r) => r.id === 'REQUIREMENTS');
+    const majorRow = rule && rule.value && rule.value.adjustments.includes('MAJOR_RELAXATION')
+      ? rule.value.categories.find((c) => c.category === '전공')
+      : null;
+    minimumMajorCredits = majorRow ? Number(majorRow.requiredCredits) : null;
+    minimumEstimated = (judged.flags || []).some((f) => f.code === 'MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT');
+  }
+  const { required, basis } = secondMajorRequirement({ type, broadSeriesDoubleMajorTrack, minimumMajorCredits });
+  const earned = secondCourses.reduce((sum, c) => sum + Number(c.credits), 0);
+  const thesis = type === 'DOUBLE' ? { satisfied: hasSecondThesis(allCourseRows, FAILING_GRADES) } : null;
+  const flags = [
+    makeFlag('SECOND_MAJOR_COURSES_ASSIGNED'),
+    ...(required == null ? [makeFlag('SECOND_MAJOR_MINIMUM_UNKNOWN')] : []),
+    ...(minimumEstimated ? [makeFlag('SECOND_MAJOR_MINIMUM_ESTIMATED')] : []),
+    ...(type === 'MINOR' ? [makeFlag('MINOR_DESIGNATED_COURSES')] : []),
+    ...(isRestrictedCombination(student.department_name, student.second_department_name) ? [makeFlag('SECOND_MAJOR_RESTRICTED')] : []),
+  ];
+  return {
+    flags,
+    status: {
+      type,
+      departmentId: student.second_department_id,
+      department: student.second_department_name,
+      required,
+      earned,
+      satisfied: required != null && earned >= required && (!thesis || thesis.satisfied),
+      basis,
+      thesis,
+      // 제2전공으로 센 과목(auto: 자동으로 정함, false: 학생이 고침)
+      courses: secondCourses.map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), auto: courseMajors.get(c.id).auto })),
+    },
+  };
+}
+
 async function getGraduationStatus(studentId) {
   const student = await studentService.findById(studentId);
   if (!student || !student.department_id) {
@@ -283,9 +335,16 @@ async function getGraduationStatus(studentId) {
 
   // 제13조④(수강 학년도 기준 이수구분)로 다시 본 과목은 학점을 옮겨 합산한다(registrationCategory.js, D-46). 옮긴 과목은 결과에 그대로 싣는다.
   const countedCourses = await fetchCountedCourses(studentId);
+  // 다전공 학생은 과목을 주전공·제2전공으로 나눈다(secondMajorCredits.js, #378 G-2). 제2전공으로 센 과목은 주전공 쪽에서 일반선택이다.
+  const courseMajors = await loadCourseMajors(student, countedCourses);
+  const isSecond = (c) => courseMajors != null && courseMajors.get(c.id).major === 'SECOND';
+  const primaryCourses = countedCourses.filter((c) => !isSecond(c));
+  const secondCourses = countedCourses.filter(isSecond);
   const { changes: categoryChanges, overrides: categoryOverrides } = await loadCategoryChanges((await getDepartmentChain(student.department_id)).departmentIds);
-  const registration = classifyByRegistration(countedCourses, categoryChanges, categoryOverrides);
-  const earnedByCategory = applyAdjustments(sumByCategory(countedCourses), registration.adjusted);
+  const registration = classifyByRegistration(primaryCourses, categoryChanges, categoryOverrides);
+  const earnedByCategory = applyAdjustments(sumByCategory(primaryCourses), registration.adjusted);
+  const secondCredits = secondCourses.reduce((sum, c) => sum + Number(c.credits), 0);
+  if (secondCredits > 0) earnedByCategory['일반선택'] = (earnedByCategory['일반선택'] || 0) + secondCredits;
   const registrationFlags = [
     ...(registration.adjusted.length ? [makeFlag('REGISTRATION_CATEGORY_APPLIED')] : []),
     ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
@@ -301,7 +360,7 @@ async function getGraduationStatus(studentId) {
 
   // 졸업논문·졸업인증제·교양필수 영역 판정은 재수강 이전 기록까지 모든 수강 기록으로 본다(한 번이라도 합격했으면 충족).
   const needsAllCourses = certificationRows.length > 0 || creditCategories.some((c) => c.category === '교양필수')
-    || DESIGNATED_MAJOR_COURSE_DEPARTMENTS.includes(student.department_name);
+    || DESIGNATED_MAJOR_COURSE_DEPARTMENTS.includes(student.department_name) || courseMajors != null;
   const [allCourseRows] = needsAllCourses
     ? await pool.query('SELECT name, letter_grade FROM student_courses WHERE student_id = ?', [studentId])
     : [[]];
@@ -315,7 +374,7 @@ async function getGraduationStatus(studentId) {
   // 광역 계열전공이면 기초·심화·응용 학점을 센다(엔진이 최소 학점을 냈을 때만 — 완화 받은 전과·편입은 null).
   const areaMinimums = requirementsRule && requirementsRule.value ? requirementsRule.value.majorAreaMinimums : null;
   const majorAreaCredits = areaMinimums
-    ? computeMajorAreaCredits(areaMinimums, countedCourses, await loadMajorAreaByName(student.department_id))
+    ? computeMajorAreaCredits(areaMinimums, primaryCourses, await loadMajorAreaByName(student.department_id))
     : null;
   // 2025학번부터 교양기초 5개 영역별 학점과 교양선택 영역 개수(liberalElectiveAreas.js, #378 H-1). 교양 기준을 완화받은 편입생·3학년 이상 전과생은 보지 않는다.
   const liberalElectiveAreas = evaluateLiberalElectiveAreas({
@@ -334,7 +393,8 @@ async function getGraduationStatus(studentId) {
   const teachingFlags = teachingAllowed && teachingCourse === false && isTeacherCollegeDepartment(student.department_name)
     ? [makeFlag('TEACHER_COLLEGE_TEACHING_DROPPED')]
     : [];
-  const extraFlags = [...registrationFlags, ...teachingFlags];
+  const secondMajor = courseMajors ? await buildSecondMajorStatus(student, secondCourses, courseMajors, allCourseRows) : null;
+  const extraFlags = [...registrationFlags, ...teachingFlags, ...(secondMajor ? secondMajor.flags : [])];
   const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(extraFlags)]);
 
   // regulation: 이 진단의 근거 신뢰도와 사유(엔진 플래그). 화면·챗봇이 "확정/추정/자료없음"을 표시하는 데 쓴다.
@@ -356,6 +416,8 @@ async function getGraduationStatus(studentId) {
     // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 알린다 { registered, required, earlyGraduation, estimated } | null.
     // 화면은 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2 결정 A).
     registrationTerms: registrationTermsOf(student),
+    // 다전공(복수전공·부전공) 판정 — { type, departmentId, department, required, earned, satisfied, basis, thesis, courses } | null(secondMajorCredits.js)
+    secondMajor: secondMajor ? secondMajor.status : null,
     // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.
     majorTrackType: student.major_track_type || null,
     regulation: {

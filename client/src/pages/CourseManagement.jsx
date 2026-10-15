@@ -150,6 +150,9 @@ function formatSchedule(schedule, tr) {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
+// 다전공 학생이 어느 전공으로 셀지 고를 수 있는 과목 구분(서버 secondMajorCredits.js의 후보와 같다). 교양은 늘 주전공이다.
+const COUNTED_MAJOR_CATEGORIES = new Set(['전공필수', '전공선택', '전공', '일반선택']);
+
 function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
   // 이 파일은 콜백 인자 이름으로 t(학기 탭, 시간표 칸 등)를 많이 써서 번역 함수는 tr로 받는다.
   const { t: tr, tRich } = useI18n();
@@ -426,6 +429,17 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       await refreshAfterChange();
     } catch {
       setError(tr('courses.err.grade'));
+    }
+  };
+
+  // 다전공 학생: 과목을 어느 전공으로 셀지 고친다(#378 결정 4-3 — 자동으로 정하고 학생은 예외만). 'AUTO'는 자동으로 되돌리기.
+  const handleCountedMajorChange = async (courseId, value) => {
+    setError(null);
+    try {
+      await updateMyCourse(courseId, { countedMajor: value === 'AUTO' ? null : value });
+      await refreshAfterChange();
+    } catch {
+      setError(tr('courses.err.countedMajor'));
     }
   };
 
@@ -744,6 +758,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const errorText = error && (typeof error === 'object' ? tr(error.key) : error);
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
+  // 다전공 학생의 과목별 전공 표시 — 제2전공 학과 이름과 구분은 졸업요건 진단 응답(status.secondMajor)에서 가져온다.
+  const countedMajorLabel = (major) =>
+    major === 'SECOND'
+      ? tr(`courses.countedMajor.SECOND.${status?.secondMajor?.type || 'DOUBLE'}`, { department: status?.secondMajor?.department || '' })
+      : tr('courses.countedMajor.PRIMARY');
 
   // 카탈로그 검색 화면의 본문 — 검색 전에는 안내, 결과가 없으면 그 사실을, 있으면 전체 높이로 목록을 보여준다.
   const renderCatalogResults = () => {
@@ -975,6 +994,19 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <p className="courses-list-item-meta">
                   {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
                 </p>
+                {/* 다전공 학생만(서버가 countedMajor를 붙인 경우) — 전공·일반선택 과목, 또는 이미 제2전공으로 센 과목 */}
+                {c.countedMajor && (COUNTED_MAJOR_CATEGORIES.has(c.category) || c.countedMajor === 'SECOND') && (
+                  <select
+                    className="courses-major-select"
+                    aria-label={tr('courses.countedMajor.label')}
+                    value={c.countedMajorAuto ? 'AUTO' : c.countedMajor}
+                    onChange={(e) => handleCountedMajorChange(c.id, e.target.value)}
+                  >
+                    <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajor) })}</option>
+                    <option value="PRIMARY">{countedMajorLabel('PRIMARY')}</option>
+                    <option value="SECOND">{countedMajorLabel('SECOND')}</option>
+                  </select>
+                )}
               </div>
               <select
                 className="courses-grade-select"

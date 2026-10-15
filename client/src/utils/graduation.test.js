@@ -318,3 +318,18 @@ describe('등록 학기(#378 H-2)', () => {
     expect(registrationTermShortage({ totalEarnedCredits: 130, totalRequiredCredits: 130 }, [])).toBe(0);
   });
 });
+
+describe('다전공(#378 G-2)', () => {
+  const second = { type: 'DOUBLE', department: '경영학과', required: 51, earned: 9, thesis: { satisfied: false } };
+
+  it('제2전공 학점과 복수전공 졸업논문을 부족 요건에 넣는다', () => {
+    expect(summarizeShortfalls([], [], null, null, null, second)).toEqual(['복수전공(경영학과) 42학점', '복수전공 졸업논문']);
+    const en = summarizeShortfalls([], [], (k, p) => translate('en', k, p), null, null, second);
+    expect(en).toEqual(['Double major (경영학과): 42 credits', 'Double major graduation thesis']);
+  });
+
+  it('부전공은 졸업논문이 없고, 기준을 모르면 학점은 넣지 않는다', () => {
+    expect(summarizeShortfalls([], [], null, null, null, { type: 'MINOR', department: '국어국문학과', required: 21, earned: 21, thesis: null })).toEqual([]);
+    expect(summarizeShortfalls([], [], null, null, null, { ...second, required: null })).toEqual(['복수전공 졸업논문']);
+  });
+});
