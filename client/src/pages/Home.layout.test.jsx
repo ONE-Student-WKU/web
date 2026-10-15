@@ -131,3 +131,30 @@ describe('Home — 지금 학년·학기는 서버 값(academicStanding)을 그�
     expect(screen.queryByText(/학년/)).toBeNull();
   });
 });
+
+describe('Home — 졸업요건 자료가 없거나 진단하지 않는 학과·학번(#378 운영 점검)', () => {
+  const NO_DATA = { totalEarnedCredits: 0, totalRequiredCredits: 0, categories: [], certifications: [], regulation: { confidence: 'NO_DATA', flags: [] } };
+  it('"모든 요건을 충족했어요!"와 0% 대신 진단할 수 없다는 안내를 보여 준다', async () => {
+    api.getGraduationStatus.mockResolvedValue(NO_DATA);
+    const { container } = renderHome();
+    expect(await screen.findByText('이 학과·학번은 홈에서 부족 요건을 알려드릴 수 없어요. 졸업요건 진단에서 이유를 확인해 주세요.')).toBeInTheDocument();
+    expect(screen.queryByText('모든 요건을 충족했어요!')).toBeNull();
+    expect(screen.queryByText('0%')).toBeNull();
+    expect(container.querySelector('.home-progress-track')).toBeNull();
+    expect(container.querySelector('.shortfall-ok')).toBeNull();
+  });
+  it('자료가 있는데 부족한 게 없으면 예전처럼 충족으로 보여 준다', async () => {
+    api.getGraduationStatus.mockResolvedValue({ ...STATUS, regulation: { confidence: 'CONFIRMED', flags: [] } });
+    renderHome();
+    expect(await screen.findByText('모든 요건을 충족했어요!')).toBeInTheDocument();
+  });
+});
+
+describe('Home — 입학하자마자 휴학해 다닌 학기가 없을 때(#378 운영 점검)', () => {
+  it('학년 없이 "휴학 중"을 보여 주고, 학년을 고칠 수 있는 링크도 남긴다(예전에는 둘 다 사라졌다)', async () => {
+    render(<Home user={{ ...USER, academicStanding: { grade: null, gradeSemester: null, extended: false, extraTerms: 0, onLeave: true, enrolledTermNumber: 0 } }} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('휴학 중')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '학년이 다르신가요?' })).toBeInTheDocument();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+});

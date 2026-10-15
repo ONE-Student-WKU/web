@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS students (
   transfer_recognized_credits SMALLINT NULL,  -- 편입생만 해당: 편입할 때 인정받은 전적대학 학점. NULL = 입력 안 함(학교 표의 인정학점으로 가정)
   teaching_course           TINYINT(1) NULL,  -- 교직과정 이수 여부. 1 = 이수 중, 0 = 이수 안 함(사범대 교직 포기 포함), NULL = 답하지 않음.
                                                -- 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 NULL(server/services/teachingCourse.js)
+  major_track_type          VARCHAR(16) NULL,  -- 광역 계열전공 이수유형(시행규칙 제7조 제2항): DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED, NULL = 묻지 않음.
   second_department_id      INT,      -- 복수전공 대상 학과. 복수전공 안 하면 NULL (복수전공+부전공 동시는 스코프 제외)
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
@@ -253,6 +254,7 @@ CREATE TABLE IF NOT EXISTS student_courses (
   name              VARCHAR(100) NOT NULL,
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
+  major_area        ENUM('기초', '심화', '응용') NULL,  -- 광역 계열전공 과목의 원래 이수구분(시행규칙 제7조 제3항). NULL = 모름(편성표 과목명으로 찾는다)
   year              INT NOT NULL,
   semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
                                         -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —

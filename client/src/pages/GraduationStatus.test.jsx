@@ -141,3 +141,56 @@ describe("자기계발심층상담 안내(판정하지 않음, DECISIONS D-65)",
     expect(screen.getByText(/Hug 심층진로상담으로 대체해요/)).toBeInTheDocument();
   });
 });
+
+describe('교양필수 영역과 학과 지정 전공 과목(#378 결정 1-1 A·5-1 A)', () => {
+  beforeEach(() => resetGraduationCache && resetGraduationCache());
+  it('학점을 채워도 종교와원불교를 안 들었으면 교양필수 미충족과 빠진 영역을 보여 주고 부족 요건에 넣는다', async () => {
+    const areas = [
+      { area: '건학이념', courses: ['종교와원불교'], completed: [], missing: ['종교와원불교'], satisfied: false },
+      { area: '대학생활', courses: ['대학생활과자기혁신'], completed: ['대학생활과자기혁신'], missing: [], satisfied: true },
+    ];
+    await renderWith(status({ categories: categories.map((c) => (c.category === '교양필수' ? { ...c, areas } : c)) }));
+    expect(screen.getByText('교양필수 미충족')).toBeInTheDocument();
+    expect(screen.getByText('아직 듣지 않은 교양필수 영역: 건학이념 영역(종교와원불교)')).toBeInTheDocument();
+    const summary = [...document.querySelectorAll('.grad-shortfall-list li')].map((li) => li.textContent);
+    expect(summary).toContain('건학이념 영역(종교와원불교)');
+  });
+  it('지정 전공 과목은 목록과 학과 확인 안내만 보여 주고 부족 요건에는 넣지 않는다', async () => {
+    await renderWith(status({
+      categories: categories.map((c) => ({ ...c, earnedCredits: c.requiredCredits })),
+      totalEarnedCredits: 140,
+      designatedMajorCourses: { courseListYear: 2026, courses: [
+        { courseName: '기본간호학', category: '전공필수', grade: 2, semester: '1', credits: 3, taken: true },
+        { courseName: '인체구조와기능', category: '전공기초', grade: 1, semester: '1', credits: 3, taken: false },
+      ] },
+    }));
+    expect(screen.getByText('학과 지정 전공 과목')).toBeInTheDocument();
+    expect(screen.getByText(/2026학년도 편성표의 전공기초·전공필수 목록/)).toBeInTheDocument();
+    expect(screen.getByText('전공기초·전공필수 2과목 · 들은 과목 1과목 (목록 보기)')).toBeInTheDocument();
+    expect(screen.getByText(/기본간호학/)).toBeInTheDocument();
+    expect(document.querySelector('.grad-shortfall-box.ok')).not.toBeNull();
+  });
+});
+
+describe('광역 계열전공 이수구분별 학점과 이수유형(#378 E-3)', () => {
+  beforeEach(() => resetGraduationCache && resetGraduationCache());
+  it('구분별 학점, 구분을 모르는 학점 안내, 이수유형을 보여 주고 모자란 구분을 부족 요건에 넣는다', async () => {
+    await renderWith(status({
+      majorTrackType: 'INTENSIVE',
+      majorAreaCredits: {
+        areas: [
+          { area: '기초', required: 12, earned: 12, satisfied: true },
+          { area: '심화', required: 15, earned: 9, satisfied: false },
+          { area: '응용', required: 9, earned: 9, satisfied: true },
+        ],
+        unknownCredits: 3,
+        satisfied: false,
+      },
+    }));
+    expect(screen.getByText('심화전공 9/15학점')).toBeInTheDocument();
+    expect(screen.getByText(/구분을 알 수 없는 전공 3학점/)).toBeInTheDocument();
+    expect(screen.getByText('전공 이수유형: 전공심화형')).toBeInTheDocument();
+    const summary = [...document.querySelectorAll('.grad-shortfall-list li')].map((li) => li.textContent);
+    expect(summary).toContain('심화전공 6학점');
+  });
+});

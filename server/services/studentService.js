@@ -6,6 +6,7 @@ const { parseHomeLayout } = require('./homeLayout');
 const { todayKst } = require('./regulationEngine/context');
 const { currentStandingOf } = require('./studentProgress');
 const { isTeacherCollegeDepartment, parseTeachingCourse } = require('./teachingCourse');
+const { isBroadSeriesStudent } = require('./majorTrackType');
 
 /**
  * server/services/studentService.js
@@ -68,6 +69,8 @@ function serializeStudent(student) {
     transferRecognizedCredits: student.transfer_recognized_credits ?? null,
     // 교직과정 이수 여부. true = 이수 중, false = 이수 안 함(사범대 교직 포기 포함), null = 답하지 않음(server/services/teachingCourse.js).
     teachingCourse: parseTeachingCourse(student.teaching_course),
+    // 광역 계열전공 이수유형(DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED). null = 아직 묻지 않음(server/services/majorTrackType.js).
+    majorTrackType: student.major_track_type || null,
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
     careerCounselingCount: student.career_counseling_count,
@@ -79,6 +82,9 @@ function serializeStudent(student) {
     academicStanding: currentStandingOf(student),
     // 온보딩을 마쳤는데 휴학 질문에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다.
     leaveAnswerRequired: !!student.onboarding_completed_at && parseLeavePeriods(student.leave_periods) === null,
+    // 온보딩을 마친 광역 계열전공 학생인데 이수유형에 답하지 않은 계정(기능 도입 전 가입) — 클라이언트가 한 번 질문 화면을 보여준다(#378 결정 3-4 A).
+    trackTypeAnswerRequired: !!student.onboarding_completed_at && !student.major_track_type
+      && isBroadSeriesStudent({ departmentName: student.department_name, admissionYear: student.admission_year }),
     // 홈 화면 편집 설정(하단 바 4칸·하단 바 켜기/끄기). null이면 기본 배치 — 해석은 client/src/utils/homeLayout.js.
     homeLayout: parseHomeLayout(student.home_layout),
     // 화면·챗봇 답변 언어. null이면 계정에 저장된 적이 없다는 뜻이라 클라이언트가 브라우저 값을 따른다.
@@ -238,17 +244,17 @@ async function findTrackById(id) {
 
 async function completeOnboarding(studentId, {
   departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-  transferRecognizedCredits, teachingCourse,
+  transferRecognizedCredits, teachingCourse, majorTrackType,
 }) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
          major_change_year = ?, major_change_semester = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
-         onboarding_completed_at = NOW()
+         major_track_type = ?, onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
       majorChangeYear ?? null, majorChangeSemester ?? null, transferGrade ?? null, transferRecognizedCredits ?? null,
-      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), studentId]
+      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), majorTrackType ?? null, studentId]
   );
 }
 
@@ -288,6 +294,7 @@ async function updateProfile(studentId, updates) {
     transferGrade: 'transfer_grade',
     transferRecognizedCredits: 'transfer_recognized_credits',
     teachingCourse: 'teaching_course',
+    majorTrackType: 'major_track_type',
     secondDepartmentId: 'second_department_id',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',

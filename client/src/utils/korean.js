@@ -10,7 +10,9 @@ function hasBatchim(char) {
 
 // pair: [받침 있을 때, 받침 없을 때] — 예: pickJosa('졸업인증제', ['이', '가']) → '가'
 export function pickJosa(word, pair) {
-  if (!word) return pair[1];
-  const lastChar = word[word.length - 1];
+  // 끝의 닫는 괄호는 건너뛰고 그 앞 글자로 고른다 — "건학이념 영역(대학생활과자기혁신)이", "(그중 기본전공 24학점)이"처럼 읽는다.
+  const trimmed = word ? word.replace(/[)\]\s]+$/, '') : '';
+  if (!trimmed) return pair[1];
+  const lastChar = trimmed[trimmed.length - 1];
   return hasBatchim(lastChar) ? pair[0] : pair[1];
 }

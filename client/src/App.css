@@ -670,6 +670,13 @@ body {
 }
 
 /* 위기 신호로 후보를 막았을 때의 도움 안내 — 오류가 아니므로 경고색 대신 차분한 카드로 보여준다. */
+/* 진로 탐색 "처음 답변 수정" — 두 저장 방식 버튼 아래 설명(이슈 #245) */
+.career-edit-mode-note {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
 .career-support-note {
   background: var(--color-accent-bg);
   border: 1px solid var(--color-border-strong);
@@ -1003,6 +1010,22 @@ body {
 
 .grad-shortfall-list li:last-child {
   margin-bottom: 0;
+}
+
+/* 학과 지정 전공 과목 안내(시행규칙 제9조) — 목록이 길어(학과에 따라 수십 과목) 접어 둔다 */
+.grad-designated summary {
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.grad-designated-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.grad-designated-list li {
+  margin-bottom: 4px;
 }
 
 .grad-shortfall-box.ok {

@@ -19,6 +19,12 @@ export function getYearRange(department, enrollmentType, nowYear = new Date().ge
   return { min, max };
 }
 
+// 학번 범위 글자. 한 해뿐이면 "2026~2026" 대신 "2026"으로 쓴다(2026-10-15 운영 점검, #378). 끝이 없으면 시작만.
+export function formatCohortRange(range) {
+  if (!range || range.min == null) return '';
+  return range.max == null || range.max === range.min ? `${range.min}` : `${range.min}~${range.max}`;
+}
+
 // 편입생이 고를 수 있는 편입 학년. 1학년 편입은 입력 화면에서 받지 않는다(학칙상 의학계열 예외뿐이고 규정 엔진도 2~4를 쓴다).
 export const TRANSFER_GRADES = [2, 3, 4];
 

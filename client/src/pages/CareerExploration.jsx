@@ -117,22 +117,59 @@ function toggledSelection(question, selected, option) {
 // 불러오기 실패처럼 이펙트 안에서 세팅되는 오류는 번역 함수에 의존하지 않도록 문구 대신 키를 담고, 렌더에서 번역한다.
 const LOAD_ERROR = { key: 'career.err.load' };
 
+// 처음 답변을 고친 기록(서버 services/careerAnswerUpdates.js와 같은 표식). 원래 답은 대화 맨 앞에 그대로 두고, 바뀐 내용을
+// 학생 메시지 하나로 남긴다 — 내용은 화면 언어와 무관한 표식 + JSON이라 화면은 번역해서 보여 준다(이슈 #245).
+const ANSWERS_UPDATE_MARKER = '[[FIXED_ANSWERS_UPDATE]]';
+function parseAnswersUpdate(message) {
+  if (!message || message.role !== 'user' || typeof message.content !== 'string' || !message.content.startsWith(ANSWERS_UPDATE_MARKER)) return null;
+  try {
+    const value = JSON.parse(message.content.slice(ANSWERS_UPDATE_MARKER.length));
+    return value && Array.isArray(value.answers) && Array.isArray(value.changes) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function toChatMessages(messages) {
   // 고정 질문 구간(질문+답변 쌍)은 채팅창에 다시 그리지 않는다 — 사용자가 실제로 입력한
   // 적 없는 turn까지 이미 나눈 대화처럼 보여서 "이게 뭐지" 하고 다시 읽게 되는 문제가
   // 실사용 피드백으로 확인됨. 서버로 보내는 history에는 그대로 남아 AI 컨텍스트로 쓰인다.
-  return messages.slice(FIXED_MESSAGE_COUNT).map((m) => ({ sender: m.role, text: m.content }));
+  // "처음부터 다시"로 고쳤으면 그 기록부터 보여 준다(이전 대화는 서버에 남지만 화면·AI에서는 감춘다).
+  const rest = messages.slice(FIXED_MESSAGE_COUNT);
+  const lastRestart = rest.map((m) => parseAnswersUpdate(m)).map((u) => u && u.mode === 'RESTART').lastIndexOf(true);
+  return rest.slice(Math.max(0, lastRestart)).map((m) => {
+    const update = parseAnswersUpdate(m);
+    return update ? { sender: 'note', update } : { sender: m.role, text: m.content };
+  });
 }
 
 // 채팅 시작 시 저장된 고정 질문 답변(질문/답변 쌍)을 "처음 답변 수정" 화면에 미리 채워
 // 넣기 위해 역파싱한다. 저장된 답변은 advanceQuestion에서 선택지를 ', '로 이어붙인
 // 문자열이라, 그 질문의 실제 선택지 목록과 대조해 다시 배열로 되돌린다.
 function parseFixedAnswersFromMessages(messages) {
+  // 고친 기록이 있으면 마지막 기록의 답이 지금 답이다(대화 맨 앞의 원래 답은 덮어쓰지 않는다).
+  const latest = messages.slice(FIXED_MESSAGE_COUNT).map(parseAnswersUpdate).filter(Boolean).at(-1);
   return FIXED_QUESTIONS.map((q, i) => {
-    const answerText = messages[i * 2 + 1]?.content;
+    const answerText = latest ? latest.answers[i] : messages[i * 2 + 1]?.content;
     if (!answerText || answerText === SKIPPED_ANSWER) return [];
     return answerText.split(', ').filter((opt) => q.options.includes(opt));
   });
+}
+
+// 고친 기록을 채팅창 안내 한 줄로 — "질문: 이전 → 새". 저장값은 한국어 선택지라 화면 언어의 선택지 이름으로 바꾼다.
+function describeAnswerChanges(changes, t) {
+  const answerLabel = (index, text) => {
+    if (!text || text === SKIPPED_ANSWER) return t('career.answerSkipped');
+    const question = FIXED_QUESTIONS[index];
+    return text
+      .split(', ')
+      .map((opt) => {
+        const optIndex = question ? question.options.indexOf(opt) : -1;
+        return optIndex >= 0 ? t(`career.q.${index}.opt.${optIndex}`) : opt;
+      })
+      .join(', ');
+  };
+  return changes.map((c) => `${t(`career.q.${c.index}.title`)}: ${answerLabel(c.index, c.before)} → ${answerLabel(c.index, c.after)}`).join(' / ');
 }
 
 /**
@@ -272,7 +309,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     setEditDrafts((prev) => prev.map((selected, i) => (i === questionIndex ? toggledSelection(question, selected, option) : selected)));
   }
 
-  async function handleSaveEditAnswers() {
+  async function handleSaveEditAnswers(mode) {
     setSavingEdit(true);
     setError(null);
     try {
@@ -280,7 +317,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         question: q.question,
         answer: editDrafts[i]?.length > 0 ? editDrafts[i].join(', ') : SKIPPED_ANSWER,
       }));
-      const res = await updateCareerFixedAnswers(sessionId, payload);
+      const res = await updateCareerFixedAnswers(sessionId, payload, mode, lang);
       setMessages(res.messages);
       setStage('chat');
     } catch {
@@ -497,9 +534,15 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                 </div>
               </div>
             ))}
-            <button className="auth-submit-btn" onClick={handleSaveEditAnswers} disabled={savingEdit}>
-              {savingEdit ? t('career.edit.saving') : t('career.edit.save')}
+            {/* 고친 답을 어떻게 반영할지 학생이 고른다 — 방향만 틀지, 처음부터 다시 할지는 사람마다 달라서(이슈 #245, 결정 14-1 C) */}
+            <button className="auth-submit-btn" onClick={() => handleSaveEditAnswers('CONTINUE')} disabled={savingEdit}>
+              {savingEdit ? t('career.edit.saving') : t('career.edit.continue')}
             </button>
+            <p className="career-edit-mode-note">{t('career.edit.continueNote')}</p>
+            <button className="auth-submit-btn auth-submit-btn--secondary" onClick={() => handleSaveEditAnswers('RESTART')} disabled={savingEdit}>
+              {t('career.edit.restart')}
+            </button>
+            <p className="career-edit-mode-note">{t('career.edit.restartNote')}</p>
             <button className="onb-skip-link" onClick={() => setStage('chat')} disabled={savingEdit}>
               {t('onb.cancel')}
             </button>
@@ -520,9 +563,17 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
               )
             )}
             <div className="career-chat-messages">
-              {toChatMessages(messages).map((msg, index) => (
-                <ChatBubble key={index} message={msg} />
-              ))}
+              {toChatMessages(messages).map((msg, index) =>
+                msg.sender === 'note' ? (
+                  <p key={index} className="career-support-note career-answers-note" role="status">
+                    {msg.update.mode === 'RESTART'
+                      ? t('career.answersRestarted', { items: describeAnswerChanges(msg.update.changes, t) })
+                      : t('career.answersChanged', { items: describeAnswerChanges(msg.update.changes, t) })}
+                  </p>
+                ) : (
+                  <ChatBubble key={index} message={msg} />
+                )
+              )}
               {sending && (
                 <div className="chat-bubble assistant">
                   <div className="message-sender">ONE Student</div>

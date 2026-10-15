@@ -136,8 +136,9 @@ export const createCareerSession = () => apiRequest('/career/sessions', { method
 export const submitCareerFixedAnswers = (sessionId, fixedAnswers, language) =>
   apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'POST', body: JSON.stringify({ fixedAnswers, language }) });
 
-export const updateCareerFixedAnswers = (sessionId, fixedAnswers) =>
-  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'PATCH', body: JSON.stringify({ fixedAnswers }) });
+// mode: CONTINUE(이어서 대화) | RESTART(처음부터 다시) — 서버가 바뀐 내용을 기록하고 AI가 한 번 응답한다(이슈 #245).
+export const updateCareerFixedAnswers = (sessionId, fixedAnswers, mode, language) =>
+  apiRequest(`/career/sessions/${sessionId}/fixed-answers`, { method: 'PATCH', body: JSON.stringify({ fixedAnswers, mode, language }) });
 
 export const sendCareerMessage = (sessionId, content, language) =>
   apiRequest(`/career/sessions/${sessionId}/messages`, { method: 'POST', body: JSON.stringify({ content, language }) });

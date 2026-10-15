@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent } from './graduation.js';
+import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
   it('전공필수/전공선택을 합쳐서 초과 이수분이 서로 상쇄되게 한다', () => {
@@ -209,5 +210,69 @@ describe('getPercent', () => {
   it('정상 값은 반올림하고 100%를 넘지 않는다', () => {
     expect(getPercent(50, 136)).toBe(37);
     expect(getPercent(150, 100)).toBe(100);
+  });
+});
+
+describe('교양필수 영역(#378 결정 1-1 A)', () => {
+  const areas = [
+    { area: '건학이념', courses: ['종교와원불교'], completed: [], missing: ['종교와원불교'], satisfied: false },
+    { area: '대학생활', courses: ['대학생활과자기혁신'], completed: ['대학생활과자기혁신'], missing: [], satisfied: true },
+  ];
+  // 학점은 채웠지만(다른 과목을 교양필수로 넣은 경우 등) 종교와원불교를 듣지 않았다
+  const categories = [
+    { category: '교양필수', earnedCredits: 5, requiredCredits: 5, areas },
+    { category: '교양선택', earnedCredits: 34, requiredCredits: 34 },
+  ];
+
+  it('학점을 채워도 영역 과목을 안 들었으면 교양필수 미충족이고, 빠진 영역을 알려 준다', () => {
+    const groups = buildRequirementGroups(categories);
+    expect(groups.liberalArts.requiredSatisfied).toBe(false);
+    expect(groups.liberalArts.missingAreas.map((a) => a.area)).toEqual(['건학이념']);
+  });
+
+  it('부족 요건 요약에 "건학이념 영역(종교와원불교)"을 넣고, 영어에서는 영역 이름만 번역한다(과목명은 서버 데이터라 그대로)', () => {
+    expect(summarizeShortfalls(categories, [])).toEqual(['건학이념 영역(종교와원불교)']);
+    expect(summarizeShortfalls(categories, [], (k, p) => translate('en', k, p))).toEqual(['Founding philosophy area (종교와원불교)']);
+  });
+
+  it('영역을 모두 들었거나 영역 판정이 없는 학과면 예전과 같다', () => {
+    const done = [{ ...categories[0], areas: areas.map((a) => ({ ...a, satisfied: true, missing: [] })) }, categories[1]];
+    expect(buildRequirementGroups(done).liberalArts.requiredSatisfied).toBe(true);
+    expect(summarizeShortfalls(done, [])).toEqual([]);
+    const noAreas = [{ category: '교양필수', earnedCredits: 5, requiredCredits: 5 }, categories[1]];
+    expect(buildRequirementGroups(noAreas).liberalArts.requiredSatisfied).toBe(true);
+  });
+
+  it('괄호로 끝나는 마지막 항목은 괄호 앞 글자로 조사를 고른다', () => {
+    expect(formatShortfallSentence(['대학생활 영역(대학생활과자기혁신)'])).toBe('대학생활 영역(대학생활과자기혁신)이 부족해요.');
+    expect(formatShortfallSentence(['건학이념 영역(종교와원불교)'])).toBe('건학이념 영역(종교와원불교)가 부족해요.');
+    expect(formatShortfallSentence(['전공 66학점(그중 기본전공 24학점)'])).toBe('전공 66학점(그중 기본전공 24학점)이 부족해요.');
+  });
+});
+
+describe('광역 계열전공 이수구분별 학점(#378 E-3)', () => {
+  const majorAreaCredits = {
+    areas: [
+      { area: '기초', required: 12, earned: 12, satisfied: true },
+      { area: '심화', required: 15, earned: 9, satisfied: false },
+      { area: '응용', required: 9, earned: 0, satisfied: false },
+    ],
+    unknownCredits: 3,
+    satisfied: false,
+  };
+  // 계열 과목은 모두 전공선택으로 저장돼 전공필수(기본전공) 풀이 0이다
+  const categories = [
+    { category: '전공', earnedCredits: 21, requiredCredits: 72, baseShortfall: 36 },
+  ];
+
+  it('"그중 기본전공 36학점" 대신 모자란 구분을 알린다', () => {
+    expect(summarizeShortfalls(categories, [], null, majorAreaCredits)).toEqual(['전공 51학점', '심화전공 6학점', '응용전공 9학점']);
+    expect(summarizeShortfalls(categories, [], (k, p) => translate('en', k, p), majorAreaCredits)).toContain('Advanced major: 6 credits');
+  });
+
+  it('기본전공 충족 표시는 감추고, 구분별 학점이 없으면 예전과 같다', () => {
+    const raw = [{ category: '전공필수', earnedCredits: 0, requiredCredits: 36 }, { category: '전공선택', earnedCredits: 21, requiredCredits: 36 }];
+    expect(buildRequirementGroups(raw, majorAreaCredits).major.baseSatisfied).toBeNull();
+    expect(buildRequirementGroups(raw).major.baseSatisfied).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
-const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
+const { isBroadSeriesStudent } = require('../majorTrackType');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
   checkEligibility,
@@ -142,6 +143,32 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     }
   }
 
+  // 광역 계열전공 이수유형(시행규칙 제7조 제2항, #378 E-3). 시드의 계열 전공 행은 전공심화형 기준이다 — 전공필수 36(기초·심화·응용 최소 학점의
+  // 풀) + 전공선택 나머지(계열별 66~72). 다른 유형은 주전공 학점만 바꾸고, 줄어든 만큼은 일반선택이 흡수해 졸업학점은 그대로 둔다.
+  // 전과·편입 완화를 받은 경우(최소전공 행)는 유형과 무관한 별도 기준이라 건드리지 않는다.
+  if (isBroadSeriesStudent({ departmentName, admissionYear: ctx.admissionYear }) && !adjustments.includes('MAJOR_RELAXATION')) {
+    const type = ctx.majorTrackType;
+    const pool = rows.find((r) => r.category === '전공필수' && r.enrollmentType == null);
+    const majorElective = rows.find((r) => r.category === '전공선택' && r.enrollmentType == null);
+    if (!type) {
+      flags.push(makeFlag('MAJOR_TRACK_UNANSWERED'));
+    } else if (type !== 'INTENSIVE' && pool && majorElective) {
+      const target = type === 'CONVERGENCE' ? Math.max(0, CONVERGENCE_MAIN_MAJOR_CREDITS - Number(pool.requiredCredits)) : 0;
+      const moved = Number(majorElective.requiredCredits) - target;
+      const label = { DOUBLE_MAJOR: '복수전공형 — 주전공 36학점', CONVERGENCE: `전공융합형 — 주전공 ${CONVERGENCE_MAIN_MAJOR_CREDITS}학점`, UNDECIDED: '이수유형 미정 — 기초·심화·응용 최소 학점만' }[type];
+      const elective = rows.find((r) => r.category === '일반선택' && r.enrollmentType == null);
+      rows = rows.map((r) => {
+        if (r === majorElective) return { ...r, requiredCredits: target, description: `${label}(시행규칙 제7조 제2항)` };
+        if (r === elective) return { ...r, requiredCredits: Number(r.requiredCredits) + moved, description: `${r.description || '자유선택'} — ${label}이라 전공선택 ${moved}학점을 자유선택으로 옮김` };
+        return r;
+      });
+      if (!elective && moved > 0) rows.push({ id: null, category: '일반선택', requiredCredits: moved, description: `자유선택 — ${label}`, enrollmentType: null, minCourseCount: null, requiredCourses: [] });
+      flags.push(makeFlag(`MAJOR_TRACK_${type}`));
+      adjustments.push('MAJOR_TRACK_TYPE');
+    }
+    basis.push('ENF_ART7_BROAD_SERIES');
+  }
+
   return { rows, adjustments, flags, basis, resolvedTransferTotal };
 }
 
@@ -246,6 +273,10 @@ function evaluate(ctx, data) {
         ...(ctx.enrollmentType === 'TRANSFER_ADMISSION' && isGenericCertificationRow(r) ? { conditionalExemption: 'BACHELOR_TRANSFER' } : {}),
       })),
       adjustments: built.adjustments,
+      // 광역 계열전공의 이수구분별 최소 학점(시행규칙 제7조 제3항) — 졸업진단이 과목의 기초·심화·응용으로 판정한다. 그 외(완화 포함)는 null.
+      majorAreaMinimums: isBroadSeriesStudent({ departmentName: department.name, admissionYear: ctx.admissionYear }) && !built.adjustments.includes('MAJOR_RELAXATION')
+        ? (BROAD_SERIES_AREA_MINIMUMS[department.name] || BROAD_SERIES_AREA_MINIMUMS.default)
+        : null,
     };
   }
 
@@ -271,6 +302,14 @@ function evaluate(ctx, data) {
   }
   // 학과 내규로 전공 과목을 정하는 학과(constants.BYLAW_MAJOR_DEPARTMENTS) — 숫자는 그대로 두고 학과 확인 안내만 붙인다.
   if (built && department && BYLAW_MAJOR_DEPARTMENTS.includes(department.name)) reqFlags.push(makeFlag('DEPARTMENT_BYLAW_MAJOR'));
+  // 학과가 생기기 전 학번의 전과생 — dbProvider가 학과 첫 학번 행과 학번별 표로 만든 행이다(newDepartmentCohort.js, #378).
+  // 전공 학점은 첫 학번 값이라 추정이고, 교양·졸업학점을 표에서 못 찾았으면 그것도 첫 학번 값이라 따로 알린다.
+  if (built && data.cohortFallback) {
+    const fb = data.cohortFallback;
+    reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT', { firstCohort: fb.firstCohort, college: fb.college }));
+    if (!fb.liberalFromTable || !fb.graduationFromTable) reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_LIBERAL_ASSUMED', { firstCohort: fb.firstCohort }));
+    reqBasis.push('ENF_ART5_COHORT_BASIS');
+  }
   reqFlags.push(...textFlagsFor(reqBasis));
 
   const fromRegulation = built ? built.flags.filter((f) => f.code === 'MAJOR_MINIMUM_FROM_REGULATION') : [];

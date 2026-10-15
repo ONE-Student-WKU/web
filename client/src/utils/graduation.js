@@ -49,7 +49,15 @@ export function mergeMajorCategories(categories) {
 // "22학점"처럼 목표로 보이는 숫자를 어느 카드에든 올리면 "이것도 따로 채워야 하나?"는
 // 오해가 생긴다는 실사용 피드백 반영 — GraduationStatus.jsx가 status.categories에서 직접
 // 찾아 "전체 이수학점" 카드 쪽 참고 문구로만 붙인다.
-export function buildRequirementGroups(categories) {
+// 교양필수 행에 서버가 붙인 영역 판정(areas) 중 아직 듣지 않은 영역. 영역 판정이 없는 학과·학번이면 빈 배열.
+export function missingLiberalAreas(categories) {
+  const required = (categories || []).find((c) => c.category === '교양필수');
+  return required && required.areas ? required.areas.filter((a) => !a.satisfied) : [];
+}
+
+// majorAreaCredits: 광역 계열전공의 이수구분별 학점(서버 graduationService). 있으면 기본전공(전공필수 풀) 충족 표시 대신 그 값을 쓴다 —
+// 계열 과목은 기초·심화·응용이 모두 전공선택으로 저장돼 전공필수 풀이 채워지지 않기 때문이다(#378 E-3).
+export function buildRequirementGroups(categories, majorAreaCredits = null) {
   if (!categories) return null;
   const find = (name) => categories.find((c) => c.category === name);
 
@@ -82,11 +90,14 @@ export function buildRequirementGroups(categories) {
       ? {
           earnedCredits: liberalRequired.earnedCredits + liberalElective.earnedCredits,
           requiredCredits: liberalRequired.requiredCredits + liberalElective.requiredCredits,
-          requiredSatisfied: liberalRequired.earnedCredits >= liberalRequired.requiredCredits,
+          // 학점을 채워도 영역 과목(종교와원불교 등)을 안 들었으면 미충족이다.
+          requiredSatisfied: liberalRequired.earnedCredits >= liberalRequired.requiredCredits && missingLiberalAreas(categories).length === 0,
+          missingAreas: missingLiberalAreas(categories),
           electiveEarnedCredits: liberalElective.earnedCredits,
         }
       : null;
 
+  if (major && majorAreaCredits) major.baseSatisfied = null;
   return { major, liberalArts };
 }
 
@@ -117,8 +128,10 @@ export function translateCategory(raw, t) {
 
 // t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
 // 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
-export function summarizeShortfalls(categories, certifications, t = null) {
+export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null) {
   const items = [];
+  // 광역 계열전공은 "그중 기본전공 N학점" 대신 이수구분별 학점(기초·심화·응용)으로 알린다(아래).
+  if (majorAreaCredits) categories = (categories || []).map((c) => ({ ...c, baseShortfall: 0 }));
   const label = (raw) => translateCategory(raw, t);
 
   for (const c of categories || []) {
@@ -142,6 +155,19 @@ export function summarizeShortfalls(categories, certifications, t = null) {
     } else if (baseShortfall > 0) {
       items.push(t ? t('grad.shortfallCredits', { category: label(base), n: baseShortfall }) : `${base} ${baseShortfall}학점`);
     }
+  }
+
+  // 광역 계열전공의 이수구분별 최소 학점(시행규칙 제7조 제3항) — 모자란 구분만.
+  for (const a of (majorAreaCredits && majorAreaCredits.areas) || []) {
+    const n = a.required - a.earned;
+    if (n > 0) items.push(t ? t('grad.shortfallMajorArea', { area: label(a.area), n }) : `${a.area}전공 ${n}학점`);
+  }
+
+  // 교양필수 영역(건학이념·대학생활·전공탐색과진로)을 아직 듣지 않았으면 학점과 따로 알린다 — 학점을 채웠어도 영역 과목이
+  // 빠지면 미충족이다(서버 liberalRequiredAreas.js). 과목명은 서버 데이터라 번역하지 않는다.
+  for (const area of missingLiberalAreas(categories)) {
+    const courses = area.missing.join('·');
+    items.push(t ? t('grad.shortfallLiberalArea', { area: label(area.area), courses }) : `${area.area} 영역(${courses})`);
   }
 
   // optional(교직기본이수 — 교직과정 이수자만 해당)은 졸업 부족 요건에 넣지 않는다. 화면 카드에는 안내 문구와 함께 남는다.

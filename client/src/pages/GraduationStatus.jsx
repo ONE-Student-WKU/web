@@ -63,8 +63,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t) : [];
-  const groups = status ? buildRequirementGroups(status.categories) : null;
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : [];
+  const groups = status ? buildRequirementGroups(status.categories, status.majorAreaCredits) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
   const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
@@ -198,6 +198,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-subcheck-label">{groups.major.baseSatisfied ? t('grad.baseMet') : t('grad.baseUnmet')}</p>
                   </div>
                 )}
+                {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
+                {status.majorAreaCredits && (
+                  <>
+                    {status.majorAreaCredits.areas.map((a) => (
+                      <div className="grad-subcheck-row" key={a.area}>
+                        <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {a.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">{t('grad.majorArea', { area: translateCategory(a.area, t), earned: a.earned, required: a.required })}</p>
+                      </div>
+                    ))}
+                    {status.majorAreaCredits.unknownCredits > 0 && (
+                      <p className="grad-flex-note">{t('grad.majorAreaUnknown', { n: status.majorAreaCredits.unknownCredits })}</p>
+                    )}
+                    <p className="grad-flex-note">{t('grad.majorTrackType', { type: status.majorTrackType ? t(`trackType.${status.majorTrackType}`) : t('grad.majorTrackTypeNone') })}</p>
+                  </>
+                )}
               </section>
             )}
 
@@ -241,6 +258,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     {groups.liberalArts.requiredSatisfied ? t('grad.liberalRequiredMet') : t('grad.liberalRequiredUnmet')}
                   </p>
                 </div>
+                {groups.liberalArts.missingAreas.length > 0 && (
+                  <p className="grad-flex-note">
+                    {t('grad.liberalAreasMissing', {
+                      items: groups.liberalArts.missingAreas
+                        .map((a) => t('grad.shortfallLiberalArea', { area: translateCategory(a.area, t), courses: a.missing.join('·') }))
+                        .join(', '),
+                    })}
+                  </p>
+                )}
                 <p className="grad-flex-note">{t('grad.electiveEarned', { n: groups.liberalArts.electiveEarnedCredits })}</p>
               </section>
             )}
@@ -281,6 +307,31 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   </section>
                 )}
               </>
+            )}
+
+            {/* 학칙시행규칙 제9조 제1호 학과(의·치·한의·약·간호·응급구조·보건의료)의 지정 전공 과목 — 어떤 과목이 지정인지는 학과 내규라
+                판정하지 않고 편성표의 전공기초·전공필수 목록과 학과 확인 안내만 보여 준다(서버 designatedMajorCourses.js). 부족 요건 요약에는 넣지 않는다. */}
+            {status.designatedMajorCourses && status.designatedMajorCourses.courses.length > 0 && (
+              <section className="home-card">
+                <p className="home-card-label">{t('grad.designated.title')}</p>
+                <p className="grad-cert-desc">{t('grad.designated.note', { year: status.designatedMajorCourses.courseListYear })}</p>
+                <details className="grad-designated">
+                  <summary className="grad-flex-note">
+                    {t('grad.designated.summary', {
+                      n: status.designatedMajorCourses.courses.length,
+                      m: status.designatedMajorCourses.courses.filter((c) => c.taken).length,
+                    })}
+                  </summary>
+                  <ul className="grad-designated-list">
+                    {status.designatedMajorCourses.courses.map((c) => (
+                      <li key={c.courseName}>
+                        {c.taken && <IconCheck size={11} />} {c.courseName}
+                        <span className="grad-flex-note"> · {t('home.gradeLevel', { grade: c.grade })} · {translateCategory(c.category, t)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </section>
             )}
 
             <section className={shortfalls.length > 0 ? 'grad-shortfall-box' : 'grad-shortfall-box ok'}>
