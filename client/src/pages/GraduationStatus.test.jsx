@@ -171,3 +171,26 @@ describe('교양필수 영역과 학과 지정 전공 과목(#378 결정 1-1 A·
     expect(document.querySelector('.grad-shortfall-box.ok')).not.toBeNull();
   });
 });
+
+describe('광역 계열전공 이수구분별 학점과 이수유형(#378 E-3)', () => {
+  beforeEach(() => resetGraduationCache && resetGraduationCache());
+  it('구분별 학점, 구분을 모르는 학점 안내, 이수유형을 보여 주고 모자란 구분을 부족 요건에 넣는다', async () => {
+    await renderWith(status({
+      majorTrackType: 'INTENSIVE',
+      majorAreaCredits: {
+        areas: [
+          { area: '기초', required: 12, earned: 12, satisfied: true },
+          { area: '심화', required: 15, earned: 9, satisfied: false },
+          { area: '응용', required: 9, earned: 9, satisfied: true },
+        ],
+        unknownCredits: 3,
+        satisfied: false,
+      },
+    }));
+    expect(screen.getByText('심화전공 9/15학점')).toBeInTheDocument();
+    expect(screen.getByText(/구분을 알 수 없는 전공 3학점/)).toBeInTheDocument();
+    expect(screen.getByText('전공 이수유형: 전공심화형')).toBeInTheDocument();
+    const summary = [...document.querySelectorAll('.grad-shortfall-list li')].map((li) => li.textContent);
+    expect(summary).toContain('심화전공 6학점');
+  });
+});

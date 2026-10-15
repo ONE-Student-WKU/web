@@ -63,8 +63,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
-  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t) : [];
-  const groups = status ? buildRequirementGroups(status.categories) : null;
+  const shortfalls = status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : [];
+  const groups = status ? buildRequirementGroups(status.categories, status.majorAreaCredits) : null;
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
   const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
@@ -197,6 +197,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     </span>
                     <p className="grad-subcheck-label">{groups.major.baseSatisfied ? t('grad.baseMet') : t('grad.baseUnmet')}</p>
                   </div>
+                )}
+                {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
+                {status.majorAreaCredits && (
+                  <>
+                    {status.majorAreaCredits.areas.map((a) => (
+                      <div className="grad-subcheck-row" key={a.area}>
+                        <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                          {a.satisfied && <IconCheck size={11} />}
+                        </span>
+                        <p className="grad-subcheck-label">{t('grad.majorArea', { area: translateCategory(a.area, t), earned: a.earned, required: a.required })}</p>
+                      </div>
+                    ))}
+                    {status.majorAreaCredits.unknownCredits > 0 && (
+                      <p className="grad-flex-note">{t('grad.majorAreaUnknown', { n: status.majorAreaCredits.unknownCredits })}</p>
+                    )}
+                    <p className="grad-flex-note">{t('grad.majorTrackType', { type: status.majorTrackType ? t(`trackType.${status.majorTrackType}`) : t('grad.majorTrackTypeNone') })}</p>
+                  </>
                 )}
               </section>
             )}

@@ -55,7 +55,9 @@ export function missingLiberalAreas(categories) {
   return required && required.areas ? required.areas.filter((a) => !a.satisfied) : [];
 }
 
-export function buildRequirementGroups(categories) {
+// majorAreaCredits: 광역 계열전공의 이수구분별 학점(서버 graduationService). 있으면 기본전공(전공필수 풀) 충족 표시 대신 그 값을 쓴다 —
+// 계열 과목은 기초·심화·응용이 모두 전공선택으로 저장돼 전공필수 풀이 채워지지 않기 때문이다(#378 E-3).
+export function buildRequirementGroups(categories, majorAreaCredits = null) {
   if (!categories) return null;
   const find = (name) => categories.find((c) => c.category === name);
 
@@ -95,6 +97,7 @@ export function buildRequirementGroups(categories) {
         }
       : null;
 
+  if (major && majorAreaCredits) major.baseSatisfied = null;
   return { major, liberalArts };
 }
 
@@ -125,8 +128,10 @@ export function translateCategory(raw, t) {
 
 // t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
 // 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
-export function summarizeShortfalls(categories, certifications, t = null) {
+export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null) {
   const items = [];
+  // 광역 계열전공은 "그중 기본전공 N학점" 대신 이수구분별 학점(기초·심화·응용)으로 알린다(아래).
+  if (majorAreaCredits) categories = (categories || []).map((c) => ({ ...c, baseShortfall: 0 }));
   const label = (raw) => translateCategory(raw, t);
 
   for (const c of categories || []) {
@@ -150,6 +155,12 @@ export function summarizeShortfalls(categories, certifications, t = null) {
     } else if (baseShortfall > 0) {
       items.push(t ? t('grad.shortfallCredits', { category: label(base), n: baseShortfall }) : `${base} ${baseShortfall}학점`);
     }
+  }
+
+  // 광역 계열전공의 이수구분별 최소 학점(시행규칙 제7조 제3항) — 모자란 구분만.
+  for (const a of (majorAreaCredits && majorAreaCredits.areas) || []) {
+    const n = a.required - a.earned;
+    if (n > 0) items.push(t ? t('grad.shortfallMajorArea', { area: label(a.area), n }) : `${a.area}전공 ${n}학점`);
   }
 
   // 교양필수 영역(건학이념·대학생활·전공탐색과진로)을 아직 듣지 않았으면 학점과 따로 알린다 — 학점을 채웠어도 영역 과목이
