@@ -49,3 +49,14 @@ test('C-1: 책자와 조회시스템이 다르면 조회시스템 — 2026 편�
   assert.ok(rows.length > 0);
   for (const c of rows) assert.equal(c.credits, '2');
 });
+
+test('결정 2-1 A(#378): 공학3계열 2026 졸업인증제는 공학1·2계열처럼 분류 이름을 포함하는 과목을 인정한다', () => {
+  const { evaluateCertifications } = require('../services/graduationService');
+  const [eng3] = cert2026('공학3계열');
+  assert.deepEqual(eng3.requiredCourses, cert2026('공학1계열')[0].requiredCourses);
+  const row = { category: eng3.category, description: eng3.description, min_course_count: eng3.minCourseCount, requiredCourses: eng3.requiredCourses };
+  const satisfied = (name) => evaluateCertifications([row], [{ name, letter_grade: 'A' }])[0].satisfied;
+  // 예전에는 컴소공·게임콘텐츠 과목명 4개만 인정해, 이름이 조금 다른 세부전공 과목은 미충족이었다
+  for (const name of ['캡스톤디자인1', '기업연계프로젝트2(종합설계2)', 'AI융합캡스톤디자인', '소프트웨어종합설계']) assert.equal(satisfied(name), true, name);
+  assert.equal(satisfied('프로젝트관리'), false);
+});

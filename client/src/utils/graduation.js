@@ -49,6 +49,12 @@ export function mergeMajorCategories(categories) {
 // "22학점"처럼 목표로 보이는 숫자를 어느 카드에든 올리면 "이것도 따로 채워야 하나?"는
 // 오해가 생긴다는 실사용 피드백 반영 — GraduationStatus.jsx가 status.categories에서 직접
 // 찾아 "전체 이수학점" 카드 쪽 참고 문구로만 붙인다.
+// 교양필수 행에 서버가 붙인 영역 판정(areas) 중 아직 듣지 않은 영역. 영역 판정이 없는 학과·학번이면 빈 배열.
+export function missingLiberalAreas(categories) {
+  const required = (categories || []).find((c) => c.category === '교양필수');
+  return required && required.areas ? required.areas.filter((a) => !a.satisfied) : [];
+}
+
 export function buildRequirementGroups(categories) {
   if (!categories) return null;
   const find = (name) => categories.find((c) => c.category === name);
@@ -82,7 +88,9 @@ export function buildRequirementGroups(categories) {
       ? {
           earnedCredits: liberalRequired.earnedCredits + liberalElective.earnedCredits,
           requiredCredits: liberalRequired.requiredCredits + liberalElective.requiredCredits,
-          requiredSatisfied: liberalRequired.earnedCredits >= liberalRequired.requiredCredits,
+          // 학점을 채워도 영역 과목(종교와원불교 등)을 안 들었으면 미충족이다.
+          requiredSatisfied: liberalRequired.earnedCredits >= liberalRequired.requiredCredits && missingLiberalAreas(categories).length === 0,
+          missingAreas: missingLiberalAreas(categories),
           electiveEarnedCredits: liberalElective.earnedCredits,
         }
       : null;
@@ -142,6 +150,13 @@ export function summarizeShortfalls(categories, certifications, t = null) {
     } else if (baseShortfall > 0) {
       items.push(t ? t('grad.shortfallCredits', { category: label(base), n: baseShortfall }) : `${base} ${baseShortfall}학점`);
     }
+  }
+
+  // 교양필수 영역(건학이념·대학생활·전공탐색과진로)을 아직 듣지 않았으면 학점과 따로 알린다 — 학점을 채웠어도 영역 과목이
+  // 빠지면 미충족이다(서버 liberalRequiredAreas.js). 과목명은 서버 데이터라 번역하지 않는다.
+  for (const area of missingLiberalAreas(categories)) {
+    const courses = area.missing.join('·');
+    items.push(t ? t('grad.shortfallLiberalArea', { area: label(area.area), courses }) : `${area.area} 영역(${courses})`);
   }
 
   // optional(교직기본이수 — 교직과정 이수자만 해당)은 졸업 부족 요건에 넣지 않는다. 화면 카드에는 안내 문구와 함께 남는다.

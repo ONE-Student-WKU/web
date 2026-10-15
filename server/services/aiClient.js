@@ -71,7 +71,11 @@ function buildGraduationStatusNote(graduationStatus) {
   if (!graduationStatus) return null;
 
   const { totalEarnedCredits, totalRequiredCredits, categories, certifications } = graduationStatus;
-  const categoryLines = categories.map((c) => `  - ${c.category}: ${c.earnedCredits}/${c.requiredCredits}학점`).join('\n');
+  // 교양필수는 학점과 별개로 영역 과목을 들었는지도 요건이다(liberalRequiredAreas.js) — 학점을 채웠어도 영역 과목이 빠졌으면 미충족이다.
+  const areaText = (areas) => areas.map((a) => `${a.area}(${a.courses.join('·')}) ${a.satisfied ? '이수' : `미이수${a.completed.length ? ` — ${a.missing.join('·')} 남음` : ''}`}`).join(', ');
+  const categoryLines = categories
+    .map((c) => `  - ${c.category}: ${c.earnedCredits}/${c.requiredCredits}학점${c.areas ? ` — 영역: ${areaText(c.areas)}` : ''}`)
+    .join('\n');
   const certLines = certifications
     .map((c) =>
       c.optional
@@ -85,6 +89,11 @@ function buildGraduationStatusNote(graduationStatus) {
   // 자기계발심층상담은 판정하지 않는다(counseling.js, D-65). 기준과 확인 경로만 안내하게 한다.
   const counseling = graduationStatus.counseling;
   const counselingCohort = counseling && { FROM_2020: '2020학번부터', BEFORE_2020: '2016~2019학번', TRANSFER: '편입생' }[counseling.cohort];
+  // 시행규칙 제9조 제1호 학과의 지정 전공 과목 — 어떤 과목이 지정인지 학과 내규라 판정하지 않는다(designatedMajorCourses.js).
+  const designated = graduationStatus.designatedMajorCourses;
+  const designatedLine = designated
+    ? `학과 지정 전공 과목(학칙시행규칙 제9조): 판정하지 않음 — 이 학과는 지정된 전공기초·전공필수 과목을 반드시 이수해야 하지만 어떤 과목이 지정인지는 학과 내규로 정해 서비스가 알 수 없다. ${designated.courseListYear}학년도 편성표의 전공기초·전공필수 ${designated.courses.length}과목 중 이수 기록이 있는 과목은 ${designated.courses.filter((c) => c.taken).length}과목이다. 지정 과목을 "충족/미충족"으로 단정하지 말고 학과 사무실 확인을 안내하라.`
+    : null;
   const counselingLine = counseling
     ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
     : null;
@@ -111,6 +120,7 @@ function buildGraduationStatusNote(graduationStatus) {
 카테고리별:
 ${categoryLines}
 ${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
+${designatedLine || ''}
 
 주의:
 - 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다
