@@ -182,6 +182,14 @@ test('buildProgressNote: 휴학 시기를 모를 때(추정 + 휴학 있음)만 
   assert.doesNotMatch(buildProgressNote({ ...fromRecords, completedCourseNames: [] }), ask);
 });
 
+test('buildSystemPrompt: 메뉴 경로를 지어내지 않고, 이전 답변을 이번 근거에 없다는 이유만으로 뒤집지 않게 지시한다(#378)', () => {
+  const sys = buildSystemPrompt(null, null, null, 'ko');
+  assert.match(sys, /웹정보서비스 → 정보서비스 → 교육과정조회 →\s*교육과정조회\(학과별\)/);
+  assert.match(sys, /근거에 없는 메뉴 이름을\s*지어내지 마라/);
+  // 로컬 재현(2026-10-15): 변경 이력을 맞게 답한 다음 질문에서 "이전 답변은 근거 없는 추정이었다"고 스스로 정정했다.
+  assert.match(sys, /이번 근거에 없다는 이유만으로 이전 답변이 틀렸다거나 추정이었다고 정정하지 말고/);
+});
+
 test('buildSystemPrompt: progress를 넘기면 포함하고, 안 넘기면 기존 프롬프트와 같다', () => {
   const base = buildSystemPrompt(null, null, null, 'ko');
   assert.equal(buildSystemPrompt(null, null, null, 'ko', null), base);
