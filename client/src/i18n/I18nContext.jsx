@@ -62,10 +62,32 @@ export function consumeLanguageChosenBeforeLogin() {
   }
 }
 
+// 한국어 조사 고르기: 자리표시자 바로 뒤의 "은(는)"·"이(가)"·"을(를)"·"과(와)"·"(으)로"를 끼워 넣은 값의 마지막 글자 받침에 맞게 고른다.
+// 예: "{dept}은(는)" + 디자인학부 → "디자인학부는", 국어교육과 → "국어교육과는", 공학3계열 → "공학3계열은"(#378).
+// 마지막 글자가 한글이 아니면(숫자·괄호 등) 받침을 알 수 없어 원래 표기("은(는)")를 그대로 둔다.
+const PARTICLES = {
+  '은(는)': ['은', '는'],
+  '이(가)': ['이', '가'],
+  '을(를)': ['을', '를'],
+  '과(와)': ['과', '와'],
+};
+function pickParticle(value, particle) {
+  const code = value.charCodeAt(value.length - 1);
+  if (!(code >= 0xac00 && code <= 0xd7a3)) return particle;
+  const jong = (code - 0xac00) % 28; // 0이면 받침 없음, 8이면 ㄹ 받침
+  if (particle === '(으)로') return jong === 0 || jong === 8 ? '로' : '으로';
+  const [withFinal, withoutFinal] = PARTICLES[particle];
+  return jong === 0 ? withoutFinal : withFinal;
+}
+
 // "{name}" 자리표시자를 params 값으로 치환. 값이 없으면 자리표시자를 그대로 둔다(누락을 눈에 띄게).
 function interpolate(template, params) {
   if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name) => (params[name] === undefined ? match : String(params[name])));
+  return template.replace(/\{(\w+)\}(은\(는\)|이\(가\)|을\(를\)|과\(와\)|\(으\)로)?/g, (match, name, particle) => {
+    if (params[name] === undefined) return match;
+    const value = String(params[name]);
+    return particle ? value + pickParticle(value, particle) : value;
+  });
 }
 
 function lookupTemplate(lang, key) {

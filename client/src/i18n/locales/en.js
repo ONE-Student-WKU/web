@@ -64,6 +64,7 @@ export default {
   'home.gradeTerm': 'Year {grade}, Semester {semester}',
   'home.gradeTermOnLeave': 'Year {grade}, Semester {semester} · On leave',
   'home.gradeExtended': '{n} extra semester(s) beyond the program length',
+  'home.gradeExtendedOnLeave': '{n} extra semester(s) beyond the program length · On leave',
   'home.gradeFix': 'Is your year wrong?',
   'home.creditProgress': 'Credit progress',
   'home.creditsWithTotal': ' / {total} credits',

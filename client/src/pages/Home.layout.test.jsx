@@ -121,6 +121,10 @@ describe('Home — 지금 학년·학기는 서버 값(academicStanding)을 그�
     render(<Home user={{ ...USER, academicStanding: standing({ grade: 4, gradeSemester: null, extended: true, extraTerms: 2 }) }} onOpenHomeEdit={() => {}} />);
     expect(await screen.findByText('초과 2학기')).toBeInTheDocument();
   });
+  it('초과 학기에 휴학했으면 "휴학 중"도 함께 보여 준다(#378 — 예전에는 빠졌다)', async () => {
+    render(<Home user={{ ...USER, academicStanding: standing({ grade: 4, gradeSemester: null, extended: true, extraTerms: 1, onLeave: true }) }} onOpenHomeEdit={() => {}} />);
+    expect(await screen.findByText('초과 1학기 · 휴학 중')).toBeInTheDocument();
+  });
   it('서버 값이 없으면(학번 미입력) 학년을 표시하지 않는다', async () => {
     render(<Home user={{ ...USER, academicStanding: null }} onOpenHomeEdit={() => {}} />);
     await screen.findByText(/경영학부/);
