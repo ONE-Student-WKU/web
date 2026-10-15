@@ -455,3 +455,27 @@ describe('다전공(복수전공·부전공, #378 G-1)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: null, secondMajorType: null }));
   });
 });
+
+describe('전과생 전공학점 인정 신청(D-77)', () => {
+  const mcUser = { ...USER, enrollmentType: 'MAJOR_CHANGE', majorChangeGrade: 2, majorChangeYear: 2022, majorChangeSemester: 2, majorChangeRecognition: null };
+
+  it('답하지 않았으면 "안 했어요"로 보이고, 체크하면 true로 보낸다', async () => {
+    render(<Onboarding user={mcUser} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /전공학점 인정 신청/ });
+    expect(row).toHaveTextContent('안 했어요');
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole('checkbox', { name: /전공학점 인정 신청/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('button', { name: /전공학점 인정 신청/ })).toHaveTextContent('했어요');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorChangeRecognition: true }));
+  });
+
+  it('전과생이 아니면 항목이 없고 null로 보낸다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    await screen.findByRole('button', { name: /학과/ });
+    expect(screen.queryByRole('button', { name: /전공학점 인정 신청/ })).toBeNull();
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorChangeRecognition: null }));
+  });
+});

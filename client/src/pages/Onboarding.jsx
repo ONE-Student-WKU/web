@@ -135,6 +135,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     majorChangeYear: editMode ? user.majorChangeYear : null,
     majorChangeSemester: editMode ? user.majorChangeSemester : null,
     majorChangeGrade: editMode ? user.majorChangeGrade : null,
+    // 전과생 전공학점 인정 신청을 했는가(D-77). 전과 전에 들은 같은 과목은 신청한 학생만 전공선택으로 센다. 답하지 않았으면 안 한 것으로 본다.
+    majorChangeRecognition: editMode ? user.majorChangeRecognition === true : false,
     // 편입생 전용. 학번(admissionYear)은 편입 연도 − 편입 학년 + 1로 정해지고(제14조③), 편입 연도는 저장하지 않고 학번 + 학년 − 1로 되돌린다.
     // 옛 방식으로 입력한 편입생은 transferGrade가 없어 둘 다 null — 요약 화면에서 "선택 필요"로 보여 다시 입력하게 한다.
     transferGrade: editMode ? user.transferGrade ?? null : null,
@@ -433,6 +435,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       majorChangeGrade: isMajorChange ? answers.majorChangeGrade : null,
       majorChangeYear: isMajorChange ? answers.majorChangeYear : null,
       majorChangeSemester: isMajorChange ? answers.majorChangeSemester : null,
+      majorChangeRecognition: isMajorChange ? answers.majorChangeRecognition : null,
       transferGrade: isTransfer ? answers.transferGrade : null,
       transferRecognizedCredits: isTransfer ? recognized.value : null,
       teachingCourse: teachingAvailable ? answers.teachingCourse : null,
@@ -801,6 +804,17 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <p className="onb-hint">{t('onb.mc.gradeHint', { naive: gradeRange.naive })}</p>
               )}
             </div>
+            <div className="onb-field-group">
+              <label className="auth-remember-field">
+                <input
+                  type="checkbox"
+                  checked={answers.majorChangeRecognition}
+                  onChange={(e) => setAnswers((a) => ({ ...a, majorChangeRecognition: e.target.checked }))}
+                />
+                {t('onb.mc.recognition')}
+              </label>
+              <p className="onb-hint">{t('onb.mc.recognitionHint')}</p>
+            </div>
           </>
         )}
 
@@ -887,6 +901,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                         })
                       : null
                   }
+                  editable={editMode}
+                  onClick={() => setManualStep('majorChange')}
+                />
+              )}
+              {answers.enrollmentType === 'MAJOR_CHANGE' && (
+                <SummaryRow
+                  label={t('onb.summary.recognition')}
+                  value={t(answers.majorChangeRecognition ? 'onb.summary.recognitionYes' : 'onb.summary.recognitionNo')}
                   editable={editMode}
                   onClick={() => setManualStep('majorChange')}
                 />

@@ -202,6 +202,18 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
   return items;
 }
 
+// 이 진단이 판정하지 않아 학생이 직접 확인해야 하는 요건(사전 키). 부족 요건이 하나도 없을 때 홈이 "모든 요건 충족" 대신 이 목록을 함께
+// 보여 준다 — 판정하지 않는 요건이 남았는데 "모두 충족"이라고 하면 졸업 가능으로 읽힌다(2026-10-16 규정 대조).
+export function uncheckedRequirementKeys(status) {
+  if (!status) return [];
+  const keys = [];
+  if (status.counseling) keys.push('home.unchecked.counseling');
+  if (status.designatedMajorCourses) keys.push('home.unchecked.designated');
+  if (status.secondMajor && status.secondMajor.type === 'MINOR') keys.push('home.unchecked.minorDesignated');
+  if (status.majorTrackType === 'CONVERGENCE') keys.push('home.unchecked.microDegree');
+  return keys;
+}
+
 // 졸업사정 등록기간(시행규칙 제118조 제1호)이 모자란 학기 수 — 학점·요건을 다 채웠을 때만 센다(#378 H-2 결정 A: 그 전에는
 // 정보로만 보여 주고 강조하지 않는다). 모자라지 않거나 강조할 때가 아니면 0.
 export function registrationTermShortage(status, shortfalls) {

@@ -180,6 +180,17 @@ function currentStandingOf(student, { today = todayKst() } = {}) {
 
 // 조기졸업자는 6학기 이상 등록하면 된다(시행규칙 제118조 제1호 단서, 학칙 제25조 제5항). 4년제 과정에만 안내한다.
 const EARLY_GRADUATION_TERMS = 6;
+// 조기졸업을 신청할 수 없는 학과(시행규칙 제126조 제2항 제6호): 의과대학, 치과대학, 한의과대학, 약학대학, 간호대학, 건축학과, 보건계열 9개 학과.
+// 전과생·편입생(제4호)도 신청할 수 없다. 재입학생(제4호)과 학사구조조정 소속변경자(제5호)는 입력받지 않아 가려내지 못한다.
+const EARLY_GRADUATION_RESTRICTED_DEPARTMENTS = new Set([
+  '의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과', '간호학과', '건축학과',
+  '작업치료학과', '임상병리학과', '물리치료학과', '방사선학과', '치기공학과', '치위생학과', '응급구조학과', '안경광학과',
+]);
+function canGraduateEarly(student, programYears) {
+  if (programYears !== DEFAULT_PROGRAM_YEARS) return false; // 전문학사(제7호)·5·6년제
+  if (student.enrollment_type === 'MAJOR_CHANGE' || student.enrollment_type === 'TRANSFER_ADMISSION') return false;
+  return !EARLY_GRADUATION_RESTRICTED_DEPARTMENTS.has(student.department_name);
+}
 
 /**
  * 졸업사정의 등록기간(시행규칙 제118조 제1호: 수업연한 이상 등록한 자)을 셀 등록 학기 수(#378 H-2, 결정 A). 프로필만으로 센다(홈과 같은 값).
@@ -197,7 +208,8 @@ function registrationTermsOf(student, { today = todayKst() } = {}) {
   return {
     registered: standing.enrolledTermNumber + (startGrade - 1) * 2,
     required: programYears * 2,
-    earlyGraduation: programYears === DEFAULT_PROGRAM_YEARS ? EARLY_GRADUATION_TERMS : null,
+    // 조기졸업 6학기는 신청할 수 있는 학생에게만 안내한다(제126조 제2항 — 2026-10-16 규정 대조에서 찾음).
+    earlyGraduation: canGraduateEarly(student, programYears) ? EARLY_GRADUATION_TERMS : null,
     // 휴학 기간을 아직 답하지 않은 계정은 누적 휴학 학기 수로만 센 값이다(시기를 모름).
     estimated: standing.source === 'ESTIMATED',
   };

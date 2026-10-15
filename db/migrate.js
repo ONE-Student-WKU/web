@@ -139,6 +139,19 @@ async function ensureStudentMajorTrackTypeColumn(connection) {
   }
 }
 
+// 전과생 전공학점 인정 신청 여부 guard(D-77) — 전과 전에 들은 과목이 전과한 학과의 같은 과목이면 신청한 학생만 전공선택으로 인정한다
+// (학교 전과 안내 11절, 시행규칙 제115조). NULL은 답하지 않음(신청 안 한 것으로 본다).
+async function ensureStudentMajorChangeRecognitionColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'major_change_recognition'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.major_change_recognition 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN major_change_recognition TINYINT(1) NULL AFTER major_change_semester');
+  }
+}
+
 // 다전공 구분 guard — 복수전공·부전공을 함께 받게 되면서(#378 G-1) 제2전공 학과(second_department_id)가 어느 쪽인지 남긴다.
 // NULL로 두면 기존 행은 복수전공으로 본다(이 칸을 처음 만들 때 "복수전공 학과"로 받았다).
 async function ensureStudentSecondMajorTypeColumn(connection) {
@@ -577,6 +590,7 @@ async function migrate() {
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentSecondMajorTypeColumn(connection);
+    await ensureStudentMajorChangeRecognitionColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentCourseCountedMajorColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);

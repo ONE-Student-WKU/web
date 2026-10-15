@@ -5,7 +5,8 @@ const { requireAuth } = require('../middleware/auth');
 const { perUserLimiter } = require('../middleware/security');
 const courseService = require('../services/courseService');
 const studentService = require('../services/studentService');
-const { loadCourseMajors, COUNTED_MAJORS } = require('../services/secondMajorCredits');
+const { COUNTED_MAJORS } = require('../services/secondMajorCredits');
+const { resolveCourseCounting } = require('../services/courseCounting');
 const { isIntInRange } = require('../services/inputValidation');
 const {
   parseCourseListPdf,
@@ -104,10 +105,10 @@ router.get('/', async (req, res, next) => {
   try {
     const { year, semester } = req.query;
     const rows = await courseService.listMyCourses(req.session.userId, { year, semester });
-    // 다전공 학생이면 과목마다 어느 전공으로 세는지(countedMajor: PRIMARY·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(#378 G-2).
     const student = await studentService.findById(req.session.userId);
-    const majors = await loadCourseMajors(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, counted_major: r.countedMajorChoice })));
-    const data = rows.map(({ countedMajorChoice, ...r }) => (majors ? { ...r, countedMajor: majors.get(r.id).major, countedMajorAuto: majors.get(r.id).auto } : r));
+    // 전과생(전과 전 과목)이나 다전공 학생이면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
+    const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
+    const data = rows.map(({ countedMajorChoice, ...r }) => (counting ? { ...r, countedMajor: counting.byId.get(r.id).counted, countedMajorAuto: counting.byId.get(r.id).auto } : r));
     res.status(200).json({ status: 200, code: 'MY_COURSES_SUCCESS', message: null, data });
   } catch (err) {
     next(err);

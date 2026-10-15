@@ -131,6 +131,12 @@ function buildGraduationStatusNote(graduationStatus) {
       '  - 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이다. 과목은 개설 학과와 학과 편성표로 자동으로 나눴고, 두 학과에 모두 있는 과목은 주전공으로 두었다 — 다르면 과목 관리에서 과목마다 바꿀 수 있다고 안내하라. 같은 과목을 두 전공에 중복 인정하는지는 학교 기준을 확인하지 못했으니 단정하지 마라.',
     ].join('\n')
     : null;
+  // 전과생의 전과 전 전공 과목(D-77) — 일반선택으로 셌고, 같은 과목은 인정 신청을 했을 때만 전공선택이다.
+  const prior = graduationStatus.priorMajorCourses;
+  const sumCredits = (list) => list.reduce((s, c) => s + c.credits, 0);
+  const priorLine = prior && (prior.demoted.length || prior.recognized.length)
+    ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 과목 관리에서 과목마다 바꿀 수 있다고 알려라.`
+    : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
   const registrationLine = terms
@@ -166,6 +172,7 @@ ${designatedLine || ''}
 ${majorAreaLine || ''}
 ${liberalAreaLine || ''}
 ${secondMajorLine || ''}
+${priorLine || ''}
 ${registrationLine || ''}
 
 주의:

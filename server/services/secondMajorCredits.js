@@ -18,7 +18,8 @@ const { isTeacherCollegeDepartment } = require('./teachingCourse');
  *    부전공은 21학점(「다전공이수에 관한 내규」 제5조 제3항). 광역 계열전공 복수전공형은 전공별 36학점(제7조 제2항 제1호).
  */
 
-const COUNTED_MAJORS = Object.freeze(['PRIMARY', 'SECOND']);
+// 학생이 과목마다 고친 값: PRIMARY 주전공 쪽(저장된 구분 그대로), SECOND 제2전공, GENERAL 일반선택(courseCounting.js).
+const COUNTED_MAJORS = Object.freeze(['PRIMARY', 'SECOND', 'GENERAL']);
 const SECOND_CANDIDATE_CATEGORIES = new Set(['전공필수', '전공선택', '전공', '일반선택']);
 const MINOR_CREDITS = 21;
 const BROAD_SERIES_DOUBLE_MAJOR_CREDITS = 36;
@@ -35,6 +36,7 @@ const RESTRICTED_TARGETS = new Set([...RESTRICTED_DEPARTMENTS, '동물보건학�
  * @returns {{ major: 'PRIMARY'|'SECOND', auto: boolean }}
  */
 function assignCourseMajor(course, ctx) {
+  if (course.counted_major === 'GENERAL') return { major: 'PRIMARY', auto: false };
   if (COUNTED_MAJORS.includes(course.counted_major)) return { major: course.counted_major, auto: false };
   if (!SECOND_CANDIDATE_CATEGORIES.has(course.category)) return { major: 'PRIMARY', auto: true };
   const dept = course.offering_department_id;
@@ -74,17 +76,6 @@ async function loadOfferingDepartments(studentId) {
 }
 
 /**
- * 학생 과목마다 어느 전공으로 세는지. 제2전공이 없으면 null.
- * @returns {Promise<Map<number, { major, auto }>> | null}
- */
-async function loadCourseMajors(student, courses) {
-  const ctx = await loadAssignmentContext(student);
-  if (!ctx) return null;
-  const offering = await loadOfferingDepartments(student.id);
-  return new Map(courses.map((c) => [c.id, assignCourseMajor({ ...c, offering_department_id: offering.get(c.id) ?? null }, ctx)]));
-}
-
-/**
  * 제2전공 요건 학점과 근거. 순수 함수 — 복수전공 최소전공은 호출자가 엔진으로 구해 넘긴다.
  * @param {{ type, broadSeriesDoubleMajorTrack: boolean, minimumMajorCredits: number|null }} p
  * @returns {{ required: number|null, basis: 'MINOR_21'|'BROAD_SERIES_36'|'DOUBLE_MINIMUM'|'DOUBLE_MINIMUM_UNKNOWN' }}
@@ -107,5 +98,5 @@ function isRestrictedCombination(primaryName, secondName) {
 
 module.exports = {
   COUNTED_MAJORS, MINOR_CREDITS, BROAD_SERIES_DOUBLE_MAJOR_CREDITS,
-  assignCourseMajor, loadAssignmentContext, loadCourseMajors, secondMajorRequirement, hasSecondThesis, isRestrictedCombination,
+  assignCourseMajor, loadAssignmentContext, curriculumNames, loadOfferingDepartments, secondMajorRequirement, hasSecondThesis, isRestrictedCombination,
 };

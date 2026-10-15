@@ -61,7 +61,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
-      majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
+      majorChangeGrade, majorChangeYear, majorChangeSemester, majorChangeRecognition, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
       secondDepartmentId, secondMajorType, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
@@ -158,6 +158,11 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (effectiveEnrollmentType === 'MAJOR_CHANGE' && majorChangeSemester === undefined && student.major_change_semester === null) {
       return res.status(400).json({ status: 400, code: 'REQUIRED_MAJOR_CHANGE_SEMESTER', message: null, data: null });
     }
+    // 전과생 전공학점 인정 신청 여부(true/false/null, D-77). 전과생이 아니면 받지 않는다.
+    if (majorChangeRecognition !== undefined && majorChangeRecognition !== null
+      && (typeof majorChangeRecognition !== 'boolean' || effectiveEnrollmentType !== 'MAJOR_CHANGE')) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_CHANGE_RECOGNITION', message: null, data: null });
+    }
 
     // transferGrade는 편입생(TRANSFER_ADMISSION)일 때만 의미가 있다. 유형을 편입생으로 바꾸는 요청에는 반드시 같이 보내야 하고(학번을
     // "편입 연도 − 학년 + 1"로 다시 계산해야 하므로), 이미 편입생이면서 옛 방식으로 입력해 값이 없는 계정이 다른 항목만 고칠 때는
@@ -232,6 +237,10 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       majorChangeGrade,
       majorChangeYear,
       majorChangeSemester,
+      // 전과생이 아닌 유형으로 바꾸면 인정 신청 답도 지운다.
+      majorChangeRecognition: enrollmentType !== undefined && enrollmentType !== 'MAJOR_CHANGE'
+        ? null
+        : majorChangeRecognition === undefined || majorChangeRecognition === null ? majorChangeRecognition : Number(majorChangeRecognition),
       // 편입생이 아닌 유형으로 바꾸면 이전 편입 학년이 남지 않게 비운다.
       transferGrade: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferGrade,
       transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
