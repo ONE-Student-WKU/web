@@ -286,3 +286,11 @@ test('등록 학기: 수업연한이 다른 학과 — 건축학과 10학기, �
 test('등록 학기: 입학 학기 전이거나 학번이 없으면 null', () => {
   assert.equal(registrationTermsOf({ admission_year: null }, { today: TODAY }), null);
 });
+
+test('조기졸업 안내는 신청할 수 있는 학생에게만 — 전과생·편입생·의약·간호·보건계열·건축학과는 제한(시행규칙 제126조 제2항)', () => {
+  const of = (over) => registrationTermsOf({ admission_year: 2024, enrollment_type: 'GENERAL', leave_periods: '[]', department_name: '경영학과', ...over }, { today: TODAY }).earlyGraduation;
+  assert.equal(of({}), 6);
+  assert.equal(of({ enrollment_type: 'MAJOR_CHANGE', major_change_grade: 2 }), null);
+  assert.equal(of({ enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3, admission_year: 2023 }), null);
+  for (const d of ['간호학과', '물리치료학과', '한약학과', '건축학과']) assert.equal(of({ department_name: d }), null, d);
+});
