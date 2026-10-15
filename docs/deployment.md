@@ -24,7 +24,7 @@
 1. `db/regulations/**` 등의 파일을 고치는 PR을 `develop`에 머지한다.
 2. 그 변경이 `main`에 들어가면(보통 `develop` → `main` 릴리스 머지) **DB Reseed** 워크플로우가 자동으로 시작된다.
 3. GitHub → Actions 탭 → **DB Reseed** 실행 → **Review deployments** 버튼으로 `db-reseed` 환경을 **승인**한다. 승인자는 `GitDaema`, `ChildrenAon`이다(2026-10-11 조회).
-4. 워크플로가 크론이 끝날 때까지 기다린다(`scripts/ci/wait-reseed.sh`, 최대 약 1시간). 크론 로그에 `규정 임베딩 시딩 완료`가 나오고 뒤 단계 실패가 없으면 **성공**, 어느 단계든 `…실패:`나 `npm error`가 나오거나 시간 안에 완료되지 않으면 **실패(빨간색)**로 끝난다. 결과 로그는 같은 실행 화면의 Summary에 남는다.
+4. 워크플로가 크론이 끝날 때까지 기다린다(`scripts/ci/wait-reseed.sh`, 최대 약 1시간). 크론 로그에 마지막 단계(19번 `seed:regulation-articles`)의 완료 문구 `regulation_versions … 건 시딩`이 나오고 실패 기록이 없으면 **성공**, 어느 단계든 `…실패:`나 `npm error`가 나오거나 시간 안에 완료되지 않으면 **실패(빨간색)**로 끝난다. 결과 로그는 같은 실행 화면의 Summary에 남는다.
    - 2026-10-13~15에는 예전 워크플로가 크론 시작 직후 로그만 받고 항상 성공으로 끝나서, 개설과목 단계 실패로 규정 재임베딩이 멈춘 것을 놓쳤다(#376, #378). 실패로 끝나면 Summary의 실패 줄부터 본다.
 
 수동으로 돌리고 싶으면 Actions 탭 → **DB Reseed** → **Run workflow**. 다만 `db-reseed` 환경이 **`main` 브랜치만 허용**하도록 설정돼 있어서(2026-10-11 조회) 다른 브랜치를 골라 돌리면 환경 규칙에 막힌다. 수동 실행도 `main`에서 한다.
@@ -62,7 +62,7 @@ node db/migrate.js && npm run seed:reference-data --workspace=server && npm run 
 | 18 | `seed:regulations -- --force` | `규정 임베딩 시딩 완료 (정리 문서 N청크, 원문 M청크)` | `규정 시딩 실패:` |
 | 19 | `seed:regulation-articles` | `regulation_versions N / regulation_articles N / regulation_relations N / regulation_applicability N건 시딩` | `seedRegulationArticles 실패:` |
 
-**재시딩 전체가 끝났다는 표시는 19번 문구(`regulation_versions … 건 시딩`)다.** 18번의 "규정 임베딩 시딩 완료"는 마지막 단계가 아니다. 완료·실패 문구는 실제 로그가 아니라 각 스크립트의 `console.log`·`console.error`에서 가져왔다(2026-10-15 `develop` 코드 기준). 2026-10-15 정상 실행의 Railway 로그에서도 이 완료 문구가 모두 나오는 것을 확인했다. 스크립트 출력을 바꾸거나 Start Command를 바꾸면 이 표도 같이 고친다.
+**재시딩 전체가 끝났다는 표시는 19번 문구(`regulation_versions … 건 시딩`)다.** 18번의 "규정 임베딩 시딩 완료"는 마지막 단계가 아니다. 완료·실패 문구는 실제 로그가 아니라 각 스크립트의 `console.log`·`console.error`에서 가져왔다(2026-10-15 `develop` 코드 기준). 2026-10-15 정상 실행의 Railway 로그에서도 이 완료 문구가 모두 나오는 것을 확인했다. 스크립트 출력을 바꾸거나 Start Command를 바꾸면 이 표도 같이 고친다. 19번 문구는 `scripts/ci/wait-reseed.sh`의 성공 기준이기도 해서, 바꾸면 그 스크립트도 같이 고친다(`server/test/ci.waitReseed.test.js`가 어긋나면 실패한다).
 
 ### 어디서 실패하느냐에 따라 운영 챗봇에 생기는 일
 
