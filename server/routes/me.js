@@ -7,6 +7,7 @@ const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
 const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 const { validateMajorTrackType, isBroadSeriesStudent } = require('../services/majorTrackType');
+const { validateSecondMajor } = require('../services/secondMajor');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -61,7 +62,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
-      secondDepartmentId, careerCounselingCount, leaveSemesters, language, homeLayout,
+      secondDepartmentId, secondMajorType, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
@@ -200,6 +201,18 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       const dept = await studentService.findDepartmentById(secondDepartmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
     }
+    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 학과를 지우면 구분도 지운다.
+    const effectiveSecondDepartmentId = secondDepartmentId !== undefined ? secondDepartmentId : student.second_department_id;
+    const secondMajorError = validateSecondMajor(
+      { secondDepartmentId, secondMajorType },
+      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId }
+    );
+    if (secondMajorError) return res.status(400).json({ status: 400, code: secondMajorError, message: null, data: null });
+    // 학과만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    let effectiveSecondMajorType; // undefined = 바꾸지 않음
+    if (effectiveSecondDepartmentId == null) effectiveSecondMajorType = null;
+    else if (secondMajorType !== undefined) effectiveSecondMajorType = secondMajorType || 'DOUBLE';
+    else if (secondDepartmentId !== undefined) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
 
     // trackId: 이번 요청에서 확정되는 departmentId(요청에 없으면 기존 값) 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
@@ -225,6 +238,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       teachingCourse: clearTeaching ? null : teachingCourse,
       majorTrackType: clearTrackType ? null : majorTrackType,
       secondDepartmentId,
+      secondMajorType: effectiveSecondMajorType,
       careerCounselingCount,
       leaveSemesters,
       language,

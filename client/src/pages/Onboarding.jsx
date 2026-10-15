@@ -146,6 +146,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     majorTrackType: editMode ? user.majorTrackType ?? null : null,
     // 휴학 기간(LeavePeriodsEditor의 draft). 기능 도입 전 계정은 user.leavePeriods가 null이라 "선택 필요"로 시작한다.
     leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
+    // 다전공(복수전공 DOUBLE·부전공 MINOR, #378 G-1). 학과·학번 수정에서만 받는다 — 다전공은 2학년부터 신청해 처음 가입할 때는 없다.
+    secondMajorType: editMode ? user.secondMajorType ?? null : null,
+    secondDepartmentId: editMode ? user.secondDepartmentId ?? null : null,
   });
 
   useEffect(() => {
@@ -176,6 +179,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     ? [{ id: NO_TRACK, name: t(noTrackOption.nameKey), captionKey: noTrackOption.captionKey }, ...tracks.map((tr) => ({ ...tr, captionKey: noTrackOption.trackCaptionKeys[tr.name] || null }))]
     : tracks;
   const selectedTrackName = trackChoices.find((tr) => tr.id === answers.trackId)?.name;
+  const secondDepartment = departments.find((d) => d.id === answers.secondDepartmentId) || null;
+  // 다전공 학과 목록에서 주전공 학과는 뺀다(서버도 같은 학과를 거절한다).
+  const secondDepartmentChoices = departments.filter((d) => d.id !== answers.departmentId);
   // 약학과 2022학번 이후 일반 입학인데 2+4년제를 골랐으면 한 번 더 확인하게 한다(막지는 않는다 — 예외가 있을 수 있다, DECISIONS D-63).
   const trackCheckKey =
     noTrackOption && answers.trackId != null && answers.trackId !== NO_TRACK && answers.enrollmentType === 'GENERAL' &&
@@ -323,6 +329,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferGrade: null,
       // 교직 답은 학과마다 다르다(사범대학이면 위 이펙트가 다시 "이수 중"을 골라 둔다).
       teachingCourse: null,
+      // 주전공을 다전공 학과로 바꾸면 다전공은 의미가 없어 지운다.
+      ...(a.secondDepartmentId === dept.id ? { secondDepartmentId: null, secondMajorType: null } : {}),
     }));
     setTracks([]);
     return getTracks(dept.id)
@@ -429,6 +437,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferRecognizedCredits: isTransfer ? recognized.value : null,
       teachingCourse: teachingAvailable ? answers.teachingCourse : null,
       majorTrackType: trackTypeAvailable ? answers.majorTrackType : null,
+      // 다전공은 학과·학번 수정에서만 받는다(처음 가입하는 온보딩 API는 받지 않는다).
+      ...(editMode ? { secondDepartmentId: answers.secondMajorType ? answers.secondDepartmentId : null, secondMajorType: answers.secondMajorType } : {}),
     };
     try {
       if (user?.onboardingCompleted) {
@@ -460,6 +470,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
     (current === 'teaching' && answers.teachingCourse === null) ||
     (current === 'trackType' && answers.majorTrackType === null) ||
+    (current === 'secondMajor' && answers.secondMajorType !== null && !answers.secondDepartmentId) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
     (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
@@ -703,6 +714,37 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
+        {current === 'secondMajor' && (
+          <>
+            <h2 className="onb-q-title">{t('onb.secondMajor.title')}</h2>
+            <p className="onb-q-sub">{t('onb.secondMajor.sub')}</p>
+            <div className="onb-option-list">
+              {[null, 'DOUBLE', 'MINOR'].map((type) => (
+                <button
+                  key={type || 'NONE'}
+                  className={'onb-option-card' + (answers.secondMajorType === type ? ' selected' : '')}
+                  onClick={() => setAnswers((a) => ({ ...a, secondMajorType: type, ...(type === null ? { secondDepartmentId: null } : {}) }))}
+                >
+                  <span className="onb-option-title">{t(`onb.secondMajor.${type || 'NONE'}`)}</span>
+                  <span className="onb-option-caption">{t(`onb.secondMajor.${type || 'NONE'}.caption`)}</span>
+                </button>
+              ))}
+            </div>
+            {answers.secondMajorType && (
+              <>
+                <p className="onb-field-label">{t('onb.secondMajor.department')}</p>
+                {secondDepartmentChoices.length > 0 && (
+                  <DepartmentPicker
+                    departments={secondDepartmentChoices}
+                    selectedId={answers.secondDepartmentId}
+                    onSelect={(dept) => setAnswers((a) => ({ ...a, secondDepartmentId: dept.id }))}
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+
         {current === 'majorChange' && (
           <>
             <h2 className="onb-q-title">{t('onb.mc.title')}</h2>
@@ -863,6 +905,20 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   value={answers.majorTrackType === null ? null : t(`trackType.${answers.majorTrackType}`)}
                   editable={editMode}
                   onClick={() => setManualStep('trackType')}
+                />
+              )}
+              {editMode && (
+                <SummaryRow
+                  label={t('onb.summary.secondMajor')}
+                  value={
+                    answers.secondMajorType === null
+                      ? t('onb.secondMajor.NONE')
+                      : secondDepartment
+                        ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: secondDepartment.name })
+                        : null
+                  }
+                  editable
+                  onClick={() => setManualStep('secondMajor')}
                 />
               )}
               <div className={leaveHighlightArmed ? 'settings-highlight' : undefined}>
