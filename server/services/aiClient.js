@@ -34,6 +34,7 @@ const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION:
 // 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
 function describeStanding(standing) {
   if (!standing) return null;
+  if (standing.grade == null) return '입학 후 아직 다닌 학기 없음(지금은 휴학 중)';
   const base = standing.extended ? `수업연한을 넘긴 초과 ${standing.extraTerms}학기` : `${standing.grade}학년 ${standing.gradeSemester}학기`;
   return `${base}(재학 ${standing.enrolledTermNumber}번째 학기${standing.onLeave ? ', 지금은 휴학 중' : ''})`;
 }

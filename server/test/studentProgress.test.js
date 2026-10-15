@@ -226,6 +226,21 @@ test('지금 학기가 휴학이면 마지막으로 다닌 학기와 함께 휴�
   assert.equal(computeProgress({ admissionYear: 2027, leavePeriods: [], today: TODAY }).current, null);
 });
 
+test('입학하자마자 휴학해 다닌 학기가 없으면 학년 없이 휴학 중만 알리고, 챗봇 프로필 줄도 깨지지 않는다(#378 운영 점검)', () => {
+  const leaveSinceAdmission = [{ startYear: 2026, startSemester: 1, semesters: 2 }];
+  assert.deepEqual(standing({ admissionYear: 2026, leavePeriods: leaveSinceAdmission, today: TODAY }), [null, null, false, 0, true, 0]);
+  const s = currentStandingOf({ admission_year: 2026, enrollment_type: 'GENERAL', leave_periods: JSON.stringify(leaveSinceAdmission), leave_semesters: 2, department_name: '건축학과' }, { today: TODAY });
+  assert.deepEqual([s.grade, s.onLeave, s.enrolledTermNumber], [null, true, 0]);
+  const student = { admission_year: 2026, enrollment_type: 'GENERAL', leave_periods: JSON.stringify(leaveSinceAdmission), leave_semesters: 2, department_name: '건축학과' };
+  const progress = computeProgress({ admissionYear: 2026, leavePeriods: leaveSinceAdmission, today: TODAY });
+  const prompt = buildSystemPrompt(student, null, null, 'ko', { ...progress, completedCourseNames: [] });
+  assert.match(prompt, /현재: 입학 후 아직 다닌 학기 없음\(지금은 휴학 중\)/);
+  assert.match(prompt, /지금 학년·학기: 입학 후 아직 다닌 학기 없음/);
+  assert.doesNotMatch(prompt, /null학년/);
+  // 휴학이 아닌데 다닌 학기가 없는 경우(입학 전)는 예전처럼 없다
+  assert.equal(computeProgress({ admissionYear: 2027, leavePeriods: [], today: TODAY }).current, null);
+});
+
 test('currentStandingOf: DB 행(학생)만으로 계산하고 학과 수업연한을 쓴다 — 홈 화면·로그인 응답용', () => {
   const s = currentStandingOf({ admission_year: 2022, enrollment_type: 'GENERAL', leave_periods: '[]', leave_semesters: 0, department_name: '건축학과' }, { today: TODAY });
   assert.deepEqual([s.grade, s.gradeSemester, s.extended, s.source], [5, 2, false, 'PROFILE']);

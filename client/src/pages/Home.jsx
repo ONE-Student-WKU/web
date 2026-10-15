@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent, describeRequirementTrust } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -141,6 +141,9 @@ function Home({
   const standing = user?.academicStanding || null;
   const gradeLabel = !standing
     ? null
+    // 입학하자마자 휴학해 아직 다닌 학기가 없으면 서버가 학년 없이(grade: null) 휴학만 알려 준다(#378).
+    : standing.grade == null
+      ? t('home.gradeOnLeave')
     : standing.extended
       // 초과 학기에 휴학한 학생도 "휴학 중"을 보여 준다(예전에는 초과 학기면 휴학 여부를 보지 않았다, #378).
       ? t(standing.onLeave ? 'home.gradeExtendedOnLeave' : 'home.gradeExtended', { n: standing.extraTerms })
@@ -148,7 +151,10 @@ function Home({
   // 홈 화면 편집에서 고른 메뉴 카드와 순서(utils/homeLayout.js). 모두 뺐으면 메뉴 영역을 그리지 않는다.
   const menuViews = resolveLayout(user?.homeLayout).menu;
   const earnedCredits = status?.totalEarnedCredits ?? 0;
-  const requiredTotal = status?.totalRequiredCredits ?? null;
+  // 졸업요건 자료가 없거나 엔진이 진단하지 않는 학과·학번(자율전공학부 등)이면 요건 목록이 비어 있다. 예전에는 이걸 "부족한 게 없음"으로
+  // 읽어 0%와 "모든 요건을 충족했어요!"가 같이 나왔다(2026-10-15 운영 점검, #378) — 졸업요건 진단 화면과 같은 판정을 쓴다.
+  const noData = Boolean(status) && describeRequirementTrust(status, lang).noData;
+  const requiredTotal = noData ? null : (status?.totalRequiredCredits ?? null);
   const progressPercent = getPercent(earnedCredits, requiredTotal);
 
   return (
@@ -238,20 +244,25 @@ function Home({
                   <span className="home-credit-number">{earnedCredits}</span>
                   <span className="home-credit-total">{requiredTotal ? t('home.creditsWithTotal', { total: requiredTotal }) : t('home.creditsUnit')}</span>
                 </div>
-                <div className="home-progress-track">
-                  <div
-                    className="home-progress-fill"
-                    style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
-                  />
-                </div>
-                <p className="grad-remaining-text">{progressPercent}%</p>
+                {/* 요구 학점을 모르면 진행률(%)도 없다 — 0%로 보이지 않게 막대를 그리지 않는다 */}
+                {!noData && (
+                  <>
+                    <div className="home-progress-track">
+                      <div
+                        className="home-progress-fill"
+                        style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                      />
+                    </div>
+                    <p className="grad-remaining-text">{progressPercent}%</p>
+                  </>
+                )}
               </section>
 
               <section className="home-card">
                 <p className="home-card-label">{t('home.shortfall')}</p>
                 <div
                   className={
-                    shortfalls === null
+                    shortfalls === null || noData
                       ? 'home-card-row'
                       : shortfalls.length > 0
                         ? 'home-card-row shortfall-danger'
@@ -261,9 +272,11 @@ function Home({
                   {/* 초록색으로 칠해도 모양 자체가 경고 삼각형이면 "충족했다는데 왜 주의
                       아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
                       아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
-                  {shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
+                  {!noData && shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
                   <span>
-                    {shortfalls === null
+                    {noData
+                      ? t('home.noData')
+                      : shortfalls === null
                       ? t('home.shortfallCheck')
                       : formatShortfallSentence(shortfalls, lang) || t('home.allMet')}
                   </span>
