@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { makeExcerpt, MAX_CHARS } = require('../services/citationExcerpt');
+const { makeExcerpt, citationExcerpt, MAX_CHARS } = require('../services/citationExcerpt');
 
 /**
  * server/test/citationExcerpt.test.js
@@ -26,6 +26,13 @@ test('긴 글은 줄을 잘라 "…"를 붙이고, 자리가 모자라면 표를
   assert.equal(makeExcerpt(long), `${'가'.repeat(MAX_CHARS)}…`);
   const fill = '나'.repeat(MAX_CHARS);
   assert.equal(makeExcerpt(`${fill}\n| a | b |\n|---|---|\n| 1 | 2 |`), `${fill}\n…`);
+});
+
+test('발췌문은 문서·조문 원문에만 붙이고, 서버가 계산한 근거(지시문이 섞인 규정 판단 등)는 제목만 보이게 null', () => {
+  assert.equal(citationExcerpt({ chunkId: 12, content: '### 2. 주의사항' }), '### 2. 주의사항');
+  assert.equal(citationExcerpt({ chunkId: 'regulation-article-ACAD_RULE:111', content: '제111조(전과(부)의 제한)' }), '제111조(전과(부)의 제한)');
+  assert.equal(citationExcerpt({ chunkId: 'regulation-judgment-2-2026-GENERAL-2026-10-16', content: '답변 지침: 단정하지 마라' }), null);
+  assert.equal(citationExcerpt({ chunkId: 'graduation-2-2026', content: '단정하지 말고' }), null);
 });
 
 test('짧은 조각은 그대로 둔다', () => {

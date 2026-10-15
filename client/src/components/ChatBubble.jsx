@@ -32,8 +32,9 @@ function ChatBubble({ message }) {
               {citations.map((c) => (
                 <li key={c.chunkId}>
                   <strong>{c.documentTitle}</strong>
-                  {/* 발췌문은 마크다운 원문을 줄 단위로 자른 것이라 답변과 같은 렌더러로 그린다(표·제목, server/services/citationExcerpt.js) */}
-                  <MessageText text={c.excerpt} />
+                  {/* 발췌문은 마크다운 원문을 줄 단위로 자른 것이라 답변과 같은 렌더러로 그린다(표·제목, server/services/citationExcerpt.js).
+                      서버가 계산해 만든 근거는 발췌문이 없다(null) — 제목만 보인다. */}
+                  {c.excerpt && <MessageText text={c.excerpt} />}
                 </li>
               ))}
             </ul>
