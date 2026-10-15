@@ -1,6 +1,7 @@
 const pool = require('../db');
 const { normalizeForSearch, prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
 const { expandAliases } = require('./searchAliases');
+const { majorAreaOf } = require('./categoryMap');
 
 /**
  * server/services/courseService.js
@@ -22,6 +23,9 @@ const GRADE_POINT_MAP = {
 // courses.category / student_courses.category ENUM과 동일 — DB ENUM 에러를 그대로
 // 흘려보내지 않고 서버에서 먼저 검증하기 위함 (letterGrade와 동일한 패턴).
 const VALID_CATEGORIES = ['전공필수', '전공선택', '교양필수', '교양선택', '일반선택'];
+// 광역 계열전공 과목의 원래 이수구분(student_courses.major_area). 전공 과목에만 남긴다 — 학생이 교양 등으로 바꾸면 의미가 없다.
+const VALID_MAJOR_AREAS = ['기초', '심화', '응용'];
+const majorAreaFor = (category, area) => ((category === '전공필수' || category === '전공선택') && VALID_MAJOR_AREAS.includes(area) ? area : null);
 
 // GRADE_POINT_MAP의 9종 + P(Pass)/NP(Not Pass) — 둘 다 "전체성적조회" PDF의 P/F 채점
 // 과목(원어민영어인증, 오리엔테이션성 교양 등)에서만 나오는 값이라 GRADE_POINT_MAP엔 없다
@@ -203,7 +207,7 @@ async function searchCatalog(keyword, year, semester) {
 
 async function findCourseById(courseId) {
   const [rows] = await pool.query(
-    'SELECT id, course_name AS name, credits, category FROM course_offerings WHERE id = ?',
+    'SELECT id, course_name AS name, credits, category, raw_category FROM course_offerings WHERE id = ?',
     [courseId]
   );
   return rows[0] || null;
@@ -292,7 +296,7 @@ async function listMyCourses(studentId, { year, semester }) {
 // 교수/시간을 확보 못 해 이름만 카탈로그에 올라간 과목은 course_schedules가 비어있으므로,
 // 그 경우엔 직접입력 과목과 동일하게 사용자가 입력한 시간표를 받아준다.
 async function addMyCourse(studentId, { courseId, name, credits, category, year, semester, schedule }) {
-  let row = { course_id: null, name, credits, category };
+  let row = { course_id: null, name, credits, category, major_area: null };
   let hasOfficialSchedule = false;
 
   if (courseId) {
@@ -302,7 +306,8 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
       pool.query('SELECT 1 FROM course_offering_schedules WHERE offering_id = ? LIMIT 1', [courseId]),
     ]);
     if (!course) throw new Error('COURSE_NOT_FOUND');
-    row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category };
+    // 개설과목의 원문 구분(기초·심화·응용)을 남긴다 — 직접입력 과목은 모르니 NULL(판정 때 편성표에서 과목명으로 찾는다).
+    row = { course_id: courseId, name: course.name, credits: course.credits, category: course.category, major_area: majorAreaFor(course.category, majorAreaOf(course.raw_category)) };
     hasOfficialSchedule = scheduleRows.length > 0;
   }
 
@@ -327,8 +332,8 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
   }
 
   const [result] = await pool.query(
-    'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [studentId, row.course_id, row.name, row.credits, row.category, year, semester]
+    'INSERT INTO student_courses (student_id, course_id, name, credits, category, major_area, year, semester) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [studentId, row.course_id, row.name, row.credits, row.category, row.major_area, year, semester]
   );
 
   if (scheduleToInsert.length > 0) {
@@ -384,8 +389,8 @@ async function bulkAddMyCourses(studentId, rows) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO student_courses (student_id, course_id, name, credits, category, year, semester, letter_grade, gpa) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?)',
-      [studentId, row.name, row.credits, row.category, row.year, row.semester, letterGrade, gpa]
+      'INSERT INTO student_courses (student_id, course_id, name, credits, category, major_area, year, semester, letter_grade, gpa) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [studentId, row.name, row.credits, row.category, majorAreaFor(row.category, row.majorArea), row.year, row.semester, letterGrade, gpa]
     );
     existingMap.set(key, { id: result.insertId, name: row.name, year: row.year, semester: row.semester, letter_grade: letterGrade });
     inserted += 1;
@@ -593,6 +598,7 @@ async function listRetakeEligibleCourses(studentId) {
 module.exports = {
   GRADE_POINT_MAP,
   VALID_CATEGORIES,
+  VALID_MAJOR_AREAS,
   LETTER_GRADES,
   FAILING_GRADES,
   getSupersededCourseIds,

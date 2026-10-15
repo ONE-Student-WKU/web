@@ -111,3 +111,14 @@ test('가리기는 학수번호·과목 행은 건드리지 않는다', () => {
   const row = '기전\t900001\t가상전공과목A\t3.0\t3.5\tB+\n교선\tL09001\t가상Java실습\t2.0\t4.5\tA+';
   assert.equal(redactStudentIdentifiers(row), row);
 });
+
+test('광역 계열전공의 원래 이수구분(기초·심화·응용)을 행에 남긴다 — category는 전공선택으로 합쳐도(#378 결정 3-3 A)', () => {
+  const text = buildTableText().replace('선전\t900003', '심화\t900003').replace('기전\t900002', '기초\t900002');
+  assert.ok(text.includes('심화\t900003') && text.includes('기초\t900002'), '픽스처 형식이 바뀌었다');
+  const result = parseFullTranscriptTextRuleBased(text);
+  assert.ok(result);
+  const byName = Object.fromEntries(result.rows.map((r) => [r.name, r]));
+  assert.deepEqual([byName['가상전공과목C'].category, byName['가상전공과목C'].majorArea], ['전공선택', '심화']);
+  assert.deepEqual([byName['가상전공과목B'].category, byName['가상전공과목B'].majorArea], ['전공선택', '기초']);
+  assert.equal(byName['가상전공과목A'].majorArea, null, '기전(기본전공)은 광역 계열전공 구분이 아니다');
+});

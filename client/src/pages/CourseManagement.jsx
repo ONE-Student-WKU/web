@@ -623,6 +623,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           name: r.name,
           credits: r.credits,
           category: r.category || '',
+          // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
+          majorArea: r.majorArea || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -663,6 +665,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           name: r.name,
           credits: r.credits,
           category: r.category || '',
+          // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
+          majorArea: r.majorArea || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -716,6 +720,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           name: r.name,
           credits: Number(r.credits),
           category: r.category,
+          majorArea: r.majorArea || null,
           year: Number(r.year),
           semester: Number(r.semester),
           letterGrade: r.letterGrade || null,
