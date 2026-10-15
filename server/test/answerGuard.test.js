@@ -86,3 +86,32 @@ test('영어 답변도 같은 기준(credits)으로 본다', () => {
   const both = 'The regulations list 130 credits while the curriculum booklet lists 140 credits. Please confirm with the Academic Affairs Office.';
   assert.equal(guardAnswer(both, mismatch, 'en').guarded, false);
 });
+
+const { removeUnverifiedPhoneNumbers, PHONE_REMOVED_NOTICE } = require('../services/answerGuard');
+
+test('근거에 없는 전화번호는 지우고 부서명은 남긴다 — 2026-10-15 점검에서 "학사지원과(063-850-5092)"를 지어냈다', () => {
+  const r = removeUnverifiedPhoneNumbers('학과 또는 **학사지원과(063-850-5092)**에 확인하시기 바랍니다.', ['규정 원문']);
+  assert.deepEqual(r.removed, ['063-850-5092']);
+  assert.ok(r.answer.startsWith('학과 또는 **학사지원과**에 확인하시기 바랍니다.'), r.answer);
+  assert.ok(r.answer.endsWith(PHONE_REMOVED_NOTICE.ko));
+  assert.ok(!r.answer.includes('5092'));
+});
+
+test('근거 문서나 코드에 있는 번호는 그대로 둔다(학사지원과 5228, 근거의 교육혁신과 5757)', () => {
+  const text = '학사지원과(063-850-5228) 또는 교육혁신과 063-850-5757로 문의하세요.';
+  const r = removeUnverifiedPhoneNumbers(text, ['담당부서: 교육혁신과(교육과정·졸업요건 설정, 063-850-5757)']);
+  assert.deepEqual(r, { answer: text, removed: [] });
+});
+
+test('쉼표 뒤 번호·괄호 없는 번호도 지우고, 번호가 없는 답변은 건드리지 않는다', () => {
+  assert.ok(removeUnverifiedPhoneNumbers('(학사지원과, 063-850-1234)로 연락', []).answer.startsWith('(학사지원과)로 연락'));
+  assert.ok(removeUnverifiedPhoneNumbers('학생지원센터 063 850 1234로 연락', []).answer.startsWith('학생지원센터로 연락'));
+  const plain = '2025-2026학년도 기준 130학점이에요.';
+  assert.deepEqual(removeUnverifiedPhoneNumbers(plain, []), { answer: plain, removed: [] });
+});
+
+test('영어 답변에는 영어 안내문을 붙인다', () => {
+  const r = removeUnverifiedPhoneNumbers('Contact the Academic Affairs Office (063-850-9999).', [], 'en');
+  assert.ok(r.answer.startsWith('Contact the Academic Affairs Office.'), r.answer);
+  assert.ok(r.answer.endsWith(PHONE_REMOVED_NOTICE.en));
+});

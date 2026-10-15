@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent, describeRequirementTrust } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent, describeRequirementTrust, registrationTermShortage } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -126,9 +126,11 @@ function Home({
   // 매 렌더에서 조립한다 — 언어를 바꿨을 때 이전 언어로 만든 문구가 캐시에 남지 않게.
   // status가 아직 없으면(첫 로딩/실패) null — 카드에 기존 안내 문구를 그대로 둔다.
   const shortfalls = useMemo(
-    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits) : null),
+    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas) : null),
     [status, t]
   );
+  // 학점·요건을 다 채웠는데 등록 학기가 모자라면 "모두 충족" 대신 그 사실을 알린다(시행규칙 제118조 제1호, #378 H-2).
+  const termShortage = registrationTermShortage(status, shortfalls);
 
   // 뒤로가기 등으로 홈에 재진입할 때마다 서버 응답을 기다리는 동안 "0학점" 같은 빈 기본값이
   // 잠깐 보이는 문제(배포 환경처럼 왕복 지연이 있으면 눈에 띔) 방지 — 첫 진입이라 캐시가
@@ -264,7 +266,7 @@ function Home({
                   className={
                     shortfalls === null || noData
                       ? 'home-card-row'
-                      : shortfalls.length > 0
+                      : shortfalls.length > 0 || termShortage > 0
                         ? 'home-card-row shortfall-danger'
                         : 'home-card-row shortfall-ok'
                   }
@@ -272,12 +274,14 @@ function Home({
                   {/* 초록색으로 칠해도 모양 자체가 경고 삼각형이면 "충족했다는데 왜 주의
                       아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
                       아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
-                  {!noData && shortfalls !== null && shortfalls.length === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
+                  {!noData && shortfalls !== null && shortfalls.length === 0 && termShortage === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
                   <span>
                     {noData
                       ? t('home.noData')
                       : shortfalls === null
                       ? t('home.shortfallCheck')
+                      : termShortage > 0
+                      ? t('grad.registrationShort', { n: termShortage })
                       : formatShortfallSentence(shortfalls, lang) || t('home.allMet')}
                   </span>
                 </div>

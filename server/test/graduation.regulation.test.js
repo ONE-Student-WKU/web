@@ -82,6 +82,33 @@ test('자료 없는 학과·학번: 다른 행으로 채우지 않고 빈 요건
   assert.ok(codes(s).includes('NO_CURRICULUM_ROWS'));
 });
 
+test('자료 없는 학과·학번이어도 들은 학점은 그대로 싣는다 — 홈이 10학점을 듣고도 "0학점"을 보였다(2026-10-15 운영 점검)', async () => {
+  await setStudent('자율전공학부', 2024);
+  await pool.query("INSERT INTO student_courses (student_id, name, credits, category, year, semester) VALUES (?, '테스트교양', 3, '교양선택', 2024, 1), (?, '테스트전공', 3, '전공선택', 2024, 1), (?, '낙제과목', 3, '전공선택', 2024, 1)", [studentId, studentId, studentId]);
+  await pool.query("UPDATE student_courses SET letter_grade = 'F' WHERE student_id = ? AND name = '낙제과목'", [studentId]);
+  const s = await getGraduationStatus(studentId);
+  assert.equal(s.regulation.confidence, 'NO_DATA');
+  assert.equal(s.totalEarnedCredits, 6, 'F는 빼고 들은 학점');
+});
+
+test('교양 영역(#378 H-1): 2025학번부터만 싣고, 교양선택으로 등록한 과목을 개설현황 영역으로 나눈다', async () => {
+  await setStudent('공학3계열', 2026);
+  await pool.query("INSERT INTO student_courses (student_id, name, credits, category, year, semester) VALUES (?, '컴퓨팅적사고력', 3, '교양선택', 2026, 1), (?, '지어낸교양', 2, '교양선택', 2026, 1)", [studentId, studentId]);
+  const s = await getGraduationStatus(studentId);
+  assert.equal(s.liberalElectiveAreas.foundation.find((a) => a.area === 'AI와디지털').earned, 3);
+  assert.equal(s.liberalElectiveAreas.unknownCredits, 2);
+  assert.equal(s.liberalElectiveAreas.electives.requiredAreaCount, 3);
+  await setStudent('경영학과', 2024);
+  assert.equal((await getGraduationStatus(studentId)).liberalElectiveAreas, null);
+});
+
+test('등록 학기(#378 H-2): 진단 결과에 등록 학기와 수업연한 학기를 싣는다', async () => {
+  await setStudent('경영학과', 2024);
+  const s = await getGraduationStatus(studentId);
+  assert.equal(s.registrationTerms.required, 8);
+  assert.ok(s.registrationTerms.registered > 0);
+});
+
 test('판단 보류 학과(2024 건축학과 전공 학점, 교육혁신과 답변 A-5): 숫자는 그대로, 신뢰도는 추정', async () => {
   await setStudent('건축학과', 2024);
   const s = await getGraduationStatus(studentId);

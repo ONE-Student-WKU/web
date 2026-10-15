@@ -100,6 +100,26 @@ function buildGraduationStatusNote(graduationStatus) {
   const majorAreaLine = areaCredits
     ? `광역 계열전공(학칙시행규칙 제7조) — 이수유형: ${TRACK_LABEL[graduationStatus.majorTrackType] || '학생이 아직 알려 주지 않음'}. 이수구분별 전공 학점: ${areaCredits.areas.map((a) => `${a.area}전공 ${a.earned}/${a.required}학점`).join(', ')}${areaCredits.unknownCredits ? `. 구분(기초·심화·응용)을 알 수 없는 전공 ${areaCredits.unknownCredits}학점은 어느 구분에도 넣지 않았다 — 부족하다고 단정하지 말고 성적표로 다시 가져오거나 학과에 확인하라고 안내하라` : ''}.`
     : null;
+  // 교양기초 영역별 학점·교양선택 영역 개수(2025학번부터, liberalElectiveAreas.js). 영역을 모르는 교양 학점은 어느 영역에도 넣지 않았다.
+  const liberal = graduationStatus.liberalElectiveAreas;
+  // 실제 AI 확인(2026-10-15 로컬)에서 한 줄로 주면 교양기초 영역(AI와디지털 등)을 교양선택 영역으로 섞어 말해서, 두 묶음을 줄을 나눠 준다.
+  const foundationShort = liberal ? liberal.foundation.filter((a) => a.earned < a.required) : [];
+  const electiveAreas = liberal && liberal.electives;
+  const liberalAreaLine = liberal
+    ? [
+      '교양 영역(2025학번부터, 교육과정 책자 교양 이수학점 기준) — 교양기초와 교양선택은 서로 다른 영역 묶음이다. 섞어 말하지 마라.',
+      `  - 교양기초(5개 영역마다 정해진 학점 이상): ${liberal.foundation.map((a) => `${a.area} ${a.earned}/${a.required}학점`).join(', ')} → ${foundationShort.length ? `모자란 영역: ${foundationShort.map((a) => `${a.area} ${a.required - a.earned}학점`).join(', ')}` : '모두 충족'}`,
+      electiveAreas
+        ? `  - 교양선택(인문과사회·자연과환경·문화와예술·취업과실무 4개 영역 중 ${electiveAreas.requiredAreaCount}개 이상): 이수한 영역 ${electiveAreas.coveredAreaCount}개(${electiveAreas.areas.filter((a) => a.earned > 0).map((a) => a.area).join('·') || '없음'}) → ${electiveAreas.satisfied ? '충족' : `${electiveAreas.requiredAreaCount - electiveAreas.coveredAreaCount}개 영역 더 필요`}`
+        : '  - 교양선택: 이 학과는 영역 개수 조건이 없다.',
+      liberal.unknownCredits ? `  - 개설현황에서 영역을 찾지 못한 교양 ${liberal.unknownCredits}학점은 어느 영역에도 넣지 않았다 — 그 학점 때문에 영역이 부족하다고 단정하지 말고, 과목명이 책자 표기와 같은지 확인하라고 안내하라.` : null,
+    ].filter(Boolean).join('\n')
+    : null;
+  // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
+  const terms = graduationStatus.registrationTerms;
+  const registrationLine = terms
+    ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라.`
+    : null;
   const counselingLine = counseling
     ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
     : null;
@@ -128,6 +148,8 @@ ${categoryLines}
 ${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
 ${designatedLine || ''}
 ${majorAreaLine || ''}
+${liberalAreaLine || ''}
+${registrationLine || ''}
 
 주의:
 - 전공필수(기본전공)와 전공선택은 학칙상 하나의 전공 요건(합산 학점)이다. 전공필수를 요건보다

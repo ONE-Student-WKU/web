@@ -10,6 +10,8 @@ const { getDepartmentChain } = require('./curriculumHistoryService');
 const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch');
 const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
+const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
+const { registrationTermsOf } = require('./studentProgress');
 const { majorAreaOf } = require('./categoryMap');
 const { loadDesignatedMajorCourses, DESIGNATED_MAJOR_COURSE_DEPARTMENTS } = require('./designatedMajorCourses');
 const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
@@ -289,7 +291,13 @@ async function getGraduationStatus(studentId) {
     ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
   ];
 
-  const { totalRequiredCredits, totalEarnedCredits, categories: creditCategories } = computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap);
+  const creditStatus = computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap);
+  const { totalRequiredCredits, categories: creditCategories } = creditStatus;
+  // 요건 자료가 없는 학과·학번(자율전공학부 등)은 요건 행이 없어 이수학점도 0으로 나왔다 — 홈이 "0학점"을 보였다(2026-10-15 운영 점검).
+  // 요건과 맞춰 볼 수 없으니 들은 학점을 그대로 싣는다.
+  const totalEarnedCredits = creditRows.length > 0
+    ? creditStatus.totalEarnedCredits
+    : countedCourses.reduce((sum, c) => sum + Number(c.credits), 0);
 
   // 졸업논문·졸업인증제·교양필수 영역 판정은 재수강 이전 기록까지 모든 수강 기록으로 본다(한 번이라도 합격했으면 충족).
   const needsAllCourses = certificationRows.length > 0 || creditCategories.some((c) => c.category === '교양필수')
@@ -309,6 +317,13 @@ async function getGraduationStatus(studentId) {
   const majorAreaCredits = areaMinimums
     ? computeMajorAreaCredits(areaMinimums, countedCourses, await loadMajorAreaByName(student.department_id))
     : null;
+  // 2025학번부터 교양기초 5개 영역별 학점과 교양선택 영역 개수(liberalElectiveAreas.js, #378 H-1). 교양 기준을 완화받은 편입생·3학년 이상 전과생은 보지 않는다.
+  const liberalElectiveAreas = evaluateLiberalElectiveAreas({
+    admissionYear: student.admission_year,
+    relaxed: student.enrollment_type === 'TRANSFER_ADMISSION' || (student.enrollment_type === 'MAJOR_CHANGE' && Number(student.major_change_grade) >= 3),
+    electiveRequiredCredits: (creditCategories.find((c) => c.category === '교양선택') || {}).requiredCredits ?? null,
+    courses: countedCourses,
+  });
   // 시행규칙 제9조 제1호 학과(의·치·한의·약·간호·응급구조·보건의료 7개 학과)의 지정 전공 과목 — 판정하지 않고 편성표 목록만 안내한다.
   const designatedMajorCourses = await loadDesignatedMajorCourses(student, passedNames);
   // 편입생·3학년 이상 전과생은 교직과정을 이수할 수 없어 "이수 안 함"과 같다(교직기본이수를 참고 항목으로도 보이지 않는다).
@@ -335,6 +350,12 @@ async function getGraduationStatus(studentId) {
     designatedMajorCourses,
     // 광역 계열전공의 이수구분별 학점(시행규칙 제7조 제3항) { areas: [{ area, required, earned, satisfied }], unknownCredits, satisfied } | null
     majorAreaCredits,
+    // 교양기초 영역별 학점·교양선택 영역 개수(2025학번부터) { foundation: [{ area, required, earned, satisfied }], electives: { requiredAreaCount,
+    // areas: [{ area, earned }], coveredAreaCount, satisfied } | null, unknownCredits, satisfied } | null
+    liberalElectiveAreas,
+    // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 알린다 { registered, required, earlyGraduation, estimated } | null.
+    // 화면은 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2 결정 A).
+    registrationTerms: registrationTermsOf(student),
     // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.
     majorTrackType: student.major_track_type || null,
     regulation: {
