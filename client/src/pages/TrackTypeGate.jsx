@@ -34,7 +34,7 @@ function TrackTypeGate({ onSaved }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
-        <span className="screen-title">ONE Student</span>
+        <span className="screen-title screen-title-brand">ONE Student</span>
         <LanguageSwitcher />
       </header>
 
