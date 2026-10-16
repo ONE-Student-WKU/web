@@ -176,6 +176,9 @@ describe('휴학 기간(휴학 "수"가 아니라 시기를 받는다)', () => {
     expect(api.updateProfile).toHaveBeenCalled();
     expect(api.saveLeavePeriods).toHaveBeenCalledWith([]);
     expect(api.updateProfile.mock.invocationCallOrder[0]).toBeLessThan(api.saveLeavePeriods.mock.invocationCallOrder[0]);
+    // 학과·학번 수정에서 저장했으므로 처음 가입 문구("설정이 끝났어요")가 아니라 저장 확인이 보인다
+    expect(await screen.findByText('저장했어요')).toBeInTheDocument();
+    expect(screen.queryByText('설정이 끝났어요')).not.toBeInTheDocument();
   });
 
   it('저장된 휴학 기간을 요약에 보여 주고, 서버가 겹침으로 거부하면 이유를 알려 준다', async () => {

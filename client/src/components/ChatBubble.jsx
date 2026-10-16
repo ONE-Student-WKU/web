@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import MessageText from './MessageText.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import { formatChatTime } from '../utils/chatTime.js';
 
 /**
  * ChatBubble Component
  * Renders individual chat messages (user or assistant).
  *
  * Props:
- * - message: { sender: 'user'|'assistant', text: string, timestamp: string, citedChunks?: array }
+ * - message: { sender: 'user'|'assistant', text: string, sentAt?: string(ISO), timestamp?: string, citedChunks?: array }
+ *   시각은 sentAt을 화면 언어로 바꿔 보여 준다(utils/chatTime.js). timestamp(미리 만든 글자)는 sentAt이 없던 예전 캐시 메시지용.
  */
 function ChatBubble({ message }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [showCitations, setShowCitations] = useState(false);
   const citations = message.citedChunks || [];
 
@@ -41,7 +43,7 @@ function ChatBubble({ message }) {
           )}
         </div>
       )}
-      <div className="message-time">{message.timestamp}</div>
+      <div className="message-time">{message.sentAt ? formatChatTime(message.sentAt, lang) : message.timestamp}</div>
     </div>
   );
 }
