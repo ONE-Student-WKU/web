@@ -594,6 +594,8 @@ export default {
   'dept.cohortSingle': '{min}학번',
   'dept.successors': '이후 학과: {names}',
   'dept.successorsEstimated': '이후 학과(추정): {names}',
+  'dept.successorShortcut': '{year}학번부터는 {name}',
+  'dept.trackMatch': '세부전공',
 
   // 진로 탐색 — 고정 질문(번호는 FIXED_QUESTIONS 순서). 서버로 보내는 질문·답변 원문은 한국어 그대로이고 이 문구는 화면 표시용이다.
   'career.q.0.title': '솔직히 하루 종일 하라면 가장 하기 싫은 일은?',

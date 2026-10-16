@@ -81,6 +81,9 @@ test('실제 학과 목록: 현재 학과와 이전 학과가 알려진 대학�
   assert.equal(cse.former, true);
   assert.ok(cse.successors.some((s) => s.name === '공학3계열'));
   assert.ok('coreMinAdmissionYear' in cse && 'maxAdmissionYear' in cse);
+  // 학과 검색이 세부전공 이름으로도 찾게 세부전공을 같이 내려준다(없는 학과는 빈 배열)
+  assert.ok(engineering3.tracks.some((tr) => tr.name === '컴퓨터·소프트웨어공학전공' && Number.isInteger(tr.id)));
+  assert.deepEqual(cse.tracks, []);
 
   const business = byName.get('경영학과');
   assert.equal(business.college, '경상대학');
