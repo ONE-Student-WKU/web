@@ -7,7 +7,7 @@ const courseService = require('../services/courseService');
 const studentService = require('../services/studentService');
 const { COUNTED_MAJORS } = require('../services/secondMajorCredits');
 const { resolveCourseCounting } = require('../services/courseCounting');
-const { isIntInRange } = require('../services/inputValidation');
+const { isIntInRange, isValidCredits } = require('../services/inputValidation');
 const {
   parseCourseListPdf,
   parseFullTranscriptText,
@@ -152,10 +152,9 @@ router.post('/', async (req, res, next) => {
       if (credits === undefined || credits === null || credits === '') {
         return res.status(400).json({ status: 400, code: 'REQUIRED_CREDITS', message: null, data: null });
       }
-      // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9). 이 범위를
-      // 벗어나면 DB INSERT 단계에서 원인 불명 500으로 터져서 사용자가 이유를 알 수 없었다
-      // (실사용 확인) — /import/confirm과 동일한 검증을 여기도 추가.
-      if (typeof credits === 'object' || !(credits >= 0 && credits <= 9.9)) {
+      // student_courses.credits는 DECIMAL(2,1) — 범위를 벗어나면 DB INSERT 단계에서 원인 불명 500으로
+      // 터져서 사용자가 이유를 알 수 없었다(실사용 확인). 0.5 단위·0~9.5만 받는다(/import/confirm과 같은 규칙).
+      if (!isValidCredits(credits)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: null });
       }
       if (!category) return res.status(400).json({ status: 400, code: 'REQUIRED_CATEGORY', message: null, data: null });
@@ -348,8 +347,8 @@ router.post('/import/confirm', async (req, res, next) => {
       if (row.name.length > 100) {
         return res.status(400).json({ status: 400, code: 'ROW_NAME_TOO_LONG', message: null, data: { name: row.name } });
       }
-      // student_courses.credits는 DECIMAL(2,1) — 정수부 1자리까지만 허용(최대 9.9).
-      if (!(row.credits >= 0 && row.credits <= 9.9)) {
+      // student_courses.credits는 DECIMAL(2,1) — 0.5 단위·0~9.5만 받는다(과목 직접 추가와 같은 규칙).
+      if (!isValidCredits(row.credits)) {
         return res.status(400).json({ status: 400, code: 'INVALID_CREDITS', message: null, data: { name: row.name, credits: row.credits } });
       }
     }

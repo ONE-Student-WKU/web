@@ -970,8 +970,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
         {current === 'done' && (
           <div className="onb-done-wrap">
             <div className="onb-done-circle">✓</div>
-            <p className="onb-done-title">{t('onb.done.title')}</p>
-            <p className="onb-done-sub">{t('onb.done.sub')}</p>
+            {/* 학과·학번 수정에서 저장한 경우는 처음 가입 문구("설정이 끝났어요")가 아니라 저장했다는 확인으로 */}
+            <p className="onb-done-title">{t(editMode ? 'onb.done.editTitle' : 'onb.done.title')}</p>
+            <p className="onb-done-sub">{t(editMode ? 'onb.done.editSub' : 'onb.done.sub')}</p>
           </div>
         )}
 

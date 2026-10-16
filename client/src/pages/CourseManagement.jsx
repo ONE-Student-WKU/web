@@ -1549,7 +1549,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     type="number"
                     step="0.5"
                     min="0"
-                    max="9.9"
+                    max="9.5"
                     value={manualFields.credits}
                     onChange={(e) => setManualFields({ ...manualFields, credits: e.target.value })}
                     required

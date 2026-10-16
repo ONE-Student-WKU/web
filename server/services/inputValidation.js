@@ -38,4 +38,14 @@ function validateNickname(name) {
   return null;
 }
 
-module.exports = { isIntInRange, isValidAdmissionYear, validateNickname, NICKNAME_MAX_LENGTH };
+// 과목 학점 — 0~9.5, 0.5 단위. student_courses.credits는 DECIMAL(2,1)이라 2.3 같은 값도 저장은 되지만 학교 과목 학점은
+// 전부 0.5 단위다(교육과정 자료의 학점은 0·0.5·1·1.5·2·3…뿐). 화면 입력 칸은 이미 0.5 단위만 받는다.
+// 0은 졸업논문 등 P/F 과목이라 유효하다. 객체·배열·불리언은 SQL 조각으로 펼쳐질 수 있어 거절한다.
+function isValidCredits(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  const credits = Number(value);
+  return Number.isFinite(credits) && credits >= 0 && credits <= 9.5 && Number.isInteger(credits * 2);
+}
+
+module.exports = { isIntInRange, isValidAdmissionYear, isValidCredits, validateNickname, NICKNAME_MAX_LENGTH };
