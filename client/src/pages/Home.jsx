@@ -126,7 +126,7 @@ function Home({
   // 매 렌더에서 조립한다 — 언어를 바꿨을 때 이전 언어로 만든 문구가 캐시에 남지 않게.
   // status가 아직 없으면(첫 로딩/실패) null — 카드에 기존 안내 문구를 그대로 둔다.
   const shortfalls = useMemo(
-    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas, status.secondMajor) : null),
+    () => (status ? summarizeShortfalls(mergeMajorCategories(status.categories), status.certifications, t, status.majorAreaCredits, status.liberalElectiveAreas, status.secondMajor, { compact: true }) : null),
     [status, t]
   );
   // 학점·요건을 다 채웠는데 등록 학기가 모자라면 "모두 충족" 대신 그 사실을 알린다(시행규칙 제118조 제1호, #378 H-2).
@@ -158,6 +158,9 @@ function Home({
   const noData = Boolean(status) && describeRequirementTrust(status, lang).noData;
   const requiredTotal = noData ? null : (status?.totalRequiredCredits ?? null);
   const progressPercent = getPercent(earnedCredits, requiredTotal);
+  // 아직 과목을 하나도 넣지 않았으면 부족 요건 목록(모든 요건) 대신 과목을 넣으라고 안내한다 — 처음 가입한 학생에게 긴 목록보다 다음 할 일이
+  // 분명하다(2026-10-16 운영 점검).
+  const noCourses = Boolean(status) && !noData && earnedCredits === 0;
 
   return (
     <div className="home-page">
@@ -264,7 +267,7 @@ function Home({
                 <p className="home-card-label">{t('home.shortfall')}</p>
                 <div
                   className={
-                    shortfalls === null || noData
+                    shortfalls === null || noData || noCourses
                       ? 'home-card-row'
                       : shortfalls.length > 0 || termShortage > 0
                         ? 'home-card-row shortfall-danger'
@@ -278,6 +281,8 @@ function Home({
                   <span>
                     {noData
                       ? t('home.noData')
+                      : noCourses
+                      ? t('home.noCourses')
                       : shortfalls === null
                       ? t('home.shortfallCheck')
                       : termShortage > 0
@@ -288,6 +293,11 @@ function Home({
                           : t('home.allMet'))}
                   </span>
                 </div>
+                {noCourses && (
+                  <button type="button" className="home-grade-fix-link home-no-courses-link" onClick={onOpenCourses}>
+                    {t('home.noCoursesAction')}
+                  </button>
+                )}
               </section>
               </>
             )}

@@ -111,6 +111,14 @@ test('진단: 전과 학기를 모르는 옛 전과 계정은 가려내지 않�
   await pool.query('UPDATE students SET major_change_year = 2023, major_change_semester = 2 WHERE id = ?', [studentId]);
 });
 
+test('진단: 전과 전 과목이 자동으로 제2전공에 배정되면 "일반선택으로 셌다"는 전과 안내에 넣지 않는다', async () => {
+  await pool.query("UPDATE students SET second_department_id = ?, second_major_type = 'DOUBLE' WHERE id = ?", [D['경영학과'], studentId]);
+  const s = await getGraduationStatus(studentId);
+  assert.deepEqual(s.secondMajor.courses.map((c) => c.name), ['마케팅원론']);
+  assert.ok(!s.priorMajorCourses.demoted.some((c) => c.name === '마케팅원론'));
+  await pool.query('UPDATE students SET second_department_id = NULL, second_major_type = NULL WHERE id = ?', [studentId]);
+});
+
 test('프로필: 전공학점 인정 신청 여부는 전과생만 받고, 일반 재학생으로 바꾸면 지운다', async () => {
   const patch = async (body) => (await fetch(`${baseUrl}/api/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
   assert.equal((await patch({ majorChangeRecognition: 'yes' })).code, 'INVALID_MAJOR_CHANGE_RECOGNITION');

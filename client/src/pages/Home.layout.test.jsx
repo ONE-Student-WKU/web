@@ -150,6 +150,21 @@ describe('Home — 졸업요건 자료가 없거나 진단하지 않는 학과·
   });
 });
 
+describe('Home — 아직 과목을 하나도 넣지 않았을 때(2026-10-16 운영 점검)', () => {
+  it('부족 요건 목록 대신 과목을 넣으라는 안내와 과목 관리로 가는 버튼을 보여 준다', async () => {
+    api.getGraduationStatus.mockResolvedValue({
+      totalEarnedCredits: 0, totalRequiredCredits: 130, certifications: [{ category: '졸업논문', satisfied: false }],
+      categories: [{ category: '교양선택', requiredCredits: 28, earnedCredits: 0 }],
+    });
+    const onOpenCourses = vi.fn();
+    render(<Home user={USER} onOpenHomeEdit={() => {}} onOpenCourses={onOpenCourses} />);
+    expect(await screen.findByText('아직 넣은 과목이 없어요. 과목을 넣으면 부족한 요건을 알려 드려요.')).toBeInTheDocument();
+    expect(screen.queryByText(/부족해요/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '과목 관리에서 성적 가져오기' }));
+    expect(onOpenCourses).toHaveBeenCalled();
+  });
+});
+
 describe('Home — 입학하자마자 휴학해 다닌 학기가 없을 때(#378 운영 점검)', () => {
   it('학년 없이 "휴학 중"을 보여 주고, 학년을 고칠 수 있는 링크도 남긴다(예전에는 둘 다 사라졌다)', async () => {
     render(<Home user={{ ...USER, academicStanding: { grade: null, gradeSemester: null, extended: false, extraTerms: 0, onLeave: true, enrolledTermNumber: 0 } }} onOpenHomeEdit={() => {}} />);

@@ -297,6 +297,20 @@ describe('교양 영역(#378 H-1)', () => {
     expect(en).toEqual(['Foundation general ed. areas (Logic and expression 3 credits·Global communication 2 credits)', '2 more elective general ed. area(s)']);
   });
 
+  it('홈(compact)은 학점이 모자란 큰 항목의 세부를 빼고, 큰 항목을 채웠을 때만 세부를 보인다', () => {
+    const cats = (electiveEarned, majorEarned) => [
+      { category: '교양선택', requiredCredits: 28, earnedCredits: electiveEarned },
+      { category: '전공', requiredCredits: 36, earnedCredits: majorEarned },
+    ];
+    const areas = { areas: [{ area: '기초', required: 12, earned: 0 }] };
+    expect(summarizeShortfalls(cats(3, 0), [], null, areas, liberal, null, { compact: true })).toEqual(['교양선택 25학점', '전공 36학점']);
+    expect(summarizeShortfalls(cats(28, 36), [], null, areas, liberal, null, { compact: true })).toEqual([
+      '기초전공 12학점', '교양기초 영역(논리와표현 3학점·글로벌의사소통 2학점)', '교양선택 영역 2개',
+    ]);
+    // 진단 화면(기본값)은 세부까지 전부 보인다.
+    expect(summarizeShortfalls(cats(3, 0), [], null, areas, liberal)).toHaveLength(5);
+  });
+
   it('다 채웠거나 영역 기준이 없으면(2024학번 이하 등) 항목을 넣지 않는다', () => {
     const done = { ...liberal, foundation: liberal.foundation.map((a) => ({ ...a, earned: a.required, satisfied: true })), electives: null, satisfied: true };
     expect(summarizeShortfalls([], [], null, null, done)).toEqual([]);

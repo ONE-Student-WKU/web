@@ -130,8 +130,12 @@ export function translateCategory(raw, t) {
 // 서버가 내려준 항목명(졸업인증제 등)은 번역 키가 없으면 원문을 그대로 쓴다.
 // liberalElectiveAreas: 2025학번부터의 교양기초 영역별 학점·교양선택 영역 개수(서버 liberalElectiveAreas.js, #378 H-1).
 // secondMajor: 다전공(복수전공·부전공) 판정(서버 secondMajorCredits.js, #378 G-2).
-export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null, liberalElectiveAreas = null, secondMajor = null) {
+export function summarizeShortfalls(categories, certifications, t = null, majorAreaCredits = null, liberalElectiveAreas = null, secondMajor = null, { compact = false } = {}) {
   const items = [];
+  // compact(홈): 학점이 모자란 큰 항목이 있으면 그 안의 세부(기초·심화·응용, 교양 영역)는 빼서 같은 내용을 두 번 말하지 않는다. 세부는 큰 항목
+  // 학점을 채웠는데도 모자랄 때만 홈에 보인다. 진단 화면은 전부 보여 준다(2026-10-16 운영 점검: 과목이 없으면 15개가 한 문장으로 나열됐다).
+  const shortCategories = new Set();
+  const hideDetail = (...parents) => compact && parents.some((p) => shortCategories.has(p));
   // 광역 계열전공은 "그중 기본전공 N학점" 대신 이수구분별 학점(기초·심화·응용)으로 알린다(아래).
   if (majorAreaCredits) categories = (categories || []).map((c) => ({ ...c, baseShortfall: 0 }));
   const label = (raw) => translateCategory(raw, t);
@@ -143,6 +147,7 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
     // 오해를 주는 문제가 있었다(실사용 확인).
     if (c.category === '일반선택') continue;
     const missing = c.requiredCredits - c.earnedCredits;
+    if (missing > 0) shortCategories.add(c.category);
     const category = displayCategory(c.category);
     const baseShortfall = c.baseShortfall || 0;
     const base = displayCategory(MAJOR_REQUIRED_KEY);
@@ -160,13 +165,13 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
   }
 
   // 광역 계열전공의 이수구분별 최소 학점(시행규칙 제7조 제3항) — 모자란 구분만.
-  for (const a of (majorAreaCredits && majorAreaCredits.areas) || []) {
+  for (const a of (!hideDetail(MAJOR_MERGED_KEY, MAJOR_REQUIRED_KEY, MAJOR_ELECTIVE_KEY) && majorAreaCredits && majorAreaCredits.areas) || []) {
     const n = a.required - a.earned;
     if (n > 0) items.push(t ? t('grad.shortfallMajorArea', { area: label(a.area), n }) : `${a.area}전공 ${n}학점`);
   }
 
   // 교양기초 영역별 학점과 교양선택 영역 개수 — 모자란 것만. 영역을 모르는 교양 학점은 어느 영역에도 넣지 않았다(서버).
-  if (liberalElectiveAreas) {
+  if (liberalElectiveAreas && !hideDetail('교양선택')) {
     const short = liberalElectiveAreas.foundation.filter((a) => a.earned < a.required);
     if (short.length > 0) {
       const parts = short.map((a) => (t ? t('grad.shortfallFoundationAreaItem', { area: label(a.area), n: a.required - a.earned }) : `${a.area} ${a.required - a.earned}학점`));
@@ -181,7 +186,7 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
 
   // 교양필수 영역(건학이념·대학생활·전공탐색과진로)을 아직 듣지 않았으면 학점과 따로 알린다 — 학점을 채웠어도 영역 과목이
   // 빠지면 미충족이다(서버 liberalRequiredAreas.js). 과목명은 서버 데이터라 번역하지 않는다.
-  for (const area of missingLiberalAreas(categories)) {
+  for (const area of hideDetail('교양필수') ? [] : missingLiberalAreas(categories)) {
     const courses = area.missing.join('·');
     items.push(t ? t('grad.shortfallLiberalArea', { area: label(area.area), courses }) : `${area.area} 영역(${courses})`);
   }
