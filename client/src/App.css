@@ -274,9 +274,10 @@ body {
   cursor: pointer;
 }
 
+/* 강조 배경 위 글자는 --color-accent-on-bg — --color-accent는 다크에서 4.37:1이라 기준(4.5:1)에 못 미친다(6.30:1로). */
 .settings-theme-btn.active {
   border-color: var(--color-accent-on-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   background: var(--color-accent-bg);
 }
 
@@ -298,7 +299,7 @@ body {
 
 .language-switcher-btn.active {
   border-color: var(--color-accent-on-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   background: var(--color-accent-bg);
 }
 
