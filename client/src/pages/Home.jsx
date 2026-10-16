@@ -166,7 +166,7 @@ function Home({
     <div className="home-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <span className="screen-title">ONE Student</span>
+          <span className="screen-title screen-title-brand">ONE Student</span>
         </div>
         <div className="home-header-actions">
           <button
