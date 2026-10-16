@@ -158,6 +158,13 @@ function buildGraduationStatusNote(graduationStatus) {
     const reasons = regulation.flags.filter((f) => f.level !== 'INFO').map((f) => `  - ${f.message}`);
     caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유:\n${reasons.join('\n')}`);
   }
+  // 최신 책자에 학과 행이 없는 통폐합·개편 학과는 INFO라 위 신뢰도 이유에는 안 들어가지만, 학교 답변(A-3)의 "소속변경을 신청하지
+  // 않았다면 옛 학과 소속 유지" 기준은 이 학생에게 직접 해당하는 안내라 따로 넘긴다. 이게 없으면 챗봇이 통폐합 학과 질문에
+  // "학과에 확인"으로만 끝냈다(운영 점검 #378). 문장은 졸업요건 화면의 안내와 같은 것(regulationEngine/flags.js)을 쓴다.
+  const absentFlag = regulation?.flags?.find((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET');
+  if (absentFlag) {
+    caveats.push(`- 이 학생의 학과는 통폐합·개편 학과다. 학과 소속·과목 편성·개편 관련 질문에는 아래 안내를 근거로 답하라(학교 답변 2026-10-14 A-3):\n  ${absentFlag.message}`);
+  }
   if (regulation && regulation.totalDefinitive === false) {
     caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다(학교 기준 인정학점을 뺀 "본교에서 이수할 학점"으로 계산했을 수 있다). 카테고리별 기준 위주로 설명하라.');
   }
