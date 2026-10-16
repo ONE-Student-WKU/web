@@ -932,7 +932,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               </div>
               <div className="courses-summary-stat">
                 <p className="home-card-label">{tr('courses.summary.gpa')}</p>
-                <p className="courses-summary-value">{currentSemesterSummary ? currentSemesterSummary.gpa : '-'}</p>
+                <p className="courses-summary-value">{currentSemesterSummary?.gpa ?? '-'}</p>
               </div>
             </div>
 
@@ -945,7 +945,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
               </div>
               <div className="courses-summary-stat">
                 <p className="home-card-label">{tr('courses.summary.totalGpa')}</p>
-                <p className="courses-summary-value">{summary && summary.total.gpa > 0 ? summary.total.gpa : '-'}</p>
+                <p className="courses-summary-value">{summary?.total.gpa ?? '-'}</p>
               </div>
             </div>
           </>

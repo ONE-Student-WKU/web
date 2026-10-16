@@ -493,6 +493,12 @@ async function listSemesters(studentId) {
   return rows.map((r) => ({ year: r.year, semester: r.semester, courseCount: r.course_count }));
 }
 
+// 평점이 있는 과목이 하나도 없으면(성적 미입력·P/F만) 평균이 "없음"이라 null — 0을 주면 화면이 "평균 0"으로 보여
+// 성적을 아직 안 넣은 학기와 전부 F인 학기(진짜 0.0)를 구분할 수 없었다.
+function averageGpa(points, gpaCredits) {
+  return gpaCredits > 0 ? Number((points / gpaCredits).toFixed(2)) : null;
+}
+
 async function getSummary(studentId) {
   // credits가 이제 student_courses 자체에 저장돼 있으므로 courses JOIN이 필요 없음.
   // 성적 필터를 걸지 않고 전부 가져온다 — 이수학점(진행률)에는 이번 학기처럼 등록만
@@ -549,14 +555,14 @@ async function getSummary(studentId) {
       year: b.year,
       semester: b.semester,
       earnedCredits: b.earnedCredits,
-      gpa: b.gpaCredits > 0 ? Number((b.points / b.gpaCredits).toFixed(2)) : 0,
+      gpa: averageGpa(b.points, b.gpaCredits),
     }));
 
   return {
     bySemester,
     total: {
       earnedCredits: totalCredits,
-      gpa: totalGpaCredits > 0 ? Number((totalPoints / totalGpaCredits).toFixed(2)) : 0,
+      gpa: averageGpa(totalPoints, totalGpaCredits),
     },
   };
 }
@@ -620,6 +626,7 @@ module.exports = {
   deleteMyCourse,
   deleteAllMyCourses,
   getTimetable,
+  averageGpa,
   getSummary,
   listSemesters,
   listRetakeEligibleCourses,
