@@ -52,7 +52,7 @@ export default {
   'chat.citationsHide': '출처 접기',
   'chat.citationsMore': '출처 더 보기 ({count})',
   'chat.typing': '답변을 준비하고 있어요',
-  'chat.disclaimer': '본 답변은 비공식 참고용입니다. 정확한 사항은 웹정보서비스 또는 관련 부서에서 확인하세요.',
+  'chat.disclaimer': '비공식 참고용이에요. 정확한 건 웹정보서비스·학과에 확인하세요.',
   'chat.dailyLimit': '오늘 채팅 한도({limit}회)를 모두 사용했어요. 내일 다시 이용해주세요.',
   'chat.error': '오류가 발생했어요. 잠시 후 다시 시도해주세요.',
 

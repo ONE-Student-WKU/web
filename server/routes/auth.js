@@ -362,7 +362,7 @@ router.post('/email/delete-reauth/request', requireAuth, requestCodeIpBackstop, 
     if (!(await guardResend(student.email, 'delete_reauth', res))) return;
 
     const code = await emailAuthService.createLoginToken(student.email, 'delete_reauth');
-    await mailer.sendLoginCode(student.email, code);
+    await mailer.sendLoginCode(student.email, code, 'delete_reauth');
 
     return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
   } catch (err) {
