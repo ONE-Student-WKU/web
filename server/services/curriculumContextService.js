@@ -4,6 +4,7 @@ const { DERIVED_RULE_CODES } = require('./curriculumKeys');
 const dq = require('./regulationEngine/dataQuality');
 const { loadLatestDataYear } = require('./regulationEngine/dbProvider');
 const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
+const { trackCertificationNotes } = require('./trackCertificationRules');
 
 /**
  * server/services/curriculumContextService.js
@@ -158,6 +159,8 @@ function engineRequirementChunk(department, year, judgment) {
     ...rule.value.certifications.map((c) => ({ category: c.category, description: c.description, required_credits: 0, min_course_count: c.minCourseCount })),
   ];
   let lines = formatRequirementLines(rows);
+  // 세부전공 졸업인증제 예외(D-78) — 진단과 같은 규칙(trackCertificationRules.js)을 근거에 적는다.
+  lines.push(...trackCertificationNotes(department.name, year));
   if (enrollmentType === 'TRANSFER_ADMISSION') {
     // 편입생은 전적대학 인정학점 때문에 총량을 단정할 수 없다(엔진 totalRequiredCredits = null) — 카테고리 합을 "합계"로 내지 않는다.
     lines = lines.filter((l) => !l.startsWith('졸업학점 합계'));
@@ -207,6 +210,7 @@ async function graduationRequirementChunk(department, year, judgment = null) {
 
   const resolvedName = await deptName(resolved.departmentId);
   const lines = formatRequirementLines(resolved.rows);
+  lines.push(...trackCertificationNotes(resolvedName, year));
   if (year < LATEST_BOOKLET_YEAR) lines.push(latestBookletBasisLine(year));
   let lineageNote = '';
   if (resolved.departmentId !== department.id) {
