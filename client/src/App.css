@@ -12,7 +12,12 @@
   --color-text-muted: #9ba0aa;
   --color-accent: #6f9bf5;
   --color-accent-contrast: #ffffff;
+  /* 흰 글씨(--color-accent-contrast)를 올리는 버튼·말풍선 배경. --color-accent(글자·테두리용)를 그대로 깔면
+     흰 글씨 대비가 2.73:1이라 따로 둔다(5.56:1). UX 점검 2026-10-16 5-1. */
+  --color-accent-fill: #3563c9;
   --color-accent-bg: #24365c;
+  /* --color-accent-bg 위에 올리는 강조 글자(선택된 탭·칩 등). --color-accent는 4.37:1이라 더 밝게(6.30:1). */
+  --color-accent-on-bg: #9dbcff;
   --color-accent-disabled: #33456c;
   --color-danger: #f37c71;
   --color-alert: #ff5449;
@@ -59,13 +64,17 @@
   --color-text-primary: #16181c;
   --color-text-secondary: #26282c;
   --color-text-muted: #3a3d42;
-  --color-accent: #3b6fd6;
+  /* #3b6fd6은 카드 배경 위 4.38:1, --color-accent-bg 위 4.14:1이라 한 단계 진하게(각각 5.45:1, 5.16:1). */
+  --color-accent: #2f5fc4;
   --color-accent-contrast: #ffffff;
+  --color-accent-fill: #2f5fc4;
   --color-accent-bg: #e8f0fe;
+  --color-accent-on-bg: #2f5fc4;
   --color-accent-disabled: #c7d7f5;
   --color-danger: #d9483c;
   --color-alert: #e0301e;
-  --color-success: #3d8b40;
+  /* #3d8b40은 카드 배경 위 '확정' 배지가 3.91:1이라 진하게(흰 배경 5.13:1). */
+  --color-success: #2e7d32;
   --color-warning: #9a6700;
   color-scheme: light;
 }
@@ -252,7 +261,7 @@ body {
 }
 
 .settings-theme-btn.active {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-on-bg);
   color: var(--color-accent);
   background: var(--color-accent-bg);
 }
@@ -274,7 +283,7 @@ body {
 }
 
 .language-switcher-btn.active {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-on-bg);
   color: var(--color-accent);
   background: var(--color-accent-bg);
 }
@@ -399,7 +408,7 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   border: none;
   display: flex;
@@ -572,7 +581,7 @@ body {
   width: 100%;
   padding: 14px;
   margin-top: 14px;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   border: none;
   border-radius: 10px;
@@ -1121,7 +1130,7 @@ body {
   margin-top: -16px;
   border-radius: 50%;
   border: none;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   cursor: pointer;
 }
@@ -1151,13 +1160,13 @@ body {
   width: 34px; height: 34px; border: none; border-radius: 50%;
   background: none; color: var(--color-text-muted); cursor: pointer;
 }
-.home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent); }
+.home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent-on-bg); }
 .home-edit-hint {
   position: absolute; top: calc(100% + 6px); right: -40px; z-index: 20;
   /* 너비는 문장 길이에 맞춘다(짧은 한국어 안내가 넓은 상자에 떠 보이지 않게). 긴 문장(영어 등)은 최대 너비에서 줄바꿈. */
   display: flex; align-items: center; gap: 8px; width: max-content; max-width: 240px;
   padding: 10px 12px; border-radius: 10px; font-size: 0.8125rem; line-height: 1.4;
-  background: var(--color-accent); color: var(--color-accent-contrast);
+  background: var(--color-accent-fill); color: var(--color-accent-contrast);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 /* 말풍선 꼬리 — 연필 버튼(34px) 중심을 가리킨다. 말풍선 오른쪽 끝이 버튼보다 40px 더 나가 있으므로
@@ -1165,10 +1174,10 @@ body {
 .home-edit-hint::before {
   content: ''; position: absolute; top: -6px; right: 51px;
   border-left: 6px solid transparent; border-right: 6px solid transparent;
-  border-bottom: 6px solid var(--color-accent);
+  border-bottom: 6px solid var(--color-accent-fill);
 }
 /* 안내가 떠 있는 동안 어느 버튼 얘기인지 보이게 편집 버튼을 강조한다 */
-.home-edit-btn.hinted { background: var(--color-accent-bg); color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
+.home-edit-btn.hinted { background: var(--color-accent-bg); color: var(--color-accent-on-bg); box-shadow: 0 0 0 2px var(--color-accent); }
 .home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .home-edit-body { display: flex; flex-direction: column; gap: 14px; }
 .home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
@@ -1369,7 +1378,7 @@ body {
 
 .courses-year-tab.active {
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   border-color: var(--color-accent-bg);
 }
 
@@ -1414,7 +1423,7 @@ body {
 
 .courses-semester-btn.active {
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   border-color: var(--color-accent-bg);
 }
 
@@ -1698,7 +1707,7 @@ body {
 
 .courses-add-mode-toggle button.active {
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   border-color: var(--color-accent-bg);
 }
 
@@ -1711,7 +1720,7 @@ body {
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1727,7 +1736,7 @@ body {
   top: 100%;
   right: 14px;
   border: 5px solid transparent;
-  border-top-color: var(--color-accent);
+  border-top-color: var(--color-accent-fill);
 }
 
 /* 등록된 과목 전체 삭제 — 되돌릴 수 없는 위험한 동작이라는 걸 색으로 구분한다. 과목 추가 폼 아래에 둔다. */
@@ -1973,7 +1982,7 @@ body {
   width: 100%;
   margin-top: 12px;
   padding: 12px;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   border: none;
   border-radius: 10px;
@@ -2266,7 +2275,7 @@ body {
   width: 100%;
   margin-bottom: 10px;
   padding: 12px;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   border: none;
   border-radius: 10px;
@@ -2381,7 +2390,7 @@ body {
 }
 
 .community-act-accept {
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
 }
 
@@ -2890,7 +2899,7 @@ body {
 
 .courses-import-method-toggle button.active {
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   border-color: var(--color-accent-bg);
 }
 
@@ -3047,7 +3056,7 @@ body {
 }
 
 .courses-pdf-pf-toggle-group button.active-np {
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
 }
 
@@ -3237,7 +3246,7 @@ body {
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
 .onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
 .onb-option-caption { font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); }
-.onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
+.onb-option-card.selected .onb-option-caption { color: var(--color-accent-on-bg); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
 .onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
 .onb-q-sub-note { margin-top: -6px; font-size: 0.8125rem; }
@@ -3418,7 +3427,7 @@ select.onb-select {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-contrast);
   font-size: 0.75rem;
   font-weight: 700;
@@ -3435,7 +3444,7 @@ select.onb-select {
   bottom: 100%;
   right: 14px;
   border: 5px solid transparent;
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-accent-fill);
 }
 
 .career-recommend-btn {
@@ -3443,7 +3452,7 @@ select.onb-select {
   border-radius: 14px;
   border: none;
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
@@ -3493,7 +3502,7 @@ select.onb-select {
   border-radius: 10px;
   border: 1px solid var(--color-accent);
   background: var(--color-accent-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-on-bg);
   font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
