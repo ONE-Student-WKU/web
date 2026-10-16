@@ -20,11 +20,17 @@ test('규칙: 공학3계열 컴소공전공 2026학번~만 졸업인증제 행�
   assert.equal(cse[1], THESIS);
   for (const other of [
     { departmentName: '공학3계열', admissionYear: 2026, trackName: '게임콘텐츠학전공' },
-    { departmentName: '공학3계열', admissionYear: 2026, trackName: null },
     { departmentName: '공학1계열', admissionYear: 2026, trackName: '컴퓨터·소프트웨어공학전공' },
   ]) {
     assert.deepEqual(applyTrackCertificationRule([GENERIC], other), [GENERIC]);
   }
+});
+
+test('규칙: 세부전공을 모르면 공통 기준(1과목)으로 판정하되 설명에 컴소공전공 예외를 함께 적는다', () => {
+  const [row] = applyTrackCertificationRule([GENERIC], { departmentName: '공학3계열', admissionYear: 2026, trackName: null });
+  assert.equal(row.min_course_count, 1);
+  assert.deepEqual(row.requiredCourses, GENERIC.requiredCourses);
+  assert.ok(row.description.startsWith('나 그룹 1과목 — 단, 컴퓨터·소프트웨어공학전공이면 기업연계프로젝트1(종합설계1)·기업연계프로젝트2(종합설계2) 모두 필수'));
 });
 
 test('챗봇 근거: 공학3계열 2026학번 졸업요건에 세부전공 예외 줄을 붙인다', () => {

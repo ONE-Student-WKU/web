@@ -20,22 +20,32 @@ const TRACK_CERTIFICATION_RULES = [
   },
 ];
 
-const ruleFor = (departmentName, admissionYear, trackName) =>
-  TRACK_CERTIFICATION_RULES.find((r) => r.departmentName === departmentName && r.trackName === trackName && admissionYear != null && admissionYear >= r.minAdmissionYear) || null;
+const rulesFor = (departmentName, admissionYear) =>
+  TRACK_CERTIFICATION_RULES.filter((r) => r.departmentName === departmentName && admissionYear != null && admissionYear >= r.minAdmissionYear);
 
-/** 학생의 세부전공 규칙이 있으면 졸업인증제 행을 그 규칙으로 바꾼다. 행 모양은 evaluateCertifications 입력과 같다. */
+/**
+ * 학생의 세부전공 규칙이 있으면 졸업인증제 행을 그 규칙으로 바꾼다. 행 모양은 evaluateCertifications 입력과 같다.
+ * 세부전공을 모르면(화면은 세부전공을 꼭 고르게 하지만 옛 계정 등은 비어 있을 수 있다) 공통 기준으로 판정하고 세부전공 예외를 설명에 함께 적는다.
+ */
 function applyTrackCertificationRule(certificationRows, { departmentName, admissionYear, trackName }) {
-  const rule = ruleFor(departmentName, admissionYear, trackName);
-  if (!rule) return certificationRows;
+  const rules = rulesFor(departmentName, admissionYear);
+  if (rules.length === 0) return certificationRows;
+  const rule = rules.find((r) => r.trackName === trackName);
+  if (rule) {
+    return certificationRows.map((row) => (row.category === '졸업인증제'
+      ? { ...row, description: rule.description, requiredCourses: rule.requiredCourses, min_course_count: rule.requiredCourses.length }
+      : row));
+  }
+  if (trackName != null) return certificationRows;
+  const note = rules.map((r) => `${r.trackName}이면 ${r.requiredCourses.join('·')} 모두 필수(학과 규칙)`).join(', ');
   return certificationRows.map((row) => (row.category === '졸업인증제'
-    ? { ...row, description: rule.description, requiredCourses: rule.requiredCourses, min_course_count: rule.requiredCourses.length }
+    ? { ...row, description: `${row.description} — 단, ${note}. 세부전공을 고르면 그 기준으로 판정해요` }
     : row));
 }
 
 /** 학과 단위 졸업요건 근거(챗봇)에 붙일 세부전공 예외 줄. 세부전공을 모르는 질문에도 예외가 있다는 걸 알린다. */
 function trackCertificationNotes(departmentName, admissionYear) {
-  return TRACK_CERTIFICATION_RULES
-    .filter((r) => r.departmentName === departmentName && admissionYear != null && admissionYear >= r.minAdmissionYear)
+  return rulesFor(departmentName, admissionYear)
     .map((r) => `졸업인증제 세부전공 예외 — ${r.trackName}: ${r.description}. 그 외 세부전공은 위 기준이다.`);
 }
 
