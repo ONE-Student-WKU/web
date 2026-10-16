@@ -647,6 +647,8 @@ export default {
   'dept.cohortSingle': '{min} cohort',
   'dept.successors': 'Successor department: {names}',
   'dept.successorsEstimated': 'Successor department (estimated): {names}',
+  'dept.successorShortcut': 'From the {year} cohort: {name}',
+  'dept.trackMatch': 'Track:',
 
   // Career exploration — fixed questions (numbered in FIXED_QUESTIONS order). The question/answer text sent to the server stays Korean; this is display text only.
   'career.q.0.title': 'Honestly, which task would you least want to do all day long?',

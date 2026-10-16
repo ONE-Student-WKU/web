@@ -3,7 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DepartmentPicker from './DepartmentPicker.jsx';
-import { groupDepartmentsByCollege, searchDepartments, normalizeForSearch, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
+import {
+  groupDepartmentsByCollege, searchDepartments, normalizeForSearch, splitByMatch, pickTrackForFormer, FORMER_GROUP_LABEL,
+} from '../utils/departmentTree.js';
 
 const dept = (id, name, extra = {}) => ({
   id, name, minAdmissionYear: 2020, maxAdmissionYear: null, coreMinAdmissionYear: 2020, coreMaxAdmissionYear: null,
@@ -284,5 +286,106 @@ describe('DepartmentPicker — 학번 범위 표시(#378 운영 점검)', () => 
     expect(within(dialog).getByRole('button', { name: /^뷰티디자인학과/ })).toHaveTextContent('2026학번');
     expect(within(dialog).getByRole('button', { name: /^뷰티디자인학과/ })).not.toHaveTextContent('2026~2026');
     expect(within(dialog).getByRole('button', { name: /^디자인학부/ })).toHaveTextContent('2017~2022학번');
+  });
+});
+
+// UX 점검(2026-10-16) 2-10 안 A — 세부전공 이름으로도 찾고, 친 글자와 직접 맞는 학과가 앞, 이전 학과 카드에 이후 학과 바로가기.
+const ENGINEERING_3 = dept(21, '공학3계열', {
+  college: '공과대학', collegeOrder: 11, minAdmissionYear: 2026, coreMinAdmissionYear: 2026,
+  tracks: [{ id: 31, name: '컴퓨터·소프트웨어공학전공' }, { id: 32, name: '게임콘텐츠학전공' }],
+});
+const CSE_FORMER = dept(22, '컴퓨터·소프트웨어공학과', {
+  college: '공과대학', collegeOrder: 11, former: true, minAdmissionYear: 2017, coreMinAdmissionYear: 2017, maxAdmissionYear: 2025, coreMaxAdmissionYear: 2025,
+  successors: [{ name: '공학3계열', effectiveYear: 2026, confirmed: true }],
+});
+const GAME_FORMER = dept(23, '게임콘텐츠학과', {
+  college: '공과대학', collegeOrder: 11, former: true, minAdmissionYear: 2024, coreMinAdmissionYear: 2024, maxAdmissionYear: 2025, coreMaxAdmissionYear: 2025,
+  successors: [{ name: '공학3계열', effectiveYear: 2026, confirmed: true }],
+});
+const BUSINESS = dept(24, '경영계열', { college: '경상대학', collegeOrder: 12, minAdmissionYear: 2026, coreMinAdmissionYear: 2026 });
+const BUSINESS_FORMER = dept(25, '경영학부', {
+  college: '경상대학', collegeOrder: 12, former: true, successors: [{ name: '경영계열', effectiveYear: 2023, confirmed: false }],
+});
+const WITH_TRACKS = [ENGINEERING_3, CSE_FORMER, GAME_FORMER, BUSINESS, BUSINESS_FORMER];
+
+describe('학과 검색 — 세부전공 이름·글자 일치 순서(2-10 안 A)', () => {
+  it('"컴퓨터": 이름이 그 글자로 시작하는 이전 학과가 먼저, 세부전공으로만 맞는 공학3계열이 다음', () => {
+    expect(searchDepartments(WITH_TRACKS, '컴퓨터').map((d) => d.name)).toEqual(['컴퓨터·소프트웨어공학과', '공학3계열']);
+  });
+
+  it('세부전공 일치가 소속 대학 일치보다 앞이다("공과"는 대학 이름으로만, "게임"은 이전 학과 이름 → 세부전공 순)', () => {
+    expect(searchDepartments(WITH_TRACKS, '게임').map((d) => d.name)).toEqual(['게임콘텐츠학과', '공학3계열']);
+    expect(searchDepartments(WITH_TRACKS, '콘텐츠').map((d) => d.name)).toEqual(['게임콘텐츠학과', '공학3계열']); // 이름 포함(1) → 세부전공(2)
+    expect(searchDepartments(WITH_TRACKS, '공과').map((d) => d.name)).toEqual(['공학3계열', '컴퓨터·소프트웨어공학과', '게임콘텐츠학과']);
+  });
+
+  it('일치한 글자를 원래 글자 위치로 나눈다(가운뎃점·공백을 무시하고 맞춘 범위는 그대로 칠한다)', () => {
+    expect(splitByMatch('컴퓨터·소프트웨어공학과', '컴퓨터 소프트')).toEqual([
+      { text: '컴퓨터·소프트', hit: true },
+      { text: '웨어공학과', hit: false },
+    ]);
+    expect(splitByMatch('공학3계열', '3계')).toEqual([
+      { text: '공학', hit: false },
+      { text: '3계', hit: true },
+      { text: '열', hit: false },
+    ]);
+    expect(splitByMatch('공학3계열', '경영')).toEqual([{ text: '공학3계열', hit: false }]);
+  });
+
+  it('이전 학과에서 이어지는 세부전공: 학과 이름의 "과·부"와 세부전공의 "전공"을 뗀 줄기가 같은 것, 없으면 null', () => {
+    expect(pickTrackForFormer('컴퓨터·소프트웨어공학과', ENGINEERING_3.tracks)).toEqual({ id: 31, name: '컴퓨터·소프트웨어공학전공' });
+    expect(pickTrackForFormer('게임콘텐츠학과', ENGINEERING_3.tracks)).toEqual({ id: 32, name: '게임콘텐츠학전공' });
+    expect(pickTrackForFormer('경영학부', ENGINEERING_3.tracks)).toBeNull();
+    expect(pickTrackForFormer('경영학부', undefined)).toBeNull();
+  });
+});
+
+describe('DepartmentPicker — 검색 결과 표시와 이후 학과 바로가기', () => {
+  const openSearch = async (query) => {
+    await userEvent.click(screen.getByRole('button', { name: '학과 검색' }));
+    const dialog = screen.getByRole('dialog', { name: '학과 검색' });
+    await userEvent.type(within(dialog).getByRole('searchbox', { name: '학과 검색' }), query);
+    return dialog;
+  };
+
+  it('세부전공으로 찾은 학과는 맞은 세부전공을 보여 주고, 일치한 글자를 칠한다', async () => {
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} />);
+    const dialog = await openSearch('컴퓨터');
+    const engineering = within(dialog).getByRole('button', { name: /^공학3계열/ });
+    expect(engineering).toHaveTextContent('세부전공 컴퓨터·소프트웨어공학전공');
+    expect(engineering).not.toHaveTextContent('게임콘텐츠학전공');
+    expect(within(engineering).getByText('컴퓨터', { selector: 'mark' })).toBeInTheDocument();
+    const former = within(dialog).getByRole('button', { name: /^컴퓨터·소프트웨어공학과/ });
+    expect(within(former).getByText('컴퓨터', { selector: 'mark' })).toBeInTheDocument();
+    expect(former).not.toHaveTextContent('세부전공'); // 학과 이름으로 맞았으면 세부전공 줄은 없다
+  });
+
+  it('onSelectSuccessor를 주면 확인된 이후 학과에만 "○○학번부터는 △△" 바로가기가 생기고, 누르면 (이후 학과, 이전 학과)로 불린 뒤 검색 화면이 닫힌다', async () => {
+    const onSelectSuccessor = vi.fn();
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} onSelectSuccessor={onSelectSuccessor} />);
+    let dialog = await openSearch('경영학부');
+    expect(within(dialog).queryByRole('button', { name: /학번부터는/ })).toBeNull(); // 추정 연결(경영학부 → 경영계열)은 바로가기 없음
+    await userEvent.click(within(dialog).getByRole('button', { name: '검색 닫기' }));
+
+    dialog = await openSearch('컴퓨터');
+    await userEvent.click(within(dialog).getByRole('button', { name: '2026학번부터는 공학3계열' }));
+    expect(onSelectSuccessor).toHaveBeenCalledWith(ENGINEERING_3, CSE_FORMER);
+    expect(screen.queryByRole('dialog', { name: '학과 검색' })).toBeNull();
+  });
+
+  it('onSelectSuccessor가 없으면(다전공 학과 고르기) 바로가기를 보이지 않는다', async () => {
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} />);
+    const dialog = await openSearch('컴퓨터');
+    expect(within(dialog).queryByRole('button', { name: /학번부터는/ })).toBeNull();
+  });
+
+  it('목록(대학 묶음)에서도 이전 학과 아래에 바로가기가 있다', async () => {
+    const onSelectSuccessor = vi.fn();
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} onSelectSuccessor={onSelectSuccessor} />);
+    await userEvent.click(screen.getByRole('button', { name: /공과대학/ }));
+    const shortcuts = screen.getAllByRole('button', { name: '2026학번부터는 공학3계열' });
+    expect(shortcuts).toHaveLength(2); // 컴퓨터·소프트웨어공학과, 게임콘텐츠학과
+    await userEvent.click(shortcuts[1]);
+    expect(onSelectSuccessor).toHaveBeenCalledWith(ENGINEERING_3, GAME_FORMER);
   });
 });

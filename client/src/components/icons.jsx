@@ -71,9 +71,8 @@ export function IconUser({ size = 14 }) {
 export function IconBook({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
-      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5" />
-      <path d="M4 5.5v15" />
-      <path d="M20 18H6.5A2.5 2.5 0 0 0 4 20.5" />
+      {/* 아래 책장(페이지 끝 줄)까지 그린다 — 예전 모양은 표지 아래가 비어 있어 18px에서 말풍선(채팅 아이콘)처럼 보였다. */}
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
     </svg>
   );
 }
@@ -110,6 +109,15 @@ export function IconArrowUp({ size = 16 }) {
     <svg width={size} height={size} {...base} aria-hidden="true">
       <line x1="12" y1="19" x2="12" y2="5" />
       <polyline points="5 12 12 5 19 12" />
+    </svg>
+  );
+}
+
+export function IconArrowRight({ size = 14 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
     </svg>
   );
 }

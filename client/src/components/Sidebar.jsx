@@ -25,7 +25,7 @@ function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, o
             <IconChevronLeft />
           </button>
         )}
-        <span className="screen-title">ONE Student</span>
+        <span className="screen-title screen-title-brand">ONE Student</span>
       </div>
       <AccountMenu
         user={user}

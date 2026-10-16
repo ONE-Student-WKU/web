@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { IconSearch } from './icons.jsx';
+import { IconArrowRight, IconSearch } from './icons.jsx';
 import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
-import { groupDepartmentsByCollege, searchDepartments, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
+import { groupDepartmentsByCollege, searchDepartments, matchedTracks, splitByMatch, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
@@ -20,8 +20,25 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - onSelect: (department) => void
  * - onSelectAndContinue: (department) => void (선택) — 검색 결과에서 고를 때와 목록에서 엔터로 고를 때. 없으면 onSelect.
  *   온보딩은 이걸로 고른 뒤 바로 다음 질문으로 간다("다음"을 누른 것처럼).
+ * - onSelectSuccessor: (successor, former) => void (선택) — 있으면 이전 학과 카드 아래에 "○○학번부터는 △△" 바로가기를 둔다.
+ *   학교 문서로 확인된(confirmed) 이후 학과만. 이름이 비슷해서 이은 추정 연결은 잘못 보낼 수 있어 글자 안내만 남긴다.
  */
-function DepartmentCard({ department, selected, active = false, onSelect, showCollege }) {
+
+// 검색어와 일치한 글자를 칠한다(검색 결과에서만 — 목록에서는 query가 비어 그대로).
+function Highlighted({ text, query }) {
+  if (!query) return text;
+  return splitByMatch(text, query).map((part, i) =>
+    part.hit ? (
+      <mark key={i} className="search-hit">
+        {part.text}
+      </mark>
+    ) : (
+      <React.Fragment key={i}>{part.text}</React.Fragment>
+    )
+  );
+}
+
+function DepartmentCard({ department, selected, active = false, onSelect, showCollege, query = '', shortcuts = [], onSelectSuccessor }) {
   const { t } = useI18n();
   const range = getYearRange(department, 'GENERAL');
   const ref = useRef(null);
@@ -29,7 +46,9 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
   useEffect(() => {
     if (active) ref.current?.scrollIntoView?.({ block: 'nearest' });
   }, [active]);
-  return (
+  // 학과 이름이 아니라 세부전공 이름으로 찾은 경우, 어느 세부전공이 맞았는지 보여 준다(예: 공학3계열 · 세부전공 컴퓨터·소프트웨어공학전공).
+  const tracks = query && !splitByMatch(department.name, query).some((p) => p.hit) ? matchedTracks(department, query) : [];
+  const card = (
     <button
       ref={ref}
       type="button"
@@ -37,7 +56,9 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
       className={'onb-option-card' + (selected ? ' selected' : '') + (active ? ' active' : '')}
       onClick={() => onSelect(department)}
     >
-      <span className="onb-option-title">{department.name}</span>
+      <span className="onb-option-title">
+        <Highlighted text={department.name} query={query} />
+      </span>
       <span className="onb-option-caption">
         {/* 일반·편입 학생이 실제로 고를 수 있는 범위(요건이 있는 학번)를 보여준다 */}
         {/* 한 해뿐인 학과는 "2026~2026학번"이 아니라 "2026학번"(#378) */}
@@ -45,12 +66,36 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
         {showCollege && department.college && ` · ${department.college}${department.former ? ` (${t('dept.former')})` : ''}`}
         {showCollege && !department.college && department.former && ` · ${t('dept.formerClosed')}`}
       </span>
+      {tracks.length > 0 && (
+        <span className="onb-option-note">
+          {t('dept.trackMatch')}{' '}
+          {tracks.map((tr, i) => (
+            <React.Fragment key={tr.id}>
+              {i > 0 && ', '}
+              <Highlighted text={tr.name} query={query} />
+            </React.Fragment>
+          ))}
+        </span>
+      )}
       {describeSuccessors(department, t) && <span className="onb-option-note">{describeSuccessors(department, t)}</span>}
     </button>
   );
+  if (shortcuts.length === 0) return card;
+  // 카드 자체가 버튼이라 바로가기는 카드 안이 아니라 바로 아래에 둔다(버튼 안에 버튼을 넣을 수 없다).
+  return (
+    <div className="onb-option-item">
+      {card}
+      {shortcuts.map((s) => (
+        <button key={s.department.id} type="button" className="onb-successor-shortcut" onClick={() => onSelectSuccessor(s.department, department)}>
+          {t('dept.successorShortcut', { year: s.year, name: s.department.name })}
+          <IconArrowRight />
+        </button>
+      ))}
+    </div>
+  );
 }
 
-function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContinue = onSelect }) {
+function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContinue = onSelect, onSelectSuccessor }) {
   const { t } = useI18n();
   // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -89,6 +134,21 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
     closeSearchScreen(); // 시스템 뒤로가기와 같은 경로 — SearchScreen이 onClose(dismissSearch)를 부른다
   };
 
+  // 이전 학과 카드의 "○○학번부터는 △△" 바로가기 — 확인된 이후 학과가 이 목록에 있을 때만.
+  const byName = useMemo(() => new Map(departments.map((d) => [d.name, d])), [departments]);
+  const shortcutsFor = (department) => {
+    if (!onSelectSuccessor) return [];
+    return (department.successors || [])
+      .filter((s) => s.confirmed)
+      .map((s) => byName.get(s.name))
+      .filter(Boolean)
+      .map((target) => ({ department: target, year: getYearRange(target, 'GENERAL').min }));
+  };
+  const handleSelectSuccessorFromSearch = (successor, former) => {
+    onSelectSuccessor(successor, former);
+    closeSearchScreen();
+  };
+
   // ↑↓: 가리키는 결과를 옮긴다. 엔터(모바일 "검색" 키): 가리킨 결과를 고른다.
   const handleSearchKeyDown = (e) => {
     // 한글 조합을 끝내는 키는 건너뛴다 — 브라우저에 따라 엔터가 조합 확정용으로 한 번 더 들어와 두 번 고르게 된다.
@@ -113,7 +173,17 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
         <p className="search-screen-count">{t('dept.search.count', { count: results.length })}</p>
         <div className="onb-option-list">
           {results.map((d, i) => (
-            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} active={i === activeIndex} onSelect={handleSelectFromSearch} showCollege />
+            <DepartmentCard
+              key={d.id}
+              department={d}
+              selected={selectedId === d.id}
+              active={i === activeIndex}
+              onSelect={handleSelectFromSearch}
+              showCollege
+              query={trimmed}
+              shortcuts={shortcutsFor(d)}
+              onSelectSuccessor={handleSelectSuccessorFromSearch}
+            />
           ))}
         </div>
       </>
@@ -202,7 +272,15 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
                       <p className="onb-college-hint">{t('dept.formerHint')}</p>
                     )}
                     {g.departments.map((d) => (
-                      <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />
+                      <DepartmentCard
+                        key={d.id}
+                        department={d}
+                        selected={selectedId === d.id}
+                        onSelect={onSelect}
+                        showCollege={false}
+                        shortcuts={shortcutsFor(d)}
+                        onSelectSuccessor={onSelectSuccessor}
+                      />
                     ))}
                   </div>
                 )}
@@ -213,7 +291,15 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
       ) : (
         <div className="onb-option-list">
           {departments.map((d) => (
-            <DepartmentCard key={d.id} department={d} selected={selectedId === d.id} onSelect={onSelect} showCollege={false} />
+            <DepartmentCard
+              key={d.id}
+              department={d}
+              selected={selectedId === d.id}
+              onSelect={onSelect}
+              showCollege={false}
+              shortcuts={shortcutsFor(d)}
+              onSelectSuccessor={onSelectSuccessor}
+            />
           ))}
         </div>
       )}
