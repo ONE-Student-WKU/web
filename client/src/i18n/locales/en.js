@@ -81,6 +81,8 @@ export default {
   'home.unchecked.designated': 'designated major courses',
   'home.unchecked.minorDesignated': 'designated minor courses',
   'home.unchecked.microDegree': 'two micro-degrees (convergence type)',
+  'home.noCourses': "You haven't added any courses yet. Add your courses and we'll show what's missing.",
+  'home.noCoursesAction': 'Import grades in Course management',
   'home.noData': 'Missing requirements cannot be shown for this department and cohort. See the Graduation check screen for the reason.',
   'home.menu': 'Menu',
   'homeEdit.open': 'Edit home screen',

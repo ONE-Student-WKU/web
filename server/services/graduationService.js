@@ -19,6 +19,7 @@ const { isBroadSeriesStudent } = require('./majorTrackType');
 const { majorAreaOf } = require('./categoryMap');
 const { loadDesignatedMajorCourses, DESIGNATED_MAJOR_COURSE_DEPARTMENTS } = require('./designatedMajorCourses');
 const { isTeacherCollegeDepartment, parseTeachingCourse, canTakeTeachingCourse } = require('./teachingCourse');
+const { applyTrackCertificationRule } = require('./trackCertificationRules');
 
 /**
  * server/services/graduationService.js
@@ -339,8 +340,8 @@ async function buildSecondMajorStatus(student, secondCourses, courseMajors, allC
  * 전과 전 과목 중 일반선택으로 바뀐 과목(시행규칙 제3조 제4항)과 인정 신청으로 전공선택이 된 과목(제115조). 화면·챗봇 안내용(D-77).
  */
 function summarizePriorMajorCourses(student, courses, byId) {
-  // 학생이 일반선택으로 고친 과목도 일반선택 목록에 넣는다.
-  const reasonOf = (r) => r.reason || (r.counted === 'GENERAL' ? 'DEMOTED' : null);
+  // 학생이 일반선택으로 고친 과목도 일반선택 목록에 넣는다. 제2전공으로 센 과목은 제2전공 카드에만 보인다.
+  const reasonOf = (r) => (r.counted === 'SECOND' ? null : r.reason || (r.counted === 'GENERAL' ? 'DEMOTED' : null));
   const pick = (reason) => courses.filter((c) => reasonOf(byId.get(c.id)) === reason)
     .map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), auto: byId.get(c.id).auto }));
   return {
@@ -368,7 +369,10 @@ async function getGraduationStatus(studentId) {
   // min_course_count가 있는 행은 졸업논문/졸업인증제처럼 "학점"이 아닌 "과목 이름 매칭"으로
   // 충족 여부를 판정하는 P/F 요건이라 학점 합산 로직에서 분리한다.
   const creditRows = requirementRows.filter((r) => r.min_course_count === null);
-  const certificationRows = requirementRows.filter((r) => r.min_course_count !== null);
+  // 세부전공이 더 강하게 정한 졸업인증제(공학3계열 컴소공전공 기업연계프로젝트1·2 둘 다, D-78)는 학과 단위 행을 바꿔 끼운다. 챗봇 근거도 같은 규칙을 쓴다.
+  const certificationRows = applyTrackCertificationRule(requirementRows.filter((r) => r.min_course_count !== null), {
+    departmentName: student.department_name, admissionYear: student.admission_year, trackName: student.track_name,
+  });
 
   // 제13조④(수강 학년도 기준 이수구분)로 다시 본 과목은 학점을 옮겨 합산한다(registrationCategory.js, D-46). 옮긴 과목은 결과에 그대로 싣는다.
   const storedCourses = await fetchCountedCourses(studentId);

@@ -837,3 +837,18 @@
   - 같은 과목 판정은 과목명 일치뿐이다. 학과 심의로 인정받은 "유사 교과목"은 학생이 직접 고쳐야 한다.
   - 재입학생·학사구조조정 소속변경자는 입력받지 않아 조기졸업 제한을 가려내지 못한다.
 - **위치**: `server/services/priorMajorCourses.js`·`courseCounting.js`, `graduationService.js`(evaluateCertifications·summarizePriorMajorCourses), `studentProgress.js`(canGraduateEarly), `routes/me.js`·`onboarding.js`, `client/src/pages/Onboarding.jsx`·`CourseManagement.jsx`·`GraduationStatus.jsx`·`Home.jsx`, `utils/graduation.js`(uncheckedRequirementKeys).
+
+## D-78 공학3계열 컴퓨터·소프트웨어공학전공은 졸업인증 기업연계프로젝트1·2 둘 다 — 세부전공 예외를 한곳에서 정한다 (2026-10-16)
+- **상황**:
+  - 공학3계열(2026학번~)은 졸업인증제 "나" 그룹(1과목)으로 확정됐다(교육혁신과 A-4). 옛 컴퓨터·소프트웨어공학과의 "기업연계프로젝트1·2 둘 다" 학과 규칙을 새 전공이 잇는지는 결정 2-2로 남아 있었다.
+  - 과사무실이 "책자는 1과목이지만 학과 규칙으로 1·2 둘 다, 1과목만으로는 졸업할 수 없다"고 답했다(docs/school-inquiry/컴퓨터소프트웨어공학전공_답변_2026-10-16.md).
+  - 졸업요건 시드는 학과 단위라 계열 안의 세부전공(컴소공전공·게임콘텐츠학전공)을 나눌 수 없다.
+- **결정**:
+  - 세부전공 예외는 `server/services/trackCertificationRules.js` 한곳에 둔다. 진단(graduationService)은 학생의 세부전공이 규칙에 맞으면 졸업인증제 행을 바꿔 끼우고, 챗봇의 학과·학번 졸업요건 근거(curriculumContextService)는 같은 규칙을 "세부전공 예외" 줄로 적는다.
+  - 바꿔 끼운 행은 대학 공통 기본영역이 아니라서 교직이수자 대체(D-77)를 받지 않는다(학과가 따로 정한 졸업인증 과목은 그대로).
+  - RAG 문서 `학사학위수여.md`에 남아 있던 "공학3계열은 가 그룹" 판단(2026-08-15)을 "나"와 세부전공 예외로 고쳤다.
+  - 시드에 세부전공 칸을 두는 방법은 예외가 이것 하나뿐이라 택하지 않았다(DB 칸·시드·엔진·재시딩이 함께 바뀌는 큰 작업).
+- **단점·다시 볼 조건**:
+  - 세부전공을 고르지 않은 공학3계열 학생(화면은 세부전공을 꼭 고르게 하지만 옛 계정 등)은 공통 기준(1과목)으로 판정하고, 졸업인증 설명에 "컴퓨터·소프트웨어공학전공이면 1·2 모두"를 함께 적는다. 챗봇 근거에도 예외가 적혀 있다.
+  - 다른 세부전공·학과의 학과 규칙은 조사하지 않았다. 공학1·2계열·게임콘텐츠 학과 홈페이지에는 강화 공지가 없었다(2026-10-16 검색, 첨부파일은 못 봄). 예외가 더 생기면 시드에 세부전공 칸을 두는 쪽을 다시 본다.
+- **위치**: `server/services/trackCertificationRules.js`, `graduationService.js`(getGraduationStatus), `curriculumContextService.js`(engineRequirementChunk·graduationRequirementChunk), `db/regulations/졸업/학사학위수여.md`.

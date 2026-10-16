@@ -80,6 +80,8 @@ export default {
   'home.unchecked.designated': '학과 지정 전공 과목',
   'home.unchecked.minorDesignated': '부전공 지정 교과목',
   'home.unchecked.microDegree': '마이크로디그리 2개(전공융합형)',
+  'home.noCourses': '아직 넣은 과목이 없어요. 과목을 넣으면 부족한 요건을 알려 드려요.',
+  'home.noCoursesAction': '과목 관리에서 성적 가져오기',
   'home.noData': '이 학과·학번은 홈에서 부족 요건을 알려드릴 수 없어요. 졸업요건 진단에서 이유를 확인해 주세요.',
   'home.menu': '메뉴',
   'homeEdit.open': '홈 화면 편집',
