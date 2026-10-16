@@ -3240,6 +3240,16 @@ body {
 .onb-option-card.selected .onb-option-caption { color: var(--color-accent); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
 .onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
+/* 학과 검색에서 친 글자와 일치한 부분 — 색만으로 구분하지 않게 굵게도 한다. 강조 배경(선택·↑↓) 위에서도 읽히는 글자색. */
+mark.search-hit { background: none; color: var(--color-accent-on-bg, var(--color-accent)); font-weight: 700; }
+/* 이전 학과 카드 + 바로 아래 "2026학번부터는 공학3계열" 바로가기 묶음 */
+.onb-option-item { display: flex; flex-direction: column; gap: 6px; }
+.onb-successor-shortcut {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 8px 14px; border: 1px solid var(--color-accent); border-radius: 10px;
+  background: none; color: var(--color-accent); font-family: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer;
+}
+.onb-successor-shortcut:hover { background: var(--color-accent-bg); color: var(--color-accent-on-bg, var(--color-accent)); }
 .onb-q-sub-note { margin-top: -6px; font-size: 0.8125rem; }
 
 .onb-field-group { margin-bottom: 18px; }

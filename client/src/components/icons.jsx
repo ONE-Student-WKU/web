@@ -114,6 +114,15 @@ export function IconArrowUp({ size = 16 }) {
   );
 }
 
+export function IconArrowRight({ size = 14 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
+
 export function IconPlus({ size = 16 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

@@ -206,6 +206,15 @@ async function listDepartments() {
     }
   }
 
+  // 세부전공 이름 — 학과 검색이 "컴퓨터"로 공학3계열(컴퓨터·소프트웨어공학전공)도 찾게 한다(UX 점검 2026-10-16 2-10).
+  const [trackRows] = await pool.query('SELECT id, department_id, name FROM tracks ORDER BY id');
+  const tracksByDept = new Map();
+  for (const t of trackRows) {
+    const list = tracksByDept.get(t.department_id) || [];
+    list.push({ id: t.id, name: t.name });
+    tracksByDept.set(t.department_id, list);
+  }
+
   const successorsByFrom = new Map();
   for (const e of lineageRows) {
     const list = successorsByFrom.get(e.from_id) || [];
@@ -223,6 +232,7 @@ async function listDepartments() {
     coreMinAdmissionYear: r.core_min_admission_year,
     coreMaxAdmissionYear: r.core_max_admission_year,
     successors: successorsByFrom.get(r.id) || [],
+    tracks: tracksByDept.get(r.id) || [],
     // 교직과정: 교직기본이수 요건 행이 있는 학번 범위(없으면 null — 교직 질문을 보이지 않는다). 사범대학이면 "이수 중"을 미리 고른다.
     teachingCourseYears: teachingYearsByDept.get(r.id) || null,
     teacherCollege: isTeacherCollegeDepartment(r.name),

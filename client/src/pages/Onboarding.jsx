@@ -5,6 +5,7 @@ import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, f
 import { isBroadSeriesStudent } from '../utils/majorTrackType.js';
 import MajorTrackTypeOptions from '../components/MajorTrackTypeOptions.jsx';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
+import { pickTrackForFormer } from '../utils/departmentTree.js';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -346,6 +347,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     selectDepartment(dept).then(goNext);
   }
 
+  // 이전 학과 카드의 "2026학번부터는 공학3계열" 바로가기 — 이후 학과를 고르고, 이전 학과와 이름이 이어지는 세부전공이 있으면
+  // 그것까지 미리 골라 둔 채 다음 질문(세부전공)으로 간다. 학생은 미리 골라진 세부전공을 확인만 하면 된다(UX 점검 2-10).
+  function selectSuccessorAndContinue(successor, former) {
+    const track = pickTrackForFormer(former.name, successor.tracks);
+    selectDepartment(successor).then(() => {
+      if (track) setAnswers((a) => ({ ...a, trackId: track.id }));
+      goNext();
+    });
+  }
+
   // 입학유형을 바꿔도 학번 범위가 실제로는 안 바뀌는 경우가 많다(편입생만 올해 학번이 빠지는
   // 정도) — 그런데도 무조건 학번을 지워버리면, 이미 유효한 학번을 고른 뒤 유형만 다시
   // 고쳐도 학번을 처음부터 다시 골라야 하는 불필요한 되돌림이 생긴다(실사용 확인). 새
@@ -527,6 +538,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 selectedId={answers.departmentId}
                 onSelect={selectDepartment}
                 onSelectAndContinue={selectDepartmentAndContinue}
+                onSelectSuccessor={selectSuccessorAndContinue}
               />
             )}
           </>
