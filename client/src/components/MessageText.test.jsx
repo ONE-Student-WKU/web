@@ -44,6 +44,17 @@ describe('MessageText', () => {
     expect(container.querySelectorAll('tbody td')).toHaveLength(3);
   });
 
+  it('표 칸·목록·문단의 <br>은 글자로 보이지 않고 줄바꿈이 된다(UX 점검 2-3)', () => {
+    const text = '| 영역 | 기준 |\n|---|---|\n| 교양선택 | 3개 영역<br>영역당 1과목<br/>32학점 |\n- 첫 줄<BR />둘째 줄\n문단<br>다음 줄';
+    const blocks = parseBlocks(text);
+    expect(blocks[0].rows[0][1]).toBe('3개 영역\n영역당 1과목\n32학점');
+    expect(blocks[1].items[0]).toBe('첫 줄\n둘째 줄');
+    expect(blocks[2].text).toBe('문단\n다음 줄');
+    const { container } = render(<MessageText text={text} />);
+    expect(container.textContent).not.toMatch(/<br/i);
+    expect(container.querySelector('br')).toBeNull(); // HTML 요소가 아니라 줄바꿈 문자(pre-wrap)로 그린다
+  });
+
   it('빈 값이어도 오류 없이 빈 영역을 그린다', () => {
     expect(parseBlocks(undefined)).toEqual([]);
     expect(parseBlocks('')).toEqual([]);

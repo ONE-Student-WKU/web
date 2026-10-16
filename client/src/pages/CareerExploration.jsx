@@ -13,6 +13,7 @@ import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
+import useChatAutoScroll from '../hooks/useChatAutoScroll.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 // 고정 질문의 question/options는 서버에 저장되고 AI 컨텍스트로 쓰이는 원문(한국어)이라 화면 언어와 무관하게 그대로 보낸다.
@@ -205,10 +206,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   const [editDrafts, setEditDrafts] = useState([]); // FIXED_QUESTIONS와 같은 순서의 string[] 배열
   const [savingEdit, setSavingEdit] = useState(false);
-  // 입력창 포커스(모바일 키보드가 뜨는 시점) — 하단 탭바는 App.jsx가 입력 칸 포커스를 보고 알아서 접는다.
-  const [inputFocused, setInputFocused] = useState(false);
 
-  const bottomRef = useRef(null);
   const bodyRef = useRef(null);
 
   useEffect(() => {
@@ -233,16 +231,15 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages, stage]);
-
-  // 입력창 포커스(모바일 키보드가 뜨는 시점)에도 다시 스크롤 — Chat.jsx와 동일한 이유.
-  useEffect(() => {
-    if (!inputFocused) return;
-    const timer = setTimeout(() => bottomRef.current?.scrollIntoView({ block: 'end' }), 300);
-    return () => clearTimeout(timer);
-  }, [inputFocused]);
+  // 진로 대화도 챗봇과 같은 규칙으로 스크롤한다 — 기다리는 동안은 맨 아래, 답이 오면 답의 첫 줄(UX 점검 2-1·2-2).
+  // 같은 스크롤 영역(bodyRef)을 후보·로드맵 화면도 쓰므로 대화 화면일 때만 움직인다.
+  // 키보드로 목록 높이가 바뀌는 것도 훅이 따라간다(입력창 포커스 때 따로 스크롤하지 않는 이유는 Chat.jsx 주석).
+  useChatAutoScroll(bodyRef, {
+    count: messages.length,
+    lastSender: messages[messages.length - 1]?.role,
+    waiting: sending,
+    enabled: stage === 'chat',
+  });
 
   // 채팅에서 답변 수정 화면으로 넘어오면 채팅창의 "맨 아래로 스크롤" 상태가 그대로
   // 이어져서, 맨 위 제목 없이 질문·선택된 답만 불쑥 보이는 문제가 있었다(실사용 피드백).
@@ -587,7 +584,6 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
               {turnLimitReached && (
                 <p className="career-support-note" role="status">{t('career.turnLimit')}</p>
               )}
-              <div ref={bottomRef} />
             </div>
           </div>
         )}
@@ -627,7 +623,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       </div>
 
       {stage === 'chat' && !turnLimitReached && (
-        <ChatInput onSendMessage={handleSendMessage} disabled={sending} onFocusChange={setInputFocused} />
+        <ChatInput onSendMessage={handleSendMessage} disabled={sending} />
       )}
 
       {(showConfirmModal || loadingCandidates) && (
