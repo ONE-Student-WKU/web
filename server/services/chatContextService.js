@@ -35,10 +35,28 @@ async function assembleStructuredChunks({ message, searchText, student, previous
     curriculumService.lookupMicroDegreesFromMessage(message),
   ]);
   const regulation = judgment ? judgment.chunks : [];
+  const second = await secondMajorChunks({ message, student, yearContext, progress });
   return {
-    regulation, judgment: judgment ? judgment.judgment : null, graduation, history, curriculum, requirement,
-    offering: offeringResult.offering, remaining: offeringResult.remaining, linkedMajor, microDegree,
+    regulation, judgment: judgment ? judgment.judgment : null, graduation, history,
+    curriculum: [...curriculum, ...second.curriculum], requirement,
+    offering: [...offeringResult.offering, ...second.offering], remaining: [...offeringResult.remaining, ...second.remaining],
+    linkedMajor, microDegree,
   };
+}
+
+// "내 복수전공 과목 뭐 들어?"처럼 학과 이름 없이 제2전공을 말하면 과목·개설 조회가 주전공 학과만 봐서, 챗봇이 "제2전공 학과 과목 목록이
+// 근거에 없다"고 답했다(2026-10-17 로컬 재현). 다전공 학생이 복수전공·부전공을 말하면 제2전공 학과로도 같은 조회를 한다.
+const SECOND_MAJOR_RE = /복수\s*전공|복전|부\s*전공|제\s*2\s*전공|다전공/;
+async function secondMajorChunks({ message, student, yearContext, progress }) {
+  const empty = { curriculum: [], offering: [], remaining: [] };
+  if (!student || student.second_department_id == null || !SECOND_MAJOR_RE.test(message || '')) return empty;
+  // 제2전공 학과 기준으로 조회한다 — 세부전공(트랙)은 주전공 것이라 뺀다. 학번은 그대로(제2전공도 같은 학번의 편성을 따른다).
+  const asSecond = { ...student, department_id: student.second_department_id, department_name: student.second_department_name, track_id: null, track_name: null };
+  const [curriculum, offering] = await Promise.all([
+    curriculumService.lookupFromMessage(message, asSecond, yearContext),
+    curriculumService.lookupOfferingChunks(message, asSecond, yearContext, { completedCourseNames: progress ? progress.completedCourseNames : [] }),
+  ]);
+  return { curriculum, offering: offering.offering, remaining: offering.remaining };
 }
 
 /**

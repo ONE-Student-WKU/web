@@ -940,11 +940,6 @@ body {
   color: var(--color-text-muted);
 }
 
-.grad-trust-badge.ok {
-  color: var(--color-success);
-  border-color: var(--color-success);
-}
-
 .grad-trust-badge.warn {
   color: var(--color-warning);
   border-color: var(--color-warning);

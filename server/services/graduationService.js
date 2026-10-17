@@ -46,6 +46,31 @@ function requirementRowsFromJudgment(requirementsRule) {
 // 예전에는 근거가 책자 한 곳이라 시행규칙 문언의 52를 대안으로 함께 받아 더 엄격한 값을 썼지만(D-32), 지금은 대안이 없다.
 // 엔진이 나중에 다시 근거가 갈리는 대안(alternatives)을 내면 더 엄격한(작은) 값을 쓰도록 남겨 둔다 — 학점을 덜 인정하는
 // 쪽은 틀려도 "졸업 가능"을 잘못 알려주는 사고로 이어지지 않기 때문이다. null이면 상한 없음.
+/**
+ * 순수 함수 — 편입생 교양 52학점 상한 적용 여부(LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED, 학교 확인 중)는 학생이 들은 교양이 상한 이하면
+ * 어느 쪽이든 결과가 같다. 그때는 그 사유를 안내(INFO)로 바꾸고 신뢰도를 다시 계산한다. 상한을 넘으면 그대로 추정이다.
+ * 예전에는 편입생이면 무조건 추정이라 3학년 편입생 전원(조사한 98개 학과 664개 조합)이 "추정"이었다(2026-10-17).
+ */
+function settleTransferLiberalCap(regulation, liberalArtsRaw, cap) {
+  const code = 'LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED';
+  if (!regulation || !(regulation.rules || []).some((r) => (r.flags || []).some((f) => f.code === code))) return regulation;
+  if (cap != null && liberalArtsRaw > cap) return regulation;
+  const settled = makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_NO_EFFECT');
+  const rules = regulation.rules.map((r) => {
+    if (!(r.flags || []).some((f) => f.code === code)) return r;
+    const flags = r.flags.map((f) => (f.code === code ? settled : f));
+    return { ...r, flags, confidence: confidenceFromFlags(flags) };
+  });
+  const confidence = worstConfidence(rules.filter((r) => r.critical).map((r) => r.confidence));
+  return {
+    ...regulation,
+    rules,
+    confidence,
+    confidenceLabel: CONFIDENCE_LABEL_KO[confidence],
+    flags: (regulation.flags || []).map((f) => (f.code === code ? settled : f)),
+  };
+}
+
 function liberalArtsCapForDiagnosis(capRule) {
   if (!capRule || !capRule.value) return null;
   const caps = [capRule.value.cap, ...(capRule.alternatives || []).map((a) => a.cap)].filter((c) => c != null);
@@ -360,9 +385,9 @@ async function getGraduationStatus(studentId) {
   }
 
   // 기준일 = 오늘(KST). 학생 행(학과·학번·입학유형·전과 학년/시점)을 그대로 엔진 입력으로 쓴다.
-  const regulation = await resolveRequirementsForStudent(inputFromStudentRow(student));
-  const requirementsRule = (regulation.rules || []).find((r) => r.id === 'REQUIREMENTS');
-  const capRule = (regulation.rules || []).find((r) => r.id === 'LIBERAL_ARTS_CAP');
+  const engineRegulation = await resolveRequirementsForStudent(inputFromStudentRow(student));
+  const requirementsRule = (engineRegulation.rules || []).find((r) => r.id === 'REQUIREMENTS');
+  const capRule = (engineRegulation.rules || []).find((r) => r.id === 'LIBERAL_ARTS_CAP');
   const requirementRows = requirementRowsFromJudgment(requirementsRule);
   const liberalArtsCap = liberalArtsCapForDiagnosis(capRule);
 
@@ -390,6 +415,8 @@ async function getGraduationStatus(studentId) {
   const earnedByCategory = applyAdjustments(sumByCategory(primaryCourses), registration.adjusted);
   const secondCredits = secondCourses.reduce((sum, c) => sum + Number(c.credits), 0);
   if (secondCredits > 0) earnedByCategory['일반선택'] = (earnedByCategory['일반선택'] || 0) + secondCredits;
+  // 편입생 교양 상한(학교 확인 중)은 실제 교양 학점이 상한을 넘을 때만 결과를 바꾼다 — 넘지 않으면 추정 사유에서 뺀다.
+  const regulation = settleTransferLiberalCap(engineRegulation, (earnedByCategory['교양필수'] || 0) + (earnedByCategory['교양선택'] || 0), liberalArtsCap);
   const registrationFlags = [
     ...(registration.adjusted.length ? [makeFlag('REGISTRATION_CATEGORY_APPLIED')] : []),
     ...(registration.unresolved.length ? [makeFlag('REGISTRATION_CATEGORY_NOT_COMPARABLE')] : []),
@@ -483,8 +510,12 @@ async function getGraduationStatus(studentId) {
       schedule4: requirementsRule && requirementsRule.value ? requirementsRule.value.schedule4 : null,
       // 2025학번 이하의 요건은 최신 책자(2026)의 학번별 이수기준표 값이다(엔진 LATEST_BOOKLET_COHORT_TABLE). 화면이 "어느 책자 기준인지"를 적는 데 쓴다. 해당 없으면 null.
       basisBookletYear: ((regulation.flags || []).find((f) => f.code === 'LATEST_BOOKLET_COHORT_TABLE') || {}).latestBookletYear ?? null,
+      // 이 학생에게 적용한 특례(전과·편입 전공 완화, 교양 29학점 고정, 복수전공 주전공 완화 등 — regulationEngine/evaluate.js)와
+      // 같은 학과·학번 일반 재학생의 전공·교양 학점. 챗봇이 "일반 학생 66학점 → 51학점"처럼 바뀐 이유를 설명하는 데 쓴다.
+      adjustments: requirementsRule && requirementsRule.value ? requirementsRule.value.adjustments || [] : [],
+      baseline: requirementsRule && requirementsRule.value ? requirementsRule.value.baseline || null : null,
     },
   };
 }
 
-module.exports = { getGraduationStatus, computeCreditStatus, computeMajorAreaCredits, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis };
+module.exports = { getGraduationStatus, settleTransferLiberalCap, computeCreditStatus, computeMajorAreaCredits, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis };

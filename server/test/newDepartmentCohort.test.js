@@ -64,3 +64,13 @@ test('뒤 학번에도 요건 행이 없으면 만들지 않는다(null)', () =>
   assert.equal(buildNewDepartmentCohortRows([row('졸업인증제', 0, 2020, 2025, { minCourseCount: 1 })], '경영학과', 2021), null);
   assert.equal(buildNewDepartmentCohortRows(BUSINESS, '경영학과', 2026), null);
 });
+
+test('3·4학년 전과의 줄어든 전공 학점이 학과의 모든 학번에서 같으면 relaxedUniform(첫 학번 값을 써도 추정이 아니다, 2026-10-17)', () => {
+  const uniform = buildNewDepartmentCohortRows([...BUSINESS, row('전공', 51, 2026, 2026, { enrollmentType: 'MAJOR_CHANGE' })], '경영학과', 2021);
+  assert.equal(uniform.fallback.relaxedUniform, true);
+  assert.equal(uniform.fallback.relaxedMajorCredits, 51);
+  // 의료상담학과처럼 학번에 따라 값이 바뀌면(48 → 36) 추정으로 남긴다
+  const changed = buildNewDepartmentCohortRows([...BUSINESS, row('전공', 36, 2026, 2026, { enrollmentType: 'MAJOR_CHANGE' })], '경영학과', 2021);
+  assert.equal(changed.fallback.relaxedUniform, false);
+  assert.equal(changed.fallback.relaxedMajorCredits, null);
+});
