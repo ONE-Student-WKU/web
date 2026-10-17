@@ -11,9 +11,10 @@ const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
  * 모델은 계산된 값을 그대로 쓰게 한다. 학기는 정규 학기(1·2) 번호 체계다(계절학기는 재학 학기 수에 세지 않는다 — termCode.js).
  *
  * 재학 학기 수(enrolledBefore: 다음 학기 직전까지 등록해 다닌 정규 학기 수)를 구하는 방법:
- *  1) RECORDS  — 과목 관리에 등록한 이수 기록이 입학 학기부터 이어져 있으면, 기록이 있는 정규 학기 수를 센다.
- *                기록이 없는 중간 학기는 휴학으로 본다(휴학 시기를 따로 입력받지 않기 위한 설계).
- *  2) PROFILE  — 기록이 입학 학기부터가 아니고, 학생이 휴학 질문에 답했으면(leave_periods가 [] 또는 기간) 입학 이후 경과 학기 − 그 기간의 휴학 학기 수.
+ *  1) PROFILE  — 학생이 휴학 질문에 답했으면(leave_periods가 [] 또는 기간) 입학 이후 경과 학기 − 그 기간의 휴학 학기 수. 이수 기록보다 우선한다
+ *                (기록은 학생이 아직 다 넣지 않았을 수 있다 — 최근 학기 과목이 없다고 휴학으로 보면 학년이 낮게 나온다).
+ *  2) RECORDS  — 휴학 질문에 아직 답하지 않았고, 과목 관리에 등록한 이수 기록이 입학 학기부터 이어져 있으면 기록이 있는 정규 학기 수를 센다.
+ *                기록이 없는 중간 학기는 휴학으로 본다(휴학 시기를 묻기 전 계정을 위한 방식).
  *  3) ESTIMATED — 휴학 질문에 아직 답하지 않은 계정(leave_periods NULL)은 입학 이후 경과 학기 − 프로필의 누적 휴학 학기 수(시기를 모름).
  * 학년 = 시작 학년(편입생 3, 그 외 1) + floor(재학 학기 수 / 2), 최대는 학과의 수업연한(그 이상은 초과학기).
  * 홈 화면·챗봇·진로 상담의 "현재 학년"도 이 계산 하나를 쓴다(이슈 #318, DECISIONS D-64) — 화면은 이수 기록 없이 프로필(휴학 기간)로,
@@ -87,7 +88,14 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
   let enrolledBefore;
   let source;
   let needsConfirmation;
-  if (recordsCoverAdmission) {
+  if (knownLeave) {
+    // 휴학 질문에 답한 학생은 휴학 기간을 직접 알려 줬으니 그 값으로 센다(홈 화면과 같은 값). 기록의 빈 학기를 휴학으로 보던 방식은
+    // 휴학 시기를 묻지 않던 때의 설계라, 최근 학기 과목을 아직 안 넣은 학생을 낮은 학년으로 계산했다(2026-10-17 로컬 재현: 휴학 없는
+    // 2024학번이 2025-1까지만 과목을 넣자 챗봇이 "2학년 1학기"라고 하고 2학년 과목을 권했다). 이수 기록은 이수 과목 목록에만 쓴다.
+    enrolledBefore = estimated;
+    source = 'PROFILE';
+    needsConfirmation = false;
+  } else if (recordsCoverAdmission) {
     source = 'RECORDS';
     // 이번 학기를 아직 등록하지 않았다면 추정값은 이번 학기까지 센 값이라 기록보다 하나 많은 게 정상이다 —
     // 이때는 이번 학기도 다니는 중으로 보고 추정값을 쓴다(기록만 세면 진행 중인 학기가 빠져 학년이 한 학기 낮게 나온다).
@@ -96,10 +104,6 @@ function computeProgress({ admissionYear, enrollmentType = 'GENERAL', transferGr
     enrolledBefore = consistent ? estimated : recordedIndexes.size;
     if (!consistent) flags.push('RECORDS_LEAVE_MISMATCH');
     needsConfirmation = !consistent;
-  } else if (knownLeave) {
-    enrolledBefore = estimated;
-    source = 'PROFILE';
-    needsConfirmation = false;
   } else {
     enrolledBefore = estimated;
     source = 'ESTIMATED';

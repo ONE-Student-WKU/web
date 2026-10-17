@@ -5,6 +5,9 @@
  */
 
 const { currentStandingOf } = require('./studentProgress');
+const { parseLeavePeriods } = require('./leavePeriods');
+const { parseTeachingCourse } = require('./teachingCourse');
+const { secondMajorTypeOf } = require('./secondMajor');
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -28,9 +31,52 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 이수과목확인리스트"(등급 없이 과목만)이다. 이 서비스의 과목 관리 화면에서 이 화면을 PDF로 저장해 올리면 과목을 한 번에 가져올 수 있다.
 이전 대화의 답변은 그때 제공된 근거로 한 것이다. 이번 근거 문서는 이번 질문에 맞춰 새로 고른 것이라 이전 답변의 근거가
 빠져 있을 수 있다. 이번 근거에 없다는 이유만으로 이전 답변이 틀렸다거나 추정이었다고 정정하지 말고, 이번 질문에만 답하라.
-학생이 이전 답변을 직접 의심하며 다시 물으면 이번 근거로 확인할 수 있는 만큼만 답하라.`;
+학생이 이전 답변을 직접 의심하며 다시 물으면 이번 근거로 확인할 수 있는 만큼만 답하라.
+말투: 학생을 "당신"이라고 부르지 마라. 주어가 필요하면 생략하거나 "학생"이라고 쓰고, 문장 끝은 "~해요/~이에요"로 통일하라.
+쉬운 말: 학칙 용어(예: "최소전공 인정학점")를 그대로 앞세우지 말고 무슨 뜻인지 먼저 말한 뒤 용어는 괄호로 붙여라.
+기준이 줄거나 바뀐 경우는 "일반 학생 66학점 → 51학점으로 줄었다"처럼 바뀌기 전과 후 숫자를 나란히 말하고,
+"~을 적용하지 않는다", "~미적용"처럼 부정형으로 규칙을 설명하지 마라(무엇이 더 쉬워지는지 거꾸로 읽히기 쉽다).`;
 
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
+const SECOND_MAJOR_LABEL = { DOUBLE: '복수전공', MINOR: '부전공' };
+const MAJOR_TRACK_TYPE_LABEL = { DOUBLE_MAJOR: '복수전공형', INTENSIVE: '전공심화형', CONVERGENCE: '전공융합형', UNDECIDED: '아직 정하지 않음' };
+
+// 학생이 온보딩·학과 수정에서 직접 입력한 항목들. 처음에는 학과·학번·입학유형만 넘겼는데, 뒤에 입력 항목(전과 시점, 편입 인정학점,
+// 휴학 기간, 교직, 다전공, 이수유형)이 늘어도 여기에 넣지 않아 챗봇이 "전과 시점을 알려 주세요", "인정학점이 기록돼 있지 않다",
+// "휴학 기록을 찾을 수 없다"고 되물었다(2026-10-17 로컬 재현). 입력하지 않은 값은 "입력 안 함"이라고 적어 그것만 묻게 한다.
+function profileDetailLines(student) {
+  const lines = [];
+  if (student.enrollment_type === 'MAJOR_CHANGE') {
+    const when = student.major_change_year != null && student.major_change_semester != null
+      ? `${student.major_change_year}학년도 ${student.major_change_semester}학기`
+      : null;
+    const grade = student.major_change_grade != null ? `${student.major_change_grade}학년` : null;
+    lines.push(when || grade
+      ? `전과: ${[when, grade ? `${grade} 때` : null].filter(Boolean).join(', ')} 전과${!when ? '(전과 연도·학기는 입력 안 함)' : ''}${!grade ? '(전과 학년은 입력 안 함)' : ''}`
+      : '전과: 전과 시점·학년을 입력 안 함');
+    lines.push(`전과 전 학과 과목의 전공학점 인정 신청: ${Number(student.major_change_recognition) === 1 ? '했음' : '안 했음(또는 입력 안 함)'}`);
+  }
+  if (student.enrollment_type === 'TRANSFER_ADMISSION') {
+    lines.push(`편입: ${student.transfer_grade != null ? `${student.transfer_grade}학년으로 편입` : '편입 학년은 입력 안 함(3학년 편입으로 가정)'}, ` +
+      `편입 때 인정받은 학점 ${student.transfer_recognized_credits != null ? `${student.transfer_recognized_credits}학점(학생 입력)` : '입력 안 함'}`);
+  }
+  const secondType = secondMajorTypeOf(student);
+  lines.push(secondType
+    ? `다전공: ${SECOND_MAJOR_LABEL[secondType]} ${student.second_department_name || '(학과 미상)'}`
+    : '다전공: 하지 않음');
+  const teaching = parseTeachingCourse(student.teaching_course);
+  if (teaching !== null) lines.push(`교직과정: ${teaching ? '이수 중' : '이수 안 함'}`);
+  if (student.major_track_type) lines.push(`전공 이수유형(광역 계열전공): ${MAJOR_TRACK_TYPE_LABEL[student.major_track_type] || student.major_track_type}`);
+  const periods = parseLeavePeriods(student.leave_periods);
+  if (periods) {
+    lines.push(periods.length === 0
+      ? '휴학: 한 적 없음'
+      : `휴학: ${periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', ')}`);
+  } else if (Number(student.leave_semesters) > 0) {
+    lines.push(`휴학: 누적 ${student.leave_semesters}학기(시기는 입력 안 함)`);
+  }
+  return lines;
+}
 
 // 지금 학년·학기 한 줄. 계산은 studentProgress 한 곳에서 한다(이슈 #318) — 챗봇은 이수 기록까지 넣은 progress.current를,
 // 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
@@ -57,7 +103,10 @@ function buildStudentProfileNote(student, progress = null) {
     standing ? `현재: ${standing}` : null,
   ].filter(Boolean);
 
+  const details = profileDetailLines(student);
   return `이 학생의 프로필 — ${parts.join(', ')}.
+${details.map((l) => `- ${l}`).join('\n')}
+위 항목은 학생이 직접 입력한 값이다. 이 값을 학생에게 다시 묻지 말고 그대로 써서 답하라. "입력 안 함"인 항목만, 답이 그 값에 따라 달라질 때 물어라.
 근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
 여기서 "이 학번 기준"은 최신 교육과정 책자에 실린 "${student.admission_year}학번 적용" 표(학번별 이수기준표)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${student.admission_year}학년도 책자의 숫자는 입학 당시 기준(이력)일 뿐이다.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
@@ -69,7 +118,55 @@ function buildStudentProfileNote(student, progress = null) {
 // 온보딩 프로필(학과/학번)만 알고 실제 이수과목/졸업요건 계산 결과는 전혀 몰라서 "구체적인 건
 // 학사지원과에 문의하라"고 얼버무리는 문제가 있었다(실사용 확인, 2026-08-16) — 과목
 // 관리/졸업요건 진단 쪽 로직(graduationService.js)이 챗봇과 완전히 분리된 경로였기 때문.
-function buildGraduationStatusNote(graduationStatus) {
+// 이 학생에게 적용한 특례(regulationEngine/evaluate.js의 adjustments)를 "일반 학생 기준 → 이 학생 기준" 숫자로 풀어 쓴다.
+// 숫자만 주면 모델이 학칙 원문을 보고 규칙을 지어내 "3학년 이상 전과생은 최소전공 기준을 적용하지 않는다"처럼 거꾸로 설명했다
+// (2026-10-17 로컬 재현 — 실제로는 3·4학년 전과가 전공 학점이 줄어드는 쪽이다).
+const MAJOR_ROW_CATEGORIES = ['전공필수', '전공선택', '전공'];
+const LIBERAL_ROW_CATEGORIES = ['교양필수', '교양선택'];
+function adjustmentLines(graduationStatus, student) {
+  const regulation = graduationStatus.regulation || {};
+  const adjustments = regulation.adjustments || [];
+  const baseline = regulation.baseline || null;
+  const sumRequired = (cats) => graduationStatus.categories.filter((c) => cats.includes(c.category)).reduce((s, c) => s + Number(c.requiredCredits || 0), 0);
+  const major = sumRequired(MAJOR_ROW_CATEGORIES);
+  const enrollment = student ? student.enrollment_type : null;
+  const lines = [];
+  const fromTo = (base, now) => (base != null && base !== now ? `같은 학과·학번 일반 학생 ${base}학점 → 이 학생 ${now}학점` : `${now}학점`);
+  const rebalanced = adjustments.includes('GENERAL_ELECTIVE_REBALANCE') ? ' 줄어든 학점은 일반선택(자유선택)으로 옮겨져 졸업 총학점은 일반 학생과 같다.' : '';
+
+  if (adjustments.includes('MAJOR_RELAXATION')) {
+    const why = enrollment === 'MAJOR_CHANGE'
+      ? `${student.major_change_grade ? `${student.major_change_grade}학년 때` : '3·4학년 때'} 전과해서`
+      : enrollment === 'TRANSFER_ADMISSION'
+        ? `${student.transfer_grade || 3}학년으로 편입해서`
+        : '';
+    lines.push(`- 전공 기준이 줄었다: ${why} 전공은 ${fromTo(baseline && baseline.majorCredits, major)}만 채우면 된다(학교 용어로 "최소전공 인정학점", 학칙시행규칙 제6조·제8조).${enrollment === 'TRANSFER_ADMISSION' ? '' : rebalanced}`);
+  } else if (enrollment === 'MAJOR_CHANGE') {
+    lines.push(student.major_change_grade
+      ? `- ${student.major_change_grade}학년 때 전과해서 전공 기준은 일반 학생과 같은 ${major}학점이다(전공 학점이 줄어드는 건 3·4학년 전과뿐이다, 학칙시행규칙 제8조 제2항).`
+      : `- 전과 학년을 입력하지 않아 1·2학년 전과로 보고 전공을 일반 학생과 같은 ${major}학점으로 계산했다. 3·4학년 때 전과했다면 전공 학점이 줄어든다.`);
+  } else if (enrollment === 'TRANSFER_ADMISSION' && Number(student.transfer_grade) === 2) {
+    lines.push(`- 2학년으로 편입해서 전공 기준은 일반 학생과 같은 ${major}학점이다(전공 학점이 줄어드는 건 3·4학년 편입뿐이다, 학칙시행규칙 제8조 제2항).`);
+  }
+  if (adjustments.includes('DOUBLE_MAJOR_MINIMUM')) {
+    lines.push(`- 복수전공을 해서 주전공 기준도 줄었다: 주전공 전공은 ${fromTo(baseline && baseline.majorCredits, major)}(학교 용어로 "최소전공 인정학점", 학칙시행규칙 제8조 제1항).${rebalanced}`);
+  }
+  if (adjustments.includes('TRANSFER_4TH_MAJOR_21')) {
+    lines.push('- 4학년으로 편입해서 전공은 학과와 상관없이 21학점이다(학칙시행규칙 제6조 제3항).');
+  }
+  if (adjustments.includes('LIBERAL_FIXED_29')) {
+    lines.push(`- 교양은 학번 표${baseline && baseline.liberalCredits ? `(${baseline.liberalCredits}학점)` : ''} 대신 29학점(교양필수 5 + 교양선택 24)으로 정해져 있다 — 2022학년도 2학기 이전에 전과한 학생 기준이다.`);
+  }
+  if (adjustments.includes('TRANSFER_LIBERAL_DEEMED')) {
+    lines.push('- 3·4학년 편입이라 교양 영역 기준은 채운 것으로 보고 "종교와원불교"만 따로 들으면 된다. 본교에서 들은 교양 과목은 일반선택으로 센다.');
+  }
+  if (adjustments.includes('TRANSFER_RECOGNIZED_CREDITS') && student && student.transfer_recognized_credits != null) {
+    lines.push(`- 편입 때 인정받은 ${student.transfer_recognized_credits}학점(학생 입력)을 졸업학점에서 빼고, 본교에서 ${graduationStatus.totalRequiredCredits}학점을 들으면 되는 것으로 계산했다.`);
+  }
+  return lines;
+}
+
+function buildGraduationStatusNote(graduationStatus, student = null) {
   if (!graduationStatus) return null;
 
   const { totalEarnedCredits, totalRequiredCredits, categories, certifications } = graduationStatus;
@@ -127,17 +224,17 @@ function buildGraduationStatusNote(graduationStatus) {
     ? [
       `다전공: ${secondLabel} ${second.department} — 제2전공 ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 ${secondLabel} 기준)${second.thesis ? `, 복수전공 졸업논문(졸업논문2) ${second.thesis.satisfied ? '통과' : '미통과'}` : ''}.`,
       second.type === 'DOUBLE'
-        ? `  - 복수전공 이수학생은 주전공도 최소전공 인정학점이면 된다(시행규칙 제8조 제1항).${primaryMajorRow ? ` 주전공 전공 기준은 ${primaryMajorRow.requiredCredits}학점이고 지금 ${primaryMajorRow.earnedCredits}학점이다(위 카테고리의 "전공" 행).` : ''} 주전공·복수전공 요건을 모두 채워야 졸업한다.`
+        ? `  - 복수전공을 하면 주전공 전공 학점도 일반 학생보다 줄어든다(학교 용어로 "최소전공 인정학점", 시행규칙 제8조 제1항).${primaryMajorRow ? ` 주전공 전공 기준은 ${primaryMajorRow.requiredCredits}학점이고 지금 ${primaryMajorRow.earnedCredits}학점이다(위 카테고리의 "전공" 행).` : ''} 주전공·복수전공 요건을 모두 채워야 졸업한다.`
         : '  - 부전공은 부전공 지정 교과목을 포함해 21학점 이상이다(다전공이수에 관한 내규 제5조). 지정 교과목은 판정하지 않으니 부전공 학과 확인을 안내하라. 부전공을 유지하면 부전공 요건도 채워야 졸업한다(취소하고 졸업할 수도 있다).',
       '  - 근거 문서에 나오는 학과의 전공 학점(전공필수+전공선택 합계)은 그 학과 일반 재학생 기준이다. 복수전공·부전공 기준이 아니니 위 숫자로 답하라.',
-      '  - 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이다. 과목은 개설 학과와 학과 편성표로 자동으로 나눴고, 두 학과에 모두 있는 과목은 주전공으로 두었다 — 다르면 과목 관리에서 과목마다 바꿀 수 있다고 안내하라. 같은 과목을 두 전공에 중복 인정하는지는 학교 기준을 확인하지 못했으니 단정하지 마라.',
+      '  - 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이다. 과목은 개설 학과와 학과 편성표로 자동으로 나눴고, 두 학과에 모두 있는 과목은 주전공으로 두었다 — 다르면 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 바꿀 수 있다고 안내하라(웹정보서비스 메뉴가 아니다). 같은 과목을 두 전공에 중복 인정하는지는 학교 기준을 확인하지 못했으니 단정하지 마라.',
     ].join('\n')
     : null;
   // 전과생의 전과 전 전공 과목(D-77) — 일반선택으로 셌고, 같은 과목은 인정 신청을 했을 때만 전공선택이다.
   const prior = graduationStatus.priorMajorCourses;
   const sumCredits = (list) => list.reduce((s, c) => s + c.credits, 0);
   const priorLine = prior && (prior.demoted.length || prior.recognized.length)
-    ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 과목 관리에서 과목마다 바꿀 수 있다고 알려라.`
+    ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 바꿀 수 있다고 알려라(웹정보서비스 메뉴가 아니다).`
     : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
@@ -156,8 +253,13 @@ function buildGraduationStatusNote(graduationStatus) {
   const caveats = [];
   if (regulation && regulation.confidence !== 'CONFIRMED') {
     const reasons = regulation.flags.filter((f) => f.level !== 'INFO').map((f) => `  - ${f.message}`);
-    caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유:\n${reasons.join('\n')}`);
+    caveats.push(`- 이 진단의 요건 신뢰도는 "${regulation.confidenceLabel}"이다. 아래 숫자를 확정처럼 말하지 말고 추정임을 밝힌 뒤 확인을 안내하라. 이유(이 목록에 있는 이유만 말하고, 목록에 없는 이유를 지어내지 마라):\n${reasons.join('\n')}`);
+  } else if (regulation && regulation.confidence === 'CONFIRMED') {
+    // 진단이 확정인데도 "적용 규정 판단" 문서의 전체 신뢰도(문서 안 모든 규정 항목 중 가장 낮은 것)만 보고 졸업요건 숫자에
+    // "추정"을 붙였다(2026-10-17 운영 점검). 졸업요건 숫자의 확정 여부는 이 진단을 따르게 한다.
+    caveats.push('- 이 진단의 요건 신뢰도는 "확정"이다. 학점 기준과 남은 학점은 확정으로 답해도 된다. "적용 규정 판단" 문서에 "추정"으로 적힌 항목은 그 규정 항목(과목 경과조치·자료 등급 등)에만 해당하니, 졸업요건 숫자에 "추정"을 붙이지 마라.');
   }
+  const specialRules = adjustmentLines(graduationStatus, student);
   // 최신 책자에 학과 행이 없는 통폐합·개편 학과는 INFO라 위 신뢰도 이유에는 안 들어가지만, 학교 답변(A-3)의 "소속변경을 신청하지
   // 않았다면 옛 학과 소속 유지" 기준은 이 학생에게 직접 해당하는 안내라 따로 넘긴다. 이게 없으면 챗봇이 통폐합 학과 질문에
   // "학과에 확인"으로만 끝냈다(운영 점검 #378). 문장은 졸업요건 화면의 안내와 같은 것(regulationEngine/flags.js)을 쓴다.
@@ -176,6 +278,7 @@ function buildGraduationStatusNote(graduationStatus) {
 총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (졸업까지 ${remaining}학점 남음)
 카테고리별:
 ${categoryLines}
+${specialRules.length ? `이 학생에게 적용한 특례(위 기준이 일반 학생과 다른 이유 — 설명할 때 이 문장대로 바뀌기 전후 숫자를 말하라):\n${specialRules.join('\n')}` : ''}
 ${certLines || counselingLine ? `졸업논문·졸업인증제:\n${[certLines, counselingLine].filter(Boolean).join('\n')}` : ''}
 ${designatedLine || ''}
 ${majorAreaLine || ''}
@@ -325,7 +428,7 @@ function buildSystemPrompt(student, graduationStatus, yearContext = null, langua
     EVIDENCE_PRIORITY_NOTE,
     buildStudentProfileNote(student, progress),
     buildYearContextNote(yearContext),
-    buildGraduationStatusNote(graduationStatus),
+    buildGraduationStatusNote(graduationStatus, student),
     buildProgressNote(progress),
     buildLanguageNote(language),
   ].filter(Boolean);

@@ -189,7 +189,12 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     basis.push('ENF_ART7_BROAD_SERIES');
   }
 
-  return { rows, adjustments, flags, basis, resolvedTransferTotal };
+  // 같은 학과·학번 일반 재학생의 전공·교양 학점 — 완화·고정을 적용했을 때 "몇 학점에서 몇 학점으로 바뀌었는지"를 설명하는 데 쓴다(챗봇).
+  const baseline = {
+    majorCredits: sum(generalRows.filter((r) => MAJOR_CATEGORIES.includes(r.category))),
+    liberalCredits: sum(generalRows.filter((r) => LIBERAL_CATEGORIES.includes(r.category))),
+  };
+  return { rows, adjustments, flags, basis, resolvedTransferTotal, baseline };
 }
 
 // 졸업인증제 행이 대학 공통 기본영역 묶음(constants.GENERIC_CERTIFICATION_COURSE_SETS)과 같은가. 학과 지정 과목(컴소공 기업연계프로젝트1·2 등)은 아니다.
@@ -293,6 +298,7 @@ function evaluate(ctx, data) {
         ...(ctx.enrollmentType === 'TRANSFER_ADMISSION' && isGenericCertificationRow(r) ? { conditionalExemption: 'BACHELOR_TRANSFER' } : {}),
       })),
       adjustments: built.adjustments,
+      baseline: built.baseline,
       // 광역 계열전공의 이수구분별 최소 학점(시행규칙 제7조 제3항) — 졸업진단이 과목의 기초·심화·응용으로 판정한다. 그 외(완화 포함)는 null.
       majorAreaMinimums: isBroadSeriesStudent({ departmentName: department.name, admissionYear: ctx.admissionYear }) && !built.adjustments.includes('MAJOR_RELAXATION')
         ? (BROAD_SERIES_AREA_MINIMUMS[department.name] || BROAD_SERIES_AREA_MINIMUMS.default)

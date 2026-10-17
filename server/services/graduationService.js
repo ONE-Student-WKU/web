@@ -483,6 +483,10 @@ async function getGraduationStatus(studentId) {
       schedule4: requirementsRule && requirementsRule.value ? requirementsRule.value.schedule4 : null,
       // 2025학번 이하의 요건은 최신 책자(2026)의 학번별 이수기준표 값이다(엔진 LATEST_BOOKLET_COHORT_TABLE). 화면이 "어느 책자 기준인지"를 적는 데 쓴다. 해당 없으면 null.
       basisBookletYear: ((regulation.flags || []).find((f) => f.code === 'LATEST_BOOKLET_COHORT_TABLE') || {}).latestBookletYear ?? null,
+      // 이 학생에게 적용한 특례(전과·편입 전공 완화, 교양 29학점 고정, 복수전공 주전공 완화 등 — regulationEngine/evaluate.js)와
+      // 같은 학과·학번 일반 재학생의 전공·교양 학점. 챗봇이 "일반 학생 66학점 → 51학점"처럼 바뀐 이유를 설명하는 데 쓴다.
+      adjustments: requirementsRule && requirementsRule.value ? requirementsRule.value.adjustments || [] : [],
+      baseline: requirementsRule && requirementsRule.value ? requirementsRule.value.baseline || null : null,
     },
   };
 }

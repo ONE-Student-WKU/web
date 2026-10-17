@@ -115,3 +115,18 @@ test('영어 답변에는 영어 안내문을 붙인다', () => {
   assert.ok(r.answer.startsWith('Contact the Academic Affairs Office.'), r.answer);
   assert.ok(r.answer.endsWith(PHONE_REMOVED_NOTICE.en));
 });
+
+const { guardJudgmentFor } = require('../services/answerGuard');
+
+test('본인 졸업요건 질문은 진단 신뢰도로 안내문을 정한다 — 진단이 확정이면 판단이 추정이어도 붙이지 않는다(2026-10-17)', () => {
+  const regulationJudgment = { judgment: { confidence: 'ESTIMATED' }, subject: { hypothetical: false } };
+  assert.equal(guardJudgmentFor(regulationJudgment, 'CONFIRMED', { requirement: true }).confidence, 'CONFIRMED');
+  // 경과조치·이력·비교 질문, 다른 학번·학과를 가정한 질문은 판단 신뢰도 그대로
+  assert.equal(guardJudgmentFor(regulationJudgment, 'CONFIRMED', { requirement: true, history: true }).confidence, 'ESTIMATED');
+  assert.equal(guardJudgmentFor({ ...regulationJudgment, subject: { hypothetical: true } }, 'CONFIRMED', { requirement: true }).confidence, 'ESTIMATED');
+  assert.equal(guardJudgmentFor(regulationJudgment, 'CONFIRMED', {}).confidence, 'ESTIMATED');
+  // 요건 단어 없이 학점을 묻는 비교 질문도 본인 요건 질문이다. 과목 경과조치 질문은 판단 신뢰도 그대로.
+  assert.equal(guardJudgmentFor(regulationJudgment, 'CONFIRMED', { compare: true }, '3학년 때 전과했는데 전공 학점 기준이 일반 학생이랑 달라?').confidence, 'CONFIRMED');
+  assert.equal(guardJudgmentFor(regulationJudgment, 'CONFIRMED', { requirement: false }, '폐지된 전공 과목은 안 들어도 돼?').confidence, 'ESTIMATED');
+  assert.equal(guardJudgmentFor(null, 'CONFIRMED', { requirement: true }), null);
+});
