@@ -84,9 +84,9 @@ test('"내 졸업요건이 뭐야?"(2018학번): 프로필 학번 기준 한 해
   embeddingToReturn = new Array(512).fill(0);
   const { status, body } = await post('내 졸업요건이 뭐야?');
   assert.equal(status, 200);
-  // 2018학번 컴소공은 판단 신뢰도가 확정이 아니고 mock 답변에 단서 표현이 없어서, 응답 후처리 가드(D-49)가 안내문을 덧붙인다 — 본문은 그대로.
-  assert.ok(body.data.content.startsWith('테스트 답변\n\n※ '), body.data.content);
-  assert.match(body.data.content, /학사지원과\(063-850-5228\)/);
+  // 2018학번 컴소공은 규정 판단 전체 신뢰도는 확정이 아니지만, 본인 졸업요건 질문이라 응답 후처리 가드(D-49)는 졸업요건 진단의 신뢰도(과목이
+  // 없는 이 계정은 확정)를 따른다 — 진단이 확정인데 "추정이에요"가 붙던 문제(2026-10-17 운영 점검, answerGuard.guardJudgmentFor).
+  assert.equal(body.data.content, '테스트 답변');
   assert.equal(captured.yearContext.mode, 'COHORT');
   assert.equal(captured.yearContext.applicableCohort, 2018);
   assert.ok(titles().some((t) => /2018학번 졸업요건/.test(t)));

@@ -110,4 +110,25 @@ function removeUnverifiedPhoneNumbers(answer, sourceTexts, language = 'ko') {
   return { answer: `${out.trimEnd()}\n\n${PHONE_REMOVED_NOTICE[language === 'en' ? 'en' : 'ko']}`, removed };
 }
 
-module.exports = { guardAnswer, removeUnverifiedPhoneNumbers, HEDGE_RE, HEDGE_RE_EN, NOTICE, NOTICE_EN, PHONE_REMOVED_NOTICE };
+/**
+ * 안내문을 붙일지 정할 때 쓸 신뢰도. 규정 판단의 전체 신뢰도는 판단 문서 안 모든 규정 항목(과목 경과조치·자료 등급 등) 중 가장 낮은 것이라
+ * 일반 재학생도 거의 항상 "추정"이다. 학생 본인의 졸업요건을 묻는 질문(경과조치·이력·비교 질문이 아닌 요건 질문)은 졸업요건 진단의
+ * 신뢰도를 따른다 — 진단이 "확정"인데도 답 끝에 "추정이에요"가 붙었다(2026-10-17 운영 점검). 그 밖의 질문은 판단 신뢰도 그대로다.
+ * @param {{ judgment, subject }|null} regulationJudgment  lookupRegulationJudgment 결과
+ * @param {string|null} diagnosisConfidence  졸업요건 진단(graduationService)의 신뢰도
+ * @param {{ requirement, history }} intents  yearContext.intents
+ * @param {string} [message]  질문 원문 — "전공 학점 기준이 일반 학생이랑 달라?"처럼 요건 단어 없이 학점을 묻는 질문도 본인 요건 질문으로 본다
+ */
+const CREDIT_TOPIC_RE = /학점|전공|교양|일반선택|자유선택|졸업|요건/;
+// 과목 경과조치(폐지·필수→선택 등) 질문은 판단 문서의 과목별 항목이 답의 중심이라 판단 신뢰도를 그대로 쓴다.
+const COURSE_TRANSITION_RE = /폐지|폐설|경과조치|없어진s*과목|바뀐s*과목|안s*들어도/;
+function guardJudgmentFor(regulationJudgment, diagnosisConfidence, intents = {}, message = '') {
+  if (!regulationJudgment || !regulationJudgment.judgment) return null;
+  const { judgment, subject } = regulationJudgment;
+  const text = String(message || '');
+  const aboutOwnRequirements = intents.requirement || (CREDIT_TOPIC_RE.test(text) && !COURSE_TRANSITION_RE.test(text));
+  const ownRequirementQuestion = subject && !subject.hypothetical && aboutOwnRequirements && !intents.history;
+  return ownRequirementQuestion && diagnosisConfidence ? { ...judgment, confidence: diagnosisConfidence } : judgment;
+}
+
+module.exports = { guardAnswer, guardJudgmentFor, removeUnverifiedPhoneNumbers, HEDGE_RE, HEDGE_RE_EN, NOTICE, NOTICE_EN, PHONE_REMOVED_NOTICE };

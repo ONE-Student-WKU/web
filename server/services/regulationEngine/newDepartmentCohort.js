@@ -1,6 +1,8 @@
 const { rowAppliesToYear, hasCoreRowsForYear } = require('./evaluate');
 const cohortTables = require('./cohortTables');
 
+const MAJOR_ROW_CATEGORIES = ['전공필수', '전공선택', '전공'];
+
 /**
  * server/services/regulationEngine/newDepartmentCohort.js
  * 학과가 생기기 전 학번의 학생이 그 학과로 전과한 경우(예: 2021학번 → 2023년 신설 경영학과)의 졸업요건 행을 만든다(#378, 2026-10-15 결정 A안).
@@ -64,7 +66,17 @@ function buildNewDepartmentCohortRows(rows, departmentName, admissionYear, deps 
       : [...out, { id: null, category: '일반선택', requiredCredits: elective, description, enrollmentType: null, minCourseCount: null, minAdmissionYear: admissionYear, maxAdmissionYear: admissionYear, requiredCourses: [] }];
   }
 
-  return { rows: out, fallback: { firstCohort, college, liberalFromTable, graduationFromTable } };
+  // 3·4학년 전과의 줄어든 전공 학점(전과 완화 행, 학칙시행규칙 제6조①의 계열별 최소전공)이 이 학과의 모든 학번에서 같으면 학번과 상관없는 값이라
+  // 첫 학번 값을 써도 추정이 아니다(2026-10-17 조사: 신설 학과 25곳 중 의료상담학과 2026학번만 48→36으로 다르고 나머지는 학번마다 같다).
+  const relaxedByCategory = new Map();
+  for (const r of rows.filter((x) => x.enrollmentType === 'MAJOR_CHANGE' && MAJOR_ROW_CATEGORIES.includes(x.category))) {
+    if (!relaxedByCategory.has(r.category)) relaxedByCategory.set(r.category, new Set());
+    relaxedByCategory.get(r.category).add(Number(r.requiredCredits));
+  }
+  const relaxedUniform = relaxedByCategory.size > 0 && [...relaxedByCategory.values()].every((values) => values.size === 1);
+  const relaxedMajorCredits = relaxedUniform ? [...relaxedByCategory.values()].reduce((s, values) => s + [...values][0], 0) : null;
+
+  return { rows: out, fallback: { firstCohort, college, liberalFromTable, graduationFromTable, relaxedUniform, relaxedMajorCredits } };
 }
 
 module.exports = { buildNewDepartmentCohortRows };

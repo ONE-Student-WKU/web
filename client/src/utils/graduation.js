@@ -236,7 +236,7 @@ export function formatShortfallSentence(shortfalls, lang = 'ko') {
 // 화면은 이 값을 "작게" 보여 주기만 한다 — 숫자를 바꾸거나 판단하지 않는다.
 // ---------------------------------------------------------------------------
 
-const TRUST_LABEL = { CONFIRMED: '확정', ESTIMATED: '추정', INSUFFICIENT: '자료 불충분', NO_DATA: '자료 없음' };
+const TRUST_LABEL = { ESTIMATED: '추정', INSUFFICIENT: '자료 불충분', NO_DATA: '자료 없음' };
 const FLAG_SEVERITY = { NO_DATA: 3, INSUFFICIENT: 2, ESTIMATED: 1 };
 
 function pickTrustLabel(regulation, lang) {
@@ -267,10 +267,13 @@ export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
   if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
-  const level = regulation.confidence === 'CONFIRMED' ? 'ok' : regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
+  // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준
+  // 졸업요건처럼 읽혀 "비공식 참고용" 안내와도 부딪힌다. 예외(추정·자료 없음)만 표시해야 눈에 띈다(2026-10-17).
+  const confirmed = regulation.confidence === 'CONFIRMED';
+  const level = regulation.confidence === 'NO_DATA' ? 'none' : 'warn';
   return {
     noData,
-    badge: { label: pickTrustLabel(regulation, lang), level },
+    badge: confirmed ? null : { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
   };

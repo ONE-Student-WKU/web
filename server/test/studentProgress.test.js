@@ -294,3 +294,13 @@ test('조기졸업 안내는 신청할 수 있는 학생에게만 — 전과생�
   assert.equal(of({ enrollment_type: 'TRANSFER_ADMISSION', transfer_grade: 3, admission_year: 2023 }), null);
   for (const d of ['간호학과', '물리치료학과', '한약학과', '건축학과']) assert.equal(of({ department_name: d }), null, d);
 });
+
+test('휴학 질문에 답한 학생은 이수 기록이 최근 학기까지 없어도 프로필(휴학 기간)로 학년을 센다(2026-10-17)', () => {
+  // 휴학 없는 2024학번이 2025-1까지만 과목을 넣었다. 예전에는 빈 학기를 휴학으로 봐 "2학년 1학기"로 계산했다.
+  const recordedTerms = [T(2024, 1), T(2024, 3), T(2025, 1)];
+  const p = computeProgress({ admissionYear: 2024, leavePeriods: [], recordedTerms, today: TODAY });
+  assert.equal(p.source, 'PROFILE');
+  assert.equal(p.needsConfirmation, false);
+  assert.deepEqual([p.current.grade, p.current.gradeSemester], [3, 2]);
+  assert.ok(!p.flags.includes('RECORDS_LEAVE_MISMATCH'));
+});

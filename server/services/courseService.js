@@ -137,7 +137,7 @@ function loadCatalogRows(year, semester) {
 
   const rowsPromise = pool
     .query(
-      `SELECT id, course_name AS name, section, professor, credits, category
+      `SELECT id, course_name AS name, section, professor, credits, category, department_id, track_id
        FROM course_offerings
        WHERE year = ? AND semester = ?
        ORDER BY course_name, section`,
@@ -163,17 +163,56 @@ function clearCatalogCache() {
   catalogCache.clear();
 }
 
-async function searchCatalog(keyword, year, semester) {
+/**
+ * 검색 결과에서 학생 소속 과목을 앞에 둘 순위(작을수록 앞). 내 세부전공 → 내 학과(통폐합 전후 학과 포함) → 제2전공 학과 → 나머지.
+ * scope: { trackId, departmentIds: Set, secondDepartmentIds: Set } — 비어 있으면 모두 같은 순위(기존 순서 그대로).
+ */
+function catalogScopeRank(item, scope) {
+  if (!scope) return 0;
+  const dept = item.department_id != null ? Number(item.department_id) : null;
+  if (scope.trackId != null && item.track_id != null && Number(item.track_id) === Number(scope.trackId)) return 0;
+  if (dept != null && scope.departmentIds && scope.departmentIds.has(dept)) return 1;
+  if (dept != null && scope.secondDepartmentIds && scope.secondDepartmentIds.has(dept)) return 2;
+  return 3;
+}
+
+/**
+ * 순수 함수 — 검색어 일치 정도(level·distance)가 같은 과목끼리만 학생 소속 순위로 앞뒤를 바꾼다. 다른 학과 과목이라도 이름이 더 정확히
+ * 맞으면 위에 남는다. 검색어가 없을 때(level 없음)는 소속 순위로만 정렬한다. 정렬은 안정적이라 같은 순위 안에서는 원래 순서를 지킨다.
+ */
+function orderCatalogResults(ranked, scope) {
+  return ranked
+    .map((r, index) => ({ ...r, index, rank: catalogScopeRank(r.item, scope) }))
+    .sort((a, b) => ((a.level ?? 0) - (b.level ?? 0)) || ((a.distance ?? 0) - (b.distance ?? 0)) || (a.rank - b.rank) || (a.index - b.index))
+    .map((r) => r.item);
+}
+
+// 학생 소속(searchCatalog의 scope)을 만든다. 통폐합·개편된 학과는 이어지는 학과의 과목도 내 학과로 본다(curriculumHistoryService.getDepartmentChain).
+async function catalogScopeFor(student) {
+  if (!student || student.department_id == null) return null;
+  const { getDepartmentChain } = require('./curriculumHistoryService');
+  const own = await getDepartmentChain(student.department_id);
+  const second = student.second_department_id != null ? await getDepartmentChain(student.second_department_id) : null;
+  return {
+    trackId: student.track_id ?? null,
+    departmentIds: new Set(own.departmentIds.map(Number)),
+    secondDepartmentIds: new Set(second ? second.departmentIds.map(Number) : []),
+  };
+}
+
+async function searchCatalog(keyword, year, semester, scope = null) {
   const rows = await loadCatalogRows(year, semester);
   const rawKeyword = typeof keyword === 'string' ? keyword.trim() : '';
   let courses;
   if (!rawKeyword) {
-    courses = rows.map((r) => r.item); // 검색어가 없으면 그 학기 전체(기존 동작)
+    // 검색어가 없으면 그 학기 전체(기존 동작) — 내 학과 과목을 앞에 둔다.
+    courses = orderCatalogResults(rows.map((r) => ({ item: r.item })), scope);
   } else {
     const normalized = normalizeForSearch(rawKeyword);
     // "?!"처럼 문장부호뿐이라 정규화하면 비는 검색어는 아무것도 찾지 않는다.
     const query = prepareQuery(rawKeyword, expandAliases(normalized));
-    courses = rankEntries(rows, query, { limit: CATALOG_RESULT_LIMIT }).map((r) => r.item);
+    // 소속 순위로 바꾸기 전에 자르면 내 학과 과목이 잘려 나갈 수 있어, 전부 고른 뒤 정렬하고 자른다.
+    courses = orderCatalogResults(rankEntries(rows, query), scope).slice(0, CATALOG_RESULT_LIMIT);
   }
   if (courses.length === 0) return [];
 
@@ -616,6 +655,8 @@ module.exports = {
   FAILING_GRADES,
   getSupersededCourseIds,
   searchCatalog,
+  catalogScopeFor,
+  orderCatalogResults,
   clearCatalogCache,
   findCourseById,
   listMyCourses,

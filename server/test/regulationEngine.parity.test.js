@@ -87,8 +87,12 @@ test('패리티: 일반 재학생 — 전 학과 × 자료가 있는 첫/마지�
   assert.ok(n > 200, `비교 건수 ${n}`);
 });
 
+// 의·치·한의예(학)과·약학대학으로는 전과할 수 없어(시행규칙 제111조 제4호) 엔진이 판정하지 않는다 — 전과 패리티에서 뺀다(2026-10-17).
+const { MAJOR_CHANGE_CLOSED_DEPARTMENTS } = require('../services/regulationEngine/constants');
+const openForMajorChange = (list) => list.filter((d) => !MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(d.name));
+
 test('패리티: 3학년 전과 — 컷오프 이전(2021-2) / 이후(2022-2 경계 포함) × 전 학과', async () => {
-  for (const d of departments) {
+  for (const d of openForMajorChange(departments)) {
     for (const y of yearsOf(d)) {
       if (y <= 2021) await compare(`${d.name} ${y} 전과3 2021-2`, d, y, 'MAJOR_CHANGE', { grade: 3, year: 2021, semester: 2 });
       const year = Math.max(2022, y);
@@ -98,7 +102,7 @@ test('패리티: 3학년 전과 — 컷오프 이전(2021-2) / 이후(2022-2 경
 });
 
 test('패리티: 1·2학년 전과(컷오프 이후) × 전 학과', async () => {
-  for (const d of departments) {
+  for (const d of openForMajorChange(departments)) {
     for (const y of yearsOf(d)) await compare(`${d.name} ${y} 전과1`, d, y, 'MAJOR_CHANGE', { grade: 1, year: Math.max(2022, y), semester: 2 });
   }
 });
