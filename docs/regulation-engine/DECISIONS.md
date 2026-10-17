@@ -866,3 +866,14 @@
   - 편입생 상한이 실제로 적용되는지는 여전히 학교 답(B-2)을 기다린다. 답이 오면 사유를 지우거나 상한을 확정한다.
   - 신설 학과의 옛 학번 교양(소속 대학이 그 학번 표에 없음)은 긴 휴학 뒤 전과처럼 드문 경우라 추정으로 두고 다음 문의 후보에 낮은 우선순위로 올린다.
 - **위치**: `server/services/regulationEngine/decisions.js`(decideLiberalArtsCap), `newDepartmentCohort.js`, `evaluate.js`, `flags.js`, `server/services/graduationService.js`(settleTransferLiberalCap).
+
+## D-80 의·치·한의예(학)과·약학대학으로의 전과는 받지 않고, 의·약학계열 3학년 편입은 학과 전공 기준 그대로 (2026-10-17)
+- **상황**: D-79 조사에서 남은 "줄어든 기준 자료 없음" 14개 학과(의·치·한·약·간호·작업치료·응급구조·중등특수 등)를 규정과 대조했다.
+  - 학칙시행규칙 제111조 제4호는 의과대학 의예(학)과·치과대학 치의예(학)과·한의과대학 한의예(학)과·약학대학으로의 전과를 제한한다(예외 단서 없음). 간호대학(3학년 5학기 초, 정원 내)·보건의료계열·응급구조(2·3학년, 정원 내)·사범계열(2·3학년, 정원 내)은 막지 않는다(제109조).
+  - 학교 편입생 교육과정 3항 단서: "의·약학계열 편입생은 학과의 전공이수학점에 따른다." 제107조로 의학계열은 한의과·의과·치과·간호대학, 약학계열은 약학대학이다.
+- **결정**:
+  1. 온보딩·학과 수정에서 이 8개 학과(의예·의학·치의예·치의학·한의예·한의학·약학·한약학과)는 "전과생"을 고를 수 없게 하고 제111조를 안내한다. 서버도 `MAJOR_CHANGE_CLOSED_DEPARTMENT`로 거절한다. 이미 저장된 프로필은 엔진이 판정하지 않고(`MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT`, 자료 없음) 입학 유형을 다시 확인하라고 안내한다.
+  2. 의·약학계열(간호 포함) 3학년 편입생은 전공 학점을 학과 기준 그대로 쓰고 `MAJOR_RELAXATION_ROW_MISSING`(추정) 대신 `TRANSFER_MED_PHARM_MAJOR_AS_DEPARTMENT`(INFO)를 붙인다. 4학년 편입은 시행규칙 제6조 제3항(학과 무관 21학점)을 그대로 둔다.
+  3. 총량은 여전히 단정하지 않는다(`TRANSFER_TOTAL_UNRESOLVED`) — 전공을 학과 기준 그대로 요구하면 전적대학 학점이 전공에 얼마나 인정되는지가 졸업 총량을 정하는데, 그건 학과 확인이 필요하다(기존 결정 유지).
+  4. 다전공 신청 제한(의·치·한·약·건축 소속, 의·치·한·약·사범·건축·동물보건·반려동물로)은 지금처럼 막지 않고 안내만 한다(D-75 — 학교 승인을 받은 값일 수 있다).
+- **위치**: `regulationEngine/constants.js`(MAJOR_CHANGE_CLOSED_DEPARTMENTS·MED_PHARM_DEPARTMENTS·근거 2개), `evaluate.js`, `flags.js`, `routes/onboarding.js`·`me.js`, `client/src/utils/majorChange.js`·`pages/Onboarding.jsx`.

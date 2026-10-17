@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { isMajorChangeClosed } from '../utils/majorChange.js';
 import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from '../utils/onboardingYears.js';
@@ -232,10 +233,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teachingAvailable, selectedDepartment]);
 
-  // 학과가 바뀌어 편입생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
+  // 학과가 바뀌어 편입생·전과생 조합이 더 이상 성립하지 않게 되면 선택을 되돌린다.
   useEffect(() => {
     if (answers.enrollmentType === 'TRANSFER_ADMISSION' && selectedDepartment && !isTransferAvailable(selectedDepartment)) {
       setAnswers((a) => ({ ...a, enrollmentType: null, admissionYear: null, transferYear: null, transferGrade: null }));
+    }
+    if (answers.enrollmentType === 'MAJOR_CHANGE' && selectedDepartment && isMajorChangeClosed(selectedDepartment.name)) {
+      setAnswers((a) => ({ ...a, enrollmentType: null, majorChangeYear: null, majorChangeSemester: null, majorChangeGrade: null }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDepartment]);
@@ -489,6 +493,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
   const transferAvailable = selectedDepartment ? isTransferAvailable(selectedDepartment) : true;
+  const majorChangeAvailable = !(selectedDepartment && isMajorChangeClosed(selectedDepartment.name));
 
   return (
     <div className="courses-page">
@@ -589,10 +594,15 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               </button>
               <button
                 className={'onb-option-card' + (answers.enrollmentType === 'MAJOR_CHANGE' ? ' selected' : '')}
+                disabled={!majorChangeAvailable}
                 onClick={() => selectEnrollmentType('MAJOR_CHANGE')}
               >
                 <span className="onb-option-title">{t('onb.type.MAJOR_CHANGE')}</span>
-                <span className="onb-option-caption">{t('onb.type.MAJOR_CHANGE.caption')}</span>
+                <span className="onb-option-caption">
+                  {majorChangeAvailable
+                    ? t('onb.type.MAJOR_CHANGE.caption')
+                    : t('onb.type.MAJOR_CHANGE.unavailable', { dept: selectedDepartment?.name || '' })}
+                </span>
               </button>
             </div>
           </>

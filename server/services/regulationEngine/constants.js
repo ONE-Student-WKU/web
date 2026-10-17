@@ -43,6 +43,14 @@ const NON_DEGREE_DEPARTMENTS = Object.freeze(['자율전공학부']);
 // "의·치·한·약"은 학칙시행규칙 제3조 제1항 제2호의 의과·치과·한의과·약학대학 학과다.
 const BYLAW_MAJOR_DEPARTMENTS = Object.freeze(['건축학과', '의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과']);
 
+// 전과(부)로 들어갈 수 없는 학과 — 학칙시행규칙 제111조 제4호 "의과대학 의예(학)과, 치과대학 치의예(학)과, 한의과대학 한의예(학)과,
+// 약학대학으로의 전과"를 제한한다(예외 단서 없음). 이 학과의 전과생 프로필은 규정상 있을 수 없어 판정하지 않는다(입력 화면도 막는다).
+const MAJOR_CHANGE_CLOSED_DEPARTMENTS = Object.freeze(['의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과']);
+
+// 의·약학계열(시행규칙 제107조: 의학계열 = 한의과·의과·치과·간호대학 소속 학과, 약학계열 = 약학대학 소속 학과). 이 계열 3학년 편입생은
+// "학과의 전공이수학점에 따른다"(학교 편입생 교육과정 3항 단서) — 전공 학점이 줄지 않는다는 규정이라 "줄어든 기준 자료 없음"이 아니다.
+const MED_PHARM_DEPARTMENTS = Object.freeze(['의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과', '간호학과']);
+
 // 편입생 인정학점(전적대학 학점 중 본교 졸업학점으로 인정하는 학점). 학교 홈페이지 편입생 교육과정 "1. 편입생 학점인정"
 // (docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt). 표가 학과 이름이 아니라 대학·계열로 적혀 있어
 // 학과의 졸업학점으로 대학을 가른다: 136학점 = 창의공과대학, 140학점 = 사범대학·간호학과(2023학번까지)·작업치료학과(2024학번까지),
@@ -236,6 +244,17 @@ const CITATIONS = Object.freeze({
     file: 'docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt',
     quote: '※ 전적대학 취득학점이 편입학 인정학점보다 적게 취득한 경우 재학중 추가로 이수하여야 함',
   },
+  SITE_TRANSFER_MED_PHARM_MAJOR: {
+    kind: 'SITE', doc: '학교 홈페이지 편입생 교육과정(2026-10-12 확인)', article: '3. 전공이수학점 — 단서',
+    file: 'docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt',
+    quote: '다만, 의․약학계열 편입생은 학과의 전공이수학점에 따른다',
+  },
+  ENF_ART111_4_MAJOR_CHANGE_CLOSED: {
+    kind: 'ARTICLE', doc: '학칙시행규칙', article: '제111조 제4호',
+    articleRef: 'ENFORCEMENT_RULES:제111조',
+    file: TEXT_SOURCES.ENFORCEMENT_RULES.file,
+    quote: '의과대학 의예(학)과, 치과대학 치의예(학)과, 한의과대학 한의예(학)과, 약학대학으로의 전과',
+  },
   SITE_TRANSFER_RELIGION_REQUIRED: {
     kind: 'SITE', doc: '학교 홈페이지 편입생 교육과정(2026-10-12 확인)', article: '2. 교육과정 이수 — 교양',
     file: 'docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt',
@@ -292,6 +311,8 @@ module.exports = {
   LIBERAL_ARTS_CAP_FIRST_COHORT,
   NON_DEGREE_DEPARTMENTS,
   BYLAW_MAJOR_DEPARTMENTS,
+  MAJOR_CHANGE_CLOSED_DEPARTMENTS,
+  MED_PHARM_DEPARTMENTS,
   TRANSFER_RECOGNIZED_CREDITS,
   REGULATION_MIN_MAJOR_BY_DEPARTMENT,
   BROAD_SERIES_AREA_MINIMUMS,

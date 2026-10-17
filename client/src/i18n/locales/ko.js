@@ -489,6 +489,7 @@ export default {
   'onb.type.TRANSFER_ADMISSION.caption': '타 대학·전문학사에서 편입',
   'onb.type.TRANSFER_ADMISSION.unavailable': '{dept}은(는) 아직 편입 가능한 학번이 없어요',
   'onb.type.MAJOR_CHANGE.caption': '다른 학과에서 전과해 옴',
+  'onb.type.MAJOR_CHANGE.unavailable': '{dept}(으)로는 전과할 수 없어요(학칙시행규칙 제111조)',
   'onb.dept.title': '어느 학과 소속이에요?',
   'onb.dept.sub': '선택한 학과와 학번을 기준으로 졸업요건을 계산해요.',
   'onb.track.title': '희망하는 세부전공을 선택하세요',

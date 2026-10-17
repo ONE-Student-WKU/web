@@ -539,6 +539,7 @@ export default {
   'onb.type.TRANSFER_ADMISSION.caption': 'Transferred from another university or a junior college',
   'onb.type.TRANSFER_ADMISSION.unavailable': '{dept} has no admission years open to transfer students yet',
   'onb.type.MAJOR_CHANGE.caption': 'Changed majors from another department',
+  'onb.type.MAJOR_CHANGE.unavailable': 'You cannot change your major into {dept} (Enforcement Rules, Article 111)',
   'onb.dept.title': 'Which department are you in?',
   'onb.dept.sub': 'We calculate your graduation requirements based on your department and admission year.',
   'onb.track.title': 'Choose the track you want',

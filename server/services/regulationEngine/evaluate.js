@@ -1,4 +1,4 @@
-const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
 const { isBroadSeriesStudent } = require('../majorTrackType');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
@@ -61,7 +61,15 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
   // 완화 행으로 바꿀 때는 일반 학생의 전공 행을 전부 뺀다. 건축학과(~2024)·의약계열처럼 일반 학생 전공이 "전필/전선"이 아니라
   // 통합 "전공" 행인 학과에서 그 행을 남겨 두면 "전공 127 + 전공 66"처럼 전공 요건이 두 번 잡혔다(GRADUATION_AUDIT_2026-10-12 6절).
   const withoutMajorRows = generalRows.filter((r) => !MAJOR_CATEGORIES.includes(r.category));
-  if (relaxation.relaxedRows) {
+  // 의·약학계열 3학년 편입생은 학과의 전공이수학점을 그대로 따른다(학교 편입생 교육과정 3항 단서) — 줄어든 기준을 찾지 않는다. 4학년 편입은
+  // 학칙시행규칙 제6조 제3항(학과와 무관하게 21학점)이 따로 있어 그대로 둔다. 총량은 전적대학 학점이 전공에 얼마나 인정되는지 몰라
+  // 여전히 단정하지 않는다(TRANSFER_TOTAL_UNRESOLVED).
+  const medPharmTransfer = ctx.enrollmentType === 'TRANSFER_ADMISSION' && relaxation.relaxedRows && relaxation.overrideMajorCredits == null && MED_PHARM_DEPARTMENTS.includes(departmentName);
+  if (medPharmTransfer) {
+    flags.push(makeFlag('TRANSFER_MED_PHARM_MAJOR_AS_DEPARTMENT'));
+    basis.push('SITE_TRANSFER_MED_PHARM_MAJOR');
+    adjustments.push('TRANSFER_MED_PHARM_MAJOR');
+  } else if (relaxation.relaxedRows) {
     const overrideRows = allYearRows.filter((r) => r.enrollmentType === ctx.enrollmentType);
     if (overrideRows.length > 0) {
       rows = [...withoutMajorRows, ...overrideRows];
@@ -269,6 +277,8 @@ function evaluate(ctx, data) {
   // 1학년 과정만 운영하고 학과를 배정받는 단위(자율전공학부)는 시드에 1학년 이수 기준 행이 있어도 졸업요건이 아니다 —
   // 그 행으로 진단하면 46~48학점에 "졸업요건 충족"이 나왔다(GRADUATION_AUDIT_2026-10-12 3절).
   else if (NON_DEGREE_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('NON_DEGREE_DEPARTMENT'));
+  // 규정상 전과할 수 없는 학과의 전과생(시행규칙 제111조 제4호) — 있을 수 없는 프로필이라 다른 학과 자료로 추정하지 않는다.
+  else if (ctx.enrollmentType === 'MAJOR_CHANGE' && MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT'));
   // 상한이 열린 행(max=NULL)은 "그 이후 개편이 확인될 때까지 유효"라는 뜻이지 미래 학번에 대한 확인이 아니다. 시스템이 아는
   // 가장 최신 학년도보다 뒤의 학번에는 외삽하지 않는다.
   else if (data.latestDataYear != null && ctx.admissionYear > data.latestDataYear) {
@@ -347,7 +357,7 @@ function evaluate(ctx, data) {
   const relaxFlags = [...eligibilityFlags, ...relaxation.flags, ...fromRegulation, ...dataFlags.filter((f) => f.code === 'NO_CURRICULUM_ROWS' || f.code === 'DEPARTMENT_NOT_FOUND')]
     .filter((f) => !(built && built.resolvedTransferTotal && f.code === 'TRANSFER_TOTAL_UNRESOLVED'));
   relaxFlags.push(...textFlagsFor(relaxBasis));
-  if (requirementsValue && !requirementsValue.adjustments.includes('MAJOR_RELAXATION') && relaxation.relaxedRows) relaxFlags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
+  if (requirementsValue && !requirementsValue.adjustments.includes('MAJOR_RELAXATION') && !requirementsValue.adjustments.includes('TRANSFER_MED_PHARM_MAJOR') && relaxation.relaxedRows) relaxFlags.push(makeFlag('MAJOR_RELAXATION_ROW_MISSING'));
 
   const libFlags = [...eligibilityFlags, ...liberal.flags];
   libFlags.push(...textFlagsFor(liberal.basis));
