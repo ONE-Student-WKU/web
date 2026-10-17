@@ -9,12 +9,29 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS; // 예: 'ONE Student <no-reply@mail.도메인>'
 
-async function sendLoginCode(email, code) {
+// 목적(emailAuthService 토큰의 purpose)별 메일 이름 — 계정 삭제 재인증도 같은 함수로 보내므로 제목이 "로그인"으로 나가지 않게 나눈다.
+const CODE_LABELS = {
+  login: '로그인 인증코드',
+  delete_reauth: '계정 삭제 확인 코드',
+};
+
+// 코드를 제목에도 넣어 휴대폰 알림·메일 목록에서 메일을 열지 않고 확인할 수 있게 한다. 본문에도 그대로 둔다 —
+// 복사하기 쉽고, Gmail·iOS의 "코드 복사/자동 입력"이 본문에서 코드를 찾는다.
+function buildCodeEmail(code, purpose = 'login') {
+  const label = CODE_LABELS[purpose] ?? CODE_LABELS.login;
+  return {
+    subject: `[ONE Student] ${label}: ${code}`,
+    text: `ONE Student ${label}예요.\n\n${code}\n\n15분 안에 입력해 주세요. 이 코드는 다른 사람에게 알려주지 마세요.`,
+  };
+}
+
+async function sendLoginCode(email, code, purpose = 'login') {
+  const { subject, text } = buildCodeEmail(code, purpose);
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: email,
-    subject: '[ONE Student] 로그인 인증코드',
-    text: `인증코드: ${code}\n\n15분 이내에 입력해주세요. 본인이 요청하지 않았다면 이 메일을 무시하세요.`,
+    subject,
+    text,
   });
 
   // resend.emails.send()는 API 요청이 거부돼도(from/도메인 권한 불일치 등) throw하지 않고
@@ -29,4 +46,4 @@ async function sendLoginCode(email, code) {
   return data;
 }
 
-module.exports = { sendLoginCode };
+module.exports = { sendLoginCode, buildCodeEmail };

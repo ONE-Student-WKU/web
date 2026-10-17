@@ -52,7 +52,7 @@ export default {
   'chat.citationsMore': 'Show more sources ({count})',
   'chat.typing': 'Preparing an answer',
   'chat.disclaimer':
-    'This answer is unofficial and for reference only. Please confirm details with the university web information service or the relevant office.',
+    'Unofficial, for reference only. Confirm with the university.',
   'chat.dailyLimit': "You've used all {limit} chats for today. Please try again tomorrow.",
   'chat.error': 'Something went wrong. Please try again in a moment.',
 
