@@ -27,8 +27,6 @@
   --color-alert: #ff5449;
   --color-success: #5fc164;
   --color-warning: #e3b341;
-  /* 진행률 막대(utils/graduation.js getProgressColor)의 명도. 밝은 테마에서는 낮춰서 막대가 회색 트랙과 구분되게 한다. */
-  --progress-lightness: 50%;
   /* 시간표 과목별 구분색 — 테마별로 다시 정의하지 않아도 됨: 실제 사용되는 색은
      color-mix()로 --color-bg-card와 섞어서 만들기 때문에 다크/라이트 각각에 맞는
      톤이 자동으로 나온다(courses-timetable-cell.tt-c0~7 참고). */
@@ -89,7 +87,6 @@
   /* #3d8b40은 카드 배경 위 '확정' 배지가 3.91:1이라 진하게(흰 배경 5.13:1). */
   --color-success: #2e7d32;
   --color-warning: #9a6700;
-  --progress-lightness: 42%;
   color-scheme: light;
 }
 
@@ -884,6 +881,7 @@ body {
   overflow: hidden;
 }
 
+/* 진행률 막대는 화면에 남는 몇 안 되는 파랑 — 예전의 노랑→초록 변화 대신 한 색으로 두어 "봐야 할 값"으로 눈에 띄게 한다(2026-10-17). */
 .home-progress-fill {
   height: 100%;
   background: var(--color-accent);

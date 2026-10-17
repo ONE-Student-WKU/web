@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getProgressColor, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -145,7 +145,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"
-                  style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
               <p className="grad-remaining-text">
@@ -194,9 +194,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     className="home-progress-fill"
                     style={{
                       width: `${getPercent(groups.major.earnedCredits, groups.major.requiredCredits)}%`,
-                      backgroundColor: getProgressColor(
-                        getPercent(groups.major.earnedCredits, groups.major.requiredCredits)
-                      ),
                     }}
                   />
                 </div>
@@ -263,7 +260,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       className="home-progress-fill"
                       style={{
                         width: `${getPercent(status.secondMajor.earned, status.secondMajor.required)}%`,
-                        backgroundColor: getProgressColor(getPercent(status.secondMajor.earned, status.secondMajor.required)),
                       }}
                     />
                   </div>
@@ -304,9 +300,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     className="home-progress-fill"
                     style={{
                       width: `${getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)}%`,
-                      backgroundColor: getProgressColor(
-                        getPercent(groups.liberalArts.earnedCredits, groups.liberalArts.requiredCredits)
-                      ),
                     }}
                   />
                 </div>

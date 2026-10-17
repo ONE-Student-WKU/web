@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getProgressColor, getPercent, describeRequirementTrust, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -255,7 +255,7 @@ function Home({
                     <div className="home-progress-track">
                       <div
                         className="home-progress-fill"
-                        style={{ width: `${progressPercent}%`, backgroundColor: getProgressColor(progressPercent) }}
+                        style={{ width: `${progressPercent}%` }}
                       />
                     </div>
                     <p className="grad-remaining-text">{progressPercent}%</p>

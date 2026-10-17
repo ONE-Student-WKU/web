@@ -101,22 +101,10 @@ export function buildRequirementGroups(categories, majorAreaCredits = null) {
   return { major, liberalArts };
 }
 
-// 진행률 바를 파랑 한 가지로만 두지 말고 퍼센트가 오를수록 색이 자연스럽게 바뀌게 해서
-// 재미를 주자는 요청 — 노랑(0%)에서 초록(100%)으로 이어지게 했다(보라 시작은 어색하다는
-// 피드백으로 노랑으로 교체). 100%에서 기존 "충족" 초록(--color-success, hsl(122, 39%, 59%))과
-// 거의 같은 색에 자연스럽게 도달한다.
 // 요구학점이 0이면 0으로 나누어 NaN%·Infinity%가 되므로 0%로 돌려준다(진행률 막대용).
 export function getPercent(earned, required) {
   if (!(required > 0)) return 0;
   return Math.min(100, Math.round((earned / required) * 100));
-}
-
-// 명도는 테마마다 다르다(App.css --progress-lightness) — 밝은 테마에서 명도 50%면 노랑·연두가 회색 트랙과 1.4:1밖에 안 돼
-// 막대가 빛나 보이기만 하고 채운 정도가 잘 안 읽혔다.
-export function getProgressColor(percent) {
-  const clamped = Math.max(0, Math.min(100, percent));
-  const hue = 50 + (70 * clamped) / 100;
-  return `hsl(${hue}, 70%, var(--progress-lightness, 50%))`;
 }
 
 // 서버/DB가 한국어로 내려주는 항목명(기본전공, 졸업인증제 등)을 화면 언어로 바꾼다. t를 안 넘기거나
