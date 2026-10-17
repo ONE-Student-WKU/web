@@ -92,3 +92,10 @@ test('추정 이유는 목록에 있는 것만 말하게 한다', () => {
 test('학생을 "당신"이라고 부르지 말라고 한다', () => {
   assert.match(buildSystemPrompt(null, null), /"당신"이라고 부르지 마라/);
 });
+
+test('3학년 전과인데 학과에 줄어든 기준 자료가 없으면(의약계열 등) "같다"가 아니라 "자료가 없어 일반 기준으로 계산"이라고 적는다', () => {
+  const student = { ...base, department_name: '의예과', enrollment_type: 'MAJOR_CHANGE', major_change_year: 2026, major_change_semester: 1, major_change_grade: 3 };
+  const p = buildSystemPrompt(student, status({ confidence: 'ESTIMATED' }));
+  assert.match(p, /3학년 때 전과해서 원래 전공 학점이 일반 학생보다 줄어들지만, 이 학과는 줄어든 기준 자료가 없어/);
+  assert.doesNotMatch(p, /전공 기준은 일반 학생과 같은/);
+});

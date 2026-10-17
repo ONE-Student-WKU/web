@@ -122,7 +122,6 @@ ${details.map((l) => `- ${l}`).join('\n')}
 // 숫자만 주면 모델이 학칙 원문을 보고 규칙을 지어내 "3학년 이상 전과생은 최소전공 기준을 적용하지 않는다"처럼 거꾸로 설명했다
 // (2026-10-17 로컬 재현 — 실제로는 3·4학년 전과가 전공 학점이 줄어드는 쪽이다).
 const MAJOR_ROW_CATEGORIES = ['전공필수', '전공선택', '전공'];
-const LIBERAL_ROW_CATEGORIES = ['교양필수', '교양선택'];
 function adjustmentLines(graduationStatus, student) {
   const regulation = graduationStatus.regulation || {};
   const adjustments = regulation.adjustments || [];
@@ -141,6 +140,9 @@ function adjustmentLines(graduationStatus, student) {
         ? `${student.transfer_grade || 3}학년으로 편입해서`
         : '';
     lines.push(`- 전공 기준이 줄었다: ${why} 전공은 ${fromTo(baseline && baseline.majorCredits, major)}만 채우면 된다(학교 용어로 "최소전공 인정학점", 학칙시행규칙 제6조·제8조).${enrollment === 'TRANSFER_ADMISSION' ? '' : rebalanced}`);
+  } else if ((enrollment === 'MAJOR_CHANGE' && Number(student.major_change_grade) >= 3) || (enrollment === 'TRANSFER_ADMISSION' && Number(student.transfer_grade || 3) >= 3)) {
+    // 3·4학년 전과·편입이면 원래 전공 학점이 줄어들지만, 이 학과·학번의 줄어든 기준 자료가 없어(의·치·한·약 등 학과 내규) 일반 학생 기준으로 계산한 경우.
+    lines.push(`- ${enrollment === 'MAJOR_CHANGE' ? `${student.major_change_grade}학년 때 전과해서` : `${student.transfer_grade || 3}학년으로 편입해서`} 원래 전공 학점이 일반 학생보다 줄어들지만, 이 학과는 줄어든 기준 자료가 없어 일반 학생 기준(${major}학점)으로 계산했다. 이 숫자는 학과에 확인하라고 안내하라.`);
   } else if (enrollment === 'MAJOR_CHANGE') {
     lines.push(student.major_change_grade
       ? `- ${student.major_change_grade}학년 때 전과해서 전공 기준은 일반 학생과 같은 ${major}학점이다(전공 학점이 줄어드는 건 3·4학년 전과뿐이다, 학칙시행규칙 제8조 제2항).`
