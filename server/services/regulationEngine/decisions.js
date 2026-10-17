@@ -221,7 +221,9 @@ function decideLiberalArtsCap(ctx) {
   } else {
     basis.push('BOOKLET_2026_LIBERAL_CAP', 'SITE_GRADUATION_LIBERAL_CAP');
   }
-  if (ctx.enrollmentType === 'TRANSFER_ADMISSION') flags.push(makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
+  // 편입생에게 상한이 적용되는지는 학교 확인 중(B-2)이지만, 2021학번 이하는 상한 자체가 없어 물을 것이 없다. 실제 교양 학점이 상한 이하면
+  // 결과가 같으므로 졸업진단(graduationService.settleTransferLiberalCap)이 과목을 보고 안내(INFO)로 낮춘다.
+  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && cap != null) flags.push(makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
   return { cap, flags, basis, alternatives };
 }
 

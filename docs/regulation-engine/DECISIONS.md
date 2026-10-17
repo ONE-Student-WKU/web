@@ -852,3 +852,17 @@
   - 세부전공을 고르지 않은 공학3계열 학생(화면은 세부전공을 꼭 고르게 하지만 옛 계정 등)은 공통 기준(1과목)으로 판정하고, 졸업인증 설명에 "컴퓨터·소프트웨어공학전공이면 1·2 모두"를 함께 적는다. 챗봇 근거에도 예외가 적혀 있다.
   - 다른 세부전공·학과의 학과 규칙은 조사하지 않았다. 공학1·2계열·게임콘텐츠 학과 홈페이지에는 강화 공지가 없었다(2026-10-16 검색, 첨부파일은 못 봄). 예외가 더 생기면 시드에 세부전공 칸을 두는 쪽을 다시 본다.
 - **위치**: `server/services/trackCertificationRules.js`, `graduationService.js`(getGraduationStatus), `curriculumContextService.js`(engineRequirementChunk·graduationRequirementChunk), `db/regulations/졸업/학사학위수여.md`.
+
+## D-79 자료가 있는데 "추정"으로 남던 두 경우를 확정으로 — 편입생 교양 상한, 신설 학과 3·4학년 전과 전공 (2026-10-17)
+- **상황**:
+  - 모든 학과 × 2017~2026학번 × 입학유형(일반, 전과 2·3학년, 3학년 편입, 복수전공) 3,830개 조합을 과목 없이 판정했더니 3학년 편입생은 0건이 확정이었다.
+  - 이유 하나는 "편입생에게 교양 52학점 상한이 적용되는지"(B-2, 학교 확인 중)였다. 그런데 2021학번 이하는 상한 자체가 없고(D-51), 2022학번 이상도 교양이 52학점 이하면 어느 쪽이든 결과가 같다. 3·4학년 편입생은 교양 영역을 충족한 것으로 보고 본교 교양을 일반선택으로 세므로(시행규칙 제10조②) 52학점을 넘는 경우가 거의 없다.
+  - 학과가 생기기 전 학번의 3·4학년 전과생(25개 학과, #378 A안)은 전공 학점을 "학과 첫 학번 값"으로 추정했다. 그런데 3·4학년 전과의 줄어든 전공 학점은 학칙시행규칙 제6조①의 계열별 최소전공이라 학번에 따라 달라지지 않고, 시드에서도 의료상담학과(2026학번 48→36) 말고는 학과마다 모든 학번이 같은 값이다.
+- **결정**:
+  1. 편입생 상한 확인 사유(`LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED`)는 상한이 있는 학번(2022~)에만 붙인다. 졸업진단은 학생이 들은 교양(교양필수+교양선택)이 상한 이하면 이 사유를 안내(`LIBERAL_CAP_TRANSFER_EXEMPTION_NO_EFFECT`, INFO)로 바꾸고 신뢰도를 다시 계산한다(`graduationService.settleTransferLiberalCap`). 넘으면 추정 그대로다.
+  2. 신설 학과 전과생의 3·4학년 전과 완화 값이 그 학과의 모든 학번에서 같으면 전공 학점은 추정이 아니다(`newDepartmentCohort` → `relaxedUniform`). 이때 `MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT`(추정) 대신 `MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT_MINIMUM_SAME`(INFO)를 붙인다. 1·2학년 전과(일반 학생 전공 학점, 학번별로 다름)와 값이 학번마다 다른 학과는 그대로 추정이다.
+- **결과**(과목 없이 다시 판정): 3학년 편입 확정 0 → 538, 3학년 전과 확정 460 → 518. 남은 추정은 학과 내규 학과(의·치·한·약·간호 등 14곳, A-5), 학칙 별표4와 책자가 다른 간호·작업치료(D-1), 판단 보류(#260), 옛 학번 교양 표에 소속 대학이 없는 신설 학과 7곳이다.
+- **단점·다시 볼 조건**:
+  - 편입생 상한이 실제로 적용되는지는 여전히 학교 답(B-2)을 기다린다. 답이 오면 사유를 지우거나 상한을 확정한다.
+  - 신설 학과의 옛 학번 교양(소속 대학이 그 학번 표에 없음)은 긴 휴학 뒤 전과처럼 드문 경우라 추정으로 두고 다음 문의 후보에 낮은 우선순위로 올린다.
+- **위치**: `server/services/regulationEngine/decisions.js`(decideLiberalArtsCap), `newDepartmentCohort.js`, `evaluate.js`, `flags.js`, `server/services/graduationService.js`(settleTransferLiberalCap).

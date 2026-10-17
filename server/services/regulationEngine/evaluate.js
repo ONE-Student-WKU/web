@@ -332,7 +332,11 @@ function evaluate(ctx, data) {
   // 전공 학점은 첫 학번 값이라 추정이고, 교양·졸업학점을 표에서 못 찾았으면 그것도 첫 학번 값이라 따로 알린다.
   if (built && data.cohortFallback) {
     const fb = data.cohortFallback;
-    reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT', { firstCohort: fb.firstCohort, college: fb.college }));
+    // 3·4학년 전과(전공 완화)이고 그 학과의 완화 값이 학번마다 같으면 전공 학점은 추정이 아니다(newDepartmentCohort.relaxedUniform).
+    const relaxedSettled = fb.relaxedUniform && built.adjustments.includes('MAJOR_RELAXATION');
+    reqFlags.push(relaxedSettled
+      ? makeFlag('MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT_MINIMUM_SAME', { firstCohort: fb.firstCohort, majorCredits: fb.relaxedMajorCredits })
+      : makeFlag('MAJOR_CHANGE_COHORT_BEFORE_DEPARTMENT', { firstCohort: fb.firstCohort, college: fb.college }));
     if (!fb.liberalFromTable || !fb.graduationFromTable) reqFlags.push(makeFlag('MAJOR_CHANGE_COHORT_LIBERAL_ASSUMED', { firstCohort: fb.firstCohort }));
     reqBasis.push('ENF_ART5_COHORT_BASIS');
   }
