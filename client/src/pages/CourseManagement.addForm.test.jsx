@@ -50,7 +50,7 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/');
   Element.prototype.scrollIntoView = vi.fn();
   api.getGraduationStatus.mockResolvedValue(null);
-  api.getCourseSummary.mockResolvedValue({ total: { earnedCredits: 0, gpa: 0 }, bySemester: [] });
+  api.getCourseSummary.mockResolvedValue({ total: { earnedCredits: 0, gpa: null }, bySemester: [] });
   api.getSemesters.mockResolvedValue([]);
   api.getRetakeEligibleCourses.mockResolvedValue([]);
   api.getMyCourses.mockResolvedValue([]);

@@ -1,7 +1,10 @@
 // 표 한 줄: "|"로 시작하고 "|"로 끝난다. 구분선 줄: "|---|:---:|"처럼 |, -, :, 공백만 있고 "---"가 들어 있다.
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const isSeparator = (line) => /^[\s|:-]+$/.test(line) && /-{3,}/.test(line) && line.includes('|');
-const splitRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+// 모델이 표 칸·목록 안에서 줄을 바꾸려고 쓰는 <br>을 글자 그대로 보이지 않게 줄바꿈 문자로 바꾼다. 말풍선은 white-space: pre-wrap이라
+// 줄바꿈으로 그려진다. HTML로 주입하지 않으므로 안전하다(UX 점검 2026-10-16 2-3: 표 칸에 "<br>"이 여러 번 그대로 보였다).
+const brToNewline = (text) => text.replace(/<br\s*\/?>/gi, '\n');
+const splitRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => brToNewline(cell.trim()));
 
 // i 다음에서 빈 줄을 건너뛴 첫 줄의 위치(없으면 lines.length).
 function nextNonBlank(lines, i) {
@@ -53,7 +56,7 @@ export function parseBlocks(text) {
         list = { type: 'list', items: [] };
         blocks.push(list);
       }
-      list.items.push(bullet[1]);
+      list.items.push(brToNewline(bullet[1]));
       continue;
     }
     list = null;
@@ -61,7 +64,7 @@ export function parseBlocks(text) {
     if (heading) blocks.push({ type: 'heading', text: heading[1] });
     else if (/^\s*-{3,}\s*$/.test(line)) blocks.push({ type: 'rule' });
     else if (line.trim() === '') continue;
-    else blocks.push({ type: 'paragraph', text: line });
+    else blocks.push({ type: 'paragraph', text: brToNewline(line) });
   }
   return blocks;
 }

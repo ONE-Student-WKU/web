@@ -37,7 +37,7 @@ function useChat() {
           data.messages.map((m) => ({
             sender: m.role,
             text: m.content,
-            timestamp: new Date(m.createdAt).toLocaleTimeString(),
+            sentAt: m.createdAt,
           }))
         );
         chatCache.conversationId = data.conversationId;
@@ -58,7 +58,7 @@ function useChat() {
     async (text) => {
       if (!conversationId) return;
 
-      const userMsg = { sender: 'user', text, timestamp: new Date().toLocaleTimeString() };
+      const userMsg = { sender: 'user', text, sentAt: new Date().toISOString() };
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
 
@@ -67,7 +67,7 @@ function useChat() {
         const assistantMsg = {
           sender: 'assistant',
           text: response.content,
-          timestamp: new Date().toLocaleTimeString(),
+          sentAt: new Date().toISOString(),
           citedChunks: response.citedChunks,
         };
         setMessages((prev) => [...prev, assistantMsg]);
@@ -77,7 +77,7 @@ function useChat() {
           error.code === 'CHAT_DAILY_LIMIT_EXCEEDED'
             ? t('chat.dailyLimit', { limit: error.data?.limit ?? 20 })
             : t('chat.error');
-        setMessages((prev) => [...prev, { sender: 'assistant', text, timestamp: new Date().toLocaleTimeString() }]);
+        setMessages((prev) => [...prev, { sender: 'assistant', text, sentAt: new Date().toISOString() }]);
       } finally {
         setLoading(false);
       }

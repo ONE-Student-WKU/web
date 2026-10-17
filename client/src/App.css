@@ -12,19 +12,21 @@
   --color-text-muted: #9ba0aa;
   --color-accent: #6f9bf5;
   --color-accent-contrast: #ffffff;
-  /* 흰 글씨(--color-accent-contrast)를 올리는 버튼·말풍선 배경. --color-accent(글자·테두리용)를 그대로 깔면
-     흰 글씨 대비가 2.73:1이라 따로 둔다(5.56:1). UX 점검 2026-10-16 5-1. */
-  --color-accent-fill: #3563c9;
   --color-accent-bg: #24365c;
   /* --color-accent-bg 위에 올리는 강조 글자(선택된 탭·칩 등). --color-accent는 4.37:1이라 더 밝게(6.30:1). */
   --color-accent-on-bg: #9dbcff;
-  --color-accent-disabled: #33456c;
+  /* 잉크 — 주요 버튼·선택 상태·브랜드처럼 "누르거나 고른 것"의 색. 파랑(--color-accent)은 진행 막대·링크·포커스처럼
+     "봐야 할 값"에만 남겨서 드물게 나올 때 눈에 띄게 한다(2026-10-17 포인트 색 줄이기). 다크에서는 거의 흰색으로 뒤집혀
+     주요 버튼이 흰 바탕·어두운 글자가 된다(화면 배경 대비 14.4:1, 버튼 글자 15.6:1). */
+  --color-ink: #e8ecf3;
+  --color-ink-contrast: #131417;
+  --color-ink-disabled: #4d535f;
+  /* 선택된 카드·안내 상자·내 말풍선처럼 색 대신 회색으로 구분하는 바탕. */
+  --color-neutral-bg: #2f333b;
   --color-danger: #f37c71;
   --color-alert: #ff5449;
   --color-success: #5fc164;
   --color-warning: #e3b341;
-  /* 진행률 막대(utils/graduation.js getProgressColor)의 명도. 밝은 테마에서는 낮춰서 막대가 회색 트랙과 구분되게 한다. */
-  --progress-lightness: 50%;
   /* 시간표 과목별 구분색 — 테마별로 다시 정의하지 않아도 됨: 실제 사용되는 색은
      color-mix()로 --color-bg-card와 섞어서 만들기 때문에 다크/라이트 각각에 맞는
      톤이 자동으로 나온다(courses-timetable-cell.tt-c0~7 참고). */
@@ -72,17 +74,19 @@
   /* #3b6fd6은 카드 배경 위 4.38:1, --color-accent-bg 위 4.14:1이라 한 단계 진하게(각각 5.45:1, 5.16:1). */
   --color-accent: #2f5fc4;
   --color-accent-contrast: #ffffff;
-  --color-accent-fill: #2f5fc4;
   --color-accent-bg: #e8f0fe;
   --color-accent-on-bg: #2f5fc4;
-  --color-accent-disabled: #c7d7f5;
+  /* 진한 남색 — 검정(#191f28)은 붕 떠 보인다는 피드백으로 남색으로(흰 글자 14.1:1). 커뮤니티 '팀 활동' 배지 남색과 같은 계열. */
+  --color-ink: #1e2b45;
+  --color-ink-contrast: #ffffff;
+  --color-ink-disabled: #b9c0cc;
+  --color-neutral-bg: #eef0f3;
   /* #d9483c는 흰 배경 4.25:1, 카드 배경 3.93:1이라 오류 문구·삭제 버튼 글자가 4.5:1에 못 미쳐 한 단계 진하게(5.32:1, 4.92:1). */
   --color-danger: #c4382d;
   --color-alert: #e0301e;
   /* #3d8b40은 카드 배경 위 '확정' 배지가 3.91:1이라 진하게(흰 배경 5.13:1). */
   --color-success: #2e7d32;
   --color-warning: #9a6700;
-  --progress-lightness: 42%;
   color-scheme: light;
 }
 
@@ -167,7 +171,7 @@ body {
 
 .screen-title.screen-title-brand {
   font-weight: 800;
-  color: var(--color-accent);
+  color: var(--color-ink);
 }
 
 .back-btn {
@@ -228,7 +232,7 @@ body {
 }
 
 .account-menu-item:hover:not(:disabled) {
-  background: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
 }
 
 .account-menu-item:disabled {
@@ -241,7 +245,7 @@ body {
 }
 
 .account-menu-item-admin {
-  color: var(--color-accent);
+  color: var(--color-ink);
   font-weight: 700;
 }
 
@@ -274,10 +278,14 @@ body {
   cursor: pointer;
 }
 
+/* 선택 버튼이 여러 줄(테마·글자 크기·언어)이라 잉크로 채우면 무거워서 테두리로만 표시한다(2단 선택 상태). 테두리 두께는
+   inset 그림자로 더해 크기가 바뀌지 않게 한다. */
 .settings-theme-btn.active {
-  border-color: var(--color-accent-on-bg);
-  color: var(--color-accent);
-  background: var(--color-accent-bg);
+  border-color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
+  color: var(--color-ink);
+  background: var(--color-bg-frame);
+  font-weight: 700;
 }
 
 /* 로그인 화면 헤더의 언어 전환기 — 설정 화면의 선택 버튼과 같은 색 규칙을 쓰되 헤더에 맞게 작게. */
@@ -297,9 +305,9 @@ body {
 }
 
 .language-switcher-btn.active {
-  border-color: var(--color-accent-on-bg);
-  color: var(--color-accent);
-  background: var(--color-accent-bg);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
+  background: var(--color-ink);
 }
 
 .settings-field-hint {
@@ -422,8 +430,8 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   border: none;
   display: flex;
   align-items: center;
@@ -434,7 +442,7 @@ body {
 }
 
 .prompt-send-btn:disabled {
-  background: var(--color-accent-disabled);
+  background: var(--color-ink-disabled);
   cursor: not-allowed;
 }
 
@@ -487,7 +495,7 @@ body {
 .auth-remember-field input {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-ink);
   cursor: pointer;
 }
 
@@ -550,7 +558,7 @@ body {
   width: 16px;
   height: 16px;
   margin-top: 3px;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-ink);
   cursor: pointer;
 }
 
@@ -595,8 +603,8 @@ body {
   width: 100%;
   padding: 14px;
   margin-top: 14px;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   border: none;
   border-radius: 10px;
   font-size: 1rem;
@@ -701,7 +709,7 @@ body {
 }
 
 .career-support-note {
-  background: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
   border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   color: var(--color-text-primary);
@@ -873,6 +881,7 @@ body {
   overflow: hidden;
 }
 
+/* 진행률 막대는 화면에 남는 몇 안 되는 파랑 — 예전의 노랑→초록 변화 대신 한 색으로 두어 "봐야 할 값"으로 눈에 띄게 한다(2026-10-17). */
 .home-progress-fill {
   height: 100%;
   background: var(--color-accent);
@@ -906,8 +915,8 @@ body {
 }
 
 .grad-empty-notice {
-  border-color: var(--color-accent);
-  background: var(--color-accent-bg);
+  border-color: transparent;
+  background: var(--color-neutral-bg);
 }
 
 .grad-empty-notice-text {
@@ -1173,7 +1182,7 @@ body {
 }
 
 .bottom-tab.active {
-  color: var(--color-accent);
+  color: var(--color-ink);
 }
 
 .bottom-tab-chat {
@@ -1185,13 +1194,13 @@ body {
   margin-top: -16px;
   border-radius: 50%;
   border: none;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   cursor: pointer;
 }
 
 .bottom-tab-chat.active {
-  box-shadow: 0 0 0 3px var(--color-accent-bg);
+  box-shadow: 0 0 0 3px var(--color-neutral-bg);
 }
 
 /* 빈 자리 — 아이콘과 같은 크기로 비워 두어 다른 자리의 위치가 그대로다 */
@@ -1215,13 +1224,13 @@ body {
   width: 34px; height: 34px; border: none; border-radius: 50%;
   background: none; color: var(--color-text-muted); cursor: pointer;
 }
-.home-edit-btn:hover { background: var(--color-accent-bg); color: var(--color-accent-on-bg); }
+.home-edit-btn:hover { background: var(--color-neutral-bg); color: var(--color-ink); }
 .home-edit-hint {
   position: absolute; top: calc(100% + 6px); right: -40px; z-index: 20;
   /* 너비는 문장 길이에 맞춘다(짧은 한국어 안내가 넓은 상자에 떠 보이지 않게). 긴 문장(영어 등)은 최대 너비에서 줄바꿈. */
   display: flex; align-items: center; gap: 8px; width: max-content; max-width: 240px;
   padding: 10px 12px; border-radius: 10px; font-size: 0.8125rem; line-height: 1.4;
-  background: var(--color-accent-fill); color: var(--color-accent-contrast);
+  background: var(--color-ink); color: var(--color-ink-contrast);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 /* 말풍선 꼬리 — 연필 버튼(34px) 중심을 가리킨다. 말풍선 오른쪽 끝이 버튼보다 40px 더 나가 있으므로
@@ -1229,10 +1238,10 @@ body {
 .home-edit-hint::before {
   content: ''; position: absolute; top: -6px; right: 51px;
   border-left: 6px solid transparent; border-right: 6px solid transparent;
-  border-bottom: 6px solid var(--color-accent-fill);
+  border-bottom: 6px solid var(--color-ink);
 }
 /* 안내가 떠 있는 동안 어느 버튼 얘기인지 보이게 편집 버튼을 강조한다 */
-.home-edit-btn.hinted { background: var(--color-accent-bg); color: var(--color-accent-on-bg); box-shadow: 0 0 0 2px var(--color-accent); }
+.home-edit-btn.hinted { background: var(--color-neutral-bg); color: var(--color-ink); box-shadow: 0 0 0 2px var(--color-ink); }
 .home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .home-edit-body { display: flex; flex-direction: column; gap: 14px; }
 .home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
@@ -1242,18 +1251,18 @@ body {
 .home-edit-slot { touch-action: none; user-select: none; position: relative; cursor: grab; }
 .home-edit-slot.home-edit-preview-empty { cursor: pointer; }
 .home-edit-preview .home-edit-slot:not(.home-edit-preview-empty) { color: var(--color-text-primary); }
-.home-edit-slot.selected { color: var(--color-accent); background: var(--color-accent-bg); box-shadow: 0 0 0 2px var(--color-accent); }
+.home-edit-slot.selected { color: var(--color-ink); background: var(--color-neutral-bg); box-shadow: 0 0 0 2px var(--color-ink); }
 .home-edit-slot:not(.dragging) { transition: transform 0.12s, box-shadow 0.12s, background 0.12s; }
 /* 끄는 것은 조금 작고 반투명하게(크기는 useSwapSlots의 인라인 transform) — 아래에 깔린 "들어갈 자리" 표시가 가려지지 않게 */
 .home-edit-slot.dragging { z-index: 2; cursor: grabbing; opacity: 0.85; background: var(--color-bg-card); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); }
 /* 놓으면 들어갈 자리 — 점선 대신 강조색 테두리·배경, 살짝 키워서 "여기 들어간다"를 보여 준다 */
 .home-edit-slot.drop-target {
-  background: var(--color-accent-bg); color: var(--color-accent);
-  border-color: transparent; box-shadow: 0 0 0 3px var(--color-accent); transform: scale(1.2);
+  background: var(--color-neutral-bg); color: var(--color-ink);
+  border-color: transparent; box-shadow: 0 0 0 3px var(--color-ink); transform: scale(1.2);
 }
 .home-edit-menu { margin-top: 10px; }
 .home-edit-menu .home-edit-slot.drop-target { transform: scale(1.04); }
-.home-edit-menu .home-edit-slot.drop-target svg { color: var(--color-accent); }
+.home-edit-menu .home-edit-slot.drop-target svg { color: var(--color-ink); }
 
 .home-edit-group-label { margin: 14px 0 6px; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-muted); }
 .home-edit-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -1264,11 +1273,11 @@ body {
 .home-edit-row-name { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
 .home-edit-row { cursor: pointer; }
 .home-edit-row.disabled { opacity: 0.45; cursor: default; }
-.home-edit-row input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
+.home-edit-row input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-ink); }
 .home-edit-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
 .home-edit-toggle > span { display: flex; flex-direction: column; gap: 2px; }
 .home-edit-toggle .home-card-label { margin: 0; }
-.home-edit-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-accent); }
+.home-edit-toggle input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-ink); }
 
 .bottom-tab-disabled {
   opacity: 0.4;
@@ -1301,7 +1310,14 @@ body {
 
 .chat-bubble.user {
   align-self: flex-end;
-  background: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
+}
+
+/* 답변은 말풍선 없이 본문처럼 — 긴 답변이 읽기 편하고, 내 질문(회색 말풍선)과 자연스럽게 구분된다. */
+.chat-bubble.assistant {
+  background: none;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 .chat-bubble .message-sender {
@@ -1432,9 +1448,9 @@ body {
 }
 
 .courses-year-tab.active {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
-  border-color: var(--color-accent-bg);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+  border-color: var(--color-ink);
 }
 
 .courses-semester-row {
@@ -1477,9 +1493,11 @@ body {
 }
 
 .courses-semester-btn.active {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
-  border-color: var(--color-accent-bg);
+  background: var(--color-bg-frame);
+  color: var(--color-ink);
+  border-color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
+  font-weight: 700;
 }
 
 .courses-summary-row {
@@ -1590,8 +1608,8 @@ body {
 }
 
 .courses-timetable-cell.filled {
-  background: var(--color-accent-bg);
-  color: var(--color-accent);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
 }
 
 /* 같은 과목이 여러 칸에 걸치므로 과목별로 색을 다르게 줘서 한눈에 구분되게 한다 —
@@ -1677,8 +1695,8 @@ body {
 }
 
 .courses-retake-notice {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-frame));
+  border: 1px solid transparent;
+  background: var(--color-neutral-bg);
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 14px;
@@ -1799,9 +1817,10 @@ body {
 }
 
 .courses-add-mode-toggle button.active {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
-  border-color: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+  font-weight: 700;
 }
 
 /* 말풍선은 세 번째 탭이 아니라 탭 줄(.courses-add-mode-toggle) 오른쪽 위에 붙인다 — 탭이 두 줄로 나뉘어도 첫 줄을 가리지 않게. */
@@ -1813,8 +1832,8 @@ body {
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 6px 10px;
@@ -1829,7 +1848,7 @@ body {
   top: 100%;
   right: 14px;
   border: 5px solid transparent;
-  border-top-color: var(--color-accent-fill);
+  border-top-color: var(--color-ink);
 }
 
 /* 등록된 과목 전체 삭제 — 되돌릴 수 없는 위험한 동작이라는 걸 색으로 구분한다. 과목 추가 폼 아래에 둔다.
@@ -2080,8 +2099,8 @@ body {
   width: 100%;
   margin-top: 12px;
   padding: 12px;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   border: none;
   border-radius: 10px;
   font-size: 0.9375rem;
@@ -2363,8 +2382,8 @@ body {
 
 .community-badge-capacity {
   background: none;
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
   font-weight: 600;
 }
 
@@ -2373,8 +2392,8 @@ body {
   width: 100%;
   margin-bottom: 10px;
   padding: 12px;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   border: none;
   border-radius: 10px;
   font-size: 0.875rem;
@@ -2488,8 +2507,8 @@ body {
 }
 
 .community-act-accept {
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 .community-act-reject {
@@ -2506,7 +2525,7 @@ body {
 .community-contact-box {
   margin-top: 8px;
   padding: 8px 10px;
-  background: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
   border-radius: 8px;
   font-size: 0.8125rem;
   color: var(--color-text-primary);
@@ -2514,7 +2533,7 @@ body {
 
 .community-contact-box b,
 .community-contact-box strong {
-  color: var(--color-accent);
+  color: var(--color-text-primary);
 }
 
 .community-reject-message {
@@ -2956,7 +2975,7 @@ body {
   width: 15px;
   height: 15px;
   border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
+  border-top-color: var(--color-ink);
   border-radius: 50%;
   animation: career-spin 0.8s linear infinite;
 }
@@ -2996,9 +3015,10 @@ body {
 }
 
 .courses-import-method-toggle button.active {
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
-  border-color: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+  font-weight: 700;
 }
 
 .courses-pdf-paste {
@@ -3154,8 +3174,8 @@ body {
 }
 
 .courses-pdf-pf-toggle-group button.active-np {
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 .courses-pdf-pf-note {
@@ -3295,8 +3315,8 @@ body {
   background: var(--color-border-strong);
 }
 
-.onb-dot.active { background: var(--color-accent); width: 16px; border-radius: 3px; }
-.onb-dot.done { background: var(--color-accent); opacity: 0.5; }
+.onb-dot.active { background: var(--color-ink); width: 16px; border-radius: 3px; }
+.onb-dot.done { background: var(--color-ink); opacity: 0.5; }
 
 .onb-q-title {
   font-size: 1.25rem;
@@ -3336,15 +3356,15 @@ body {
 
 /* .active: 학과 검색 결과에서 ↑↓로 가리킨 항목 — 마우스를 올린 것과 같은 모양(엔터로 고를 대상) */
 .onb-option-card:hover:not(:disabled),
-.onb-option-card.active { background: var(--color-accent-bg); }
-.onb-option-card.selected { border-color: var(--color-accent); background: var(--color-accent-bg); }
+.onb-option-card.active { background: var(--color-neutral-bg); }
+.onb-option-card.selected { border-color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); background: var(--color-neutral-bg); }
 /* 키보드 포커스 표시를 브라우저 기본색(주황 등) 대신 강조색으로 — ↑↓로 학과를 옮길 때 지금 위치를 보여 준다. */
 .onb-option-card:focus-visible,
 .onb-college-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .onb-option-card:disabled { opacity: 0.4; cursor: not-allowed; }
 .onb-option-title { font-size: 0.9375rem; line-height: 1.4; font-weight: 500; }
 .onb-option-caption { font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); }
-.onb-option-card.selected .onb-option-caption { color: var(--color-accent-on-bg); }
+.onb-option-card.selected .onb-option-caption { color: var(--color-text-secondary); }
 .onb-option-card:disabled .onb-option-caption { color: var(--color-danger); }
 .onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
 /* 학과 검색에서 친 글자와 일치한 부분 — 색만으로 구분하지 않게 굵게도 한다. 강조 배경(선택·↑↓) 위에서도 읽히는 글자색. */
@@ -3353,10 +3373,10 @@ mark.search-hit { background: none; color: var(--color-accent-on-bg, var(--color
 .onb-option-item { display: flex; flex-direction: column; gap: 6px; }
 .onb-successor-shortcut {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
-  min-height: 44px; padding: 8px 14px; border: 1px solid var(--color-accent); border-radius: 10px;
-  background: none; color: var(--color-accent); font-family: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer;
+  min-height: 44px; padding: 8px 14px; border: 1px solid var(--color-ink); border-radius: 10px;
+  background: none; color: var(--color-ink); font-family: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer;
 }
-.onb-successor-shortcut:hover { background: var(--color-accent-bg); color: var(--color-accent-on-bg, var(--color-accent)); }
+.onb-successor-shortcut:hover { background: var(--color-neutral-bg); color: var(--color-ink); }
 .onb-q-sub-note { margin-top: -6px; font-size: 0.8125rem; }
 
 .onb-field-group { margin-bottom: 18px; }
@@ -3420,7 +3440,7 @@ select.onb-select {
   font-family: inherit;
 }
 
-.onb-chip.selected { border-color: var(--color-accent); background: var(--color-accent-bg); color: var(--color-accent); font-weight: 700; }
+.onb-chip.selected { border-color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); background: var(--color-neutral-bg); color: var(--color-ink); font-weight: 700; }
 .onb-chip:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .onb-hint { margin: 8px 0 0; font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.5; }
@@ -3496,7 +3516,7 @@ select.onb-select {
 
 .onb-float-action .auth-submit-btn:disabled {
   opacity: 1;
-  background: var(--color-accent-disabled);
+  background: var(--color-ink-disabled);
 }
 
 /* 온보딩 "나중에 선택하기"(학적정보 수정은 "취소") — 질문 제목 줄 오른쪽. 줄 높이를 제목(.onb-q-title 1.25rem × 1.4)과 맞춰 세로 가운데에 온다. */
@@ -3535,8 +3555,8 @@ select.onb-select {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--color-accent-fill);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 6px 10px;
@@ -3552,15 +3572,15 @@ select.onb-select {
   bottom: 100%;
   right: 14px;
   border: 5px solid transparent;
-  border-bottom-color: var(--color-accent-fill);
+  border-bottom-color: var(--color-ink);
 }
 
 .career-recommend-btn {
   padding: 6px 12px;
   border-radius: 14px;
   border: none;
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
   font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
@@ -3608,9 +3628,9 @@ select.onb-select {
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 10px;
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent-bg);
-  color: var(--color-accent-on-bg);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
   font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
@@ -3742,7 +3762,7 @@ select.onb-select {
   width: 32px;
   height: 32px;
   border: 3px solid var(--color-border);
-  border-top-color: var(--color-accent);
+  border-top-color: var(--color-ink);
   border-radius: 50%;
   animation: career-spin 0.8s linear infinite;
 }
@@ -3868,7 +3888,7 @@ select.onb-select {
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 8px;
-  background: var(--color-accent-bg);
+  background: var(--color-neutral-bg);
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -3902,7 +3922,7 @@ select.onb-select {
   cursor: pointer;
 }
 .onb-college-head.open {
-  border-color: var(--color-accent, #6c8cff);
+  border-color: var(--color-ink);
 }
 .onb-college-name {
   flex: 1;
