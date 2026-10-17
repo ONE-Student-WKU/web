@@ -153,9 +153,9 @@ describe('formatShortfallSentence', () => {
 describe('describeRequirementTrust', () => {
   const base = { totalRequiredCredits: 140, totalEarnedCredits: 10, categories: [], certifications: [] };
 
-  it('확정: 배지만 보이고 사유·추정 표시는 없다', () => {
+  it('확정: 배지·사유·추정 표시가 모두 없다(예외만 표시)', () => {
     const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
-    expect(t).toEqual({ noData: false, badge: { label: '확정', level: 'ok' }, reason: null, totalEstimated: false });
+    expect(t).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
   });
 
   it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {

@@ -238,7 +238,6 @@ export default {
   'grad.summaryTitle': '부족 요건 요약',
   // 서버 규정 판단 엔진의 신뢰도 라벨 — 한국어 화면은 서버가 내려준 라벨/사유를 그대로 쓰고,
   // 아래 값은 한국어가 아닌 언어에서 서버 값 대신 쓰는 번역의 기준(원문)이다.
-  'grad.trust.CONFIRMED': '확정',
   'grad.trust.ESTIMATED': '추정',
   'grad.trust.INSUFFICIENT': '자료 불충분',
   'grad.trust.NO_DATA': '자료 없음',

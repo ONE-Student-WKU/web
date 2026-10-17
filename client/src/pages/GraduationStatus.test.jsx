@@ -37,9 +37,10 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     getGraduationStatus.mockReset();
   });
 
-  it('확정: 배지만 작게 보이고 사유·추정 표시는 없다', async () => {
+  it('확정: 배지·사유·추정 표시가 모두 없다(예외만 표시, 2026-10-17)', async () => {
     await renderWith(status());
-    expect(screen.getByText('확정')).toHaveClass('grad-trust-badge', 'ok');
+    expect(document.querySelector('.grad-trust-badge')).toBeNull();
+    expect(screen.queryByText('확정')).not.toBeInTheDocument();
     expect(screen.queryByText('(추정)')).not.toBeInTheDocument();
     expect(document.querySelector('.grad-trust-reason')).toBeNull();
     expect(screen.getByText(/\/ 140학점/)).toBeInTheDocument();
@@ -47,7 +48,7 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
 
   it('2025학번 이하(basisBookletYear=2026)여도 기준 책자 설명 문구는 보이지 않는다(학생에게는 필요 없는 설명이라 뺐다)', async () => {
     await renderWith(status({ regulation: { ...status().regulation, basisBookletYear: 2026 } }));
-    expect(screen.getByText('확정')).toHaveClass('grad-trust-badge', 'ok');
+    expect(document.querySelector('.grad-trust-badge')).toBeNull();
     expect(screen.queryByText(/학번별 이수기준표 기준/)).not.toBeInTheDocument();
   });
 

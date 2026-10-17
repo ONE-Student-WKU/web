@@ -266,7 +266,6 @@ export default {
   'grad.counseling.countingPending': 'We are checking with the university whether this is counted once per semester or as a total number of sessions.',
   'grad.sectionCerts': 'Thesis & graduation certification',
   'grad.summaryTitle': 'Missing requirements summary',
-  'grad.trust.CONFIRMED': 'Confirmed',
   'grad.trust.ESTIMATED': 'Estimated',
   'grad.trust.INSUFFICIENT': 'Insufficient data',
   'grad.trust.NO_DATA': 'No data',
