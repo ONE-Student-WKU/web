@@ -114,7 +114,8 @@ test('buildYearContextNote: 분류된 계획 질문이면 개설 이력 기준·
   assert.match(planning, /개설 기준 참고용/);
   // 윗학년 과목을 "후보"로 권하라던 지시는 뺐다 — 묻지 않으면 다른 학년 과목 이야기를 하지 않는다(2026-10-22 피드백).
   assert.doesNotMatch(planning, /상위·하위 학년 과목도 후보/);
-  assert.match(planning, /다른 학년 과목을 미리 듣는 이야기는 하지 마라/);
+  assert.match(planning, /윗학년 과목을 미리 듣는 이야기는 학생이 물을 때만 하라/);
+  assert.match(planning, /답을 피하지 말고/);
   const current = buildYearContextNote(ctx('지금 열려 있는 과목 알려줘', 'CURRENT_OFFERINGS'));
   assert.match(current, /지금\(올해\) 개설된 과목을 묻는다/);
   const plain = buildYearContextNote(ctx(PLANNING_MESSAGE, 'DEFAULT'));

@@ -27,14 +27,15 @@ function ChatBubble({ message }) {
       {citations.length > 0 && (
         <div className="message-citations">
           <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)}>
-            {showCitations ? t('chat.citationsHide') : t('chat.citationsMore', { count: citations.length })}
+            {showCitations ? t('chat.citationsHide') : t('chat.citationsMore')}
           </button>
           {/* 학생은 근거 문서를 읽으려는 게 아니라 답을 원해서, 출처는 작은 라벨로 접어 두고 펼쳐도 자료 제목만 보인다
               (2026-10-22 피드백 — 발췌문까지 보여주면 피로만 늘었다). 서버는 발췌문(excerpt)을 계속 내려주지만 화면에서는 쓰지 않는다. */}
           {showCitations && (
             <ul>
-              {citations.map((c) => (
-                <li key={c.chunkId}>{c.documentTitle}</li>
+              {/* 한 문서의 여러 조각(조문·절)이 함께 인용되면 제목이 같아 같은 줄이 반복돼서 제목으로 한 번씩만 보여준다. */}
+              {[...new Set(citations.map((c) => c.documentTitle))].map((title) => (
+                <li key={title}>{title}</li>
               ))}
             </ul>
           )}

@@ -49,7 +49,7 @@ export default {
   'chat.placeholder': 'Ask me anything',
   'chat.send': 'Send',
   'chat.citationsHide': 'Hide sources',
-  'chat.citationsMore': 'Sources ({count})',
+  'chat.citationsMore': 'View sources',
   'chat.typing': 'Preparing an answer',
   'chat.disclaimer':
     'Unofficial, for reference only. Confirm with the university.',

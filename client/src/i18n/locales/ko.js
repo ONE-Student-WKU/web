@@ -50,7 +50,7 @@ export default {
   'chat.placeholder': '무엇이든 물어보세요',
   'chat.send': '전송',
   'chat.citationsHide': '참고한 자료 접기',
-  'chat.citationsMore': '참고한 자료 {count}',
+  'chat.citationsMore': '참고한 자료 보기',
   'chat.typing': '답변을 준비하고 있어요',
   'chat.disclaimer': '비공식 참고용이에요. 정확한 건 웹정보서비스·학과에 확인하세요.',
   'chat.dailyLimit': '오늘 채팅 한도({limit}회)를 모두 사용했어요. 내일 다시 이용해주세요.',
