@@ -305,7 +305,7 @@ router.get('/stats', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats/trend?range=24h|30d|1y|all — 대시보드 지표(신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
+// GET /api/admin/stats/trend?range=24h|7d|30d|1y|all — 대시보드 지표(방문자·신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
 // 24h는 1시간 단위, 나머지는 하루 단위(services/adminStatsService.js getTrend).
 router.get('/stats/trend', async (req, res, next) => {
   try {
@@ -315,6 +315,16 @@ router.get('/stats/trend', async (req, res, next) => {
     }
     const trend = await adminStatsService.getTrend(range);
     res.status(200).json({ status: 200, code: 'ADMIN_STATS_TREND', message: null, data: trend });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/stats/composition — 학과·학번별 가입자와 최근 7일 방문자(학교에 보여줄 이용 현황). 5명 미만 칸은 "기타"로 묶는다.
+router.get('/stats/composition', async (req, res, next) => {
+  try {
+    const composition = await adminStatsService.getComposition();
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_COMPOSITION', message: null, data: composition });
   } catch (err) {
     next(err);
   }

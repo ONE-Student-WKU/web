@@ -242,5 +242,8 @@ export const resolveAdminInquiry = (id, note) =>
 
 export const getAdminStats = () => apiRequest('/admin/stats');
 
-// 추이 — range: 24h(1시간 단위) | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, points: [{ at, signups, chatQuestions, chatNotFound }] }(오래된 순)
+// 추이 — range: 24h(1시간 단위) | 7d | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, uniqueVisitors, points: [{ at, visitors, signups, chatQuestions, chatNotFound }] }(오래된 순, 방문자는 하루 단위에서만)
 export const getAdminStatsTrend = (range) => apiRequest(`/admin/stats/trend?range=${range}`);
+
+// 학과·학번별 가입자와 최근 7일 방문자 — 5명 미만 칸은 서버가 기타로 묶어 준다. { minGroupSize, noDepartment, department: { members, visitors7d }, cohort: { members, visitors7d } }
+export const getAdminStatsComposition = () => apiRequest('/admin/stats/composition');

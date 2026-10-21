@@ -24,7 +24,7 @@ const RANGE_NOTE = {
 
 /**
  * AdminTrendView
- * 관리자 대시보드 현황 칸을 눌렀을 때 보는 추이 — 24시간(1시간 단위)·30일·1년·전체(하루 단위) 그래프, 점을 가리키면 그 때의 값, 표 보기.
+ * 관리자 대시보드 현황 칸을 눌렀을 때 보는 추이 — 24시간(1시간 단위)·7일·30일·1년·전체(하루 단위) 그래프, 점을 가리키면 그 때의 값, 표 보기.
  * 관리자 화면(Admin.jsx)의 하위 화면이라 뒤로가기는 Admin이 대시보드로 되돌린다.
  *
  * Props:
@@ -58,12 +58,15 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
   const current = TREND_METRICS.find((m) => m.key === metric) || TREND_METRICS[0];
   const points = data?.points;
   const unit = data?.unit;
-  const values = useMemo(() => (points ? points.map((p) => p[current.key]) : []), [points, current.key]);
+  const values = useMemo(() => (points ? points.map((p) => p[current.key] ?? 0) : []), [points, current.key]);
   const ticks = useMemo(() => (points ? axisTicks(points, unit) : []), [points, unit]);
   const names = useMemo(() => (points ? points.map((p, i) => pointLabel(p, unit, i === points.length - 1)) : []), [points, unit]);
   const barLabels = useMemo(() => names.map((name, i) => `${name} ${values[i].toLocaleString()}${current.unit}`), [names, values, current.unit]);
 
-  const total = values.reduce((sum, v) => sum + v, 0);
+  // 방문자는 날마다의 수를 더하면 같은 사람이 여러 번 세져서, 합계 자리에는 서버가 센 "기간 동안 한 번 이상 온 사람 수"를 쓴다.
+  const total = current.key === 'visitors' && data?.uniqueVisitors != null ? data.uniqueVisitors : values.reduce((sum, v) => sum + v, 0);
+  // 방문자는 시간대별 기록이 없어 24시간(1시간 단위)에서는 그래프 대신 안내만 보여준다.
+  const dailyOnlyBlocked = Boolean(current.dailyOnly && unit === 'hour');
   const peak = values.reduce((best, v, i) => (v > values[best] ? i : best), 0);
   const rangeTab = TREND_RANGES.find((r) => r.key === range)?.tab;
   const peakWord = unit === 'hour' ? '시간' : '날';
@@ -108,6 +111,10 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
         ) : (
           <div className="skeleton skeleton-card" style={{ height: 300 }} aria-busy="true" aria-label="불러오는 중" />
         )
+      ) : dailyOnlyBlocked ? (
+        <div className="admin-trend-card">
+          <p className="courses-manual-hint">{current.tab}는 하루 단위로만 세요. 7일 이상 기간을 골라주세요.</p>
+        </div>
       ) : (
         <div className="admin-trend-card">
           <p className="admin-stat-label">
@@ -135,7 +142,7 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
           />
 
           <p className="courses-manual-hint">
-            {current.hint} {RANGE_NOTE[unit]}
+            {current.hint} {current.key === 'visitors' && `위 합계(${total.toLocaleString()}명)는 이 기간에 한 번 이상 온 사람 수라 막대를 더한 값과 달라요.`} {RANGE_NOTE[unit]}
           </p>
 
           <details className="admin-trend-table">
