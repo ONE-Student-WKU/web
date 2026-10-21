@@ -155,18 +155,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
               )}
-              {/* 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기만 알린다. 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2). */}
-              {status.registrationTerms && (
-                termShortage > 0 ? (
-                  <p className="grad-trust-reason">{t('grad.registrationShort', { n: termShortage })}</p>
-                ) : (
-                  <p className="grad-flex-note">
-                    {t('grad.registrationTerms', { registered: status.registrationTerms.registered, required: status.registrationTerms.required })}
-                    {status.registrationTerms.earlyGraduation && ` ${t('grad.registrationEarly', { n: status.registrationTerms.earlyGraduation })}`}
-                    {status.registrationTerms.estimated && ` ${t('grad.registrationEstimated')}`}
-                  </p>
-                )
-              )}
+              {/* 졸업사정 등록기간(시행규칙 제118조 제1호) — 학점을 다 채웠는데 학기가 모자랄 때만 알린다(#378 H-2). 평소 보이던
+                  "수업연한 이상 등록해야 해요" 줄은 누구나 아는 내용이라 읽는 피로만 늘고 조기졸업을 노리는 학생에게 오해를 줘서 뺐다(2026-10-22 피드백). */}
+              {termShortage > 0 && <p className="grad-trust-reason">{t('grad.registrationShort', { n: termShortage })}</p>}
             </section>
 
             <p className="home-quick-label">{t('grad.sectionMajorLiberal')}</p>
@@ -377,19 +368,21 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     </div>
                   </section>
                 ))}
-                {/* 자기계발심층상담: 판정하지 않고 기준·확인 경로만 안내한다(서버 counseling.js, DECISIONS D-65). 부족 요건 요약에는 넣지 않는다. */}
+                {/* 자기계발심층상담: 상담 기록은 읽지 않지만, 지도교수가 학기마다 상담을 진행해 거의 모든 학생이 채우므로 충족(체크)으로
+                    보여주고 확인 경로만 짧게 붙인다(2026-10-22 결정, D-65를 바꿈). 부족 요건 요약에는 넣지 않는다. */}
                 {status.counseling && (
                   <section className="home-card">
                     <div className="grad-cert-row">
-                      <span className="grad-cert-check" aria-hidden="true" />
+                      <span className="grad-cert-check satisfied" aria-hidden="true">
+                        <IconCheck size={11} />
+                      </span>
                       <div>
                         <p className="home-card-label">{t('grad.counseling.title')}</p>
                         <p className="grad-cert-desc">
                           {t('grad.counseling.need', { n: status.counseling.required, cohort: t(`grad.counseling.cohort.${status.counseling.cohort}`) })}
                         </p>
                         {status.counseling.replacement === 'HUG' && <p className="grad-flex-note">{t('grad.counseling.hug')}</p>}
-                        <p className="grad-flex-note">{t('grad.counseling.notJudged')}</p>
-                        <p className="grad-flex-note">{t('grad.counseling.countingPending')}</p>
+                        <p className="grad-flex-note">{t('grad.counseling.usuallyDone')}</p>
                       </div>
                     </div>
                   </section>

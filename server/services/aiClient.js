@@ -187,7 +187,7 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
     )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
-  // 자기계발심층상담은 판정하지 않는다(counseling.js, D-65). 기준과 확인 경로만 안내하게 한다.
+  // 자기계발심층상담은 상담 기록을 읽지 않지만, 지도교수가 학기마다 상담을 진행해 거의 모든 학생이 채우므로 충족으로 안내한다(D-81, D-65를 바꿈).
   const counseling = graduationStatus.counseling;
   const counselingCohort = counseling && { FROM_2020: '2020학번부터', BEFORE_2020: '2016~2019학번', TRANSFER: '편입생' }[counseling.cohort];
   // 시행규칙 제9조 제1호 학과의 지정 전공 과목 — 어떤 과목이 지정인지 학과 내규라 판정하지 않는다(designatedMajorCourses.js).
@@ -244,7 +244,7 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
     ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라.`
     : null;
   const counselingLine = counseling
-    ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
+    ? `  - 자기계발심층상담: ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 대부분 지도교수가 학기마다 상담을 진행해 채워 주므로 부족 요건으로 말하지 마라. 학생이 직접 물으면 이렇게 설명하고, 혹시 모르니 웹정보서비스 → 상담관리 → 지도교수 상담에서 확인할 수 있다고 덧붙여라.`
     : null;
 
   // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.

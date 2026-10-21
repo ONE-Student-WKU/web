@@ -202,7 +202,7 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
 export function uncheckedRequirementKeys(status) {
   if (!status) return [];
   const keys = [];
-  if (status.counseling) keys.push('home.unchecked.counseling');
+  // 자기계발심층상담은 거의 모든 학생이 지도교수 상담으로 채워 충족으로 보여주므로 여기 넣지 않는다(2026-10-22 결정).
   if (status.designatedMajorCourses) keys.push('home.unchecked.designated');
   if (status.secondMajor && status.secondMajor.type === 'MINOR') keys.push('home.unchecked.minorDesignated');
   if (status.majorTrackType === 'CONVERGENCE') keys.push('home.unchecked.microDegree');
