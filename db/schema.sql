@@ -847,6 +847,28 @@ CREATE TABLE IF NOT EXISTS community_applications (
 -- 실제 주소와 무관한 무작위 토큰(communityService.generateProxyEmail)이라 역추적 단서가
 -- 되지 않는다. Resend 인바운드 웹훅(server/routes/emailRelay.js, 2단계)이 이 매핑으로
 -- 실제 수신자를 찾아 forward한다.
+-- 커뮤니티 공지 — 운영자가 쓰고 학생은 읽기만 한다(신청·신고·댓글 없음, 승인 절차 없음). 일반 글(community_posts)과
+-- 섞으면 승인·신청·신고·검색 로직이 공지를 따로 걸러야 해서 표를 나눴다. 작성 관리자 계정이 지워져도 공지는 남긴다.
+CREATE TABLE IF NOT EXISTS community_notices (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  author_id   INT NULL,
+  title       VARCHAR(60) NOT NULL,
+  body        TEXT NOT NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NULL,
+
+  INDEX idx_community_notices_created (created_at),
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+-- 학생이 공지 목록을 마지막으로 본 시각 — 이보다 뒤에 올라온 공지가 있으면 커뮤니티에 새 공지 점을 띄운다.
+CREATE TABLE IF NOT EXISTS community_notice_seen (
+  student_id  INT PRIMARY KEY,
+  seen_at     DATETIME NOT NULL,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS community_email_proxies (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   application_id INT NOT NULL,

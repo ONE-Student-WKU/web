@@ -1116,6 +1116,7 @@ body {
 /* 메뉴는 하단 탭바와 같은 곳으로 가는 바로가기라 위의 이수학점·부족 요건 카드보다 가볍게 — 채운 배경 없이 테두리만, 아이콘과 이름을
    한 줄에 두어 높이를 줄인다(위의 정보 카드와 모양이 같으면 무엇이 내 정보이고 무엇이 메뉴인지 구분되지 않았다). */
 .home-quick-btn {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -2106,6 +2107,74 @@ body {
   position: sticky;
   bottom: 0;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 커뮤니티 공지 — 전체 글 탭 맨 위에 최신 공지 한 줄을 고정한다(B안). 검색창과 같은 폭·높이 감각으로, 배지와 테두리 사이에 여백을 둔다. */
+.notice-pin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notice-pin .community-badge {
+  margin-left: 0;
+}
+
+/* 새 공지 점 — 상단 탭의 점(.courses-year-tab .tab-dot)과 같은 크기·색 */
+.notice-pin .tab-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-danger, #e5484d);
+}
+
+.notice-pin-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-pin-more {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.community-badge-notice {
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+/* 홈 메뉴 카드의 새 알림 점(새 공지·신고 처리 결과) — 하단 바 점과 같은 색·크기. 카드 테두리에 닿지 않게 안쪽으로 둔다. */
+.home-quick-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-danger, #e5484d);
+}
+
+.notice-readonly-note {
+  margin: 0 0 16px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
 }
 
 .community-write-btn:disabled {
