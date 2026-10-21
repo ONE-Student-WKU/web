@@ -20,11 +20,13 @@ import {
   markMyReportsSeen,
   getNotices,
   markNoticesSeen,
+  blockCommunityContact,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import SearchScreen from '../components/SearchScreen.jsx';
 import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
 import CommunityNotices, { NoticePin } from '../components/CommunityNotices.jsx';
+import { ContactBox, ContactBlockedNote, BlockContactDialog } from '../components/ContactRelay.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
@@ -210,6 +212,9 @@ function Community({
   const [applicantReportOpenId, setApplicantReportOpenId] = useState(null);
   const [applicantReportReasons, setApplicantReportReasons] = useState({});
   const [applicantReportSubmittingId, setApplicantReportSubmittingId] = useState(null);
+  // 연락 차단 확인 팝업 — { applicationId, name }이면 열림, null이면 닫힘.
+  const [blockTarget, setBlockTarget] = useState(null);
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
 
   // 목록 → 상세/글쓰기 이동도 모바일 뒤로가기 스택에 반영해야, 뒤로가기를 눌렀을 때 곧장
   // 홈으로 나가지 않고 먼저 목록으로 돌아온다(App.jsx의 view 히스토리 관리, Admin.jsx의
@@ -581,6 +586,30 @@ function Community({
     }
   };
 
+  // 매칭 연락 차단 — 차단하면 그 매칭의 중계 메일이 양쪽 모두 전달되지 않는다. 서버에서 다시 불러오지 않고 화면의 해당 신청만
+  // 차단 상태로 바꾼다(글 상세의 내 신청, 글쓴이의 신청자 목록, 내 신청 탭).
+  const handleBlockContact = async () => {
+    if (!blockTarget) return;
+    const { applicationId } = blockTarget;
+    setBlockSubmitting(true);
+    setError(null);
+    try {
+      await blockCommunityContact(applicationId);
+      const blockedAt = new Date().toISOString();
+      const mark = (a) => (a.id === applicationId ? { ...a, contactBlockedAt: blockedAt, contactEmail: null } : a);
+      setApplicants((prev) => prev.map(mark));
+      setMyApplications((prev) => (prev ? prev.map(mark) : prev));
+      setSelectedPost((p) => (p && p.myApplication && p.myApplication.id === applicationId ? { ...p, myApplication: mark(p.myApplication) } : p));
+      setBlockTarget(null);
+      showToast(t('community.contact.toast'));
+    } catch {
+      setError(t('community.contact.err'));
+      setBlockTarget(null);
+    } finally {
+      setBlockSubmitting(false);
+    }
+  };
+
   const handleReportPost = async (e) => {
     e.preventDefault();
     if (!reportReason.trim() || !selectedPost) return;
@@ -737,6 +766,7 @@ function Community({
                       <span className="community-applicant-name">{a.applicant}</span>
                       {a.hasAppliedBefore && <span className="community-badge community-badge-reapply">{t('community.reapplied')}</span>}
                       <span className={`community-badge community-badge-${a.status}`}>{t(`community.appStatus.${a.status}`)}</span>
+                      {a.contactBlockedAt && <span className="community-badge community-badge-closed">{t('community.contact.blockedBadge')}</span>}
                     </div>
                     <p className="community-applicant-msg">{a.message}</p>
                     <div className="community-applicant-date">
@@ -771,11 +801,12 @@ function Community({
                         </div>
                       </>
                     )}
-                    {a.status === 'accepted' && a.contactEmail && (
-                      <div className="community-contact-box">
-                        <b>{t('community.label.contactEmail')}</b> · {a.contactEmail}
-                      </div>
-                    )}
+                    {a.status === 'accepted' &&
+                      (a.contactBlockedAt ? (
+                        <ContactBlockedNote blockedAt={a.contactBlockedAt} formatDate={formatDate} />
+                      ) : (
+                        a.contactEmail && <ContactBox email={a.contactEmail} onBlock={() => setBlockTarget({ applicationId: a.id, name: a.applicant })} />
+                      ))}
                     {a.status === 'rejected' && a.rejectReason && (
                       <p className="community-reject-message">
                         <b>{t('community.label.declineReason')}</b> · {a.rejectReason}
@@ -851,9 +882,17 @@ function Community({
                 {post.myApplication.status === 'pending' && (
                   <p className="community-status-desc">{t('community.pendingDesc')}</p>
                 )}
-                {post.myApplication.status === 'accepted' && (
-                  <p className="community-status-desc">{t('community.acceptedDesc')}</p>
-                )}
+                {post.myApplication.status === 'accepted' &&
+                  (post.myApplication.contactBlockedAt ? (
+                    <ContactBlockedNote blockedAt={post.myApplication.contactBlockedAt} formatDate={formatDate} />
+                  ) : (
+                    <>
+                      <p className="community-status-desc">{t('community.acceptedDesc')}</p>
+                      {post.myApplication.contactEmail && (
+                        <ContactBox email={post.myApplication.contactEmail} onBlock={() => setBlockTarget({ applicationId: post.myApplication.id, name: post.author })} />
+                      )}
+                    </>
+                  ))}
                 {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
                   <p className="community-reject-message">
                     <b>{t('community.label.declineReason')}</b> · {post.myApplication.rejectReason}
@@ -1181,7 +1220,11 @@ function Community({
                     <span className="courses-list-item-meta">
                       {t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}
                     </span>
-                    {a.contactEmail && <span className="community-row-contact">{t('community.appItem.contact', { email: a.contactEmail })}</span>}
+                    {a.contactBlockedAt ? (
+                      <span className="community-row-contact">{t('community.contact.blockedBadge')}</span>
+                    ) : (
+                      a.contactEmail && <span className="community-row-contact">{t('community.appItem.contact', { email: a.contactEmail })}</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -1214,6 +1257,8 @@ function Community({
           {renderSearchResults()}
         </SearchScreen>
       )}
+
+      <BlockContactDialog target={blockTarget} submitting={blockSubmitting} onConfirm={handleBlockContact} onClose={() => setBlockTarget(null)} />
 
       {sanctionPost && (
         <StudentSanctionDialog

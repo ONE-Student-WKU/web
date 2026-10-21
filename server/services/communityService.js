@@ -51,6 +51,9 @@ async function createEmailProxiesForApplication(conn, applicationId, applicantId
 // application당 프록시가 정확히 2개라 "나(매칭된 프록시) 아닌 쪽"이 곧 상대방이라는
 // 사실만으로 찾을 수 있다 — 인바운드 메일의 실제 발신 주소(from)는 신뢰하지 않는다
 // (신뢰할 필요도 없다).
+//
+// 전달하지 않는 경우(blocked): 둘 중 누군가 이 매칭의 연락을 차단했거나(community_contact_blocks), 보내는 사람(상대 프록시의 주인)이
+// 지금 제재 중일 때. 예전에는 차단 수단이 없고 제재를 받아도 메일이 계속 전달됐다(2026-10-22 신고 관련 후속).
 async function findEmailRelayTarget(toProxyEmail) {
   const [rows] = await pool.query('SELECT application_id, owner_id FROM community_email_proxies WHERE proxy_email = ?', [
     toProxyEmail,
@@ -62,13 +65,37 @@ async function findEmailRelayTarget(toProxyEmail) {
   if (!recipient) return null;
 
   const [siblingRows] = await pool.query(
-    'SELECT proxy_email FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
+    'SELECT proxy_email, owner_id FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
     [matched.application_id, matched.owner_id]
   );
   const sibling = siblingRows[0];
   if (!sibling) return null;
 
+  const [[blocked]] = await pool.query(
+    `SELECT
+       EXISTS(SELECT 1 FROM community_contact_blocks WHERE application_id = ?) AS contact_blocked,
+       EXISTS(SELECT 1 FROM student_sanctions WHERE student_id = ? AND lifted_at IS NULL AND (ends_at IS NULL OR ends_at > NOW())) AS sender_sanctioned`,
+    [matched.application_id, sibling.owner_id]
+  );
+  if (Number(blocked.contact_blocked)) return { blocked: 'CONTACT_BLOCKED' };
+  if (Number(blocked.sender_sanctioned)) return { blocked: 'SENDER_SANCTIONED' };
+
   return { recipientEmail: recipient.email, senderProxyEmail: sibling.proxy_email };
+}
+
+// 매칭 연락 차단 — 수락된 신청의 글쓴이·신청자만 할 수 있다. 이미 차단됐으면 그대로 성공(같은 결과라 다시 눌러도 된다).
+async function blockContact(applicationId, studentId) {
+  const [rows] = await pool.query(
+    `SELECT a.status, a.applicant_id, p.author_id
+     FROM community_applications a JOIN community_posts p ON p.id = a.post_id
+     WHERE a.id = ?`,
+    [applicationId]
+  );
+  const row = rows[0];
+  if (!row || (row.applicant_id !== studentId && row.author_id !== studentId)) return { ok: false, reason: 'NOT_FOUND' };
+  if (row.status !== 'accepted') return { ok: false, reason: 'NOT_ACCEPTED' };
+  await pool.query('INSERT IGNORE INTO community_contact_blocks (application_id, blocked_by) VALUES (?, ?)', [applicationId, studentId]);
+  return { ok: true };
 }
 
 // studentService.js의 serializeStudent()와 동일한 닉네임 폴백(student.name || user{id}) —
@@ -217,17 +244,24 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
   const isMine = row.author_id === studentId;
   let myApplication = null;
   if (!isMine) {
+    // 수락된 신청이면 글쓴이에게 연락할 주소(글쓴이 프록시)와 연락 차단 여부도 같이 준다 — 상세에서 바로 연락하거나 차단할 수 있게.
     const [appRows] = await pool.query(
-      `SELECT id, status, reject_reason FROM community_applications
-       WHERE post_id = ? AND applicant_id = ?
-       ORDER BY created_at DESC LIMIT 1`,
-      [id, studentId]
+      `SELECT a.id, a.status, a.reject_reason, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
+       FROM community_applications a
+       LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = ?
+       LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
+       WHERE a.post_id = ? AND a.applicant_id = ?
+       ORDER BY a.created_at DESC LIMIT 1`,
+      [row.author_id, id, studentId]
     );
     if (appRows[0]) {
+      const app = appRows[0];
       myApplication = {
-        id: appRows[0].id,
-        status: appRows[0].status,
-        rejectReason: appRows[0].status === 'rejected' ? appRows[0].reject_reason : null,
+        id: app.id,
+        status: app.status,
+        rejectReason: app.status === 'rejected' ? app.reject_reason : null,
+        contactEmail: app.status === 'accepted' && !app.contact_blocked_at ? app.contact_proxy_email : null,
+        contactBlockedAt: app.contact_blocked_at || null,
       };
     }
   }
@@ -360,11 +394,12 @@ async function getMyApplications(studentId) {
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
             DATE_FORMAT(p.recruit_end_date, '%Y-%m-%d') AS recruit_end_date,
-            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email
+            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
      JOIN students s ON s.id = p.author_id
      LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = p.author_id
+     LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
      WHERE a.applicant_id = ?
      ORDER BY a.created_at DESC`,
     [studentId]
@@ -381,7 +416,9 @@ async function getMyApplications(studentId) {
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
-    contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
+    // 연락을 차단한 매칭은 연락 주소를 내려주지 않고 차단 시각만 준다(누가 차단했는지는 보여주지 않는다).
+    contactEmail: row.status === 'accepted' && !row.contact_blocked_at ? row.contact_proxy_email : null,
+    contactBlockedAt: row.contact_blocked_at || null,
   }));
 }
 
@@ -392,10 +429,11 @@ async function getMyApplications(studentId) {
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
-            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email
+            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
      LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = a.applicant_id
+     LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
      WHERE a.post_id = ?
      ORDER BY a.created_at ASC`,
     [postId]
@@ -411,7 +449,8 @@ async function getApplicantsForPost(postId) {
       createdAt: row.created_at,
       applicant: nicknameOf(row.applicant_name, row.applicant_id),
       hasAppliedBefore,
-      contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
+      contactEmail: row.status === 'accepted' && !row.contact_blocked_at ? row.contact_proxy_email : null,
+      contactBlockedAt: row.contact_blocked_at || null,
       rejectReason: row.status === 'rejected' ? row.reject_reason : null,
     };
   });
@@ -735,6 +774,7 @@ module.exports = {
   getApplicantsForPost,
   decideApplication,
   findEmailRelayTarget,
+  blockContact,
   listPostsForAdmin,
   decidePost,
   deletePost,

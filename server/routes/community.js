@@ -411,6 +411,23 @@ router.post('/applications/:id/report', async (req, res, next) => {
   return handleReport(req, res, next, 'application');
 });
 
+// POST /api/community/applications/:id/block-contact — 수락된 매칭의 연락 차단(글쓴이·신청자 누구든). 차단하면 그 매칭의 중계 메일을
+// 양쪽 모두 전달하지 않는다(communityService.findEmailRelayTarget). 되돌리지 않는다.
+router.post('/applications/:id/block-contact', async (req, res, next) => {
+  try {
+    const result = await communityService.blockContact(Number(req.params.id), req.session.userId);
+    if (!result.ok && result.reason === 'NOT_FOUND') {
+      return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
+    }
+    if (!result.ok) {
+      return res.status(409).json({ status: 409, code: 'APPLICATION_NOT_ACCEPTED', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'CONTACT_BLOCKED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // reason은 선택 — 글쓴이가 신청자에게 남기는 거부 메시지.
 router.post('/applications/:id/reject', async (req, res, next) => {
   try {

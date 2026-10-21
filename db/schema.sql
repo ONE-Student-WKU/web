@@ -863,6 +863,17 @@ CREATE TABLE IF NOT EXISTS community_notice_seen (
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+-- 매칭 연락 차단 — 수락된 신청의 글쓴이·신청자 중 누구든 차단하면 그 신청의 중계 메일을 양쪽 모두 더 이상 전달하지 않는다
+-- (server/routes/emailRelay.js). 메일 내용은 여전히 저장하지 않는다. 차단은 되돌리지 않는다.
+CREATE TABLE IF NOT EXISTS community_contact_blocks (
+  application_id  INT PRIMARY KEY,
+  blocked_by      INT NULL,
+  blocked_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (application_id) REFERENCES community_applications(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_by) REFERENCES students(id) ON DELETE SET NULL
+);
+
 -- 신청 수락(매칭 성사) 시 신청자·글쓴이 각각을 위해 한 쌍(2행)으로 생성되는 프록시 이메일
 -- (#182). owner_id는 "이 프록시로 온 메일을 실제로 받을 사람" — 신청자에게 보여줄
 -- 프록시는 owner_id=글쓴이, 글쓴이에게 보여줄 프록시는 owner_id=신청자다. proxy_email은
