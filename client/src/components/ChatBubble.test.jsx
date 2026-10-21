@@ -17,13 +17,15 @@ describe('ChatBubble', () => {
     expect(container.querySelector('.message-sender').textContent).toBe('ONE Student');
   });
 
-  it('근거 발췌문의 마크다운(제목·표)을 기호 그대로가 아니라 제목·표로 그린다', () => {
+  it('참고한 자료는 작은 라벨로 접어 두고, 펼치면 자료 제목만 보인다(발췌문은 보여주지 않는다)', () => {
     const excerpt = ['### 개설 과목', '| 학수번호 | 교과목 |', '|---|---|', '| L00302 | 인적자원개발론 |'].join('\n');
-    const { container } = render(<ChatBubble message={{ sender: 'assistant', text: '답변', citedChunks: [{ chunkId: 1, documentTitle: '교양 개설현황', excerpt }] }} />);
-    fireEvent.click(container.querySelector('.citations-toggle'));
-    const citations = container.querySelector('.message-citations');
-    expect(citations.querySelector('.md-heading').textContent).toBe('개설 과목');
-    expect(citations.querySelector('table td').textContent).toBe('L00302');
-    expect(citations.textContent).not.toMatch(/###|\|---\|/);
+    const { container } = render(<ChatBubble message={{ sender: 'assistant', text: '답변', citedChunks: [{ chunkId: 1, documentTitle: '교양 개설현황', excerpt }, { chunkId: 2, documentTitle: '학칙 전문' }] }} />);
+    const toggle = container.querySelector('.citations-toggle');
+    expect(toggle.textContent).toBe('참고한 자료 2');
+    expect(container.querySelector('.message-citations li')).toBeNull();
+    fireEvent.click(toggle);
+    const items = [...container.querySelectorAll('.message-citations li')].map((li) => li.textContent);
+    expect(items).toEqual(['교양 개설현황', '학칙 전문']);
+    expect(container.querySelector('.message-citations table')).toBeNull();
   });
 });

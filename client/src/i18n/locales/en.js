@@ -49,7 +49,7 @@ export default {
   'chat.placeholder': 'Ask me anything',
   'chat.send': 'Send',
   'chat.citationsHide': 'Hide sources',
-  'chat.citationsMore': 'Show more sources ({count})',
+  'chat.citationsMore': 'Sources ({count})',
   'chat.typing': 'Preparing an answer',
   'chat.disclaimer':
     'Unofficial, for reference only. Confirm with the university.',
@@ -118,6 +118,8 @@ export default {
   'grad.shortfallCredits': '{category}: {n} credits',
   'grad.shortfallCreditsWithBase': '{category}: {n} credits (including {base}: {m} credits)',
   'grad.certExemptBachelorTransfer': 'If you transferred with a bachelor’s degree or through the industry-worker track, this certification is waived. Regular transfer students must complete it.',
+  'grad.certCourse.done': '{course} — completed',
+  'grad.certCourse.left': '{course} — not yet taken',
   'grad.certOptionalTeaching': 'Applies only to students in the teacher-training program. If you are not in it, this is not counted as a missing graduation requirement.',
   'category.기본전공': 'Major core',
   'category.전공필수': 'Major core',

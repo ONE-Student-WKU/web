@@ -108,11 +108,13 @@ test('resolveOfferingTargets: 요건 질문에 연도가 있어도 개설 의도
 
 // ── 모델에게 알리는 문구 ─────────────────────────────────────────────────────────
 
-test('buildYearContextNote: 분류된 계획 질문이면 개설 이력 기준·참고용 안내·권장 학년 문구가 들어가고, DEFAULT면 안 들어간다', () => {
+test('buildYearContextNote: 분류된 계획 질문이면 개설 이력 기준·참고용 안내·학년 범위 문구가 들어가고, DEFAULT면 안 들어간다', () => {
   const planning = buildYearContextNote(ctx(PLANNING_MESSAGE, 'NEXT_TERM_PLANNING'));
   assert.match(planning, /앞으로 들을 과목·학기 계획을 묻는다/);
   assert.match(planning, /개설 기준 참고용/);
-  assert.match(planning, /권장 학년일 뿐/);
+  // 윗학년 과목을 "후보"로 권하라던 지시는 뺐다 — 묻지 않으면 다른 학년 과목 이야기를 하지 않는다(2026-10-22 피드백).
+  assert.doesNotMatch(planning, /상위·하위 학년 과목도 후보/);
+  assert.match(planning, /다른 학년 과목을 미리 듣는 이야기는 하지 마라/);
   const current = buildYearContextNote(ctx('지금 열려 있는 과목 알려줘', 'CURRENT_OFFERINGS'));
   assert.match(current, /지금\(올해\) 개설된 과목을 묻는다/);
   const plain = buildYearContextNote(ctx(PLANNING_MESSAGE, 'DEFAULT'));

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -371,6 +371,14 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       <div>
                         <p className="home-card-label">{translateCategory(cert.category, t)}</p>
                         <p className="grad-cert-desc">{cleanRequirementNote(cert.description)}</p>
+                        {certCourseRows(cert).map((row) => (
+                          <div className="grad-subcheck-row" key={row.course}>
+                            <span className={row.done ? 'grad-cert-check satisfied' : 'grad-cert-check'}>
+                              {row.done && <IconCheck size={11} />}
+                            </span>
+                            <p className="grad-subcheck-label">{t(row.done ? 'grad.certCourse.done' : 'grad.certCourse.left', { course: row.course })}</p>
+                          </div>
+                        ))}
                         {cert.optional && <p className="grad-flex-note">{t('grad.certOptionalTeaching')}</p>}
                         {cert.conditionalExemption === 'BACHELOR_TRANSFER' && <p className="grad-flex-note">{t('grad.certExemptBachelorTransfer')}</p>}
                       </div>

@@ -29,15 +29,12 @@ function ChatBubble({ message }) {
           <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)}>
             {showCitations ? t('chat.citationsHide') : t('chat.citationsMore', { count: citations.length })}
           </button>
+          {/* 학생은 근거 문서를 읽으려는 게 아니라 답을 원해서, 출처는 작은 라벨로 접어 두고 펼쳐도 자료 제목만 보인다
+              (2026-10-22 피드백 — 발췌문까지 보여주면 피로만 늘었다). 서버는 발췌문(excerpt)을 계속 내려주지만 화면에서는 쓰지 않는다. */}
           {showCitations && (
             <ul>
               {citations.map((c) => (
-                <li key={c.chunkId}>
-                  <strong>{c.documentTitle}</strong>
-                  {/* 발췌문은 마크다운 원문을 줄 단위로 자른 것이라 답변과 같은 렌더러로 그린다(표·제목, server/services/citationExcerpt.js).
-                      서버가 계산해 만든 근거는 발췌문이 없다(null) — 제목만 보인다. */}
-                  {c.excerpt && <MessageText text={c.excerpt} />}
-                </li>
+                <li key={c.chunkId}>{c.documentTitle}</li>
               ))}
             </ul>
           )}
