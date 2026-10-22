@@ -218,6 +218,19 @@ export function registrationTermShortage(status, shortfalls) {
   return Math.max(0, terms.required - terms.registered);
 }
 
+// 졸업논문·졸업인증제 카드에 과목마다 이수/남음을 보여줄 줄(서버 evaluateCertifications의 completedCourses).
+// 요구 과목을 모두 들어야 하는 행(2과목 이상)은 전부 보여주고, 여러 과목 중 몇 개만 들으면 되는 행은 이수한 과목만 보여준다 —
+// 대체 과목 묶음을 "남음"으로 늘어놓으면 다 들어야 하는 것처럼 읽힌다. 서버가 아직 값을 안 주면 빈 배열.
+export function certCourseRows(cert) {
+  const required = (cert && cert.requiredCourses) || [];
+  const done = cert && Array.isArray(cert.completedCourses) ? cert.completedCourses : null;
+  if (!done) return [];
+  if (required.length >= 2 && cert.minCourseCount >= required.length) {
+    return required.map((course) => ({ course, done: done.includes(course) }));
+  }
+  return done.map((course) => ({ course, done: true }));
+}
+
 // summarizeShortfalls 결과를 "OO, OO가 부족해요." 문장으로 조립 — 마지막 항목의 받침 유무에
 // 맞춰 이/가를 고른다(항상 "이"로 고정하면 "졸업인증제이 부족해요"처럼 어색해짐).
 // 한국어가 아닌 언어는 조사가 없어서 번역 문장 틀(home.shortfallSentence)에 항목만 끼워 넣는다.

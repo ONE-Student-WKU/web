@@ -49,8 +49,8 @@ export default {
   // 채팅
   'chat.placeholder': '무엇이든 물어보세요',
   'chat.send': '전송',
-  'chat.citationsHide': '출처 접기',
-  'chat.citationsMore': '출처 더 보기 ({count})',
+  'chat.citationsHide': '참고한 자료 접기',
+  'chat.citationsMore': '참고한 자료 보기',
   'chat.typing': '답변을 준비하고 있어요',
   'chat.disclaimer': '비공식 참고용이에요. 정확한 건 웹정보서비스·학과에 확인하세요.',
   'chat.dailyLimit': '오늘 채팅 한도({limit}회)를 모두 사용했어요. 내일 다시 이용해주세요.',
@@ -117,6 +117,8 @@ export default {
   'grad.shortfallCredits': '{category} {n}학점',
   // 전공 합계도 모자라고 그 안의 기본전공 하한도 모자랄 때 — 두 숫자를 따로 쓰면 더해서 읽히므로 "그중"으로 묶는다.
   'grad.shortfallCreditsWithBase': '{category} {n}학점(그중 {base} {m}학점)',
+  'grad.certCourse.done': '{course} 이수',
+  'grad.certCourse.left': '{course} 남음',
   'grad.certOptionalTeaching': '교직과정 이수자만 해당해요. 교직을 이수하지 않으면 졸업 부족 요건에 넣지 않아요.',
   'grad.certExemptBachelorTransfer': '학사편입(4년제 대학 졸업 후 편입)·산업체편입이라면 이 졸업인증제는 면제예요. 일반편입이면 이수해야 해요.',
 
