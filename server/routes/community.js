@@ -6,6 +6,7 @@ const communityService = require('../services/communityService');
 const sanctionService = require('../services/sanctionService');
 const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
+const { normalizeDepartmentIds, departmentsExist } = require('../services/postDepartments');
 
 /**
  * server/routes/community.js
@@ -58,6 +59,14 @@ function normalizeRecruitEndDate(value) {
   const today = communityService.todayKst();
   if (value < today || value > communityService.addDaysToDate(today, MAX_RECRUIT_DAYS)) return { ok: false, value: null };
   return { ok: true, value };
+}
+
+// 모집 학과(선택) — 학과 id 배열, 최대 3개. 비우면 학과 상관없음. 글 수정에서 보내지 않으면 그대로 둔다(postDepartments.js).
+async function parseDepartmentIds(value) {
+  const ids = normalizeDepartmentIds(value);
+  if (ids === null) return { ok: false };
+  if (ids !== undefined && !(await departmentsExist(ids))) return { ok: false };
+  return { ok: true, value: ids };
 }
 
 function isValidReportReason(reason) {
@@ -132,6 +141,10 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
     if (!recruitEnd.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
     }
+    const departments = await parseDepartmentIds(req.body.departmentIds);
+    if (!departments.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENTS', message: null, data: null });
+    }
 
     const id = await communityService.createPost(req.session.userId, {
       title,
@@ -139,6 +152,7 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
       category: req.body.category,
       capacity: capacityResult.value,
       recruitEndDate: recruitEnd.value,
+      departmentIds: departments.value || [],
     });
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
@@ -189,9 +203,11 @@ router.post('/reports/seen', async (req, res, next) => {
 });
 
 // GET /api/community?q= — 승인된 글 목록(전체 공개). q가 있으면 제목·본문에 그 검색어가 들어간 글만(최신순).
+// 글마다 모집 학과와, 보는 학생 기준 "내 학과" 여부를 붙인다.
 router.get('/', async (req, res, next) => {
   try {
-    const posts = await communityService.listApprovedPosts({ query: req.query.q });
+    const viewer = await studentService.findById(req.session.userId);
+    const posts = await communityService.listApprovedPosts({ query: req.query.q, viewerDepartmentId: viewer?.department_id ?? null });
     res.status(200).json({ status: 200, code: 'COMMUNITY_POSTS_LIST', message: null, data: posts });
   } catch (err) {
     next(err);
@@ -206,6 +222,7 @@ router.get('/:id', async (req, res, next) => {
     const post = await communityService.getPostById(req.params.id, {
       studentId: req.session.userId,
       includeAuthorId: Boolean(viewer && viewer.role === 'admin'),
+      viewerDepartmentId: viewer?.department_id ?? null,
     });
     if (!post) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
@@ -239,6 +256,10 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
     if (!recruitEnd.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
     }
+    const departments = await parseDepartmentIds(req.body.departmentIds);
+    if (!departments.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENTS', message: null, data: null });
+    }
 
     const edited = await communityService.editPost(req.params.id, req.session.userId, {
       title,
@@ -246,6 +267,7 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
       category: req.body.category,
       capacity: capacityResult.value,
       recruitEndDate: recruitEnd.value,
+      departmentIds: departments.value,
     });
     if (!edited) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
