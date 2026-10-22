@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db');
+const { replacePostDepartments, attachTargetDepartments } = require('./postDepartments');
 const { prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
 
 /**
@@ -142,12 +143,25 @@ function recruitFields(row, today) {
 // 글은 목록/상세 어디서도 제3자에게 노출되면 안 된다(db/schema.sql 커뮤니티 게시판 주석
 // 참고 — 관리자 승인 전엔 비공개). 아래 학생용 함수들이 이 규칙을 지킨다.
 
-async function createPost(authorId, { title, body, category, capacity, recruitEndDate = null }) {
-  const [result] = await pool.query(
-    "INSERT INTO community_posts (author_id, title, body, category, capacity, recruit_end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
-    [authorId, title, body, category, capacity, recruitEndDate]
-  );
-  return result.insertId;
+// departmentIds: 모집 학과 id(최대 3개, 빈 배열이면 학과 상관없음 — postDepartments.js). 글과 모집 학과를 한 트랜잭션으로 저장해,
+// 학과 저장이 실패하면 글도 남지 않게 한다.
+async function createPost(authorId, { title, body, category, capacity, recruitEndDate = null, departmentIds = [] }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      "INSERT INTO community_posts (author_id, title, body, category, capacity, recruit_end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+      [authorId, title, body, category, capacity, recruitEndDate]
+    );
+    await replacePostDepartments(conn, result.insertId, departmentIds);
+    await conn.commit();
+    return result.insertId;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 게시글 검색 — 제목이나 본문에 검색어가 들어간 글(koreanSearch.js: 띄어쓰기·문장부호 무시, 제목 일치가 본문 일치보다
@@ -163,7 +177,8 @@ function normalizeSearchQuery(q) {
 }
 
 // query가 비어 있으면 검색하지 않고 전체 목록(기존 동작)을 돌려준다.
-async function listApprovedPosts({ query } = {}) {
+// viewerDepartmentId: 보는 학생의 학과 — 글마다 모집 학과와 "내 학과" 여부(isMyDepartment)를 붙인다.
+async function listApprovedPosts({ query, viewerDepartmentId = null } = {}) {
   const keyword = normalizeSearchQuery(query);
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name,
@@ -185,12 +200,12 @@ async function listApprovedPosts({ query } = {}) {
     author: nicknameOf(row.author_name, row.author_id),
     ...recruitFields(row, today),
   }));
-  if (!keyword) return posts;
+  if (!keyword) return attachTargetDepartments(posts, { viewerDepartmentId });
 
   // "?!"처럼 문장부호뿐이라 정규화하면 비는 검색어는 아무것도 찾지 않는다(rankEntries가 빈 배열을 준다).
   const prepared = prepareQuery(keyword);
   const searchable = posts.map((post) => ({ item: post, entry: prepareEntry(post.title, [post.body]) }));
-  return rankEntries(searchable, prepared, { limit: SEARCH_RESULT_LIMIT }).map((r) => r.item);
+  return attachTargetDepartments(rankEntries(searchable, prepared, { limit: SEARCH_RESULT_LIMIT }).map((r) => r.item), { viewerDepartmentId });
 }
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
@@ -210,7 +225,7 @@ async function listMyPosts(studentId) {
     [studentId]
   );
   const today = todayKst();
-  return rows.map((row) => ({
+  return attachTargetDepartments(rows.map((row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -222,14 +237,14 @@ async function listMyPosts(studentId) {
     applicationCount: Number(row.application_count),
     pendingApplicationCount: Number(row.pending_application_count),
     ...recruitFields(row, today),
-  }));
+  })));
 }
 
 // 승인된 글은 누구나, 그 외(대기/반려)는 작성자 본인만 볼 수 있다 — id를 알아도 남의
 // 비공개 글을 못 보게 막는 게 목적. 이 함수가 신청 가능 여부 판정도 겸한다(3단계 —
 // server/routes/community.js의 POST /:id/apply가 그대로 재사용): null이면 신청 대상도
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
-async function getPostById(id, { studentId, includeAuthorId = false }) {
+async function getPostById(id, { studentId, includeAuthorId = false, viewerDepartmentId = null }) {
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name,
             ${RECRUIT_DATE_COLUMNS}
@@ -274,7 +289,10 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
 
   const contentHidden = row.status !== 'approved' && !isMine;
 
+  const [post] = await attachTargetDepartments([{ id: row.id }], { viewerDepartmentId });
   return {
+    targetDepartments: post.targetDepartments,
+    ...(viewerDepartmentId ? { isMyDepartment: post.isMyDepartment } : {}),
     id: row.id,
     title: contentHidden ? null : row.title,
     body: contentHidden ? null : row.body,
@@ -298,14 +316,26 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
 // 적용돼 공개 목록에서 사라진다). closed_at은 건드리지 않는다(마감 여부는 수정과 무관한
 // 별개 상태). 이미 달린 신청(대기/수락 포함)도 그대로 둔다 — 수정은 글 노출 여부만
 // 잠그지, 신청 데이터를 건드리지 않는다.
-async function editPost(id, authorId, { title, body, category, capacity, recruitEndDate = null }) {
-  const [result] = await pool.query(
-    `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?,
-            recruit_end_date = ?, status = 'pending', decided_at = NULL
-     WHERE id = ? AND author_id = ?`,
-    [title, body, category, capacity, recruitEndDate, id, authorId]
-  );
-  return result.affectedRows > 0;
+// departmentIds가 undefined면 모집 학과는 그대로 둔다(학과를 보내지 않는 예전 화면 호환).
+async function editPost(id, authorId, { title, body, category, capacity, recruitEndDate = null, departmentIds }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?,
+              recruit_end_date = ?, status = 'pending', decided_at = NULL
+       WHERE id = ? AND author_id = ?`,
+      [title, body, category, capacity, recruitEndDate, id, authorId]
+    );
+    if (result.affectedRows > 0 && departmentIds !== undefined) await replacePostDepartments(conn, id, departmentIds);
+    await conn.commit();
+    return result.affectedRows > 0;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 삭제는 관리자 승인과 무관하게 작성자가 상태(대기/승인/반려/마감) 상관없이 언제든 할 수

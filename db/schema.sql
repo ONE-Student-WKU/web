@@ -826,6 +826,19 @@ CREATE TABLE IF NOT EXISTS community_posts (
   INDEX idx_community_posts_status (status)
 );
 
+-- 커뮤니티 글의 모집 학과(2026-10-22) — 글마다 최대 3개, 줄이 없으면 "학과 상관없음". 제목만으로는 자기 학과 글인지 알 수 없어
+-- 목록에 모집 학과와 "내 학과" 표시를 붙인다(services/postDepartments.js). position은 글쓴이가 고른 순서.
+CREATE TABLE IF NOT EXISTS community_post_departments (
+  post_id        INT NOT NULL,
+  department_id  INT NOT NULL,
+  position       TINYINT NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (post_id, department_id),
+  INDEX idx_community_post_departments_dept (department_id),
+  FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+);
+
 -- 신청 메시지는 글쓴이만 볼 수 있음(비공개).
 CREATE TABLE IF NOT EXISTS community_applications (
   id             INT AUTO_INCREMENT PRIMARY KEY,
