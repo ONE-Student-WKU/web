@@ -70,7 +70,7 @@ describe('진로 탐색 처음 답변 수정', () => {
     await userEvent.click(screen.getByRole('button', { name: '처음 답변 수정' }));
     const restart = screen.getByRole('button', { name: '처음부터 다시 시작' });
     expect(restart).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: '혼자 오래 집중해서 하는 일' })[0]).toHaveClass('selected');
-    expect(screen.getAllByRole('button', { name: '계속 사람을 상대하는 일' })[0]).not.toHaveClass('selected');
+    expect(screen.getAllByRole('button', { name: '혼자 오래 집중해서 하는 일' })[0]).toHaveClass('active');
+    expect(screen.getAllByRole('button', { name: '계속 사람을 상대하는 일' })[0]).not.toHaveClass('active');
   });
 });

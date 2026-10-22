@@ -62,11 +62,12 @@ export function resetProfileCache() {
  * - onGoHome: function
  * - onNameChanged: function(name) — App.jsx의 user 상태 동기화용
  * - onAccountDeleted: function — 삭제 성공 시(서버에서 세션도 함께 파기됨) 로그인 화면으로 되돌림
+ * - onOpenOnboarding: function (선택) — "학과·학번 수정하기" 줄에서 학과·학번 수정 화면을 연다.
  * - justReauthenticated: boolean — Google 재인증 왕복 직후(App.jsx가 ?reauth=1 쿼리로 판단)인지.
  *   서버의 재인증 유효 시간(5분)과 별개로, 새로고침하면 다시 false가 되는 프론트 전용 플래그라
  *   실제 삭제 시점엔 서버가 다시 한번 유효성을 검사한다(REAUTH_REQUIRED).
  */
-function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthenticated }) {
+function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthenticated, onOpenOnboarding }) {
   const { t } = useI18n();
   const [name, setName] = useState(user?.name || '');
   const [nameSaved, setNameSaved] = useState(false);
@@ -94,6 +95,8 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
   }, []);
 
   const [deleteError, setDeleteError] = useState(null);
+  // 계정 삭제 줄을 눌러 펼쳤는지 — 재인증 왕복 직후(justReauthenticated)에는 펼친 채로 돌아온다.
+  const [deleteOpen, setDeleteOpen] = useState(Boolean(justReauthenticated));
   const [deleting, setDeleting] = useState(false);
 
   // 이메일 OTP 전용 계정(user.hasGoogleAccount === false)의 삭제 재인증 — 구글처럼 풀 페이지
@@ -203,112 +206,159 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
         </div>
       </header>
 
-      <div className="courses-body">
-        <section className="home-card">
-          <p className="home-card-label">{t('profile.name')}</p>
-          <form className="settings-inline-field" onSubmit={handleSaveName}>
-            <input
-              type="text"
-              className="onb-select"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setNameSaved(false);
-              }}
-            />
-            <button type="submit" className="settings-theme-btn">
-              {t('profile.save')}
-            </button>
-          </form>
-          {nameError && <p className="home-error">{nameError}</p>}
-          {nameSaved && <p className="settings-field-hint">{t('profile.saved')}</p>}
-        </section>
+      {/* 휴대폰 설정 화면처럼 맨 위에 내 계정, 아래에 묶음 목록(2026-10-22 개편). 계정 삭제는 맨 아래 한 줄을 눌러야 펼쳐진다. */}
+      <div className="courses-body community-body">
+        <div className="settings-page">
+          <div className="profile-id">
+            <span className="profile-id-avatar" aria-hidden="true">
+              {String(user?.name || '?').trim().charAt(0).toUpperCase()}
+            </span>
+            <div className="profile-id-text">
+              <b>{user?.name}</b>
+              {(user?.department || user?.admissionYear) && (
+                <span>{[user?.department, user?.admissionYear && t('profile.cohort', { year: user.admissionYear })].filter(Boolean).join(' · ')}</span>
+              )}
+            </div>
+          </div>
 
-        {confirmedRoadmapLoading ? (
-          <section className="home-card">
-            <p className="home-card-label">{t('profile.career')}</p>
-            <div className="skeleton skeleton-text skeleton-row" style={{ height: 38 }} />
-          </section>
-        ) : (
-          confirmedRoadmap && (
-            <section className="home-card">
-              <p className="home-card-label">{t('profile.career')}</p>
-              <div className="settings-inline-field">
-                <span className="profile-career-name">{confirmedRoadmap.confirmedCareer}</span>
-                <button className="settings-theme-btn" onClick={() => setRoadmapExpanded((v) => !v)}>
-                  {roadmapExpanded ? t('profile.roadmapHide') : t('profile.roadmapShow')}
+          <section className="settings-group">
+            <p className="settings-group-title">{t('profile.group.profile')}</p>
+            <div className="settings-list">
+              <form className="settings-row settings-row--stack" onSubmit={handleSaveName}>
+                <label htmlFor="profile-name">{t('profile.name')}</label>
+                <div className="settings-inline">
+                  <input
+                    id="profile-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setNameSaved(false);
+                    }}
+                  />
+                  <button type="submit" className="post-btn post-btn--ink" disabled={name.trim() === (user?.name || '')}>
+                    {t('profile.save')}
+                  </button>
+                </div>
+                {nameError ? (
+                  <p className="home-error">{nameError}</p>
+                ) : nameSaved ? (
+                  <p className="settings-help settings-help--ok">{t('profile.saved')}</p>
+                ) : (
+                  <p className="settings-help">{t('profile.nameHelp')}</p>
+                )}
+              </form>
+
+              {confirmedRoadmapLoading ? (
+                <div className="settings-row">
+                  <span>{t('profile.career')}</span>
+                  <span className="skeleton skeleton-text" style={{ width: 96, height: 14 }} />
+                </div>
+              ) : (
+                confirmedRoadmap && (
+                  <>
+                    <button type="button" className="settings-row" aria-expanded={roadmapExpanded} onClick={() => setRoadmapExpanded((v) => !v)}>
+                      <span>{t('profile.career')}</span>
+                      <span className="settings-row-value">
+                        {confirmedRoadmap.confirmedCareer}
+                        <span className={roadmapExpanded ? 'settings-chevron open' : 'settings-chevron'} aria-hidden="true">
+                          ›
+                        </span>
+                      </span>
+                    </button>
+                    {roadmapExpanded && (
+                      <div className="settings-row settings-row--stack profile-roadmap-list">
+                        <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
+                      </div>
+                    )}
+                  </>
+                )
+              )}
+
+              {onOpenOnboarding && (
+                <button type="button" className="settings-row" onClick={onOpenOnboarding}>
+                  <span>{t('profile.dept')}</span>
+                  <span className="settings-row-value">
+                    {t('profile.deptEdit')}
+                    <span className="settings-chevron" aria-hidden="true">
+                      ›
+                    </span>
+                  </span>
                 </button>
-              </div>
-              {roadmapExpanded && (
-                <div className="profile-roadmap-list">
-                  <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
+              )}
+            </div>
+          </section>
+
+          <section className="settings-group">
+            <p className="settings-group-title">{t('profile.group.account')}</p>
+            <div className="settings-list">
+              {!deleteOpen ? (
+                <button type="button" className="settings-row settings-row--danger" onClick={() => setDeleteOpen(true)}>
+                  {t('profile.delete.title')}
+                </button>
+              ) : (
+                <div className="settings-row settings-row--stack">
+                  <span className="settings-row-danger-title">{t('profile.delete.title')}</span>
+                  {justReauthenticated || emailReauthenticated ? (
+                    <form onSubmit={handleDeleteAccount}>
+                      {deleteError && <p className="home-error">{deleteError}</p>}
+                      <button type="submit" className="post-btn post-btn--danger post-btn--block" disabled={deleting}>
+                        {deleting ? t('profile.delete.deleting') : t('profile.delete.title')}
+                      </button>
+                    </form>
+                  ) : user?.hasGoogleAccount ? (
+                    <>
+                      <p className="settings-help">{t('profile.reauth.googleHint')}</p>
+                      <button type="button" className="post-btn post-btn--outline post-btn--block" onClick={startGoogleReauth}>
+                        {t('profile.reauth.google')}
+                      </button>
+                    </>
+                  ) : emailReauthStep === 'idle' ? (
+                    <>
+                      <p className="settings-help">{t('profile.reauth.emailHint')}</p>
+                      {emailReauthError && <p className="home-error">{emailReauthError}</p>}
+                      <button
+                        type="button"
+                        className="post-btn post-btn--outline post-btn--block"
+                        onClick={handleRequestEmailReauthCode}
+                        disabled={emailReauthSubmitting || !!retryAt}
+                      >
+                        {emailReauthSubmitting
+                          ? t('profile.reauth.sending')
+                          : retryAt
+                            ? t('profile.reauth.retryIn', { time: formatCountdown(cooldownRemainingMs) })
+                            : t('profile.reauth.getCode')}
+                      </button>
+                    </>
+                  ) : (
+                    <form onSubmit={handleVerifyEmailReauthCode} className="settings-stack">
+                      <p className="settings-help">{t('profile.reauth.codeSent')}</p>
+                      <div className="settings-inline">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          aria-label={t('login.codePlaceholder')}
+                          placeholder={t('login.codePlaceholder')}
+                          value={emailReauthCode}
+                          onChange={(e) => setEmailReauthCode(e.target.value)}
+                          required
+                        />
+                        <button type="submit" className="post-btn post-btn--ink" disabled={emailReauthSubmitting}>
+                          {emailReauthSubmitting ? t('login.verifying') : t('profile.reauth.confirm')}
+                        </button>
+                      </div>
+                      {emailReauthError && <p className="home-error">{emailReauthError}</p>}
+                      <button type="button" className="settings-text-btn" onClick={handleRequestEmailReauthCode} disabled={emailReauthSubmitting || !!retryAt}>
+                        {retryAt ? t('profile.reauth.resendWait', { time: formatCountdown(cooldownRemainingMs) }) : t('profile.reauth.resend')}
+                      </button>
+                    </form>
+                  )}
                 </div>
               )}
-            </section>
-          )
-        )}
-
-        <section className="home-card profile-danger-zone">
-          <p className="home-card-label">{t('profile.delete.title')}</p>
-          <p className="settings-field-hint">
-            {t('profile.delete.desc')}
-          </p>
-          {justReauthenticated || emailReauthenticated ? (
-            <form onSubmit={handleDeleteAccount}>
-              {deleteError && <p className="home-error">{deleteError}</p>}
-              <button type="submit" className="profile-delete-btn" disabled={deleting}>
-                {deleting ? t('profile.delete.deleting') : t('profile.delete.title')}
-              </button>
-            </form>
-          ) : user?.hasGoogleAccount ? (
-            <button type="button" className="settings-theme-btn" onClick={startGoogleReauth}>
-              {t('profile.reauth.google')}
-            </button>
-          ) : emailReauthStep === 'idle' ? (
-            <>
-              {emailReauthError && <p className="home-error">{emailReauthError}</p>}
-              <button
-                type="button"
-                className="settings-theme-btn"
-                onClick={handleRequestEmailReauthCode}
-                disabled={emailReauthSubmitting || !!retryAt}
-              >
-                {emailReauthSubmitting
-                  ? t('profile.reauth.sending')
-                  : retryAt
-                    ? t('profile.reauth.retryIn', { time: formatCountdown(cooldownRemainingMs) })
-                    : t('profile.reauth.getCode')}
-              </button>
-            </>
-          ) : (
-            <form onSubmit={handleVerifyEmailReauthCode}>
-              <p className="settings-field-hint">{t('profile.reauth.codeSent')}</p>
-              <div className="settings-inline-field">
-                <input
-                  type="text"
-                  className="onb-select"
-                  inputMode="numeric"
-                  placeholder={t('login.codePlaceholder')}
-                  value={emailReauthCode}
-                  onChange={(e) => setEmailReauthCode(e.target.value)}
-                  required
-                />
-                <button type="submit" className="settings-theme-btn" disabled={emailReauthSubmitting}>
-                  {emailReauthSubmitting ? t('login.verifying') : t('profile.reauth.confirm')}
-                </button>
-              </div>
-              {emailReauthError && <p className="home-error">{emailReauthError}</p>}
-              <button
-                type="button"
-                className="settings-theme-btn"
-                onClick={handleRequestEmailReauthCode}
-                disabled={emailReauthSubmitting || !!retryAt}
-              >
-                {retryAt ? t('profile.reauth.resendWait', { time: formatCountdown(cooldownRemainingMs) }) : t('profile.reauth.resend')}
-              </button>
-            </form>
-          )}
-        </section>
+            </div>
+            <p className="settings-group-note">{t('profile.delete.desc')}</p>
+          </section>
+        </div>
       </div>
     </div>
   );

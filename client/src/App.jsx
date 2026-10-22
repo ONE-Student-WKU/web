@@ -437,6 +437,7 @@ function App() {
             onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
             onAccountDeleted={handleAccountDeleted}
             justReauthenticated={justReauthenticated}
+            onOpenOnboarding={() => setView('onboarding')}
           />
         ) : view === 'admin' && user.role === 'admin' ? (
           <Admin
