@@ -23,6 +23,7 @@ import { resolveLayout, isLockedView } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
+import useClearClickCaret from './hooks/useClearClickCaret.js';
 import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
@@ -219,6 +220,8 @@ function App() {
   const textInputFocused = useTextInputFocused(view);
   // 홈 등에서 글자를 클릭해 둔 채 다른 화면으로 가면 그 자리의 커서가 허공에 남는 문제 방지.
   useClearStaleSelection(view);
+  // 입력 칸 밖에서 클릭으로 생긴 커서는 바로 지운다 — 바뀌지 않는 글자 위에서 커서가 깜빡이지 않게(2026-10-22 피드백).
+  useClearClickCaret();
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
