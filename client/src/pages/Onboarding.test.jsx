@@ -234,7 +234,7 @@ describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "�
     expect(screen.getByRole('button', { name: '인공지능' })).toBeInTheDocument();
   });
 
-  it('이전 학과의 "2026학번부터는 공학3계열" 바로가기를 누르면 이어지는 세부전공까지 골라 둔 채 세부전공 질문으로 간다(UX 점검 2-10)', async () => {
+  it('검색 결과의 개편 묶음에서 "2026학번부터 공학3계열"을 고르면 이전 학과에 이어지는 세부전공까지 골라 둔 채 세부전공 질문으로 간다(UX 점검 2-10)', async () => {
     const tracks = [{ id: 41, name: '컴퓨터·소프트웨어공학전공' }, { id: 42, name: '게임콘텐츠학전공' }];
     const engineering3 = { ...TRANSFER_DEPT, id: 21, name: '공학3계열', minAdmissionYear: 2026, maxAdmissionYear: null, coreMinAdmissionYear: 2026, coreMaxAdmissionYear: null, college: '공과대학', collegeOrder: 11, tracks };
     const cseFormer = {
@@ -246,7 +246,7 @@ describe('학과 선택: 학과 검색에서 고르면 바로 다음 질문, "�
     render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
     await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
     await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '컴퓨터');
-    await userEvent.click(await screen.findByRole('button', { name: '2026학번부터는 공학3계열' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^2026학번부터s*공학3계열/ }));
     expect(await screen.findByRole('heading', { name: '희망하는 세부전공을 선택하세요' })).toBeInTheDocument();
     expect(api.getTracks).toHaveBeenCalledWith(21);
     expect(screen.getByRole('button', { name: /^컴퓨터·소프트웨어공학전공/ })).toHaveClass('selected');

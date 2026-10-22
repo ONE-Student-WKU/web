@@ -201,7 +201,7 @@ describe('문의하기 / 계정 정보 수정', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     await userEvent.type(screen.getByLabelText('Nickname'), 'd');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('That nickname is already taken.')).toBeInTheDocument();
+    expect(await screen.findByText('That nickname is already taken, or one that looks too similar is.')).toBeInTheDocument();
     // 계정 삭제는 맨 아래 줄을 눌러야 재인증 버튼이 펼쳐진다.
     expect(screen.queryByRole('button', { name: 'Log in again to confirm' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Delete account' }));

@@ -172,6 +172,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
       if (err.code === 'DUPLICATE_NAME') setNameError(t('profile.err.duplicateName'));
       else if (err.code === 'RESERVED_NAME') setNameError(t('profile.err.reservedName'));
       else if (err.code === 'INVALID_NAME') setNameError(t('profile.err.nameInvalid'));
+      else if (err.code === 'NAME_CONTACT_INFO') setNameError(t('profile.err.nameContactInfo'));
       else if (err.code === 'NAME_TOO_LONG') setNameError(t('profile.err.nameTooLong'));
       else setNameError(t('profile.err.saveFailed'));
     }
