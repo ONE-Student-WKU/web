@@ -7,7 +7,7 @@
  * 이 값을 올린다 — 그러면 이전 버전에 동의한 계정은 다음 접속 때 동의 화면을 한 번 더 본다(serializeStudent의 consentRequired).
  * client/src/utils/consent.js의 CONSENT_VERSION과 같은 값이어야 한다(서버는 클라이언트가 보낸 값이 같을 때만 동의로 인정한다).
  */
-const CURRENT_CONSENT_VERSION = '2026-10-17';
+const CURRENT_CONSENT_VERSION = '2026-10-23';
 
 function isCurrentConsent(version) {
   return version === CURRENT_CONSENT_VERSION;

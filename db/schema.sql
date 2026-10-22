@@ -995,6 +995,8 @@ CREATE TABLE IF NOT EXISTS student_activity (
 -- 하루 방문 기록(관리자 대시보드의 방문자 추이·재방문율). student_activity는 마지막 접속 시각 하나뿐이라 날마다 몇 명이
 -- 왔는지 알 수 없어서, 학생이 그날 처음 요청할 때 (학생, 한국 날짜) 한 줄을 남긴다(middleware/activityTracker.js).
 -- 이 표를 만든 날부터 쌓이므로 그 전 기간의 방문자는 비어 있다.
+-- 학생과 연결된 기록은 최근 14일만 둔다(재방문율 계산에 필요한 만큼, 개인정보처리방침). 지난 날은 아래 daily_visit_counts로
+-- 날짜별 합계만 옮기고 지운다(services/visitStatsService.js).
 CREATE TABLE IF NOT EXISTS student_daily_visits (
   student_id  INT NOT NULL,
   visit_date  DATE NOT NULL,  -- 한국(KST) 날짜
@@ -1002,6 +1004,24 @@ CREATE TABLE IF NOT EXISTS student_daily_visits (
   PRIMARY KEY (student_id, visit_date),
   INDEX idx_student_daily_visits_date (visit_date),
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 14일이 지난 하루 방문 기록의 날짜별 합계. 학생과 연결되지 않는다.
+CREATE TABLE IF NOT EXISTS daily_visit_counts (
+  visit_date  DATE PRIMARY KEY,  -- 한국(KST) 날짜
+  visitors    INT NOT NULL
+);
+
+-- 기능 사용 횟수(관리자 "기능 사용"). 화면·버튼이 하루에 몇 번 쓰였는지의 합계만 남기고, 누가 썼는지·몇 시에 썼는지는
+-- 저장하지 않는다(routes/uiEvents.js, client/src/utils/track.js).
+-- devices: 그날 그 기능을 쓴 기기 수(대략) — 같은 브라우저에서 그날 처음 쓸 때만 1을 더한다.
+CREATE TABLE IF NOT EXISTS ui_event_daily (
+  event_date  DATE NOT NULL,         -- 한국(KST) 날짜
+  event       VARCHAR(64) NOT NULL,  -- 기능 이름(화면.요소[.값])
+  count       INT NOT NULL DEFAULT 0,
+  devices     INT NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (event_date, event)
 );
 
 -- ---------------------------------------------------------------------------

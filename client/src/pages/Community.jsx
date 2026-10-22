@@ -32,6 +32,7 @@ import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch, IconMore } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import { track } from '../utils/track.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
@@ -641,6 +642,7 @@ function Community({
         showToast(t('community.toast.edited'));
       } else {
         await createCommunityPost(payload);
+        track('community.write.posted');
         showToast(t('community.toast.posted'));
       }
       resetAfterWrite();
@@ -742,6 +744,7 @@ function Community({
     setError(null);
     try {
       await applyToCommunityPost(selectedPost.id, applyMessage.trim());
+      track('community.post.applied');
       showToast(t('community.toast.applied'));
       setApplyMessage('');
       openPost(selectedPost.id);
@@ -1383,7 +1386,7 @@ function Community({
                 ['applications', 'community.tab.apps'],
                 ['reports', 'community.tab.reports'],
               ].map(([key, label]) => (
-                <button key={key} type="button" className={`community-tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
+                <button key={key} type="button" className={`community-tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)} data-track={`community.tab.${key}`}>
                   {t(label)}
                   {key === 'reports' && unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label={t('community.newResultsAria')} />}
                 </button>
@@ -1400,7 +1403,7 @@ function Community({
             {tab === 'list' && (
               <>
                 <div className="community-tools">
-                  <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')}>
+                  <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')} data-track="community.search.open">
                     <IconSearch />
                     <span>{t('community.search.placeholder')}</span>
                   </button>
@@ -1409,6 +1412,7 @@ function Community({
                       type="button"
                       className={`community-filter ${myDeptOnly ? 'active' : ''}`}
                       aria-pressed={myDeptOnly}
+                      data-track={myDeptOnly ? 'community.mydept.off' : 'community.mydept.on'}
                       aria-label={t('community.myDeptFilter')}
                       onClick={() => {
                         setMyDeptOnly(!myDeptOnly);
@@ -1429,7 +1433,7 @@ function Community({
                   {tab === 'list' ? t('community.listHead.posts') : t('community.tab.mine')}
                   {(tab === 'list' ? visiblePosts : myPosts)?.length > 0 && <em>{(tab === 'list' ? visiblePosts : myPosts).length}</em>}
                 </h3>
-                <button type="button" className="post-write-btn" onClick={() => setShowWriteForm(true)} disabled={sanction?.scope === 'post_apply'}>
+                <button type="button" className="post-write-btn" onClick={() => setShowWriteForm(true)} disabled={sanction?.scope === 'post_apply'} data-track="community.write.open">
                   <IconPlus size={15} />
                   {sanction?.scope === 'post_apply' ? t('community.writeBtnLimited') : t('community.writeBtn')}
                 </button>

@@ -18,6 +18,8 @@ import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
+import { installTracking, setTrackingEnabled, track } from './utils/track.js';
+import { resetAdminPending } from './utils/adminPending.js';
 import HomeEdit from './pages/HomeEdit.jsx';
 import { resolveLayout, isLockedView } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
@@ -51,6 +53,7 @@ function resetAllUserCaches() {
   resetChatCache();
   resetCommunityCache();
   resetAdminTrendCache();
+  resetAdminPending();
 }
 
 /**
@@ -286,6 +289,21 @@ function App() {
     document.documentElement.dataset.fontSize = fontSize;
     localStorage.setItem('fontSize', fontSize);
   }, [fontSize]);
+
+  // 기능 사용 횟수(utils/track.js) — 클릭 감지기는 한 번만 걸고, 학생으로 로그인했을 때만 센다(관리자는 뺀다).
+  // 화면 열림은 화면이 바뀔 때만 센다(사용자 정보가 새로 고쳐져도 다시 세지 않게 마지막으로 센 화면을 기억한다).
+  useEffect(() => installTracking(), []);
+  const trackedView = useRef(null);
+  useEffect(() => {
+    setTrackingEnabled(Boolean(user) && user.role !== 'admin');
+    if (!user) {
+      trackedView.current = null;
+      return;
+    }
+    if (trackedView.current === view) return;
+    trackedView.current = view;
+    track(`view.${view}`);
+  }, [view, user]);
 
   const handleLogout = () => {
     logout().finally(() => {

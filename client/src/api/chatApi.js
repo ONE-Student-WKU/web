@@ -235,7 +235,8 @@ export const markMyReportsSeen = () => apiRequest('/community/reports/seen', { m
 // 신고 대상자 요약(읽기 전용, 관리자 전용). 서버가 아직 이 엔드포인트가 없는 배포 순서면 404 → 화면이 에러 안내만 보여준다.
 export const getReportedStudentSummary = (studentId) => apiRequest(`/admin/community/students/${studentId}/summary`);
 
-export const getAdminSanctions = () => apiRequest('/admin/sanctions');
+// status: active(지금 적용 중) | past(해제됐거나 기간이 끝난 제재, 최근 100건)
+export const getAdminSanctions = (status = 'active') => apiRequest(`/admin/sanctions?status=${status}`);
 
 export const liftSanction = (id) => apiRequest(`/admin/sanctions/${id}/lift`, { method: 'POST' });
 
@@ -253,7 +254,14 @@ export const resolveAdminInquiry = (id, note) =>
 
 export const getAdminStats = () => apiRequest('/admin/stats');
 
-// 추이 — range: 24h(1시간 단위) | 7d | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, uniqueVisitors, points: [{ at, visitors, signups, chatQuestions, chatNotFound }] }(오래된 순, 방문자는 하루 단위에서만)
+// 처리할 일 건수만 — 계정 메뉴의 빨간 점. { reports, inquiries, posts, total }(신고는 같은 대상을 한 건으로 센다)
+export const getAdminPending = () => apiRequest('/admin/pending');
+
+// 기능 사용 횟수 — range: 7d | 30d | all. { range, from, to, firstDate, events: [{ event, count, devices }] }(많이 쓴 순, devices는 날마다의 기기 수 합)
+export const getAdminFeatureUsage = (range) => apiRequest(`/admin/stats/features?range=${range}`);
+
+// 추이 — range: 24h(1시간 단위) | 7d | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, uniqueVisitors, points: [{ at, visitors, signups, chatQuestions, chatNotFound }], previous: { points } | null }
+// (오래된 순, 방문자는 하루 단위에서만, previous는 바로 앞 같은 길이 기간 — 전체는 null)
 export const getAdminStatsTrend = (range) => apiRequest(`/admin/stats/trend?range=${range}`);
 
 // 학과·학번별 가입자와 최근 7일 방문자 — 5명 미만 칸은 서버가 기타로 묶어 준다. { minGroupSize, noDepartment, department: { members, visitors7d }, cohort: { members, visitors7d } }

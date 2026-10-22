@@ -120,6 +120,10 @@ async function parseCourseListText(rawText, { beforeAiCall } = {}) {
     blob = blob.slice(firstHeader.index + firstHeader[0].length);
   }
 
+  // 머리글을 못 찾으면(인쇄 레이아웃이 다른 기기 등) 위의 자르기가 안 돼 학생정보 블록이 그대로 남는다 — 전체성적조회와
+  // 같은 기준으로 학번·이름을 한 번 더 가린 뒤에만 API로 보낸다(개인정보처리방침 "이름과 학번은 지운 뒤에 보냅니다").
+  blob = redactStudentIdentifiers(blob);
+
   const warnings = [];
   const { extracted, aiSucceeded } = await callAiWithHook(extractCourseListRows, blob, beforeAiCall);
   if (!aiSucceeded) {

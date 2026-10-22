@@ -27,14 +27,15 @@ function barPath(x, y, width, height) {
  * - values: number[] — 오래된 순
  * - ticks: [{ index, label }] — x축에 글자를 쓸 점
  * - barLabels: string[] — 점별 화면 낭독용 설명("4시~5시 2명" 같은 때와 값)
+ * - prevValues: number[] | null — 바로 앞 같은 길이 기간(같은 칸 수). 옅은 점선으로 겹친다(장식이라 화면 낭독기에는 숨긴다).
  * - activeIndex: number | null — 강조할 점
  * - onActiveChange: (index | null) => void
  * - ariaLabel: string
  */
-function TrendChart({ values, ticks, barLabels, activeIndex, onActiveChange, ariaLabel }) {
+function TrendChart({ values, ticks, barLabels, prevValues = null, activeIndex, onActiveChange, ariaLabel }) {
   const plotWidth = WIDTH - MARGIN.left - MARGIN.right;
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const max = niceMax(Math.max(0, ...values));
+  const max = niceMax(Math.max(0, ...values, ...(prevValues || [])));
   const slot = plotWidth / values.length;
   const baseline = MARGIN.top + plotHeight;
   const lastIndex = values.length - 1;
@@ -50,6 +51,12 @@ function TrendChart({ values, ticks, barLabels, activeIndex, onActiveChange, ari
       </text>
     </g>
   ));
+
+  // 앞 기간 점선 — 막대·선 그래프 둘 다 같은 칸 가운데를 잇는다.
+  const prevLine =
+    prevValues && prevValues.length === values.length ? (
+      <path d={prevValues.map((v, i) => `${i === 0 ? 'M' : 'L'}${xOfCenter(i)},${yOf(v)}`).join(' ')} className="trend-chart-prev" aria-hidden="true" />
+    ) : null;
 
   const xLabels = ticks.map(({ index, label }) => (
     <text
@@ -92,6 +99,7 @@ function TrendChart({ values, ticks, barLabels, activeIndex, onActiveChange, ari
           );
         })}
         <line x1={MARGIN.left} x2={WIDTH - MARGIN.right} y1={baseline} y2={baseline} className="trend-chart-baseline" />
+        {prevLine}
         {xLabels}
       </svg>
     );
@@ -129,6 +137,7 @@ function TrendChart({ values, ticks, barLabels, activeIndex, onActiveChange, ari
       {yTicks}
       <line x1={MARGIN.left} x2={WIDTH - MARGIN.right} y1={baseline} y2={baseline} className="trend-chart-baseline" />
       <path d={area} className="trend-chart-area" />
+      {prevLine}
       <path d={line} className="trend-chart-line" />
       {activeIndex !== null && (
         <>

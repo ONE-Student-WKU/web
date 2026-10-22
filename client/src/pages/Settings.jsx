@@ -48,6 +48,7 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, onLang
                     className={theme === value ? 'settings-theme-card active' : 'settings-theme-card'}
                     aria-pressed={theme === value}
                     onClick={() => onSetTheme(value)}
+                    data-track={`settings.theme.${value}`}
                   >
                     <span className={`settings-theme-preview settings-theme-preview--${value}`} aria-hidden="true">
                       <i className="strong" />
@@ -74,6 +75,7 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, onLang
                     className={fontSize === value ? 'settings-font-card active' : 'settings-font-card'}
                     aria-pressed={fontSize === value}
                     onClick={() => onSetFontSize(value)}
+                    data-track={`settings.font.${value}`}
                   >
                     <b className={`settings-font-sample settings-font-sample--${value}`} aria-hidden="true">
                       {t('settings.fontSize.sample')}
@@ -93,6 +95,7 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, onLang
                   key={option.code}
                   type="button"
                   className="settings-row"
+                  data-track={`settings.lang.${option.code}`}
                   onClick={() => {
                     setLang(option.code);
                     onLanguageChange?.(option.code);

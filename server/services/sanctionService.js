@@ -40,20 +40,40 @@ async function getActiveSanction(studentId) {
 // 알아채야 할 신호에 가깝다).
 async function listActiveSanctions() {
   const [rows] = await pool.query(
-    `SELECT s.id, s.student_id, s.reason, s.scope, s.starts_at, s.ends_at, st.name AS student_name
+    `SELECT s.id, s.student_id, s.reason, s.scope, s.starts_at, s.ends_at, s.lifted_at, s.report_id, st.name AS student_name
      FROM student_sanctions s
      JOIN students st ON st.id = s.student_id
      WHERE s.lifted_at IS NULL AND (s.ends_at IS NULL OR s.ends_at > NOW())
      ORDER BY s.created_at DESC`
   );
-  return rows.map((r) => ({
+  return rows.map(toAdminSanction);
+}
+
+function toAdminSanction(r) {
+  return {
     id: r.id,
     student: r.student_name || `user${r.student_id}`,
     reason: r.reason,
     scope: r.scope,
     startsAt: r.starts_at,
     endsAt: r.ends_at,
-  }));
+    liftedAt: r.lifted_at,
+    // 신고함에서 이어진 제재면 그 신고 id(직접 건 제재는 null).
+    reportId: r.report_id,
+  };
+}
+
+// 해제됐거나 기간이 끝난 제재 — 관리자 "지난 제재". 최근 것부터 100건이면 지금 규모에서 충분하다.
+async function listPastSanctions() {
+  const [rows] = await pool.query(
+    `SELECT s.id, s.student_id, s.reason, s.scope, s.starts_at, s.ends_at, s.lifted_at, s.report_id, st.name AS student_name
+     FROM student_sanctions s
+     JOIN students st ON st.id = s.student_id
+     WHERE s.lifted_at IS NOT NULL OR (s.ends_at IS NOT NULL AND s.ends_at <= NOW())
+     ORDER BY COALESCE(s.lifted_at, s.ends_at) DESC
+     LIMIT 100`
+  );
+  return rows.map(toAdminSanction);
 }
 
 module.exports = {
@@ -61,4 +81,5 @@ module.exports = {
   liftSanction,
   getActiveSanction,
   listActiveSanctions,
+  listPastSanctions,
 };

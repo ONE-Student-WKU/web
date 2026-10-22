@@ -174,6 +174,7 @@ function Home({
           <button
             type="button"
             className={showEditHint ? 'home-edit-btn hinted' : 'home-edit-btn'}
+            data-track="home.edit"
             onClick={() => {
               dismissEditHint();
               onOpenHomeEdit();
@@ -317,6 +318,7 @@ function Home({
                     key={view}
                     className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
                     onClick={openView[view]}
+                    data-track={`home.menu.${view}`}
                     aria-label={
                       isLockedView(view, user)
                         ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) })

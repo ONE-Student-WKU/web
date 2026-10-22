@@ -24,8 +24,9 @@ const RANGE_NOTE = {
 
 /**
  * AdminTrendView
- * 관리자 대시보드 현황 칸을 눌렀을 때 보는 추이 — 24시간(1시간 단위)·7일·30일·1년·전체(하루 단위) 그래프, 점을 가리키면 그 때의 값, 표 보기.
- * 관리자 화면(Admin.jsx)의 하위 화면이라 뒤로가기는 Admin이 대시보드로 되돌린다.
+ * 관리자 통계의 "추이" 탭 — 24시간(1시간 단위)·7일·30일·1년·전체(하루 단위) 그래프, 점을 가리키면 그 때의 값, 표 보기.
+ * 바로 앞 같은 길이 기간(서버 previous)을 옅은 점선으로 겹치고 "그 전 30일보다 N건 많아요"처럼 비교한다(전체는 앞 기간이 없다).
+ * 방문자는 합계가 "한 번 이상 온 사람 수"라 앞 기간과는 하루 평균으로 비교한다.
  *
  * Props:
  * - metric / onChangeMetric: TREND_METRICS의 key
@@ -57,6 +58,12 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
 
   const current = TREND_METRICS.find((m) => m.key === metric) || TREND_METRICS[0];
   const points = data?.points;
+  const previousPoints = data?.previous?.points;
+  // 앞 기간에 기록이 하나도 없으면(기록을 쌓기 전) 점선·비교를 아예 그리지 않는다 — 바닥에 붙은 점선은 "0이었다"로 잘못 읽힌다.
+  const prevValues = useMemo(() => {
+    const list = previousPoints ? previousPoints.map((p) => p[current.key] ?? 0) : null;
+    return list && list.some((v) => v > 0) ? list : null;
+  }, [previousPoints, current.key]);
   const unit = data?.unit;
   const values = useMemo(() => (points ? points.map((p) => p[current.key] ?? 0) : []), [points, current.key]);
   const ticks = useMemo(() => (points ? axisTicks(points, unit) : []), [points, unit]);
@@ -70,31 +77,25 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
   const peak = values.reduce((best, v, i) => (v > values[best] ? i : best), 0);
   const rangeTab = TREND_RANGES.find((r) => r.key === range)?.tab;
   const peakWord = unit === 'hour' ? '시간' : '날';
+  const compare = compareText({ values, prevValues, total, current, rangeTab, unit });
 
   return (
     <>
-      <div className="admin-sub-tabs" role="tablist" aria-label="기간 선택">
+      <div className="seg admin-filter" role="tablist" aria-label="기간 선택">
         {TREND_RANGES.map((r) => (
-          <button
-            key={r.key}
-            type="button"
-            role="tab"
-            aria-selected={r.key === range}
-            className={`admin-sub-tab ${r.key === range ? 'active' : ''}`}
-            onClick={() => onChangeRange(r.key)}
-          >
+          <button key={r.key} type="button" role="tab" aria-selected={r.key === range} className={r.key === range ? 'active' : ''} onClick={() => onChangeRange(r.key)}>
             {r.tab}
           </button>
         ))}
       </div>
-      <div className="admin-sub-tabs" role="tablist" aria-label="지표 선택">
+      <div className="admin-chips" role="tablist" aria-label="지표 선택">
         {TREND_METRICS.map((m) => (
           <button
             key={m.key}
             type="button"
             role="tab"
             aria-selected={m.key === current.key}
-            className={`admin-sub-tab ${m.key === current.key ? 'active' : ''}`}
+            className={m.key === current.key ? 'on' : ''}
             onClick={() => {
               setActiveIndex(null);
               onChangeMetric(m.key);
@@ -123,6 +124,7 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
           <div className="admin-stat-value admin-trend-total">
             {total.toLocaleString()}
             <span className="admin-trend-unit">{current.unit}</span>
+            {compare && <em className={`admin-compare ${compare.tone}`}>{compare.text}</em>}
           </div>
           <p className="admin-trend-readout" aria-live="polite">
             {activeIndex !== null
@@ -136,10 +138,23 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
             values={values}
             ticks={ticks}
             barLabels={barLabels}
+            prevValues={prevValues}
             activeIndex={activeIndex}
             onActiveChange={setActiveIndex}
             ariaLabel={`${rangeTab} ${current.tab} ${unit === 'hour' ? '시간별' : '일별'} 그래프`}
           />
+
+          {prevValues && (
+            <p className="admin-legend" aria-hidden="true">
+              <span>
+                <i className="bar" />
+                이번 {rangeTab}
+              </span>
+              <span>
+                <i className="line" />그 전 {rangeTab}
+              </span>
+            </p>
+          )}
 
           <p className="courses-manual-hint">
             {current.hint} {current.key === 'visitors' && `위 합계(${total.toLocaleString()}명)는 이 기간에 한 번 이상 온 사람 수라 막대를 더한 값과 달라요.`} {RANGE_NOTE[unit]}
@@ -174,6 +189,23 @@ function AdminTrendView({ metric, onChangeMetric, range, onChangeRange }) {
       )}
     </>
   );
+}
+
+// 바로 앞 기간과의 비교 문구. 앞 기간에 기록이 하나도 없으면(기록을 쌓기 전) 비교가 틀리므로 보여주지 않는다.
+function compareText({ values, prevValues, total, current, rangeTab, unit }) {
+  if (!prevValues) return null;
+  const prevSum = prevValues.reduce((sum, v) => sum + v, 0);
+  if (current.key === 'visitors') {
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const prevAvg = prevSum / prevValues.length;
+    return { text: `하루 평균 ${avg.toFixed(1)}명 · 그 전 ${rangeTab} ${prevAvg.toFixed(1)}명`, tone: avg > prevAvg ? 'up' : avg < prevAvg ? 'down' : '' };
+  }
+  const diff = total - prevSum;
+  const period = unit === 'hour' ? '그 전 24시간' : `그 전 ${rangeTab}`;
+  if (diff === 0) return { text: `${period}과 같아요`, tone: '' };
+  // 답 못 찾은 질문은 늘면 나쁜 신호라 경고색으로 보여준다.
+  const upTone = current.key === 'chatNotFound' ? 'warn' : 'up';
+  return { text: `${period}보다 ${Math.abs(diff).toLocaleString()}${current.unit} ${diff > 0 ? '많아요' : '적어요'}`, tone: diff > 0 ? upTone : 'down' };
 }
 
 export default AdminTrendView;

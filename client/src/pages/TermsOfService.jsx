@@ -8,6 +8,7 @@ import { IconChevronLeft } from '../components/icons.jsx';
  *
  * 2026-10-07 전면 개정: 이메일 인증코드 로그인, 커뮤니티(승인·신고·제재), 이용 한도, AI 답변의 한계처럼 서비스가
  * 실제로 하는 일에 맞췄다. 정식 법률 검토를 거친 문서는 아니므로 사용자가 늘기 전에 팀 검토를 거칠 것.
+ * 2026-10-23: 금지 행위에 "다른 사람의 성적표나 학적 자료를 올리는 행위"를 넣었다(성적표 가져오기).
  * 의미 있게 고치면 동의 버전을 같이 올려야 한다 — CLAUDE.md "약관·개인정보 동의" 참고
  * (server/services/consent.js, client/src/utils/consent.js).
  * 법적 문서라 아직 번역하지 않고 한국어로만 제공한다.
@@ -27,7 +28,7 @@ function TermsOfService({ onGoBack }) {
       </header>
 
       <div className="courses-body">
-        <p className="settings-field-hint">시행일: 2026년 10월 7일</p>
+        <p className="settings-field-hint">시행일: 2026년 10월 23일</p>
 
         <section className="home-card">
           <p className="home-card-label">1. 서비스 소개</p>
@@ -75,6 +76,7 @@ function TermsOfService({ onGoBack }) {
             다음 행위는 할 수 없습니다.
             <br />· 타인의 계정이나 이메일을 도용하는 행위
             <br />· 실제와 다른 학적, 성적, 수강 정보를 입력해 다른 사람을 속이려는 행위
+            <br />· 다른 사람의 성적표나 학적 자료를 본인 동의 없이 올리는 행위(성적표 가져오기에는 본인의 성적표만 올려야 합니다)
             <br />· 자동화된 방법으로 과도하게 요청하거나, 이용 한도를 우회하거나, 서비스의 정상 운영을 방해하는 행위
             <br />· 서비스의 보안 취약점을 악용하거나 다른 이용자의 정보에 접근하려는 행위
             <br />· 관련 법령을 위반하는 행위
@@ -133,7 +135,8 @@ function TermsOfService({ onGoBack }) {
             문의: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </p>
           <p className="settings-field-hint">
-            · 2026년 10월 7일: 이메일 인증코드 로그인, 커뮤니티 이용 규칙, AI 답변의 한계, 이용 한도를 포함해 현재
+            · 2026년 10월 23일: 금지 행위에 "다른 사람의 성적표나 학적 자료를 올리는 행위"를 추가
+            <br />· 2026년 10월 7일: 이메일 인증코드 로그인, 커뮤니티 이용 규칙, AI 답변의 한계, 이용 한도를 포함해 현재
             서비스에 맞게 전면 개정
             <br />· 2026년 9월 7일: 최초 시행(Google 로그인만 지원하던 시기)
           </p>

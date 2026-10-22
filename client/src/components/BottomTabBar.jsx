@@ -43,6 +43,7 @@ function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityB
         type="button"
         className={'bottom-tab' + (active === view ? ' active' : '') + (locked ? ' locked' : '')}
         onClick={() => onOpen(view)}
+        data-track={`tabbar.${view}`}
         aria-label={locked ? t('nav.locked', { name }) : name}
         aria-current={active === view ? 'page' : undefined}
       >
@@ -62,6 +63,7 @@ function BottomTabBar({ tabs, active, onOpen, isLocked = () => false, communityB
         type="button"
         className={active === 'chat' ? 'bottom-tab-chat active' : 'bottom-tab-chat'}
         onClick={() => onOpen('chat')}
+        data-track="tabbar.chat"
         aria-label={t('nav.chat')}
         aria-current={active === 'chat' ? 'page' : undefined}
       >
