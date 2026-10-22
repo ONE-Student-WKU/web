@@ -90,13 +90,17 @@ describe('커뮤니티 영어 화면', () => {
   });
 
   it('목록: 구분 배지·모집 인원·마감일은 영어이고, 제목과 닉네임은 그대로다', async () => {
-    api.getCommunityPosts.mockResolvedValue([post({ recruitEndDate: '2026-12-05' })]);
+    const later = new Date();
+    later.setDate(later.getDate() + 20);
+    const laterDate = `${later.getFullYear()}-${String(later.getMonth() + 1).padStart(2, '0')}-${String(later.getDate()).padStart(2, '0')}`;
+    api.getCommunityPosts.mockResolvedValue([post({ recruitEndDate: laterDate, targetDepartments: [] })]);
     renderEn();
     const item = (await screen.findByText('알고리즘 스터디')).closest('button');
     expect(within(item).getByText('Study group')).toBeInTheDocument();
     expect(item).toHaveTextContent('지원');
-    expect(item).toHaveTextContent('Recruiting 4');
-    expect(item).toHaveTextContent('until 12.05');
+    expect(item).toHaveTextContent('Looking for 4');
+    expect(item).toHaveTextContent('20d left');
+    expect(item).toHaveTextContent('All departments');
   });
 
   it('상세(내 글이 아님): 신청 폼이 영어이고, 신청하면 영어 토스트가 나온다', async () => {
@@ -106,8 +110,7 @@ describe('커뮤니티 영어 화면', () => {
     renderEn();
     await userEvent.click((await screen.findByText('알고리즘 스터디')).closest('button'));
 
-    expect(await screen.findByText('Application message')).toBeInTheDocument();
-    await userEvent.type(screen.getByRole('textbox'), '참여하고 싶어요');
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Application message' }), '참여하고 싶어요');
     await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(await screen.findByText("Applied — you'll find out once the author reviews it.")).toBeInTheDocument();
     expect(api.applyToCommunityPost).toHaveBeenCalledWith(1, '참여하고 싶어요');
@@ -138,26 +141,30 @@ describe('커뮤니티 영어 화면', () => {
     expect(await screen.findByText('1 applications waiting for review')).toBeInTheDocument();
     await userEvent.click((await screen.findByText('알고리즘 스터디')).closest('button'));
 
-    expect(await screen.findByText('Applicants for "알고리즘 스터디": 2 (3 applications)')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 3, name: /Applications/ })).toHaveTextContent('Applications2');
+    expect(screen.getByText('3 applications')).toBeInTheDocument();
+    expect(screen.getByText('2 applicants · 1 not reviewed yet')).toBeInTheDocument();
     expect(screen.getByText('열심히 할게요')).toBeInTheDocument();
     expect(screen.getByText('Re-applied')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
     expect(screen.getByText('Reason for declining')).toBeInTheDocument();
     expect(screen.getByText(/시간이 안 맞아요/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Close recruitment' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('menuitem', { name: 'Close recruitment' })).toBeEnabled();
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument();
   });
 
   it('글쓰기 폼: 안내·라벨·마감일 도움말이 영어다', async () => {
     renderEn();
     await userEvent.click(await screen.findByRole('button', { name: 'Write a post' }));
-    expect(screen.getByText(/Post to find teammates/)).toBeInTheDocument();
-    expect(screen.getByLabelText('Recruitment deadline (optional)')).toBeInTheDocument();
+    expect(screen.getByText("It'll appear in the list after an admin reviews it.")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Deadline/)).toBeInTheDocument();
+    expect(screen.getByText('Recruiting details')).toBeInTheDocument();
     expect(screen.getByLabelText('Title')).toBeInTheDocument();
     expect(screen.getByLabelText('Details')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Post' })).toBeInTheDocument();
-    expect(screen.getByText(/Applications are open through the deadline day/)).toBeInTheDocument();
+    expect(screen.getByText('Leave empty to recruit until you close it')).toBeInTheDocument();
   });
 
   it('제재 배너: 안내는 영어이고 사유(사람이 쓴 글)는 그대로이며, <b>가 들어 있어도 굵게 해석하지 않는다', async () => {
@@ -187,8 +194,8 @@ describe('커뮤니티 영어 화면', () => {
     renderEn();
     await userEvent.click(screen.getByRole('button', { name: 'My reports' }));
 
-    expect(await screen.findByText(/Post report · 광고글/)).toBeInTheDocument();
-    expect(screen.getByText(/Application report · \(deleted post\)/)).toBeInTheDocument();
+    expect((await screen.findByText('광고글')).closest('.post-row')).toHaveTextContent('Post report');
+    expect(screen.getByText('(deleted post)').closest('.post-row')).toHaveTextContent('Application report');
     expect(screen.getByText('New result')).toBeInTheDocument();
     expect(screen.getByText(/We reviewed your report and handled it according to the community policy/)).toBeInTheDocument();
     expect(screen.getByText(/삭제 처리했습니다/)).toBeInTheDocument();

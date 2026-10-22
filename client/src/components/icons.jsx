@@ -159,6 +159,17 @@ export function IconSearch({ size = 16 }) {
   );
 }
 
+// 가로 점 세 개("⋯") — 자주 쓰지 않는 동작을 접어 둔 메뉴 버튼.
+export function IconMore({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5.5" cy="12" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="18.5" cy="12" r="1.7" />
+    </svg>
+  );
+}
+
 export function IconX({ size = 16 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

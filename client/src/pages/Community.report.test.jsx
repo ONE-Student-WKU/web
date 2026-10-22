@@ -61,7 +61,9 @@ beforeEach(() => {
 async function openReportForm() {
   render(<Community {...baseProps} />);
   await userEvent.click(await screen.findByText('남의 글'));
-  await userEvent.click(await screen.findByRole('button', { name: '신고하기' }));
+  // 글 신고는 글쓴이 옆 ⋯ 메뉴에 있다.
+  await userEvent.click(await screen.findByRole('button', { name: '더 보기' }));
+  await userEvent.click(screen.getByRole('menuitem', { name: '신고하기' }));
   await userEvent.type(screen.getByPlaceholderText('신고하는 이유를 적어주세요.'), '부적절한 글');
 }
 
@@ -96,7 +98,8 @@ describe('글 신고', () => {
     render(<Community {...baseProps} />);
     await userEvent.click(await screen.findByText('남의 글'));
     await screen.findByRole('heading', { level: 2 });
-    expect(screen.queryByRole('button', { name: '신고하기' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: '더 보기' }));
+    expect(screen.queryByRole('menuitem', { name: '신고하기' })).toBeNull();
   });
 });
 
@@ -109,7 +112,7 @@ describe('신청 신고', () => {
     api.reportCommunityApplication.mockRejectedValue(Object.assign(new Error('dup'), { code: 'DUPLICATE_REPORT' }));
     render(<Community {...baseProps} />);
     await userEvent.click(await screen.findByText('남의 글'));
-    await userEvent.click(await screen.findByRole('button', { name: '신고하기' }));
+    await userEvent.click(await screen.findByRole('button', { name: '지원자님의 신청 신고하기' }));
     await userEvent.type(screen.getByPlaceholderText('신고 사유를 적어주세요.'), '욕설');
     await userEvent.click(screen.getByRole('button', { name: '신고 제출' }));
     expect(await screen.findByText('이미 신고한 신청이에요.')).toBeInTheDocument();

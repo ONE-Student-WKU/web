@@ -202,6 +202,8 @@ function App() {
   const [unseenReportCount, setUnseenReportCount] = useState(0);
   // 아직 안 본 공지 수 — 같은 커뮤니티 점(하단 바·홈 메뉴)에 함께 쓴다. 커뮤니티에서 공지 목록을 열면 그 화면이 0으로 맞춘다.
   const [unseenNoticeCount, setUnseenNoticeCount] = useState(0);
+  // 커뮤니티 글 상세·글쓰기 중 — 화면 아래에 붙는 신청·등록 버튼을 탭바(떠 있는 채팅 버튼)가 가리지 않게 숨긴다.
+  const [communityFocus, setCommunityFocus] = useState(false);
   useEffect(() => {
     if (!user || view === 'community') return;
     let cancelled = false;
@@ -310,7 +312,7 @@ function App() {
   // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 채팅 화면에서는 입력창과 겹치므로 그리지 않는다.
   const chatOnly = layoutTabs.every((v) => !v);
   const tabBarVisible =
-    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && view === 'chat');
+    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && view === 'chat') && !(view === 'community' && communityFocus);
 
   // 홈 메뉴·하단 바에서 화면을 연다. 학과를 고르지 않은 계정이 학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)을 누르면 학과 선택으로 보낸다.
   const openView = (next) => setView(isLockedView(next, user) ? 'onboarding' : next);
@@ -401,6 +403,7 @@ function App() {
             unseenReportCount={unseenReportCount}
             onUnseenReportsChange={setUnseenReportCount}
             onUnseenNoticesChange={setUnseenNoticeCount}
+            onFocusModeChange={setCommunityFocus}
           />
         ) : view === 'settings' ? (
           <Settings

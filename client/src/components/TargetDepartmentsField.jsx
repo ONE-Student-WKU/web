@@ -4,7 +4,7 @@ import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { searchDepartments } from '../utils/departmentTree.js';
-import { IconPlus } from './icons.jsx';
+import { IconPlus, IconX } from './icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
@@ -92,20 +92,20 @@ function TargetDepartmentsField({ mode, departments, onChange }) {
   };
 
   return (
-    <div className="auth-field">
-      <label>{t('community.write.dept')}</label>
-      <div className="dept-target-toggle" role="group" aria-label={t('community.write.dept')}>
-        <button type="button" className={`courses-year-tab ${mode === 'any' ? 'active' : ''}`} aria-pressed={mode === 'any'} onClick={() => onChange({ mode: 'any', departments })}>
-          {t('community.write.deptAny')}
-        </button>
-        <button
-          type="button"
-          className={`courses-year-tab ${mode === 'specific' ? 'active' : ''}`}
-          aria-pressed={mode === 'specific'}
-          onClick={() => onChange({ mode: 'specific', departments })}
-        >
-          {t('community.write.deptSpecific')}
-        </button>
+    // 커뮤니티 글쓰기의 "모집 정보" 한 줄(write-set) — 이름은 왼쪽, "상관없음 / 특정 학과" 고르기는 오른쪽, 학과 칩은 그 아래.
+    <div className="write-set write-set--stack">
+      <div className="write-set-row">
+        <span className="write-set-label" id="community-write-dept">
+          {t('community.write.dept')}
+        </span>
+        <div className="seg" role="group" aria-labelledby="community-write-dept">
+          <button type="button" className={mode === 'any' ? 'active' : ''} aria-pressed={mode === 'any'} onClick={() => onChange({ mode: 'any', departments })}>
+            {t('community.write.deptAny')}
+          </button>
+          <button type="button" className={mode === 'specific' ? 'active' : ''} aria-pressed={mode === 'specific'} onClick={() => onChange({ mode: 'specific', departments })}>
+            {t('community.write.deptSpecific')}
+          </button>
+        </div>
       </div>
       {mode === 'specific' && (
         <>
@@ -114,7 +114,7 @@ function TargetDepartmentsField({ mode, departments, onChange }) {
               <span key={d.id} className="dept-chip">
                 {d.name}
                 <button type="button" aria-label={t('community.write.deptRemoveAria', { name: d.name })} onClick={() => remove(d.id)}>
-                  ×
+                  <IconX size={12} />
                 </button>
               </span>
             ))}
@@ -125,7 +125,7 @@ function TargetDepartmentsField({ mode, departments, onChange }) {
               </button>
             )}
           </div>
-          <p className="courses-manual-hint">{t('community.write.deptMax', { n: MAX_TARGET_DEPARTMENTS })}</p>
+          <p className="post-write-help">{t('community.write.deptMax', { n: MAX_TARGET_DEPARTMENTS })}</p>
         </>
       )}
       {searchOpen && (
