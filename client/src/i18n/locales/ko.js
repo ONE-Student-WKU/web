@@ -812,7 +812,8 @@ export default {
   'community.write.capacity': '모집 인원 (선택)',
   'community.write.capacityPlaceholder': '예: 4',
   'community.write.endDate': '모집 마감일 (선택)',
-  'community.write.endDateHint': '언제까지 모집하나요? 마감일 당일까지 신청을 받고, 지나면 신청이 닫혀요. 비워 두면 직접 마감할 때까지 모집해요(최대 오늘부터 1년).',
+  // "최대 1년"은 고를 수 있는 날짜 범위다 — 비워 둔 글에도 1년 제한이 있는 것처럼 읽히지 않게 문장을 나눈다(2026-10-22 피드백).
+  'community.write.endDateHint': '언제까지 모집하나요? 마감일 당일까지 신청을 받고, 지나면 신청이 닫혀요. 마감일은 오늘부터 1년 안에서 고를 수 있어요. 비워 두면 기한 없이, 직접 마감할 때까지 모집해요.',
   'community.write.endDateEditHint': '마감일을 바꾸려면 글을 수정해야 하고, 수정할 때마다 관리자 승인을 다시 받아요.',
   'community.write.dept': '모집 학과',
   'community.write.deptAny': '학과 상관없음',

@@ -864,7 +864,7 @@ export default {
   'community.write.capacity': 'Number of people (optional)',
   'community.write.capacityPlaceholder': 'e.g. 4',
   'community.write.endDate': 'Recruitment deadline (optional)',
-  'community.write.endDateHint': "How long are you recruiting? Applications are open through the deadline day and close after it. Leave it empty to keep recruiting until you close it yourself (up to one year from today).",
+  'community.write.endDateHint': "How long are you recruiting? Applications are open through the deadline day and close after it. You can pick a deadline up to one year from today. Leave it empty to recruit with no deadline until you close it yourself.",
   'community.write.endDateEditHint': 'To change the deadline you must edit the post, and every edit needs admin approval again.',
   'community.write.dept': 'Recruiting from',
   'community.write.deptAny': 'Any department',
