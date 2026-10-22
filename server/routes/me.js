@@ -84,17 +84,16 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     // 닉네임 사칭/도용 방지 — students.name의 UNIQUE 제약(db/schema.sql)이 최종 방어선이고,
     // 이건 그 전에 사용자에게 원인을 알려주기 위한 사전 확인이다(동시 요청 경합 시 UNIQUE
     // 위반이 실제로 날 수 있어 아래 catch에서도 ER_DUP_ENTRY를 한 번 더 처리한다).
+    // "user{id}"(닉네임 미설정 계정의 표시용 대체값)와 그 변형은 validateNickname(nicknamePolicy.js)이 이미 막았다.
     if (name !== undefined) {
       const trimmedName = name.trim();
-      // "user{id}"는 닉네임 미설정 계정의 표시용 대체값(studentService.serializeStudent)일
-      // 뿐 실제 저장되는 값이 아니라서, name 컬럼 UNIQUE 제약이나 findByName 비교로는 안
-      // 걸린다 — 이 형식을 직접 자기 닉네임으로 쓰면 아직 닉네임을 안 정한 다른 계정을 화면에서
-      // 구분 못 하게 사칭할 수 있다(실사용 확인). 존재하는 id인지와 무관하게 형식 자체를 막는다.
-      if (/^user\d+$/i.test(trimmedName)) {
+      // 학과 이름 그대로인 닉네임은 학과 사무실이 쓴 글처럼 보여서 막는다.
+      if (await studentService.isDepartmentName(trimmedName)) {
         return res.status(400).json({ status: 400, code: 'RESERVED_NAME', message: null, data: null });
       }
-      const existing = await studentService.findByName(trimmedName);
-      if (existing && existing.id !== student.id) {
+      // 다른 학생 닉네임과 똑같거나 대소문자·공백·기호·비슷한 글자만 다르면 같은 닉네임으로 본다.
+      const existing = await studentService.findConfusableName(trimmedName, student.id);
+      if (existing) {
         return res.status(409).json({ status: 409, code: 'DUPLICATE_NAME', message: null, data: null });
       }
     }

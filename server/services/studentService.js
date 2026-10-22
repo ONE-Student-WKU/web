@@ -8,6 +8,7 @@ const { currentStandingOf } = require('./studentProgress');
 const { isTeacherCollegeDepartment, parseTeachingCourse } = require('./teachingCourse');
 const { isBroadSeriesStudent } = require('./majorTrackType');
 const { secondMajorTypeOf } = require('./secondMajor');
+const { nicknameKey } = require('./nicknamePolicy');
 
 /**
  * server/services/studentService.js
@@ -28,11 +29,21 @@ async function findByEmail(email) {
   return rows[0] || null;
 }
 
-// 닉네임 중복 확인용(PATCH /api/me) — students.name의 UNIQUE 제약(db/schema.sql)과 같은
-// collation(utf8mb4_unicode_ci, 대소문자 구분 안 함)으로 비교되므로 결과가 서로 일치한다.
-async function findByName(name) {
-  const [rows] = await pool.query('SELECT id FROM students WHERE name = ?', [name]);
-  return rows[0] || null;
+// 닉네임 중복·혼동 확인용(PATCH /api/me) — 다른 학생 닉네임과 대소문자·공백·기호·비슷한 글자(I·l·1, O·0)만 다르면 같은 닉네임으로 본다
+// (nicknamePolicy.nicknameKey). 예전에는 DB에서 완전히 같은지만 봐서 "홍길동."·"lan"(대문자 I 대신 소문자 l)처럼 겉보기에 같은
+// 닉네임을 막지 못했다. 닉네임은 바꿀 때만 보므로 이름 전체를 읽어 비교한다(학생 수천 명 수준이라 가볍다).
+// students.name의 UNIQUE 제약(db/schema.sql)은 완전히 같은 이름의 최종 방어선으로 그대로 둔다.
+async function findConfusableName(name, excludeStudentId) {
+  const key = nicknameKey(name);
+  const [rows] = await pool.query('SELECT id, name FROM students WHERE name IS NOT NULL AND id <> ?', [excludeStudentId]);
+  return rows.find((row) => nicknameKey(row.name) === key) || null;
+}
+
+// 학과 이름 그대로인 닉네임인가(예: "컴퓨터소프트웨어공학과") — 학과 사무실이 쓴 글처럼 보인다.
+async function isDepartmentName(name) {
+  const key = nicknameKey(name);
+  const [rows] = await pool.query('SELECT name FROM departments');
+  return rows.some((row) => nicknameKey(row.name) === key);
 }
 
 // 클라이언트에 내려주는 학생 프로필 형태로 변환 — /api/auth/login과 /api/me가 같은
@@ -376,7 +387,8 @@ module.exports = {
   serializeStudent,
   recordConsent,
   findByEmail,
-  findByName,
+  findConfusableName,
+  isDepartmentName,
   findById,
   findByOauth,
   createOauthStudent,

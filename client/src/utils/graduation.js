@@ -202,7 +202,7 @@ export function summarizeShortfalls(categories, certifications, t = null, majorA
 export function uncheckedRequirementKeys(status) {
   if (!status) return [];
   const keys = [];
-  if (status.counseling) keys.push('home.unchecked.counseling');
+  // 자기계발심층상담은 거의 모든 학생이 지도교수 상담으로 채워 충족으로 보여주므로 여기 넣지 않는다(2026-10-22 결정).
   if (status.designatedMajorCourses) keys.push('home.unchecked.designated');
   if (status.secondMajor && status.secondMajor.type === 'MINOR') keys.push('home.unchecked.minorDesignated');
   if (status.majorTrackType === 'CONVERGENCE') keys.push('home.unchecked.microDegree');
@@ -216,6 +216,19 @@ export function registrationTermShortage(status, shortfalls) {
   if (!terms || !shortfalls || shortfalls.length > 0) return 0;
   if (status.totalEarnedCredits < status.totalRequiredCredits) return 0;
   return Math.max(0, terms.required - terms.registered);
+}
+
+// 졸업논문·졸업인증제 카드에 과목마다 이수/남음을 보여줄 줄(서버 evaluateCertifications의 completedCourses).
+// 요구 과목을 모두 들어야 하는 행(2과목 이상)은 전부 보여주고, 여러 과목 중 몇 개만 들으면 되는 행은 이수한 과목만 보여준다 —
+// 대체 과목 묶음을 "남음"으로 늘어놓으면 다 들어야 하는 것처럼 읽힌다. 서버가 아직 값을 안 주면 빈 배열.
+export function certCourseRows(cert) {
+  const required = (cert && cert.requiredCourses) || [];
+  const done = cert && Array.isArray(cert.completedCourses) ? cert.completedCourses : null;
+  if (!done) return [];
+  if (required.length >= 2 && cert.minCourseCount >= required.length) {
+    return required.map((course) => ({ course, done: done.includes(course) }));
+  }
+  return done.map((course) => ({ course, done: true }));
 }
 
 // summarizeShortfalls 결과를 "OO, OO가 부족해요." 문장으로 조립 — 마지막 항목의 받침 유무에

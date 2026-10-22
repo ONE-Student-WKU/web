@@ -248,3 +248,15 @@ export function IconHelpCircle({ size = 18 }) {
     </svg>
   );
 }
+
+// 관리자 "학과·학번별 사용자" — 막대그래프.
+export function IconBarChart({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="6" y="11" width="3" height="6" rx="0.5" />
+      <rect x="11" y="6" width="3" height="11" rx="0.5" />
+      <rect x="16" y="13" width="3" height="4" rx="0.5" />
+    </svg>
+  );
+}

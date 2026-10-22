@@ -351,11 +351,11 @@ describe('DepartmentPicker — 검색 결과 표시와 이후 학과 바로가�
   it('세부전공으로 찾은 학과는 맞은 세부전공을 보여 주고, 일치한 글자를 칠한다', async () => {
     render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} />);
     const dialog = await openSearch('컴퓨터');
-    const engineering = within(dialog).getByRole('button', { name: /^공학3계열/ });
+    const engineering = within(dialog).getByRole('button', { name: /^2026학번부터s*공학3계열/ });
     expect(engineering).toHaveTextContent('세부전공 컴퓨터·소프트웨어공학전공');
     expect(engineering).not.toHaveTextContent('게임콘텐츠학전공');
     expect(within(engineering).getByText('컴퓨터', { selector: 'mark' })).toBeInTheDocument();
-    const former = within(dialog).getByRole('button', { name: /^컴퓨터·소프트웨어공학과/ });
+    const former = within(dialog).getByRole('button', { name: /^2025학번까지s*컴퓨터·소프트웨어공학과/ });
     expect(within(former).getByText('컴퓨터', { selector: 'mark' })).toBeInTheDocument();
     expect(former).not.toHaveTextContent('세부전공'); // 학과 이름으로 맞았으면 세부전공 줄은 없다
   });
@@ -367,10 +367,32 @@ describe('DepartmentPicker — 검색 결과 표시와 이후 학과 바로가�
     expect(within(dialog).queryByRole('button', { name: /학번부터는/ })).toBeNull(); // 추정 연결(경영학부 → 경영계열)은 바로가기 없음
     await userEvent.click(within(dialog).getByRole('button', { name: '검색 닫기' }));
 
-    dialog = await openSearch('컴퓨터');
+    // 이후 학과가 검색 결과에 없으면(이전 학과 이름으로만 찾은 경우) 지금처럼 바로가기를 둔다
+    dialog = await openSearch('컴퓨터·소프트웨어공학과');
     await userEvent.click(within(dialog).getByRole('button', { name: '2026학번부터는 공학3계열' }));
     expect(onSelectSuccessor).toHaveBeenCalledWith(ENGINEERING_3, CSE_FORMER);
     expect(screen.queryByRole('dialog', { name: '학과 검색' })).toBeNull();
+  });
+
+  it('이전 학과와 이후 학과가 둘 다 검색되면 한 묶음으로 보여 주고(바로가기 없음), 이후 학과를 고르면 바로가기와 같은 경로로 간다', async () => {
+    const onSelectSuccessor = vi.fn();
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} onSelectSuccessor={onSelectSuccessor} />);
+    const dialog = await openSearch('컴퓨터');
+    expect(within(dialog).getByText(/2026학번부터 학과가 바뀌었어요./)).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /학번부터는/ })).toBeNull();
+    expect(within(dialog).queryByText(/이후 학과:/)).toBeNull(); // 묶음 안에서는 "이후 학과" 안내도 뺀다
+    await userEvent.click(within(dialog).getByRole('button', { name: /^2026학번부터s*공학3계열/ }));
+    expect(onSelectSuccessor).toHaveBeenCalledWith(ENGINEERING_3, CSE_FORMER);
+    expect(screen.queryByRole('dialog', { name: '학과 검색' })).toBeNull();
+  });
+
+  it('줄임말(컴소·컴공·컴소공)로도 찾는다', async () => {
+    render(<DepartmentPicker departments={WITH_TRACKS} selectedId={null} onSelect={vi.fn()} />);
+    for (const q of ['컴소', '컴공', '컴소공']) {
+      const dialog = await openSearch(q);
+      expect(within(dialog).getByRole('button', { name: /컴퓨터·소프트웨어공학과/ })).toBeInTheDocument();
+      await userEvent.click(within(dialog).getByRole('button', { name: '검색 닫기' }));
+    }
   });
 
   it('onSelectSuccessor가 없으면(다전공 학과 고르기) 바로가기를 보이지 않는다', async () => {

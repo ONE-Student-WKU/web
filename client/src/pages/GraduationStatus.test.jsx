@@ -122,18 +122,19 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
   });
 });
 
-describe("자기계발심층상담 안내(판정하지 않음, DECISIONS D-65)", () => {
+describe("자기계발심층상담 안내(충족으로 보여주고 확인 경로만, 2026-10-22 결정)", () => {
   beforeEach(() => resetGraduationCache && resetGraduationCache());
-  it("학번 기준 횟수와 확인 경로, 세는 방법 확인 중을 보여 주고 부족 요건에는 넣지 않는다", async () => {
+  it("학번 기준 횟수와 체크 표시, 짧은 확인 경로를 보여주고 부족 요건에는 넣지 않는다", async () => {
     await renderWith(status({
       categories: categories.map((c) => ({ ...c, earnedCredits: c.requiredCredits })),
       totalEarnedCredits: 140,
       counseling: { required: 8, cohort: "FROM_2020", replacement: null, judged: false },
     }));
-    expect(screen.getByText("자기계발심층상담")).toBeInTheDocument();
+    const title = screen.getByText("자기계발심층상담");
+    expect(title.closest(".grad-cert-row").querySelector(".grad-cert-check.satisfied")).not.toBeNull();
     expect(screen.getByText("2020학번부터 기준 8학기(회) 이상 상담해야 해요.")).toBeInTheDocument();
-    expect(screen.getByText(/에서 직접 확인해 주세요/)).toBeInTheDocument();
-    expect(screen.getByText(/학교에 확인 중이에요/)).toBeInTheDocument();
+    expect(screen.getByText(/대부분 지도교수님이 학기마다 상담을 진행해 채워주세요/)).toBeInTheDocument();
+    expect(screen.queryByText(/학교에 확인 중이에요/)).toBeNull();
     expect(screen.queryByText(/Hug/)).toBeNull();
     expect(document.querySelector(".grad-shortfall-box.ok")).not.toBeNull();
   });
