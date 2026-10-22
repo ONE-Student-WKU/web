@@ -19,13 +19,23 @@ export function draftFromPeriods(periods) {
   return { hasLeave: periods.length > 0, periods: periods.map((p) => ({ ...p })) };
 }
 
+// 기간의 세 칸(시작 학년도·학기·학기 수)을 모두 골랐는가. 칸은 "–"(null)로 비어 시작한다 — 값이 미리 들어 있으면 입력한 것처럼 보였다.
+const isComplete = (p) => p.startYear != null && p.startSemester != null && p.semesters != null;
+
 /** 저장할 값([] 또는 기간 목록). 아직 다 고르지 않았으면 null. */
 // eslint-disable-next-line react-refresh/only-export-components
 export function periodsFromDraft(draft) {
   if (!draft || draft.hasLeave === null) return null;
   if (draft.hasLeave === false) return [];
-  if (draft.periods.length === 0) return null;
+  if (draft.periods.length === 0 || !draft.periods.every(isComplete)) return null;
   return draft.periods.map((p) => ({ startYear: Number(p.startYear), startSemester: Number(p.startSemester), semesters: Number(p.semesters) }));
+}
+
+/** 휴학이 끝나는 학기 — 2023학년도 2학기부터 2학기면 2024학년도 1학기. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function leavePeriodEnd({ startYear, startSemester, semesters }) {
+  const index = startYear * 2 + (startSemester - 1) + (semesters - 1);
+  return { year: Math.floor(index / 2), semester: (index % 2) + 1 };
 }
 
 /** 사람이 읽는 한 줄 요약(요약 화면용). */
@@ -52,97 +62,99 @@ export function leaveErrorKey(code) {
  * - draft, onChange(draft)
  * - firstYear: 처음 다닌 학년도(편입생은 편입 연도) — 이보다 이른 연도는 고를 수 없다
  * - lastYear: 고를 수 있는 마지막 학년도(다음 학기까지)
+ *
+ * 화면(2026-10-22 개편): 기간 입력을 "있어요" 카드 안에 넣어 선택지와 한 덩어리로 보이게 하고, "[2023]학년도 [2]학기부터 / [2]학기 동안
+ * 쉬었어요"처럼 문장을 채우듯 고르게 한다. 예전에는 선택지 아래에 같은 모양의 입력 상자가 따로 생기고 칸 이름이 없어, 무엇을 고르는
+ * 칸인지 알아보기 어려웠다. 고른 뒤에는 "언제부터 언제까지"를 한 줄로 풀어 보여 준다.
  */
 function LeavePeriodsEditor({ draft, onChange, firstYear, lastYear }) {
-  const { t } = useI18n();
+  const { t, tRich } = useI18n();
   const years = [];
   for (let y = lastYear; y >= firstYear; y--) years.push(y);
 
+  const emptyPeriod = { startYear: null, startSemester: null, semesters: null };
   const setPeriod = (index, key, value) =>
-    onChange({ ...draft, periods: draft.periods.map((p, i) => (i === index ? { ...p, [key]: Number(value) } : p)) });
-  const addPeriod = () =>
-    onChange({ ...draft, periods: [...draft.periods, { startYear: lastYear, startSemester: 1, semesters: 1 }] });
+    onChange({ ...draft, periods: draft.periods.map((p, i) => (i === index ? { ...p, [key]: value === '' ? null : Number(value) } : p)) });
+  const addPeriod = () => onChange({ ...draft, periods: [...draft.periods, { ...emptyPeriod }] });
   const removePeriod = (index) => onChange({ ...draft, periods: draft.periods.filter((_, i) => i !== index) });
+  const termText = (year, semester) => t('leave.termN', { year, semester });
+
+  const select = (period, index, key, label, values) => (
+    <select className="onb-select" aria-label={label} value={period[key] ?? ''} onChange={(e) => setPeriod(index, key, e.target.value)}>
+      <option value="">–</option>
+      {values.map((v) => (
+        <option key={v} value={v}>
+          {v}
+        </option>
+      ))}
+    </select>
+  );
+
+  const summary = (p) => {
+    if (!isComplete(p)) return null;
+    const end = leavePeriodEnd(p);
+    if (p.semesters === 1) return tRich('leave.summaryOne', { term: termText(p.startYear, p.startSemester) });
+    return tRich('leave.summaryRange', { from: termText(p.startYear, p.startSemester), to: termText(end.year, end.semester) });
+  };
 
   return (
-    <>
-      <div className="onb-option-list">
+    <div className="onb-option-list">
+      <button
+        type="button"
+        className={'onb-option-card' + (draft.hasLeave === false ? ' selected' : '')}
+        onClick={() => onChange({ hasLeave: false, periods: [] })}
+      >
+        <span className="onb-option-title">{t('leave.none')}</span>
+      </button>
+
+      {draft.hasLeave === true ? (
+        <div className="leave-choice">
+          <button type="button" className="onb-option-card" aria-pressed="true">
+            <span className="onb-option-title">{t('leave.some')}</span>
+            <span className="onb-option-caption">{t('leave.some.caption')}</span>
+          </button>
+          <div className="leave-choice-body">
+            {draft.periods.map((p, i) => (
+              <div key={i} className="leave-period">
+                {draft.periods.length > 1 && (
+                  <div className="leave-period-head">
+                    <span className="leave-period-name">{t('leave.periodN', { n: i + 1 })}</span>
+                    <button type="button" className="leave-text-btn danger" onClick={() => removePeriod(i)}>
+                      {t('leave.remove')}
+                    </button>
+                  </div>
+                )}
+                <div className="leave-sentence">
+                  {select(p, i, 'startYear', t('leave.period.year'), years)}
+                  <span>{t('leave.sentence.year')}</span>
+                  {select(p, i, 'startSemester', t('leave.period.semester'), [1, 2])}
+                  <span>{t('leave.sentence.from')}</span>
+                </div>
+                <div className="leave-sentence">
+                  {select(p, i, 'semesters', t('leave.period.count'), Array.from({ length: MAX_SEMESTERS }, (_, k) => k + 1))}
+                  <span>{t('leave.sentence.count')}</span>
+                </div>
+                {summary(p) && <p className="leave-summary">{summary(p)}</p>}
+              </div>
+            ))}
+            <button type="button" className="leave-text-btn" onClick={addPeriod}>
+              {t('leave.add')}
+            </button>
+          </div>
+        </div>
+      ) : (
         <button
           type="button"
-          className={'onb-option-card' + (draft.hasLeave === false ? ' selected' : '')}
-          onClick={() => onChange({ hasLeave: false, periods: [] })}
-        >
-          <span className="onb-option-title">{t('leave.none')}</span>
-        </button>
-        <button
-          type="button"
-          className={'onb-option-card' + (draft.hasLeave === true ? ' selected' : '')}
-          onClick={() =>
-            onChange({
-              hasLeave: true,
-              periods: draft.periods.length > 0 ? draft.periods : [{ startYear: Math.max(firstYear, lastYear - 1), startSemester: 1, semesters: 2 }],
-            })
-          }
+          className="onb-option-card"
+          onClick={() => onChange({ hasLeave: true, periods: draft.periods.length > 0 ? draft.periods : [{ ...emptyPeriod }] })}
         >
           <span className="onb-option-title">{t('leave.some')}</span>
           <span className="onb-option-caption">{t('leave.some.caption')}</span>
         </button>
-      </div>
-
-      {draft.hasLeave === true && (
-        <div className="leave-period-list">
-          {draft.periods.map((p, i) => (
-            <div key={i} className="leave-period-row">
-              <select
-                className="onb-select"
-                aria-label={t('leave.period.year')}
-                value={p.startYear}
-                onChange={(e) => setPeriod(i, 'startYear', e.target.value)}
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {t('leave.period.yearN', { year: y })}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="onb-select"
-                aria-label={t('leave.period.semester')}
-                value={p.startSemester}
-                onChange={(e) => setPeriod(i, 'startSemester', e.target.value)}
-              >
-                {[1, 2].map((s) => (
-                  <option key={s} value={s}>
-                    {t('leave.period.semesterN', { semester: s })}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="onb-select"
-                aria-label={t('leave.period.count')}
-                value={p.semesters}
-                onChange={(e) => setPeriod(i, 'semesters', e.target.value)}
-              >
-                {Array.from({ length: MAX_SEMESTERS }, (_, k) => k + 1).map((n) => (
-                  <option key={n} value={n}>
-                    {t('leave.period.countN', { count: n })}
-                  </option>
-                ))}
-              </select>
-              {draft.periods.length > 1 && (
-                <button type="button" className="onb-skip-link" onClick={() => removePeriod(i)}>
-                  {t('leave.remove')}
-                </button>
-              )}
-            </div>
-          ))}
-          <button type="button" className="settings-theme-btn" onClick={addPeriod}>
-            {t('leave.add')}
-          </button>
-        </div>
       )}
-    </>
+    </div>
   );
 }
+
 
 export default LeavePeriodsEditor;
