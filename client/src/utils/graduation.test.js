@@ -349,12 +349,12 @@ describe('다전공(#378 G-2)', () => {
 });
 
 describe('판정하지 않는 요건(2026-10-16 규정 대조)', () => {
-  it('상담·지정 과목·부전공 지정 교과목·전공융합형 MD를 학생이 직접 확인할 항목으로 모은다', () => {
+  it('지정 과목·부전공 지정 교과목·전공융합형 MD를 학생이 직접 확인할 항목으로 모은다(상담은 충족으로 보여줘서 빠진다)', () => {
     expect(uncheckedRequirementKeys(null)).toEqual([]);
-    expect(uncheckedRequirementKeys({ counseling: { required: 8 } })).toEqual(['home.unchecked.counseling']);
+    expect(uncheckedRequirementKeys({ counseling: { required: 8 } })).toEqual([]);
     expect(uncheckedRequirementKeys({
       counseling: { required: 8 }, designatedMajorCourses: { courses: [] }, secondMajor: { type: 'MINOR' }, majorTrackType: 'CONVERGENCE',
-    })).toEqual(['home.unchecked.counseling', 'home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
+    })).toEqual(['home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
     expect(uncheckedRequirementKeys({ secondMajor: { type: 'DOUBLE' }, majorTrackType: 'INTENSIVE' })).toEqual([]);
   });
 });
