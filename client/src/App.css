@@ -3953,6 +3953,10 @@ select.onb-select {
   text-align: left;
   color: inherit;
   cursor: pointer;
+  /* 버튼은 내용이 세로 가운데로 가서, 옆 칸이 설명 줄로 높아지면 이름 줄이 어긋난다 — 일반 칸처럼 위에서부터 쌓는다. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .admin-stat-cell--link:hover {
@@ -3971,6 +3975,54 @@ select.onb-select {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 14px;
+}
+
+/* 관리자 "학과·학번별 사용자" — 이름·인원 한 줄과 그 아래 막대. 줄 사이 구분선은 마지막 줄에는 두지 않아 카드 테두리와 겹치지 않는다. */
+.admin-composition-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.admin-composition-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-composition-row:last-child {
+  border-bottom: none;
+}
+
+.admin-composition-row .home-progress-track {
+  grid-column: 1 / -1;
+  height: 6px;
+}
+
+.admin-composition-name {
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.admin-composition-row--other .admin-composition-name {
+  color: var(--color-text-muted);
+}
+
+.admin-composition-count {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+/* 현황 칸 숫자 아래 작은 설명(예: 재방문율의 "지난주 12명 중 5명"). */
+.admin-stat-note {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .admin-trend-total {

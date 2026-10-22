@@ -946,6 +946,18 @@ CREATE TABLE IF NOT EXISTS student_activity (
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+-- 하루 방문 기록(관리자 대시보드의 방문자 추이·재방문율). student_activity는 마지막 접속 시각 하나뿐이라 날마다 몇 명이
+-- 왔는지 알 수 없어서, 학생이 그날 처음 요청할 때 (학생, 한국 날짜) 한 줄을 남긴다(middleware/activityTracker.js).
+-- 이 표를 만든 날부터 쌓이므로 그 전 기간의 방문자는 비어 있다.
+CREATE TABLE IF NOT EXISTS student_daily_visits (
+  student_id  INT NOT NULL,
+  visit_date  DATE NOT NULL,  -- 한국(KST) 날짜
+
+  PRIMARY KEY (student_id, visit_date),
+  INDEX idx_student_daily_visits_date (visit_date),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
 -- ---------------------------------------------------------------------------
 -- 13. PDF 가져오기 사용 로그 (학기당 5회 한도 판정용)
 -- /api/my-courses/import/pdf가 pdfImportService(Claude API 호출)로 파싱할 때마다 한 행씩
