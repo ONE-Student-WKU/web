@@ -196,7 +196,7 @@ describe('문의하기 / 계정 정보 수정', () => {
     expect(screen.getByText('Edit account info')).toBeInTheDocument();
     expect(screen.getByText('Delete account')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('That nickname is already taken.')).toBeInTheDocument();
+    expect(await screen.findByText('That nickname is already taken, or one that looks too similar is.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Log in again to confirm' })).toBeInTheDocument();
   });
 
