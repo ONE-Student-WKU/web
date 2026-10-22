@@ -382,7 +382,12 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                           {t('grad.counseling.need', { n: status.counseling.required, cohort: t(`grad.counseling.cohort.${status.counseling.cohort}`) })}
                         </p>
                         {status.counseling.replacement === 'HUG' && <p className="grad-flex-note">{t('grad.counseling.hug')}</p>}
-                        <p className="grad-flex-note">{t('grad.counseling.usuallyDone')}</p>
+                        {/* 두 문장을 줄을 나눠 보여준다 — 이어 쓰면 "혹시"가 줄 끝에 걸려 읽기 불편했다(2026-10-22 피드백). */}
+                        <p className="grad-flex-note">
+                          {t('grad.counseling.usuallyDone')}
+                          <br />
+                          {t('grad.counseling.checkPath')}
+                        </p>
                       </div>
                     </div>
                   </section>
