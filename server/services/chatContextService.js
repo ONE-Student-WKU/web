@@ -1,6 +1,7 @@
 const curriculumService = require('./curriculumService');
 const curriculumContext = require('./curriculumContextService');
 const regulationContext = require('./regulationContextService');
+const { serviceGuideChunks } = require('./serviceGuide');
 
 /**
  * server/services/chatContextService.js
@@ -41,6 +42,7 @@ async function assembleStructuredChunks({ message, searchText, student, previous
     curriculum: [...curriculum, ...second.curriculum], requirement,
     offering: [...offeringResult.offering, ...second.offering], remaining: [...offeringResult.remaining, ...second.remaining],
     linkedMajor, microDegree,
+    service: serviceGuideChunks(message),
   };
 }
 
@@ -92,6 +94,8 @@ function mergeChunks({ structured, previousHistory = [], previousCitedChunks = [
     ...structured.offering,
     ...structured.linkedMajor,
     ...structured.microDegree,
+    // 서비스(ONE Student) 기능 안내 — 학칙과 겹치지 않아 순서는 중요하지 않다. 서비스 질문에 다른 근거가 없어도 답할 수 있게 넣는다.
+    ...(structured.service || []),
     ...previous,
     ...fresh,
   ]) {

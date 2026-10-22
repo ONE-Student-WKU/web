@@ -69,5 +69,8 @@ Thumbs.db
 db/mysql-data/
 db/mysql.log
 
+# 사람이 학교 웹정보서비스를 직접 조회해 모은 원자료·중간 정리본(작업 폴더). 앱에 쓰는 최종본은 db/curriculum/_source/에 있다.
+collected/
+
 # Vercel deployment metadata
 .vercel

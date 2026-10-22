@@ -25,6 +25,7 @@ import AccountMenu from '../components/AccountMenu.jsx';
 import SearchScreen from '../components/SearchScreen.jsx';
 import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
 import CommunityNotices, { NoticePin } from '../components/CommunityNotices.jsx';
+import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
@@ -89,6 +90,38 @@ function toDateInputValue(date) {
 // 서버가 recruitState를 아직 안 내려주는 배포 순서(프론트 먼저)에서는 undefined라 closedAt만 본다.
 function isRecruitClosed(closedAt, recruitState) {
   return Boolean(closedAt) || recruitState === 'ended';
+}
+
+// 새 글의 빈 입력값. 모집 학과는 보통 같은 학과 학생을 찾으므로 글쓴이 학과를 미리 골라 둔다(학과가 없으면 학과 상관없음).
+function emptyWriteFields(user) {
+  const own = user?.departmentId ? [{ id: user.departmentId, name: user.department }] : [];
+  return { title: '', body: '', category: 'study', capacity: '', recruitEndDate: '', deptMode: own.length ? 'specific' : 'any', departments: own };
+}
+
+// 목록의 모집 학과 줄 — 2개까지는 이름을 다 쓰고, 3개면 "A, B 외 1개"(전체는 상세에서). 학과 상관없는 글(이 기능 전에 올린 글 포함)은 "모든 학과".
+const LIST_DEPARTMENT_NAMES = 2;
+function departmentLine(targetDepartments, t) {
+  const names = (targetDepartments || []).map((d) => d.name);
+  if (names.length === 0) return t('community.dept.all');
+  if (names.length <= LIST_DEPARTMENT_NAMES) return names.join(', ');
+  return t('community.dept.more', { names: names.slice(0, LIST_DEPARTMENT_NAMES).join(', '), n: names.length - LIST_DEPARTMENT_NAMES });
+}
+
+// "내 학과 글만 보기"는 이 브라우저에만 기억한다(저장이 막힌 환경에서는 매번 꺼진 채로 시작).
+const MY_DEPT_ONLY_KEY = 'community_myDeptOnly';
+function readMyDeptOnly() {
+  try {
+    return localStorage.getItem(MY_DEPT_ONLY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeMyDeptOnly(on) {
+  try {
+    localStorage.setItem(MY_DEPT_ONLY_KEY, on ? '1' : '0');
+  } catch {
+    // 저장하지 못해도 이번 화면에서는 그대로 동작한다
+  }
 }
 
 // 글 작성·수정·신청이 막히는 경고성 제재(post_apply) 안내 배너 — 목록 상단, 글 상세, 글쓰기/수정 폼에서
@@ -189,7 +222,7 @@ function Community({
   }, [noticeView?.mode, notices, onUnseenNoticesChange]);
 
   const [showWriteForm, setShowWriteForm] = useState(false);
-  const [writeFields, setWriteFields] = useState({ title: '', body: '', category: 'study', capacity: '', recruitEndDate: '' });
+  const [writeFields, setWriteFields] = useState(() => emptyWriteFields(user));
   const [writeSubmitting, setWriteSubmitting] = useState(false);
   // null이면 새 글 작성, 값이 있으면 그 id의 글을 수정 중(같은 폼을 재사용).
   const [editingPostId, setEditingPostId] = useState(null);
@@ -293,6 +326,10 @@ function Community({
     setSearchError(false);
     postSearch.reset();
   }
+
+  // 내 학과 글만 보기 — 내 학과(개편 전후 포함, 서버의 isMyDepartment)를 모집하거나 학과 상관없는 글만 남긴다. 학과가 없는 계정은 끈 채로.
+  const [myDeptOnly, setMyDeptOnly] = useState(readMyDeptOnly);
+  const visiblePosts = myDeptOnly && user?.departmentId && posts ? posts.filter((p) => p.isMyDepartment || !p.targetDepartments?.length) : posts;
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -402,7 +439,7 @@ function Community({
   };
 
   const resetAfterWrite = () => {
-    setWriteFields({ title: '', body: '', category: 'study', capacity: '', recruitEndDate: '' });
+    setWriteFields(emptyWriteFields(user));
     setEditingPostId(null);
     setShowWriteForm(false);
   };
@@ -427,6 +464,10 @@ function Community({
   const handleWriteSubmit = async (e) => {
     e.preventDefault();
     if (!writeFields.title.trim() || !writeFields.body.trim()) return;
+    if (writeFields.deptMode === 'specific' && writeFields.departments.length === 0) {
+      setError(t('community.err.deptRequired'));
+      return;
+    }
     setWriteSubmitting(true);
     setError(null);
     try {
@@ -436,6 +477,7 @@ function Community({
         category: writeFields.category,
         capacity: writeFields.capacity === '' ? null : Number(writeFields.capacity),
         recruitEndDate: writeFields.recruitEndDate || null,
+        departmentIds: writeFields.deptMode === 'specific' ? writeFields.departments.map((d) => d.id) : [],
       };
       if (editingPostId) {
         await editCommunityPost(editingPostId, payload);
@@ -456,6 +498,8 @@ function Community({
         setError(editingPostId ? t('community.err.editSanctioned') : t('community.err.writeSanctioned'));
       } else if (err.code === 'INVALID_RECRUIT_END') {
         setError(t('community.err.recruitEnd'));
+      } else if (err.code === 'INVALID_DEPARTMENTS') {
+        setError(t('community.err.departments'));
       } else {
         setError(editingPostId ? t('community.err.editFailed') : t('community.err.postFailed'));
       }
@@ -471,6 +515,8 @@ function Community({
       category: post.category,
       capacity: post.capacity === null || post.capacity === undefined ? '' : String(post.capacity),
       recruitEndDate: post.recruitEndDate || '',
+      deptMode: post.targetDepartments?.length ? 'specific' : 'any',
+      departments: post.targetDepartments || [],
     });
     setEditingPostId(post.id);
     setSelectedPost(null);
@@ -657,6 +703,11 @@ function Community({
           )}
         </p>
 
+        {!post.contentHidden && post.targetDepartments && (
+          <p className="detail-dept">
+            <b>{t('community.dept.label')}</b> · {post.targetDepartments.length ? post.targetDepartments.map((d) => d.name).join(', ') : t('community.dept.all')}
+          </p>
+        )}
         {post.contentHidden ? (
           <p className="courses-manual-hint">
             {t('community.hiddenBody')}
@@ -918,6 +969,11 @@ function Community({
           />
         </div>
       </div>
+      <TargetDepartmentsField
+        mode={writeFields.deptMode}
+        departments={writeFields.departments}
+        onChange={({ mode, departments }) => setWriteFields((f) => ({ ...f, deptMode: mode, departments }))}
+      />
       <div className="auth-field">
         <label htmlFor="community-recruit-end">{t('community.write.endDate')}</label>
         <input
@@ -968,8 +1024,16 @@ function Community({
       <span className="community-post-list-row">
         {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
         <span className="community-post-list-title">{p.title}</span>
+        {p.isMyDepartment && <span className="community-badge community-badge-mydept">{t('community.badge.myDept')}</span>}
         <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
       </span>
+      {/* 서버가 아직 모집 학과를 안 내려주는 배포 순서(프론트 먼저)에서는 줄을 숨긴다. */}
+      {p.targetDepartments && (
+        <span className="post-dept-line">
+          <span className="post-dept-label">{t('community.dept.label')} · </span>
+          {departmentLine(p.targetDepartments, t)}
+        </span>
+      )}
       <span className="courses-list-item-meta">
         {p.author} · {formatDate(p.createdAt)}
         {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
@@ -1081,13 +1145,29 @@ function Community({
               </button>
             )}
 
+            {tab === 'list' && user?.departmentId && (
+              <label className="mydept-filter">
+                <input
+                  type="checkbox"
+                  checked={myDeptOnly}
+                  onChange={(e) => {
+                    setMyDeptOnly(e.target.checked);
+                    writeMyDeptOnly(e.target.checked);
+                  }}
+                />
+                {t('community.myDeptFilter')}
+              </label>
+            )}
+
             {tab === 'list' ? (
               posts === null ? (
                 <p className="courses-manual-hint">{t('community.loading')}</p>
               ) : posts.length === 0 ? (
                 <p className="courses-manual-hint">{t('community.empty.posts')}</p>
+              ) : visiblePosts.length === 0 ? (
+                <p className="courses-manual-hint">{t('community.empty.myDept')}</p>
               ) : (
-                <div className="community-post-list">{posts.map(renderPublicPostItem)}</div>
+                <div className="community-post-list">{visiblePosts.map(renderPublicPostItem)}</div>
               )
             ) : tab === 'mine' ? (
               myPosts === null ? (

@@ -197,10 +197,14 @@ function evaluateCertifications(certificationRows, courseRows, { teachingCourse 
         passedNames.some((name) => (prefix ? name.startsWith(variant) : contains ? name.includes(variant) : name === variant))
       )
     );
+    // 어느 과목을 이수했는지도 같이 준다. 충족 여부만 주면 챗봇이 "1·2 둘 다 필수 — 미충족"만 보고, 1을 이미 들은 학생에게도
+    // 둘 다 들으라고 답했다(2026-10-22 사용자 피드백). 화면도 같은 값으로 과목마다 이수/남음을 보여준다.
     return {
       category: row.category,
       description: row.description,
       requiredCourses,
+      completedCourses: satisfiedItems,
+      minCourseCount: row.min_course_count,
       satisfied: satisfiedItems.length >= row.min_course_count,
       ...(OPTIONAL_CERTIFICATION_CATEGORIES.has(row.category) && teachingCourse !== true ? { optional: true } : {}),
       // 학사편입학자 등은 면제인 대학 공통 졸업인증제(편입 종류를 입력받지 않아 부족 요건에는 남기고 안내만 붙인다).
