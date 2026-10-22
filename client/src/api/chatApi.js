@@ -219,6 +219,14 @@ export const sanctionStudent = (studentId, { scope, duration, reason }) =>
 // 신고자 본인의 신고 내역(처리 상태 + 관리자 처리 안내) / 읽지 않은 처리 결과 수 / 확인 처리.
 export const getMyReports = () => apiRequest('/community/reports/mine');
 export const getUnseenReportCount = () => apiRequest('/community/reports/unseen-count').then((d) => d.count);
+
+// 커뮤니티 공지 — 학생은 읽기만 하고, 쓰기·수정·삭제는 관리자 API다. 목록은 최신 순이고 isNew는 마지막으로 목록을 본 뒤 올라온 공지다.
+export const getNotices = () => apiRequest('/community/notices');
+export const getUnseenNoticeCount = () => apiRequest('/community/notices/unseen-count').then((d) => d.count);
+export const markNoticesSeen = () => apiRequest('/community/notices/seen', { method: 'POST' });
+export const createNotice = (payload) => apiRequest('/admin/community/notices', { method: 'POST', body: JSON.stringify(payload) });
+export const updateNotice = (id, payload) => apiRequest(`/admin/community/notices/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+export const deleteNotice = (id) => apiRequest(`/admin/community/notices/${id}`, { method: 'DELETE' });
 export const markMyReportsSeen = () => apiRequest('/community/reports/seen', { method: 'POST' });
 
 // 신고 대상자 요약(읽기 전용, 관리자 전용). 서버가 아직 이 엔드포인트가 없는 배포 순서면 404 → 화면이 에러 안내만 보여준다.

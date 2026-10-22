@@ -24,7 +24,7 @@ import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
 import useClearClickCaret from './hooks/useClearClickCaret.js';
-import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
+import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
@@ -203,6 +203,8 @@ function App() {
   // 신고자가 아직 확인하지 않은 신고 처리 결과 수 — 하단 탭바 커뮤니티 아이콘의 점과 커뮤니티 "내 신고" 탭 점에 쓴다.
   // 화면을 옮길 때마다 가볍게 다시 확인한다(커뮤니티를 보고 있을 땐 그 화면이 직접 0으로 맞춘다). 실패는 조용히 무시.
   const [unseenReportCount, setUnseenReportCount] = useState(0);
+  // 아직 안 본 공지 수 — 같은 커뮤니티 점(하단 바·홈 메뉴)에 함께 쓴다. 커뮤니티에서 공지 목록을 열면 그 화면이 0으로 맞춘다.
+  const [unseenNoticeCount, setUnseenNoticeCount] = useState(0);
   useEffect(() => {
     if (!user || view === 'community') return;
     let cancelled = false;
@@ -211,10 +213,16 @@ function App() {
         if (!cancelled) setUnseenReportCount(count);
       })
       .catch(() => {});
+    getUnseenNoticeCount()
+      .then((count) => {
+        if (!cancelled) setUnseenNoticeCount(count);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [user, view]);
+  const communityBadge = unseenReportCount > 0 || unseenNoticeCount > 0;
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
   // 어느 화면이든 글자를 입력하는 칸이 포커스를 받으면(모바일 키보드가 뜨면) 하단 탭바를 숨겨
   // 입력 공간을 확보한다 — 채팅·진로 탐색뿐 아니라 커뮤니티 글쓰기/검색, 과목 검색·직접 입력 등
@@ -398,6 +406,7 @@ function App() {
             onInitialPostConsumed={() => setCommunityInitialPostId(null)}
             unseenReportCount={unseenReportCount}
             onUnseenReportsChange={setUnseenReportCount}
+            onUnseenNoticesChange={setUnseenNoticeCount}
           />
         ) : view === 'settings' ? (
           <Settings
@@ -465,6 +474,7 @@ function App() {
             onOpenGraduation={() => openView('graduation')}
             onOpenCareer={() => openView('career')}
             onOpenCommunity={() => setView('community')}
+            communityBadge={communityBadge}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
@@ -483,7 +493,7 @@ function App() {
             active={tabPeers.has(view) ? view : null}
             onOpen={openView}
             isLocked={(v) => isLockedView(v, user)}
-            communityBadge={unseenReportCount > 0}
+            communityBadge={communityBadge}
           />
         )}
       </div>

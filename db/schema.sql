@@ -854,6 +854,28 @@ CREATE TABLE IF NOT EXISTS community_applications (
   FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+-- 커뮤니티 공지 — 운영자가 쓰고 학생은 읽기만 한다(신청·신고·댓글 없음, 승인 절차 없음). 일반 글(community_posts)과
+-- 섞으면 승인·신청·신고·검색 로직이 공지를 따로 걸러야 해서 표를 나눴다. 작성 관리자 계정이 지워져도 공지는 남긴다.
+CREATE TABLE IF NOT EXISTS community_notices (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  author_id   INT NULL,
+  title       VARCHAR(60) NOT NULL,
+  body        TEXT NOT NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NULL,
+
+  INDEX idx_community_notices_created (created_at),
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+-- 학생이 공지 목록을 마지막으로 본 시각 — 이보다 뒤에 올라온 공지가 있으면 커뮤니티에 새 공지 점을 띄운다.
+CREATE TABLE IF NOT EXISTS community_notice_seen (
+  student_id  INT PRIMARY KEY,
+  seen_at     DATETIME NOT NULL,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
 -- 신청 수락(매칭 성사) 시 신청자·글쓴이 각각을 위해 한 쌍(2행)으로 생성되는 프록시 이메일
 -- (#182). owner_id는 "이 프록시로 온 메일을 실제로 받을 사람" — 신청자에게 보여줄
 -- 프록시는 owner_id=글쓴이, 글쓴이에게 보여줄 프록시는 owner_id=신청자다. proxy_email은

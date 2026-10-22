@@ -6,6 +6,7 @@ const communityService = require('../services/communityService');
 const sanctionService = require('../services/sanctionService');
 const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
+const noticeService = require('../services/noticeService');
 const { normalizeDepartmentIds, departmentsExist } = require('../services/postDepartments');
 
 /**
@@ -20,6 +21,38 @@ router.use(requireAuth);
 // req.activeSanction에 담겨서, 글쓰기/신청 라우트의 requireNotWritingSanctioned가
 // 다시 조회하지 않고 재사용한다.
 router.use(requireNotFullySanctioned);
+
+// 공지(읽기 전용, services/noticeService.js) — 쓰기·수정·삭제는 관리자 라우트(routes/admin.js)에 있다.
+// "본 시각 기록"은 글쓰기가 아니라서 아래 쓰기 횟수 제한보다 먼저 둔다(커뮤니티를 열 때마다 불러 제한을 깎지 않게).
+// GET /api/community/notices — 공지 목록(최신 순, isNew = 마지막으로 본 뒤 올라온 공지)
+router.get('/notices', async (req, res, next) => {
+  try {
+    const notices = await noticeService.listNotices(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_LIST', message: null, data: notices });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/community/notices/unseen-count — 아직 안 본 공지 수(커뮤니티 메뉴·탭의 점 표시용)
+router.get('/notices/unseen-count', async (req, res, next) => {
+  try {
+    const count = await noticeService.countUnseen(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_UNSEEN_COUNT', message: null, data: { count } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/community/notices/seen — 공지 목록을 봤다고 기록(새 공지 점을 지운다)
+router.post('/notices/seen', async (req, res, next) => {
+  try {
+    await noticeService.markSeen(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_SEEN', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // 글·신청·신고·수락/반려처럼 DB에 쓰는 요청은 사용자당 횟수를 묶는다. 제한이 없으면 글을 수천 개 올려 관리자 승인 대기열을
 // 가득 채우거나 신고/신청으로 다른 사용자를 괴롭히는 도배가 가능했다(정상 사용은 10분에 몇 건 수준).

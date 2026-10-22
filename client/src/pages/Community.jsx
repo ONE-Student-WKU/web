@@ -18,10 +18,13 @@ import {
   getMySanction,
   getMyReports,
   markMyReportsSeen,
+  getNotices,
+  markNoticesSeen,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import SearchScreen from '../components/SearchScreen.jsx';
 import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
+import CommunityNotices, { NoticePin } from '../components/CommunityNotices.jsx';
 import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
@@ -150,6 +153,7 @@ function SanctionBanner({ sanction }) {
  * - initialPostId: number (선택) — 관리자 신고함의 "그 글로 이동"에서 넘어온 글 id.
  *   마운트 시 1회 해당 글을 열고 onInitialPostConsumed로 소비했음을 알린다.
  * - onInitialPostConsumed: function (선택)
+ * - onUnseenNoticesChange: function (선택) — 공지 목록을 열어 새 공지를 다 봤을 때 0을 알린다(App의 커뮤니티 점).
  */
 function Community({
   user,
@@ -164,6 +168,7 @@ function Community({
   onInitialPostConsumed,
   unseenReportCount = 0,
   onUnseenReportsChange,
+  onUnseenNoticesChange,
 }) {
   const { t, tRich } = useI18n();
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications' | 'reports'
@@ -197,6 +202,25 @@ function Community({
   // 거부 메시지(선택) 입력값 — 신청 id별로 따로 들고 있어야 다른 신청자 카드와 안 섞인다.
   const [rejectMessages, setRejectMessages] = useState({});
 
+  // 공지(운영자 글, 읽기 전용). notices는 전체 글 탭 맨 위 고정 줄과 공지 목록에 같이 쓴다. noticeView가 있으면 공지 화면을 보는 중이다
+  // ({ mode: 'list' | 'detail' | 'write', notice }).
+  const [notices, setNotices] = useState(null);
+  const [noticeView, setNoticeView] = useState(null);
+  const loadNotices = () =>
+    getNotices()
+      .then(setNotices)
+      .catch(() => setNotices([])); // 공지를 못 불러와도 커뮤니티는 그대로 쓸 수 있어야 해서 조용히 빈 목록으로 둔다
+  useEffect(() => {
+    loadNotices();
+  }, []);
+  // 공지 목록을 열면 본 것으로 기록해 커뮤니티의 새 공지 점을 지운다(목록의 "새 공지" 표시는 열기 전에 받은 값이라 이번에는 남는다).
+  useEffect(() => {
+    if (noticeView?.mode !== 'list' || !notices?.some((n) => n.isNew)) return;
+    markNoticesSeen()
+      .then(() => onUnseenNoticesChange?.(0))
+      .catch(() => {});
+  }, [noticeView?.mode, notices, onUnseenNoticesChange]);
+
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [writeFields, setWriteFields] = useState(() => emptyWriteFields(user));
   const [writeSubmitting, setWriteSubmitting] = useState(false);
@@ -226,7 +250,7 @@ function Community({
   // 목록을 건너뛰고 곧장 홈으로 나가버림). 상세/글쓰기는 글 id 등 실제 데이터가 있어야
   // 복원 가능해서, 뒤로가기로는 항상 목록으로만 돌아가게 하고 그 안의 세부 화면(상세 vs
   // 글쓰기)까지 구분해서 복원하지는 않는다 — 목록 밖으로 새지만 않으면 되는 문제라 이 정도로 충분.
-  const inSubView = showWriteForm || !!selectedPost;
+  const inSubView = showWriteForm || !!selectedPost || !!noticeView;
   const skipHistoryPush = useRef(true);
   const inSubViewRef = useRef(inSubView);
   inSubViewRef.current = inSubView;
@@ -239,6 +263,7 @@ function Community({
       if (!event.state?.communityInSubView) {
         setSelectedPost(null);
         setShowWriteForm(false);
+        setNoticeView(null);
       }
     }
     window.addEventListener('popstate', handlePopState);
@@ -424,7 +449,10 @@ function Community({
   // 나가버려서(글 쓰던 중이면 작성 중이던 내용까지 예고 없이 날아감), 서브뷰가 열려있을
   // 땐 그 서브뷰만 닫고 목록으로 돌아가게 한다.
   const handleHeaderBack = () => {
-    if (showWriteForm) {
+    // 공지: 상세·글쓰기 → 공지 목록 → 전체 글
+    if (noticeView) {
+      setNoticeView(noticeView.mode === 'list' ? null : { mode: 'list' });
+    } else if (showWriteForm) {
       resetAfterWrite();
     } else if (selectedPost) {
       setSelectedPost(null);
@@ -1031,7 +1059,7 @@ function Community({
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? t('community.backToList') : t('common.backHome')}>
+          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost || noticeView ? t('community.backToList') : t('common.backHome')}>
             <IconChevronLeft />
           </button>
           <span className="screen-title">{t('nav.community')}</span>
@@ -1069,6 +1097,15 @@ function Community({
             </div>
             <p className="community-sanction-footer">{t('community.sanctionFull.footer')}</p>
           </div>
+        ) : noticeView ? (
+          <CommunityNotices
+            view={noticeView}
+            onChangeView={setNoticeView}
+            notices={notices}
+            isAdmin={user?.role === 'admin'}
+            onChanged={loadNotices}
+            onToast={showToast}
+          />
         ) : selectedPost ? (
           renderDetail()
         ) : showWriteForm ? (
@@ -1098,6 +1135,8 @@ function Community({
                 {unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label={t('community.newResultsAria')} />}
               </button>
             </div>
+
+            {tab === 'list' && <NoticePin notices={notices} onOpen={() => setNoticeView({ mode: 'list' })} />}
 
             {tab === 'list' && (
               <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')}>

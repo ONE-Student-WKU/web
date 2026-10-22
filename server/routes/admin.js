@@ -7,6 +7,7 @@ const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
+const noticeService = require('../services/noticeService');
 
 /**
  * server/routes/admin.js
@@ -22,6 +23,43 @@ router.get('/community/posts', async (req, res, next) => {
     const status = req.query.status || 'pending';
     const posts = await communityService.listPostsForAdmin(status);
     res.status(200).json({ status: 200, code: 'ADMIN_POSTS_LIST', message: null, data: posts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 커뮤니티 공지(services/noticeService.js) — 관리자가 바로 게시한다(승인 절차 없음). 목록은 학생과 같은 GET /api/community/notices.
+// POST /api/admin/community/notices — { title, body }
+router.post('/community/notices', async (req, res, next) => {
+  try {
+    const input = noticeService.normalizeNoticeInput(req.body);
+    if (!input) return res.status(400).json({ status: 400, code: 'INVALID_NOTICE', message: null, data: null });
+    const id = await noticeService.createNotice(req.session.userId, input);
+    res.status(201).json({ status: 201, code: 'NOTICE_CREATED', message: null, data: { id } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/admin/community/notices/:id — { title, body }
+router.put('/community/notices/:id', async (req, res, next) => {
+  try {
+    const input = noticeService.normalizeNoticeInput(req.body);
+    if (!input) return res.status(400).json({ status: 400, code: 'INVALID_NOTICE', message: null, data: null });
+    const updated = await noticeService.updateNotice(req.params.id, input);
+    if (!updated) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_UPDATED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/community/notices/:id
+router.delete('/community/notices/:id', async (req, res, next) => {
+  try {
+    const deleted = await noticeService.deleteNotice(req.params.id);
+    if (!deleted) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_DELETED', message: null, data: null });
   } catch (err) {
     next(err);
   }
