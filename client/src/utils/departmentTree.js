@@ -37,31 +37,82 @@ export function groupDepartmentsByCollege(departments) {
 export function matchedTracks(department, query) {
   const q = normalizeForSearch(query);
   if (!q) return [];
-  return (department.tracks || []).filter((tr) => normalizeForSearch(tr.name).includes(q));
+  // 줄임말로 찾아도("컴소") 어느 세부전공이 맞았는지 보여 준다.
+  const variants = searchVariants(q);
+  return (department.tracks || []).filter((tr) => variants.some((v) => normalizeForSearch(tr.name).includes(v)));
+}
+
+// 학생들이 실제로 쓰는 학과 줄임말 → 정식 이름 조각(normalizeForSearch 모양). "컴소"로 찾으면 결과가 없었다(2026-10-22 피드백).
+// 검색어가 줄임말로 "시작"할 때만 바꾼다(서버 searchAliases.js와 같은 방식) — 중간 일치까지 받으면 짧은 줄임말이 다른 말에 걸린다.
+// 서로 다른 학과와 헷갈릴 수 있는 줄임말은 넣지 않는다.
+export const DEPARTMENT_SEARCH_ALIASES = {
+  컴소공: '컴퓨터소프트웨어공학',
+  컴소: '컴퓨터소프트웨어',
+  컴공: '컴퓨터',
+  소공: '소프트웨어공학',
+  겜콘: '게임콘텐츠',
+};
+
+// 정규화한 검색어와, 줄임말로 시작하면 정식 이름으로 바꾼 검색어들.
+function searchVariants(q) {
+  const variants = [q];
+  for (const [alias, canonical] of Object.entries(DEPARTMENT_SEARCH_ALIASES)) {
+    if (q.startsWith(alias)) variants.push(canonical + q.slice(alias.length));
+  }
+  return variants;
 }
 
 /**
- * 학과 이름·세부전공 이름·소속 대학·이후(후속) 학과 이름 중 하나라도 검색어를 포함하면 일치.
+ * 학과 이름·세부전공 이름·소속 대학·이후(후속) 학과 이름 중 하나라도 검색어를 포함하면 일치. 줄임말(DEPARTMENT_SEARCH_ALIASES)도 받는다.
  * 친 글자와 더 직접 맞는 것을 앞에 둔다: 이름이 검색어로 시작 → 이름에 포함 → 세부전공 이름에 포함 → 대학 → 이후 학과.
  * 같은 단계면 지금 있는 학과가 이전 학과보다 앞(UX 점검 2026-10-16 2-10, 안 A).
  */
 export function searchDepartments(departments, query) {
   const q = normalizeForSearch(query);
   if (!q) return [];
+  const variants = searchVariants(q);
+  const scoreFor = (d, v) => {
+    const name = normalizeForSearch(d.name);
+    if (name.startsWith(v)) return 0;
+    if (name.includes(v)) return 1;
+    if (matchedTracks(d, v).length > 0) return 2;
+    if (normalizeForSearch(d.college).includes(v)) return 3;
+    if ((d.successors || []).some((s) => normalizeForSearch(s.name).includes(v))) return 4;
+    return null;
+  };
   const scored = [];
   departments.forEach((d, index) => {
-    const name = normalizeForSearch(d.name);
-    const college = normalizeForSearch(d.college);
-    const successors = (d.successors || []).map((s) => normalizeForSearch(s.name));
-    let score = null;
-    if (name.startsWith(q)) score = 0;
-    else if (name.includes(q)) score = 1;
-    else if (matchedTracks(d, query).length > 0) score = 2;
-    else if (college.includes(q)) score = 3;
-    else if (successors.some((s) => s.includes(q))) score = 4;
-    if (score !== null) scored.push({ d, score, index });
+    const scores = variants.map((v) => scoreFor(d, v)).filter((s) => s !== null);
+    if (scores.length) scored.push({ d, score: Math.min(...scores), index });
   });
   return scored.sort((a, b) => a.score - b.score || Number(Boolean(a.d.former)) - Number(Boolean(b.d.former)) || a.index - b.index).map(({ d }) => d);
+}
+
+/**
+ * 검색 결과에서 개편 전후 학과를 한 묶음으로 모은다 — 이전 학과와 학교 문서로 확인된(confirmed) 이후 학과가 둘 다 결과에 있으면
+ * { pair: { former, successor } }, 아니면 { department }. 묶음은 둘 중 먼저 나온 자리에 둔다.
+ * 따로 두면 학생이 "이전 학과 / 바로가기 / 이후 학과" 셋 중 무엇을 골라야 할지 헷갈렸다(2026-10-22 피드백).
+ */
+export function groupSearchResults(results) {
+  const byName = new Map(results.map((d) => [d.name, d]));
+  const paired = new Map(); // 학과 → 묶음
+  for (const d of results) {
+    if (paired.has(d)) continue;
+    const successor = (d.successors || []).filter((s) => s.confirmed).map((s) => byName.get(s.name)).find((s) => s && !paired.has(s));
+    if (!successor) continue;
+    const item = { pair: { former: d, successor } };
+    paired.set(d, item);
+    paired.set(successor, item);
+  }
+  const items = [];
+  const placed = new Set();
+  for (const d of results) {
+    const item = paired.get(d) || { department: d };
+    if (placed.has(item)) continue;
+    placed.add(item);
+    items.push(item);
+  }
+  return items;
 }
 
 /**
