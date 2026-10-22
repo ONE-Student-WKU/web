@@ -2585,6 +2585,120 @@ body {
   min-width: 0;
 }
 
+/* 커뮤니티 모집 학과 — 글쓰기의 "학과 상관없음 / 특정 학과만" + 학과 칩, 목록의 모집 학과 줄·"내 학과" 배지·필터, 상세의 모집 학과 줄 */
+.dept-target-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.dept-target-toggle .courses-year-tab {
+  flex: 1;
+  text-align: center;
+  padding: 9px 10px;
+  font-size: 0.8125rem;
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-strong);
+}
+
+.dept-target-toggle .courses-year-tab.active {
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+  border-color: var(--color-ink);
+}
+
+.dept-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dept-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 11px;
+  border-radius: 999px;
+  background: var(--color-neutral-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.dept-chip button {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.dept-chip-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px dashed var(--color-border-strong);
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.post-dept-line {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-dept-label {
+  color: var(--color-text-muted);
+}
+
+.community-badge-mydept {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-on-bg);
+}
+
+.mydept-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.mydept-filter input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.detail-dept {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.detail-dept b {
+  color: var(--color-text-primary);
+}
+
 .community-status-box {
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
