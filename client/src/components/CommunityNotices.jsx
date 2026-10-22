@@ -21,7 +21,7 @@ export function NoticePin({ notices, onOpen }) {
   const latest = notices[0];
   return (
     <button type="button" className="notice-pin" onClick={onOpen}>
-      <span className="community-badge community-badge-notice">{t('community.notice.badge')}</span>
+      <span className="notice-pin-label">{t('community.notice.badge')}</span>
       <span className="notice-pin-title">{latest.title}</span>
       {notices.some((n) => n.isNew) && <span className="tab-dot" aria-label={t('community.notice.newAria')} />}
       <span className="notice-pin-more">{t('community.notice.pinMore', { n: notices.length })}</span>

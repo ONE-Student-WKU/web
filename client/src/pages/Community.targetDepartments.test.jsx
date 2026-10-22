@@ -95,25 +95,25 @@ describe('목록과 상세', () => {
       post({ id: 3, title: '상관없음' }),
     ]);
     render(<Community {...baseProps} />);
-    expect((await rowOf('두 학과')).querySelector('.post-dept-line')).toHaveTextContent('모집 학과 · 컴퓨터·소프트웨어공학과, 공학3계열');
-    expect((await rowOf('세 학과')).querySelector('.post-dept-line')).toHaveTextContent('경영학부, 경제학과 외 1개');
-    expect((await rowOf('상관없음')).querySelector('.post-dept-line')).toHaveTextContent('모든 학과');
+    expect((await rowOf('두 학과')).querySelector('.post-dept')).toHaveTextContent('모집 학과컴퓨터·소프트웨어공학과, 공학3계열');
+    expect((await rowOf('세 학과')).querySelector('.post-dept')).toHaveTextContent('경영학부, 경제학과 외 1개');
+    expect((await rowOf('상관없음')).querySelector('.post-dept')).toHaveTextContent('모든 학과');
   });
 
   it('내 학과를 모집하는 글에만 "내 학과" 배지가 붙는다', async () => {
     api.getCommunityPosts.mockResolvedValue([post({ id: 1, title: '내 학과 글', targetDepartments: [ENG3], isMyDepartment: true }), post({ id: 2, title: '다른 학과 글', targetDepartments: [BIZ] })]);
     render(<Community {...baseProps} />);
-    expect((await rowOf('내 학과 글')).querySelector('.community-badge-mydept')).toHaveTextContent('내 학과');
-    expect((await rowOf('다른 학과 글')).querySelector('.community-badge-mydept')).toBeNull();
+    expect((await rowOf('내 학과 글')).querySelector('.post-mydept')).toHaveTextContent('내 학과');
+    expect((await rowOf('다른 학과 글')).querySelector('.post-mydept')).toBeNull();
   });
 
   it('서버가 모집 학과를 안 내려주면(배포 순서) 줄을 숨긴다', async () => {
     api.getCommunityPosts.mockResolvedValue([post({ title: '예전 응답', targetDepartments: undefined, isMyDepartment: undefined })]);
     render(<Community {...baseProps} />);
-    expect((await rowOf('예전 응답')).querySelector('.post-dept-line')).toBeNull();
+    expect((await rowOf('예전 응답')).querySelector('.post-dept')).toBeNull();
   });
 
-  it('"내 학과 글만 보기"를 켜면 다른 학과만 모집하는 글이 빠지고(학과 상관없는 글은 남음), 브라우저에 기억된다', async () => {
+  it('"내 학과" 필터를 켜면 다른 학과만 모집하는 글이 빠지고(학과 상관없는 글은 남음), 브라우저에 기억된다', async () => {
     api.getCommunityPosts.mockResolvedValue([
       post({ id: 1, title: '내 학과 글', targetDepartments: [ENG3], isMyDepartment: true }),
       post({ id: 2, title: '다른 학과 글', targetDepartments: [BIZ] }),
@@ -121,21 +121,21 @@ describe('목록과 상세', () => {
     ]);
     const { unmount } = render(<Community {...baseProps} />);
     await screen.findByText('다른 학과 글');
-    await userEvent.click(screen.getByRole('checkbox', { name: '내 학과 글만 보기' }));
+    await userEvent.click(screen.getByRole('button', { name: '내 학과 글만 보기' }));
     expect(screen.queryByText('다른 학과 글')).toBeNull();
     expect(screen.getByText('내 학과 글')).toBeInTheDocument();
     expect(screen.getByText('아무나 글')).toBeInTheDocument();
     unmount();
 
     render(<Community {...baseProps} />);
-    expect(screen.getByRole('checkbox', { name: '내 학과 글만 보기' })).toBeChecked();
+    expect(screen.getByRole('button', { name: '내 학과 글만 보기' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('학과가 없는 계정에는 "내 학과 글만 보기"가 없다', async () => {
     api.getCommunityPosts.mockResolvedValue([post({ title: '글' })]);
     render(<Community {...baseProps} user={{ name: '학과없음', role: 'student' }} />);
     await screen.findByText('글');
-    expect(screen.queryByRole('checkbox', { name: '내 학과 글만 보기' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '내 학과 글만 보기' })).toBeNull();
   });
 
   it('상세에는 모집 학과를 모두 보여준다', async () => {
@@ -143,7 +143,7 @@ describe('목록과 상세', () => {
     api.getCommunityPost.mockResolvedValue({ ...post({ title: '세 학과', targetDepartments: [BIZ, ECON, ENG3] }), status: 'approved', isMine: false, myApplication: null, contentHidden: false });
     render(<Community {...baseProps} />);
     await userEvent.click(await rowOf('세 학과'));
-    expect(await screen.findByText(/경영학부, 경제학과, 공학3계열/)).toHaveClass('detail-dept');
+    expect((await screen.findByText(/경영학부, 경제학과, 공학3계열/)).closest('.post-fact')).toHaveTextContent('모집 학과');
   });
 });
 
@@ -203,7 +203,8 @@ describe('글쓰기', () => {
     render(<Community {...baseProps} />);
     await userEvent.click(screen.getByRole('button', { name: '내가 쓴 글' }));
     await userEvent.click(await rowOf('내 글'));
-    await userEvent.click(await screen.findByRole('button', { name: /^수정/ }));
+    await userEvent.click(await screen.findByRole('button', { name: '더 보기' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: '수정하기' }));
     expect(screen.getByRole('button', { name: '학과 상관없음' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
