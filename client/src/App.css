@@ -255,18 +255,6 @@ body {
   background: var(--color-border);
 }
 
-.settings-theme-options {
-  display: flex;
-  gap: 8px;
-}
-
-.settings-note {
-  margin: 10px 0 0;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-}
-
 .settings-theme-btn {
   flex: 1;
   padding: 10px;
@@ -317,15 +305,6 @@ body {
   margin: 0 0 10px;
 }
 
-.settings-inline-field {
-  display: flex;
-  gap: 8px;
-}
-
-.settings-inline-field .onb-select {
-  flex: 1;
-}
-
 @keyframes settings-highlight-pulse {
   0%, 100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); border-color: var(--color-border); }
   50% { box-shadow: 0 0 0 5px var(--color-accent-bg); transform: scale(1.015); border-color: var(--color-accent); }
@@ -340,45 +319,6 @@ body {
     animation: none;
     border-color: var(--color-accent);
   }
-}
-
-/* Profile — 확정한 진로 다시 보기 */
-.profile-career-name {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  font-size: 0.9375rem;
-  font-weight: 700;
-}
-
-.profile-roadmap-list {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
-}
-
-/* Profile — 계정 정보 수정 화면의 계정 삭제 영역 */
-.profile-danger-zone {
-  border-color: var(--color-danger);
-  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
-}
-
-.profile-delete-btn {
-  width: 100%;
-  padding: 0.875rem;
-  margin-top: 0.625rem;
-  background: var(--color-danger);
-  color: var(--color-accent-contrast);
-  border: none;
-  border-radius: 10px;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.profile-delete-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Prompt bar — ChatInput의 텍스트 입력 줄(Chat/CareerExploration 채팅 단계 공용).
@@ -698,14 +638,6 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-}
-
-/* 위기 신호로 후보를 막았을 때의 도움 안내 — 오류가 아니므로 경고색 대신 차분한 카드로 보여준다. */
-/* 진로 탐색 "처음 답변 수정" — 두 저장 방식 버튼 아래 설명(이슈 #245) */
-.career-edit-mode-note {
-  margin: 4px 0 12px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
 }
 
 .career-support-note {
@@ -3717,6 +3649,1009 @@ button.post-row:active {
   font-weight: 600;
 }
 
+/* ===== 문의하기·진로 탐색·계정 정보·설정 개편(2026-10-22) — 커뮤니티 개편과 같은 원칙(상자 대신 여백·구분선, 색은 상태에만,
+   누를 버튼은 화면 아래 한 곳). 공통 부품(post-*, community-tabs)은 위 커뮤니티 블록에 있다. ===== */
+.post-over-end {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.post-pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.post-quote-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.75rem;
+  color: var(--color-accent-on-bg);
+}
+
+.post-tip {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.post-tip b {
+  color: var(--color-text-primary);
+}
+
+.post-tip ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.post-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.post-empty-state p {
+  margin: 4px 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.post-empty-state > span:not(.post-empty-icon) {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.post-empty-state .post-write-btn {
+  margin-top: 8px;
+}
+
+.post-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  color: var(--color-text-muted);
+}
+
+/* ----- 설정·계정 정보: 휴대폰 설정 화면 같은 묶음 목록 ----- */
+.settings-page {
+  padding: 20px 0 32px;
+}
+
+.settings-group {
+  margin-bottom: 24px;
+}
+
+.settings-group-title {
+  margin: 0 20px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.settings-group-note {
+  margin: 8px 20px 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.settings-panel {
+  margin: 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--color-neutral-bg);
+}
+
+.settings-list {
+  margin: 0 16px;
+  border-radius: 14px;
+  background: var(--color-neutral-bg);
+  overflow: hidden;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+button.settings-row {
+  cursor: pointer;
+}
+
+.settings-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.settings-row--danger {
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.settings-row-danger-title {
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+.settings-row-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.settings-chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+
+.settings-chevron.open {
+  transform: rotate(90deg);
+}
+
+.settings-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-inline input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+.settings-inline .post-btn {
+  height: 42px;
+}
+
+.settings-help {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.settings-help--ok {
+  color: var(--color-success);
+}
+
+.settings-row .home-error {
+  margin: 0;
+}
+
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-text-btn {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.settings-text-btn:disabled {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  cursor: default;
+}
+
+.settings-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+/* 테마: 라이트·다크 화면 미리보기 — 미리보기 색은 지금 테마와 상관없이 그 테마의 실제 색이다. */
+.settings-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.settings-theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.settings-theme-card.active {
+  color: var(--color-text-primary);
+}
+
+.settings-theme-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 76px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+}
+
+.settings-theme-card.active .settings-theme-preview {
+  border-color: var(--color-ink);
+}
+
+.settings-theme-preview i {
+  display: block;
+  height: 7px;
+  border-radius: 4px;
+}
+
+.settings-theme-preview i.strong {
+  width: 50%;
+}
+
+.settings-theme-preview--light {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e1e3e8;
+}
+
+.settings-theme-preview--light i {
+  background: #e8eaee;
+}
+
+.settings-theme-preview--light i.strong {
+  background: #1e2b45;
+}
+
+.settings-theme-preview--dark {
+  background: #1a1c21;
+  box-shadow: inset 0 0 0 1px #383d47;
+}
+
+.settings-theme-preview--dark i {
+  background: #2f333b;
+}
+
+.settings-theme-preview--dark i.strong {
+  background: #e8ecf3;
+}
+
+/* 글자 크기: "가"를 각 크기 그대로(px — 지금 고른 크기와 상관없이 비교되게) */
+.settings-fonts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.settings-font-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 0;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background: var(--color-bg-frame);
+  font-family: inherit;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.settings-font-card.active {
+  border-color: var(--color-ink);
+  color: var(--color-text-primary);
+}
+
+.settings-font-card span {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.settings-font-sample {
+  line-height: 1;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.settings-font-sample--small {
+  font-size: 15px;
+}
+
+.settings-font-sample--medium {
+  font-size: 19px;
+}
+
+.settings-font-sample--large {
+  font-size: 23px;
+}
+
+/* 계정 정보: 맨 위 내 계정 */
+.profile-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px 22px;
+}
+
+.profile-id-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+
+.profile-id-text {
+  min-width: 0;
+}
+
+.profile-id-text b {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.profile-id-text span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.profile-roadmap-list {
+  background: var(--color-bg-frame);
+}
+
+/* ----- 진로 탐색 ----- */
+.career-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.career-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 0;
+  flex-shrink: 0;
+}
+
+.career-progress-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-neutral-bg);
+  overflow: hidden;
+}
+
+.career-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-ink);
+  transition: width 0.2s;
+}
+
+.career-progress-step {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* 질문 → 대화 → 진로 추천 → 과목 로드맵 단계 */
+.career-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-border);
+  list-style: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.career-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.career-step-num {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.career-step.done .career-step-num {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.career-step.now {
+  color: var(--color-text-primary);
+}
+
+.career-step.now .career-step-num {
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+.career-steps-line {
+  flex: 1;
+  min-width: 6px;
+  height: 1px;
+  background: var(--color-border-strong);
+}
+
+.career-question,
+.career-candidates,
+.career-roadmap {
+  padding: 6px 4px 16px;
+}
+
+.career-q-title {
+  margin: 8px 0 8px;
+  font-size: 1.3125rem;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.career-q-sub {
+  margin: 0 0 18px;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.career-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.career-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background: var(--color-neutral-bg);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.career-option.active {
+  border-color: var(--color-ink);
+  background: var(--color-bg-frame);
+}
+
+.career-option-check {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 50%;
+  color: transparent;
+}
+
+.career-option.active .career-option-check {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+/* 화면 아래에 붙는 버튼 */
+.career-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  flex-shrink: 0;
+}
+
+.career-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.career-dock-main {
+  flex: 1;
+}
+
+.career-text-btn {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 6px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.career-dock-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.career-text-link {
+  display: block;
+  margin: 20px auto 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* 답변 수정 — 칩 */
+.career-edit {
+  padding: 4px 4px 12px;
+}
+
+.career-edit-intro-body {
+  margin: 4px 0 6px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.career-edit-question {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.career-edit-question:last-child {
+  border-bottom: none;
+}
+
+.career-edit-question-title {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--color-text-primary);
+}
+
+.career-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.career-pick {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.career-pick.active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+/* 대화 위 "내 답변" */
+.career-answers {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-neutral-bg);
+}
+
+.career-answers-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-answers-head button,
+.career-answers-toggle {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.career-answers-toggle {
+  margin-top: 8px;
+  font-size: 0.75rem;
+}
+
+.career-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--color-bg-frame);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.career-answers-none {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* 접힌 칩은 두 줄까지만 보인다(칩 높이 약 26px + 간격 6px). */
+.career-chips--clamp {
+  max-height: 58px;
+  overflow: hidden;
+}
+
+/* 진로 추천 칸 — 입력창 바로 위 */
+.career-recommend-bar {
+  padding: 10px 12px 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  flex-shrink: 0;
+}
+
+.career-recommend-bar + .chat-input-bar,
+.career-recommend-bar + form {
+  border-top: none;
+}
+
+.career-recommend-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-neutral-bg);
+}
+
+.career-recommend-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.career-recommend-text b {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.career-recommend-text span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.career-recommend-btn {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.career-recommend-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.career-recommend-card.ready {
+  background: var(--color-ink);
+}
+
+.career-recommend-card.ready .career-recommend-text b {
+  color: var(--color-ink-contrast);
+}
+
+.career-recommend-card.ready .career-recommend-text span {
+  color: var(--color-ink-contrast);
+  opacity: 0.78;
+}
+
+.career-recommend-card.ready .career-recommend-btn {
+  border: none;
+  background: var(--color-ink-contrast);
+  color: var(--color-ink);
+}
+
+/* 추천 진로 — 번호 목록 */
+.career-candidate-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-candidate {
+  display: flex;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.career-candidate:last-child {
+  border-bottom: none;
+}
+
+.career-candidate-num {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+
+.career-candidate-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.career-candidate-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.career-candidate-reasoning {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+/* 로드맵 — 학기 타임라인 */
+.career-roadmap-hero {
+  margin: 8px 0 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.career-roadmap-title {
+  margin: 0 0 6px;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.career-roadmap-stats {
+  margin: 0 0 16px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.career-roadmap-stats strong {
+  color: var(--color-text-primary);
+}
+
+.career-roadmap-note {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.career-roadmap-group {
+  position: relative;
+  padding: 0 0 18px 22px;
+}
+
+.career-roadmap-group::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.career-roadmap-group:last-child::before {
+  display: none;
+}
+
+.career-roadmap-group::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-bg-frame);
+}
+
+.career-roadmap-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.career-roadmap-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.career-roadmap-item:last-child {
+  border-bottom: none;
+}
+
+.career-roadmap-course {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-roadmap-reason {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.career-roadmap-syllabus {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.career-roadmap-syllabus::after {
+  content: ' ›';
+}
+
+.career-roadmap-syllabus:hover {
+  text-decoration: underline;
+}
+
 /* 글 목록(전체 글/내가 쓴 글/내 신청) — 원래 과목관리 검색결과 드롭다운용이던
    courses-search-results(max-height + 내부 스크롤)를 재사용하고 있었는데, 이 목록은
    그 화면의 메인 컨텐츠라 courses-list처럼 페이지 자체 스크롤을 따라가는 게 맞다
@@ -4657,52 +5592,6 @@ select.onb-select {
   gap: 8px;
 }
 
-/* 헤더 안 버튼이라 courses-pdf-hint-bubble처럼 위로 띄우면 화면 밖으로 잘려서, 아래로
-   향하게 별도로 정의(화살표도 위쪽을 가리키도록 반대). */
-.career-recommend-hint-wrap {
-  position: relative;
-}
-
-.career-recommend-hint-bubble {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--color-ink);
-  color: var(--color-ink-contrast);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 8px;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  z-index: 1;
-}
-
-.career-recommend-hint-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  right: 14px;
-  border: 5px solid transparent;
-  border-bottom-color: var(--color-ink);
-}
-
-.career-recommend-btn {
-  padding: 6px 12px;
-  border-radius: 14px;
-  border: none;
-  background: var(--color-neutral-bg);
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.career-recommend-btn:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
-}
-
 .career-chat-messages {
   display: flex;
   flex-direction: column;
@@ -4746,120 +5635,6 @@ select.onb-select {
   font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
-}
-
-.career-edit-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.career-edit-icon-btn:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
-}
-
-.career-edit-intro-body {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0 0 32px;
-}
-
-.career-edit-question {
-  margin-bottom: 22px;
-}
-
-.career-edit-question-title {
-  display: block;
-  font-size: 1.0625rem;
-  font-weight: 800;
-  margin-bottom: 10px;
-}
-
-.career-candidate-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.career-candidate-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.career-candidate-title {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.career-candidate-reasoning {
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.career-roadmap-group {
-  margin-bottom: 16px;
-}
-
-.career-roadmap-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-
-.career-roadmap-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.career-roadmap-course {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.career-roadmap-reason {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-}
-
-.career-roadmap-syllabus {
-  align-self: flex-start;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-decoration: none;
-}
-
-.career-roadmap-syllabus:hover {
-  text-decoration: underline;
-}
-
-.career-roadmap-note {
-  font-size: 0.6875rem;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-  margin: 0 0 12px;
 }
 
 .career-confirm-loading {

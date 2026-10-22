@@ -13,9 +13,10 @@ const MAX_TEXTAREA_HEIGHT = 120;
  * - onSendMessage: function
  * - disabled: boolean
  * - onFocusChange: function(boolean) — optional, 입력창 포커스/블러 시점을 부모에 알림
+ * - placeholder: string — optional, 입력창 안내 글(없으면 기본 "무엇이든 물어보세요")
  *   (모바일에서 키보드가 뜨는 동안 하단 탭바/안내문 같은 주변 UI를 잠깐 접어 공간을 확보하는 용도)
  */
-function ChatInput({ onSendMessage, disabled, onFocusChange }) {
+function ChatInput({ onSendMessage, disabled, onFocusChange, placeholder }) {
   const { t } = useI18n();
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
@@ -61,7 +62,7 @@ function ChatInput({ onSendMessage, disabled, onFocusChange }) {
         <textarea
           ref={textareaRef}
           className="prompt-bar-input"
-          placeholder={t('chat.placeholder')}
+          placeholder={placeholder || t('chat.placeholder')}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
