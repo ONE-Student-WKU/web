@@ -16,9 +16,10 @@ import {
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import AdminTrendView from '../components/AdminTrendView.jsx';
+import AdminCompositionView from '../components/AdminCompositionView.jsx';
 import { TREND_METRICS, TREND_RANGES, DEFAULT_TREND_RANGE } from '../utils/adminTrendMetrics.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
-import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers, IconBan, IconAlertTriangle } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconSiren, IconMessageCircle, IconUsers, IconBan, IconAlertTriangle, IconBarChart } from '../components/icons.jsx';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -32,7 +33,7 @@ const REPORT_SUB_FILTER_LABEL = { pending: '대기중', resolved: '처리완료'
 const REPORT_SUB_FILTERS = ['pending', 'resolved'];
 const INQUIRY_SUB_FILTER_LABEL = { open: '대기중', resolved: '처리완료' };
 const INQUIRY_SUB_FILTERS = ['open', 'resolved'];
-const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions', 'trend'];
+const ADMIN_VIEWS = ['dashboard', 'approval', 'reports', 'inquiries', 'sanctions', 'trend', 'composition'];
 // 제재 사유 입력란의 기본값. 신고자가 쓴 신고 사유를 그대로 채우면 그 말이 제재받는 사용자에게 "제재 사유"로 전달된다
 // (사용자 화면의 제재 안내가 이 사유를 보여줌) — 신고자의 주장·비난·개인정보가 섞일 수 있고, 관리자가 확인한 사실도 아니다.
 // 그래서 중립 고정 문구를 기본으로 두고 관리자가 필요하면 구체적으로 고쳐 쓴다. 신고 사유는 이 화면에서 참고용으로만 보인다.
@@ -41,7 +42,7 @@ const DEFAULT_SANCTION_REASON = '커뮤니티 운영 정책 위반';
 const DEFAULT_RESOLUTION_NOTE = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
 const RESOLUTION_NOTE_MAX_LENGTH = 500;
 const SANCTION_STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
-const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리', trend: '현황 추이' };
+const VIEW_TITLE = { dashboard: '관리자', approval: '커뮤니티 승인', reports: '신고함', inquiries: '문의함', sanctions: '제재 관리', trend: '현황 추이', composition: '학과·학번별 사용자' };
 // 제재 팝업의 기간 선택지(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질
 // 수 있어 프리셋으로 제한한다. permanent는 ends_at을 NULL로 저장(영구정지).
 const SANCTION_DURATIONS = [
@@ -57,18 +58,31 @@ const SANCTION_SCOPES = [
 ];
 const SANCTION_SCOPE_BADGE_LABEL = { post_apply: '경고성', full: '전면 정지' };
 
-// 대시보드 현황 칸 — 가입 이메일·현재 접속자는 기존 그대로이고, 나머지는 운영·유지보수용 최근 24시간 지표다.
-// 챗봇 질문은 AI 호출 비용(크레딧 소진 같은 일)을 미리 보는 신호이고, 근거 못 찾은 답변은 규정 문서가 모자란 곳을 찾는 신호다.
-// trend가 있는 칸은 누르면 기간별 추이 그래프(TREND_METRICS의 key)로 간다. 가입 이메일·현재 접속자는 지금 값 하나뿐이고,
-// 24시간 활성 사용자는 시간대별 기록이 남지 않아 그래프를 그릴 수 없다.
+// 대시보드 현황 칸 — 학교에 보여줄 이용 지표(가입자·방문자·재방문)와 운영·유지보수 지표(최근 24시간 가입·챗봇 질문·답 못 찾은 질문).
+// 챗봇 질문은 AI 호출 비용(크레딧 소진 같은 일)을 미리 보는 신호이고, 답 못 찾은 질문은 규정 문서가 모자란 곳을 찾는 신호다.
+// 이름은 비전공자도 바로 알게 "활성 사용자" 대신 "방문자"로 쓴다(2026-10-22 피드백).
+// trend가 있는 칸은 누르면 기간별 추이 그래프(TREND_METRICS의 key)로 가고, range가 있으면 그 기간으로 연다.
 const DASHBOARD_STAT_CELLS = [
-  { label: '가입 이메일', value: (s) => s?.totalStudents },
+  { label: '전체 가입자', value: (s) => s?.totalStudents },
   { label: '현재 접속자', value: (s) => s?.activeSessions },
-  { label: '24시간 활성 사용자', value: (s) => s?.last24h?.activeStudents },
-  { label: '24시간 신규 가입', value: (s) => s?.last24h?.signups, trend: 'signups' },
-  { label: '24시간 챗봇 질문', value: (s) => s?.last24h?.chatQuestions, trend: 'chatQuestions' },
-  { label: '24시간 근거 못 찾은 답변', value: (s) => s?.last24h?.chatNotFound, trend: 'chatNotFound' },
+  { label: '최근 24시간 방문자', value: (s) => s?.last24h?.activeStudents, trend: 'visitors', range: '7d' },
+  { label: '최근 7일 방문자', value: (s) => s?.last7d?.visitors, trend: 'visitors', range: '7d' },
+  { label: '지난주 방문자 중 다시 온 비율', value: (s) => returnRate(s?.weeklyReturn), note: (s) => returnNote(s?.weeklyReturn) },
+  { label: '최근 24시간 신규 가입', value: (s) => s?.last24h?.signups, trend: 'signups' },
+  { label: '최근 24시간 챗봇 질문', value: (s) => s?.last24h?.chatQuestions, trend: 'chatQuestions' },
+  { label: '최근 24시간 답 못 찾은 질문', value: (s) => s?.last24h?.chatNotFound, trend: 'chatNotFound' },
 ];
+
+// 지난주(8~14일 전) 방문자 중 이번 주(최근 7일)에도 온 비율. 방문 기록이 2주가 안 돼 지난주 방문자가 없으면 "—".
+function returnRate(weekly) {
+  if (!weekly || !weekly.previous) return null;
+  return `${Math.round((weekly.returned / weekly.previous) * 100)}%`;
+}
+
+function returnNote(weekly) {
+  if (!weekly) return null;
+  return weekly.previous ? `지난주 ${weekly.previous}명 중 ${weekly.returned}명` : '방문 기록이 2주 쌓이면 보여요';
+}
 
 // 메뉴 타일의 처리 대기 건수 뱃지 — 0이면 그리지 않는다. 화면 낭독기에는 타일의 aria-label이 건수를 읽어 주므로 뱃지 자체는 숨긴다.
 function PendingBadge({ count }) {
@@ -471,6 +485,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                     <div className={`admin-stat-value ${dashboardLoading ? 'placeholder' : ''}`}>
                       {dashboardLoading ? '—' : cell.value(dashboardStats) ?? '—'}
                     </div>
+                    {cell.note && !dashboardLoading && cell.note(dashboardStats) && <p className="admin-stat-note">{cell.note(dashboardStats)}</p>}
                   </>
                 );
                 return cell.trend ? (
@@ -480,6 +495,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                     key={cell.label}
                     onClick={() => {
                       setTrendMetric(cell.trend);
+                      if (cell.range) setTrendRange(cell.range);
                       setAdminView('trend');
                     }}
                     aria-label={`${cell.label} 추이 보기`}
@@ -515,10 +531,16 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
                 <span>커뮤니티 관리</span>
                 <PendingBadge count={pendingCount.posts} />
               </button>
+              <button type="button" className="admin-tile" onClick={() => setAdminView('composition')}>
+                <IconBarChart size={22} />
+                <span>학과·학번별 사용자</span>
+              </button>
             </div>
           </>
         ) : adminView === 'trend' ? (
           <AdminTrendView metric={trendMetric} onChangeMetric={setTrendMetric} range={trendRange} onChangeRange={setTrendRange} />
+        ) : adminView === 'composition' ? (
+          <AdminCompositionView />
         ) : adminView === 'approval' ? (
           <>
             <div className="admin-sub-tabs">

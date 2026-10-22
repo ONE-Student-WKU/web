@@ -1336,26 +1336,36 @@ body {
   margin-top: 4px;
 }
 
+/* 참고한 자료 — 답변보다 눈에 띄지 않게 작은 회색 라벨로 접어 두고, 펼치면 자료 제목만 한 줄씩(2026-10-22 피드백). */
 .message-citations {
   margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border);
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .citations-toggle {
   background: none;
   border: none;
-  padding: 0;
-  color: var(--color-accent);
-  font-size: 0.8125rem;
+  padding: 2px 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
 .message-citations ul {
+  list-style: none;
   margin: 6px 0 0;
-  padding-left: 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-citations li {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-neutral-bg);
+  line-height: 1.5;
 }
 
 .chat-disclaimer {
@@ -2681,6 +2691,120 @@ body {
   min-width: 0;
 }
 
+/* 커뮤니티 모집 학과 — 글쓰기의 "학과 상관없음 / 특정 학과만" + 학과 칩, 목록의 모집 학과 줄·"내 학과" 배지·필터, 상세의 모집 학과 줄 */
+.dept-target-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.dept-target-toggle .courses-year-tab {
+  flex: 1;
+  text-align: center;
+  padding: 9px 10px;
+  font-size: 0.8125rem;
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-strong);
+}
+
+.dept-target-toggle .courses-year-tab.active {
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+  border-color: var(--color-ink);
+}
+
+.dept-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dept-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 11px;
+  border-radius: 999px;
+  background: var(--color-neutral-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.dept-chip button {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.dept-chip-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px dashed var(--color-border-strong);
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.post-dept-line {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-dept-label {
+  color: var(--color-text-muted);
+}
+
+.community-badge-mydept {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-on-bg);
+}
+
+.mydept-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.mydept-filter input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-ink);
+}
+
+.detail-dept {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.detail-dept b {
+  color: var(--color-text-primary);
+}
+
 .community-status-box {
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
@@ -3460,6 +3584,13 @@ body {
 .onb-option-note { font-size: 0.75rem; color: var(--color-text-muted); }
 /* 학과 검색에서 친 글자와 일치한 부분 — 색만으로 구분하지 않게 굵게도 한다. 강조 배경(선택·↑↓) 위에서도 읽히는 글자색. */
 mark.search-hit { background: none; color: var(--color-accent-on-bg, var(--color-accent)); font-weight: 700; }
+/* 학과 검색 — 개편 전후 학과를 한 묶음으로, 카드 맨 앞에 학번 기준("2025학번까지 / 2026학번부터")을 둔다(2026-10-22).
+   예전에는 이전 학과·바로가기·이후 학과가 따로 있어 무엇을 골라야 할지 헷갈렸다. 묶음 테두리와 카드 테두리가 맞붙지 않게 안쪽 여백을 둔다. */
+.dept-pair { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-bg-frame); }
+.dept-pair-head { margin: 0 2px; font-size: 0.8125rem; line-height: 1.5; color: var(--color-text-secondary); }
+.dept-pair-head strong { color: var(--color-text-primary); }
+.dept-cohort { align-self: flex-start; margin-bottom: 2px; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--color-ink); color: var(--color-ink-contrast); }
+.dept-cohort.old { background: var(--color-border-strong); color: var(--color-text-primary); }
 /* 이전 학과 카드 + 바로 아래 "2026학번부터는 공학3계열" 바로가기 묶음 */
 .onb-option-item { display: flex; flex-direction: column; gap: 6px; }
 .onb-successor-shortcut {
@@ -3473,10 +3604,21 @@ mark.search-hit { background: none; color: var(--color-accent-on-bg, var(--color
 .onb-field-group { margin-bottom: 18px; }
 
 /* 휴학 기간 입력(LeavePeriodsEditor) — 시작 학년도·학기·학기 수를 한 줄에 */
-.leave-period-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; align-items: flex-start; }
-.leave-period-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-card); }
-.leave-period-row .onb-select { padding: 10px 28px 10px 10px; font-size: 0.875rem; }
-.leave-period-row .onb-skip-link { margin: 0; justify-self: start; }
+/* 휴학 기간 입력(2026-10-22 개편) — "있어요" 카드 안에 넣어 선택지와 한 덩어리로 보이게 한다. 예전에는 선택지 아래에 같은 모양의
+   입력 상자가 따로 생겨 블럭이 셋으로 보였다. 카드 테두리는 바깥 상자가 그리고 안쪽 카드 버튼은 테두리를 지운다. */
+.leave-choice { border: 1px solid var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); border-radius: 12px; background: var(--color-neutral-bg); }
+.leave-choice .onb-option-card { width: 100%; border: none; box-shadow: none; background: none; cursor: default; }
+.leave-choice-body { display: flex; flex-direction: column; gap: 14px; padding: 0 16px 14px; }
+.leave-period { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.leave-period-head { display: flex; align-items: center; justify-content: space-between; }
+.leave-period-name { font-size: 0.8125rem; font-weight: 700; color: var(--color-text-secondary); }
+/* 문장형 — 칸에는 숫자만, 단위는 칸 밖 글자로 이어 문장을 채우듯 고른다. */
+.leave-sentence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.9375rem; line-height: 1.4; color: var(--color-text-primary); }
+.leave-sentence .onb-select { width: auto; padding: 8px 28px 8px 10px; font-size: 0.9375rem; font-weight: 700; background-color: var(--color-bg-frame); }
+.leave-summary { margin: 0; padding: 9px 11px; border-radius: 8px; background: var(--color-bg-frame); font-size: 0.8125rem; line-height: 1.5; color: var(--color-text-secondary); }
+.leave-summary strong { color: var(--color-text-primary); }
+.leave-text-btn { align-self: flex-start; padding: 4px 0; border: none; background: none; font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-secondary); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.leave-text-btn.danger { font-weight: 500; color: var(--color-danger); }
 
 .onb-field-label {
   display: block;
@@ -4039,6 +4181,10 @@ select.onb-select {
   text-align: left;
   color: inherit;
   cursor: pointer;
+  /* 버튼은 내용이 세로 가운데로 가서, 옆 칸이 설명 줄로 높아지면 이름 줄이 어긋난다 — 일반 칸처럼 위에서부터 쌓는다. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .admin-stat-cell--link:hover {
@@ -4057,6 +4203,54 @@ select.onb-select {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 14px;
+}
+
+/* 관리자 "학과·학번별 사용자" — 이름·인원 한 줄과 그 아래 막대. 줄 사이 구분선은 마지막 줄에는 두지 않아 카드 테두리와 겹치지 않는다. */
+.admin-composition-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.admin-composition-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-composition-row:last-child {
+  border-bottom: none;
+}
+
+.admin-composition-row .home-progress-track {
+  grid-column: 1 / -1;
+  height: 6px;
+}
+
+.admin-composition-name {
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.admin-composition-row--other .admin-composition-name {
+  color: var(--color-text-muted);
+}
+
+.admin-composition-count {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+/* 현황 칸 숫자 아래 작은 설명(예: 재방문율의 "지난주 12명 중 5명"). */
+.admin-stat-note {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .admin-trend-total {

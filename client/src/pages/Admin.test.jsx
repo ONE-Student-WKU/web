@@ -17,6 +17,7 @@ vi.mock('../api/chatApi.js', () => ({
   resolveAdminInquiry: vi.fn(),
   getAdminStats: vi.fn(),
   getAdminStatsTrend: vi.fn(),
+  getAdminStatsComposition: vi.fn(),
   getReportedStudentSummary: vi.fn(),
 }));
 
@@ -76,16 +77,31 @@ const summary = (over = {}) => ({
   ...over,
 });
 
+const composition = () => ({
+  minGroupSize: 5,
+  noDepartment: 3,
+  department: {
+    members: { rows: [{ name: '경영학부', count: 20 }, { name: '간호학과', count: 7 }], other: { groups: 2, count: 3 }, total: 30 },
+    visitors7d: { rows: [{ name: '경영학부', count: 8 }], other: null, total: 8 },
+  },
+  cohort: {
+    members: { rows: [{ name: 2022, count: 18 }, { name: 2021, count: 9 }], other: { groups: 1, count: 3 }, total: 30 },
+    visitors7d: { rows: [{ name: 2022, count: 6 }], other: null, total: 6 },
+  },
+});
+
 const stats = (over = {}) => ({
   totalStudents: 12,
   activeSessions: 1,
   pending: { reports: 0, inquiries: 0, posts: 0 },
   last24h: { signups: 2, chatQuestions: 45, chatNotFound: 6, activeStudents: 9 },
+  last7d: { visitors: 30 },
+  weeklyReturn: { previous: 10, returned: 4 },
   ...over,
 });
 
 // 추이 응답. 마지막 점이 현재(진행 중)이고 2026-10-12(월)다. over의 키는 "마지막에서 몇 번째 전"(0 = 마지막)이다.
-const TREND_COUNT = { '24h': 24, '30d': 30, '1y': 365, all: 20 };
+const TREND_COUNT = { '24h': 24, '7d': 7, '30d': 30, '1y': 365, all: 20 };
 const trend = (range = '30d', over = {}) => {
   const hour = range === '24h';
   const count = TREND_COUNT[range];
@@ -101,9 +117,11 @@ const trend = (range = '30d', over = {}) => {
         signups: 0,
         chatQuestions: 0,
         chatNotFound: 0,
+        visitors: hour ? null : 0,
         ...(over[back] || {}),
       };
     }),
+    uniqueVisitors: hour ? null : 0,
   };
 };
 
@@ -118,6 +136,7 @@ beforeEach(() => {
   api.getAdminInquiries.mockResolvedValue([]);
   api.getAdminSanctions.mockResolvedValue([]);
   api.getAdminCommunityPosts.mockResolvedValue([]);
+  api.getAdminStatsComposition.mockResolvedValue(composition());
 });
 
 describe('새로고침 시 하위 화면 유지', () => {
@@ -146,11 +165,13 @@ describe('대시보드 현황과 처리 대기 뱃지', () => {
   it('현황에는 운영 지표를 보여주고 "미처리 신고/문의" 칸은 없다', async () => {
     render(<Admin {...baseProps} />);
     await waitFor(() => expect(screen.getByText('45')).toBeInTheDocument());
-    for (const label of ['가입 이메일', '현재 접속자', '24시간 활성 사용자', '24시간 신규 가입', '24시간 챗봇 질문', '24시간 근거 못 찾은 답변']) {
+    for (const label of ['전체 가입자', '현재 접속자', '최근 24시간 방문자', '최근 7일 방문자', '지난주 방문자 중 다시 온 비율', '최근 24시간 신규 가입', '최근 24시간 챗봇 질문', '최근 24시간 답 못 찾은 질문']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    expect(screen.getByText('12')).toBeInTheDocument(); // 가입 이메일
-    expect(screen.getByText('6')).toBeInTheDocument(); // 근거 못 찾은 답변
+    expect(screen.getByText('12')).toBeInTheDocument(); // 전체 가입자
+    expect(screen.getByText('6')).toBeInTheDocument(); // 답 못 찾은 질문
+    expect(screen.getByText('40%')).toBeInTheDocument(); // 지난주 10명 중 4명
+    expect(screen.getByText('지난주 10명 중 4명')).toBeInTheDocument();
     expect(screen.queryByText('미처리 신고')).toBeNull();
     expect(screen.queryByText('미처리 문의')).toBeNull();
   });
@@ -288,7 +309,7 @@ describe('현황 추이 그래프', () => {
   it('신규 가입·챗봇 질문·근거 못 찾은 답변 칸은 누르면 추이 화면으로 가고, 그 지표와 30일이 선택돼 있다', async () => {
     withData({ 2: { chatQuestions: 7 }, 0: { chatQuestions: 3 } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 챗봇 질문');
+    await openTrend('최근 24시간 챗봇 질문');
     expect(await screen.findByText('현황 추이', { selector: '.screen-title' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '챗봇 질문' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: '30일' })).toHaveAttribute('aria-selected', 'true');
@@ -299,17 +320,37 @@ describe('현황 추이 그래프', () => {
     expect(sessionStorage.getItem('wku_cache_admin_view')).toBe('"trend"');
   });
 
-  it('활성 사용자·가입 이메일·현재 접속자 칸은 그래프로 이어지지 않는다', async () => {
+  it('전체 가입자·현재 접속자·다시 온 비율 칸은 그래프로 이어지지 않는다', async () => {
     render(<Admin {...baseProps} />);
-    await screen.findByRole('button', { name: '24시간 신규 가입 추이 보기' });
-    expect(screen.queryByRole('button', { name: /활성 사용자/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /가입 이메일/ })).toBeNull();
+    await screen.findByRole('button', { name: '최근 24시간 신규 가입 추이 보기' });
+    expect(screen.queryByRole('button', { name: /전체 가입자/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /현재 접속자/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /다시 온 비율/ })).toBeNull();
+  });
+
+  it('방문자 칸은 7일 방문자 추이로 가고, 합계는 날마다 더한 값이 아니라 기간 중 한 번 이상 온 사람 수다', async () => {
+    api.getAdminStatsTrend.mockImplementation(async (range) => ({ ...trend(range, range === '7d' ? { 0: { visitors: 4 }, 1: { visitors: 3 } } : {}), uniqueVisitors: range === '7d' ? 5 : 0 }));
+    render(<Admin {...baseProps} />);
+    await openTrend('최근 7일 방문자');
+    expect(await screen.findByText('7일 방문자')).toBeInTheDocument();
+    expect(api.getAdminStatsTrend).toHaveBeenCalledWith('7d');
+    expect(screen.getByRole('tab', { name: '7일' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('5', { selector: '.admin-trend-total' })).toBeInTheDocument();
+    expect(screen.getByText(/한 번 이상 온 사람 수라 막대를 더한 값과 달라요/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: '24시간' }));
+    expect(await screen.findByText('방문자는 하루 단위로만 세요. 7일 이상 기간을 골라주세요.')).toBeInTheDocument();
+  });
+
+  it('지난주 방문 기록이 없으면 비율 대신 "—"와 안내를 보여준다', async () => {
+    api.getAdminStats.mockResolvedValue(stats({ weeklyReturn: { previous: 0, returned: 0 } }));
+    render(<Admin {...baseProps} />);
+    expect(await screen.findByText('방문 기록이 2주 쌓이면 보여요')).toBeInTheDocument();
   });
 
   it('뒤로가기는 홈이 아니라 직전 화면인 관리자 대시보드로 돌아간다', async () => {
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await userEvent.click(await screen.findByRole('button', { name: '뒤로' }));
     expect(await screen.findByText('관리자', { selector: '.screen-title' })).toBeInTheDocument();
     expect(baseProps.onGoHome).not.toHaveBeenCalled();
@@ -318,22 +359,22 @@ describe('현황 추이 그래프', () => {
   it('지표 탭을 바꾸면 그 지표의 합계로 바뀌고, 막대를 가리키면 그 날의 값이 보인다', async () => {
     withData({ 1: { signups: 2, chatNotFound: 5 }, 0: { signups: 1 } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await screen.findByText('30일 신규 가입');
     expect(screen.getByText('3', { selector: '.admin-trend-total' })).toBeInTheDocument();
 
     await userEvent.hover(screen.getByRole('img', { name: '2026.10.11 (일) 2명' }));
     expect(screen.getByText('2026.10.11 (일) · 2명')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('tab', { name: '근거 못 찾음' }));
-    expect(await screen.findByText('30일 근거 못 찾음')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: '답 못 찾은 질문' }));
+    expect(await screen.findByText('30일 답 못 찾은 질문')).toBeInTheDocument();
     expect(screen.getByText('5', { selector: '.admin-trend-total' })).toBeInTheDocument();
   });
 
   it('기간 탭: 24시간은 1시간 단위, 1년은 선 그래프로 바뀌고 서버에 그 기간을 요청한다', async () => {
     withData({}, { '24h': { 3: { signups: 4 } }, '1y': { 0: { signups: 6 }, 1: { signups: 2 } } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await screen.findByText('30일 신규 가입');
 
     await userEvent.click(screen.getByRole('tab', { name: '24시간' }));
@@ -355,7 +396,7 @@ describe('현황 추이 그래프', () => {
   it('선 그래프는 포커스하면 마지막 날을 잡고 ←/→/Home/End로 날을 옮긴다', async () => {
     withData({}, { '1y': { 0: { signups: 6 }, 1: { signups: 2 } } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await userEvent.click(await screen.findByRole('tab', { name: '1년' }));
     const chart = await screen.findByRole('img', { name: '1년 신규 가입 일별 그래프' });
 
@@ -376,7 +417,7 @@ describe('현황 추이 그래프', () => {
   it('키보드로 막대에 포커스를 옮겨도 그 날의 값이 보이고, 벗어나면 요약으로 돌아간다', async () => {
     withData({ 4: { chatQuestions: 9 }, 3: { chatQuestions: 2 } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 챗봇 질문');
+    await openTrend('최근 24시간 챗봇 질문');
     const bar = await screen.findByRole('img', { name: '2026.10.09 (금) 2건' });
     fireEvent.focus(bar);
     expect(screen.getByText('2026.10.09 (금) · 2건')).toBeInTheDocument();
@@ -386,14 +427,14 @@ describe('현황 추이 그래프', () => {
 
   it('기록이 하나도 없으면 그렇게 알려 준다', async () => {
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 챗봇 질문');
+    await openTrend('최근 24시간 챗봇 질문');
     expect(await screen.findByText('이 기간에 기록된 건이 없어요.')).toBeInTheDocument();
   });
 
   it('표 보기에 날짜가 최신 순으로 나오고, 탈퇴 계정 기록이 빠질 수 있다는 안내가 있다', async () => {
     withData({ 0: { signups: 4 } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await screen.findByText('30일 신규 가입');
     const rows = within(screen.getByRole('table')).getAllByRole('row');
     expect(rows).toHaveLength(31); // 머리글 + 30일
@@ -405,12 +446,12 @@ describe('현황 추이 그래프', () => {
   it('한 번 본 기간은 다시 열 때 불러오는 동안에도 직전 그래프가 바로 보인다(기간별로 따로 기억)', async () => {
     withData({ 0: { signups: 6 } });
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     await screen.findByText('30일 신규 가입');
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
 
     api.getAdminStatsTrend.mockReturnValue(new Promise(() => {})); // 응답이 안 오는 상태
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     expect(screen.getByText('6', { selector: '.admin-trend-total' })).toBeInTheDocument();
     expect(screen.queryByLabelText('불러오는 중')).toBeNull();
 
@@ -421,14 +462,14 @@ describe('현황 추이 그래프', () => {
   it('처음 보는 기간은 불러오는 동안 자리표시가 보이고, 실패하면 오류 문구가 나온다', async () => {
     api.getAdminStatsTrend.mockReturnValue(new Promise(() => {}));
     const { unmount } = render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     expect(screen.getByLabelText('불러오는 중')).toBeInTheDocument();
     unmount();
 
     sessionStorage.clear();
     api.getAdminStatsTrend.mockRejectedValue(new Error('x'));
     render(<Admin {...baseProps} />);
-    await openTrend('24시간 신규 가입');
+    await openTrend('최근 24시간 신규 가입');
     expect(await screen.findByText(/추이를 불러오지 못했어요/)).toBeInTheDocument();
   });
 
@@ -438,7 +479,7 @@ describe('현황 추이 그래프', () => {
     sessionStorage.setItem('wku_cache_admin_trend_range', '"1y"');
     render(<Admin {...baseProps} />);
     expect(await screen.findByText('현황 추이', { selector: '.screen-title' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '근거 못 찾음' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '답 못 찾은 질문' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: '1년' })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => expect(api.getAdminStatsTrend).toHaveBeenCalledWith('1y'));
   });
@@ -552,5 +593,27 @@ describe('신고자에게 보낼 처리 안내', () => {
     await userEvent.type(note, '조치했어요.');
     await userEvent.click(screen.getByRole('button', { name: '제재 확정' }));
     await waitFor(() => expect(api.sanctionReport).toHaveBeenCalledWith(10, { scope: 'post_apply', duration: '7d', reason: NEUTRAL, resolutionNote: '조치했어요.' }));
+  });
+});
+
+describe('학과·학번별 사용자', () => {
+  it('학과별 가입자를 많은 순으로 보여주고, 5명 미만 학과는 이름 없이 기타로 묶어 보여준다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '학과·학번별 사용자' }));
+    expect(await screen.findByText('학과·학번별 사용자', { selector: '.screen-title' })).toBeInTheDocument();
+    expect(await screen.findByText('경영학부')).toBeInTheDocument();
+    expect(screen.getByText('20명 · 67%')).toBeInTheDocument();
+    expect(screen.getByText('기타 (5명 미만 학과 2곳)')).toBeInTheDocument();
+    expect(screen.getByText(/학과를 아직 고르지 않은 3명은 빠져 있어요/)).toBeInTheDocument();
+  });
+
+  it('학번별·최근 7일 방문자로 바꿔 볼 수 있다', async () => {
+    render(<Admin {...baseProps} />);
+    await userEvent.click(await screen.findByRole('button', { name: '학과·학번별 사용자' }));
+    await userEvent.click(await screen.findByRole('tab', { name: '학번별' }));
+    expect(screen.getByText('2022학번')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: '최근 7일 방문자' }));
+    expect(screen.getByText('학번별 최근 7일 방문자')).toBeInTheDocument();
+    expect(screen.getByText('6명 · 100%')).toBeInTheDocument();
   });
 });

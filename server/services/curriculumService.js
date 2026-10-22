@@ -143,8 +143,17 @@ async function findMentionedCourseNames(message, { departmentId, trackId } = {})
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const [rows] = await pool.query(`SELECT DISTINCT course_name FROM curriculum_courses ${where}`, params);
-  return rows.map((r) => r.course_name).filter((name) => message.includes(name));
+  // 학생은 "기업연계프로젝트는 언제 들어?"처럼 번호·괄호 없이 묻는다. 전체 이름만 맞추면 "기업연계프로젝트1(종합설계1)"을 못 찾아
+  // 챗봇이 개설 학기·학점이 "근거에 없다"고 답했다(2026-10-22 로컬 재현). 기본형도 맞추되, 짧은 기본형("영어")은 엉뚱한 질문에
+  // 걸리므로 MIN_BASE_NAME_LENGTH 이상만 쓴다.
+  return rows.map((r) => r.course_name).filter((name) => {
+    if (message.includes(name)) return true;
+    const base = stripCourseSuffix(name);
+    return base !== name && base.length >= MIN_BASE_NAME_LENGTH && message.includes(base);
+  });
 }
+
+const MIN_BASE_NAME_LENGTH = 5;
 
 // "기업연계프로젝트1(종합설계1)" → "기업연계프로젝트" — 번호/괄호를 뗀 기본형으로도 매칭되게
 // 한다. 졸업인증제 같은 min_course_count 요건은 과목이 1/2로 나뉘어 있어도 실제로는

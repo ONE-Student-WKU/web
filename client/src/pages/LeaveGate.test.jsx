@@ -55,7 +55,33 @@ describe('LeaveGate', () => {
     api.saveLeavePeriods.mockRejectedValue(Object.assign(new Error('x'), { code: 'LEAVE_BEFORE_ADMISSION' }));
     render(<LeaveGate user={USER} onSaved={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: /휴학한 적 있어요/ }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '시작 학년도' }), '2021');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '시작 학기' }), '1');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '휴학한 학기 수' }), '1');
     await userEvent.click(screen.getByRole('button', { name: '저장하고 계속하기' }));
     expect(await screen.findByText('입학(편입)하기 전 학기는 넣을 수 없어요.')).toBeInTheDocument();
+  });
+
+  it('기간 칸은 "–"로 비어 시작하고, 세 칸을 다 골라야 저장할 수 있으며, 고르면 언제부터 언제까지인지 풀어 보여 준다', async () => {
+    api.saveLeavePeriods.mockResolvedValue({});
+    render(<LeaveGate user={USER} onSaved={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: /휴학한 적 있어요/ }));
+    const save = screen.getByRole('button', { name: '저장하고 계속하기' });
+    expect(screen.getByRole('combobox', { name: '시작 학년도' })).toHaveValue('');
+    expect(save).toBeDisabled();
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '시작 학년도' }), '2023');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '시작 학기' }), '2');
+    expect(save).toBeDisabled();
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '휴학한 학기 수' }), '2');
+    expect(save).toBeEnabled();
+    expect(screen.getByText('2023학년도 2학기 ~ 2024학년도 1학기')).toBeInTheDocument();
+
+    // 두 번째 기간을 더하면 "1번째·2번째 휴학"으로 나뉘고, 새 기간을 다 고르기 전에는 다시 저장할 수 없다
+    await userEvent.click(screen.getByRole('button', { name: '+ 다른 휴학 기간 추가' }));
+    expect(screen.getByText('2번째 휴학')).toBeInTheDocument();
+    expect(save).toBeDisabled();
+    await userEvent.click(screen.getAllByRole('button', { name: '삭제' })[1]);
+    expect(save).toBeEnabled();
   });
 });

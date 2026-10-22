@@ -66,3 +66,15 @@ test('학과를 알면 다른 학과 과목명이 섞여도 자기 학과 결과
     );
   }
 });
+
+test('과목을 번호·괄호 없이 말해도(기업연계프로젝트) 그 과목들을 찾고, 짧은 기본형은 맞추지 않는다', async () => {
+  const names = await curriculumService.findMentionedCourseNames('기업연계프로젝트는 언제 들어야 하고 몇 학점이야?', { departmentId: dept1Id });
+  assert.ok(names.includes('기업연계프로젝트1(종합설계1)'), `기업연계프로젝트1을 찾아야 함 (실제: ${names.join(', ')})`);
+  assert.ok(names.includes('기업연계프로젝트2(종합설계2)'), `기업연계프로젝트2를 찾아야 함 (실제: ${names.join(', ')})`);
+  const [rows] = await pool.query('SELECT DISTINCT course_name FROM curriculum_courses WHERE department_id = ?', [dept1Id]);
+  const shortBase = rows.map((r) => r.course_name).find((n) => /\d$/.test(n) && n.replace(/\d+$/, '').length < 5);
+  if (shortBase) {
+    const base = shortBase.replace(/\d+$/, '');
+    assert.ok(!(await curriculumService.findMentionedCourseNames(`${base} 관련 질문`, { departmentId: dept1Id })).includes(shortBase));
+  }
+});

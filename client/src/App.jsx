@@ -23,6 +23,7 @@ import { resolveLayout, isLockedView } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
+import useClearClickCaret from './hooks/useClearClickCaret.js';
 import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
@@ -30,6 +31,8 @@ import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.js
 // 탭바가 보이는 화면. 하단 바 4칸은 사용자가 홈 화면 편집에서 고르므로(utils/homeLayout.js) 고른 화면(예: 문의하기)도 더한다.
 // 탭에 없는 화면(기본 배치의 과목 관리)은 탭바는 보이되 아무 탭도 강조되지 않는다. 하단 바를 끈 사용자(showTabBar=false)에게는 어디서도 보이지 않는다.
 const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', 'community'];
+// 화면 아래에 입력창(prompt-bar)이 있는 화면 — 챗봇 버튼만 띄우는 하단 바를 여기서는 그리지 않는다.
+const INPUT_BAR_VIEWS = ['chat', 'career'];
 
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 4칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
@@ -227,6 +230,8 @@ function App() {
   const textInputFocused = useTextInputFocused(view);
   // 홈 등에서 글자를 클릭해 둔 채 다른 화면으로 가면 그 자리의 커서가 허공에 남는 문제 방지.
   useClearStaleSelection(view);
+  // 입력 칸 밖에서 클릭으로 생긴 커서는 바로 지운다 — 바뀌지 않는 글자 위에서 커서가 깜빡이지 않게(2026-10-22 피드백).
+  useClearClickCaret();
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
@@ -307,10 +312,11 @@ function App() {
   const homeLayout = resolveLayout(user?.homeLayout);
   const layoutTabs = homeLayout.tabs;
   const tabPeers = tabPeerViews(user);
-  // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 채팅 화면에서는 입력창과 겹치므로 그리지 않는다.
+  // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 아래에 입력창이 있는 화면(채팅·진로 탐색)에서는
+  // 떠 있는 버튼이 입력창을 가리므로 그리지 않는다(진로 탐색은 2026-10-22 피드백).
   const chatOnly = layoutTabs.every((v) => !v);
   const tabBarVisible =
-    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && view === 'chat');
+    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && INPUT_BAR_VIEWS.includes(view));
 
   // 홈 메뉴·하단 바에서 화면을 연다. 학과를 고르지 않은 계정이 학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)을 누르면 학과 선택으로 보낸다.
   const openView = (next) => setView(isLockedView(next, user) ? 'onboarding' : next);
