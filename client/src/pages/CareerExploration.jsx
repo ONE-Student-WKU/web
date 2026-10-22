@@ -448,6 +448,8 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   const freeTurns = toChatMessages(messages).filter((m) => m.sender === 'user').length;
   const turnsLeft = Math.max(0, FIXED_QUESTIONS.length + MAX_FREE_TURNS - messages.filter((m) => m.role === 'user').length);
   const recommendReady = freeTurns >= READY_TURNS;
+  // 기능 사용 횟수에서 진로 추천을 몇 번째 대화에서 눌렀는지 본다(utils/track.js) — 10번부터는 한 칸으로 묶는다.
+  const recommendTrack = `career.recommend.turn_${freeTurns >= 10 ? '10plus' : freeTurns}`;
   const fixedAnswerChips = stage === 'chat' ? answerChips(parseFixedAnswersFromMessages(messages), t) : [];
 
   // 머리글 뒤로가기 — 질문은 이전 질문으로, 답변 수정·후보·로드맵은 대화로, 그 밖에는 홈으로 한 단계씩 돌아간다.
@@ -694,7 +696,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         (turnLimitReached ? (
           <div className="career-dock">
             <p className="career-dock-hint">{t('career.turnLimit')}</p>
-            <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates}>
+            <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates} data-track="career.recommend.limit">
               {t('career.recommend')}
             </button>
           </div>
@@ -714,7 +716,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                       : t('career.recommend.waitSub')}
                   </span>
                 </div>
-                <button type="button" className="career-recommend-btn" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates}>
+                <button type="button" className="career-recommend-btn" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates} data-track={recommendTrack}>
                   {recommendReady ? t('career.recommend') : t('career.recommend.now')}
                 </button>
               </div>
@@ -743,10 +745,10 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                 <p className="career-confirm-body">
                   {t('career.modal.body')}
                 </p>
-                <button className="auth-submit-btn" onClick={handleConfirmRecommend}>
+                <button className="auth-submit-btn" onClick={handleConfirmRecommend} data-track="career.recommend.confirm">
                   {t('career.modal.yes')}
                 </button>
-                <button className="career-confirm-cancel" onClick={() => setShowConfirmModal(false)}>
+                <button className="career-confirm-cancel" onClick={() => setShowConfirmModal(false)} data-track="career.recommend.cancel">
                   {t('career.modal.no')}
                 </button>
               </>

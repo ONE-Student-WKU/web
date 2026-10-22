@@ -39,6 +39,7 @@ export default {
   // Account menu
   'account.menu': 'Account menu',
   'account.menuNamed': '{name} · Account menu',
+  'account.adminPending': '{n} items to handle',
   'account.admin': 'Admin',
   'account.settings': 'Settings',
   'account.editDepartment': 'Edit department & student ID',
@@ -357,7 +358,7 @@ export default {
   'courses.mode.import': 'Bulk import',
   'courses.mode.hint': 'You can paste a PDF or text!',
   'courses.import.intro':
-    'To fill in grades at once, we recommend <b>전체성적조회 (Full Grade Inquiry)</b> — only courses and grades are imported; your name and student ID are not saved. If you only want to register courses without grades, you can also use <b>이수과목확인리스트 (Completed Course List)</b> (enter grades later).',
+    'To fill in grades at once, we recommend <b>전체성적조회 (Full Grade Inquiry)</b> — only courses and grades are imported. Your name and student ID are removed before the text is read by AI, and are never saved. If you only want to register courses without grades, you can also use <b>이수과목확인리스트 (Completed Course List)</b> (enter grades later).',
   'courses.import.method': 'Import method',
   'courses.import.pdf': 'Upload PDF',
   'courses.import.paste': 'Paste text',

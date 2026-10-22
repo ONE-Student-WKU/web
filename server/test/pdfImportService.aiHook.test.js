@@ -104,3 +104,13 @@ test('학생정보가 표 뒤에 섞여 붙여넣어져도 AI로 보내는 내�
   assert.ok(!sent.includes(FAKE_STUDENT_ID));
   assert.ok(!sent.includes(FAKE_STUDENT_NAME));
 });
+
+test('이수과목확인리스트도 표 머리글을 못 찾으면 학번·이름을 가린 뒤에만 AI로 보낸다', async () => {
+  // 머리글이 없어 앞부분 자르기가 안 되는 경우 — 학생정보 블록이 그대로 남는다
+  pdfText = `이수과목확인리스트\n학 번\t${FAKE_STUDENT_ID}\t성 명\t${FAKE_STUDENT_NAME}\n교필\t기초과목\t2024/1\t3.0`;
+  await parseCourseListPdf(Buffer.from(''), { beforeAiCall });
+  const sent = calls.find((c) => c.type === 'ai').content;
+  assert.ok(!sent.includes(FAKE_STUDENT_ID));
+  assert.ok(!sent.includes(FAKE_STUDENT_NAME));
+  assert.ok(sent.includes('기초과목\t2024/1\t3.0'));
+});

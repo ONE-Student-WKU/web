@@ -541,16 +541,17 @@ async function decideApplication(applicationId, authorId, status, reason = null)
 
 // 관리자 화면(4단계)이 작성자를 author_id 숫자로만 보여주면 누가 쓴 글인지 알아볼 수
 // 없어서, 학생용 목록(listApprovedPosts 등)과 동일하게 닉네임까지 조인해서 내려준다.
+// 모집 학과·마감일은 학생 상세 화면과 같은 값을 붙인다 — 승인할 때 "어느 학과를 언제까지" 모으는 글인지 같이 보려고.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, ${RECRUIT_DATE_COLUMNS}, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = ?
      ORDER BY p.created_at ASC`,
     [status]
   );
-  return rows.map((row) => ({
+  const posts = rows.map((row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -560,7 +561,9 @@ async function listPostsForAdmin(status) {
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
     rejectReason: row.reject_reason,
+    recruitEndDate: row.recruit_end_date,
   }));
+  return attachTargetDepartments(posts);
 }
 
 // status가 이미 'pending'이 아니면 아무 것도 안 바뀐다 — 이미 처리된 글을 다시
@@ -725,6 +728,8 @@ async function listReportsForAdmin(status) {
       resolvedAt: row.resolved_at,
       resolutionNote: row.resolution_note,
       targetType: row.target_type,
+      // 관리자 화면이 같은 글·신청에 들어온 신고를 한 줄로 묶는 기준(targetType + targetId).
+      targetId: row.target_id,
       // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
       // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
       reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
@@ -748,6 +753,17 @@ async function resolveReport(id, note = null) {
     [trimmed, id]
   );
   return result.affectedRows > 0;
+}
+
+// 같은 글·신청에 들어온 다른 대기 신고를 한 번에 처리완료로 바꾼다 — 관리자 신고함은 대상별로 묶어 보여주고 한 번에 처리하므로,
+// 하나만 처리하면 나머지가 대기로 남아 같은 글이 다시 뜬다. 신고자마다 같은 처리 안내를 받는다. 바뀐 건수를 돌려준다.
+async function resolvePendingReportsForTarget(targetType, targetId, note = null) {
+  const trimmed = typeof note === 'string' && note.trim() ? note.trim() : null;
+  const [result] = await pool.query(
+    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW(), resolution_note = ? WHERE target_type = ? AND target_id = ? AND status = 'pending'",
+    [trimmed, targetType, targetId]
+  );
+  return result.affectedRows;
 }
 
 // 신고자 본인의 신고 내역("내 신고 내역"). 신고 대상자·제재 여부는 내려주지 않는다 — 신고자에게는 "내가 무엇을 신고했고,
@@ -814,6 +830,7 @@ module.exports = {
   getReportById,
   listReportsForAdmin,
   resolveReport,
+  resolvePendingReportsForTarget,
   listMyReports,
   countUnseenReportResults,
   markMyReportResultsSeen,

@@ -59,6 +59,14 @@ export function IconChevronLeft({ size = 20 }) {
   );
 }
 
+export function IconChevronRight({ size = 20 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
 export function IconUser({ size = 14 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

@@ -23,7 +23,9 @@ const adminRoutes = require('./routes/admin');
 const communityRoutes = require('./routes/community');
 const emailRelayRoutes = require('./routes/emailRelay');
 const inquiriesRoutes = require('./routes/inquiries');
+const uiEventsRoutes = require('./routes/uiEvents');
 const { trackActivity } = require('./middleware/activityTracker');
+const { startVisitRollup } = require('./services/visitStatsService');
 const { securityHeaders, requireStringQuery } = require('./middleware/security');
 
 const app = express();
@@ -100,6 +102,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/email-relay', emailRelayRoutes);
 app.use('/api/inquiries', inquiriesRoutes);
+app.use('/api/ui-events', uiEventsRoutes);
 
 // Base Route
 app.get('/', (req, res) => {
@@ -131,6 +134,8 @@ app.use((err, req, res, next) => {
 // Server Initialization
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  // 14일이 지난 하루 방문 기록을 날짜별 합계로 옮긴다(개인정보처리방침의 보관 기간).
+  startVisitRollup();
 });
 
 module.exports = app;

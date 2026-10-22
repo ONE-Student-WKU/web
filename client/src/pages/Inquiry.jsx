@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createInquiry, getMyInquiries } from '../api/chatApi.js';
 import { IconChevronLeft, IconCheck, IconHelpCircle, IconPlus } from '../components/icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import { track } from '../utils/track.js';
 
 // 상태는 커뮤니티와 같은 점 + 글자(post-status)로 보여준다 — 답변 기다리는 중은 노랑, 답변 완료는 초록.
 const STATUS_TONE = { open: 'wait', resolved: 'ok' };
@@ -63,6 +64,7 @@ function Inquiry({ onGoHome }) {
     setError(null);
     try {
       await createInquiry(title.trim(), content.trim());
+      track('inquiry.sent');
       showToast(t('inquiry.toast.sent'));
       setTitle('');
       setContent('');

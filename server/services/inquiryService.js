@@ -37,9 +37,11 @@ async function listMyInquiries(studentId) {
 
 async function listInquiriesForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT i.id, i.title, i.content, i.status, i.created_at, i.resolved_at, i.resolution_note, s.name AS student_name, s.id AS student_id
+    `SELECT i.id, i.title, i.content, i.status, i.created_at, i.resolved_at, i.resolution_note, s.name AS student_name, s.id AS student_id,
+            s.admission_year, d.name AS department_name
      FROM inquiries i
      JOIN students s ON s.id = i.student_id
+     LEFT JOIN departments d ON d.id = s.department_id
      WHERE i.status = ?
      ORDER BY i.created_at ASC`,
     [status]
@@ -53,6 +55,9 @@ async function listInquiriesForAdmin(status) {
     resolvedAt: row.resolved_at,
     resolutionNote: row.resolution_note,
     student: nicknameOf(row.student_name, row.student_id),
+    // 졸업요건·과목 문의에 답하려면 학과·학번이 필요하다(관리자 문의 상세). 이메일 같은 다른 계정 정보는 내려주지 않는다.
+    department: row.department_name,
+    admissionYear: row.admission_year,
   }));
 }
 

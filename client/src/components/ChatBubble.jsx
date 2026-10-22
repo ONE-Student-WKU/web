@@ -26,7 +26,7 @@ function ChatBubble({ message }) {
       )}
       {citations.length > 0 && (
         <div className="message-citations">
-          <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)}>
+          <button type="button" className="citations-toggle" onClick={() => setShowCitations((v) => !v)} data-track={showCitations ? 'chat.citations.hide' : 'chat.citations.show'}>
             {showCitations ? t('chat.citationsHide') : t('chat.citationsMore')}
           </button>
           {/* 학생은 근거 문서를 읽으려는 게 아니라 답을 원해서, 출처는 작은 라벨로 접어 두고 펼쳐도 자료 제목만 보인다

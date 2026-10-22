@@ -33,14 +33,20 @@ test('각 지표를 알맞은 조건으로 세어 묶어서 돌려준다', async
     return [[{ count: n }]];
   });
 
-  const stats = await getDashboardStats();
+  const { last14d, ...stats } = await getDashboardStats();
   assert.deepEqual(stats, {
     activeSessions: 1,
     pending: { reports: 4, inquiries: 2, posts: 7 },
     last24h: { signups: 3, chatQuestions: 120, chatNotFound: 9, activeStudents: 15 },
-    last7d: { visitors: 40 },
+    // 그 전 24시간도 같은 표에서 센다(mock은 SQL 조각으로 골라 같은 값을 준다)
+    previous24h: { signups: 3, chatQuestions: 120, chatNotFound: 9 },
+    last7d: { visitors: 40, previousVisitors: 10 },
     weeklyReturn: { previous: 10, returned: 4 },
   });
+  assert.equal(last14d.daily.length, 14);
+  // 신고는 같은 글·신청에 들어온 신고를 한 건으로 세고, 어제 비교는 24~48시간 전 구간이다
+  assert.match(calls.find((c) => c.sql.includes('FROM community_reports')).sql, /COUNT\(DISTINCT target_type, target_id\)/);
+  assert.ok(calls.some((c) => c.sql.includes("role = 'user'") && /INTERVAL 48 HOUR AND created_at <= NOW\(\) - INTERVAL 24 HOUR/.test(c.sql)));
 
   // 처리 대기는 상태 값으로, 운영 지표는 24시간 구간으로 센다
   const sqlOf = (frag) => calls.find((c) => c.sql.includes(frag)).sql;
@@ -73,7 +79,7 @@ function mockTrendQueries({ students = [], user = [], notFound = [], visits = []
   mock.method(pool, 'query', async (sql, params) => {
     calls.push({ sql, params });
     if (sql.includes('MIN(created_at)')) return [[{ first: sql.includes('FROM students') ? firstStudent : firstMessage }]];
-    if (sql.includes('COUNT(DISTINCT student_id)')) return [[{ count: uniqueVisitors }]];
+    if (sql.includes('FROM student_activity')) return [[{ count: uniqueVisitors }]];
     if (sql.includes('FROM student_daily_visits')) return [visits];
     if (sql.includes('FROM students')) return [students];
     if (sql.includes("role = 'user'")) return [user];
@@ -185,7 +191,7 @@ test('허용된 range만 통과한다', () => {
 test('주간 재방문: 지난주(8~14일 전) 방문자 중 이번 주(최근 7일)에도 온 사람을 한국 날짜로 센다', async () => {
   let call;
   mock.method(pool, 'query', async (sql, params) => {
-    if (sql.includes('student_daily_visits')) {
+    if (sql.includes('HAVING MIN(visit_date)')) {
       call = { sql, params };
       return [[{ previous: '12', returned: null }]];
     }
@@ -208,7 +214,14 @@ test('7일 추이: 오늘까지 7일이고, 방문자는 하루 방문 기록으
   assert.equal(trend.points.find((p) => p.at === '2026-10-10').visitors, 3);
   assert.equal(trend.points[1].visitors, 0);
   assert.equal(trend.uniqueVisitors, 6);
-  for (const c of calls.filter((c) => c.sql.includes('student_daily_visits'))) assert.deepEqual(c.params, ['2026-10-07']);
+  // 날마다의 방문자는 최근 14일 기록과 그 전 날짜별 합계를 합치고, 기간 전체 방문자는 마지막 접속 시각으로 센다
+  const visitCalls = calls.filter((c) => c.sql.includes('student_daily_visits'));
+  for (const c of visitCalls) assert.match(c.sql, /UNION ALL SELECT visit_date, visitors FROM daily_visit_counts/);
+  // 지금 기간은 끝 없이, 바로 앞 7일은 지금 기간 첫날 전까지
+  assert.deepEqual(visitCalls.map((c) => c.params), [['2026-10-07', '2026-10-07'], ['2026-09-30', '2026-10-07', '2026-09-30', '2026-10-07']]);
+  assert.equal(trend.previous.points.length, 7);
+  assert.equal(trend.previous.points[0].at, '2026-09-30');
+  assert.deepEqual(calls.find((c) => c.sql.includes('FROM student_activity')).params, [Date.UTC(2026, 9, 7) / 1000 - 9 * 3600]);
 });
 
 test('학과·학번별 사용자: 5명 미만인 칸은 이름 없이 기타로 묶는다', () => {

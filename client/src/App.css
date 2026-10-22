@@ -2426,11 +2426,6 @@ body {
   cursor: not-allowed;
 }
 
-.community-act-accept {
-  background: var(--color-ink);
-  color: var(--color-ink-contrast);
-}
-
 .community-act-reject {
   background: var(--color-bg-card);
   color: var(--color-text-secondary);
@@ -4700,18 +4695,6 @@ button.settings-row {
 /* 관리자 페이지(이슈 #164 4단계) — community-act-btn/community-outline-btn/
    community-detail-meta/body 등은 위 커뮤니티 스타일을 그대로 재사용한다. */
 
-/* 관리자 신고함에서 신고 대상자 이름을 눌러 요약을 여는 링크형 버튼. */
-.admin-student-link {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .admin-sub-tabs {
   display: flex;
   gap: 6px;
@@ -4733,23 +4716,6 @@ button.settings-row {
   background: var(--color-bg-card);
   color: var(--color-text-primary);
   border-color: var(--color-text-muted);
-}
-
-.admin-post-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.admin-post-card {
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-frame);
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.admin-post-card.clickable {
-  cursor: pointer;
 }
 
 .admin-post-title {
@@ -4774,19 +4740,6 @@ button.settings-row {
   color: var(--color-danger);
 }
 
-.admin-reject-reason-input {
-  width: 100%;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  font-family: inherit;
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  resize: vertical;
-}
-
 .admin-stat-value {
   font-size: 2rem;
   font-weight: 800;
@@ -4797,77 +4750,11 @@ button.settings-row {
   color: var(--color-text-muted);
 }
 
-/* 관리자 홈 대시보드 — 학생 홈 화면의 이수학점 카드/메뉴 타일과 같은 구조.
-   admin-stat-value(카드 안 숫자)는 위에서 이미 정의됨(글자 크기만 재사용). */
-.admin-dashboard-stats {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 4px;
-  margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.admin-stat-cell {
-  padding: 14px;
-}
-
-.admin-stat-cell:nth-child(2n) {
-  border-left: 1px solid var(--color-border);
-}
-
-.admin-stat-cell:nth-child(n+3) {
-  border-top: 1px solid var(--color-border);
-}
-
 .admin-stat-label {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-text-muted);
   margin: 0 0 6px;
-}
-
-.admin-tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.admin-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 18px 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-  position: relative;
-}
-
-/* 처리 대기 건수 뱃지 — 신고함·문의함·커뮤니티 관리 타일 오른쪽 위에 빨간 원으로 붙는다(0건이면 그리지 않음). */
-.admin-tile-badge {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  box-sizing: border-box;
-  border-radius: 10px;
-  background: var(--color-alert);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  line-height: 20px;
-  text-align: center;
 }
 
 .courses-category-select {
@@ -5746,14 +5633,6 @@ select.onb-select {
   background: var(--color-danger, #e5484d);
   vertical-align: super;
 }
-.community-resolution-note {
-  margin: 8px 0 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--color-neutral-bg);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
 .community-badge-new { background: var(--color-danger, #e5484d); color: #fff; margin-left: 6px; }
 
 /* 학과 선택: 검색 진입 버튼(.search-entry) + 소속(단과대학) 트리 */
@@ -5801,31 +5680,6 @@ select.onb-select {
   margin: 8px 0 4px 10px;
 }
 
-/* 관리자 현황 칸 중 시간대별 추이로 이어지는 칸 — 일반 칸과 같은 모양의 버튼 */
-.admin-stat-cell--link {
-  width: 100%;
-  border: 0;
-  background: none;
-  font: inherit;
-  text-align: left;
-  color: inherit;
-  cursor: pointer;
-  /* 버튼은 내용이 세로 가운데로 가서, 옆 칸이 설명 줄로 높아지면 이름 줄이 어긋난다 — 일반 칸처럼 위에서부터 쌓는다. */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.admin-stat-cell--link:hover {
-  background: var(--color-accent-bg);
-}
-
-.admin-stat-link-hint {
-  font-weight: 600;
-  color: var(--color-accent);
-  white-space: nowrap;
-}
-
 /* 현황 추이 화면 — 지표 카드, 막대 그래프(TrendChart), 표 보기 */
 .admin-trend-card {
   background: var(--color-bg-card);
@@ -5834,52 +5688,10 @@ select.onb-select {
   padding: 14px;
 }
 
-/* 관리자 "학과·학번별 사용자" — 이름·인원 한 줄과 그 아래 막대. 줄 사이 구분선은 마지막 줄에는 두지 않아 카드 테두리와 겹치지 않는다. */
-.admin-composition-list {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-}
-
-.admin-composition-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 10px;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.admin-composition-row:last-child {
-  border-bottom: none;
-}
-
-.admin-composition-row .home-progress-track {
-  grid-column: 1 / -1;
-  height: 6px;
-}
-
+/* 관리자 통계 "학과·학번" 표의 학과·학번 이름(AdminCompositionView). */
 .admin-composition-name {
   font-size: 0.8125rem;
   color: var(--color-text-primary);
-}
-
-.admin-composition-row--other .admin-composition-name {
-  color: var(--color-text-muted);
-}
-
-.admin-composition-count {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-}
-
-/* 현황 칸 숫자 아래 작은 설명(예: 재방문율의 "지난주 12명 중 5명"). */
-.admin-stat-note {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
 }
 
 .admin-trend-total {
@@ -6031,4 +5843,1011 @@ select.onb-select {
   .trend-chart-bar {
     transition: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   관리자 화면 개편(2026-10-23) — 처리할 일 → 이용 현황 → 통계, 안쪽 화면은 학생 커뮤니티 개편과 같은 모양(글자 탭·줄 목록·상태 점).
+   목록에서는 보고 상세에서 처리하며, 처리 창은 아래에서 올라오는 시트(AdminSheet)라 내용이 길어도 버튼이 항상 보인다.
+   --------------------------------------------------------------------------- */
+.admin-page {
+  position: relative;
+}
+
+.courses-body.admin-body-flush {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-pad {
+  padding: 16px;
+}
+
+.admin-tabs {
+  position: static;
+}
+
+.admin-tab-count {
+  margin-left: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-danger);
+}
+
+/* 첫 화면 — 처리할 일·최근 24시간·관리 줄 목록 */
+.admin-list {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.admin-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-list-row:last-child {
+  border-bottom: none;
+}
+
+.admin-list-row:hover {
+  background: var(--color-bg-card);
+}
+
+.admin-list-row > svg:last-child {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.admin-list-icon {
+  display: flex;
+  color: var(--color-text-secondary);
+}
+
+.admin-list-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.admin-list-value {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-list-row.warn .admin-list-value {
+  color: var(--color-danger);
+}
+
+.admin-list-sub {
+  min-width: 64px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--color-alert);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-done svg {
+  color: var(--color-success);
+}
+
+/* 첫 화면 — 이용 현황 */
+.admin-hero {
+  display: block;
+  width: 100%;
+  padding: 16px 16px 12px;
+  border: none;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-hero-top .admin-stat-label {
+  margin: 0;
+}
+
+.admin-hero-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.admin-hero-num {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin: 6px 0 10px;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-hero-num b {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.admin-compare {
+  margin-left: 4px;
+  font-style: normal;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.admin-compare.up {
+  color: var(--color-success);
+}
+
+.admin-compare.warn {
+  color: var(--color-danger);
+}
+
+.admin-trend-total .admin-compare {
+  margin-left: 8px;
+}
+
+.admin-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 44px;
+}
+
+.admin-spark i {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+
+.admin-spark i.week {
+  background: color-mix(in srgb, var(--color-accent) 55%, var(--color-bg-card));
+}
+
+.admin-spark i.today {
+  background: var(--color-accent);
+}
+
+.admin-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.admin-mini > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--color-bg-card);
+}
+
+.admin-mini span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-mini b {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-mini small {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* 통계 */
+.admin-filter {
+  margin-bottom: 10px;
+}
+
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.admin-chips button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 15px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.admin-chips button.on {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+.trend-chart-prev {
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+
+.admin-legend {
+  display: flex;
+  gap: 14px;
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-legend i.bar {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.admin-legend i.bar.b {
+  background: var(--color-border-strong);
+}
+
+.admin-legend i.line {
+  width: 14px;
+  border-top: 2px dashed var(--color-text-muted);
+}
+
+.admin-card {
+  margin-bottom: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--color-bg-card);
+}
+
+.admin-card .admin-stat-label {
+  margin: 0 0 4px;
+}
+
+.admin-card-note {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.admin-card-note b {
+  color: var(--color-text-primary);
+}
+
+.admin-vs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-vs li {
+  display: grid;
+  grid-template-columns: 92px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-vs-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+}
+
+.admin-vs-bar i.a {
+  background: var(--color-accent);
+}
+
+.admin-vs-bar i.b {
+  background: var(--color-border-strong);
+}
+
+.admin-vs-n {
+  text-align: right;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.admin-hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 96px;
+  margin-top: 12px;
+}
+
+.admin-hist span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.admin-hist i {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--color-border-strong);
+}
+
+.admin-hist span.on i {
+  background: var(--color-accent);
+}
+
+.admin-hist em {
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.admin-group {
+  margin-bottom: 10px;
+  padding: 4px 14px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.admin-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.admin-group-head:disabled {
+  cursor: default;
+}
+
+.admin-group-head span {
+  flex: 1;
+  text-align: left;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.admin-group-head b {
+  font-size: 0.875rem;
+}
+
+.admin-group-head svg {
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+
+.admin-group-head[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.admin-feature-row {
+  display: grid;
+  grid-template-columns: 1fr 64px 84px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  font-size: 0.8125rem;
+}
+
+.admin-feature-name {
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.admin-feature-bar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-neutral-bg);
+}
+
+.admin-feature-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-accent);
+}
+
+.admin-feature-n {
+  text-align: right;
+  line-height: 1.3;
+  color: var(--color-text-secondary);
+}
+
+.admin-feature-n b {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.admin-feature-n small {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.admin-composition-total {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-composition-total b {
+  font-size: 1.125rem;
+  color: var(--color-text-primary);
+}
+
+.admin-composition-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-composition-table th,
+.admin-composition-table td {
+  padding: 9px 0;
+  border-top: 1px solid var(--color-border);
+  text-align: left;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.admin-composition-table thead th {
+  padding-top: 0;
+  border-top: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.admin-composition-table tbody th {
+  padding-right: 12px;
+}
+
+.admin-composition-table tbody th .admin-composition-name {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.admin-composition-table .num {
+  width: 84px;
+  text-align: right;
+  line-height: 1.35;
+}
+
+.admin-composition-table .num small {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.admin-composition-table tr.other .admin-composition-name {
+  color: var(--color-text-muted);
+}
+
+/* 안쪽 화면 — 줄 목록·상세 */
+.admin-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-row {
+  gap: 4px;
+}
+
+.admin-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-row-top .post-meta {
+  margin-left: auto;
+}
+
+.admin-detail {
+  flex: 1;
+  padding: 16px 16px 20px;
+  overflow-y: auto;
+}
+
+.admin-detail-title {
+  margin: 4px 0 12px;
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.admin-detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  margin-top: 4px;
+  padding: 0;
+}
+
+.admin-section {
+  display: block;
+  margin: 20px 0 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.admin-section.first {
+  margin-top: 0;
+}
+
+.admin-section small {
+  margin-left: 6px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.admin-body {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-body--lead {
+  margin-top: 14px;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+.admin-note-line {
+  margin-top: 10px;
+}
+
+.admin-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-reasons li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-reasons b {
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-reasons span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.admin-person {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--color-bg-card);
+}
+
+.admin-person-top {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-person-top b {
+  font-size: 0.9375rem;
+}
+
+.admin-person-top span {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-person-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 12px;
+  margin: 12px 0 0;
+}
+
+.admin-person-stats dt {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.admin-person-stats dd {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.admin-person-sanctions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 12px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-person-sanctions li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-dock {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-frame);
+}
+
+.admin-dock .post-btn {
+  flex: 1;
+}
+
+.admin-textarea {
+  resize: vertical;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-actions.left {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+.admin-post {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-post:first-child {
+  padding-top: 0;
+}
+
+.admin-post-heading {
+  margin: 6px 0 4px;
+}
+
+.admin-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--color-bg-card);
+}
+
+.admin-facts dt {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.admin-facts dd {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.admin-reject {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+}
+
+.admin-reject .admin-actions {
+  margin-top: 8px;
+}
+
+.admin-more {
+  position: relative;
+}
+
+.admin-more-btn {
+  display: flex;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.admin-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-bg-card);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.admin-confirm b {
+  color: var(--color-text-primary);
+}
+
+.admin-confirm .admin-actions {
+  margin-top: 4px;
+}
+
+/* 처리 시트 */
+.admin-sheet-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.admin-sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 90%;
+  border-radius: 18px 18px 0 0;
+  background: var(--color-bg-frame);
+}
+
+.admin-sheet-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px 10px;
+}
+
+.admin-sheet-head b {
+  font-size: 1rem;
+}
+
+.admin-sheet-head .post-btn {
+  height: 30px;
+  padding: 0 4px;
+}
+
+.admin-sheet-grip {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  margin-left: -18px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+
+.admin-sheet-body {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 16px 12px;
+  overflow-y: auto;
+}
+
+.admin-sheet-foot {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-sheet-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-sheet-warn {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+}
+
+.admin-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.admin-choice button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.admin-choice button b {
+  font-size: 0.875rem;
+}
+
+.admin-choice button span {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.admin-choice button.on {
+  padding: 11px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-neutral-bg);
+}
+
+.admin-seg-full {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-seg-full button {
+  flex: 1;
+}
+
+/* 계정 메뉴 — 관리자 처리할 일 */
+.account-avatar-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--color-bg-frame);
+  border-radius: 50%;
+  background: var(--color-alert);
+  pointer-events: none;
+}
+
+.account-menu-item-admin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.account-menu-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--color-alert);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
 }

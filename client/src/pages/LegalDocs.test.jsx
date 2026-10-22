@@ -37,9 +37,19 @@ describe('개인정보처리방침', () => {
     for (const item of ['커뮤니티 글', '문의하기', '성적 등급', '동의한 시각']) expect(text, item).toContain(item);
   });
 
+  // 코드와 어긋나지 않게: 성적표는 이름·학번을 지운 글자만 AI로 보내고(server/services/pdfImportService.js),
+  // 접속한 날짜는 14일만 두며(visitStatsService.js), 기능 사용 횟수는 누가 썼는지 없이 센다(uiEventService.js).
+  it('성적표 가져오기의 AI 전송 범위, 접속 날짜 보관 기간, 기능 사용 횟수를 적어 두었다', () => {
+    const { container } = render(<PrivacyPolicy onGoBack={() => {}} />);
+    const text = container.textContent.replace(/\s+/g, ' ');
+    for (const item of ['이름과 학번은 지운 뒤에 보냅니다', 'PDF 파일 자체는 보내지 않습니다', '최근 14일만 보관', '누가 썼는지와 쓴 시각', '각 사업자의 정책에 따라']) {
+      expect(text, item).toContain(item);
+    }
+  });
+
   it('개인정보 보호책임자와 시행일이 있다', () => {
     render(<PrivacyPolicy onGoBack={() => {}} />);
-    expect(screen.getByText(/시행일: 2026년 10월 17일/)).toBeInTheDocument();
+    expect(screen.getByText(/시행일: 2026년 10월 23일/)).toBeInTheDocument();
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);
   });
 });
@@ -56,7 +66,7 @@ describe('이용약관', () => {
     const { container } = render(<TermsOfService onGoBack={() => {}} />);
     const text = container.textContent;
     expect(text).not.toContain('Google 계정으로 로그인해야 합니다');
-    for (const item of ['이메일 인증코드', '커뮤니티 이용 규칙', '신고', '이용 정지', 'AI가 만들기', '추정']) {
+    for (const item of ['이메일 인증코드', '커뮤니티 이용 규칙', '신고', '이용 정지', 'AI가 만들기', '추정', '본인의 성적표만']) {
       expect(text, item).toContain(item);
     }
   });

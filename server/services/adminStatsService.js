@@ -12,6 +12,8 @@ const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('./chatConstants');
  *   · chatNotFound: 근거 문서를 못 찾아 고정 안내로만 답한 횟수 — 규정 문서가 모자란 곳을 찾는 신호.
  *   · activeStudents: 최근 24시간 안에 요청이 있었던 계정 수(student_activity).
  *   · signups: 최근 24시간 신규 가입 수.
+ * - previous24h: 그 전 24시간(24~48시간 전)의 같은 지표 — 첫 화면에서 "어제"와 비교한다.
+ * - last14d: 최근 14일(오늘 포함) 날마다의 방문자 수와 방문 기록이 시작된 날 — 첫 화면의 작은 막대와 "지난주보다" 비교에 쓴다.
  */
 async function count(sql, params = []) {
   const [[row]] = await pool.query(sql, params);
@@ -41,23 +43,63 @@ async function getWeeklyReturn(now = Date.now()) {
   return { previous: Number(row.previous), returned: Number(row.returned) };
 }
 
+/**
+ * 처리할 일 건수 — 대시보드 뱃지와 계정 메뉴의 빨간 점(GET /api/admin/pending). 신고는 같은 글·신청에 들어온 신고를 한 건으로 센다
+ * (관리자 신고함이 대상별로 묶어 보여주고 한 번에 처리한다).
+ */
+async function getPendingCounts() {
+  const [reports, inquiries, posts] = await Promise.all([
+    count("SELECT COUNT(DISTINCT target_type, target_id) AS count FROM community_reports WHERE status = 'pending'"),
+    count("SELECT COUNT(*) AS count FROM inquiries WHERE status = 'open'"),
+    count("SELECT COUNT(*) AS count FROM community_posts WHERE status = 'pending'"),
+  ]);
+  return { reports, inquiries, posts, total: reports + inquiries + posts };
+}
+
+// 날마다의 방문자 수(한국 날짜 → 명) — 최근 14일은 학생별 기록을 세고, 그 전은 날짜별 합계를 더한다(visitStatsService.js).
+// endDate(제외)를 주면 그 전날까지만 센다. 열쇠는 1970-01-01부터 센 날 수(일 단위 구간 인덱스)다.
+async function dailyVisitors(startDate, endDate = null) {
+  const upper = endDate ? ' AND visit_date < ?' : '';
+  const [rows] = await pool.query(
+    `SELECT DATEDIFF(visit_date, '1970-01-01') AS bucket, SUM(visitors) AS count
+     FROM (SELECT visit_date, COUNT(*) AS visitors FROM student_daily_visits WHERE visit_date >= ?${upper} GROUP BY visit_date
+           UNION ALL SELECT visit_date, visitors FROM daily_visit_counts WHERE visit_date >= ?${upper}) v
+     GROUP BY bucket`,
+    endDate ? [startDate, endDate, startDate, endDate] : [startDate, startDate]
+  );
+  return new Map(rows.map((row) => [Number(row.bucket), Number(row.count)]));
+}
+
+// 방문 기록이 시작된 날(한국 날짜, 기록이 없으면 null) — "지난주보다" 비교는 지난주가 다 기록된 뒤에만 보여준다.
+async function firstVisitDate() {
+  const [[row]] = await pool.query(
+    `SELECT DATE_FORMAT(LEAST(COALESCE((SELECT MIN(visit_date) FROM student_daily_visits), '9999-12-31'),
+                              COALESCE((SELECT MIN(visit_date) FROM daily_visit_counts), '9999-12-31')), '%Y-%m-%d') AS first`
+  );
+  return row?.first && row.first !== '9999-12-31' ? row.first : null;
+}
+
+const PREVIOUS_24H = 'created_at > NOW() - INTERVAL 48 HOUR AND created_at <= NOW() - INTERVAL 24 HOUR';
+
 async function getDashboardStats(now = Date.now()) {
+  const last14Start = kstDateOffset(now, -13);
   const [
     activeSessions,
-    pendingReports,
-    pendingInquiries,
-    pendingPosts,
+    pending,
     signups,
     chatQuestions,
     chatNotFound,
     activeStudents,
     visitors7d,
     weeklyReturn,
+    prevSignups,
+    prevChatQuestions,
+    prevChatNotFound,
+    visitsByDay,
+    visitsSince,
   ] = await Promise.all([
     count('SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at > NOW() - INTERVAL 5 MINUTE'),
-    count("SELECT COUNT(*) AS count FROM community_reports WHERE status = 'pending'"),
-    count("SELECT COUNT(*) AS count FROM inquiries WHERE status = 'open'"),
-    count("SELECT COUNT(*) AS count FROM community_posts WHERE status = 'pending'"),
+    getPendingCounts(),
     count('SELECT COUNT(*) AS count FROM students WHERE created_at > NOW() - INTERVAL 24 HOUR'),
     count("SELECT COUNT(*) AS count FROM chat_messages WHERE role = 'user' AND created_at > NOW() - INTERVAL 24 HOUR"),
     count(
@@ -68,13 +110,27 @@ async function getDashboardStats(now = Date.now()) {
     // 최근 7일 방문자는 마지막 접속 시각으로도 셀 수 있어(7일 안에 한 번이라도 왔으면 마지막 접속도 7일 안이다) 방문 기록 표가 없던 기간도 맞다.
     count('SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at > NOW() - INTERVAL 7 DAY'),
     getWeeklyReturn(now),
+    count(`SELECT COUNT(*) AS count FROM students WHERE ${PREVIOUS_24H}`),
+    count(`SELECT COUNT(*) AS count FROM chat_messages WHERE role = 'user' AND ${PREVIOUS_24H}`),
+    count(`SELECT COUNT(*) AS count FROM chat_messages WHERE role = 'assistant' AND content IN (?, ?) AND ${PREVIOUS_24H}`, [NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN]),
+    dailyVisitors(last14Start),
+    firstVisitDate(),
   ]);
+
+  const startIndex = Math.floor((Math.floor(now / 1000) + KST_OFFSET_SECONDS) / DAY_SECONDS) - 13;
+  const daily = Array.from({ length: 14 }, (_, i) => ({
+    at: new Date((startIndex + i) * DAY_SECONDS * 1000).toISOString().slice(0, 10),
+    visitors: visitsByDay.get(startIndex + i) ?? 0,
+  }));
 
   return {
     activeSessions,
-    pending: { reports: pendingReports, inquiries: pendingInquiries, posts: pendingPosts },
+    pending: { reports: pending.reports, inquiries: pending.inquiries, posts: pending.posts },
     last24h: { signups, chatQuestions, chatNotFound, activeStudents },
-    last7d: { visitors: visitors7d },
+    previous24h: { signups: prevSignups, chatQuestions: prevChatQuestions, chatNotFound: prevChatNotFound },
+    // previousVisitors: 지난주(8~14일 전) 한 번 이상 온 사람 수(재방문율의 분모와 같다). 방문 기록이 지난주를 다 덮을 때만 의미가 있다.
+    last7d: { visitors: visitors7d, previousVisitors: weeklyReturn.previous },
+    last14d: { daily, since: visitsSince },
     weeklyReturn,
   };
 }
@@ -113,8 +169,10 @@ async function firstRecordEpoch() {
  * - 모두 오래된 순이고, 기록이 없는 구간은 0이다. 구간 경계는 에포크 초를 단위로 나눠 구해서 DB 서버의 시간대와 무관하다(일 단위는 KST 기준).
  * - 점의 at: 시간 단위면 구간 시작 시각(ISO), 일 단위면 한국 날짜 'YYYY-MM-DD'.
  * - 한계: 탈퇴한 계정의 가입·챗봇 기록은 계정과 함께 지워지므로 과거 값에서 빠진다.
- * - 방문자(visitors)는 하루 방문 기록(student_daily_visits)으로 일 단위 구간에서만 센다 — 시간대별 기록은 없어 24h는 null이다.
- *   uniqueVisitors는 기간 동안 한 번 이상 온 사람 수(날마다의 방문자를 더하면 같은 사람이 여러 번 세진다).
+ * - 방문자(visitors)는 하루 방문 기록으로 일 단위 구간에서만 센다 — 최근 14일은 student_daily_visits, 그 전은 날짜별 합계
+ *   daily_visit_counts(services/visitStatsService.js). 시간대별 기록은 없어 24h는 null이다.
+ * - previous: 바로 앞 같은 길이 기간의 points(전체는 null) — 화면이 옅은 선과 "그 전 기간보다" 비교로 쓴다.
+ *   uniqueVisitors는 기간 동안 한 번 이상 온 사람 수(날마다의 방문자를 더하면 같은 사람이 여러 번 세진다) — 마지막 접속 시각(student_activity)으로 센다.
  * now는 테스트에서 시각을 고정하려고 받는다(밀리초).
  */
 async function getTrend(range, now = Date.now()) {
@@ -133,44 +191,52 @@ async function getTrend(range, now = Date.now()) {
   const startIndex = endIndex - (bucketCount - 1);
   const startEpoch = startIndex * unitSeconds - offset;
 
-  const byBucket = async (sql, params = []) => {
-    const [rows] = await pool.query(sql, [...params, startEpoch]);
-    return new Map(rows.map((row) => [Number(row.bucket), Number(row.count)]));
-  };
-  const bucketed = (table, column, extraWhere = '') =>
-    `SELECT (UNIX_TIMESTAMP(${column}) + ${offset}) DIV ${unitSeconds} AS bucket, COUNT(*) AS count
-     FROM ${table} WHERE ${extraWhere}${column} >= FROM_UNIXTIME(?) GROUP BY bucket`;
-
-  // 하루 방문은 한국 날짜로 저장돼 있어, 날짜를 1970-01-01부터 센 날 수가 곧 일 단위 구간 인덱스다.
-  const startDate = new Date(startIndex * DAY_SECONDS * 1000).toISOString().slice(0, 10);
   const daily = unit === 'day';
-  const [signups, chatQuestions, chatNotFound, visitors, uniqueVisitors] = await Promise.all([
-    byBucket(bucketed('students', 'created_at')),
-    byBucket(bucketed('chat_messages', 'created_at', "role = 'user' AND ")),
-    byBucket(bucketed('chat_messages', 'created_at', "role = 'assistant' AND content IN (?, ?) AND "), [NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN]),
+  const epochOf = (index) => index * unitSeconds - offset;
+  // 하루 방문은 한국 날짜로 저장돼 있어, 날짜를 1970-01-01부터 센 날 수가 곧 일 단위 구간 인덱스다.
+  const dateOf = (index) => new Date(index * DAY_SECONDS * 1000).toISOString().slice(0, 10);
+
+  // fromIndex부터(포함) toIndex 전까지(제외, null이면 끝 없음) 구간별 값. 지금 기간과 바로 앞 기간을 같은 쿼리로 센다.
+  const collect = async (fromIndex, toIndex = null) => {
+    const bounds = toIndex === null ? [epochOf(fromIndex)] : [epochOf(fromIndex), epochOf(toIndex)];
+    const byBucket = async (sql, params = []) => {
+      const [rows] = await pool.query(sql, [...params, ...bounds]);
+      return new Map(rows.map((row) => [Number(row.bucket), Number(row.count)]));
+    };
+    const bucketed = (table, column, extraWhere = '') =>
+      `SELECT (UNIX_TIMESTAMP(${column}) + ${offset}) DIV ${unitSeconds} AS bucket, COUNT(*) AS count
+       FROM ${table} WHERE ${extraWhere}${column} >= FROM_UNIXTIME(?)${toIndex === null ? '' : ` AND ${column} < FROM_UNIXTIME(?)`} GROUP BY bucket`;
+    const [signups, chatQuestions, chatNotFound, visitors] = await Promise.all([
+      byBucket(bucketed('students', 'created_at')),
+      byBucket(bucketed('chat_messages', 'created_at', "role = 'user' AND ")),
+      byBucket(bucketed('chat_messages', 'created_at', "role = 'assistant' AND content IN (?, ?) AND "), [NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN]),
+      daily ? dailyVisitors(dateOf(fromIndex), toIndex === null ? null : dateOf(toIndex)) : null,
+    ]);
+    const points = [];
+    for (let index = fromIndex; index < fromIndex + bucketCount; index += 1) {
+      // 일 단위 인덱스는 KST로 민 에포크라, UTC로 읽으면 그대로 한국 날짜가 된다.
+      const at = unit === 'hour' ? new Date(index * unitSeconds * 1000).toISOString() : dateOf(index);
+      points.push({
+        at,
+        signups: signups.get(index) ?? 0,
+        chatQuestions: chatQuestions.get(index) ?? 0,
+        chatNotFound: chatNotFound.get(index) ?? 0,
+        visitors: visitors ? visitors.get(index) ?? 0 : null,
+      });
+    }
+    return points;
+  };
+
+  // 바로 앞 기간(같은 길이)은 "그 전 30일보다" 비교와 옅은 선에 쓴다. 전체(all)는 앞 기간이 없다.
+  const [points, previousPoints, uniqueVisitors] = await Promise.all([
+    collect(startIndex),
+    range === 'all' ? null : collect(startIndex - bucketCount, startIndex),
+    // 기간 동안 한 번 이상 온 사람 = 마지막 접속이 기간 시작 뒤인 사람(학생별 방문 기록은 14일만 남아 긴 기간은 이걸로 센다).
     daily
-      ? pool
-        .query("SELECT DATEDIFF(visit_date, '1970-01-01') AS bucket, COUNT(*) AS count FROM student_daily_visits WHERE visit_date >= ? GROUP BY bucket", [startDate])
-        .then(([rows]) => new Map(rows.map((row) => [Number(row.bucket), Number(row.count)])))
-      : null,
-    daily
-      ? pool.query('SELECT COUNT(DISTINCT student_id) AS count FROM student_daily_visits WHERE visit_date >= ?', [startDate]).then(([[row]]) => Number(row?.count ?? 0))
+      ? pool.query('SELECT COUNT(*) AS count FROM student_activity WHERE last_seen_at >= FROM_UNIXTIME(?)', [startEpoch]).then(([[row]]) => Number(row?.count ?? 0))
       : null,
   ]);
-
-  const points = [];
-  for (let index = startIndex; index <= endIndex; index += 1) {
-    // 일 단위 인덱스는 KST로 민 에포크라, UTC로 읽으면 그대로 한국 날짜가 된다.
-    const at = unit === 'hour' ? new Date(index * unitSeconds * 1000).toISOString() : new Date(index * unitSeconds * 1000).toISOString().slice(0, 10);
-    points.push({
-      at,
-      signups: signups.get(index) ?? 0,
-      chatQuestions: chatQuestions.get(index) ?? 0,
-      chatNotFound: chatNotFound.get(index) ?? 0,
-      visitors: visitors ? visitors.get(index) ?? 0 : null,
-    });
-  }
-  return { range, unit, generatedAt: new Date(now).toISOString(), points, uniqueVisitors };
+  return { range, unit, generatedAt: new Date(now).toISOString(), points, previous: previousPoints ? { points: previousPoints } : null, uniqueVisitors };
 }
 
 // 학과·학번별 사용자에서 이 인원보다 적은 칸은 "기타"로 묶는다 — 학과·학번만으로 누가 쓰는지 짐작되지 않게(서버에서 묶어 작은 숫자를 내려보내지 않는다).
@@ -216,4 +282,4 @@ async function getComposition() {
   };
 }
 
-module.exports = { getDashboardStats, getTrend, isTrendRange, getComposition, groupSmall };
+module.exports = { getDashboardStats, getPendingCounts, getTrend, isTrendRange, getComposition, groupSmall, kstDateOffset };
