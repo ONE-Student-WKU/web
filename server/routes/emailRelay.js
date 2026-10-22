@@ -32,6 +32,10 @@ router.post('/inbound', async (req, res, next) => {
       // Resend가 실패로 보고 재시도하지 않도록 200으로 응답한다.
       return res.status(200).json({ status: 200, code: 'PROXY_NOT_FOUND', message: null, data: null });
     }
+    if (target.blocked) {
+      // 연락을 차단한 매칭이거나 보내는 사람이 제재 중이면 전달하지 않는다. 재시도해도 결과가 같아 200으로 끝낸다.
+      return res.status(200).json({ status: 200, code: target.blocked, message: null, data: null });
+    }
 
     // 첨부 개수·크기·다운로드 시간 한도(emailRelayService.RELAY_LIMITS)가 이 응답이 늦어지는 상한을
     // 정한다. 다운로드 실패 등으로 예외가 나면 500으로 응답해 Resend가 재시도하게 두고, 재시도로

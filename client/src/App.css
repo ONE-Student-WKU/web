@@ -2610,6 +2610,33 @@ body {
   color: var(--color-text-primary);
 }
 
+/* 연락 주소 설명 — 연결용 주소가 오류처럼 보이지 않게 바로 아래에 작게 붙인다. */
+.contact-relay-hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.contact-block-link {
+  margin-top: 6px;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.contact-blocked-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
 .community-reject-message {
   margin-top: 8px;
   padding: 8px 10px;

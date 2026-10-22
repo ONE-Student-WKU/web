@@ -179,6 +179,9 @@ export const acceptCommunityApplication = (id) =>
 export const rejectCommunityApplication = (id, reason) =>
   apiRequest(`/community/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
 
+// 수락된 매칭의 연락 차단(글쓴이·신청자 누구든) — 그 매칭의 중계 메일이 양쪽 모두 더 이상 전달되지 않는다. 되돌릴 수 없다.
+export const blockCommunityContact = (id) => apiRequest(`/community/applications/${id}/block-contact`, { method: 'POST' });
+
 export const reportCommunityPost = (id, reason) =>
   apiRequest(`/community/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) });
 
