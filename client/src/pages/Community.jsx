@@ -19,7 +19,8 @@ import {
   getMyReports,
   markMyReportsSeen,
   getNotices,
-  markNoticesSeen,
+  markNoticeRead,
+  markAllNoticesRead,
   blockCommunityContact,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
@@ -28,8 +29,9 @@ import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
 import CommunityNotices, { NoticePin } from '../components/CommunityNotices.jsx';
 import { ContactBox, ContactBlockedNote, BlockContactDialog } from '../components/ContactRelay.jsx';
 import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
+import MoreMenu from '../components/MoreMenu.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
-import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch, IconMore } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import { track } from '../utils/track.js';
@@ -232,57 +234,6 @@ function formatDay(dateStr, t) {
 }
 
 /**
- * "⋯" 메뉴 — 자주 쓰지 않는 동작(신고·수정·마감·삭제)을 접어 둔다. 바깥을 누르거나 Esc를 누르면 닫힌다.
- * items: [{ label, onClick, disabled?, danger?, hint? }] — hint는 막힌 이유(예: 신청자가 있어야 마감 가능)를 항목 아래에 보여준다.
- */
-function MoreMenu({ items }) {
-  const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (e) => {
-      if (e.type === 'keydown' ? e.key === 'Escape' : !rootRef.current?.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', close);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', close);
-    };
-  }, [open]);
-  if (items.length === 0) return null;
-  return (
-    <div className="more-menu" ref={rootRef}>
-      <button type="button" className="more-menu-btn" aria-label={t('community.more')} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <IconMore />
-      </button>
-      {open && (
-        <div className="more-menu-list" role="menu">
-          {items.map((item) => (
-            <React.Fragment key={item.label}>
-              <button
-                type="button"
-                role="menuitem"
-                className={item.danger ? 'danger' : ''}
-                disabled={item.disabled}
-                onClick={() => {
-                  setOpen(false);
-                  item.onClick();
-                }}
-              >
-                {item.label}
-              </button>
-              {item.hint && <p className="more-menu-hint">{item.hint}</p>}
-            </React.Fragment>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
  * Community Page
  * 커뮤니티(스터디/프로젝트 모집) 게시판 — 2단계(글쓰기+목록/상세) + 3단계(신청+수락/반려+
  * 모집마감+수정/삭제). 관리자 승인 화면은 아직 없음(4단계) — 승인/반려는 서버 API를
@@ -298,7 +249,7 @@ function MoreMenu({ items }) {
  * - initialPostId: number (선택) — 관리자 신고함의 "그 글로 이동"에서 넘어온 글 id.
  *   마운트 시 1회 해당 글을 열고 onInitialPostConsumed로 소비했음을 알린다.
  * - onInitialPostConsumed: function (선택)
- * - onUnseenNoticesChange: function (선택) — 공지 목록을 열어 새 공지를 다 봤을 때 0을 알린다(App의 커뮤니티 점).
+ * - onUnseenNoticesChange: function (선택) — 공지를 읽을 때마다 남은 안 읽은 공지 수를 알린다(App의 커뮤니티 점).
  * - onFocusModeChange: function (선택) — 글 상세·글쓰기를 열고 닫을 때 true/false. 화면 아래에 붙는 신청·등록 버튼을
  *   떠 있는 채팅 버튼이 가리지 않게 App이 아래 탭바를 숨긴다.
  */
@@ -352,7 +303,7 @@ function Community({
   // 거절 메시지 칸을 연 신청 id — 거절을 한 번 누르면 메시지(선택)를 적고 확정한다.
   const [rejectOpenId, setRejectOpenId] = useState(null);
 
-  // 공지(운영자 글, 읽기 전용). notices는 전체 글 탭 맨 위 고정 줄과 공지 목록에 같이 쓴다. noticeView가 있으면 공지 화면을 보는 중이다
+  // 공지(운영팀 글, 읽기 전용). notices는 전체 글 탭 맨 위 고정 줄과 공지 목록에 같이 쓴다. noticeView가 있으면 공지 화면을 보는 중이다
   // ({ mode: 'list' | 'detail' | 'write', notice }).
   const [notices, setNotices] = useState(null);
   const [noticeView, setNoticeView] = useState(null);
@@ -363,13 +314,24 @@ function Community({
   useEffect(() => {
     loadNotices();
   }, []);
-  // 공지 목록을 열면 본 것으로 기록해 커뮤니티의 새 공지 점을 지운다(목록의 "새 공지" 표시는 열기 전에 받은 값이라 이번에는 남는다).
-  useEffect(() => {
-    if (noticeView?.mode !== 'list' || !notices?.some((n) => n.isNew)) return;
-    markNoticesSeen()
-      .then(() => onUnseenNoticesChange?.(0))
-      .catch(() => {});
-  }, [noticeView?.mode, notices, onUnseenNoticesChange]);
+  // 공지는 상세를 열어야 읽은 것이 된다(목록을 여는 것만으로는 아니다 — 2026-10-23). 화면은 바로 고치고 기록은 뒤에서 보낸다
+  // (기록이 실패해도 다음에 목록을 다시 받으면 서버 값으로 맞춰진다). 남은 안 읽은 공지 수로 App의 커뮤니티 점을 고친다.
+  const markNoticesLocally = (isRead) => {
+    const next = (notices || []).map((n) => (isRead(n) ? { ...n, isNew: false } : n));
+    setNotices(next);
+    onUnseenNoticesChange?.(next.filter((n) => n.isNew).length);
+  };
+  const openNotice = (notice) => {
+    setNoticeView({ mode: 'detail', notice });
+    if (!notice.isNew) return;
+    markNoticesLocally((n) => n.id === notice.id);
+    markNoticeRead(notice.id).catch(() => {});
+  };
+  const handleMarkAllNoticesRead = () => {
+    markNoticesLocally(() => true);
+    markAllNoticesRead().catch(() => {});
+  };
+  const noticeWhen = (dateStr) => formatWhen(dateStr, t);
 
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [writeFields, setWriteFields] = useState(() => emptyWriteFields(user));
@@ -1326,7 +1288,9 @@ function Community({
           <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost || noticeView ? t('community.backToList') : t('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">{t('nav.community')}</span>
+          <span className="screen-title">
+            {noticeView ? t(noticeView.mode === 'write' && !noticeView.notice ? 'community.notice.write' : 'community.notice.heading') : t('nav.community')}
+          </span>
         </div>
         <AccountMenu
           user={user}
@@ -1363,16 +1327,17 @@ function Community({
             <p className="community-sanction-footer">{t('community.sanctionFull.footer')}</p>
           </div>
         ) : noticeView ? (
-          <div className="community-pad">
-            <CommunityNotices
-              view={noticeView}
-              onChangeView={setNoticeView}
-              notices={notices}
-              isAdmin={user?.role === 'admin'}
-              onChanged={loadNotices}
-              onToast={showToast}
-            />
-          </div>
+          <CommunityNotices
+            view={noticeView}
+            onChangeView={setNoticeView}
+            notices={notices}
+            isAdmin={user?.role === 'admin'}
+            onOpenNotice={openNotice}
+            onMarkAllRead={handleMarkAllNoticesRead}
+            onChanged={loadNotices}
+            onToast={showToast}
+            when={noticeWhen}
+          />
         ) : selectedPost ? (
           renderDetail()
         ) : showWriteForm ? (
@@ -1423,7 +1388,7 @@ function Community({
                     </button>
                   )}
                 </div>
-                <NoticePin notices={notices} onOpen={() => setNoticeView({ mode: 'list' })} />
+                <NoticePin notices={notices} onOpenList={() => setNoticeView({ mode: 'list' })} onOpenNotice={openNotice} when={noticeWhen} />
               </>
             )}
 

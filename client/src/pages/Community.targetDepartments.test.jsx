@@ -7,7 +7,8 @@ vi.mock('../api/chatApi.js', () => ({
   getCommunityPosts: vi.fn(),
   // 공지(전체 글 탭 맨 위 고정 줄, 별도 브랜치)와 합쳐져도 이 테스트는 공지가 없는 상태로 본다.
   getNotices: vi.fn(() => Promise.resolve([])),
-  markNoticesSeen: vi.fn(() => Promise.resolve(null)),
+  markNoticeRead: vi.fn(() => Promise.resolve(null)),
+  markAllNoticesRead: vi.fn(() => Promise.resolve(null)),
   getMyCommunityPosts: vi.fn(),
   getCommunityPost: vi.fn(),
   createCommunityPost: vi.fn(),
