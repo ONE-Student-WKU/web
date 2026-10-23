@@ -160,6 +160,7 @@ export default {
   'login.google': 'Log in with Google',
   'login.or': 'or',
   'login.email': 'Email address',
+  'login.emailPlaceholder': 'Enter the email you use most',
   'login.cooldown': 'You can request again in {time}.',
   'login.sending': 'Sending...',
   'login.sendCode': 'Get verification code',

@@ -210,7 +210,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
               <input
                 id="login-email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => blockWithoutConsent({ focus: false })}
