@@ -23,8 +23,8 @@ router.use(requireAuth);
 router.use(requireNotFullySanctioned);
 
 // 공지(읽기 전용, services/noticeService.js) — 쓰기·수정·삭제는 관리자 라우트(routes/admin.js)에 있다.
-// "본 시각 기록"은 글쓰기가 아니라서 아래 쓰기 횟수 제한보다 먼저 둔다(커뮤니티를 열 때마다 불러 제한을 깎지 않게).
-// GET /api/community/notices — 공지 목록(최신 순, isNew = 마지막으로 본 뒤 올라온 공지)
+// 읽음 기록은 글쓰기가 아니라서 아래 쓰기 횟수 제한보다 먼저 둔다(커뮤니티를 열 때마다 불러 제한을 깎지 않게).
+// GET /api/community/notices — 공지 목록(최신 순, isNew = 아직 열어 보지 않은 공지)
 router.get('/notices', async (req, res, next) => {
   try {
     const notices = await noticeService.listNotices(req.session.userId);
@@ -44,11 +44,24 @@ router.get('/notices/unseen-count', async (req, res, next) => {
   }
 });
 
-// POST /api/community/notices/seen — 공지 목록을 봤다고 기록(새 공지 점을 지운다)
-router.post('/notices/seen', async (req, res, next) => {
+// POST /api/community/notices/:id/read — 공지 상세를 열었다고 기록(그 공지만 새 공지에서 빠진다)
+router.post('/notices/:id/read', async (req, res, next) => {
   try {
-    await noticeService.markSeen(req.session.userId);
-    res.status(200).json({ status: 200, code: 'NOTICE_SEEN', message: null, data: null });
+    const id = Number(req.params.id);
+    const found = Number.isInteger(id) && id > 0 && (await noticeService.markRead(req.session.userId, id));
+    if (!found) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_READ', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/community/notices/read-all — "모두 읽음으로 표시"
+// /notices/seen은 예전 화면(목록을 열면 모두 본 것으로 기록)이 부르던 주소라, 배포 순서가 엇갈려도 같은 뜻으로 받는다.
+router.post(['/notices/read-all', '/notices/seen'], async (req, res, next) => {
+  try {
+    await noticeService.markAllRead(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_READ_ALL', message: null, data: null });
   } catch (err) {
     next(err);
   }

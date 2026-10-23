@@ -868,12 +868,24 @@ CREATE TABLE IF NOT EXISTS community_notices (
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE SET NULL
 );
 
--- 학생이 공지 목록을 마지막으로 본 시각 — 이보다 뒤에 올라온 공지가 있으면 커뮤니티에 새 공지 점을 띄운다.
+-- 학생이 공지 목록을 마지막으로 본 시각. 공지마다 읽음을 기록하기(아래 community_notice_reads) 전에 쓰던 방식이라 이제는
+-- 갱신하지 않고, 그 전에 올라온 공지를 이미 본 것으로 치는 기준으로만 쓴다(services/noticeService.js).
 CREATE TABLE IF NOT EXISTS community_notice_seen (
   student_id  INT PRIMARY KEY,
   seen_at     DATETIME NOT NULL,
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 학생이 연 공지 — 공지 상세를 열거나 "모두 읽음으로 표시"를 누르면 한 줄씩 남는다. 새 공지 점은 안 읽은 공지 수로 센다.
+CREATE TABLE IF NOT EXISTS community_notice_reads (
+  student_id  INT NOT NULL,
+  notice_id   INT NOT NULL,
+  read_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (student_id, notice_id),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (notice_id) REFERENCES community_notices(id) ON DELETE CASCADE
 );
 
 -- 매칭 연락 차단 — 수락된 신청의 글쓴이·신청자 중 누구든 차단하면 그 신청의 중계 메일을 양쪽 모두 더 이상 전달하지 않는다

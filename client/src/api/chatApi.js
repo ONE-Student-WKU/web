@@ -226,7 +226,9 @@ export const getUnseenReportCount = () => apiRequest('/community/reports/unseen-
 // 커뮤니티 공지 — 학생은 읽기만 하고, 쓰기·수정·삭제는 관리자 API다. 목록은 최신 순이고 isNew는 마지막으로 목록을 본 뒤 올라온 공지다.
 export const getNotices = () => apiRequest('/community/notices');
 export const getUnseenNoticeCount = () => apiRequest('/community/notices/unseen-count').then((d) => d.count);
-export const markNoticesSeen = () => apiRequest('/community/notices/seen', { method: 'POST' });
+// 공지는 상세를 열 때 하나씩 읽음으로 기록한다. read-all은 "모두 읽음으로 표시".
+export const markNoticeRead = (id) => apiRequest(`/community/notices/${id}/read`, { method: 'POST' });
+export const markAllNoticesRead = () => apiRequest('/community/notices/read-all', { method: 'POST' });
 export const createNotice = (payload) => apiRequest('/admin/community/notices', { method: 'POST', body: JSON.stringify(payload) });
 export const updateNotice = (id, payload) => apiRequest(`/admin/community/notices/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
 export const deleteNotice = (id) => apiRequest(`/admin/community/notices/${id}`, { method: 'DELETE' });

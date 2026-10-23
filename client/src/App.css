@@ -2051,7 +2051,8 @@ body {
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* 커뮤니티 공지 — 전체 글 탭 맨 위에 최신 공지 한 줄을 고정한다(B안). 검색창과 같은 폭·높이 감각으로, 배지와 테두리 사이에 여백을 둔다. */
+/* 커뮤니티 공지 — 전체 글 탭 맨 위. 다 읽었으면 최근 공지 한 줄(.notice-pin), 안 읽은 공지가 있으면 개수와 최대 3줄을 담은
+   묶음(.notice-pin--unread, 2026-10-23). 검색창과 같은 폭이고 테두리 없이 바탕색으로만 구분한다. */
 .notice-pin {
   display: flex;
   align-items: center;
@@ -2059,9 +2060,9 @@ body {
   width: 100%;
   margin-bottom: 10px;
   padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-neutral-bg);
+  border: none;
+  border-radius: 12px;
+  background: var(--color-bg-card);
   color: var(--color-text-primary);
   font-family: inherit;
   font-size: 0.8125rem;
@@ -2069,17 +2070,157 @@ body {
   cursor: pointer;
 }
 
-.notice-pin .community-badge {
-  margin-left: 0;
+.notice-pin--unread {
+  display: block;
+  padding: 12px 14px 8px;
+  background: var(--color-accent-bg);
+  cursor: default;
 }
 
-/* 새 공지 점 — 상단 탭의 점(.courses-year-tab .tab-dot)과 같은 크기·색 */
-.notice-pin .tab-dot {
+.notice-pin-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.notice-pin-count {
+  font-weight: 600;
+}
+
+.notice-pin-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.notice-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notice-pin-row i {
   flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--color-danger, #e5484d);
+}
+
+.notice-pin-row span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-pin-row em {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.notice-pin-rest {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+/* 공지 목록·상세 — 커뮤니티 글과 같은 줄 목록·상세 머리. 작성자는 기본 사람 아이콘 + 작은 인증 체크. */
+.notice-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notice-markall {
+  height: 30px;
+  padding: 0;
+}
+
+.notice-row {
+  gap: 5px;
+}
+
+.notice-row:not(.notice-row--new) .post-title {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.notice-cat {
+  --post-cat: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-accent-on-bg);
+}
+
+.notice-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+.notice-avatar > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notice-avatar-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-bg-frame);
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.notice-avatar-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+.notice-body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
 }
 
 .notice-pin-title {
@@ -2096,11 +2237,6 @@ body {
   color: var(--color-text-muted);
 }
 
-.community-badge-notice {
-  background: var(--color-ink);
-  color: var(--color-ink-contrast);
-}
-
 /* 홈 메뉴 카드의 새 알림 점(새 공지·신고 처리 결과) — 하단 바 점과 같은 색·크기. 카드 테두리에 닿지 않게 안쪽으로 둔다. */
 .home-quick-dot {
   position: absolute;
@@ -2113,7 +2249,7 @@ body {
 }
 
 .notice-readonly-note {
-  margin: 0 0 16px;
+  margin: 24px 0 0;
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--color-text-muted);
@@ -5633,7 +5769,6 @@ select.onb-select {
   background: var(--color-danger, #e5484d);
   vertical-align: super;
 }
-.community-badge-new { background: var(--color-danger, #e5484d); color: #fff; margin-left: 6px; }
 
 /* 학과 선택: 검색 진입 버튼(.search-entry) + 소속(단과대학) 트리 */
 .onb-college-hint {
