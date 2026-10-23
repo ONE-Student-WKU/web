@@ -2217,9 +2217,10 @@ body {
   height: 10px;
 }
 
-.notice-body {
-  margin-top: 18px;
-  padding-top: 18px;
+/* .post-body의 margin: 0이 뒤에 있어 덮어쓰지 않게 두 클래스를 같이 건다(2026-10-23, 구분선이 작성자 줄에 붙던 문제). */
+.post-body.notice-body {
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid var(--color-border);
 }
 
