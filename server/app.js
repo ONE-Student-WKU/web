@@ -33,8 +33,8 @@ const app = express();
 // 붙는다 — SERVER_PORT는 로컬 개발용 수동 지정 값으로 남겨두고 PORT를 우선한다.
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// Vercel → Railway 프록시 뒤에서 구동되므로, 프록시가 전달하는 프로토콜(X-Forwarded-Proto)과 접속자 IP(X-Forwarded-For)를
-// 그 단계 수만큼 신뢰해야 세션 쿠키의 secure 판정과 IP 기준 제한이 정확히 동작한다(단계 수와 한계는 middleware/security.js).
+// Railway 엣지(리버스 프록시) 뒤에서 구동되므로, 프록시가 전달하는 프로토콜(X-Forwarded-Proto)을 믿어야 세션 쿠키의 secure 판정이
+// 정확히 동작한다. 접속자 IP(req.ip)가 무엇으로 읽히는지와 한계는 middleware/security.js의 TRUST_PROXY_HOPS 설명에 있다.
 app.set('trust proxy', TRUST_PROXY_HOPS);
 
 // 어떤 프레임워크를 쓰는지 응답 헤더로 알려줄 필요 없음(불필요한 정찰 정보 노출 방지).

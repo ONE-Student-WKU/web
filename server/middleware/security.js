@@ -37,12 +37,15 @@ function requireStringQuery(req, res, next) {
   next();
 }
 
-// 서버 앞에 있는 프록시 단계 수(app.set('trust proxy', ...)에 넣는 값). 운영 요청은 학생 → Vercel(rewrite) → Railway 엣지 →
-// 서버 순서로 오고, X-Forwarded-For는 "학생 IP, Vercel IP"가 된다. 1이면 req.ip가 Vercel IP라 IP 기준 제한이 전체 학생 합계로
-// 동작했다(2026-10-23 운영 로그에서 접속 IP가 전부 Vercel 주소로 찍힘). 2로 두면 학생 IP를 읽는다.
-// 한계: Railway 주소로 직접 접속하는 사람은 X-Forwarded-For 앞쪽을 지어내 IP 기준 제한을 피할 수 있다. 그래서 중요한 제한은
-// IP가 아니라 이메일·계정 기준으로 둔다(routes/auth.js). IP 기준은 남용 상한(안전장치)으로만 쓴다.
-const TRUST_PROXY_HOPS = 2;
+// 서버 앞에서 믿는 프록시 단계 수(app.set('trust proxy', ...)에 넣는 값). 운영 요청은 학생 → Vercel(rewrite) → Railway 엣지 →
+// 서버 순서로 온다. Railway 엣지는 받은 X-Forwarded-For를 이어 붙이지 않고 **자기에게 접속한 IP 하나로 덮어쓴다**(2026-10-23 운영
+// 실측: 직접 접속에 X-Forwarded-For를 지어내 보내도 무시되고 실제 접속 IP로 셌다). 그래서 req.ip는
+//  - Vercel을 거친 요청: Vercel 출구 IP다. 출구 IP는 요청마다 바뀌어(운영 로그에 여러 개) IP 기준 제한이 학생별로도, 전체 합계로도
+//    정확히 묶이지 않는다. 학생 IP는 이 경로로 알 수 없다.
+//  - Railway로 직접 온 요청: 실제 접속 IP다. 위조할 수 없다.
+// 단계를 늘려도 동작은 같고, Railway가 덮어쓰기를 멈추면 위조된 값을 믿게 되므로 1로 둔다(2026-10-23 PR #436에서 2로 올렸다가
+// 실측 후 되돌림). 그래서 중요한 제한은 IP가 아니라 이메일·계정 기준으로 둔다(routes/auth.js). IP 기준은 남용 상한(안전장치)일 뿐이다.
+const TRUST_PROXY_HOPS = 1;
 
 const TOO_MANY = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
 
