@@ -7,6 +7,7 @@ import AccountMenu from '../components/AccountMenu.jsx';
 import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 // 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
@@ -168,7 +169,7 @@ function Home({
     <div className="home-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <span className="screen-title screen-title-brand">ONE Student</span>
+          <BrandTitle />
         </div>
         <div className="home-header-actions">
           <button
