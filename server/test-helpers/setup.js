@@ -7,3 +7,4 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 // 로컬 .env에 Discord 웹훅 주소가 있어도 테스트(문의·글·신고 라우트)가 실제 채널에 알림을 보내지 않게 한다(adminAlertService.js).
 process.env.DISCORD_WEBHOOK_URL = '';
+process.env.DISCORD_MENTION_USER_ID = '';
