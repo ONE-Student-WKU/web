@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createNotice, updateNotice, deleteNotice } from '../api/chatApi.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import MoreMenu from './MoreMenu.jsx';
-import { IconChevronRight } from './icons.jsx';
+import { IconChevronRight, IconPlus } from './icons.jsx';
 
 const TITLE_MAX = 60;
 const BODY_MAX = 3000;
@@ -239,6 +239,7 @@ function CommunityNotices({ view, onChangeView, notices, isAdmin, onOpenNotice, 
           )}
           {isAdmin && (
             <button type="button" className="post-write-btn" onClick={() => openWrite()}>
+              <IconPlus size={15} />
               {t('community.notice.write')}
             </button>
           )}
