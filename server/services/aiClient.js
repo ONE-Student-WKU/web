@@ -46,6 +46,15 @@ const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION:
 const SECOND_MAJOR_LABEL = { DOUBLE: '복수전공', MINOR: '부전공' };
 const MAJOR_TRACK_TYPE_LABEL = { DOUBLE_MAJOR: '복수전공형', INTENSIVE: '전공심화형', CONVERGENCE: '전공융합형', UNDECIDED: '아직 정하지 않음' };
 
+// 휴학 기간 한 덩어리를 "2023학년도 1학기~2024학년도 2학기(4학기)"처럼 끝 학기까지 적는다. 시작 학기와 학기 수만 주면 모델이
+// "2023학년도 1~4학기"처럼 끝을 잘못 읽었다(2026-10-23 로컬 재현). 정규 학기만 센다(1학기 → 2학기 → 다음 해 1학기).
+function describeLeavePeriod(p) {
+  const endIndex = p.startYear * 2 + (p.startSemester - 1) + p.semesters - 1;
+  const start = `${p.startYear}학년도 ${p.startSemester}학기`;
+  const end = `${Math.floor(endIndex / 2)}학년도 ${(endIndex % 2) + 1}학기`;
+  return p.semesters === 1 ? `${start}(1학기)` : `${start}~${end}(${p.semesters}학기)`;
+}
+
 // 학생이 온보딩·학과 수정에서 직접 입력한 항목들. 처음에는 학과·학번·입학유형만 넘겼는데, 뒤에 입력 항목(전과 시점, 편입 인정학점,
 // 휴학 기간, 교직, 다전공, 이수유형)이 늘어도 여기에 넣지 않아 챗봇이 "전과 시점을 알려 주세요", "인정학점이 기록돼 있지 않다",
 // "휴학 기록을 찾을 수 없다"고 되물었다(2026-10-17 로컬 재현). 입력하지 않은 값은 "입력 안 함"이라고 적어 그것만 묻게 한다.
@@ -76,12 +85,21 @@ function profileDetailLines(student) {
   if (periods) {
     lines.push(periods.length === 0
       ? '휴학: 한 적 없음'
-      : `휴학: ${periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', ')}`);
+      : `휴학: ${periods.map(describeLeavePeriod).join(', ')}`);
   } else if (Number(student.leave_semesters) > 0) {
     lines.push(`휴학: 누적 ${student.leave_semesters}학기(시기는 입력 안 함)`);
   }
   return lines;
 }
+
+// 휴학 종류(가사·질병·입대·창업·임신출산육아)는 받지 않는다(건강·임신은 민감정보라 저장하지 않음, leavePeriods.js). 그런데 휴학 한도는
+// 종류마다 따로 세서, "휴학 몇 학기 더 할 수 있어?"에 챗봇이 가사휴학으로 가정해 "8학기 중 4학기 남았다"고 단정했다(2026-10-23 로컬 재현).
+// 한도 숫자는 근거 문서(학칙·휴학 안내)에서 가져오게 하고, 여기서는 종류를 가정하지 말고 경우별로 나눠 답한 뒤 묻게만 한다.
+const LEAVE_TYPE_NOTE = `휴학 종류(가사·질병, 입대(군), 창업, 임신·출산·육아 등)는 이 서비스가 받지 않아 모른다. 남은 휴학 가능 학기, 신청 기간, 필요 서류,
+복학 절차처럼 휴학 종류에 따라 답이 달라지는 질문에는 한 종류를 가정해서 답하지 마라. 위 프로필의 휴학 학기를 근거 문서의 종류별 한도에 대어
+"지금까지 휴학이 가사·질병 휴학이었다면 ○학기, 입대 휴학이었다면 ○학기"처럼 경우를 나눠 숫자로 답하고(어떤 종류가 한도에 세어지지 않는지도 밝혀라),
+입대·창업·임신출산육아처럼 가사·질병 한도에 세지 않는 종류였다면 그 종류의 남은 학기와 함께 가사·질병 휴학 한도가 그대로 남아 있다는 것도 말하라.
+끝에 "어떤 휴학이었는지 알려주시면 정확히 계산해 드릴게요"처럼 한 줄로 물어라. 학생이 이 대화에서 종류를 이미 말했으면 그 종류로만 답하고 다시 묻지 마라.`;
 
 // 지금 학년·학기 한 줄. 계산은 studentProgress 한 곳에서 한다(이슈 #318) — 챗봇은 이수 기록까지 넣은 progress.current를,
 // 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
@@ -112,6 +130,7 @@ function buildStudentProfileNote(student, progress = null) {
   return `이 학생의 프로필 — ${parts.join(', ')}.
 ${details.map((l) => `- ${l}`).join('\n')}
 위 항목은 학생이 직접 입력한 값이다. 이 값을 학생에게 다시 묻지 말고 그대로 써서 답하라. "입력 안 함"인 항목만, 답이 그 값에 따라 달라질 때 물어라.
+${LEAVE_TYPE_NOTE}
 근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
 여기서 "이 학번 기준"은 최신 교육과정 책자에 실린 "${student.admission_year}학번 적용" 표(학번별 이수기준표)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${student.admission_year}학년도 책자의 숫자는 입학 당시 기준(이력)일 뿐이다.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
@@ -408,7 +427,7 @@ function buildProgressNote(progress) {
   const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
   const periodText = (periods) => (periods.length === 0
     ? '휴학한 적 없음'
-    : periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', '));
+    : periods.map(describeLeavePeriod).join(', '));
   const sourceText = progress.source === 'RECORDS'
     ? '학생이 과목 관리에 등록한 이수 기록'
     : progress.source === 'PROFILE'

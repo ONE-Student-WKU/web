@@ -69,9 +69,20 @@ test('휴학 기간·교직·다전공을 프로필로 넘긴다', () => {
     second_department_id: 39, second_department_name: '식품영양학과', second_major_type: 'MINOR',
   };
   const p = buildSystemPrompt(student, status());
-  assert.match(p, /휴학: 2025학년도 1학기부터 2학기/);
+  assert.match(p, /휴학: 2025학년도 1학기~2025학년도 2학기\(2학기\)/);
   assert.match(p, /교직과정: 이수 중/);
   assert.match(p, /다전공: 부전공 식품영양학과/);
+});
+
+test('휴학 종류는 모르므로 한 종류로 가정하지 말고 경우별로 나눠 답한 뒤 묻게 한다(가사휴학으로 가정해 단정하던 문제, 2026-10-23)', () => {
+  const student = { ...base, leave_periods: JSON.stringify([{ startYear: 2024, startSemester: 1, semesters: 4 }]), leave_semesters: 4 };
+  const p = buildSystemPrompt(student, status());
+  assert.match(p, /휴학 종류\(가사·질병, 입대\(군\), 창업, 임신·출산·육아 등\)는 이 서비스가 받지 않아 모른다/);
+  assert.match(p, /한 종류를 가정해서 답하지 마라/);
+  assert.match(p, /경우를 나눠 숫자로 답하고/);
+  assert.match(p, /가사·질병 휴학 한도가 그대로 남아 있다는 것도 말하라/);
+  assert.match(p, /휴학: 2024학년도 1학기~2025학년도 2학기\(4학기\)/); // 끝 학기까지 적어 "1~4학기"로 잘못 읽지 않게
+  assert.match(p, /어떤 휴학이었는지 알려주시면 정확히 계산해 드릴게요/);
 });
 
 test('교직 질문에 답하지 않았으면(교직이 없는 학과 등) 교직 줄을 넣지 않는다', () => {

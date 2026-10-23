@@ -58,7 +58,7 @@ test('수강 진행 상태: 휴학 질문에 답했으면(PROFILE) 확정값으�
   assert.equal(p.needsConfirmation, false);
   assert.deepEqual([p.upcomingTerms[0].year, p.upcomingTerms[0].semester, p.upcomingTerms[0].grade], [2027, 1, 4]);
   const note = buildProgressNote({ ...p, completedCourseNames: [] });
-  assert.match(note, /입력한 휴학 기간\(2023학년도 1학기부터 4학기\)/);
+  assert.match(note, /입력한 휴학 기간\(2023학년도 1학기~2024학년도 2학기\(4학기\)\)/);
   assert.doesNotMatch(note, /확정이 아니다/);
   assert.doesNotMatch(note, /몇 학년 몇 학기에 휴학했는지/);
 
