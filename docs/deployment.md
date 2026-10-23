@@ -136,6 +136,7 @@ npm run seed:regulations --workspace=server   # 로컬 DB에 문서 임베딩(Vo
 | `GOOGLE_CLIENT_SECRET` | Google Cloud → API 및 서비스 → 사용자 인증 정보 → OAuth 클라이언트 → 보안 비밀 추가. 새 비밀로 확인한 뒤 옛 비밀을 사용 중지 → 삭제 |
 | `SESSION_SECRET` | 로컬에서 `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`. 바꾸면 모든 사용자가 한 번 로그아웃된다 |
 | `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET` | Resend → API Keys(Full access), Webhooks의 Signing Secret |
+| `DISCORD_WEBHOOK_URL` (관리자 알림) | Discord `ONE Student` 서버 → `#운영-알림` 채널 설정 → 연동 → 웹후크. 새 웹후크를 만들어 넣고 옛 웹후크를 삭제한다. 비워두면 알림만 꺼지고 서비스는 그대로다. 같이 쓰는 `DISCORD_MENTION_USER_ID`(폰 푸시용 멘션 대상)는 비밀값이 아니라 교체할 일이 없다 |
 | DB 비밀번호 | 위의 Regenerate |
 
 ## 시크릿 위치
