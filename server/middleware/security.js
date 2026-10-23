@@ -37,6 +37,13 @@ function requireStringQuery(req, res, next) {
   next();
 }
 
+// 서버 앞에 있는 프록시 단계 수(app.set('trust proxy', ...)에 넣는 값). 운영 요청은 학생 → Vercel(rewrite) → Railway 엣지 →
+// 서버 순서로 오고, X-Forwarded-For는 "학생 IP, Vercel IP"가 된다. 1이면 req.ip가 Vercel IP라 IP 기준 제한이 전체 학생 합계로
+// 동작했다(2026-10-23 운영 로그에서 접속 IP가 전부 Vercel 주소로 찍힘). 2로 두면 학생 IP를 읽는다.
+// 한계: Railway 주소로 직접 접속하는 사람은 X-Forwarded-For 앞쪽을 지어내 IP 기준 제한을 피할 수 있다. 그래서 중요한 제한은
+// IP가 아니라 이메일·계정 기준으로 둔다(routes/auth.js). IP 기준은 남용 상한(안전장치)으로만 쓴다.
+const TRUST_PROXY_HOPS = 2;
+
 const TOO_MANY = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
 
 // 로그인한 사용자 단위 호출 제한. IP로 세면 학교·기숙사처럼 한 IP를 여럿이 쓰거나 프록시 뒤에서 IP가 뭉개질 때
@@ -68,4 +75,4 @@ function oneRequestPerUser() {
   };
 }
 
-module.exports = { securityHeaders, requireStringQuery, perUserLimiter, oneRequestPerUser };
+module.exports = { securityHeaders, requireStringQuery, perUserLimiter, oneRequestPerUser, TRUST_PROXY_HOPS };
