@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 52 52">
   <!-- 8학기 원(2026-10-24): 지난 학기 5조각 · 이번 학기 1조각 · 남은 학기 2조각. client/src/components/BrandTitle.jsx와 같은 도형. -->
   <style>
     .rest { stroke: #dbe6fb; }
@@ -10,9 +10,9 @@
       .now { stroke: #6f9bf5; }
     }
   </style>
-  <g transform="rotate(-90 32 32)" fill="none" stroke-width="18">
-    <circle class="rest" cx="32" cy="32" r="16" stroke-dasharray="11.07 1.5" />
-    <circle class="done" cx="32" cy="32" r="16" stroke-dasharray="11.07 1.5 11.07 1.5 11.07 1.5 11.07 1.5 11.07 200" />
-    <circle class="now" cx="32" cy="32" r="16" stroke-dasharray="11.07 200" stroke-dashoffset="-62.83" />
+  <g transform="rotate(-90 32 32)" fill="none" stroke-width="16.5">
+    <circle class="rest" cx="32" cy="32" r="16.75" stroke-dasharray="11.655 1.5" />
+    <circle class="done" cx="32" cy="32" r="16.75" stroke-dasharray="11.655 1.5 11.655 1.5 11.655 1.5 11.655 1.5 11.655 200" />
+    <circle class="now" cx="32" cy="32" r="16.75" stroke-dasharray="11.655 200" stroke-dashoffset="-65.78" />
   </g>
 </svg>
