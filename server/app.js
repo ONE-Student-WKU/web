@@ -26,16 +26,16 @@ const inquiriesRoutes = require('./routes/inquiries');
 const uiEventsRoutes = require('./routes/uiEvents');
 const { trackActivity } = require('./middleware/activityTracker');
 const { startVisitRollup } = require('./services/visitStatsService');
-const { securityHeaders, requireStringQuery } = require('./middleware/security');
+const { securityHeaders, requireStringQuery, TRUST_PROXY_HOPS } = require('./middleware/security');
 
 const app = express();
 // Railway/Render 같은 PaaS는 자체적으로 PORT를 주입하고 그 포트로 리슨해야 라우팅이
 // 붙는다 — SERVER_PORT는 로컬 개발용 수동 지정 값으로 남겨두고 PORT를 우선한다.
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// Railway 같은 리버스 프록시 뒤에서 구동되므로, 프록시가 전달하는 프로토콜(X-Forwarded-Proto)을
-// 신뢰해야 세션 쿠키의 secure 판정 등이 정확히 동작한다.
-app.set('trust proxy', 1);
+// Vercel → Railway 프록시 뒤에서 구동되므로, 프록시가 전달하는 프로토콜(X-Forwarded-Proto)과 접속자 IP(X-Forwarded-For)를
+// 그 단계 수만큼 신뢰해야 세션 쿠키의 secure 판정과 IP 기준 제한이 정확히 동작한다(단계 수와 한계는 middleware/security.js).
+app.set('trust proxy', TRUST_PROXY_HOPS);
 
 // 어떤 프레임워크를 쓰는지 응답 헤더로 알려줄 필요 없음(불필요한 정찰 정보 노출 방지).
 app.disable('x-powered-by');
