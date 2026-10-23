@@ -20,22 +20,34 @@ const KINDS = {
 
 const TIMEOUT_MS = 5000;
 
+// Discord 사용자 ID(스노플레이크)는 숫자 17~20자리다. 형식이 다르면 멘션 없이 보낸다(잘못된 값이 본문에 섞이지 않게).
+const DISCORD_USER_ID = /^\d{17,20}$/;
+
 // 웹훅에 보낼 본문. pending은 getPendingCounts()의 결과(실패하면 null — 건수 없이 보낸다).
-function buildAdminAlertMessage(kind, pending, siteUrl) {
+// mentionUserId가 있으면 맨 앞에서 그 사람을 멘션한다 — 채널 알림이 "@멘션만"이어도 폰 푸시가 오게 하려는 것(2026-10-24).
+function buildAdminAlertMessage(kind, pending, siteUrl, mentionUserId = null) {
   const spec = KINDS[kind];
   if (!spec) return null;
   const parts = [spec.label];
   if (pending && Number.isFinite(pending[spec.pendingKey])) parts.push(`미처리 ${pending[spec.pendingKey]}건`);
   let content = parts.join(' · ');
   if (siteUrl) content += `\n관리자 페이지에서 보기: <${siteUrl}>`;
-  // allowed_mentions.parse=[]: 본문이 무엇이든 @everyone 같은 멘션이 걸리지 않게 한다.
-  return { username: 'ONE 알림', content, allowed_mentions: { parse: [] } };
+  const mention = DISCORD_USER_ID.test(mentionUserId || '') ? mentionUserId : null;
+  if (mention) content = `<@${mention}> ${content}`;
+  // allowed_mentions: @everyone·역할 멘션은 막고, 지정한 사용자 한 명만 멘션을 허용한다.
+  const allowed_mentions = mention ? { parse: [], users: [mention] } : { parse: [] };
+  return { username: 'ONE 알림', content, allowed_mentions };
 }
 
 // 옵션은 테스트용 주입 지점이다(DB·네트워크 없이 검증).
 async function notifyAdmin(
   kind,
-  { fetchImpl = globalThis.fetch, webhookUrl = process.env.DISCORD_WEBHOOK_URL, getPending = getPendingCounts } = {}
+  {
+    fetchImpl = globalThis.fetch,
+    webhookUrl = process.env.DISCORD_WEBHOOK_URL,
+    mentionUserId = process.env.DISCORD_MENTION_USER_ID,
+    getPending = getPendingCounts,
+  } = {}
 ) {
   if (!webhookUrl || !KINDS[kind]) return false;
   try {
@@ -49,7 +61,7 @@ async function notifyAdmin(
     const res = await fetchImpl(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildAdminAlertMessage(kind, pending, siteUrl)),
+      body: JSON.stringify(buildAdminAlertMessage(kind, pending, siteUrl, mentionUserId)),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) {

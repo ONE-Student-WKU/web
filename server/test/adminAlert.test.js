@@ -34,6 +34,20 @@ test('건수를 못 구하면 건수 없이 보낸다', () => {
   assert.equal(buildAdminAlertMessage('inquiry', null, null).content, '새 문의가 들어왔어요');
 });
 
+test('멘션할 사용자 ID가 있으면 맨 앞에서 그 사람만 멘션한다', () => {
+  const msg = buildAdminAlertMessage('inquiry', PENDING, null, '123456789012345678');
+  assert.equal(msg.content, '<@123456789012345678> 새 문의가 들어왔어요 · 미처리 3건');
+  assert.deepEqual(msg.allowed_mentions, { parse: [], users: ['123456789012345678'] });
+});
+
+test('사용자 ID 형식이 아니면 멘션 없이 보낸다', () => {
+  for (const bad of ['', 'abc', '123', '<@123456789012345678>', '@everyone']) {
+    const msg = buildAdminAlertMessage('inquiry', PENDING, null, bad);
+    assert.equal(msg.content, '새 문의가 들어왔어요 · 미처리 3건');
+    assert.deepEqual(msg.allowed_mentions, { parse: [] });
+  }
+});
+
 test('모르는 종류는 메시지를 만들지 않는다', () => {
   assert.equal(buildAdminAlertMessage('unknown', PENDING, null), null);
 });
@@ -46,7 +60,7 @@ test('웹훅 주소가 없으면 보내지 않는다', async () => {
 
 test('웹훅 주소로 JSON POST를 보낸다', async () => {
   const fetchImpl = fakeFetch();
-  const ok = await notifyAdmin('report', { fetchImpl, webhookUrl: URL, getPending: async () => PENDING });
+  const ok = await notifyAdmin('report', { fetchImpl, webhookUrl: URL, mentionUserId: '', getPending: async () => PENDING });
   assert.equal(ok, true);
   assert.equal(fetchImpl.calls.length, 1);
   assert.equal(fetchImpl.calls[0].url, URL);
