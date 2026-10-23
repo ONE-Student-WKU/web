@@ -7,6 +7,7 @@ const sanctionService = require('../services/sanctionService');
 const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
 const noticeService = require('../services/noticeService');
+const { notifyAdmin } = require('../services/adminAlertService');
 const { normalizeDepartmentIds, departmentsExist } = require('../services/postDepartments');
 
 /**
@@ -133,6 +134,7 @@ async function handleReport(req, res, next, targetType) {
       const status = result.reason === 'DUPLICATE_REPORT' ? 409 : result.reason === 'CANNOT_REPORT_OWN' ? 400 : 404;
       return res.status(status).json({ status, code: result.reason, message: null, data: null });
     }
+    notifyAdmin('report'); // 기다리지 않는다(adminAlertService.js)
     res.status(201).json({ status: 201, code: 'COMMUNITY_REPORT_CREATED', message: null, data: { id: result.id } });
   } catch (err) {
     next(err);
@@ -200,6 +202,7 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
       recruitEndDate: recruitEnd.value,
       departmentIds: departments.value || [],
     });
+    notifyAdmin('post'); // 승인 대기 글 — 기다리지 않는다(adminAlertService.js)
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
     next(err);
