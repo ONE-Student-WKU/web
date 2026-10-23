@@ -6,6 +6,8 @@ const communityService = require('../services/communityService');
 const sanctionService = require('../services/sanctionService');
 const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
+const noticeService = require('../services/noticeService');
+const { normalizeDepartmentIds, departmentsExist } = require('../services/postDepartments');
 
 /**
  * server/routes/community.js
@@ -19,6 +21,51 @@ router.use(requireAuth);
 // req.activeSanction에 담겨서, 글쓰기/신청 라우트의 requireNotWritingSanctioned가
 // 다시 조회하지 않고 재사용한다.
 router.use(requireNotFullySanctioned);
+
+// 공지(읽기 전용, services/noticeService.js) — 쓰기·수정·삭제는 관리자 라우트(routes/admin.js)에 있다.
+// 읽음 기록은 글쓰기가 아니라서 아래 쓰기 횟수 제한보다 먼저 둔다(커뮤니티를 열 때마다 불러 제한을 깎지 않게).
+// GET /api/community/notices — 공지 목록(최신 순, isNew = 아직 열어 보지 않은 공지)
+router.get('/notices', async (req, res, next) => {
+  try {
+    const notices = await noticeService.listNotices(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_LIST', message: null, data: notices });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/community/notices/unseen-count — 아직 안 본 공지 수(커뮤니티 메뉴·탭의 점 표시용)
+router.get('/notices/unseen-count', async (req, res, next) => {
+  try {
+    const count = await noticeService.countUnseen(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_UNSEEN_COUNT', message: null, data: { count } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/community/notices/:id/read — 공지 상세를 열었다고 기록(그 공지만 새 공지에서 빠진다)
+router.post('/notices/:id/read', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const found = Number.isInteger(id) && id > 0 && (await noticeService.markRead(req.session.userId, id));
+    if (!found) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_READ', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/community/notices/read-all — "모두 읽음으로 표시"
+// /notices/seen은 예전 화면(목록을 열면 모두 본 것으로 기록)이 부르던 주소라, 배포 순서가 엇갈려도 같은 뜻으로 받는다.
+router.post(['/notices/read-all', '/notices/seen'], async (req, res, next) => {
+  try {
+    await noticeService.markAllRead(req.session.userId);
+    res.status(200).json({ status: 200, code: 'NOTICE_READ_ALL', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // 글·신청·신고·수락/반려처럼 DB에 쓰는 요청은 사용자당 횟수를 묶는다. 제한이 없으면 글을 수천 개 올려 관리자 승인 대기열을
 // 가득 채우거나 신고/신청으로 다른 사용자를 괴롭히는 도배가 가능했다(정상 사용은 10분에 몇 건 수준).
@@ -58,6 +105,14 @@ function normalizeRecruitEndDate(value) {
   const today = communityService.todayKst();
   if (value < today || value > communityService.addDaysToDate(today, MAX_RECRUIT_DAYS)) return { ok: false, value: null };
   return { ok: true, value };
+}
+
+// 모집 학과(선택) — 학과 id 배열, 최대 3개. 비우면 학과 상관없음. 글 수정에서 보내지 않으면 그대로 둔다(postDepartments.js).
+async function parseDepartmentIds(value) {
+  const ids = normalizeDepartmentIds(value);
+  if (ids === null) return { ok: false };
+  if (ids !== undefined && !(await departmentsExist(ids))) return { ok: false };
+  return { ok: true, value: ids };
 }
 
 function isValidReportReason(reason) {
@@ -132,6 +187,10 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
     if (!recruitEnd.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
     }
+    const departments = await parseDepartmentIds(req.body.departmentIds);
+    if (!departments.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENTS', message: null, data: null });
+    }
 
     const id = await communityService.createPost(req.session.userId, {
       title,
@@ -139,6 +198,7 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
       category: req.body.category,
       capacity: capacityResult.value,
       recruitEndDate: recruitEnd.value,
+      departmentIds: departments.value || [],
     });
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
@@ -189,9 +249,11 @@ router.post('/reports/seen', async (req, res, next) => {
 });
 
 // GET /api/community?q= — 승인된 글 목록(전체 공개). q가 있으면 제목·본문에 그 검색어가 들어간 글만(최신순).
+// 글마다 모집 학과와, 보는 학생 기준 "내 학과" 여부를 붙인다.
 router.get('/', async (req, res, next) => {
   try {
-    const posts = await communityService.listApprovedPosts({ query: req.query.q });
+    const viewer = await studentService.findById(req.session.userId);
+    const posts = await communityService.listApprovedPosts({ query: req.query.q, viewerDepartmentId: viewer?.department_id ?? null });
     res.status(200).json({ status: 200, code: 'COMMUNITY_POSTS_LIST', message: null, data: posts });
   } catch (err) {
     next(err);
@@ -206,6 +268,7 @@ router.get('/:id', async (req, res, next) => {
     const post = await communityService.getPostById(req.params.id, {
       studentId: req.session.userId,
       includeAuthorId: Boolean(viewer && viewer.role === 'admin'),
+      viewerDepartmentId: viewer?.department_id ?? null,
     });
     if (!post) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
@@ -239,6 +302,10 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
     if (!recruitEnd.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_RECRUIT_END', message: null, data: null });
     }
+    const departments = await parseDepartmentIds(req.body.departmentIds);
+    if (!departments.ok) {
+      return res.status(400).json({ status: 400, code: 'INVALID_DEPARTMENTS', message: null, data: null });
+    }
 
     const edited = await communityService.editPost(req.params.id, req.session.userId, {
       title,
@@ -246,6 +313,7 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
       category: req.body.category,
       capacity: capacityResult.value,
       recruitEndDate: recruitEnd.value,
+      departmentIds: departments.value,
     });
     if (!edited) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
@@ -376,6 +444,23 @@ router.post('/applications/:id/report', async (req, res, next) => {
     return next(err);
   }
   return handleReport(req, res, next, 'application');
+});
+
+// POST /api/community/applications/:id/block-contact — 수락된 매칭의 연락 차단(글쓴이·신청자 누구든). 차단하면 그 매칭의 중계 메일을
+// 양쪽 모두 전달하지 않는다(communityService.findEmailRelayTarget). 되돌리지 않는다.
+router.post('/applications/:id/block-contact', async (req, res, next) => {
+  try {
+    const result = await communityService.blockContact(Number(req.params.id), req.session.userId);
+    if (!result.ok && result.reason === 'NOT_FOUND') {
+      return res.status(404).json({ status: 404, code: 'APPLICATION_NOT_FOUND', message: null, data: null });
+    }
+    if (!result.ok) {
+      return res.status(409).json({ status: 409, code: 'APPLICATION_NOT_ACCEPTED', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'CONTACT_BLOCKED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // reason은 선택 — 글쓴이가 신청자에게 남기는 거부 메시지.

@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createInquiry, getMyInquiries } from '../api/chatApi.js';
-import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconHelpCircle, IconPlus } from '../components/icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import { track } from '../utils/track.js';
 
-// App.css에 open/resolved 전용 배지 색이 없어서(커뮤니티 글 상태용 pending/approved만 있음),
-// 새 CSS를 추가하는 대신 의미가 같은 기존 클래스를 재사용한다 — open은 pending과, resolved는
-// approved와 같은 "아직 대기 중 / 처리 끝남" 의미라 색상도 자연스럽게 맞아떨어진다.
-const STATUS_BADGE_CLASS = { open: 'pending', resolved: 'approved' };
+// 상태는 커뮤니티와 같은 점 + 글자(post-status)로 보여준다 — 답변 기다리는 중은 노랑, 답변 완료는 초록.
+const STATUS_TONE = { open: 'wait', resolved: 'ok' };
 // 목록 불러오기 실패는 이펙트가 부르는 loadMine 안에서 세팅되므로, 번역 함수에 의존하지 않게 문구 대신 키를 담고 렌더에서 번역한다.
 const LOAD_ERROR = { key: 'inquiry.err.load' };
 const TITLE_MAX_LENGTH = 50;
@@ -65,6 +64,7 @@ function Inquiry({ onGoHome }) {
     setError(null);
     try {
       await createInquiry(title.trim(), content.trim());
+      track('inquiry.sent');
       showToast(t('inquiry.toast.sent'));
       setTitle('');
       setContent('');
@@ -94,28 +94,48 @@ function Inquiry({ onGoHome }) {
         </div>
       )}
 
-      <div className="courses-body">
-        <div className="courses-year-tabs">
-          <button type="button" className={`courses-year-tab ${tab === 'write' ? 'active' : ''}`} onClick={() => setTab('write')}>
+      {/* 커뮤니티 개편(2026-10-22)과 같은 배치 — 글자 탭, 큰 제목 칸, 화면 아래에 붙는 보내기, 상자 없는 목록. */}
+      <div className="courses-body community-body">
+        <div className="community-tabs">
+          <button type="button" className={`community-tab ${tab === 'write' ? 'active' : ''}`} onClick={() => setTab('write')}>
             {t('inquiry.tab.write')}
           </button>
-          <button type="button" className={`courses-year-tab ${tab === 'mine' ? 'active' : ''}`} onClick={() => setTab('mine')}>
+          <button type="button" className={`community-tab ${tab === 'mine' ? 'active' : ''}`} onClick={() => setTab('mine')}>
             {t('inquiry.tab.mine')}
           </button>
         </div>
 
-        {error && <p className="home-error">{typeof error === 'object' ? t(error.key) : error}</p>}
+        {error && (
+          <div className="community-alerts">
+            <p className="home-error">{typeof error === 'object' ? t(error.key) : error}</p>
+          </div>
+        )}
 
         {tab === 'write' ? (
-          <form className="courses-manual-fields" onSubmit={handleSubmit}>
-            <p className="courses-manual-hint">{t('inquiry.hint')}</p>
-            <div className="auth-field">
-              <label>{t('inquiry.field.title')}</label>
-              <input type="text" maxLength={TITLE_MAX_LENGTH} value={title} onChange={(e) => setTitle(e.target.value)} required />
-            </div>
-            <div className="auth-field">
-              <label>{t('inquiry.field.content')}</label>
+          <form className="post-write" onSubmit={handleSubmit}>
+            <div className="post-write-inner">
+              <label htmlFor="inquiry-title" className="sr-only">
+                {t('inquiry.field.title')}
+              </label>
+              <input
+                id="inquiry-title"
+                className="post-write-title"
+                type="text"
+                maxLength={TITLE_MAX_LENGTH}
+                placeholder={t('inquiry.field.title')}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+              <span className="post-write-count">
+                {title.length} / {TITLE_MAX_LENGTH}
+              </span>
+              <label htmlFor="inquiry-content" className="sr-only">
+                {t('inquiry.field.content')}
+              </label>
               <textarea
+                id="inquiry-content"
+                className="post-write-body"
                 rows={8}
                 maxLength={CONTENT_MAX_LENGTH}
                 value={content}
@@ -123,30 +143,52 @@ function Inquiry({ onGoHome }) {
                 placeholder={t('inquiry.placeholder')}
                 required
               />
+              {/* 확인이 빨라지는 세 가지를 적어 둔다 — 문의를 받아 보면 "어디서·무엇을·어떻게"가 빠진 경우가 많다. */}
+              <div className="post-tip">
+                <b>{t('inquiry.tip.title')}</b>
+                <ul>
+                  <li>{t('inquiry.tip.where')}</li>
+                  <li>{t('inquiry.tip.what')}</li>
+                  <li>{t('inquiry.tip.result')}</li>
+                </ul>
+              </div>
             </div>
-            <button type="submit" className="auth-submit-btn" disabled={submitting}>
-              {submitting ? t('inquiry.sending') : t('inquiry.send')}
-            </button>
+            <div className="post-dock">
+              <button type="submit" className="post-btn post-btn--ink post-btn--block post-btn--lg" disabled={submitting}>
+                {submitting ? t('inquiry.sending') : t('inquiry.send')}
+              </button>
+            </div>
           </form>
         ) : loading ? (
-          <p className="courses-manual-hint">{t('inquiry.loading')}</p>
+          <p className="post-empty">{t('inquiry.loading')}</p>
         ) : myInquiries.length === 0 ? (
-          <p className="courses-manual-hint">{t('inquiry.empty')}</p>
+          <div className="post-empty-state">
+            <span className="post-empty-icon">
+              <IconHelpCircle size={24} />
+            </span>
+            <p>{t('inquiry.empty')}</p>
+            <span>{t('inquiry.emptySub')}</span>
+            <button type="button" className="post-write-btn" onClick={() => setTab('write')}>
+              <IconPlus size={15} />
+              {t('inquiry.writeBtn')}
+            </button>
+          </div>
         ) : (
-          <div className="community-post-list">
+          <div className="post-list">
             {myInquiries.map((i) => (
-              <div key={i.id} className="community-post-list-item">
-                <span className="community-post-list-row">
-                  <span className="community-post-list-title">{i.title}</span>
-                  <span className={`community-badge community-badge-${STATUS_BADGE_CLASS[i.status]}`}>{t(`inquiry.status.${i.status}`)}</span>
+              <div key={i.id} className="post-row post-row--static">
+                <span className="post-over">
+                  <span className={`post-status post-status--${STATUS_TONE[i.status] || 'mute'}`}>{t(`inquiry.status.${i.status}`)}</span>
+                  <span className="post-over-end">{formatDate(i.createdAt)}</span>
                 </span>
-                <p className="community-detail-body">{i.content}</p>
+                <span className="post-title">{i.title}</span>
+                <p className="post-section-desc post-pre">{i.content}</p>
                 {i.resolutionNote && (
-                  <p className="community-resolution-note">
-                    <b>{t('inquiry.reply')}</b> · {i.resolutionNote}
+                  <p className="post-quote post-quote--answer">
+                    <b className="post-quote-label">{t('inquiry.reply')}</b>
+                    {i.resolutionNote}
                   </p>
                 )}
-                <span className="courses-list-item-meta">{formatDate(i.createdAt)}</span>
               </div>
             ))}
           </div>

@@ -84,7 +84,7 @@ describe('진로 탐색', () => {
     const names = ['Dealing with people nonstop', 'Concentrating alone for long stretches', 'Handling new situations every time'];
     for (const name of names) await userEvent.click(await screen.findByRole('button', { name }));
 
-    const isSelected = (name) => screen.getByRole('button', { name }).className.includes('selected');
+    const isSelected = (name) => screen.getByRole('button', { name }).getAttribute('aria-pressed') === 'true';
     expect(isSelected(names[0])).toBe(false);
     expect(isSelected(names[1])).toBe(true);
     expect(isSelected(names[2])).toBe(true);
@@ -92,7 +92,7 @@ describe('진로 탐색', () => {
 
   it('"딱히 없어요"는 다른 선택지와 같이 고를 수 없다(고르면 나머지 해제, 다른 걸 고르면 해제)', async () => {
     renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
-    const isSelected = (name) => screen.getByRole('button', { name }).className.includes('selected');
+    const isSelected = (name) => screen.getByRole('button', { name }).getAttribute('aria-pressed') === 'true';
 
     await userEvent.click(await screen.findByRole('button', { name: 'Dealing with people nonstop' }));
     await userEvent.click(screen.getByRole('button', { name: 'Nothing in particular' }));
@@ -151,11 +151,13 @@ describe('진로 탐색', () => {
     api.sendCareerMessage.mockResolvedValue({ messages: [] });
     renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
 
-    expect(await screen.findByRole('button', { name: 'Get recommendations' })).toBeInTheDocument();
+    // 자유 대화 전이라 입력창 위 진로 추천 칸은 회색으로 몇 번 남았는지 알리고, "지금 받기"로도 바로 누를 수 있다.
+    expect(await screen.findByText('3 more messages until career suggestions')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Career exploration steps' })).toHaveTextContent('Chat');
     await userEvent.type(screen.getByRole('textbox'), 'I like games{Enter}');
     await waitFor(() => expect(api.sendCareerMessage).toHaveBeenCalledWith(4, 'I like games', 'en'));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Get recommendations' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Get them now' }));
     expect(screen.getByText('Want career recommendations?')).toBeInTheDocument();
   });
 });
@@ -165,16 +167,17 @@ describe('문의하기 / 계정 정보 수정', () => {
     renderEn(<Inquiry onGoHome={() => {}} />);
     expect(screen.getByText('Contact us')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'My inquiries' })).toBeInTheDocument();
-    expect(screen.getByText(/Let us know if you run into a bug/)).toBeInTheDocument();
+    expect(screen.getByText('These help us check faster')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'My inquiries' }));
-    expect(await screen.findByText("You haven't sent any inquiries yet.")).toBeInTheDocument();
+    expect(await screen.findByText("You haven't sent any inquiries yet")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write an inquiry' })).toBeInTheDocument();
   });
 
   it('내 문의 목록: 상태 배지는 번역되고, 사용자가 쓴 제목·내용은 그대로 보인다', async () => {
     api.getMyInquiries.mockResolvedValue([{ id: 1, title: '버튼이 안 눌려요', content: '졸업요건 화면에서요', status: 'resolved', createdAt: '2026-10-01T00:00:00Z' }]);
     renderEn(<Inquiry onGoHome={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: 'My inquiries' }));
-    expect(await screen.findByText('Resolved')).toBeInTheDocument();
+    expect(await screen.findByText('Answered')).toBeInTheDocument();
     expect(screen.getByText('버튼이 안 눌려요')).toBeInTheDocument();
   });
 
@@ -194,16 +197,21 @@ describe('문의하기 / 계정 정보 수정', () => {
     api.updateProfile.mockRejectedValue(Object.assign(new Error('x'), { code: 'DUPLICATE_NAME' }));
     renderEn(<Profile user={{ name: 'abc', hasGoogleAccount: true }} onGoHome={() => {}} />);
     expect(screen.getByText('Edit account info')).toBeInTheDocument();
-    expect(screen.getByText('Delete account')).toBeInTheDocument();
+    // 저장은 닉네임을 바꿨을 때만 켜진다.
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('Nickname'), 'd');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('That nickname is already taken.')).toBeInTheDocument();
+    expect(await screen.findByText('That nickname is already taken, or one that looks too similar is.')).toBeInTheDocument();
+    // 계정 삭제는 맨 아래 줄을 눌러야 재인증 버튼이 펼쳐진다.
+    expect(screen.queryByRole('button', { name: 'Log in again to confirm' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Delete account' }));
     expect(screen.getByRole('button', { name: 'Log in again to confirm' })).toBeInTheDocument();
   });
 
   it('확정한 진로가 있으면 로드맵 보기 버튼과 학기 그룹 이름이 영어다', async () => {
     api.getLatestConfirmedRoadmap.mockResolvedValue({ confirmedCareer: 'Backend developer', roadmap: [{ grade: 3, semester: 1, courseName: '운영체제', reason: 'Core of systems' }] });
     renderEn(<Profile user={{ name: 'abc', hasGoogleAccount: true }} onGoHome={() => {}} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'View roadmap' }));
+    await userEvent.click(await screen.findByRole('button', { name: /My career|Confirmed career|Backend developer/ }));
     expect(screen.getByText('Year 3, Semester 1')).toBeInTheDocument();
     expect(screen.getByText('운영체제')).toBeInTheDocument();
   });

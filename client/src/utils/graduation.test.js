@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -349,12 +349,31 @@ describe('다전공(#378 G-2)', () => {
 });
 
 describe('판정하지 않는 요건(2026-10-16 규정 대조)', () => {
-  it('상담·지정 과목·부전공 지정 교과목·전공융합형 MD를 학생이 직접 확인할 항목으로 모은다', () => {
+  it('지정 과목·부전공 지정 교과목·전공융합형 MD를 학생이 직접 확인할 항목으로 모은다(상담은 충족으로 보여줘서 빠진다)', () => {
     expect(uncheckedRequirementKeys(null)).toEqual([]);
-    expect(uncheckedRequirementKeys({ counseling: { required: 8 } })).toEqual(['home.unchecked.counseling']);
+    expect(uncheckedRequirementKeys({ counseling: { required: 8 } })).toEqual([]);
     expect(uncheckedRequirementKeys({
       counseling: { required: 8 }, designatedMajorCourses: { courses: [] }, secondMajor: { type: 'MINOR' }, majorTrackType: 'CONVERGENCE',
-    })).toEqual(['home.unchecked.counseling', 'home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
+    })).toEqual(['home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
     expect(uncheckedRequirementKeys({ secondMajor: { type: 'DOUBLE' }, majorTrackType: 'INTENSIVE' })).toEqual([]);
+  });
+});
+
+describe('certCourseRows', () => {
+  const both = { requiredCourses: ['기업연계프로젝트1', '기업연계프로젝트2'], minCourseCount: 2 };
+  it('모두 들어야 하는 졸업인증제는 과목마다 이수/남음을 보여준다', () => {
+    expect(certCourseRows({ ...both, completedCourses: ['기업연계프로젝트1'] })).toEqual([
+      { course: '기업연계프로젝트1', done: true },
+      { course: '기업연계프로젝트2', done: false },
+    ]);
+  });
+  it('여러 과목 중 몇 개만 들으면 되면 이수한 과목만 보여준다(대체 과목을 남음으로 늘어놓지 않는다)', () => {
+    const oneOf = { requiredCourses: ['캡스톤디자인', '기업연계프로젝트', '종합설계'], minCourseCount: 1 };
+    expect(certCourseRows({ ...oneOf, completedCourses: [] })).toEqual([]);
+    expect(certCourseRows({ ...oneOf, completedCourses: ['캡스톤디자인'] })).toEqual([{ course: '캡스톤디자인', done: true }]);
+  });
+  it('과목이 하나뿐인 행(졸업논문)이나 서버가 값을 안 주면 아무것도 보여주지 않는다', () => {
+    expect(certCourseRows({ requiredCourses: ['졸업논문'], minCourseCount: 1, completedCourses: [] })).toEqual([]);
+    expect(certCourseRows(both)).toEqual([]);
   });
 });

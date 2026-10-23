@@ -4,7 +4,7 @@ import SearchScreen from './SearchScreen.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
-import { groupDepartmentsByCollege, searchDepartments, matchedTracks, splitByMatch, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
+import { groupDepartmentsByCollege, searchDepartments, groupSearchResults, matchedTracks, splitByMatch, FORMER_GROUP_LABEL } from '../utils/departmentTree.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
 /**
@@ -38,7 +38,8 @@ function Highlighted({ text, query }) {
   );
 }
 
-function DepartmentCard({ department, selected, active = false, onSelect, showCollege, query = '', shortcuts = [], onSelectSuccessor }) {
+// cohortLabel: 개편 전후 묶음 안에서 카드 맨 앞에 붙는 학번 기준("2025학번까지" / "2026학번부터"). 묶음 안에서는 "이후 학과" 안내와 바로가기를 뺀다.
+function DepartmentCard({ department, selected, active = false, onSelect, showCollege, query = '', shortcuts = [], onSelectSuccessor, cohortLabel = null, cohortOld = false }) {
   const { t } = useI18n();
   const range = getYearRange(department, 'GENERAL');
   const ref = useRef(null);
@@ -56,6 +57,7 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
       className={'onb-option-card' + (selected ? ' selected' : '') + (active ? ' active' : '')}
       onClick={() => onSelect(department)}
     >
+      {cohortLabel && <span className={'dept-cohort' + (cohortOld ? ' old' : '')}>{cohortLabel}</span>}
       <span className="onb-option-title">
         <Highlighted text={department.name} query={query} />
       </span>
@@ -77,7 +79,7 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
           ))}
         </span>
       )}
-      {describeSuccessors(department, t) && <span className="onb-option-note">{describeSuccessors(department, t)}</span>}
+      {!cohortLabel && describeSuccessors(department, t) && <span className="onb-option-note">{describeSuccessors(department, t)}</span>}
     </button>
   );
   if (shortcuts.length === 0) return card;
@@ -95,8 +97,11 @@ function DepartmentCard({ department, selected, active = false, onSelect, showCo
   );
 }
 
+// 검색 결과를 화면에 보이는 순서로 — 개편 전후 학과 묶음은 이전 학과 다음에 이후 학과(↑↓·엔터도 이 순서를 따른다).
+const displayOrder = (list) => groupSearchResults(list).flatMap((item) => (item.pair ? [item.pair.former, item.pair.successor] : [item.department]));
+
 function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContinue = onSelect, onSelectSuccessor }) {
-  const { t } = useI18n();
+  const { t, tRich } = useI18n();
   // 검색 입력 칸의 상태와 한글 조합 처리(조합 중 낱자로 걸러 내면 "맞는 학과가 없어요"가 깜빡인다)는 useSearchInput이 맡는다.
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -118,7 +123,7 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
   }, [groups, selectedId]);
 
   const trimmed = query.trim();
-  const results = useMemo(() => (trimmed ? searchDepartments(departments, trimmed) : []), [departments, trimmed]);
+  const results = useMemo(() => (trimmed ? displayOrder(searchDepartments(departments, trimmed)) : []), [departments, trimmed]);
   // ↑↓로 가리키는 검색 결과. 검색어가 바뀌면 다시 맨 위(엔터만 치면 맨 위가 골라진다).
   const [active, setActive] = useState({ query: '', index: 0 });
   const activeIndex = active.query === trimmed ? active.index : 0;
@@ -148,6 +153,13 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
     onSelectSuccessor(successor, former);
     closeSearchScreen();
   };
+  // 검색 결과에서 학과를 고른다. 개편 전후 묶음의 이후 학과는 바로가기와 같은 경로(onSelectSuccessor)로 보내, 이전 학과에 이어지는
+  // 세부전공까지 골라 두게 한다(컴퓨터·소프트웨어공학과 → 공학3계열 컴퓨터·소프트웨어공학전공).
+  const selectFromSearch = (department) => {
+    const pair = groupSearchResults(results).find((item) => item.pair && item.pair.successor === department)?.pair;
+    if (pair && onSelectSuccessor) handleSelectSuccessorFromSearch(department, pair.former);
+    else handleSelectFromSearch(department);
+  };
 
   // ↑↓: 가리키는 결과를 옮긴다. 엔터(모바일 "검색" 키): 가리킨 결과를 고른다.
   const handleSearchKeyDown = (e) => {
@@ -160,8 +172,8 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
     } else if (e.key === 'Enter') {
       // 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있어, 그때는 입력 칸의 지금 값으로 다시 찾아 맨 위를 고른다.
       const value = e.currentTarget.value.trim();
-      const pick = value === trimmed ? results[activeIndex] : searchDepartments(departments, value)[0];
-      if (pick) handleSelectFromSearch(pick);
+      const pick = value === trimmed ? results[activeIndex] : displayOrder(searchDepartments(departments, value))[0];
+      if (pick) selectFromSearch(pick);
     }
   };
 
@@ -172,19 +184,34 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
       <>
         <p className="search-screen-count">{t('dept.search.count', { count: results.length })}</p>
         <div className="onb-option-list">
-          {results.map((d, i) => (
-            <DepartmentCard
-              key={d.id}
-              department={d}
-              selected={selectedId === d.id}
-              active={i === activeIndex}
-              onSelect={handleSelectFromSearch}
-              showCollege
-              query={trimmed}
-              shortcuts={shortcutsFor(d)}
-              onSelectSuccessor={handleSelectSuccessorFromSearch}
-            />
-          ))}
+          {groupSearchResults(results).map((item) => {
+            const card = (d, extra = {}) => (
+              <DepartmentCard
+                key={d.id}
+                department={d}
+                selected={selectedId === d.id}
+                active={results.indexOf(d) === activeIndex}
+                onSelect={selectFromSearch}
+                showCollege
+                query={trimmed}
+                shortcuts={extra.cohortLabel ? [] : shortcutsFor(d)}
+                onSelectSuccessor={handleSelectSuccessorFromSearch}
+                {...extra}
+              />
+            );
+            if (!item.pair) return card(item.department);
+            // 개편 전후 학과 — 한 묶음으로 두고 맨 앞에 학번 기준을 보여, 학생이 자기 학번으로 바로 고르게 한다(2026-10-22 피드백).
+            const { former, successor } = item.pair;
+            const from = getYearRange(successor, 'GENERAL').min;
+            const until = getYearRange(former, 'GENERAL').max;
+            return (
+              <div className="dept-pair" key={`pair-${former.id}-${successor.id}`}>
+                <p className="dept-pair-head">{tRich('dept.pair.head', { year: from })}</p>
+                {card(former, { cohortLabel: t('dept.cohortUntil', { year: until }), cohortOld: true })}
+                {card(successor, { cohortLabel: t('dept.cohortFrom', { year: from }) })}
+              </div>
+            );
+          })}
         </div>
       </>
     );

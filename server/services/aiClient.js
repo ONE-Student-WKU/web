@@ -5,7 +5,7 @@
  */
 
 const { currentStandingOf } = require('./studentProgress');
-const { parseLeavePeriods } = require('./leavePeriods');
+const { parseLeavePeriods, totalLeaveSemesters } = require('./leavePeriods');
 const { parseTeachingCourse } = require('./teachingCourse');
 const { secondMajorTypeOf } = require('./secondMajor');
 
@@ -32,6 +32,11 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 이전 대화의 답변은 그때 제공된 근거로 한 것이다. 이번 근거 문서는 이번 질문에 맞춰 새로 고른 것이라 이전 답변의 근거가
 빠져 있을 수 있다. 이번 근거에 없다는 이유만으로 이전 답변이 틀렸다거나 추정이었다고 정정하지 말고, 이번 질문에만 답하라.
 학생이 이전 답변을 직접 의심하며 다시 물으면 이번 근거로 확인할 수 있는 만큼만 답하라.
+답변에서 "근거 문서에 따르면", "문서에 있는 것은", "제공된 자료에는"처럼 근거 자료를 말로 언급하지 마라 — 참고한 자료는 화면에
+답변과 따로 표시된다. 질문에 대한 답부터 바로 말하고, 근거에 없는 내용은 "확인된 내용이 없어요"처럼 짧게 밝혀라.
+질문이 요구한 범위만 답하라. 학생이 묻지 않은 부가 정보(예: 졸업학점을 물었는데 윗학년 과목을 미리 들을 수 있다는 이야기)는 덧붙이지 마라.
+이 챗봇은 ONE Student라는 원광대 학생용 서비스 안에 있다. 학생이 커뮤니티·과목 관리·졸업요건 진단·진로 탐색·문의하기를 말하면
+대개 이 서비스의 기능이니 "ONE Student 이용 안내" 근거로 답하고, 학교 웹정보서비스나 학교 부서 이야기로 바꾸지 마라.
 말투: 학생을 "당신"이라고 부르지 마라. 주어가 필요하면 생략하거나 "학생"이라고 쓰고, 문장 끝은 "~해요/~이에요"로 통일하라.
 쉬운 말: 학칙 용어(예: "최소전공 인정학점")를 그대로 앞세우지 말고 무슨 뜻인지 먼저 말한 뒤 용어는 괄호로 붙여라.
 기준이 줄거나 바뀐 경우는 "일반 학생 66학점 → 51학점으로 줄었다"처럼 바뀌기 전과 후 숫자를 나란히 말하고,
@@ -40,6 +45,15 @@ const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 
 const ENROLLMENT_TYPE_LABEL = { GENERAL: '일반 재학생', TRANSFER_ADMISSION: '편입생', MAJOR_CHANGE: '전과생' };
 const SECOND_MAJOR_LABEL = { DOUBLE: '복수전공', MINOR: '부전공' };
 const MAJOR_TRACK_TYPE_LABEL = { DOUBLE_MAJOR: '복수전공형', INTENSIVE: '전공심화형', CONVERGENCE: '전공융합형', UNDECIDED: '아직 정하지 않음' };
+
+// 휴학 기간 한 덩어리를 "2023학년도 1학기~2024학년도 2학기(4학기)"처럼 끝 학기까지 적는다. 시작 학기와 학기 수만 주면 모델이
+// "2023학년도 1~4학기"처럼 끝을 잘못 읽었다(2026-10-23 로컬 재현). 정규 학기만 센다(1학기 → 2학기 → 다음 해 1학기).
+function describeLeavePeriod(p) {
+  const endIndex = p.startYear * 2 + (p.startSemester - 1) + p.semesters - 1;
+  const start = `${p.startYear}학년도 ${p.startSemester}학기`;
+  const end = `${Math.floor(endIndex / 2)}학년도 ${(endIndex % 2) + 1}학기`;
+  return p.semesters === 1 ? `${start}(1학기)` : `${start}~${end}(${p.semesters}학기)`;
+}
 
 // 학생이 온보딩·학과 수정에서 직접 입력한 항목들. 처음에는 학과·학번·입학유형만 넘겼는데, 뒤에 입력 항목(전과 시점, 편입 인정학점,
 // 휴학 기간, 교직, 다전공, 이수유형)이 늘어도 여기에 넣지 않아 챗봇이 "전과 시점을 알려 주세요", "인정학점이 기록돼 있지 않다",
@@ -71,12 +85,24 @@ function profileDetailLines(student) {
   if (periods) {
     lines.push(periods.length === 0
       ? '휴학: 한 적 없음'
-      : `휴학: ${periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', ')}`);
+      : `휴학: ${periods.map(describeLeavePeriod).join(', ')} — 지금까지 휴학한 학기는 모두 ${totalLeaveSemesters(periods)}학기`);
   } else if (Number(student.leave_semesters) > 0) {
     lines.push(`휴학: 누적 ${student.leave_semesters}학기(시기는 입력 안 함)`);
   }
   return lines;
 }
+
+// 휴학 종류(가사·질병·입대·창업·임신출산육아)는 받지 않는다(건강·임신은 민감정보라 저장하지 않음, leavePeriods.js). 그런데 휴학 한도는
+// 종류마다 따로 세서, "휴학 몇 학기 더 할 수 있어?"에 챗봇이 가사휴학이라는 전제를 밝히지 않고 "8학기 중 4학기 남았다"고 단정했다(2026-10-23 로컬 재현).
+// 한도 숫자는 근거 문서(학칙·휴학 안내)에서 가져오게 한다. 묻기만 하면 학생이 번거롭고 종류마다 다 계산하면 답이 어지러워서(사용자 결정
+// 2026-10-23), 가장 흔한 가사휴학을 전제로 밝히고 먼저 답한 뒤, 다른 종류는 한도만 짧은 표로 보여준다.
+const LEAVE_TYPE_NOTE = `휴학 종류(가사·질병, 입대(군), 창업, 임신·출산·육아 등)는 이 서비스가 받지 않아 모른다. 남은 휴학 가능 학기, 신청 기간, 필요 서류,
+복학 절차처럼 휴학 종류에 따라 답이 달라지는 질문에는 이렇게 답하라.
+1) 가장 흔한 가사휴학이라는 전제를 먼저 밝히고 그 기준으로 답한다. 남은 학기 = 근거 문서의 가사휴학 한도 − 위 프로필의 "지금까지 휴학한 학기" 합계다
+   (예: 한도 8학기, 휴학 4학기 → "지금까지 휴학이 가사휴학이었다면 8학기 중 4학기를 써서 4학기 더 할 수 있어요").
+2) 이어서 다른 종류는 근거 문서의 한도만 짧은 마크다운 표(휴학 종류 | 한도 | 가사휴학 한도에 세는지)로 반드시 보여준다. 종류마다 이 학생의 남은 학기를 따로 계산해 늘어놓지 마라.
+3) 표 다음, 답의 맨 끝에 "다른 종류의 휴학이었다면 알려주세요. 그 기준으로 다시 계산해 드릴게요"처럼 한 줄만 덧붙인다. 답하기 전에 종류부터 되묻지 마라.
+학생이 이 대화에서 종류를 이미 말했으면 그 종류로만 답하고 표는 생략한다.`;
 
 // 지금 학년·학기 한 줄. 계산은 studentProgress 한 곳에서 한다(이슈 #318) — 챗봇은 이수 기록까지 넣은 progress.current를,
 // 그게 없는 곳(진로 상담 등)은 프로필로 계산한 currentStandingOf를 쓴다. 방학이면 직전 학기다.
@@ -107,6 +133,7 @@ function buildStudentProfileNote(student, progress = null) {
   return `이 학생의 프로필 — ${parts.join(', ')}.
 ${details.map((l) => `- ${l}`).join('\n')}
 위 항목은 학생이 직접 입력한 값이다. 이 값을 학생에게 다시 묻지 말고 그대로 써서 답하라. "입력 안 함"인 항목만, 답이 그 값에 따라 달라질 때 물어라.
+${LEAVE_TYPE_NOTE}
 근거 문서에 학번/입학년도별로 기준이 나뉘어 있으면, 학생이 다른 학번·학년도를 직접 물은 경우가 아닌 한 반드시 이 학생의 학번(${student.admission_year}학번) 기준을 우선 적용해서 답하라.
 여기서 "이 학번 기준"은 최신 교육과정 책자에 실린 "${student.admission_year}학번 적용" 표(학번별 이수기준표)를 뜻한다 — 원광대는 개편된 교육과정을 모든 학번에 적용하고 학번별 차이는 최신 책자의 표로 정하므로, ${student.admission_year}학년도 책자의 숫자는 입학 당시 기준(이력)일 뿐이다.
 근거 문서에 이 학생의 학번에 해당하는 내용이 없고 다른 학번 기준만 있다면, 그 문서가 어느 학번 기준인지 명시하면서
@@ -168,6 +195,20 @@ function adjustmentLines(graduationStatus, student) {
   return lines;
 }
 
+// 졸업논문·졸업인증제 행에 과목별 이수 여부를 붙인다(graduationService.evaluateCertifications의 completedCourses).
+// 요구 과목을 모두 들어야 하는 행은 "이수/남은 과목"으로, 여러 과목 중 몇 개만 들으면 되는 행은 "이 중 N과목"으로 적어
+// 대체 과목 묶음을 "모두 남았다"고 읽지 않게 한다.
+function certificationCourseText(c) {
+  if (!Array.isArray(c.completedCourses) || !c.requiredCourses || c.requiredCourses.length === 0) return '';
+  const done = c.completedCourses;
+  const doneText = done.length ? done.join(', ') : '없음';
+  if (c.minCourseCount >= c.requiredCourses.length) {
+    const left = c.requiredCourses.filter((name) => !done.includes(name));
+    return ` — 이미 이수한 과목: ${doneText}${left.length ? ` / 아직 남은 과목: ${left.join(', ')}` : ''}. 이미 이수한 과목을 다시 들으라고 안내하지 마라.`;
+  }
+  return ` — 요구 과목(${c.requiredCourses.join(', ')}) 중 ${c.minCourseCount}과목 이상이면 된다. 이미 이수한 과목: ${doneText}.`;
+}
+
 function buildGraduationStatusNote(graduationStatus, student = null) {
   if (!graduationStatus) return null;
 
@@ -179,15 +220,15 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
     .join('\n');
   const certLines = certifications
     .map((c) =>
-      c.optional
+      (c.optional
         ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 교직과정 이수자만 해당하는 참고 항목이다. 교직을 이수하지 않는 학생에게 졸업 부족 요건으로 말하지 마라 (${c.description})`
         : c.conditionalExemption === 'BACHELOR_TRANSFER'
           ? `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} — 학사편입학자·산업체편입자는 이 대학 공통 졸업인증제가 면제다. 미충족이면 일반편입인지 학사편입인지 먼저 물어보고 단정하지 마라 (${c.description})`
-          : `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`
+          : `  - ${c.category}: ${c.satisfied ? '충족' : '미충족'} (${c.description})`) + certificationCourseText(c)
     )
     .join('\n');
   const remaining = Math.max(0, totalRequiredCredits - totalEarnedCredits);
-  // 자기계발심층상담은 판정하지 않는다(counseling.js, D-65). 기준과 확인 경로만 안내하게 한다.
+  // 자기계발심층상담은 상담 기록을 읽지 않지만, 지도교수가 학기마다 상담을 진행해 거의 모든 학생이 채우므로 충족으로 안내한다(D-81, D-65를 바꿈).
   const counseling = graduationStatus.counseling;
   const counselingCohort = counseling && { FROM_2020: '2020학번부터', BEFORE_2020: '2016~2019학번', TRANSFER: '편입생' }[counseling.cohort];
   // 시행규칙 제9조 제1호 학과의 지정 전공 과목 — 어떤 과목이 지정인지 학과 내규라 판정하지 않는다(designatedMajorCourses.js).
@@ -241,10 +282,10 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
   const registrationLine = terms
-    ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라.`
+    ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라. 이 내용은 학생이 학기·등록·졸업 시기를 묻거나, 학점을 다 채웠는데 등록 학기가 모자랄 때만 말하라(남은 학점만 물으면 꺼내지 마라).`
     : null;
   const counselingLine = counseling
-    ? `  - 자기계발심층상담: 판정하지 않음 — ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 이 서비스는 상담 기록을 읽지 않으니 "충족/미충족"을 말하지 말고, 웹정보서비스 → 상담관리 → 지도교수 상담 → 상담일지(오프라인)에서 직접 확인하라고 안내하라. 학기마다 1회로 세는지 합계 횟수인지는 학교에 확인 중이니 단정하지 마라.`
+    ? `  - 자기계발심층상담: ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 대부분 지도교수가 학기마다 상담을 진행해 채워 주므로 부족 요건으로 말하지 마라. 학생이 직접 물으면 이렇게 설명하고, 혹시 모르니 웹정보서비스 → 상담관리 → 지도교수 상담에서 확인할 수 있다고 덧붙여라.`
     : null;
 
   // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.
@@ -329,7 +370,10 @@ function buildYearContextNote(yearContext) {
     lines.push('이 질문은 학생이 앞으로 들을 과목·학기 계획을 묻는다(질문에 연도는 없다). 들을 수 있는 과목은 학번 교육과정표가 아니라 근거 문서의 "개설과목" 문서(실제 개설 이력)를 기준으로 답하라. ' +
       '"아직 이수하지 않은 과목" 문서가 있으면 그것이 개설 과목에서 이수한 과목을 이미 뺀 목록이니 우선 근거로 쓰고, 이미 이수한 과목을 다시 권하지 마라(목록에 없는 과목을 지어내지도 마라). ' +
       '다음 학기 개설 정보는 아직 확정되지 않았을 수 있으니, 근거 문서 제목에 적힌 학년도를 밝히며 "○학년도 개설 기준 참고용"이라고 알리고 실제 개설은 학과·수강신청 사이트에서 확인하라고 안내하라. ' +
-      '개설 과목의 학년은 권장 학년일 뿐이라 상위·하위 학년 과목도 후보로 볼 수 있다.');
+      // 예전에는 "상위·하위 학년 과목도 후보"라고 지시해서, 졸업학점만 물어도 윗학년 과목을 미리 들을 수 있다는 이야기를 늘어놓았다(2026-10-22 피드백).
+      '과목은 다음 수강 학기 학년의 과목과, 아래 학년 과목 중 아직 이수하지 않은 필수 과목을 권하라. 윗학년 과목을 미리 듣는 이야기는 학생이 물을 때만 하라. ' +
+      '다음 학년도 개설 정보가 아직 없으면 답을 피하지 말고, 가장 최근 학년도 개설 자료로 "○학년도 개설 기준 참고용"이라고 밝혀 권하라. ' +
+      '과목이 몇 학년 몇 학기에 개설되는지와 학점은 근거 문서에 적힌 값만 말하고, 다음 수강 학기에 끼워 맞춰 지어내지 마라.');
   }
   if (questionIntent === 'CURRENT_OFFERINGS') {
     lines.push('이 질문은 연도 없이 지금(올해) 개설된 과목을 묻는다. 근거 문서의 "개설과목" 문서(실제 개설 이력)를 기준으로, 제목에 적힌 학년도·학기를 밝히며 답하라.');
@@ -375,7 +419,7 @@ const PROGRESS_FLAG_NOTE = {
   RECORDS_LEAVE_MISMATCH: '프로필의 누적 휴학 학기 수와 이수 기록의 빈 학기가 맞지 않는다(기록 기준으로 계산)',
   // 다음 수강 학기 중 하나라도 수업연한을 넘기면 붙는다. 주어 없이 "초과학기다"라고만 쓰면 모델이 "지금 초과학기"로 읽어서
   // 4학년 2학기 학생에게 "현재 초과학기 재학 중"이라고 답했다(2026-10-15 운영 점검, #378). 그래서 무엇이 초과학기인지 못박는다.
-  EXTENDED_TERM: '위 "다음에 수강신청할 학기" 중 수업연한(학과의 정규 학기 수)을 넘긴 학기가 있다(그 학기는 초과학기). 지금 학기가 초과학기라는 뜻이 아니다 — 지금 학년·학기는 위 "지금 학년·학기" 값이다',
+  EXTENDED_TERM: '위 "다음에 수강신청할 학기" 중 수업연한(학과의 정규 학기 수)을 넘긴 학기가 있다(그 학기는 초과학기). 지금 학기가 초과학기라는 뜻이 아니다 — 지금 학년·학기는 위 "지금 학년·학기" 값이다. 학생이 학기·졸업 시기를 묻지 않으면 초과학기 이야기는 꺼내지 마라',
 };
 
 // studentProgress.getStudentProgress() 결과를 시스템 프롬프트에 심는다. "현재 N학년"이라는 한 줄만 주면 모델이 학기를 즉흥으로
@@ -386,7 +430,7 @@ function buildProgressNote(progress) {
   const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
   const periodText = (periods) => (periods.length === 0
     ? '휴학한 적 없음'
-    : periods.map((p) => `${p.startYear}학년도 ${p.startSemester}학기부터 ${p.semesters}학기`).join(', '));
+    : periods.map(describeLeavePeriod).join(', '));
   const sourceText = progress.source === 'RECORDS'
     ? '학생이 과목 관리에 등록한 이수 기록'
     : progress.source === 'PROFILE'
@@ -418,7 +462,8 @@ function buildProgressNote(progress) {
   }
   lines.push(
     progress.completedCourseNames.length > 0
-      ? `- 이미 이수한 과목(성적 미입력 포함, 낙제·재수강으로 대체된 기록 제외) ${progress.completedCourseNames.length}개: ${progress.completedCourseNames.join(', ')}`
+      ? `- 이미 이수한 과목(성적 미입력 포함, 낙제·재수강으로 대체된 기록 제외) ${progress.completedCourseNames.length}개: ${progress.completedCourseNames.join(', ')}\n` +
+        '  과목을 권하거나 "이 중에서 들으면 된다"며 나열할 때는 이 목록의 과목을 반드시 빼라(괄호 속 별칭만 다른 같은 과목도 뺀다). 근거 문서의 교육과정 목록에는 이미 들은 과목도 섞여 있다.'
       : '- 이수 기록으로 등록된 과목이 없다. 들은 과목을 모르니 "이미 들은 과목을 뺀다"고 단정하지 말고 학생에게 확인하라.'
   );
   return lines.join('\n');
@@ -455,10 +500,11 @@ searchQuery: 학생이 쓴 줄임말·은어·비격식 표현을 원광대학�
 
 intent: 질문이 "어느 시점의 과목 정보"를 필요로 하는지 고른다.
 - NEXT_TERM_PLANNING: 학생이 앞으로 들을 과목·학기 계획을 묻는다. 남은 과목, 들을 만한 과목 추천, 다음 학기·내년에 뭘 들을지, 학기별 학점 배분 등.
-  예: "1학기에 12학점 2학기에 6학점 채워야 하는데 뭐 들을까?", "졸업하려면 남은 과목 중에 뭐가 있어?", "다음 학기 시간표 짜는 중인데 추천해줘"
+  예: "1학기에 12학점 2학기에 6학점 채워야 하는데 뭐 들을까?", "졸업하려면 남은 과목 중에 뭐가 있어?", "다음 학기 시간표 짜는 중인데 추천해줘", "졸업요건 채우려면 무슨 과목 들어야 해?"
+  졸업요건을 채우려고 "무슨/어떤 과목을 들어야 하는지" 묻는 질문은 졸업요건 질문이 아니라 이 분류다.
 - CURRENT_OFFERINGS: 연도를 말하지 않고 "지금/올해/이번 학기에 개설된 과목"을 묻는다.
   예: "이번 학기에 개설된 전공선택 뭐 있어?", "지금 열려 있는 과목 알려줘"
-- DEFAULT: 그 밖의 모든 질문. 졸업요건·학칙·규정·절차 질문, 질문에 특정 연도나 학번이 이미 적혀 있는 질문, 과목 변경 이력·비교 질문 포함. 애매하면 DEFAULT.`;
+- DEFAULT: 그 밖의 모든 질문. 졸업요건의 기준·남은 학점 수를 묻는 질문, 학칙·규정·절차 질문, 질문에 특정 연도나 학번이 이미 적혀 있는 질문, 과목 변경 이력·비교 질문 포함. 애매하면 DEFAULT.`;
 
 function parseQuestionAnalysis(text, rawQuery) {
   const fallback = { searchQuery: rawQuery, intent: 'DEFAULT' };

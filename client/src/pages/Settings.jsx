@@ -1,7 +1,8 @@
 import React from 'react';
-import { IconChevronLeft } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import { SUPPORTED_LANGUAGES, useI18n } from '../i18n/I18nContext.jsx';
 
+const THEME_VALUES = ['light', 'dark'];
 const FONT_SIZE_VALUES = ['small', 'medium', 'large'];
 
 /**
@@ -31,60 +32,89 @@ function Settings({ theme, onSetTheme, fontSize, onSetFontSize, onGoHome, onLang
         </div>
       </header>
 
-      <div className="courses-body">
-        <section className="home-card">
-          <p className="home-card-label">{t('settings.theme')}</p>
-          <div className="settings-theme-options">
-            <button
-              className={theme === 'dark' ? 'settings-theme-btn active' : 'settings-theme-btn'}
-              onClick={() => onSetTheme('dark')}
-            >
-              {t('settings.theme.dark')}
-            </button>
-            <button
-              className={theme === 'light' ? 'settings-theme-btn active' : 'settings-theme-btn'}
-              onClick={() => onSetTheme('light')}
-            >
-              {t('settings.theme.light')}
-            </button>
-          </div>
-        </section>
+      {/* 고르면 어떻게 보일지 바로 알 수 있게 — 테마는 화면 미리보기, 글자 크기는 실제 크기의 "가", 언어는 체크 목록(2026-10-22 개편). */}
+      <div className="courses-body community-body">
+        <div className="settings-page">
+          <section className="settings-group">
+            <p className="settings-group-title" id="settings-theme">
+              {t('settings.theme')}
+            </p>
+            <div className="settings-panel">
+              <div className="settings-themes" role="group" aria-labelledby="settings-theme">
+                {THEME_VALUES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={theme === value ? 'settings-theme-card active' : 'settings-theme-card'}
+                    aria-pressed={theme === value}
+                    onClick={() => onSetTheme(value)}
+                    data-track={`settings.theme.${value}`}
+                  >
+                    <span className={`settings-theme-preview settings-theme-preview--${value}`} aria-hidden="true">
+                      <i className="strong" />
+                      <i />
+                      <i />
+                    </span>
+                    {t(`settings.theme.${value}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
 
-        <section className="home-card">
-          <p className="home-card-label">{t('settings.fontSize')}</p>
-          <div className="settings-theme-options">
-            {FONT_SIZE_VALUES.map((value) => (
-              <button
-                key={value}
-                className={fontSize === value ? 'settings-theme-btn active' : 'settings-theme-btn'}
-                onClick={() => onSetFontSize(value)}
-              >
-                {t(`settings.fontSize.${value}`)}
-              </button>
-            ))}
-          </div>
-        </section>
+          <section className="settings-group">
+            <p className="settings-group-title" id="settings-font">
+              {t('settings.fontSize')}
+            </p>
+            <div className="settings-panel">
+              <div className="settings-fonts" role="group" aria-labelledby="settings-font">
+                {FONT_SIZE_VALUES.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={fontSize === value ? 'settings-font-card active' : 'settings-font-card'}
+                    aria-pressed={fontSize === value}
+                    onClick={() => onSetFontSize(value)}
+                    data-track={`settings.font.${value}`}
+                  >
+                    <b className={`settings-font-sample settings-font-sample--${value}`} aria-hidden="true">
+                      {t('settings.fontSize.sample')}
+                    </b>
+                    <span>{t(`settings.fontSize.${value}`)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
 
-        <section className="home-card">
-          <p className="home-card-label">{t('settings.language')}</p>
-          <div className="settings-theme-options">
-            {SUPPORTED_LANGUAGES.map((option) => (
-              <button
-                key={option.code}
-                className={lang === option.code ? 'settings-theme-btn active' : 'settings-theme-btn'}
-                onClick={() => {
-                  setLang(option.code);
-                  onLanguageChange?.(option.code);
-                }}
-                lang={option.code}
-                aria-pressed={lang === option.code}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <p className="settings-note">{t('settings.language.note')}</p>
-        </section>
+          <section className="settings-group">
+            <p className="settings-group-title">{t('settings.language')}</p>
+            <div className="settings-list">
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  className="settings-row"
+                  data-track={`settings.lang.${option.code}`}
+                  onClick={() => {
+                    setLang(option.code);
+                    onLanguageChange?.(option.code);
+                  }}
+                  lang={option.code}
+                  aria-pressed={lang === option.code}
+                >
+                  <span>{option.label}</span>
+                  {lang === option.code && (
+                    <span className="settings-check">
+                      <IconCheck size={11} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="settings-group-note">{t('settings.language.note')}</p>
+          </section>
+        </div>
       </div>
     </div>
   );

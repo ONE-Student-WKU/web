@@ -40,11 +40,12 @@ function CareerRoadmapList({ roadmap }) {
     <>
       {/* 추천 이유는 과목명만 보고 쓴 설명이라 실제 수업 내용과 다를 수 있다 — 목록 맨 위에 한 번만 안내하고 각 과목의 계획서 링크로 확인하게 한다. */}
       <p className="career-roadmap-note">{t('career.roadmapReasonNote')}</p>
+      {/* 학기별 세로 타임라인 — 학기 이름 앞의 점과 세로선으로 1학년 2학기 → 2학년 1학기 흐름이 보이게 한다(2026-10-22 개편). */}
       {groups.map((group) => (
         <div key={group.label} className="career-roadmap-group">
           <span className="career-roadmap-label">{group.label}</span>
           {group.items.map((item) => (
-            <div key={item.courseName} className="home-card career-roadmap-item">
+            <div key={item.courseName} className="career-roadmap-item">
               <span className="career-roadmap-course">{item.courseName}</span>
               {item.reason && <span className="career-roadmap-reason">{item.reason}</span>}
               {item.syllabusUrl && (

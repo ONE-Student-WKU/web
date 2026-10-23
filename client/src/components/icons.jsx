@@ -59,6 +59,14 @@ export function IconChevronLeft({ size = 20 }) {
   );
 }
 
+export function IconChevronRight({ size = 20 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
 export function IconUser({ size = 14 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
@@ -159,6 +167,17 @@ export function IconSearch({ size = 16 }) {
   );
 }
 
+// 가로 점 세 개("⋯") — 자주 쓰지 않는 동작을 접어 둔 메뉴 버튼.
+export function IconMore({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5.5" cy="12" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="18.5" cy="12" r="1.7" />
+    </svg>
+  );
+}
+
 export function IconX({ size = 16 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">
@@ -234,6 +253,18 @@ export function IconHelpCircle({ size = 18 }) {
       <circle cx="12" cy="12" r="9" />
       <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6" />
       <line x1="12" y1="17" x2="12" y2="17.01" />
+    </svg>
+  );
+}
+
+// 관리자 "학과·학번별 사용자" — 막대그래프.
+export function IconBarChart({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="6" y="11" width="3" height="6" rx="0.5" />
+      <rect x="11" y="6" width="3" height="11" rx="0.5" />
+      <rect x="16" y="13" width="3" height="4" rx="0.5" />
     </svg>
   );
 }

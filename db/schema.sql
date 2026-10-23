@@ -826,6 +826,19 @@ CREATE TABLE IF NOT EXISTS community_posts (
   INDEX idx_community_posts_status (status)
 );
 
+-- 커뮤니티 글의 모집 학과(2026-10-22) — 글마다 최대 3개, 줄이 없으면 "학과 상관없음". 제목만으로는 자기 학과 글인지 알 수 없어
+-- 목록에 모집 학과와 "내 학과" 표시를 붙인다(services/postDepartments.js). position은 글쓴이가 고른 순서.
+CREATE TABLE IF NOT EXISTS community_post_departments (
+  post_id        INT NOT NULL,
+  department_id  INT NOT NULL,
+  position       TINYINT NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (post_id, department_id),
+  INDEX idx_community_post_departments_dept (department_id),
+  FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+);
+
 -- 신청 메시지는 글쓴이만 볼 수 있음(비공개).
 CREATE TABLE IF NOT EXISTS community_applications (
   id             INT AUTO_INCREMENT PRIMARY KEY,
@@ -839,6 +852,51 @@ CREATE TABLE IF NOT EXISTS community_applications (
 
   FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
   FOREIGN KEY (applicant_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 커뮤니티 공지 — 운영자가 쓰고 학생은 읽기만 한다(신청·신고·댓글 없음, 승인 절차 없음). 일반 글(community_posts)과
+-- 섞으면 승인·신청·신고·검색 로직이 공지를 따로 걸러야 해서 표를 나눴다. 작성 관리자 계정이 지워져도 공지는 남긴다.
+CREATE TABLE IF NOT EXISTS community_notices (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  author_id   INT NULL,
+  title       VARCHAR(60) NOT NULL,
+  body        TEXT NOT NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NULL,
+
+  INDEX idx_community_notices_created (created_at),
+  FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+-- 학생이 공지 목록을 마지막으로 본 시각. 공지마다 읽음을 기록하기(아래 community_notice_reads) 전에 쓰던 방식이라 이제는
+-- 갱신하지 않고, 그 전에 올라온 공지를 이미 본 것으로 치는 기준으로만 쓴다(services/noticeService.js).
+CREATE TABLE IF NOT EXISTS community_notice_seen (
+  student_id  INT PRIMARY KEY,
+  seen_at     DATETIME NOT NULL,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 학생이 연 공지 — 공지 상세를 열거나 "모두 읽음으로 표시"를 누르면 한 줄씩 남는다. 새 공지 점은 안 읽은 공지 수로 센다.
+CREATE TABLE IF NOT EXISTS community_notice_reads (
+  student_id  INT NOT NULL,
+  notice_id   INT NOT NULL,
+  read_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (student_id, notice_id),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (notice_id) REFERENCES community_notices(id) ON DELETE CASCADE
+);
+
+-- 매칭 연락 차단 — 수락된 신청의 글쓴이·신청자 중 누구든 차단하면 그 신청의 중계 메일을 양쪽 모두 더 이상 전달하지 않는다
+-- (server/routes/emailRelay.js). 메일 내용은 여전히 저장하지 않는다. 차단은 되돌리지 않는다.
+CREATE TABLE IF NOT EXISTS community_contact_blocks (
+  application_id  INT PRIMARY KEY,
+  blocked_by      INT NULL,
+  blocked_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (application_id) REFERENCES community_applications(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_by) REFERENCES students(id) ON DELETE SET NULL
 );
 
 -- 신청 수락(매칭 성사) 시 신청자·글쓴이 각각을 위해 한 쌍(2행)으로 생성되는 프록시 이메일
@@ -944,6 +1002,38 @@ CREATE TABLE IF NOT EXISTS student_activity (
   last_seen_at  DATETIME NOT NULL,
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 하루 방문 기록(관리자 대시보드의 방문자 추이·재방문율). student_activity는 마지막 접속 시각 하나뿐이라 날마다 몇 명이
+-- 왔는지 알 수 없어서, 학생이 그날 처음 요청할 때 (학생, 한국 날짜) 한 줄을 남긴다(middleware/activityTracker.js).
+-- 이 표를 만든 날부터 쌓이므로 그 전 기간의 방문자는 비어 있다.
+-- 학생과 연결된 기록은 최근 14일만 둔다(재방문율 계산에 필요한 만큼, 개인정보처리방침). 지난 날은 아래 daily_visit_counts로
+-- 날짜별 합계만 옮기고 지운다(services/visitStatsService.js).
+CREATE TABLE IF NOT EXISTS student_daily_visits (
+  student_id  INT NOT NULL,
+  visit_date  DATE NOT NULL,  -- 한국(KST) 날짜
+
+  PRIMARY KEY (student_id, visit_date),
+  INDEX idx_student_daily_visits_date (visit_date),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- 14일이 지난 하루 방문 기록의 날짜별 합계. 학생과 연결되지 않는다.
+CREATE TABLE IF NOT EXISTS daily_visit_counts (
+  visit_date  DATE PRIMARY KEY,  -- 한국(KST) 날짜
+  visitors    INT NOT NULL
+);
+
+-- 기능 사용 횟수(관리자 "기능 사용"). 화면·버튼이 하루에 몇 번 쓰였는지의 합계만 남기고, 누가 썼는지·몇 시에 썼는지는
+-- 저장하지 않는다(routes/uiEvents.js, client/src/utils/track.js).
+-- devices: 그날 그 기능을 쓴 기기 수(대략) — 같은 브라우저에서 그날 처음 쓸 때만 1을 더한다.
+CREATE TABLE IF NOT EXISTS ui_event_daily (
+  event_date  DATE NOT NULL,         -- 한국(KST) 날짜
+  event       VARCHAR(64) NOT NULL,  -- 기능 이름(화면.요소[.값])
+  count       INT NOT NULL DEFAULT 0,
+  devices     INT NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (event_date, event)
 );
 
 -- ---------------------------------------------------------------------------

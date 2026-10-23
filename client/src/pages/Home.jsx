@@ -66,6 +66,7 @@ function markHintSeen() {
  * - onOpenInquiry: function
  * - onOpenHomeEdit: function — 헤더의 편집 버튼(홈 화면 편집)
  * - onLogout: function
+ * - communityBadge: boolean (선택) — 새 공지·확인 안 한 신고 결과가 있으면 메뉴의 커뮤니티에 점을 단다(하단 바와 같은 기준).
  */
 function Home({
   user,
@@ -73,6 +74,7 @@ function Home({
   onOpenGraduation,
   onOpenCareer,
   onOpenCommunity,
+  communityBadge = false,
   onOpenSettings,
   onOpenOnboarding,
   onOpenLeaveSettings,
@@ -172,6 +174,7 @@ function Home({
           <button
             type="button"
             className={showEditHint ? 'home-edit-btn hinted' : 'home-edit-btn'}
+            data-track="home.edit"
             onClick={() => {
               dismissEditHint();
               onOpenHomeEdit();
@@ -315,10 +318,18 @@ function Home({
                     key={view}
                     className={isLockedView(view, user) ? 'home-quick-btn locked' : 'home-quick-btn'}
                     onClick={openView[view]}
-                    aria-label={isLockedView(view, user) ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) }) : undefined}
+                    data-track={`home.menu.${view}`}
+                    aria-label={
+                      isLockedView(view, user)
+                        ? t('nav.locked', { name: t(TAB_LABEL_KEYS[view]) })
+                        : view === 'community' && communityBadge
+                          ? t('nav.communityBadge')
+                          : undefined
+                    }
                   >
                     <Icon />
                     <span>{t(TAB_LABEL_KEYS[view])}</span>
+                    {view === 'community' && communityBadge && <span className="home-quick-dot" aria-hidden="true" />}
                   </button>
                 );
               })}

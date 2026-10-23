@@ -5,6 +5,10 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('../api/chatApi.js', () => ({
   getCommunityPosts: vi.fn(),
+  // 공지(전체 글 탭 맨 위 고정 줄) — 이 테스트들은 공지가 없는 상태로 본다.
+  getNotices: vi.fn(() => Promise.resolve([])),
+  markNoticeRead: vi.fn(() => Promise.resolve(null)),
+  markAllNoticesRead: vi.fn(() => Promise.resolve(null)),
   getMyCommunityPosts: vi.fn(),
   getCommunityPost: vi.fn(),
   createCommunityPost: vi.fn(),
@@ -64,20 +68,23 @@ beforeEach(() => {
 });
 
 describe('모집 마감일', () => {
-  it('마감일이 지난 글(recruitState=ended)은 목록에서 제목 앞에 "마감"이 붙고 흐리게 보인다, 진행 중인 글은 "N.DD까지"가 보인다', async () => {
+  it('마감일이 지난 글(recruitState=ended)은 목록에서 "마감"이 붙고 흐리게 보인다, 진행 중인 글은 남은 날(D-n)이 보인다', async () => {
+    const later = new Date();
+    later.setDate(later.getDate() + 20);
+    const laterDate = `${later.getFullYear()}-${String(later.getMonth() + 1).padStart(2, '0')}-${String(later.getDate()).padStart(2, '0')}`;
     api.getCommunityPosts.mockResolvedValue([
       post({ id: 1, title: '끝난 모집', recruitEndDate: '2026-09-30', recruitState: 'ended' }),
-      post({ id: 2, title: '진행 중 모집', recruitEndDate: '2026-12-05', recruitState: 'open' }),
+      post({ id: 2, title: '진행 중 모집', recruitEndDate: laterDate, recruitState: 'open' }),
     ]);
     render(<Community {...baseProps} />);
     const ended = (await screen.findByText('끝난 모집')).closest('button');
     expect(within(ended).getByText('마감')).toBeInTheDocument();
-    expect(ended.className).toContain('community-post-list-item-closed');
+    expect(ended).toHaveClass('post-row--closed');
     const open = screen.getByText('진행 중 모집').closest('button');
     expect(within(open).queryByText('마감')).toBeNull();
-    expect(open.className).not.toContain('community-post-list-item-closed');
-    expect(open).toHaveTextContent('12.05까지');
-    expect(ended).not.toHaveTextContent('까지'); // 이미 끝난 글에는 "~까지"를 붙이지 않는다
+    expect(open).not.toHaveClass('post-row--closed');
+    expect(within(open).getByText('D-20')).toBeInTheDocument();
+    expect(ended).not.toHaveTextContent('D-'); // 이미 끝난 글에는 남은 날을 붙이지 않는다
   });
 
   it('마감일이 지난 글의 상세에는 "마감" 표시가 있고 신청 폼이 없다', async () => {
@@ -86,7 +93,7 @@ describe('모집 마감일', () => {
     render(<Community {...baseProps} />);
     await userEvent.click(await screen.findByText('스터디 모집'));
     expect(await screen.findByText(/모집 기간이 끝났어요 \(9\.30까지\)/)).toBeInTheDocument();
-    expect(screen.getByText('모집 기간 마감')).toBeInTheDocument();
+    expect(document.querySelector('.post-detail .post-state')).toHaveTextContent('마감');
     expect(screen.queryByRole('button', { name: '신청하기' })).toBeNull();
   });
 
@@ -116,7 +123,7 @@ describe('모집 마감일', () => {
     api.createCommunityPost.mockResolvedValue({ id: 9 });
     render(<Community {...baseProps} />);
     await userEvent.click(await screen.findByRole('button', { name: /글 쓰기/ }));
-    const input = screen.getByLabelText('모집 마감일 (선택)');
+    const input = screen.getByLabelText(/^마감일/);
     expect(input).toHaveAttribute('type', 'date');
     expect(input.min).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(input.max > input.min).toBe(true);
@@ -149,7 +156,8 @@ describe('내 신고 내역', () => {
     api.getMyReports.mockResolvedValue([report()]);
     render(<Community {...baseProps} />);
     await userEvent.click(await screen.findByRole('button', { name: '내 신고' }));
-    expect(await screen.findByText(/글 신고 · 문제 글/)).toBeInTheDocument();
+    const row = (await screen.findByText('문제 글')).closest('.post-row');
+    expect(row).toHaveTextContent('글 신고');
     expect(screen.getByText('검토 중')).toBeInTheDocument();
     expect(screen.getByText(/광고예요/)).toBeInTheDocument();
     expect(screen.getByText(/관리자가 확인하고 있어요/)).toBeInTheDocument();

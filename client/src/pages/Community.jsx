@@ -18,14 +18,23 @@ import {
   getMySanction,
   getMyReports,
   markMyReportsSeen,
+  getNotices,
+  markNoticeRead,
+  markAllNoticesRead,
+  blockCommunityContact,
 } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import SearchScreen from '../components/SearchScreen.jsx';
 import StudentSanctionDialog from '../components/StudentSanctionDialog.jsx';
+import CommunityNotices, { NoticePin } from '../components/CommunityNotices.jsx';
+import { ContactBox, ContactBlockedNote, BlockContactDialog } from '../components/ContactRelay.jsx';
+import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
+import MoreMenu from '../components/MoreMenu.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
-import { IconChevronLeft, IconCheck, IconPlus, IconSiren, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import { track } from '../utils/track.js';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 캐시해둔다.
 // sessionStorage에서 초기값을 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우
@@ -88,6 +97,38 @@ function isRecruitClosed(closedAt, recruitState) {
   return Boolean(closedAt) || recruitState === 'ended';
 }
 
+// 새 글의 빈 입력값. 모집 학과는 보통 같은 학과 학생을 찾으므로 글쓴이 학과를 미리 골라 둔다(학과가 없으면 학과 상관없음).
+function emptyWriteFields(user) {
+  const own = user?.departmentId ? [{ id: user.departmentId, name: user.department }] : [];
+  return { title: '', body: '', category: 'study', capacity: '', recruitEndDate: '', deptMode: own.length ? 'specific' : 'any', departments: own };
+}
+
+// 목록의 모집 학과 줄 — 2개까지는 이름을 다 쓰고, 3개면 "A, B 외 1개"(전체는 상세에서). 학과 상관없는 글(이 기능 전에 올린 글 포함)은 "모든 학과".
+const LIST_DEPARTMENT_NAMES = 2;
+function departmentLine(targetDepartments, t) {
+  const names = (targetDepartments || []).map((d) => d.name);
+  if (names.length === 0) return t('community.dept.all');
+  if (names.length <= LIST_DEPARTMENT_NAMES) return names.join(', ');
+  return t('community.dept.more', { names: names.slice(0, LIST_DEPARTMENT_NAMES).join(', '), n: names.length - LIST_DEPARTMENT_NAMES });
+}
+
+// "내 학과 글만 보기"는 이 브라우저에만 기억한다(저장이 막힌 환경에서는 매번 꺼진 채로 시작).
+const MY_DEPT_ONLY_KEY = 'community_myDeptOnly';
+function readMyDeptOnly() {
+  try {
+    return localStorage.getItem(MY_DEPT_ONLY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeMyDeptOnly(on) {
+  try {
+    localStorage.setItem(MY_DEPT_ONLY_KEY, on ? '1' : '0');
+  } catch {
+    // 저장하지 못해도 이번 화면에서는 그대로 동작한다
+  }
+}
+
 // 글 작성·수정·신청이 막히는 경고성 제재(post_apply) 안내 배너 — 목록 상단, 글 상세, 글쓰기/수정 폼에서
 // 같은 문구를 쓰도록 한 곳에 둔다(수정만 안내가 없던 문제, 서버는 PATCH /:id에도 같은 제재를 건다).
 function SanctionBanner({ sanction }) {
@@ -99,6 +140,97 @@ function SanctionBanner({ sanction }) {
       <p>{tRich('community.sanction.banner', { when, reason: sanction.reason })}</p>
     </div>
   );
+}
+
+// 글쓰기 입력 한도 — 서버(routes/community.js)의 TITLE_MAX_LENGTH, normalizeCapacity와 같다.
+const TITLE_MAX = 20;
+const MAX_CAPACITY = 999;
+
+// 'YYYY-MM-DD' 두 날짜 사이 날 수 — 시간대 영향 없이 날짜만 비교한다.
+function daysBetween(from, to) {
+  const toUtc = (s) => {
+    const [y, m, d] = String(s).split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((toUtc(to) - toUtc(from)) / 86400000);
+}
+
+// 마감까지 3일 안이면 빨강으로 재촉하고, 그 전에는 파랑으로 남은 날만 알린다.
+const SOON_DAYS = 3;
+
+/**
+ * 모집 상태 한 낱말 — 끝났으면 "마감", 마감일이 있으면 "D-n"(당일은 "오늘 마감"), 없으면 "모집 중".
+ * 색은 상태에만 쓴다(구분·학과는 조용히): soon=빨강, open=파랑, off=회색.
+ */
+function RecruitState({ closedAt, recruitState, recruitEndDate }) {
+  const { t } = useI18n();
+  let label;
+  let tone = 'open';
+  if (isRecruitClosed(closedAt, recruitState)) {
+    label = t('community.state.closed');
+    tone = 'off';
+  } else if (!recruitEndDate) {
+    label = t('community.state.open');
+  } else {
+    const left = daysBetween(toDateInputValue(new Date()), recruitEndDate);
+    label = left <= 0 ? t('community.state.today') : t('community.state.dday', { n: left });
+    if (left <= SOON_DAYS) tone = 'soon';
+  }
+  return <span className={`post-state post-state--${tone}`}>{label}</span>;
+}
+
+// 구분(스터디·팀 활동)은 작은 색 점 + 글자로 조용히 표시한다.
+function CategoryLabel({ category }) {
+  const { t } = useI18n();
+  return <span className={`post-cat post-cat--${category}`}>{t(`community.category.${category}`)}</span>;
+}
+
+// 승인·수락·반려 같은 상태 — 색 배지 대신 점 + 글자. end면 줄 오른쪽 끝으로 민다.
+const POST_STATUS_TONE = { pending: 'wait', approved: 'ok', rejected: 'no' };
+const APP_STATUS_TONE = { pending: 'wait', accepted: 'ok', rejected: 'no' };
+function StatusText({ tone, end = false, children }) {
+  return <span className={`post-status post-status--${tone || 'mute'}${end ? ' post-status--end' : ''}`}>{children}</span>;
+}
+
+// 닉네임 첫 글자 동그라미 — 글쓴이·신청자를 한눈에 구분하는 자리표시(사진은 받지 않는다).
+function Avatar({ name }) {
+  return (
+    <span className="post-avatar" aria-hidden="true">
+      {String(name || '?').trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+function MetaSep() {
+  return <span className="post-meta-sep" aria-hidden="true" />;
+}
+
+// 목록에서 제목 아래 한 줄로 보여줄 본문 — 첫 번째 빈 줄이 아닌 줄(CSS가 한 줄로 자른다).
+function excerptOf(body) {
+  return (
+    String(body || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .find(Boolean) || ''
+  );
+}
+
+// 글 날짜 — 일주일 안은 "오늘·어제·n일 전", 그 뒤는 "10월 3일", 해가 다르면 "2025.12.30".
+function formatWhen(dateStr, t) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const ago = daysBetween(toDateInputValue(d), toDateInputValue(now));
+  if (ago <= 0) return t('community.when.today');
+  if (ago === 1) return t('community.when.yesterday');
+  if (ago < 7) return t('community.when.daysAgo', { n: ago });
+  if (d.getFullYear() !== now.getFullYear()) return formatDate(dateStr);
+  return t('community.when.date', { m: d.getMonth() + 1, d: d.getDate() });
+}
+
+// 'YYYY-MM-DD'(마감일) → "10월 31일". 시간대 변환 없이 문자열만 나눈다.
+function formatDay(dateStr, t) {
+  const [, m, d] = String(dateStr).split('-').map(Number);
+  return t('community.when.date', { m, d });
 }
 
 /**
@@ -117,6 +249,9 @@ function SanctionBanner({ sanction }) {
  * - initialPostId: number (선택) — 관리자 신고함의 "그 글로 이동"에서 넘어온 글 id.
  *   마운트 시 1회 해당 글을 열고 onInitialPostConsumed로 소비했음을 알린다.
  * - onInitialPostConsumed: function (선택)
+ * - onUnseenNoticesChange: function (선택) — 공지를 읽을 때마다 남은 안 읽은 공지 수를 알린다(App의 커뮤니티 점).
+ * - onFocusModeChange: function (선택) — 글 상세·글쓰기를 열고 닫을 때 true/false. 화면 아래에 붙는 신청·등록 버튼을
+ *   떠 있는 채팅 버튼이 가리지 않게 App이 아래 탭바를 숨긴다.
  */
 function Community({
   user,
@@ -131,6 +266,8 @@ function Community({
   onInitialPostConsumed,
   unseenReportCount = 0,
   onUnseenReportsChange,
+  onUnseenNoticesChange,
+  onFocusModeChange,
 }) {
   const { t, tRich } = useI18n();
   const [tab, setTab] = useState('list'); // 'list' | 'mine' | 'applications' | 'reports'
@@ -163,9 +300,41 @@ function Community({
   const [applicantActionId, setApplicantActionId] = useState(null); // 수락/반려 처리 중인 신청 id
   // 거부 메시지(선택) 입력값 — 신청 id별로 따로 들고 있어야 다른 신청자 카드와 안 섞인다.
   const [rejectMessages, setRejectMessages] = useState({});
+  // 거절 메시지 칸을 연 신청 id — 거절을 한 번 누르면 메시지(선택)를 적고 확정한다.
+  const [rejectOpenId, setRejectOpenId] = useState(null);
+
+  // 공지(운영팀 글, 읽기 전용). notices는 전체 글 탭 맨 위 고정 줄과 공지 목록에 같이 쓴다. noticeView가 있으면 공지 화면을 보는 중이다
+  // ({ mode: 'list' | 'detail' | 'write', notice }).
+  const [notices, setNotices] = useState(null);
+  const [noticeView, setNoticeView] = useState(null);
+  const loadNotices = () =>
+    getNotices()
+      .then(setNotices)
+      .catch(() => setNotices([])); // 공지를 못 불러와도 커뮤니티는 그대로 쓸 수 있어야 해서 조용히 빈 목록으로 둔다
+  useEffect(() => {
+    loadNotices();
+  }, []);
+  // 공지는 상세를 열어야 읽은 것이 된다(목록을 여는 것만으로는 아니다 — 2026-10-23). 화면은 바로 고치고 기록은 뒤에서 보낸다
+  // (기록이 실패해도 다음에 목록을 다시 받으면 서버 값으로 맞춰진다). 남은 안 읽은 공지 수로 App의 커뮤니티 점을 고친다.
+  const markNoticesLocally = (isRead) => {
+    const next = (notices || []).map((n) => (isRead(n) ? { ...n, isNew: false } : n));
+    setNotices(next);
+    onUnseenNoticesChange?.(next.filter((n) => n.isNew).length);
+  };
+  const openNotice = (notice) => {
+    setNoticeView({ mode: 'detail', notice });
+    if (!notice.isNew) return;
+    markNoticesLocally((n) => n.id === notice.id);
+    markNoticeRead(notice.id).catch(() => {});
+  };
+  const handleMarkAllNoticesRead = () => {
+    markNoticesLocally(() => true);
+    markAllNoticesRead().catch(() => {});
+  };
+  const noticeWhen = (dateStr) => formatWhen(dateStr, t);
 
   const [showWriteForm, setShowWriteForm] = useState(false);
-  const [writeFields, setWriteFields] = useState({ title: '', body: '', category: 'study', capacity: '', recruitEndDate: '' });
+  const [writeFields, setWriteFields] = useState(() => emptyWriteFields(user));
   const [writeSubmitting, setWriteSubmitting] = useState(false);
   // null이면 새 글 작성, 값이 있으면 그 id의 글을 수정 중(같은 폼을 재사용).
   const [editingPostId, setEditingPostId] = useState(null);
@@ -186,6 +355,9 @@ function Community({
   const [applicantReportOpenId, setApplicantReportOpenId] = useState(null);
   const [applicantReportReasons, setApplicantReportReasons] = useState({});
   const [applicantReportSubmittingId, setApplicantReportSubmittingId] = useState(null);
+  // 연락 차단 확인 팝업 — { applicationId, name }이면 열림, null이면 닫힘.
+  const [blockTarget, setBlockTarget] = useState(null);
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
 
   // 목록 → 상세/글쓰기 이동도 모바일 뒤로가기 스택에 반영해야, 뒤로가기를 눌렀을 때 곧장
   // 홈으로 나가지 않고 먼저 목록으로 돌아온다(App.jsx의 view 히스토리 관리, Admin.jsx의
@@ -193,7 +365,7 @@ function Community({
   // 목록을 건너뛰고 곧장 홈으로 나가버림). 상세/글쓰기는 글 id 등 실제 데이터가 있어야
   // 복원 가능해서, 뒤로가기로는 항상 목록으로만 돌아가게 하고 그 안의 세부 화면(상세 vs
   // 글쓰기)까지 구분해서 복원하지는 않는다 — 목록 밖으로 새지만 않으면 되는 문제라 이 정도로 충분.
-  const inSubView = showWriteForm || !!selectedPost;
+  const inSubView = showWriteForm || !!selectedPost || !!noticeView;
   const skipHistoryPush = useRef(true);
   const inSubViewRef = useRef(inSubView);
   inSubViewRef.current = inSubView;
@@ -206,11 +378,17 @@ function Community({
       if (!event.state?.communityInSubView) {
         setSelectedPost(null);
         setShowWriteForm(false);
+        setNoticeView(null);
       }
     }
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  useEffect(() => {
+    onFocusModeChange?.(inSubView);
+  }, [inSubView, onFocusModeChange]);
+  useEffect(() => () => onFocusModeChange?.(false), [onFocusModeChange]);
 
   useEffect(() => {
     if (skipHistoryPush.current) {
@@ -268,6 +446,10 @@ function Community({
     setSearchError(false);
     postSearch.reset();
   }
+
+  // 내 학과 글만 보기 — 내 학과(개편 전후 포함, 서버의 isMyDepartment)를 모집하거나 학과 상관없는 글만 남긴다. 학과가 없는 계정은 끈 채로.
+  const [myDeptOnly, setMyDeptOnly] = useState(readMyDeptOnly);
+  const visiblePosts = myDeptOnly && user?.departmentId && posts ? posts.filter((p) => p.isMyDepartment || !p.targetDepartments?.length) : posts;
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -377,7 +559,7 @@ function Community({
   };
 
   const resetAfterWrite = () => {
-    setWriteFields({ title: '', body: '', category: 'study', capacity: '', recruitEndDate: '' });
+    setWriteFields(emptyWriteFields(user));
     setEditingPostId(null);
     setShowWriteForm(false);
   };
@@ -387,7 +569,10 @@ function Community({
   // 나가버려서(글 쓰던 중이면 작성 중이던 내용까지 예고 없이 날아감), 서브뷰가 열려있을
   // 땐 그 서브뷰만 닫고 목록으로 돌아가게 한다.
   const handleHeaderBack = () => {
-    if (showWriteForm) {
+    // 공지: 상세·글쓰기 → 공지 목록 → 전체 글
+    if (noticeView) {
+      setNoticeView(noticeView.mode === 'list' ? null : { mode: 'list' });
+    } else if (showWriteForm) {
       resetAfterWrite();
     } else if (selectedPost) {
       setSelectedPost(null);
@@ -399,6 +584,10 @@ function Community({
   const handleWriteSubmit = async (e) => {
     e.preventDefault();
     if (!writeFields.title.trim() || !writeFields.body.trim()) return;
+    if (writeFields.deptMode === 'specific' && writeFields.departments.length === 0) {
+      setError(t('community.err.deptRequired'));
+      return;
+    }
     setWriteSubmitting(true);
     setError(null);
     try {
@@ -408,12 +597,14 @@ function Community({
         category: writeFields.category,
         capacity: writeFields.capacity === '' ? null : Number(writeFields.capacity),
         recruitEndDate: writeFields.recruitEndDate || null,
+        departmentIds: writeFields.deptMode === 'specific' ? writeFields.departments.map((d) => d.id) : [],
       };
       if (editingPostId) {
         await editCommunityPost(editingPostId, payload);
         showToast(t('community.toast.edited'));
       } else {
         await createCommunityPost(payload);
+        track('community.write.posted');
         showToast(t('community.toast.posted'));
       }
       resetAfterWrite();
@@ -428,6 +619,8 @@ function Community({
         setError(editingPostId ? t('community.err.editSanctioned') : t('community.err.writeSanctioned'));
       } else if (err.code === 'INVALID_RECRUIT_END') {
         setError(t('community.err.recruitEnd'));
+      } else if (err.code === 'INVALID_DEPARTMENTS') {
+        setError(t('community.err.departments'));
       } else {
         setError(editingPostId ? t('community.err.editFailed') : t('community.err.postFailed'));
       }
@@ -443,6 +636,8 @@ function Community({
       category: post.category,
       capacity: post.capacity === null || post.capacity === undefined ? '' : String(post.capacity),
       recruitEndDate: post.recruitEndDate || '',
+      deptMode: post.targetDepartments?.length ? 'specific' : 'any',
+      departments: post.targetDepartments || [],
     });
     setEditingPostId(post.id);
     setSelectedPost(null);
@@ -511,6 +706,7 @@ function Community({
     setError(null);
     try {
       await applyToCommunityPost(selectedPost.id, applyMessage.trim());
+      track('community.post.applied');
       showToast(t('community.toast.applied'));
       setApplyMessage('');
       openPost(selectedPost.id);
@@ -537,6 +733,7 @@ function Community({
       if (decision === 'accepted') await acceptCommunityApplication(applicationId);
       else await rejectCommunityApplication(applicationId, rejectMessages[applicationId]);
       showToast(decision === 'accepted' ? t('community.toast.accepted') : t('community.toast.declined'));
+      setRejectOpenId(null);
       setRejectMessages((prev) => {
         const next = { ...prev };
         delete next[applicationId];
@@ -550,6 +747,30 @@ function Community({
       setError(t('community.err.decideFailed'));
     } finally {
       setApplicantActionId(null);
+    }
+  };
+
+  // 매칭 연락 차단 — 차단하면 그 매칭의 중계 메일이 양쪽 모두 전달되지 않는다. 서버에서 다시 불러오지 않고 화면의 해당 신청만
+  // 차단 상태로 바꾼다(글 상세의 내 신청, 글쓴이의 신청자 목록, 내 신청 탭).
+  const handleBlockContact = async () => {
+    if (!blockTarget) return;
+    const { applicationId } = blockTarget;
+    setBlockSubmitting(true);
+    setError(null);
+    try {
+      await blockCommunityContact(applicationId);
+      const blockedAt = new Date().toISOString();
+      const mark = (a) => (a.id === applicationId ? { ...a, contactBlockedAt: blockedAt, contactEmail: null } : a);
+      setApplicants((prev) => prev.map(mark));
+      setMyApplications((prev) => (prev ? prev.map(mark) : prev));
+      setSelectedPost((p) => (p && p.myApplication && p.myApplication.id === applicationId ? { ...p, myApplication: mark(p.myApplication) } : p));
+      setBlockTarget(null);
+      showToast(t('community.contact.toast'));
+    } catch {
+      setError(t('community.contact.err'));
+      setBlockTarget(null);
+    } finally {
+      setBlockSubmitting(false);
     }
   };
 
@@ -597,358 +818,455 @@ function Community({
 
   const renderDetail = () => {
     const post = selectedPost;
+    const closed = isRecruitClosed(post.closedAt, post.recruitState);
+    const isAdmin = user?.role === 'admin';
+    const writeLimited = sanction?.scope === 'post_apply';
     const applicantPeople = applicants.filter((a) => !a.hasAppliedBefore).length;
+    const uncheckedCount = applicants.filter((a) => a.status === 'pending').length;
+    const canApply = !post.isMine && post.myApplication === null && !closed && !writeLimited && !post.contentHidden;
+
+    // 자주 쓰지 않는 동작(신고·수정·마감·삭제)은 글쓴이 옆 "⋯" 메뉴에 모은다.
+    const menuItems = post.isMine
+      ? [
+          { label: writeLimited ? t('community.editLimited') : t('community.menu.edit'), onClick: () => startEdit(post), disabled: writeLimited },
+          ...(post.status === 'approved' && !post.closedAt
+            ? [
+                {
+                  label: closeSubmitting ? t('community.processing') : t('community.closeBtn'),
+                  onClick: () => handleClose(post),
+                  disabled: closeSubmitting || applicantsLoading || applicants.length === 0,
+                  hint: !applicantsLoading && applicants.length === 0 ? t('community.closeNeedApplicant') : null,
+                },
+              ]
+            : []),
+          { label: deleteSubmitting ? t('community.deleting') : t('community.menu.delete'), onClick: () => handleDelete(post), disabled: deleteSubmitting, danger: true },
+        ]
+      : [
+          { label: t('community.reportAria'), onClick: () => setReportFormOpen(true) },
+          ...(isAdmin ? [{ label: t('community.adminDeleteShort'), onClick: () => handleAdminDelete(post), disabled: deleteSubmitting, danger: true }] : []),
+        ];
+
+    const ownerSummary =
+      post.status === 'pending'
+        ? t('community.owner.waiting')
+        : post.status === 'rejected'
+          ? t('community.owner.rejected')
+          : [t('community.owner.apps', { n: applicantPeople }), uncheckedCount > 0 && t('community.owner.unchecked', { n: uncheckedCount })].filter(Boolean).join(' · ');
+
     return (
-      <div className="community-detail">
-        {errorText && <p className="home-error">{errorText}</p>}
-        <div className="community-detail-title-row">
-          <h2 className="community-detail-title">
-            {isRecruitClosed(post.closedAt, post.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
-            {post.contentHidden ? t('community.hiddenTitle') : post.title}
-          </h2>
-        </div>
-        {/* 제목·작성자·배지 줄 아래에 구분선(CSS)을 둬서 본문·신청 영역과 나눈다. */}
-        <p className="community-detail-meta community-detail-meta-divider">
-          {user?.role === 'admin' && !post.isMine && post.authorId ? (
-            <button type="button" className="community-author-link" onClick={() => setSanctionPost(post)} aria-label={t('community.sanctionAuthorAria', { author: post.author })}>
-              {post.author}
-            </button>
-          ) : (
-            post.author
-          )}{' '}
-          · {formatDate(post.createdAt)}
-          <span className={`community-badge community-badge-${post.category}`}>{t(`community.category.${post.category}`)}</span>
-          {post.capacity && <span className="community-badge community-badge-capacity">{t('community.capacity', { n: post.capacity })}</span>}
-          {post.closedAt && <span className="community-badge community-badge-closed">{t('community.badge.closed')}</span>}
-          {!post.closedAt && post.recruitState === 'ended' && <span className="community-badge community-badge-closed">{t('community.badge.periodEnded')}</span>}
-          {!post.closedAt && post.recruitState === 'open' && post.recruitEndDate && (
-            <span className="community-badge community-badge-capacity">{t('community.deadlineBadge', { date: formatDeadline(post.recruitEndDate) })}</span>
-          )}
-          {post.status !== 'approved' && (
-            <span className={`community-badge community-badge-${post.status}`}>{t(`community.postStatus.${post.status}`)}</span>
-          )}
-        </p>
-
-        {post.contentHidden ? (
-          <p className="courses-manual-hint">
-            {t('community.hiddenBody')}
-          </p>
-        ) : (
-          <p className="community-detail-body community-detail-body-card">{post.body}</p>
-        )}
-
-        {/* 신고·(관리자) 삭제는 아이콘만 두면 무슨 버튼인지 알기 어려워서 글자가 붙은 버튼으로 본문 바로 아래에 둔다. */}
-        {!post.isMine && (
-          <div className="community-detail-tools">
-            <button type="button" className="community-tool-btn" onClick={() => setReportFormOpen(true)}>
-              <IconSiren size={15} />
-              <span>{t('community.reportAria')}</span>
-            </button>
-            {user?.role === 'admin' && (
-              <button type="button" className="community-tool-btn community-tool-danger" onClick={() => handleAdminDelete(post)} disabled={deleteSubmitting}>
-                <IconX size={15} />
-                <span>{t('community.adminDeleteShort')}</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        {post.status === 'rejected' && post.rejectReason && (
-          <p className="admin-reject-reason">
-            <b>{t('community.label.rejectReason')}</b> · {post.rejectReason}
-          </p>
-        )}
-
-        {post.isMine ? (
-          <>
-            {post.status === 'approved' && !post.closedAt && post.recruitState === 'ended' && (
-              <p className="community-close-hint">
-                {t('community.endedHint', { date: formatDeadline(post.recruitEndDate) })}
-              </p>
-            )}
-            {post.status === 'approved' && !post.closedAt && (
-              <>
-                <button
-                  type="button"
-                  className="community-close-btn"
-                  onClick={() => handleClose(post)}
-                  disabled={closeSubmitting || applicantsLoading || applicants.length === 0}
-                >
-                  {closeSubmitting ? t('community.processing') : t('community.closeBtn')}
-                </button>
-                {!applicantsLoading && applicants.length === 0 && (
-                  <p className="community-close-hint">{t('community.closeNeedApplicant')}</p>
-                )}
-              </>
-            )}
-            {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
-            <div className="community-owner-actions">
-              <button type="button" className="community-outline-btn" onClick={() => startEdit(post)} disabled={sanction?.scope === 'post_apply'}>
-                {sanction?.scope === 'post_apply' ? t('community.editLimited') : t('community.edit')}
-              </button>
-              <button type="button" className="community-outline-btn community-danger" onClick={() => handleDelete(post)} disabled={deleteSubmitting}>
-                {deleteSubmitting ? t('community.deleting') : t('community.delete')}
-              </button>
+      <>
+        <div className="post-detail">
+          {errorText && <p className="home-error">{errorText}</p>}
+          {post.isMine && (
+            <div className="post-owner-bar">
+              <StatusText tone={POST_STATUS_TONE[post.status]}>{t(`community.postStatus.${post.status}`)}</StatusText>
+              <span>{ownerSummary}</span>
             </div>
+          )}
+          {post.isMine && post.status === 'approved' && !post.closedAt && post.recruitState === 'ended' && (
+            <p className="post-note">{t('community.endedHint', { date: formatDeadline(post.recruitEndDate) })}</p>
+          )}
+          {post.isMine && writeLimited && <SanctionBanner sanction={sanction} />}
 
-            <p className="community-section-label">
-              {/* 신청자는 사람 수로 센다 — 반려 후 재신청한 건(hasAppliedBefore)은 같은 사람이라 빼고, 건수가 다를 때만 함께 보여준다. */}
-              {applicantPeople === applicants.length
-                ? t('community.applicantsHeading', { title: post.title, count: applicantPeople })
-                : t('community.applicantsHeadingWithApplications', { title: post.title, count: applicantPeople, applications: applicants.length })}
-            </p>
-            {applicantsLoading ? (
-              <p className="courses-manual-hint">{t('community.loading')}</p>
-            ) : applicants.length === 0 ? (
-              <p className="courses-manual-hint">{t('community.noApplicants')}</p>
-            ) : (
-              <div className="community-applicant-list">
-                {applicants.map((a) => (
-                  <div className="community-applicant-card" key={a.id}>
-                    <div className="community-applicant-top">
-                      <span className="community-applicant-name">{a.applicant}</span>
-                      {a.hasAppliedBefore && <span className="community-badge community-badge-reapply">{t('community.reapplied')}</span>}
-                      <span className={`community-badge community-badge-${a.status}`}>{t(`community.appStatus.${a.status}`)}</span>
-                    </div>
-                    <p className="community-applicant-msg">{a.message}</p>
-                    <div className="community-applicant-date">
-                      {t('community.applicantDate', { date: formatDate(a.createdAt), title: post.title })}
-                    </div>
-                    {a.status === 'pending' && (
-                      <>
-                        <textarea
-                          className="community-reject-message-input"
-                          rows={2}
-                          placeholder={t('community.rejectPlaceholder')}
-                          value={rejectMessages[a.id] || ''}
-                          onChange={(e) => setRejectMessages((prev) => ({ ...prev, [a.id]: e.target.value }))}
-                        />
-                        <div className="community-applicant-actions">
-                          <button
-                            type="button"
-                            className="community-act-btn community-act-accept"
-                            onClick={() => handleDecideApplication(a.id, 'accepted')}
-                            disabled={applicantActionId === a.id}
-                          >
-                            {t('community.accept')}
-                          </button>
-                          <button
-                            type="button"
-                            className="community-act-btn community-act-reject"
-                            onClick={() => handleDecideApplication(a.id, 'rejected')}
-                            disabled={applicantActionId === a.id}
-                          >
-                            {t('community.decline')}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                    {a.status === 'accepted' && a.contactEmail && (
-                      <div className="community-contact-box">
-                        <b>{t('community.label.contactEmail')}</b> · {a.contactEmail}
-                      </div>
-                    )}
-                    {a.status === 'rejected' && a.rejectReason && (
-                      <p className="community-reject-message">
-                        <b>{t('community.label.declineReason')}</b> · {a.rejectReason}
-                      </p>
-                    )}
-                    {applicantReportOpenId === a.id ? (
-                      <>
-                        <textarea
-                          className="community-reject-message-input"
-                          rows={2}
-                          placeholder={t('community.reportReasonPlaceholder')}
-                          value={applicantReportReasons[a.id] || ''}
-                          onChange={(e) => setApplicantReportReasons((prev) => ({ ...prev, [a.id]: e.target.value }))}
-                        />
-                        <div className="community-applicant-actions">
-                          <button
-                            type="button"
-                            className="community-act-btn community-act-reject"
-                            onClick={() => handleReportApplication(a.id)}
-                            disabled={applicantReportSubmittingId === a.id}
-                          >
-                            {applicantReportSubmittingId === a.id ? t('community.reporting') : t('community.submitReport')}
-                          </button>
-                          <button type="button" className="community-outline-btn" onClick={() => setApplicantReportOpenId(null)}>
-                            {t('onb.cancel')}
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <button type="button" className="community-outline-btn community-danger" onClick={() => setApplicantReportOpenId(a.id)}>
-                        {t('community.report')}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            {post.myApplication === null ? (
-              post.closedAt ? (
-                <p className="courses-manual-hint">{t('community.recruitClosed')}</p>
-              ) : post.recruitState === 'ended' ? (
-                <p className="courses-manual-hint">{t('community.recruitEndedLine', { date: formatDeadline(post.recruitEndDate) })}</p>
-              ) : sanction?.scope === 'post_apply' ? (
-                <p className="courses-manual-hint">{t('community.applyRestricted', { reason: sanction.reason })}</p>
+          {!post.contentHidden && (
+            <div className="post-over">
+              <CategoryLabel category={post.category} />
+              {post.isMyDepartment && <span className="post-mydept">{t('community.badge.myDept')}</span>}
+              <RecruitState closedAt={post.closedAt} recruitState={post.recruitState} recruitEndDate={post.recruitEndDate} />
+            </div>
+          )}
+          <h2 className="post-detail-title">{post.contentHidden ? t('community.hiddenTitle') : post.title}</h2>
+
+          <div className="post-author">
+            <Avatar name={post.author} />
+            <div className="post-author-text">
+              {isAdmin && !post.isMine && post.authorId ? (
+                <button type="button" className="post-author-name community-author-link" onClick={() => setSanctionPost(post)} aria-label={t('community.sanctionAuthorAria', { author: post.author })}>
+                  {post.author}
+                </button>
               ) : (
-                <form className="community-apply-form community-apply-section" onSubmit={handleApply}>
-                  <div className="auth-field">
-                    <label>{t('community.applyMessage')}</label>
-                    <textarea
-                      rows={5}
-                      value={applyMessage}
-                      onChange={(e) => setApplyMessage(e.target.value)}
-                      placeholder={t('community.applyPlaceholder')}
-                      required
-                    />
+                <span className="post-author-name">{post.isMine ? t('community.authorMe', { name: post.author }) : post.author}</span>
+              )}
+              <span className="post-author-sub">{formatDate(post.createdAt)}</span>
+            </div>
+            <MoreMenu items={menuItems} />
+          </div>
+
+          {post.contentHidden ? (
+            <p className="post-note">{t('community.hiddenBody')}</p>
+          ) : (
+            <>
+              <dl className="post-facts">
+                {post.targetDepartments && (
+                  <div className="post-fact post-fact--wide">
+                    <dt>{t('community.dept.label')}</dt>
+                    <dd>
+                      {post.targetDepartments.length ? post.targetDepartments.map((d) => d.name).join(', ') : t('community.dept.all')}
+                      {post.isMyDepartment && <span className="post-mydept">{t('community.badge.myDept')}</span>}
+                    </dd>
                   </div>
-                  <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                    {applySubmitting ? t('community.applying') : t('community.apply')}
-                  </button>
-                </form>
-              )
-            ) : (
-              <div className="community-status-box">
-                <div className="community-status-top">
-                  <span className="community-status-label">{t('community.myApplication')}</span>
-                  <span className={`community-badge community-badge-${post.myApplication.status}`}>
-                    {t(`community.appStatus.${post.myApplication.status}`)}
-                  </span>
+                )}
+                <div className="post-fact">
+                  <dt>{t('community.fact.capacity')}</dt>
+                  <dd>{post.capacity ? t('community.fact.capacityValue', { n: post.capacity }) : t('community.fact.capacityNone')}</dd>
                 </div>
-                {post.myApplication.status === 'pending' && (
-                  <p className="community-status-desc">{t('community.pendingDesc')}</p>
-                )}
-                {post.myApplication.status === 'accepted' && (
-                  <p className="community-status-desc">{t('community.acceptedDesc')}</p>
-                )}
-                {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
-                  <p className="community-reject-message">
-                    <b>{t('community.label.declineReason')}</b> · {post.myApplication.rejectReason}
-                  </p>
-                )}
-                {post.myApplication.status === 'rejected' && !isRecruitClosed(post.closedAt, post.recruitState) && (
-                  <>
-                    <p className="community-status-desc">{t('community.notSelectedDesc')}</p>
-                    {sanction?.scope === 'post_apply' ? (
-                      <p className="courses-manual-hint">{t('community.reapplyRestricted', { reason: sanction.reason })}</p>
-                    ) : (
-                      <form className="community-apply-form" onSubmit={handleApply}>
-                        <div className="auth-field">
-                          <label>{t('community.reapplyLabel')}</label>
-                          <textarea
-                            rows={4}
-                            value={applyMessage}
-                            onChange={(e) => setApplyMessage(e.target.value)}
-                            placeholder={t('community.reapplyPlaceholder')}
-                            required
-                          />
+                <div className="post-fact">
+                  <dt>{t('community.fact.deadline')}</dt>
+                  <dd>{post.closedAt ? t('community.fact.closedByAuthor') : post.recruitEndDate ? formatDay(post.recruitEndDate, t) : t('community.fact.deadlineNone')}</dd>
+                </div>
+              </dl>
+              <p className="post-body">{post.body}</p>
+            </>
+          )}
+
+          {post.status === 'rejected' && post.rejectReason && (
+            <p className="admin-reject-reason">
+              <b>{t('community.label.rejectReason')}</b> · {post.rejectReason}
+            </p>
+          )}
+
+          {post.isMine ? (
+            <>
+              <div className="post-section-head">
+                <h3>
+                  {t('community.received')}
+                  <em>{applicantPeople}</em>
+                </h3>
+                {/* 신청자는 사람 수로 센다 — 반려 후 재신청한 건(hasAppliedBefore)은 같은 사람이라 빼고, 건수가 다를 때만 함께 보여준다. */}
+                {applicantPeople !== applicants.length && <span className="post-section-sub">{t('community.applicationsCount', { n: applicants.length })}</span>}
+              </div>
+              {applicantsLoading ? (
+                <p className="post-empty">{t('community.loading')}</p>
+              ) : applicants.length === 0 ? (
+                <p className="post-empty">{t('community.noApplicants')}</p>
+              ) : (
+                <div className="applicant-list">
+                  {applicants.map((a) => (
+                    <div className="applicant-row" key={a.id}>
+                      <Avatar name={a.applicant} />
+                      <div className="applicant-main">
+                        <div className="applicant-top">
+                          <span className="applicant-name">{a.applicant}</span>
+                          {a.hasAppliedBefore && <span className="post-tag">{t('community.reapplied')}</span>}
+                          {a.contactBlockedAt && <span className="post-tag">{t('community.contact.blockedBadge')}</span>}
+                          <StatusText tone={APP_STATUS_TONE[a.status]}>{t(`community.appStatus.${a.status}`)}</StatusText>
                         </div>
-                        <button type="submit" className="auth-submit-btn" disabled={applySubmitting}>
-                          {applySubmitting ? t('community.applying') : t('community.reapplyBtn')}
-                        </button>
-                      </form>
+                        <p className="applicant-msg">{a.message}</p>
+                        <span className="applicant-date">{formatDate(a.createdAt)}</span>
+                        {a.status === 'pending' &&
+                          (rejectOpenId === a.id ? (
+                            <>
+                              <textarea
+                                className="post-input"
+                                rows={2}
+                                aria-label={t('community.rejectPlaceholder')}
+                                placeholder={t('community.rejectPlaceholder')}
+                                value={rejectMessages[a.id] || ''}
+                                onChange={(e) => setRejectMessages((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                              />
+                              <div className="applicant-actions">
+                                <button type="button" className="post-btn post-btn--outline" onClick={() => handleDecideApplication(a.id, 'rejected')} disabled={applicantActionId === a.id}>
+                                  {t('community.declineConfirm')}
+                                </button>
+                                <button type="button" className="post-btn post-btn--text" onClick={() => setRejectOpenId(null)}>
+                                  {t('onb.cancel')}
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="applicant-actions">
+                              <button type="button" className="post-btn post-btn--ink" onClick={() => handleDecideApplication(a.id, 'accepted')} disabled={applicantActionId === a.id}>
+                                {t('community.accept')}
+                              </button>
+                              <button type="button" className="post-btn post-btn--outline" onClick={() => setRejectOpenId(a.id)} disabled={applicantActionId === a.id}>
+                                {t('community.decline')}
+                              </button>
+                            </div>
+                          ))}
+                        {a.status === 'accepted' &&
+                          (a.contactBlockedAt ? (
+                            <ContactBlockedNote blockedAt={a.contactBlockedAt} formatDate={formatDate} />
+                          ) : (
+                            a.contactEmail && <ContactBox email={a.contactEmail} onBlock={() => setBlockTarget({ applicationId: a.id, name: a.applicant })} />
+                          ))}
+                        {a.status === 'rejected' && a.rejectReason && (
+                          <p className="post-quote">
+                            <b>{t('community.label.declineReason')}</b> · {a.rejectReason}
+                          </p>
+                        )}
+                        {applicantReportOpenId === a.id ? (
+                          <>
+                            <textarea
+                              className="post-input"
+                              rows={2}
+                              aria-label={t('community.reportReasonPlaceholder')}
+                              placeholder={t('community.reportReasonPlaceholder')}
+                              value={applicantReportReasons[a.id] || ''}
+                              onChange={(e) => setApplicantReportReasons((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                            />
+                            <div className="applicant-actions">
+                              <button type="button" className="post-btn post-btn--danger" onClick={() => handleReportApplication(a.id)} disabled={applicantReportSubmittingId === a.id}>
+                                {applicantReportSubmittingId === a.id ? t('community.reporting') : t('community.submitReport')}
+                              </button>
+                              <button type="button" className="post-btn post-btn--text" onClick={() => setApplicantReportOpenId(null)}>
+                                {t('onb.cancel')}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button type="button" className="applicant-report" onClick={() => setApplicantReportOpenId(a.id)} aria-label={t('community.reportApplicantAria', { name: a.applicant })}>
+                            {t('community.reportShort')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : post.myApplication ? (
+            <>
+              <div className="post-section-head">
+                <h3>{t('community.myApplication')}</h3>
+                <StatusText tone={APP_STATUS_TONE[post.myApplication.status]}>{t(`community.appStatus.${post.myApplication.status}`)}</StatusText>
+              </div>
+              {post.myApplication.status === 'pending' && <p className="post-section-desc">{t('community.pendingDesc')}</p>}
+              {post.myApplication.status === 'accepted' &&
+                (post.myApplication.contactBlockedAt ? (
+                  <ContactBlockedNote blockedAt={post.myApplication.contactBlockedAt} formatDate={formatDate} />
+                ) : (
+                  <>
+                    <p className="post-section-desc">{t('community.acceptedDesc')}</p>
+                    {post.myApplication.contactEmail && (
+                      <ContactBox email={post.myApplication.contactEmail} onBlock={() => setBlockTarget({ applicationId: post.myApplication.id, name: post.author })} />
                     )}
                   </>
-                )}
-              </div>
-            )}
-          </>
+                ))}
+              {post.myApplication.status === 'rejected' && post.myApplication.rejectReason && (
+                <p className="post-quote">
+                  <b>{t('community.label.declineReason')}</b> · {post.myApplication.rejectReason}
+                </p>
+              )}
+              {post.myApplication.status === 'rejected' && !closed && (
+                <>
+                  <p className="post-section-desc">{t('community.notSelectedDesc')}</p>
+                  {writeLimited ? (
+                    <p className="post-note">{t('community.reapplyRestricted', { reason: sanction.reason })}</p>
+                  ) : (
+                    <form className="post-reapply" onSubmit={handleApply}>
+                      <textarea
+                        className="post-input"
+                        rows={4}
+                        aria-label={t('community.reapplyLabel')}
+                        value={applyMessage}
+                        onChange={(e) => setApplyMessage(e.target.value)}
+                        placeholder={t('community.reapplyPlaceholder')}
+                        required
+                      />
+                      <button type="submit" className="post-btn post-btn--ink post-btn--block" disabled={applySubmitting}>
+                        {applySubmitting ? t('community.applying') : t('community.reapplyBtn')}
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+            </>
+          ) : post.contentHidden ? null : post.closedAt ? (
+            <p className="post-note">{t('community.recruitClosed')}</p>
+          ) : post.recruitState === 'ended' ? (
+            <p className="post-note">{t('community.recruitEndedLine', { date: formatDeadline(post.recruitEndDate) })}</p>
+          ) : writeLimited ? (
+            <p className="post-note">{t('community.applyRestricted', { reason: sanction.reason })}</p>
+          ) : null}
+        </div>
+
+        {/* 신청 칸은 화면 아래에 붙여 긴 글을 읽다가도 바로 신청할 수 있게 한다. */}
+        {canApply && (
+          <form className="post-dock" onSubmit={handleApply}>
+            <textarea
+              className="post-input"
+              rows={2}
+              aria-label={t('community.applyMessage')}
+              value={applyMessage}
+              onChange={(e) => setApplyMessage(e.target.value)}
+              placeholder={t('community.applyPlaceholder')}
+              required
+            />
+            <button type="submit" className="post-btn post-btn--ink post-btn--block post-btn--lg" disabled={applySubmitting}>
+              {applySubmitting ? t('community.applying') : t('community.apply')}
+            </button>
+          </form>
         )}
-      </div>
+      </>
     );
   };
 
+  const capacityValue = writeFields.capacity === '' ? null : Number(writeFields.capacity);
+  const stepCapacity = (delta) =>
+    setWriteFields((f) => {
+      const current = f.capacity === '' ? 0 : Number(f.capacity) || 0;
+      const next = Math.min(MAX_CAPACITY, current + delta);
+      return { ...f, capacity: next < 1 ? '' : String(next) };
+    });
+
   const renderWriteForm = () => (
-    <form className="courses-manual-fields community-write-form" onSubmit={handleWriteSubmit}>
-      {errorText && <p className="home-error">{errorText}</p>}
-      {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
-      <p className="courses-manual-hint">
-        {editingPostId ? t('community.write.editHint') : t('community.write.newHint')}
-      </p>
-      <div className="community-write-row">
-        <div className="auth-field">
-          <label>{t('community.write.category')}</label>
-          <select className="onb-select" value={writeFields.category} onChange={(e) => setWriteFields((f) => ({ ...f, category: e.target.value }))}>
-            <option value="study">{t('community.category.study')}</option>
-            <option value="project">{t('community.category.project')}</option>
-          </select>
-        </div>
-        <div className="auth-field">
-          <label>{t('community.write.capacity')}</label>
-          <input
-            type="number"
-            min={1}
-            max={999}
-            placeholder={t('community.write.capacityPlaceholder')}
-            value={writeFields.capacity}
-            onChange={(e) => setWriteFields((f) => ({ ...f, capacity: e.target.value }))}
-          />
-        </div>
-      </div>
-      <div className="auth-field">
-        <label htmlFor="community-recruit-end">{t('community.write.endDate')}</label>
-        <input
-          id="community-recruit-end"
-          type="date"
-          min={toDateInputValue(new Date())}
-          max={toDateInputValue(new Date(Date.now() + MAX_RECRUIT_DAYS * 86400000))}
-          value={writeFields.recruitEndDate}
-          onChange={(e) => setWriteFields((f) => ({ ...f, recruitEndDate: e.target.value }))}
-        />
-        <p className="courses-manual-hint">
-          {t('community.write.endDateHint')}
-          {editingPostId && ` ${t('community.write.endDateEditHint')}`}
-        </p>
-      </div>
-      <div className="auth-field">
-        <label htmlFor="community-write-title">{t('community.write.title')}</label>
+    <form className="post-write" onSubmit={handleWriteSubmit}>
+      <div className="post-write-inner">
+        {errorText && <p className="home-error">{errorText}</p>}
+        {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
+        <p className="post-write-note">{editingPostId ? t('community.write.editHint') : t('community.write.newHintShort')}</p>
+
+        <label htmlFor="community-write-title" className="sr-only">
+          {t('community.write.title')}
+        </label>
         <input
           id="community-write-title"
+          className="post-write-title"
           type="text"
-          maxLength={20}
+          maxLength={TITLE_MAX}
+          placeholder={t('community.write.title')}
           value={writeFields.title}
           onChange={(e) => setWriteFields((f) => ({ ...f, title: e.target.value }))}
           required
         />
+        <span className="post-write-count">
+          {writeFields.title.length} / {TITLE_MAX}
+        </span>
+        <label htmlFor="community-write-body" className="sr-only">
+          {t('community.write.body')}
+        </label>
+        <textarea
+          id="community-write-body"
+          className="post-write-body"
+          rows={7}
+          maxLength={1000}
+          placeholder={t('community.write.bodyPlaceholder')}
+          value={writeFields.body}
+          onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))}
+          required
+        />
+
+        <p className="post-write-group">{t('community.write.group')}</p>
+        <div className="write-settings">
+          <div className="write-set">
+            <span className="write-set-label" id="community-write-category">
+              {t('community.write.category')}
+            </span>
+            <div className="seg" role="group" aria-labelledby="community-write-category">
+              {['study', 'project'].map((c) => (
+                <button key={c} type="button" className={writeFields.category === c ? 'active' : ''} aria-pressed={writeFields.category === c} onClick={() => setWriteFields((f) => ({ ...f, category: c }))}>
+                  {t(`community.category.${c}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="write-set">
+            <label className="write-set-label" htmlFor="community-write-capacity">
+              {t('community.write.capacityLabel')}
+              <small>{t('community.write.optional')}</small>
+            </label>
+            <div className="stepper">
+              <button type="button" onClick={() => stepCapacity(-1)} disabled={capacityValue === null} aria-label={t('community.write.capacityLess')}>
+                −
+              </button>
+              <input
+                id="community-write-capacity"
+                type="number"
+                min={1}
+                max={MAX_CAPACITY}
+                inputMode="numeric"
+                placeholder="–"
+                value={writeFields.capacity}
+                onChange={(e) => setWriteFields((f) => ({ ...f, capacity: e.target.value }))}
+              />
+              <span className="stepper-unit">{t('community.write.capacityUnit')}</span>
+              <button type="button" onClick={() => stepCapacity(1)} disabled={capacityValue !== null && capacityValue >= MAX_CAPACITY} aria-label={t('community.write.capacityMore')}>
+                +
+              </button>
+            </div>
+          </div>
+          <div className="write-set">
+            <label className="write-set-label" htmlFor="community-recruit-end">
+              {t('community.write.endDateLabel')}
+              <small>{t('community.write.endDateShort')}</small>
+            </label>
+            <div className="date-pick">
+              <span className={writeFields.recruitEndDate ? 'date-pick-value' : 'date-pick-value empty'}>
+                {writeFields.recruitEndDate ? formatDay(writeFields.recruitEndDate, t) : t('community.write.endDateNone')}
+              </span>
+              <input
+                id="community-recruit-end"
+                className="date-pick-input"
+                type="date"
+                min={toDateInputValue(new Date())}
+                max={toDateInputValue(new Date(Date.now() + MAX_RECRUIT_DAYS * 86400000))}
+                value={writeFields.recruitEndDate}
+                onClick={(e) => {
+                  // 글자 위를 눌러도 날짜 고르기가 바로 열리게 한다(지원하지 않는 브라우저는 기본 동작).
+                  try {
+                    e.currentTarget.showPicker?.();
+                  } catch {
+                    // 이미 열려 있거나 막힌 경우 — 기본 동작으로 둔다
+                  }
+                }}
+                onChange={(e) => setWriteFields((f) => ({ ...f, recruitEndDate: e.target.value }))}
+              />
+              {writeFields.recruitEndDate && (
+                <button type="button" className="date-pick-clear" aria-label={t('community.write.endDateClear')} onClick={() => setWriteFields((f) => ({ ...f, recruitEndDate: '' }))}>
+                  <IconX size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+          <TargetDepartmentsField
+            mode={writeFields.deptMode}
+            departments={writeFields.departments}
+            onChange={({ mode, departments }) => setWriteFields((f) => ({ ...f, deptMode: mode, departments }))}
+          />
+        </div>
+        {editingPostId && <p className="post-write-help">{t('community.write.endDateEditHint')}</p>}
       </div>
-      <div className="auth-field">
-        <label htmlFor="community-write-body">{t('community.write.body')}</label>
-        <textarea id="community-write-body" rows={6} maxLength={1000} value={writeFields.body} onChange={(e) => setWriteFields((f) => ({ ...f, body: e.target.value }))} required />
+      <div className="post-dock">
+        <button type="submit" className="post-btn post-btn--ink post-btn--block post-btn--lg" disabled={writeSubmitting}>
+          {writeSubmitting ? t('community.write.saving') : editingPostId ? t('community.write.update') : t('community.write.submit')}
+        </button>
       </div>
-      <button type="submit" className="auth-submit-btn" disabled={writeSubmitting}>
-        {writeSubmitting ? t('community.write.saving') : editingPostId ? t('community.write.update') : t('community.write.submit')}
-      </button>
-      <button type="button" className="courses-manual-only-note courses-catalog-back" onClick={resetAfterWrite}>
-        {t('onb.cancel')}
-      </button>
     </form>
   );
 
   // 전체 글 목록과 검색 결과가 같은 모양으로 보이도록 항목 하나를 그리는 함수를 공유한다.
-  const renderPublicPostItem = (p) => (
-    <button
-      key={p.id}
-      className={`community-post-list-item ${isRecruitClosed(p.closedAt, p.recruitState) ? 'community-post-list-item-closed' : ''}`}
-      onClick={() => openPost(p.id)}
-      disabled={detailLoading}
-    >
-      <span className="community-post-list-row">
-        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
-        <span className="community-post-list-title">{p.title}</span>
-        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
-      </span>
-      <span className="courses-list-item-meta">
-        {p.author} · {formatDate(p.createdAt)}
-        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
-        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
-      </span>
-    </button>
-  );
+  const renderPublicPostItem = (p) => {
+    const excerpt = excerptOf(p.body);
+    return (
+      <button key={p.id} type="button" className={`post-row${isRecruitClosed(p.closedAt, p.recruitState) ? ' post-row--closed' : ''}`} onClick={() => openPost(p.id)} disabled={detailLoading}>
+        <span className="post-over">
+          <CategoryLabel category={p.category} />
+          {p.isMyDepartment && <span className="post-mydept">{t('community.badge.myDept')}</span>}
+          <RecruitState closedAt={p.closedAt} recruitState={p.recruitState} recruitEndDate={p.recruitEndDate} />
+        </span>
+        <span className="post-title">{p.title}</span>
+        {excerpt && <span className="post-excerpt">{excerpt}</span>}
+        {/* 서버가 아직 모집 학과를 안 내려주는 배포 순서(프론트 먼저)에서는 줄을 숨긴다. */}
+        {p.targetDepartments && (
+          <span className="post-meta post-dept">
+            <span className="post-meta-label">{t('community.dept.label')}</span>
+            {departmentLine(p.targetDepartments, t)}
+          </span>
+        )}
+        <span className="post-meta">
+          <span>{p.author}</span>
+          <MetaSep />
+          <span>{formatWhen(p.createdAt, t)}</span>
+          {p.capacity && (
+            <>
+              <MetaSep />
+              <span>{t('community.capacityShort', { n: p.capacity })}</span>
+            </>
+          )}
+        </span>
+      </button>
+    );
+  };
 
   const renderSearchResults = () => {
     if (!searchedQuery) return <p className="search-screen-hint">{t('community.search.hint')}</p>;
@@ -967,10 +1285,12 @@ function Community({
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost ? t('community.backToList') : t('common.backHome')}>
+          <button className="back-btn" onClick={handleHeaderBack} aria-label={showWriteForm || selectedPost || noticeView ? t('community.backToList') : t('common.backHome')}>
             <IconChevronLeft />
           </button>
-          <span className="screen-title">{t('nav.community')}</span>
+          <span className="screen-title">
+            {noticeView ? t(noticeView.mode === 'write' && !noticeView.notice ? 'community.notice.write' : 'community.notice.heading') : t('nav.community')}
+          </span>
         </div>
         <AccountMenu
           user={user}
@@ -990,9 +1310,10 @@ function Community({
         </div>
       )}
 
-      <div className="courses-body">
+      <div className="courses-body community-body">
         {sanction?.scope === 'full' ? (
-          <div className="community-sanction-full">
+          // 공지 화면과 전면 정지 안내는 예전 배치(안쪽 여백 16px)를 그대로 쓴다.
+          <div className="community-pad community-sanction-full">
             <div className="community-sanction-icon">
               <IconBan size={28} />
             </div>
@@ -1005,159 +1326,198 @@ function Community({
             </div>
             <p className="community-sanction-footer">{t('community.sanctionFull.footer')}</p>
           </div>
+        ) : noticeView ? (
+          <CommunityNotices
+            view={noticeView}
+            onChangeView={setNoticeView}
+            notices={notices}
+            isAdmin={user?.role === 'admin'}
+            onOpenNotice={openNotice}
+            onMarkAllRead={handleMarkAllNoticesRead}
+            onChanged={loadNotices}
+            onToast={showToast}
+            when={noticeWhen}
+          />
         ) : selectedPost ? (
           renderDetail()
         ) : showWriteForm ? (
           renderWriteForm()
         ) : (
           <>
-            {errorText && <p className="home-error">{errorText}</p>}
-
-            {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
-
-            <div className="courses-year-tabs courses-year-tabs--fill">
-              <button type="button" className={`courses-year-tab ${tab === 'list' ? 'active' : ''}`} onClick={() => setTab('list')}>
-                {t('community.tab.all')}
-              </button>
-              <button type="button" className={`courses-year-tab ${tab === 'mine' ? 'active' : ''}`} onClick={() => setTab('mine')}>
-                {t('community.tab.mine')}
-              </button>
-              <button
-                type="button"
-                className={`courses-year-tab ${tab === 'applications' ? 'active' : ''}`}
-                onClick={() => setTab('applications')}
-              >
-                {t('community.tab.apps')}
-              </button>
-              <button type="button" className={`courses-year-tab ${tab === 'reports' ? 'active' : ''}`} onClick={() => setTab('reports')}>
-                {t('community.tab.reports')}
-                {unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label={t('community.newResultsAria')} />}
-              </button>
+            <div className="community-tabs">
+              {[
+                ['list', 'community.tab.all'],
+                ['mine', 'community.tab.mine'],
+                ['applications', 'community.tab.apps'],
+                ['reports', 'community.tab.reports'],
+              ].map(([key, label]) => (
+                <button key={key} type="button" className={`community-tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)} data-track={`community.tab.${key}`}>
+                  {t(label)}
+                  {key === 'reports' && unseenReportCount > 0 && tab !== 'reports' && <span className="tab-dot" aria-label={t('community.newResultsAria')} />}
+                </button>
+              ))}
             </div>
 
+            {(errorText || sanction?.scope === 'post_apply') && (
+              <div className="community-alerts">
+                {errorText && <p className="home-error">{errorText}</p>}
+                {sanction?.scope === 'post_apply' && <SanctionBanner sanction={sanction} />}
+              </div>
+            )}
+
             {tab === 'list' && (
-              <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')}>
-                <IconSearch />
-                <span>{t('community.search.placeholder')}</span>
-              </button>
+              <>
+                <div className="community-tools">
+                  <button type="button" className="search-entry" onClick={() => setSearchOpen(true)} aria-label={t('community.search.aria')} data-track="community.search.open">
+                    <IconSearch />
+                    <span>{t('community.search.placeholder')}</span>
+                  </button>
+                  {user?.departmentId && (
+                    <button
+                      type="button"
+                      className={`community-filter ${myDeptOnly ? 'active' : ''}`}
+                      aria-pressed={myDeptOnly}
+                      data-track={myDeptOnly ? 'community.mydept.off' : 'community.mydept.on'}
+                      aria-label={t('community.myDeptFilter')}
+                      onClick={() => {
+                        setMyDeptOnly(!myDeptOnly);
+                        writeMyDeptOnly(!myDeptOnly);
+                      }}
+                    >
+                      {t('community.badge.myDept')}
+                    </button>
+                  )}
+                </div>
+                <NoticePin notices={notices} onOpenList={() => setNoticeView({ mode: 'list' })} onOpenNotice={openNotice} when={noticeWhen} />
+              </>
+            )}
+
+            {(tab === 'list' || tab === 'mine') && (
+              <div className="post-list-head">
+                <h3>
+                  {tab === 'list' ? t('community.listHead.posts') : t('community.tab.mine')}
+                  {(tab === 'list' ? visiblePosts : myPosts)?.length > 0 && <em>{(tab === 'list' ? visiblePosts : myPosts).length}</em>}
+                </h3>
+                <button type="button" className="post-write-btn" onClick={() => setShowWriteForm(true)} disabled={sanction?.scope === 'post_apply'} data-track="community.write.open">
+                  <IconPlus size={15} />
+                  {sanction?.scope === 'post_apply' ? t('community.writeBtnLimited') : t('community.writeBtn')}
+                </button>
+              </div>
             )}
 
             {tab === 'list' ? (
               posts === null ? (
-                <p className="courses-manual-hint">{t('community.loading')}</p>
+                <p className="post-empty">{t('community.loading')}</p>
               ) : posts.length === 0 ? (
-                <p className="courses-manual-hint">{t('community.empty.posts')}</p>
+                <p className="post-empty">{t('community.empty.posts')}</p>
+              ) : visiblePosts.length === 0 ? (
+                <p className="post-empty">{t('community.empty.myDept')}</p>
               ) : (
-                <div className="community-post-list">{posts.map(renderPublicPostItem)}</div>
+                <div className="post-list">{visiblePosts.map(renderPublicPostItem)}</div>
               )
             ) : tab === 'mine' ? (
               myPosts === null ? (
-                <p className="courses-manual-hint">{t('community.loading')}</p>
+                <p className="post-empty">{t('community.loading')}</p>
               ) : myPosts.length === 0 ? (
-                <p className="courses-manual-hint">{t('community.empty.mine')}</p>
+                <p className="post-empty">{t('community.empty.mine')}</p>
               ) : (
-                <div className="community-post-list">
+                <div className="post-list">
                   {myPosts.map((p) => (
                     <button
                       key={p.id}
-                      className={`community-post-list-item ${isRecruitClosed(p.closedAt, p.recruitState) ? 'community-post-list-item-closed' : ''}`}
+                      type="button"
+                      className={`post-row${isRecruitClosed(p.closedAt, p.recruitState) ? ' post-row--closed' : ''}`}
                       onClick={() => openPost(p.id)}
                       disabled={detailLoading}
                     >
-                      <span className="community-post-list-row">
-                        {isRecruitClosed(p.closedAt, p.recruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
-                        <span className="community-post-list-title">{p.title}</span>
-                        <span className={`community-badge community-badge-${p.category}`}>{t(`community.category.${p.category}`)}</span>
-                        <span className={`community-badge community-badge-${p.status}`}>{t(`community.postStatus.${p.status}`)}</span>
+                      <span className="post-over">
+                        <CategoryLabel category={p.category} />
+                        {p.status === 'approved' && <RecruitState closedAt={p.closedAt} recruitState={p.recruitState} recruitEndDate={p.recruitEndDate} />}
                       </span>
-                      <span className="courses-list-item-meta">
-                        {formatDate(p.createdAt)}
-                        {p.capacity && ` · ${t('community.capacity', { n: p.capacity })}`}
-                        {p.recruitEndDate && !isRecruitClosed(p.closedAt, p.recruitState) && ` · ${t('community.deadlineShort', { date: formatDeadline(p.recruitEndDate) })}`}
+                      <span className="post-title">{p.title}</span>
+                      <span className="post-meta">
+                        <StatusText tone={POST_STATUS_TONE[p.status]}>{t(`community.postStatus.${p.status}`)}</StatusText>
+                        <MetaSep />
+                        <span>{formatWhen(p.createdAt, t)}</span>
                         {/* 서버가 아직 이 필드를 안 내려주는 배포 순서(프론트 먼저)에서는 undefined라 아무것도 안 보인다. */}
-                        {p.applicationCount > 0 && ` · ${t('community.receivedApps', { n: p.applicationCount })}`}
+                        {p.applicationCount > 0 && (
+                          <>
+                            <MetaSep />
+                            <span>{t('community.receivedApps', { n: p.applicationCount })}</span>
+                          </>
+                        )}
                       </span>
-                      {p.pendingApplicationCount > 0 && (
-                        <span className="community-row-pending">{t('community.pendingApps', { n: p.pendingApplicationCount })}</span>
-                      )}
+                      {p.pendingApplicationCount > 0 && <span className="post-new-apps">{t('community.pendingApps', { n: p.pendingApplicationCount })}</span>}
                     </button>
                   ))}
                 </div>
               )
             ) : tab === 'reports' ? (
               myReports === null ? (
-                <p className="courses-manual-hint">{t('community.loading')}</p>
+                <p className="post-empty">{t('community.loading')}</p>
               ) : myReports.length === 0 ? (
-                <p className="courses-manual-hint">{t('community.empty.reports')}</p>
+                <p className="post-empty">{t('community.empty.reports')}</p>
               ) : (
-                <div className="community-post-list">
+                <div className="post-list">
                   {myReports.map((r) => (
-                    <div key={r.id} className="community-status-box">
-                      <div className="community-status-top">
-                        <span className="community-status-label">
-                          {r.targetType === 'post' ? t('community.reportItem.post') : t('community.reportItem.application')} · {r.targetTitle || t('community.reportItem.deletedPost')}
-                        </span>
-                        <span className={`community-badge community-badge-${r.status === 'resolved' ? 'accepted' : 'pending'}`}>
+                    <div key={r.id} className="post-row post-row--static">
+                      <span className="post-over">
+                        <span>{r.targetType === 'post' ? t('community.reportItem.post') : t('community.reportItem.application')}</span>
+                        {r.isUnseen && <span className="post-mydept">{t('community.reportItem.newResult')}</span>}
+                        <StatusText tone={r.status === 'resolved' ? 'ok' : 'wait'} end>
                           {t(`community.reportStatus.${r.status}`)}
-                        </span>
-                      </div>
-                      <p className="community-detail-meta">
-                        {t('community.reportItem.date', { date: formatDate(r.createdAt) })}
-                        {r.status === 'resolved' && r.resolvedAt && ` · ${t('community.reportItem.resolvedDate', { date: formatDate(r.resolvedAt) })}`}
-                        {r.isUnseen && <span className="community-badge community-badge-new">{t('community.reportItem.newResult')}</span>}
-                      </p>
-                      <p className="community-detail-body">
-                        {tRich('community.reportItem.myReason', { reason: r.reason })}
-                      </p>
+                        </StatusText>
+                      </span>
+                      <span className="post-title">{r.targetTitle || t('community.reportItem.deletedPost')}</span>
+                      <span className="post-meta">
+                        <span>{t('community.reportItem.date', { date: formatDate(r.createdAt) })}</span>
+                        {r.status === 'resolved' && r.resolvedAt && (
+                          <>
+                            <MetaSep />
+                            <span>{t('community.reportItem.resolvedDate', { date: formatDate(r.resolvedAt) })}</span>
+                          </>
+                        )}
+                      </span>
+                      <p className="post-quote">{tRich('community.reportItem.myReason', { reason: r.reason })}</p>
                       {r.status === 'resolved' ? (
-                        <p className="community-resolution-note">
-                          {tRich('community.reportItem.note', { note: r.resolutionNote || t('community.defaultResolution') })}
-                        </p>
+                        <p className="post-quote post-quote--answer">{tRich('community.reportItem.note', { note: r.resolutionNote || t('community.defaultResolution') })}</p>
                       ) : (
-                        <p className="community-status-desc">{t('community.reportItem.waiting')}</p>
+                        <p className="post-section-desc">{t('community.reportItem.waiting')}</p>
                       )}
                     </div>
                   ))}
                 </div>
               )
             ) : myApplications === null ? (
-              <p className="courses-manual-hint">{t('community.loading')}</p>
+              <p className="post-empty">{t('community.loading')}</p>
             ) : myApplications.length === 0 ? (
-              <p className="courses-manual-hint">{t('community.empty.apps')}</p>
+              <p className="post-empty">{t('community.empty.apps')}</p>
             ) : (
-              <div className="community-post-list">
+              <div className="post-list">
                 {myApplications.map((a) => (
                   <button
                     key={a.id}
-                    className={`community-post-list-item ${isRecruitClosed(a.postClosedAt, a.postRecruitState) ? 'community-post-list-item-closed' : ''}`}
+                    type="button"
+                    className={`post-row${isRecruitClosed(a.postClosedAt, a.postRecruitState) ? ' post-row--closed' : ''}`}
                     onClick={() => openPost(a.postId)}
                     disabled={detailLoading}
                   >
-                    <span className="community-post-list-row">
-                      {isRecruitClosed(a.postClosedAt, a.postRecruitState) && <span className="community-closed-prefix">{t('community.closedPrefix')}</span>}
-                      <span className="community-post-list-title">{a.postTitle}</span>
-                      <span className={`community-badge community-badge-${a.postCategory}`}>{t(`community.category.${a.postCategory}`)}</span>
-                      <span className={`community-badge community-badge-${a.status}`}>{t(`community.appStatus.${a.status}`)}</span>
+                    <span className="post-over">
+                      <CategoryLabel category={a.postCategory} />
+                      <StatusText tone={APP_STATUS_TONE[a.status]} end>
+                        {t(`community.appStatus.${a.status}`)}
+                      </StatusText>
                     </span>
-                    <span className="courses-list-item-meta">
-                      {t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}
-                    </span>
-                    {a.contactEmail && <span className="community-row-contact">{t('community.appItem.contact', { email: a.contactEmail })}</span>}
+                    <span className="post-title">{a.postTitle}</span>
+                    <span className="post-meta">{t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}</span>
+                    {a.contactBlockedAt ? (
+                      <span className="post-contact-line">{t('community.contact.blockedBadge')}</span>
+                    ) : (
+                      a.contactEmail && <span className="post-contact-line">{t('community.appItem.contact', { email: a.contactEmail })}</span>
+                    )}
                   </button>
                 ))}
               </div>
-            )}
-
-            {(tab === 'list' || tab === 'mine') && (
-              <button
-                type="button"
-                className="community-write-btn"
-                onClick={() => setShowWriteForm(true)}
-                disabled={sanction?.scope === 'post_apply'}
-              >
-                <IconPlus size={16} />
-                {sanction?.scope === 'post_apply' ? t('community.writeBtnLimited') : t('community.writeBtn')}
-              </button>
             )}
           </>
         )}
@@ -1175,6 +1535,8 @@ function Community({
           {renderSearchResults()}
         </SearchScreen>
       )}
+
+      <BlockContactDialog target={blockTarget} submitting={blockSubmitting} onConfirm={handleBlockContact} onClose={() => setBlockTarget(null)} />
 
       {sanctionPost && (
         <StudentSanctionDialog

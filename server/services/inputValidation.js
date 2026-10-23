@@ -4,6 +4,8 @@
  * 타입을 안 보고 DB에 넘기면 배열·객체가 mysql2에서 SQL 조각으로 펼쳐져 500 오류나 의도하지 않은 쿼리가 된다.
  */
 
+const { checkNicknamePolicy } = require('./nicknamePolicy');
+
 // 정수(또는 정수 문자열)이고 min~max 범위 안인가. true/null/배열/객체/소수는 거절한다.
 function isIntInRange(value, min, max) {
   if (typeof value === 'number') return Number.isInteger(value) && value >= min && value <= max;
@@ -18,24 +20,13 @@ function isValidAdmissionYear(value) {
 
 const NICKNAME_MAX_LENGTH = 50; // students.name VARCHAR(50)
 
-// 제어문자·보이지 않는 글자(너비 0 공백, 방향 제어 등)는 겉보기에 같은 닉네임을 만들거나 "user12" 예약어 검사를 피하는 데 쓸 수 있다.
-// eslint-disable-next-line no-control-regex
-const INVISIBLE_CHARS = new RegExp(
-  '[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u2028-\u202f\u2060-\u206f\u3164\ufeff\ufff9-\ufffb]'
-);
-
-// 운영자를 사칭하기 쉬운 이름 — 커뮤니티 글·신청에서 운영진이 쓴 것처럼 보이게 하는 데 쓰인다. 공백/대소문자는 무시하고 비교한다.
-const RESERVED_NICKNAMES = ['admin', 'administrator', 'moderator', 'system', 'onestudent', '관리자', '운영자', '운영진', '시스템', '관리팀', '운영팀'];
-
 // 문제가 있으면 오류 코드를, 괜찮으면 null을 돌려준다. 호출부가 name이 문자열임을 먼저 확인한다.
+// 혼선을 주는 닉네임(보이지 않는·비슷하게 생긴 글자, 운영·학교 사칭, 자동 이름, 연락처 모양) 규칙은 nicknamePolicy.js 한곳에 둔다.
+// 학과 이름과 같은지, 다른 학생 닉네임과 헷갈리는지는 DB를 봐야 해서 호출부(routes/me.js)가 따로 본다.
 function validateNickname(name) {
   const trimmed = name.trim();
   if ([...trimmed].length > NICKNAME_MAX_LENGTH) return 'NAME_TOO_LONG';
-  if (INVISIBLE_CHARS.test(trimmed)) return 'INVALID_NAME';
-  // NFKC: 전각 'ａｄｍｉｎ'처럼 겉보기에 같은 다른 글자를 표준 글자로 바꿔 비교한다(저장값은 바꾸지 않는다).
-  const compact = trimmed.normalize('NFKC').replace(/\s+/g, '').toLowerCase();
-  if (RESERVED_NICKNAMES.includes(compact)) return 'INVALID_NAME';
-  return null;
+  return checkNicknamePolicy(trimmed);
 }
 
 // 과목 학점 — 0~9.5, 0.5 단위. student_courses.credits는 DECIMAL(2,1)이라 2.3 같은 값도 저장은 되지만 학교 과목 학점은

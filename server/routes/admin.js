@@ -7,6 +7,8 @@ const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
+const uiEventService = require('../services/uiEventService');
+const noticeService = require('../services/noticeService');
 
 /**
  * server/routes/admin.js
@@ -22,6 +24,43 @@ router.get('/community/posts', async (req, res, next) => {
     const status = req.query.status || 'pending';
     const posts = await communityService.listPostsForAdmin(status);
     res.status(200).json({ status: 200, code: 'ADMIN_POSTS_LIST', message: null, data: posts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 커뮤니티 공지(services/noticeService.js) — 관리자가 바로 게시한다(승인 절차 없음). 목록은 학생과 같은 GET /api/community/notices.
+// POST /api/admin/community/notices — { title, body }
+router.post('/community/notices', async (req, res, next) => {
+  try {
+    const input = noticeService.normalizeNoticeInput(req.body);
+    if (!input) return res.status(400).json({ status: 400, code: 'INVALID_NOTICE', message: null, data: null });
+    const id = await noticeService.createNotice(req.session.userId, input);
+    res.status(201).json({ status: 201, code: 'NOTICE_CREATED', message: null, data: { id } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/admin/community/notices/:id — { title, body }
+router.put('/community/notices/:id', async (req, res, next) => {
+  try {
+    const input = noticeService.normalizeNoticeInput(req.body);
+    if (!input) return res.status(400).json({ status: 400, code: 'INVALID_NOTICE', message: null, data: null });
+    const updated = await noticeService.updateNotice(req.params.id, input);
+    if (!updated) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_UPDATED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/community/notices/:id
+router.delete('/community/notices/:id', async (req, res, next) => {
+  try {
+    const deleted = await noticeService.deleteNotice(req.params.id);
+    if (!deleted) return res.status(404).json({ status: 404, code: 'NOTICE_NOT_FOUND', message: null, data: null });
+    res.status(200).json({ status: 200, code: 'NOTICE_DELETED', message: null, data: null });
   } catch (err) {
     next(err);
   }
@@ -108,18 +147,21 @@ function normalizeResolutionNote(note) {
   return { ok: true, value: trimmed || null };
 }
 
-// POST /api/admin/community/reports/:id/resolve — "반려"(조치 없이 신고만 처리완료). body.note(선택)는 신고자에게 보이는 처리 안내.
+// POST /api/admin/community/reports/:id/resolve — "조치 없이 처리"(신고만 처리완료). body.note(선택)는 신고자에게 보이는 처리 안내.
+// 같은 글·신청에 들어온 다른 대기 신고도 함께 처리완료가 된다(관리자 신고함은 대상별로 묶어 한 번에 처리한다).
 router.post('/community/reports/:id/resolve', async (req, res, next) => {
   try {
     const note = normalizeResolutionNote(req.body?.note);
     if (!note.ok) {
       return res.status(400).json({ status: 400, code: 'INVALID_RESOLUTION_NOTE', message: null, data: null });
     }
-    const resolved = await communityService.resolveReport(req.params.id, note.value);
+    const report = await communityService.getReportById(req.params.id);
+    const resolved = report && (await communityService.resolveReport(report.id, note.value));
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
-    res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: null });
+    const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, note.value);
+    res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
   }
@@ -196,7 +238,9 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
     else await communityService.deleteApplication(report.targetId);
 
     await communityService.resolveReport(report.id, resolutionNote.value);
-    res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: null });
+    // 같은 대상의 다른 대기 신고도 같은 안내로 처리완료(대상 글·신청은 이미 지워졌다).
+    const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, resolutionNote.value);
+    res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
   }
@@ -237,10 +281,15 @@ router.post('/community/students/:id/sanction', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/sanctions — 현재 유효한(해제 안 됐고 기간이 안 지난) 제재 전체.
+// GET /api/admin/sanctions?status=active|past — active: 지금 유효한(해제 안 됐고 기간이 안 지난) 제재 전체,
+// past: 해제됐거나 기간이 끝난 제재(최근 것부터 100건).
 router.get('/sanctions', async (req, res, next) => {
   try {
-    const sanctions = await sanctionService.listActiveSanctions();
+    const status = req.query.status || 'active';
+    if (status !== 'active' && status !== 'past') {
+      return res.status(400).json({ status: 400, code: 'INVALID_STATUS', message: null, data: null });
+    }
+    const sanctions = status === 'past' ? await sanctionService.listPastSanctions() : await sanctionService.listActiveSanctions();
     res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
   } catch (err) {
     next(err);
@@ -288,6 +337,16 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
   }
 });
 
+// GET /api/admin/pending — 처리할 일 건수만(계정 메뉴의 빨간 점). 대시보드 통계 전체를 부르지 않고 대기열 COUNT 세 개만 센다.
+router.get('/pending', async (req, res, next) => {
+  try {
+    const pending = await adminStatsService.getPendingCounts();
+    res.status(200).json({ status: 200, code: 'ADMIN_PENDING', message: null, data: pending });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/admin/stats — 관리자 대시보드 통계(집계는 services/adminStatsService.js: 처리 대기 건수(뱃지)와 최근 24시간 운영 지표).
 // activeSessions는 "현재 접속자"
 // (최근 5분 내 요청이 있었던 계정 수 — student_activity, middleware/activityTracker.js).
@@ -305,7 +364,7 @@ router.get('/stats', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats/trend?range=24h|30d|1y|all — 대시보드 지표(신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
+// GET /api/admin/stats/trend?range=24h|7d|30d|1y|all — 대시보드 지표(방문자·신규 가입·챗봇 질문·근거 못 찾은 답변)의 추이(그래프 화면용).
 // 24h는 1시간 단위, 나머지는 하루 단위(services/adminStatsService.js getTrend).
 router.get('/stats/trend', async (req, res, next) => {
   try {
@@ -315,6 +374,30 @@ router.get('/stats/trend', async (req, res, next) => {
     }
     const trend = await adminStatsService.getTrend(range);
     res.status(200).json({ status: 200, code: 'ADMIN_STATS_TREND', message: null, data: trend });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/stats/composition — 학과·학번별 가입자와 최근 7일 방문자(학교에 보여줄 이용 현황). 5명 미만 칸은 "기타"로 묶는다.
+router.get('/stats/composition', async (req, res, next) => {
+  try {
+    const composition = await adminStatsService.getComposition();
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_COMPOSITION', message: null, data: composition });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/stats/features?range=7d|30d|all — 기능 사용 횟수(화면·버튼별 합계, 누가 썼는지는 없음 — services/uiEventService.js).
+router.get('/stats/features', async (req, res, next) => {
+  try {
+    const range = req.query.range || '7d';
+    if (!uiEventService.isUsageRange(range)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_RANGE', message: null, data: null });
+    }
+    const usage = await uiEventService.getUsage(range);
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_FEATURES', message: null, data: usage });
   } catch (err) {
     next(err);
   }

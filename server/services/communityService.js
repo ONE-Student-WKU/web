@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const pool = require('../db');
+const { replacePostDepartments, attachTargetDepartments } = require('./postDepartments');
 const { prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
 
 /**
@@ -51,6 +52,9 @@ async function createEmailProxiesForApplication(conn, applicationId, applicantId
 // application당 프록시가 정확히 2개라 "나(매칭된 프록시) 아닌 쪽"이 곧 상대방이라는
 // 사실만으로 찾을 수 있다 — 인바운드 메일의 실제 발신 주소(from)는 신뢰하지 않는다
 // (신뢰할 필요도 없다).
+//
+// 전달하지 않는 경우(blocked): 둘 중 누군가 이 매칭의 연락을 차단했거나(community_contact_blocks), 보내는 사람(상대 프록시의 주인)이
+// 지금 제재 중일 때. 예전에는 차단 수단이 없고 제재를 받아도 메일이 계속 전달됐다(2026-10-22 신고 관련 후속).
 async function findEmailRelayTarget(toProxyEmail) {
   const [rows] = await pool.query('SELECT application_id, owner_id FROM community_email_proxies WHERE proxy_email = ?', [
     toProxyEmail,
@@ -62,13 +66,37 @@ async function findEmailRelayTarget(toProxyEmail) {
   if (!recipient) return null;
 
   const [siblingRows] = await pool.query(
-    'SELECT proxy_email FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
+    'SELECT proxy_email, owner_id FROM community_email_proxies WHERE application_id = ? AND owner_id != ?',
     [matched.application_id, matched.owner_id]
   );
   const sibling = siblingRows[0];
   if (!sibling) return null;
 
+  const [[blocked]] = await pool.query(
+    `SELECT
+       EXISTS(SELECT 1 FROM community_contact_blocks WHERE application_id = ?) AS contact_blocked,
+       EXISTS(SELECT 1 FROM student_sanctions WHERE student_id = ? AND lifted_at IS NULL AND (ends_at IS NULL OR ends_at > NOW())) AS sender_sanctioned`,
+    [matched.application_id, sibling.owner_id]
+  );
+  if (Number(blocked.contact_blocked)) return { blocked: 'CONTACT_BLOCKED' };
+  if (Number(blocked.sender_sanctioned)) return { blocked: 'SENDER_SANCTIONED' };
+
   return { recipientEmail: recipient.email, senderProxyEmail: sibling.proxy_email };
+}
+
+// 매칭 연락 차단 — 수락된 신청의 글쓴이·신청자만 할 수 있다. 이미 차단됐으면 그대로 성공(같은 결과라 다시 눌러도 된다).
+async function blockContact(applicationId, studentId) {
+  const [rows] = await pool.query(
+    `SELECT a.status, a.applicant_id, p.author_id
+     FROM community_applications a JOIN community_posts p ON p.id = a.post_id
+     WHERE a.id = ?`,
+    [applicationId]
+  );
+  const row = rows[0];
+  if (!row || (row.applicant_id !== studentId && row.author_id !== studentId)) return { ok: false, reason: 'NOT_FOUND' };
+  if (row.status !== 'accepted') return { ok: false, reason: 'NOT_ACCEPTED' };
+  await pool.query('INSERT IGNORE INTO community_contact_blocks (application_id, blocked_by) VALUES (?, ?)', [applicationId, studentId]);
+  return { ok: true };
 }
 
 // studentService.js의 serializeStudent()와 동일한 닉네임 폴백(student.name || user{id}) —
@@ -115,12 +143,25 @@ function recruitFields(row, today) {
 // 글은 목록/상세 어디서도 제3자에게 노출되면 안 된다(db/schema.sql 커뮤니티 게시판 주석
 // 참고 — 관리자 승인 전엔 비공개). 아래 학생용 함수들이 이 규칙을 지킨다.
 
-async function createPost(authorId, { title, body, category, capacity, recruitEndDate = null }) {
-  const [result] = await pool.query(
-    "INSERT INTO community_posts (author_id, title, body, category, capacity, recruit_end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
-    [authorId, title, body, category, capacity, recruitEndDate]
-  );
-  return result.insertId;
+// departmentIds: 모집 학과 id(최대 3개, 빈 배열이면 학과 상관없음 — postDepartments.js). 글과 모집 학과를 한 트랜잭션으로 저장해,
+// 학과 저장이 실패하면 글도 남지 않게 한다.
+async function createPost(authorId, { title, body, category, capacity, recruitEndDate = null, departmentIds = [] }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      "INSERT INTO community_posts (author_id, title, body, category, capacity, recruit_end_date, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+      [authorId, title, body, category, capacity, recruitEndDate]
+    );
+    await replacePostDepartments(conn, result.insertId, departmentIds);
+    await conn.commit();
+    return result.insertId;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 게시글 검색 — 제목이나 본문에 검색어가 들어간 글(koreanSearch.js: 띄어쓰기·문장부호 무시, 제목 일치가 본문 일치보다
@@ -136,7 +177,8 @@ function normalizeSearchQuery(q) {
 }
 
 // query가 비어 있으면 검색하지 않고 전체 목록(기존 동작)을 돌려준다.
-async function listApprovedPosts({ query } = {}) {
+// viewerDepartmentId: 보는 학생의 학과 — 글마다 모집 학과와 "내 학과" 여부(isMyDepartment)를 붙인다.
+async function listApprovedPosts({ query, viewerDepartmentId = null } = {}) {
   const keyword = normalizeSearchQuery(query);
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.closed_at, p.created_at, p.author_id, s.name AS author_name,
@@ -158,12 +200,12 @@ async function listApprovedPosts({ query } = {}) {
     author: nicknameOf(row.author_name, row.author_id),
     ...recruitFields(row, today),
   }));
-  if (!keyword) return posts;
+  if (!keyword) return attachTargetDepartments(posts, { viewerDepartmentId });
 
   // "?!"처럼 문장부호뿐이라 정규화하면 비는 검색어는 아무것도 찾지 않는다(rankEntries가 빈 배열을 준다).
   const prepared = prepareQuery(keyword);
   const searchable = posts.map((post) => ({ item: post, entry: prepareEntry(post.title, [post.body]) }));
-  return rankEntries(searchable, prepared, { limit: SEARCH_RESULT_LIMIT }).map((r) => r.item);
+  return attachTargetDepartments(rankEntries(searchable, prepared, { limit: SEARCH_RESULT_LIMIT }).map((r) => r.item), { viewerDepartmentId });
 }
 
 // 작성자 본인은 상태(대기/승인/반려) 무관하게 자기 글을 전부 볼 수 있다 — 승인 전엔
@@ -183,7 +225,7 @@ async function listMyPosts(studentId) {
     [studentId]
   );
   const today = todayKst();
-  return rows.map((row) => ({
+  return attachTargetDepartments(rows.map((row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -195,14 +237,14 @@ async function listMyPosts(studentId) {
     applicationCount: Number(row.application_count),
     pendingApplicationCount: Number(row.pending_application_count),
     ...recruitFields(row, today),
-  }));
+  })));
 }
 
 // 승인된 글은 누구나, 그 외(대기/반려)는 작성자 본인만 볼 수 있다 — id를 알아도 남의
 // 비공개 글을 못 보게 막는 게 목적. 이 함수가 신청 가능 여부 판정도 겸한다(3단계 —
 // server/routes/community.js의 POST /:id/apply가 그대로 재사용): null이면 신청 대상도
 // 아님, isMine이면 자기 글이라 신청 불가, closedAt 있으면 마감이라 신청 불가.
-async function getPostById(id, { studentId, includeAuthorId = false }) {
+async function getPostById(id, { studentId, includeAuthorId = false, viewerDepartmentId = null }) {
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name,
             ${RECRUIT_DATE_COLUMNS}
@@ -217,17 +259,24 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
   const isMine = row.author_id === studentId;
   let myApplication = null;
   if (!isMine) {
+    // 수락된 신청이면 글쓴이에게 연락할 주소(글쓴이 프록시)와 연락 차단 여부도 같이 준다 — 상세에서 바로 연락하거나 차단할 수 있게.
     const [appRows] = await pool.query(
-      `SELECT id, status, reject_reason FROM community_applications
-       WHERE post_id = ? AND applicant_id = ?
-       ORDER BY created_at DESC LIMIT 1`,
-      [id, studentId]
+      `SELECT a.id, a.status, a.reject_reason, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
+       FROM community_applications a
+       LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = ?
+       LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
+       WHERE a.post_id = ? AND a.applicant_id = ?
+       ORDER BY a.created_at DESC LIMIT 1`,
+      [row.author_id, id, studentId]
     );
     if (appRows[0]) {
+      const app = appRows[0];
       myApplication = {
-        id: appRows[0].id,
-        status: appRows[0].status,
-        rejectReason: appRows[0].status === 'rejected' ? appRows[0].reject_reason : null,
+        id: app.id,
+        status: app.status,
+        rejectReason: app.status === 'rejected' ? app.reject_reason : null,
+        contactEmail: app.status === 'accepted' && !app.contact_blocked_at ? app.contact_proxy_email : null,
+        contactBlockedAt: app.contact_blocked_at || null,
       };
     }
   }
@@ -240,7 +289,10 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
 
   const contentHidden = row.status !== 'approved' && !isMine;
 
+  const [post] = await attachTargetDepartments([{ id: row.id }], { viewerDepartmentId });
   return {
+    targetDepartments: post.targetDepartments,
+    ...(viewerDepartmentId ? { isMyDepartment: post.isMyDepartment } : {}),
     id: row.id,
     title: contentHidden ? null : row.title,
     body: contentHidden ? null : row.body,
@@ -264,14 +316,26 @@ async function getPostById(id, { studentId, includeAuthorId = false }) {
 // 적용돼 공개 목록에서 사라진다). closed_at은 건드리지 않는다(마감 여부는 수정과 무관한
 // 별개 상태). 이미 달린 신청(대기/수락 포함)도 그대로 둔다 — 수정은 글 노출 여부만
 // 잠그지, 신청 데이터를 건드리지 않는다.
-async function editPost(id, authorId, { title, body, category, capacity, recruitEndDate = null }) {
-  const [result] = await pool.query(
-    `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?,
-            recruit_end_date = ?, status = 'pending', decided_at = NULL
-     WHERE id = ? AND author_id = ?`,
-    [title, body, category, capacity, recruitEndDate, id, authorId]
-  );
-  return result.affectedRows > 0;
+// departmentIds가 undefined면 모집 학과는 그대로 둔다(학과를 보내지 않는 예전 화면 호환).
+async function editPost(id, authorId, { title, body, category, capacity, recruitEndDate = null, departmentIds }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [result] = await conn.query(
+      `UPDATE community_posts SET title = ?, body = ?, category = ?, capacity = ?,
+              recruit_end_date = ?, status = 'pending', decided_at = NULL
+       WHERE id = ? AND author_id = ?`,
+      [title, body, category, capacity, recruitEndDate, id, authorId]
+    );
+    if (result.affectedRows > 0 && departmentIds !== undefined) await replacePostDepartments(conn, id, departmentIds);
+    await conn.commit();
+    return result.affectedRows > 0;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // 삭제는 관리자 승인과 무관하게 작성자가 상태(대기/승인/반려/마감) 상관없이 언제든 할 수
@@ -360,11 +424,12 @@ async function getMyApplications(studentId) {
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
             DATE_FORMAT(p.recruit_end_date, '%Y-%m-%d') AS recruit_end_date,
-            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email
+            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
      JOIN students s ON s.id = p.author_id
      LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = p.author_id
+     LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
      WHERE a.applicant_id = ?
      ORDER BY a.created_at DESC`,
     [studentId]
@@ -381,7 +446,9 @@ async function getMyApplications(studentId) {
     status: row.status,
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
-    contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
+    // 연락을 차단한 매칭은 연락 주소를 내려주지 않고 차단 시각만 준다(누가 차단했는지는 보여주지 않는다).
+    contactEmail: row.status === 'accepted' && !row.contact_blocked_at ? row.contact_proxy_email : null,
+    contactBlockedAt: row.contact_blocked_at || null,
   }));
 }
 
@@ -392,10 +459,11 @@ async function getMyApplications(studentId) {
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
-            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email
+            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
      LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = a.applicant_id
+     LEFT JOIN community_contact_blocks cb ON cb.application_id = a.id
      WHERE a.post_id = ?
      ORDER BY a.created_at ASC`,
     [postId]
@@ -411,7 +479,8 @@ async function getApplicantsForPost(postId) {
       createdAt: row.created_at,
       applicant: nicknameOf(row.applicant_name, row.applicant_id),
       hasAppliedBefore,
-      contactEmail: row.status === 'accepted' ? row.contact_proxy_email : null,
+      contactEmail: row.status === 'accepted' && !row.contact_blocked_at ? row.contact_proxy_email : null,
+      contactBlockedAt: row.contact_blocked_at || null,
       rejectReason: row.status === 'rejected' ? row.reject_reason : null,
     };
   });
@@ -472,16 +541,17 @@ async function decideApplication(applicationId, authorId, status, reason = null)
 
 // 관리자 화면(4단계)이 작성자를 author_id 숫자로만 보여주면 누가 쓴 글인지 알아볼 수
 // 없어서, 학생용 목록(listApprovedPosts 등)과 동일하게 닉네임까지 조인해서 내려준다.
+// 모집 학과·마감일은 학생 상세 화면과 같은 값을 붙인다 — 승인할 때 "어느 학과를 언제까지" 모으는 글인지 같이 보려고.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, ${RECRUIT_DATE_COLUMNS}, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = ?
      ORDER BY p.created_at ASC`,
     [status]
   );
-  return rows.map((row) => ({
+  const posts = rows.map((row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -491,7 +561,9 @@ async function listPostsForAdmin(status) {
     createdAt: row.created_at,
     author: nicknameOf(row.author_name, row.author_id),
     rejectReason: row.reject_reason,
+    recruitEndDate: row.recruit_end_date,
   }));
+  return attachTargetDepartments(posts);
 }
 
 // status가 이미 'pending'이 아니면 아무 것도 안 바뀐다 — 이미 처리된 글을 다시
@@ -656,6 +728,8 @@ async function listReportsForAdmin(status) {
       resolvedAt: row.resolved_at,
       resolutionNote: row.resolution_note,
       targetType: row.target_type,
+      // 관리자 화면이 같은 글·신청에 들어온 신고를 한 줄로 묶는 기준(targetType + targetId).
+      targetId: row.target_id,
       // 구버전 신고(스냅샷 컬럼 도입 전)는 reported_student_id가 없을 수 있음 — 그 경우
       // 제재 버튼을 비활성화해야 하므로 null을 그대로 내려준다.
       reportedStudent: row.reported_student_id ? nicknameOf(row.reported_name, row.reported_student_id) : null,
@@ -679,6 +753,17 @@ async function resolveReport(id, note = null) {
     [trimmed, id]
   );
   return result.affectedRows > 0;
+}
+
+// 같은 글·신청에 들어온 다른 대기 신고를 한 번에 처리완료로 바꾼다 — 관리자 신고함은 대상별로 묶어 보여주고 한 번에 처리하므로,
+// 하나만 처리하면 나머지가 대기로 남아 같은 글이 다시 뜬다. 신고자마다 같은 처리 안내를 받는다. 바뀐 건수를 돌려준다.
+async function resolvePendingReportsForTarget(targetType, targetId, note = null) {
+  const trimmed = typeof note === 'string' && note.trim() ? note.trim() : null;
+  const [result] = await pool.query(
+    "UPDATE community_reports SET status = 'resolved', resolved_at = NOW(), resolution_note = ? WHERE target_type = ? AND target_id = ? AND status = 'pending'",
+    [trimmed, targetType, targetId]
+  );
+  return result.affectedRows;
 }
 
 // 신고자 본인의 신고 내역("내 신고 내역"). 신고 대상자·제재 여부는 내려주지 않는다 — 신고자에게는 "내가 무엇을 신고했고,
@@ -735,6 +820,7 @@ module.exports = {
   getApplicantsForPost,
   decideApplication,
   findEmailRelayTarget,
+  blockContact,
   listPostsForAdmin,
   decidePost,
   deletePost,
@@ -744,6 +830,7 @@ module.exports = {
   getReportById,
   listReportsForAdmin,
   resolveReport,
+  resolvePendingReportsForTarget,
   listMyReports,
   countUnseenReportResults,
   markMyReportResultsSeen,

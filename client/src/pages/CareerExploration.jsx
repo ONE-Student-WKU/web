@@ -11,8 +11,8 @@ import {
 import AccountMenu from '../components/AccountMenu.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
-import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
-import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
+import CareerRoadmapList, { groupRoadmapBySemester } from '../components/CareerRoadmapList.jsx';
+import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import useChatAutoScroll from '../hooks/useChatAutoScroll.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -101,6 +101,13 @@ const FIXED_MESSAGE_COUNT = FIXED_QUESTIONS.length * 2;
 // 상담 한 번의 자유 대화 상한 — 서버(server/services/careerService.js MAX_FREE_TURNS)와 같은 값. 다 쓰면 입력창 대신 추천받기 안내를 보여준다.
 const MAX_FREE_TURNS = 15;
 
+// 진로 추천 칸이 진하게 바뀌는 자유 대화 횟수 — 이 정도 이야기하면 추천이 쓸 만해진다고 보고 정한 값(2026-10-22 사용자 결정, 3번).
+// 그 전에도 "지금 받기"로 언제든 누를 수 있다. 남은 대화가 TURNS_LEFT_WARNING번 이하면 남은 횟수를 같이 알린다.
+const READY_TURNS = 3;
+const TURNS_LEFT_WARNING = 3;
+// 대화 위 "내 답변" 칩은 이 개수를 넘으면 두 줄까지만 보이고 펼치기 버튼을 둔다.
+const ANSWER_CHIPS_FOLDED = 4;
+
 // "모르겠어요" 답변의 저장값 — 서버 저장과 parseFixedAnswersFromMessages의 역파싱이 같은 문자열에 의존하므로 화면 언어와 무관하게 고정.
 const SKIPPED_ANSWER = '(잘 모르겠어요, 건너뜀)';
 
@@ -173,6 +180,39 @@ function describeAnswerChanges(changes, t) {
   return changes.map((c) => `${t(`career.q.${c.index}.title`)}: ${answerLabel(c.index, c.before)} → ${answerLabel(c.index, c.after)}`).join(' / ');
 }
 
+// "내 답변" 칩 — 질문마다 고른 선택지를 화면 언어로. 건너뛴 질문은 뺀다.
+function answerChips(drafts, t) {
+  return drafts.flatMap((selected, qIndex) =>
+    selected.map((option) => {
+      const optIndex = FIXED_QUESTIONS[qIndex].options.indexOf(option);
+      return optIndex >= 0 ? t(`career.q.${qIndex}.opt.${optIndex}`) : option;
+    })
+  );
+}
+
+// 진로 탐색이 질문 → 대화 → 진로 추천 → 과목 로드맵으로 이어진다는 걸 대화 중에도 보여준다 — 대화 다음에 추천이 온다는 걸 몰라
+// 추천받기를 찾지 못하던 문제(2026-10-22) 때문에 넣었다.
+const CAREER_STEPS = ['questions', 'chat', 'candidates', 'roadmap'];
+function CareerSteps({ stage }) {
+  const { t } = useI18n();
+  const current = CAREER_STEPS.indexOf(stage);
+  return (
+    <ol className="career-steps" aria-label={t('career.steps.aria')}>
+      {CAREER_STEPS.map((step, i) => (
+        <React.Fragment key={step}>
+          {i > 0 && <li className="career-steps-line" aria-hidden="true" />}
+          <li className={'career-step' + (i < current ? ' done' : i === current ? ' now' : '')} aria-current={i === current ? 'step' : undefined}>
+            <span className="career-step-num" aria-hidden="true">
+              {i < current ? <IconCheck size={9} /> : i + 1}
+            </span>
+            {t(`career.steps.${step}`)}
+          </li>
+        </React.Fragment>
+      ))}
+    </ol>
+  );
+}
+
 /**
  * CareerExploration Page
  * 고정 질문(진입장벽 낮추기) → 자유 대화(AI 상담) → 진로 후보 → 확정 → 과목 로드맵.
@@ -181,7 +221,7 @@ function describeAnswerChanges(changes, t) {
  * - user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile
  */
 function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
-  const { t, lang } = useI18n();
+  const { t, tRich, lang } = useI18n();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
@@ -204,6 +244,8 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   const [roadmap, setRoadmap] = useState([]);
   const [confirmedCareer, setConfirmedCareer] = useState(null);
 
+  // 대화 위 "내 답변" 칩을 다 펼쳤는지.
+  const [answersExpanded, setAnswersExpanded] = useState(false);
   const [editDrafts, setEditDrafts] = useState([]); // FIXED_QUESTIONS와 같은 순서의 string[] 배열
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -399,70 +441,62 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     setStage('questions');
   }
 
-  const headerTitle =
-    stage === 'roadmap' && confirmedCareer
-      ? t('career.roadmapTitle', { career: confirmedCareer })
-      : stage === 'editAnswers'
-        ? t('career.editTitle')
-        : t('nav.career');
   const errorText = error && (typeof error === 'object' ? t(error.key) : error);
   const currentQuestion = FIXED_QUESTIONS[stepIndex];
-  // 자유 대화를 몇 번 나눴는데도 "추천받기"가 있는 걸 못 알아채는 경우를 위한 안내 —
-  // 과목 추가의 "한 번에 채우려면?" 말풍선과 같은 패턴. 자유 대화 메시지 4개(사용자+AI
-  // 2턴) 이상 쌓이면 보여주고, 후보를 이미 받았으면(chat 단계를 벗어나면) 자연히 사라진다.
-  const showRecommendHint = stage === 'chat' && messages.length - FIXED_MESSAGE_COUNT >= 4;
   const turnLimitReached = messages.filter((m) => m.role === 'user').length >= FIXED_QUESTIONS.length + MAX_FREE_TURNS;
+  // 화면에 보이는 자유 대화 중 학생이 보낸 횟수("처음부터 다시"를 했으면 그 뒤부터) — 진로 추천 칸의 "n번 남았어요"와 바뀌는 시점에 쓴다.
+  const freeTurns = toChatMessages(messages).filter((m) => m.sender === 'user').length;
+  const turnsLeft = Math.max(0, FIXED_QUESTIONS.length + MAX_FREE_TURNS - messages.filter((m) => m.role === 'user').length);
+  const recommendReady = freeTurns >= READY_TURNS;
+  // 기능 사용 횟수에서 진로 추천을 몇 번째 대화에서 눌렀는지 본다(utils/track.js) — 10번부터는 한 칸으로 묶는다.
+  const recommendTrack = `career.recommend.turn_${freeTurns >= 10 ? '10plus' : freeTurns}`;
+  const fixedAnswerChips = stage === 'chat' ? answerChips(parseFixedAnswersFromMessages(messages), t) : [];
+
+  // 머리글 뒤로가기 — 질문은 이전 질문으로, 답변 수정·후보·로드맵은 대화로, 그 밖에는 홈으로 한 단계씩 돌아간다.
+  const handleHeaderBack = () => {
+    if (stage === 'questions' && stepIndex > 0 && !startingChat) goBackQuestion();
+    else if ((stage === 'editAnswers' && !savingEdit) || (stage === 'candidates' && confirmingCareer === null) || (stage === 'roadmap' && sessionId)) setStage('chat');
+    else onGoHome();
+  };
+  const backToChat = stage === 'editAnswers' || stage === 'candidates' || (stage === 'roadmap' && sessionId);
 
   return (
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onGoHome} aria-label={t('common.backHome')}>
+          <button
+            className="back-btn"
+            onClick={handleHeaderBack}
+            aria-label={stage === 'questions' && stepIndex > 0 ? t('career.q.prev') : backToChat ? t('career.backToChat') : t('common.backHome')}
+          >
             <IconChevronLeft />
           </button>
-          {stage !== 'questions' && <span className="screen-title">{headerTitle}</span>}
+          <span className="screen-title">{stage === 'editAnswers' ? t('career.editTitle') : t('nav.career')}</span>
         </div>
-        {stage === 'questions' && (
-          <div className="onb-dots">
-            {FIXED_QUESTIONS.map((_, i) => (
-              <div key={i} className={'onb-dot' + (i === stepIndex ? ' active' : i < stepIndex ? ' done' : '')} />
-            ))}
-          </div>
-        )}
-        <div className="screen-header-right">
-          {stage === 'chat' && (
-            <>
-              <button type="button" className="career-edit-icon-btn" onClick={openEditAnswers} aria-label={t('career.editAria')}>
-                <IconEdit />
-              </button>
-              <div className="career-recommend-hint-wrap">
-                {showRecommendHint && (
-                  <span className="career-recommend-hint-bubble">{t('career.recommendHint')}</span>
-                )}
-                <button
-                  type="button"
-                  className="career-recommend-btn"
-                  onClick={() => setShowConfirmModal(true)}
-                  disabled={sending || loadingCandidates}
-                >
-                  {t('career.recommend')}
-                </button>
-              </div>
-            </>
-          )}
-          <AccountMenu
-            user={user}
-            onLogout={onLogout}
-            onOpenSettings={onOpenSettings}
-            onOpenOnboarding={onOpenOnboarding}
-            onOpenProfile={onOpenProfile}
-            onOpenAdmin={onOpenAdmin}
-            onOpenInquiry={onOpenInquiry}
-          />
-        </div>
+        <AccountMenu
+          user={user}
+          onLogout={onLogout}
+          onOpenSettings={onOpenSettings}
+          onOpenOnboarding={onOpenOnboarding}
+          onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onOpenInquiry={onOpenInquiry}
+        />
       </header>
 
-      <div className="courses-body" ref={bodyRef}>
+      {!loading && stage === 'questions' && currentQuestion && !onboardingRequired && (
+        <div className="career-progress" aria-label={t('career.q.progressAria', { n: stepIndex + 1, total: FIXED_QUESTIONS.length })}>
+          <div className="career-progress-bar">
+            <i style={{ width: `${((stepIndex + 1) / FIXED_QUESTIONS.length) * 100}%` }} />
+          </div>
+          <span className="career-progress-step">
+            {stepIndex + 1} / {FIXED_QUESTIONS.length}
+          </span>
+        </div>
+      )}
+      {!loading && (stage === 'chat' || stage === 'candidates' || stage === 'roadmap') && <CareerSteps stage={stage} />}
+
+      <div className="courses-body career-body" ref={bodyRef}>
         {errorText && <p className={error.support ? 'career-support-note' : 'home-error'} role={error.support ? 'status' : undefined}>{errorText}</p>}
         {onboardingRequired && <p className="home-error">{t('career.needOnboarding')}</p>}
 
@@ -477,77 +511,77 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         )}
 
         {!loading && !onboardingRequired && stage === 'questions' && currentQuestion && (
-          <>
-            <h2 className="onb-q-title">{t(`career.q.${stepIndex}.title`)}</h2>
-            <p className="onb-q-sub">{currentQuestion.multi ? (currentQuestion.max ? t('career.q.multiMaxHint', { max: currentQuestion.max }) : t('career.q.multiHint')) : t('career.q.singleHint')}</p>
-            <div className="onb-option-list">
+          <div className="career-question">
+            <h2 className="career-q-title">{t(`career.q.${stepIndex}.title`)}</h2>
+            <p className="career-q-sub">{currentQuestion.multi ? (currentQuestion.max ? t('career.q.multiMaxHint', { max: currentQuestion.max }) : t('career.q.multiHint')) : t('career.q.singleHint')}</p>
+            <div className="career-options">
               {currentQuestion.options.map((option, optIndex) => (
                 <button
                   key={option}
-                  className={'onb-option-card' + (draftAnswer.includes(option) ? ' selected' : '')}
+                  type="button"
+                  className={'career-option' + (draftAnswer.includes(option) ? ' active' : '')}
+                  aria-pressed={draftAnswer.includes(option)}
                   onClick={() => toggleOption(option)}
                 >
-                  <span className="onb-option-title">{t(`career.q.${stepIndex}.opt.${optIndex}`)}</span>
+                  <span>{t(`career.q.${stepIndex}.opt.${optIndex}`)}</span>
+                  <span className="career-option-check" aria-hidden="true">
+                    <IconCheck size={11} />
+                  </span>
                 </button>
               ))}
             </div>
-            <button className="onb-skip-link" onClick={() => advanceQuestion([])} disabled={startingChat}>
-              {t('career.q.skip')}
-            </button>
-            <button
-              className="auth-submit-btn"
-              onClick={() => advanceQuestion(draftAnswer)}
-              disabled={draftAnswer.length === 0 || startingChat}
-            >
-              {startingChat ? t('career.q.preparing') : stepIndex + 1 < FIXED_QUESTIONS.length ? t('onb.next') : t('career.q.startChat')}
-            </button>
-            {stepIndex > 0 && (
-              <button className="onb-skip-link" onClick={goBackQuestion} disabled={startingChat}>
-                {t('career.q.prev')}
-              </button>
-            )}
-          </>
+          </div>
         )}
 
         {!loading && stage === 'editAnswers' && (
-          <>
-            <h2 className="onb-q-title">{t('career.editTitle')}</h2>
-            <p className="career-edit-intro-body">
-              {t('career.edit.intro')}
-            </p>
+          <div className="career-edit">
+            <p className="career-edit-intro-body">{t('career.edit.intro')}</p>
             {FIXED_QUESTIONS.map((q, qIndex) => (
               <div key={q.question} className="career-edit-question">
                 <span className="career-edit-question-title">{t(`career.q.${qIndex}.title`)}</span>
-                <div className="onb-option-list">
+                <div className="career-chips">
                   {q.options.map((option, optIndex) => (
                     <button
                       key={option}
-                      className={'onb-option-card' + ((editDrafts[qIndex] || []).includes(option) ? ' selected' : '')}
+                      type="button"
+                      className={'career-pick' + ((editDrafts[qIndex] || []).includes(option) ? ' active' : '')}
+                      aria-pressed={(editDrafts[qIndex] || []).includes(option)}
                       onClick={() => toggleEditOption(qIndex, option)}
                     >
-                      <span className="onb-option-title">{t(`career.q.${qIndex}.opt.${optIndex}`)}</span>
+                      {t(`career.q.${qIndex}.opt.${optIndex}`)}
                     </button>
                   ))}
                 </div>
               </div>
             ))}
-            {/* 고친 답을 어떻게 반영할지 학생이 고른다 — 방향만 틀지, 처음부터 다시 할지는 사람마다 달라서(이슈 #245, 결정 14-1 C) */}
-            <button className="auth-submit-btn" onClick={() => handleSaveEditAnswers('CONTINUE')} disabled={savingEdit}>
-              {savingEdit ? t('career.edit.saving') : t('career.edit.continue')}
-            </button>
-            <p className="career-edit-mode-note">{t('career.edit.continueNote')}</p>
-            <button className="auth-submit-btn auth-submit-btn--secondary" onClick={() => handleSaveEditAnswers('RESTART')} disabled={savingEdit}>
-              {t('career.edit.restart')}
-            </button>
-            <p className="career-edit-mode-note">{t('career.edit.restartNote')}</p>
-            <button className="onb-skip-link" onClick={() => setStage('chat')} disabled={savingEdit}>
-              {t('onb.cancel')}
-            </button>
-          </>
+          </div>
         )}
 
         {!loading && stage === 'chat' && (
           <div className="career-chat-wrap">
+            {messages.length >= FIXED_MESSAGE_COUNT && (
+              <div className="career-answers">
+                <div className="career-answers-head">
+                  <span>{t('career.answers.title')}</span>
+                  <button type="button" onClick={openEditAnswers} aria-label={t('career.editAria')}>
+                    {t('career.answers.edit')}
+                  </button>
+                </div>
+                {fixedAnswerChips.length === 0 && <p className="career-answers-none">{t('career.answers.none')}</p>}
+                <div className={answersExpanded ? 'career-chips' : 'career-chips career-chips--clamp'}>
+                  {fixedAnswerChips.map((chip) => (
+                    <span key={chip} className="career-chip">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+                {fixedAnswerChips.length > ANSWER_CHIPS_FOLDED && (
+                  <button type="button" className="career-answers-toggle" aria-expanded={answersExpanded} onClick={() => setAnswersExpanded((v) => !v)}>
+                    {answersExpanded ? t('career.answers.fold') : t('career.answers.unfold', { n: fixedAnswerChips.length })}
+                  </button>
+                )}
+              </div>
+            )}
             {confirmedCareer ? (
               <button type="button" className="career-result-banner" onClick={() => setStage('roadmap')}>
                 {t('career.banner.roadmap', { career: confirmedCareer })}
@@ -581,50 +615,115 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                   </div>
                 </div>
               )}
-              {turnLimitReached && (
-                <p className="career-support-note" role="status">{t('career.turnLimit')}</p>
-              )}
             </div>
           </div>
         )}
 
         {!loading && stage === 'candidates' && (
-          <>
-            <p className="onb-q-sub">{t('career.candidates.intro')}</p>
-            <div className="career-candidate-list">
-              {candidates.map((c) => (
-                <div key={c.careerName} className="career-candidate-card">
-                  <span className="career-candidate-title">{c.careerName}</span>
-                  <p className="career-candidate-reasoning">{c.reasoning}</p>
-                  <button
-                    className="auth-submit-btn"
-                    onClick={() => handleChooseCareer(c.careerName)}
-                    disabled={confirmingCareer !== null}
-                  >
-                    {confirmingCareer === c.careerName ? t('career.candidates.building') : t('career.candidates.choose')}
-                  </button>
-                </div>
+          <div className="career-candidates">
+            <h2 className="career-q-title">{t('career.candidates.title')}</h2>
+            <p className="career-q-sub">{t('career.candidates.intro')}</p>
+            <ol className="career-candidate-list">
+              {candidates.map((c, index) => (
+                <li key={c.careerName} className="career-candidate">
+                  <span className="career-candidate-num" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <div className="career-candidate-main">
+                    <h3 className="career-candidate-title">{c.careerName}</h3>
+                    <p className="career-candidate-reasoning">{c.reasoning}</p>
+                    <button type="button" className="post-btn post-btn--outline" onClick={() => handleChooseCareer(c.careerName)} disabled={confirmingCareer !== null}>
+                      {confirmingCareer === c.careerName ? t('career.candidates.building') : t('career.candidates.choose')}
+                    </button>
+                  </div>
+                </li>
               ))}
-            </div>
-            <button className="onb-skip-link" onClick={() => setStage('chat')} disabled={confirmingCareer !== null}>
+            </ol>
+            <button className="career-text-link" onClick={() => setStage('chat')} disabled={confirmingCareer !== null}>
               {t('career.candidates.more')}
             </button>
-          </>
+          </div>
         )}
 
         {!loading && stage === 'roadmap' && (
-          <>
+          <div className="career-roadmap">
+            {confirmedCareer && (
+              <>
+                <p className="career-roadmap-hero">{t('career.roadmap.mine')}</p>
+                <h2 className="career-roadmap-title">{confirmedCareer}</h2>
+                {roadmap.length > 0 && (
+                  <p className="career-roadmap-stats">
+                    {tRich('career.roadmap.stats', { terms: groupRoadmapBySemester(roadmap).length, courses: roadmap.length })}
+                  </p>
+                )}
+              </>
+            )}
             <CareerRoadmapList roadmap={roadmap} />
-            <button className="onb-skip-link" onClick={handleRestart}>
+            <button className="career-text-link" onClick={handleRestart}>
               {t('career.restart')}
             </button>
-          </>
+          </div>
         )}
       </div>
 
-      {stage === 'chat' && !turnLimitReached && (
-        <ChatInput onSendMessage={handleSendMessage} disabled={sending} />
+      {/* 화면 아래에 붙는 버튼 — 질문(건너뛰기·다음), 답변 수정(이어서·처음부터), 대화(진로 추천 칸 + 입력창). */}
+      {!loading && !onboardingRequired && stage === 'questions' && currentQuestion && (
+        <div className="career-dock">
+          <div className="career-dock-row">
+            <button type="button" className="career-text-btn" onClick={() => advanceQuestion([])} disabled={startingChat}>
+              {t('career.q.skip')}
+            </button>
+            <button type="button" className="post-btn post-btn--ink post-btn--lg career-dock-main" onClick={() => advanceQuestion(draftAnswer)} disabled={draftAnswer.length === 0 || startingChat}>
+              {startingChat ? t('career.q.preparing') : stepIndex + 1 < FIXED_QUESTIONS.length ? t('onb.next') : t('career.q.startChat')}
+            </button>
+          </div>
+        </div>
       )}
+
+      {!loading && stage === 'editAnswers' && (
+        <div className="career-dock">
+          <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={() => handleSaveEditAnswers('CONTINUE')} disabled={savingEdit}>
+            {savingEdit ? t('career.edit.saving') : t('career.edit.continue')}
+          </button>
+          <button type="button" className="post-btn post-btn--outline post-btn--block" onClick={() => handleSaveEditAnswers('RESTART')} disabled={savingEdit}>
+            {t('career.edit.restart')}
+          </button>
+          <p className="career-dock-hint">{t('career.edit.choiceHint')}</p>
+        </div>
+      )}
+
+      {!loading && stage === 'chat' &&
+        (turnLimitReached ? (
+          <div className="career-dock">
+            <p className="career-dock-hint">{t('career.turnLimit')}</p>
+            <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates} data-track="career.recommend.limit">
+              {t('career.recommend')}
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* 진로 추천 칸 — 머리글의 작은 버튼은 대화 중에 눈에 안 띄어서(사용자 피드백 2026-10-22) 입력창 바로 위에 둔다.
+                자유 대화 READY_TURNS번 전에는 회색으로 몇 번 남았는지만, 그 뒤에는 진하게 눌러 달라고 한다. 처음부터 언제든 누를 수 있다. */}
+            <div className="career-recommend-bar">
+              <div className={recommendReady ? 'career-recommend-card ready' : 'career-recommend-card'}>
+                <div className="career-recommend-text">
+                  <b>{recommendReady ? t('career.recommend.readyTitle') : t('career.recommend.waitTitle', { n: READY_TURNS - freeTurns })}</b>
+                  <span>
+                    {recommendReady
+                      ? turnsLeft <= TURNS_LEFT_WARNING
+                        ? t('career.recommend.readyLeft', { n: turnsLeft })
+                        : t('career.recommend.readySub')
+                      : t('career.recommend.waitSub')}
+                  </span>
+                </div>
+                <button type="button" className="career-recommend-btn" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates} data-track={recommendTrack}>
+                  {recommendReady ? t('career.recommend') : t('career.recommend.now')}
+                </button>
+              </div>
+            </div>
+            <ChatInput onSendMessage={handleSendMessage} disabled={sending} placeholder={recommendReady ? t('career.input.more') : undefined} />
+          </>
+        ))}
 
       {(showConfirmModal || loadingCandidates) && (
         <div
@@ -646,10 +745,10 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                 <p className="career-confirm-body">
                   {t('career.modal.body')}
                 </p>
-                <button className="auth-submit-btn" onClick={handleConfirmRecommend}>
+                <button className="auth-submit-btn" onClick={handleConfirmRecommend} data-track="career.recommend.confirm">
                   {t('career.modal.yes')}
                 </button>
-                <button className="career-confirm-cancel" onClick={() => setShowConfirmModal(false)}>
+                <button className="career-confirm-cancel" onClick={() => setShowConfirmModal(false)} data-track="career.recommend.cancel">
                   {t('career.modal.no')}
                 </button>
               </>

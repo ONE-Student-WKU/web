@@ -217,8 +217,9 @@ const requestCodeLimiter = rateLimit({
   },
 });
 
-// 이메일을 바꿔 가며 아무 주소로나 코드를 보내는 남용(발송량)을 막는 넉넉한 안전장치. IP 단위라 지금 운영에서는 사실상
-// 전체 합계 상한으로 동작한다 — 정상적인 가입 몰림(10분에 100건)은 넘지 않을 값으로 둔다. 실제 학생 IP를 읽게 되면 IP별 상한이 된다.
+// 이메일을 바꿔 가며 아무 주소로나 코드를 보내는 남용(발송량)을 막는 넉넉한 안전장치. IP 단위다 — trust proxy를 2로 올려
+// 학생 IP를 읽으므로 IP별 상한이다(2026-10-23 전에는 Vercel IP로 묶여 전체 합계 상한이었다). 값은 같은 학교·기숙사 IP에서
+// 가입이 몰려도 넘지 않을 만큼 넉넉하게 둔다. Railway 직접 접속의 IP 위조로는 피할 수 있다(middleware/security.js).
 const requestCodeIpBackstop = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 100,

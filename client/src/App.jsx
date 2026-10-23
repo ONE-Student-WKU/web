@@ -18,18 +18,23 @@ import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfService from './pages/TermsOfService.jsx';
 import BottomTabBar from './components/BottomTabBar.jsx';
+import { installTracking, setTrackingEnabled, track } from './utils/track.js';
+import { resetAdminPending } from './utils/adminPending.js';
 import HomeEdit from './pages/HomeEdit.jsx';
 import { resolveLayout, isLockedView } from './utils/homeLayout.js';
 import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
-import { getMe, logout, getUnseenReportCount, updateProfile } from './api/chatApi.js';
+import useClearClickCaret from './hooks/useClearClickCaret.js';
+import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
 // 탭바가 보이는 화면. 하단 바 4칸은 사용자가 홈 화면 편집에서 고르므로(utils/homeLayout.js) 고른 화면(예: 문의하기)도 더한다.
 // 탭에 없는 화면(기본 배치의 과목 관리)은 탭바는 보이되 아무 탭도 강조되지 않는다. 하단 바를 끈 사용자(showTabBar=false)에게는 어디서도 보이지 않는다.
 const BASE_TAB_BAR_VIEWS = ['home', 'chat', 'courses', 'graduation', 'career', 'community'];
+// 화면 아래에 입력창(prompt-bar)이 있는 화면 — 챗봇 버튼만 띄우는 하단 바를 여기서는 그리지 않는다.
+const INPUT_BAR_VIEWS = ['chat', 'career'];
 
 // 하단 탭바가 가리키는 화면들(서로 형제 관계) = 홈·챗봇 + 사용자가 고른 4칸 — 이 화면들끼리 오갈 때는 히스토리를
 // 쌓지 않고 한 자리를 계속 갱신해서, 여러 탭을 거쳐도 뒤로가기 한 번이면 항상 홈으로 간다.
@@ -48,6 +53,7 @@ function resetAllUserCaches() {
   resetChatCache();
   resetCommunityCache();
   resetAdminTrendCache();
+  resetAdminPending();
 }
 
 /**
@@ -200,6 +206,10 @@ function App() {
   // 신고자가 아직 확인하지 않은 신고 처리 결과 수 — 하단 탭바 커뮤니티 아이콘의 점과 커뮤니티 "내 신고" 탭 점에 쓴다.
   // 화면을 옮길 때마다 가볍게 다시 확인한다(커뮤니티를 보고 있을 땐 그 화면이 직접 0으로 맞춘다). 실패는 조용히 무시.
   const [unseenReportCount, setUnseenReportCount] = useState(0);
+  // 아직 안 본 공지 수 — 같은 커뮤니티 점(하단 바·홈 메뉴)에 함께 쓴다. 커뮤니티에서 공지 목록을 열면 그 화면이 0으로 맞춘다.
+  const [unseenNoticeCount, setUnseenNoticeCount] = useState(0);
+  // 커뮤니티 글 상세·글쓰기 중 — 화면 아래에 붙는 신청·등록 버튼을 탭바(떠 있는 채팅 버튼)가 가리지 않게 숨긴다.
+  const [communityFocus, setCommunityFocus] = useState(false);
   useEffect(() => {
     if (!user || view === 'community') return;
     let cancelled = false;
@@ -208,10 +218,16 @@ function App() {
         if (!cancelled) setUnseenReportCount(count);
       })
       .catch(() => {});
+    getUnseenNoticeCount()
+      .then((count) => {
+        if (!cancelled) setUnseenNoticeCount(count);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [user, view]);
+  const communityBadge = unseenReportCount > 0 || unseenNoticeCount > 0;
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'medium');
   // 어느 화면이든 글자를 입력하는 칸이 포커스를 받으면(모바일 키보드가 뜨면) 하단 탭바를 숨겨
   // 입력 공간을 확보한다 — 채팅·진로 탐색뿐 아니라 커뮤니티 글쓰기/검색, 과목 검색·직접 입력 등
@@ -219,6 +235,8 @@ function App() {
   const textInputFocused = useTextInputFocused(view);
   // 홈 등에서 글자를 클릭해 둔 채 다른 화면으로 가면 그 자리의 커서가 허공에 남는 문제 방지.
   useClearStaleSelection(view);
+  // 입력 칸 밖에서 클릭으로 생긴 커서는 바로 지운다 — 바뀌지 않는 글자 위에서 커서가 깜빡이지 않게(2026-10-22 피드백).
+  useClearClickCaret();
 
   // 모바일에서 뒤로가기(제스처/버튼)를 누르면 앱을 벗어나 이전 브라우저 페이지로
   // 나가버리는 문제 방지: 화면 전환마다 히스토리 항목을 쌓아서, 뒤로가기를
@@ -272,6 +290,21 @@ function App() {
     localStorage.setItem('fontSize', fontSize);
   }, [fontSize]);
 
+  // 기능 사용 횟수(utils/track.js) — 클릭 감지기는 한 번만 걸고, 학생으로 로그인했을 때만 센다(관리자는 뺀다).
+  // 화면 열림은 화면이 바뀔 때만 센다(사용자 정보가 새로 고쳐져도 다시 세지 않게 마지막으로 센 화면을 기억한다).
+  useEffect(() => installTracking(), []);
+  const trackedView = useRef(null);
+  useEffect(() => {
+    setTrackingEnabled(Boolean(user) && user.role !== 'admin');
+    if (!user) {
+      trackedView.current = null;
+      return;
+    }
+    if (trackedView.current === view) return;
+    trackedView.current = view;
+    track(`view.${view}`);
+  }, [view, user]);
+
   const handleLogout = () => {
     logout().finally(() => {
       resetAllUserCaches();
@@ -299,10 +332,11 @@ function App() {
   const homeLayout = resolveLayout(user?.homeLayout);
   const layoutTabs = homeLayout.tabs;
   const tabPeers = tabPeerViews(user);
-  // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 채팅 화면에서는 입력창과 겹치므로 그리지 않는다.
+  // 4자리를 모두 비우면 챗봇 버튼만 내용 위에 띄운다(바가 자리를 차지하지 않는다). 아래에 입력창이 있는 화면(채팅·진로 탐색)에서는
+  // 떠 있는 버튼이 입력창을 가리므로 그리지 않는다(진로 탐색은 2026-10-22 피드백).
   const chatOnly = layoutTabs.every((v) => !v);
   const tabBarVisible =
-    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && view === 'chat');
+    homeLayout.showTabBar && (BASE_TAB_BAR_VIEWS.includes(view) || layoutTabs.includes(view)) && !(chatOnly && INPUT_BAR_VIEWS.includes(view)) && !(view === 'community' && communityFocus);
 
   // 홈 메뉴·하단 바에서 화면을 연다. 학과를 고르지 않은 계정이 학과가 필요한 기능(과목 관리·졸업요건 진단·진로 탐색)을 누르면 학과 선택으로 보낸다.
   const openView = (next) => setView(isLockedView(next, user) ? 'onboarding' : next);
@@ -392,6 +426,8 @@ function App() {
             onInitialPostConsumed={() => setCommunityInitialPostId(null)}
             unseenReportCount={unseenReportCount}
             onUnseenReportsChange={setUnseenReportCount}
+            onUnseenNoticesChange={setUnseenNoticeCount}
+            onFocusModeChange={setCommunityFocus}
           />
         ) : view === 'settings' ? (
           <Settings
@@ -425,6 +461,7 @@ function App() {
             onNameChanged={(name) => setUser((u) => ({ ...u, name }))}
             onAccountDeleted={handleAccountDeleted}
             justReauthenticated={justReauthenticated}
+            onOpenOnboarding={() => setView('onboarding')}
           />
         ) : view === 'admin' && user.role === 'admin' ? (
           <Admin
@@ -459,6 +496,7 @@ function App() {
             onOpenGraduation={() => openView('graduation')}
             onOpenCareer={() => openView('career')}
             onOpenCommunity={() => setView('community')}
+            communityBadge={communityBadge}
             onOpenSettings={() => setView('settings')}
             onOpenOnboarding={() => setView('onboarding')}
             onOpenProfile={() => setView('profile')}
@@ -477,7 +515,7 @@ function App() {
             active={tabPeers.has(view) ? view : null}
             onOpen={openView}
             isLocked={(v) => isLockedView(v, user)}
-            communityBadge={unseenReportCount > 0}
+            communityBadge={communityBadge}
           />
         )}
       </div>

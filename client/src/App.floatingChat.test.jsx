@@ -13,11 +13,13 @@ vi.mock('./api/chatApi.js', async (importOriginal) => ({
 vi.mock('./pages/Login.jsx', () => ({ default: () => <div>LOGIN</div> }));
 vi.mock('./pages/Home.jsx', () => ({ default: () => <div>HOME</div>, resetHomeCache: () => {} }));
 vi.mock('./pages/Chat.jsx', () => ({ default: () => <div>CHAT</div> }));
+vi.mock('./pages/CareerExploration.jsx', () => ({ default: () => <div>CAREER</div> }));
 vi.mock('./components/BottomTabBar.jsx', () => ({
   default: ({ onOpen }) => (
     <nav>
       TABBAR
       <button onClick={() => onOpen('chat')}>open-chat</button>
+      <button onClick={() => onOpen('career')}>open-career</button>
     </nav>
   ),
 }));
@@ -50,6 +52,17 @@ describe('챗봇 버튼만 남긴 하단 바', () => {
 
     await userEvent.click(screen.getByText('open-chat'));
     expect(await screen.findByText('CHAT')).toBeInTheDocument();
+    expect(screen.queryByText(/TABBAR/)).toBeNull();
+    expect(container.querySelector('.app-frame')).not.toHaveClass('floating-chat');
+  });
+
+  it('진로 탐색 화면에서도(아래에 입력창이 있다) 떠 있는 챗봇 버튼을 그리지 않는다', async () => {
+    // 진로 탐색은 학과를 고른 계정만 열 수 있다(isLockedView).
+    api.getMe.mockResolvedValue({ ...student({ tabs: [null, null, null, null], showTabBar: true }), departmentId: 1 });
+    const { container } = render(<App />);
+    await screen.findByText('HOME');
+    await userEvent.click(screen.getByText('open-career'));
+    expect(await screen.findByText('CAREER')).toBeInTheDocument();
     expect(screen.queryByText(/TABBAR/)).toBeNull();
     expect(container.querySelector('.app-frame')).not.toHaveClass('floating-chat');
   });
