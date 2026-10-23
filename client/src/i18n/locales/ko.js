@@ -133,6 +133,7 @@ export default {
   'login.google': 'Google로 로그인',
   'login.or': '또는',
   'login.email': '이메일 주소',
+  'login.emailPlaceholder': '자주 쓰는 이메일을 입력해주세요',
   'login.cooldown': '{time} 후 다시 요청할 수 있어요.',
   'login.sending': '전송 중...',
   'login.sendCode': '인증코드 받기',
