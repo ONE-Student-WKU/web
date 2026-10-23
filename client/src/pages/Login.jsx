@@ -5,6 +5,7 @@ import ConsentCheckbox from '../components/ConsentCheckbox.jsx';
 import { IconGoogle } from '../components/icons.jsx';
 import { CONSENT_VERSION, readStoredConsent, storeConsent } from '../utils/consent.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
 // data.retryAt(ISO 문자열)을 같이 내려준다 — 일일 한도까지 걸리면 몇 시간 단위로 남을 수
@@ -156,7 +157,7 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
-        <span className="screen-title screen-title-brand">ONE Student</span>
+        <BrandTitle />
         <LanguageSwitcher />
       </header>
 

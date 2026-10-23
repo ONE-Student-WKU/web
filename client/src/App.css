@@ -170,8 +170,28 @@ body {
 }
 
 .screen-title.screen-title-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 800;
   color: var(--color-ink);
+}
+
+/* 로고(8학기 원, BrandTitle.jsx). 남은 학기 조각은 --color-accent-bg보다 한 단계 진하게 잡아야 흰 머리 위에서 보인다. */
+.brand-mark {
+  flex-shrink: 0;
+}
+.brand-mark-done {
+  stroke: var(--color-ink);
+}
+.brand-mark-now {
+  stroke: var(--color-accent);
+}
+.brand-mark-rest {
+  stroke: #2a3f6b;
+}
+:root[data-theme='light'] .brand-mark-rest {
+  stroke: #dbe6fb;
 }
 
 .back-btn {
