@@ -5,9 +5,9 @@ const { TRUST_PROXY_HOPS } = require('../middleware/security');
 
 /**
  * server/test/trustProxy.test.js
- * 운영 요청은 학생 → Vercel → Railway 엣지 → 서버로 와서 X-Forwarded-For가 "학생 IP, Vercel IP"가 된다.
- * app.js와 같은 trust proxy 값으로 req.ip가 학생 IP로 읽히는지 확인한다(예전 값 1에서는 Vercel IP로 읽혀
- * IP 기준 제한이 전체 학생 합계로 묶였다). DB 없이 같은 설정의 작은 앱만 띄운다.
+ * Railway 엣지는 X-Forwarded-For를 자기에게 접속한 IP 하나로 덮어쓴다(2026-10-23 운영 실측). app.js와 같은 trust proxy 값으로
+ * req.ip가 그 값을 읽는지, 그리고 혹시 여러 값이 이어진 헤더가 오더라도 클라이언트가 지어낸 앞쪽 값을 믿지 않는지 확인한다.
+ * DB 없이 같은 설정의 작은 앱만 띄운다.
  */
 
 let server;
@@ -30,23 +30,18 @@ async function getIp(headers) {
   return res.json();
 }
 
-test('Vercel을 거친 요청은 학생 IP를 req.ip로 읽는다', async () => {
-  const { ip } = await getIp({ 'X-Forwarded-For': '203.0.113.7, 76.76.21.21' });
+test('Railway 엣지가 넘긴 접속 IP를 req.ip로 읽는다', async () => {
+  // Vercel을 거친 요청이면 이 값은 Vercel 출구 IP, Railway로 직접 왔으면 실제 접속 IP다.
+  const { ip } = await getIp({ 'X-Forwarded-For': '76.76.21.21' });
+  assert.equal(ip, '76.76.21.21');
+});
+
+test('여러 값이 이어진 헤더가 와도 클라이언트가 지어낸 앞쪽 값은 믿지 않는다', async () => {
+  const { ip } = await getIp({ 'X-Forwarded-For': '198.51.100.77, 203.0.113.7' });
   assert.equal(ip, '203.0.113.7');
 });
 
-test('학생마다 다른 IP로 읽혀 IP 기준 제한이 서로 묶이지 않는다', async () => {
-  const a = await getIp({ 'X-Forwarded-For': '203.0.113.7, 76.76.21.21' });
-  const b = await getIp({ 'X-Forwarded-For': '198.51.100.9, 76.76.21.21' });
-  assert.notEqual(a.ip, b.ip);
-});
-
-test('Railway에 직접 온 요청(앞 단계 하나)은 그 접속 IP를 읽는다', async () => {
-  const { ip } = await getIp({ 'X-Forwarded-For': '198.51.100.9' });
-  assert.equal(ip, '198.51.100.9');
-});
-
 test('프록시가 넘긴 https 프로토콜을 믿는다(세션 쿠키 secure 판정)', async () => {
-  const { protocol } = await getIp({ 'X-Forwarded-For': '203.0.113.7, 76.76.21.21', 'X-Forwarded-Proto': 'https' });
+  const { protocol } = await getIp({ 'X-Forwarded-For': '76.76.21.21', 'X-Forwarded-Proto': 'https' });
   assert.equal(protocol, 'https');
 });
