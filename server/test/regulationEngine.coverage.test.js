@@ -18,8 +18,8 @@ const { resolveRequirementsForStudent, inputFromStudentRow } = require('../servi
 
 after(() => pool.end());
 
-// 의·치·한의예(학)과·약학대학 전과생은 규정상 있을 수 없어(시행규칙 제111조 제4호) 판정하지 않는다(2026-10-17).
-const ALLOWED_NO_DATA = new Set(['NON_DEGREE_DEPARTMENT', 'MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT']);
+// 의·치·한의예(학)과·약학대학 전과생(시행규칙 제111조 제4호)과 예과 편입생(학칙 제36조)은 규정상 있을 수 없어 판정하지 않는다(2026-10-17, 10-24).
+const ALLOWED_NO_DATA = new Set(['NON_DEGREE_DEPARTMENT', 'MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT', 'TRANSFER_INTO_PREMED_NOT_OFFERED']);
 const THIS_YEAR = 2026;
 
 test('고를 수 있는 모든 학과·학번·입학 유형에서 졸업요건이 나온다(자율전공학부 제외)', async () => {

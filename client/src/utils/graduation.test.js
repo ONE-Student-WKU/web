@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -155,7 +155,7 @@ describe('describeRequirementTrust', () => {
 
   it('확정: 배지·사유·추정 표시가 모두 없다(예외만 표시)', () => {
     const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
-    expect(t).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(t).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
   });
 
   it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {
@@ -193,9 +193,9 @@ describe('describeRequirementTrust', () => {
   });
 
   it('예전 응답(regulation 없음)도 그대로 동작: 배지·사유 없음, 총량 0이면 noData', () => {
-    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
     expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
-    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
   });
 });
 
@@ -356,6 +356,43 @@ describe('판정하지 않는 요건(2026-10-16 규정 대조)', () => {
       counseling: { required: 8 }, designatedMajorCourses: { courses: [] }, secondMajor: { type: 'MINOR' }, majorTrackType: 'CONVERGENCE',
     })).toEqual(['home.unchecked.designated', 'home.unchecked.minorDesignated', 'home.unchecked.microDegree']);
     expect(uncheckedRequirementKeys({ secondMajor: { type: 'DOUBLE' }, majorTrackType: 'INTENSIVE' })).toEqual([]);
+  });
+});
+
+describe('추정이 섞인 진단을 확정처럼 말하지 않는다(2026-10-24 점검)', () => {
+  const t = (key, params) => translate('ko', key, params);
+  const cert = { category: '졸업인증제', satisfied: true };
+
+  it('졸업인증제가 있으면 학과 졸업인증(어학·자격증 등)은 늘 직접 확인할 항목이다', () => {
+    expect(uncheckedRequirementKeys({ certifications: [cert] })).toEqual(['home.unchecked.deptCertification']);
+    expect(uncheckedRequirementKeys({ certifications: [{ category: '졸업논문', satisfied: true }] })).toEqual([]);
+  });
+
+  it('부족 요건이 없어도 추정이면 "모든 요건을 충족했어요"라고 하지 않고 학사지원과 확인을 권한다', () => {
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe(t('home.allMet'));
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t)).toBe(`${t('home.allMetQualified')} ${t('home.allMetNote.estimated')}`);
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 18, totalEarnedCredits: 130, totalRequiredCredits: 130 }, t)).toContain('18학점');
+    // 수강 중 학점을 빼도 이미 졸업 학점을 채웠으면 조건을 붙이지 않는다
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 6, totalEarnedCredits: 140, totalRequiredCredits: 130 }, t)).toBe(t('home.allMet'));
+    expect(creditsDependOnInProgress({ inProgressCredits: 6, totalEarnedCredits: 134, totalRequiredCredits: 130 })).toBe(true);
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학과 졸업인증');
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학사지원과');
+  });
+
+  it('추정 이유가 여러 개면 한 줄 사유 말고 나머지도 펼쳐 볼 수 있게 준다(중복 제거)', () => {
+    const regulation = { confidence: 'ESTIMATED', flags: [
+      { level: 'ESTIMATED', message: '가' }, { level: 'INFO', message: '안내' }, { level: 'ESTIMATED', message: '나' }, { level: 'ESTIMATED', message: '나' },
+    ] };
+    const trust = describeRequirementTrust({ totalRequiredCredits: 130, regulation });
+    expect(trust.reason).toBe('가');
+    expect(trust.otherReasons).toEqual(['나']);
+  });
+
+  it('[별표 4] 불일치는 한 줄 사유가 이미 말하므로 펼쳐 보기에 다시 넣지 않는다', () => {
+    const regulation = { confidence: 'ESTIMATED', schedule4: { schedule4Credits: 130, bookCredits: 140 }, flags: [
+      { code: 'SCHEDULE4_CREDIT_MISMATCH', level: 'ESTIMATED', message: '별표4 문장' }, { code: 'X', level: 'ESTIMATED', message: '다른 이유' },
+    ] };
+    expect(describeRequirementTrust({ totalRequiredCredits: 130, regulation }).otherReasons).toEqual(['다른 이유']);
   });
 });
 

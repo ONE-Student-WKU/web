@@ -10,6 +10,7 @@ const {
   transferRecognizedCredits,
 } = require('./decisions');
 const { basisTextFlags } = require('./textVersion');
+const { profileCaveats, requirementSignature, originalCohortOf, returningCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS } = require('./profileCaveats');
 
 /**
  * server/services/regulationEngine/evaluate.js
@@ -279,6 +280,8 @@ function evaluate(ctx, data) {
   else if (NON_DEGREE_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('NON_DEGREE_DEPARTMENT'));
   // 규정상 전과할 수 없는 학과의 전과생(시행규칙 제111조 제4호) — 있을 수 없는 프로필이라 다른 학과 자료로 추정하지 않는다.
   else if (ctx.enrollmentType === 'MAJOR_CHANGE' && MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT'));
+  // 2년 과정인 예과에는 편입학이 없다(학칙 제36조) — 있을 수 없는 프로필이라 다른 학과 자료로 추정하지 않는다.
+  else if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && PREMED_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('TRANSFER_INTO_PREMED_NOT_OFFERED'));
   // 상한이 열린 행(max=NULL)은 "그 이후 개편이 확인될 때까지 유효"라는 뜻이지 미래 학번에 대한 확인이 아니다. 시스템이 아는
   // 가장 최신 학년도보다 뒤의 학번에는 외삽하지 않는다.
   else if (data.latestDataYear != null && ctx.admissionYear > data.latestDataYear) {
@@ -293,7 +296,24 @@ function evaluate(ctx, data) {
     // 편입 인정학점으로 총량을 계산했으면 "총량 미해결"은 더 이상 사실이 아니다(인정학점 가정은 TRANSFER_RECOGNIZED_CREDITS_ASSUMED가 알린다).
     if (built.resolvedTransferTotal) reqFlags = reqFlags.filter((f) => f.code !== 'TRANSFER_TOTAL_UNRESOLVED');
     const creditRows = orderCategories(built.rows.filter((r) => r.minCourseCount == null));
-    const certRows = built.rows.filter((r) => r.minCourseCount != null);
+    // 전문학사 과정은 졸업논문·졸업인증제를 졸업사정에서 뺀다(시행규칙 제118조 제1항 제7호) — 시드에는 책자 총괄표대로 행이 있다.
+    const certRows = built.rows.filter((r) => r.minCourseCount != null && !isAssociateExcludedRequirement(department.name, r.category));
+    if (built.rows.some((r) => r.minCourseCount != null && isAssociateExcludedRequirement(department.name, r.category))) reqFlags.push(makeFlag('ASSOCIATE_DEGREE_THESIS_CERT_EXCLUDED'));
+    // 전과생 기준 학번(3차 문의 E-1 ①): 휴학 등으로 "전과한 학년의 당초 입학자" 학번이 입학 학번과 다를 때, 그 학번으로 계산한 최종 요건이 실제로 다를 때만 알린다.
+    const originalCohort = originalCohortOf(ctx);
+    if (originalCohort != null && !data.cohortFallback && hasCoreRowsForYear(data.rows || [], originalCohort)) {
+      const originalRows = (data.rows || []).filter((r) => rowAppliesToYear(r, originalCohort));
+      const original = buildRequirementRows({ ...ctx, admissionYear: originalCohort }, originalRows, relaxation, liberal, department.name);
+      if (requirementSignature(original.rows) !== requirementSignature(built.rows)) reqFlags.push(makeFlag('MAJOR_CHANGE_ORIGINAL_COHORT_DIFFERS', { originalCohort }));
+    }
+    // 복학생(2차 문의 B-1): 휴학한 만큼 뒤 학번으로 계산한 최종 요건이 입학 학번과 다를 때만 알린다. 전과생 비교와 같은 방식이다.
+    const returningCohort = returningCohortOf(ctx);
+    if (returningCohort != null && !data.cohortFallback && hasCoreRowsForYear(data.rows || [], returningCohort)
+      && !reqFlags.some((f) => f.code === 'MAJOR_CHANGE_ORIGINAL_COHORT_DIFFERS')) {
+      const returningRows = (data.rows || []).filter((r) => rowAppliesToYear(r, returningCohort));
+      const returning = buildRequirementRows({ ...ctx, admissionYear: returningCohort }, returningRows, relaxation, liberal, department.name);
+      if (requirementSignature(returning.rows) !== requirementSignature(built.rows)) reqFlags.push(makeFlag('RETURNING_STUDENT_COHORT_UNVERIFIED', { returningCohort }));
+    }
     const majorRow = creditRows.filter((r) => MAJOR_CATEGORIES.includes(r.category));
     majorMinimumCredits = majorRow.length > 0 ? sum(majorRow) : null;
     requirementsValue = {
@@ -338,6 +358,13 @@ function evaluate(ctx, data) {
   }
   // 학과 내규로 전공 과목을 정하는 학과(constants.BYLAW_MAJOR_DEPARTMENTS) — 숫자는 그대로 두고 학과 확인 안내만 붙인다.
   if (built && department && BYLAW_MAJOR_DEPARTMENTS.includes(department.name)) reqFlags.push(makeFlag('DEPARTMENT_BYLAW_MAJOR'));
+  // 학교 답변 전이라 틀릴 수 있는 가정·규정상 맞지 않는 입력(profileCaveats.js) — 플래그가 없으면 결과가 "확정"으로 나가므로 여기서 붙인다.
+  if (built && department) {
+    reqFlags.push(...profileCaveats(ctx, department.name, {
+      adjustments: built.adjustments,
+      hasMajorAreaMinimums: requirementsValue.majorAreaMinimums != null, hasCertificationRows: requirementsValue.certifications.length > 0,
+    }));
+  }
   // 학과가 생기기 전 학번의 전과생 — dbProvider가 학과 첫 학번 행과 학번별 표로 만든 행이다(newDepartmentCohort.js, #378).
   // 전공 학점은 첫 학번 값이라 추정이고, 교양·졸업학점을 표에서 못 찾았으면 그것도 첫 학번 값이라 따로 알린다.
   if (built && data.cohortFallback) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -140,8 +140,20 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 <span className="home-credit-number">{status.totalEarnedCredits}</span>
                 <span className="home-credit-total">{t('grad.totalCredits', { total: status.totalRequiredCredits })}</span>
                 {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
+                {status.inProgressCredits > 0 && <span className="grad-trust-tag">{t('grad.inProgressIncluded', { n: status.inProgressCredits })}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
+              {isAbsentInLatestBooklet(status) && <p className="grad-trust-reason">{t('grad.absentDeptNote')}</p>}
+              {trust.otherReasons.length > 0 && (
+                <details className="grad-trust-more">
+                  <summary>{t('grad.trust.more', { n: trust.otherReasons.length })}</summary>
+                  <ul>
+                    {trust.otherReasons.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"
@@ -150,7 +162,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </div>
               <p className="grad-remaining-text">
                 {progressPercent}% ·{' '}
-                {remaining > 0 ? t('grad.remaining', { n: remaining }) : t('grad.complete')}
+                {remaining > 0 ? t('grad.remaining', { n: remaining }) : creditsDependOnInProgress(status) ? t('grad.completeInProgress', { n: status.inProgressCredits }) : t('grad.complete')}
               </p>
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
@@ -438,9 +450,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 </ul>
               ) : (
                 <p>
-                  {uncheckedRequirementKeys(status).length > 0
-                    ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
-                    : t('home.allMet')}
+                  {allMetMessage(status, t)}
                 </p>
               )}
             </section>

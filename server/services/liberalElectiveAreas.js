@@ -147,6 +147,9 @@ function evaluateLiberalElectiveAreas({ admissionYear, relaxed = false, elective
   return {
     foundation,
     electives,
+    // 교양선택 4개 영역 과목의 학점 합과 교양선택 몫(행 학점 − 교양기초 16). 교양기초를 넘게 들은 학점으로 교양선택 학점을 채웠는지 보는 데 쓴다.
+    electiveCredits: Object.values(electiveEarned).reduce((s, v) => s + v, 0),
+    electiveCreditsRequired: Number(electiveRequiredCredits) - FOUNDATION_TOTAL,
     unknownCredits,
     satisfied: foundation.every((a) => a.satisfied) && (!electives || electives.satisfied),
   };

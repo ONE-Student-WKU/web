@@ -4,6 +4,7 @@ const historyService = require('./curriculumHistoryService');
 const { OFFERING_SEMESTER, regularSemesterToOfferingCode, offeringCodeLabel } = require('./termCode');
 const { buildCompletedNameSet, isCompleted } = require('./courseNameMatch');
 const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
+const { isAssociateExcludedRequirement } = require('./regulationEngine/profileCaveats');
 
 /**
  * server/services/curriculumService.js
@@ -186,7 +187,8 @@ async function findRequirementRows({ departmentId, admissionYear } = {}) {
   );
 
   const results = [];
-  for (const row of rows) {
+  // 전문학사 과정의 졸업논문·졸업인증제는 졸업사정에서 빠진다(시행규칙 제118조 제1항 제7호) — 진단(엔진)과 같은 기준으로 근거에서도 뺀다.
+  for (const row of rows.filter((r) => !isAssociateExcludedRequirement(r.department_name, r.category))) {
     const [courseRows] = await pool.query(
       'SELECT course_name FROM curriculum_required_courses WHERE requirement_id = ?',
       [row.id]
