@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, allMetMessage } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
@@ -291,10 +291,7 @@ function Home({
                       ? t('home.shortfallCheck')
                       : termShortage > 0
                       ? t('grad.registrationShort', { n: termShortage })
-                      : formatShortfallSentence(shortfalls, lang) ||
-                        (uncheckedRequirementKeys(status).length > 0
-                          ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
-                          : t('home.allMet'))}
+                      : formatShortfallSentence(shortfalls, lang) || allMetMessage(status, t)}
                   </span>
                 </div>
                 {noCourses && (

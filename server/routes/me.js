@@ -1,5 +1,6 @@
 const express = require('express');
 const { MAJOR_CHANGE_CLOSED_DEPARTMENTS } = require('../services/regulationEngine/constants');
+const { PREMED_DEPARTMENTS } = require('../services/regulationEngine/profileCaveats');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
@@ -199,6 +200,10 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     // 의·치·한의예(학)과·약학대학으로는 전과할 수 없다(학칙시행규칙 제111조 제4호) — 학과나 유형을 바꿔 그 조합이 되면 거절한다.
     if ((departmentId !== undefined || enrollmentType !== undefined) && effectiveEnrollmentType === 'MAJOR_CHANGE' && MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(effectiveDepartmentName)) {
       return res.status(400).json({ status: 400, code: 'MAJOR_CHANGE_CLOSED_DEPARTMENT', message: null, data: null });
+    }
+    // 2년 과정인 예과에는 편입학이 없다(학칙 제36조) — 학과나 유형을 바꿔 그 조합이 되면 거절한다.
+    if ((departmentId !== undefined || enrollmentType !== undefined) && effectiveEnrollmentType === 'TRANSFER_ADMISSION' && PREMED_DEPARTMENTS.includes(effectiveDepartmentName)) {
+      return res.status(400).json({ status: 400, code: 'TRANSFER_INTO_PREMED', message: null, data: null });
     }
     // 광역 계열전공 이수유형 — 이번 요청으로 확정되는 학과·학번 기준. 계열 학생이 아니게 되거나 학과가 바뀌면 함께 보내지 않은 이전 답은 지운다(다시 묻는다).
     const trackTypeTarget = { departmentName: effectiveDepartmentName, admissionYear: admissionYear !== undefined ? admissionYear : student.admission_year };

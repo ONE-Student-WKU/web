@@ -162,8 +162,8 @@ const SCENARIOS = [
     id: 'E20', title: '컴소공 2021학번, 2022-1학기 2학년 전과 — 교양 29학점 고정 갈래',
     input: { department: '컴퓨터·소프트웨어공학과', admissionYear: 2021, enrollmentType: 'MAJOR_CHANGE', majorChange: { grade: 2, year: 2022, semester: 1 } },
     expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['COURSE_DATA_GRADE_B'], notFlags: ['HISTORY_NOT_VERIFIED', 'LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'] },
-    question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'CONFIRMED' },
-    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 엔진이 추정인 이유는 컴소공 2021 전공과목 B등급(과목 판단). 진단(요건 값)은 확정 — 예전엔 교양 분할 보류(#260-cse-liberal)로 추정이었는데 2026 책자 학번별 표로 해소(2026-10-12). 총량 136은 D-07(재배분)',
+    question: '전과했는데 교양 몇 학점 들어야 해?', graduation: { total: 136, confidence: 'ESTIMATED' },
+    why: 'D-52: 교양 29학점 컷오프 기준은 학교 전과 안내(10항 "2022-1학기 전과생까지")로 전과 시점이 확정됨. 엔진이 추정인 이유는 컴소공 2021 전공과목 B등급(과목 판단). 진단도 추정 — 29학점이 2026 책자 학번별 표(2021학번 23)보다 우선하는지는 학교 확인 중(3차 문의 E-1 ④, LIBERAL_FIXED_29_ABOVE_COHORT, 2026-10-24). 총량 136은 D-07(재배분)',
   },
   {
     id: 'E21', title: '컴소공 2022학번, 2024-2학기 3학년 전과 — 최소전공 완화',

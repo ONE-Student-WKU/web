@@ -206,7 +206,43 @@ export function uncheckedRequirementKeys(status) {
   if (status.designatedMajorCourses) keys.push('home.unchecked.designated');
   if (status.secondMajor && status.secondMajor.type === 'MINOR') keys.push('home.unchecked.minorDesignated');
   if (status.majorTrackType === 'CONVERGENCE') keys.push('home.unchecked.microDegree');
+  // 졸업인증제 학과(부)·전공영역(어학·자격증 등)은 학과 공지라 자료가 없다(컴소공 기업연계프로젝트 같은 일부만 있음) — 충족으로 단정하지 않게 늘 알린다.
+  if ((status.certifications || []).some((c) => c.category === '졸업인증제')) keys.push('home.unchecked.deptCertification');
   return keys;
+}
+
+/**
+ * 부족 요건이 없을 때의 한 줄. 진단에 추정(학교 확인 중인 기준)이 섞였으면 "모든 요건을 충족했어요"라고 단정하지 않는다(2026-10-24 점검).
+ * @param {object} status getGraduationStatus 응답
+ * @param {Function} t 번역 함수
+ */
+/**
+ * 최신(2026) 책자에 학과 단위로 실려 있지 않은 통폐합·개편 학과인가(서버 DEPARTMENT_ABSENT_IN_LATEST_BOOKLET, 안내 수준).
+ * 학번별 학점 기준을 그대로 적용하는지 학교에 다시 확인하고 있어(2차 문의 D-4) 화면에 한 줄 알린다. 신뢰도는 바꾸지 않는다(2026-10-25 결정).
+ */
+export function isAbsentInLatestBooklet(status) {
+  return Boolean(status && status.regulation && (status.regulation.flags || []).some((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'));
+}
+
+/**
+ * 졸업 학점을 다 채운 것이 이번 학기 수강 중 학점 덕분인가(성적이 나와야 확정). 수강 중 학점을 빼도 채웠으면 false.
+ * @param {object} status getGraduationStatus 응답
+ */
+export function creditsDependOnInProgress(status) {
+  const inProgress = Number(status && status.inProgressCredits) || 0;
+  return inProgress > 0 && status.totalEarnedCredits - inProgress < status.totalRequiredCredits;
+}
+
+export function allMetMessage(status, t) {
+  const items = uncheckedRequirementKeys(status).map((k) => t(k)).join(', ');
+  const inProgress = creditsDependOnInProgress(status) ? Number(status.inProgressCredits) : 0;
+  const estimated = Boolean(status && status.regulation && status.regulation.confidence !== 'CONFIRMED');
+  const notes = [
+    inProgress > 0 ? t('home.allMetNote.inProgress', { n: inProgress }) : null,
+    estimated ? t('home.allMetNote.estimated') : null,
+    items ? t('home.allMetNote.unchecked', { items }) : null,
+  ].filter(Boolean);
+  return notes.length ? [t('home.allMetQualified'), ...notes].join(' ') : t('home.allMet');
 }
 
 // 졸업사정 등록기간(시행규칙 제118조 제1호)이 모자란 학기 수 — 학점·요건을 다 채웠을 때만 센다(#378 H-2 결정 A: 그 전에는
@@ -267,6 +303,15 @@ function pickTrustReason(regulation, lang) {
   return flags.reduce((best, f) => ((FLAG_SEVERITY[f.level] || 0) > (FLAG_SEVERITY[best.level] || 0) ? f : best)).message;
 }
 
+function otherTrustReasons(regulation, shown) {
+  const seen = new Set([shown]);
+  // [별표 4] 불일치는 한 줄 사유가 두 값을 담은 문장으로 따로 말하므로(pickTrustReason) 같은 내용을 펼쳐 보기에 또 넣지 않는다.
+  return (regulation.flags || [])
+    .filter((f) => f.level !== 'INFO' && f.message && !(regulation.schedule4 && f.code === 'SCHEDULE4_CREDIT_MISMATCH'))
+    .map((f) => f.message)
+    .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
+}
+
 /**
  * status → 화면 표시용 정보.
  *  - noData: 졸업요건 자료가 없어 진단할 수 없음(총 요구학점 0 또는 자료없음) → 0/0 대신 안내
@@ -279,7 +324,7 @@ function pickTrustReason(regulation, lang) {
 export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
-  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
+  if (!regulation) return { noData, badge: null, reason: null, otherReasons: [], totalEstimated: false };
   // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준
   // 졸업요건처럼 읽혀 "비공식 참고용" 안내와도 부딪힌다. 예외(추정·자료 없음)만 표시해야 눈에 띈다(2026-10-17).
   const confirmed = regulation.confidence === 'CONFIRMED';
@@ -288,6 +333,8 @@ export function describeRequirementTrust(status, lang = 'ko') {
     noData,
     badge: confirmed ? null : { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
+    // 한 줄 사유 말고도 추정 이유가 더 있으면 펼쳐 볼 수 있게 나머지를 준다(서버가 만든 한국어 문장, 중복 제거).
+    otherReasons: regulation.confidence === 'CONFIRMED' ? [] : otherTrustReasons(regulation, pickTrustReason(regulation, 'ko')),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
   };
 }

@@ -918,6 +918,23 @@ body {
   line-height: 1.5;
 }
 
+/* 한 줄 사유 말고 더 있는 추정 이유(펼쳐 보기) */
+.grad-trust-more {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.grad-trust-more summary {
+  cursor: pointer;
+}
+
+.grad-trust-more ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
 .grad-overflow-note {
   margin: 6px 0 0;
   font-size: 0.75rem;

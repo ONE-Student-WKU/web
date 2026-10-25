@@ -125,13 +125,14 @@ test('4학년 편입(통합 "전공" 행 학과): 최소전공 21이 한 번만 
 
 // ---------------------------------------------------------------- 전과 교양 29학점 고정
 
-test('간호학과 2019학번 2021-1 전과: 일반선택은 음수가 아니라 0, 29학점이 학번표(23)보다 많다는 알림(INFO)', async () => {
+test('간호학과 2019학번 2021-1 전과: 일반선택은 음수가 아니라 0, 29학점이 학번표(23)보다 많아 추정(학교 확인 중)', async () => {
   const regulation = await judge('간호학과', 2019, 'MAJOR_CHANGE', { majorChange: { grade: 3, year: 2021, semester: 1 } });
   const { creditRows } = diagnosisInputs(regulation);
   assert.equal(Number(creditRows.find((r) => r.category === '일반선택').required_credits), 0);
-  // 컴소공 학과 공지가 학번표 23학점인 학번의 전과생에게도 29를 요구한다(SOURCE_VERIFICATION_2026-10-12) — 신뢰도를 낮추지 않는 알림이다.
+  // 컴소공 학과 공지가 학번표 23학점인 학번의 전과생에게도 29를 요구한다(SOURCE_VERIFICATION_2026-10-12). 다만 29가 2026 책자 학번별 표보다
+  // 우선하는지는 학교 확인 중이라(3차 문의 E-1 ④) 값이 갈리는 이 경우는 추정이다(2026-10-24).
   const flag = regulation.flags.find((f) => f.code === 'LIBERAL_FIXED_29_ABOVE_COHORT');
-  assert.equal(flag.level, 'INFO');
+  assert.equal(flag.level, 'ESTIMATED');
 });
 
 test('29학점 고정 알림은 학번표 교양이 29보다 적을 때만 붙는다(컴소공 2021학번 23 → 붙음, 전기공학과 2022학번 39 → 안 붙음)', async () => {

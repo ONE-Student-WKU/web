@@ -310,6 +310,10 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   if (absentFlag) {
     caveats.push(`- 이 학생의 학과는 통폐합·개편 학과다. 학과 소속·과목 편성·개편 관련 질문에는 아래 안내를 근거로 답하라(학교 답변 2026-10-14 A-3):\n  ${absentFlag.message}`);
   }
+  // 성적이 아직 없는 이번 학기 과목도 이수 학점에 들어가 있다 — 졸업 학기 학생에게 "다 채웠다"고 단정하면 안 된다(2026-10-24 점검).
+  if (Number(graduationStatus.inProgressCredits) > 0) {
+    caveats.push(`- 아래 이수 학점에는 성적이 아직 나오지 않은(이번 학기 수강 중) ${graduationStatus.inProgressCredits}학점이 포함돼 있다. 요건을 채웠다고 답할 때는 "수강 중인 과목을 모두 이수하면"이라는 조건을 붙여라.`);
+  }
   if (regulation && regulation.totalDefinitive === false) {
     caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다(학교 기준 인정학점을 뺀 "본교에서 이수할 학점"으로 계산했을 수 있다). 카테고리별 기준 위주로 설명하라.');
   }
