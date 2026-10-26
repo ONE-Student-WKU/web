@@ -100,15 +100,18 @@ test('제13조③: 휴학 기간을 입력하면 개편 당시 학년을 휴학�
   assert.ok(codes(none).includes('GRADE_FROM_ADMISSION_AND_LEAVE'));
 });
 
-test('제13조③: "재학 중인 학년" 해석(개편 시점 vs 기준일)에 따라 갈리면 두 결과를 모두 내고 플래그를 남긴다', () => {
+test('제13조③: "재학 중인 학년"은 개편 시점 학년(학교 답변 B-3 ④) — 기준일 해석을 고를 때만 추정과 대안을 남긴다', () => {
   // 2023학번, 2024 개편(개편 시점 2학년), 기준일 2026(4학년). 3학년 개설 과목: 개편 시점 기준 이수, 기준일 기준 면제.
   const data = base({ courseChanges: [change({ field: 'category', changeType: 'CHANGED', oldValue: '전공선택', newValue: '전공필수', toYear: 2024, offeredGrade: 3 })] });
   const atRevision = rule(resolveApplicableRules(input(), data), 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
   assert.equal(atRevision.details.courses[0].exempt, false);
-  assert.deepEqual(atRevision.details.courses[0].alternatives, [{ gradeBasis: 'AT_AS_OF', exempt: true }]);
-  assert.ok(codes(atRevision).includes('TRANSITION_GRADE_BASIS_AMBIGUOUS'));
+  assert.deepEqual(atRevision.details.courses[0].alternatives, []);
+  assert.ok(!codes(atRevision).includes('TRANSITION_GRADE_BASIS_AMBIGUOUS'));
+  assert.deepEqual(atRevision.alternatives, []);
   const atAsOf = rule(resolveApplicableRules(input({ policy: { transitionGradeBasis: 'AT_AS_OF' } }), data), 'ENF13_3_ELECTIVE_TO_REQUIRED_LOWER_GRADE');
   assert.equal(atAsOf.details.courses[0].exempt, true);
+  assert.deepEqual(atAsOf.details.courses[0].alternatives, [{ gradeBasis: 'AT_REVISION', exempt: false }]);
+  assert.ok(codes(atAsOf).includes('TRANSITION_GRADE_BASIS_AMBIGUOUS'));
 });
 
 test('제13조③: 입학 후 새로 생긴 필수과목은 조문에 규정이 없어 판단하지 않는다(확인 필요)', () => {

@@ -6,7 +6,7 @@ const { makeFlag } = require('../services/regulationEngine/flags');
 
 /**
  * server/test/graduationService.transferLiberalCap.test.js
- * 편입생 교양 52학점 상한 적용 여부(학교 확인 중, B-2)는 결과를 바꿀 때만 "추정" 사유다(2026-10-17).
+ * 1·2학년 편입생 교양 52학점 상한 적용 여부(학교 답변이 3·4학년만 다룸, B-2)는 결과를 바꿀 때만 "추정" 사유다(2026-10-17, 2026-10-26).
  * 예전에는 편입생이면 무조건 추정이라, 3학년 편입생 전원이 "추정"이었다.
  */
 
@@ -14,8 +14,16 @@ test('상한이 없는 학번(2021학번 이하) 편입생에게는 상한 확�
   const old = decideLiberalArtsCap({ admissionYear: 2021, enrollmentType: 'TRANSFER_ADMISSION' });
   assert.equal(old.cap, null);
   assert.ok(!old.flags.some((f) => f.code === 'LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
-  const recent = decideLiberalArtsCap({ admissionYear: 2022, enrollmentType: 'TRANSFER_ADMISSION' });
-  assert.ok(recent.flags.some((f) => f.code === 'LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
+  const second = decideLiberalArtsCap({ admissionYear: 2022, enrollmentType: 'TRANSFER_ADMISSION', transfer: { grade: 2 } });
+  assert.ok(second.flags.some((f) => f.code === 'LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
+});
+
+test('3·4학년 편입생(학년 모르면 3학년)은 교양 이수기준을 충족한 것으로 보므로 상한 확인 사유가 없다(2차 문의 B-2)', () => {
+  for (const transfer of [{ grade: 3 }, { grade: 4 }, { grade: null }, undefined]) {
+    const r = decideLiberalArtsCap({ admissionYear: 2024, enrollmentType: 'TRANSFER_ADMISSION', transfer });
+    assert.equal(r.cap, 52);
+    assert.ok(!r.flags.some((f) => f.code === 'LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'), JSON.stringify(transfer));
+  }
 });
 
 function engineResult() {

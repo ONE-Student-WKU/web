@@ -28,6 +28,6 @@ test('챗봇: 상담을 부족 요건으로 말하지 않고, 물으면 대부�
   const prompt = buildSystemPrompt(null, status, null);
   assert.match(prompt, /자기계발심층상담: 2020학번부터 기준 8학기\(회\) 이상/);
   assert.match(prompt, /부족 요건으로 말하지 마라/);
-  assert.match(prompt, /웹정보서비스 → 상담관리 → 지도교수 상담/);
+  assert.match(prompt, /웹정보서비스 → 정보서비스 → 이수과목확인리스트 맨 아래 "상담 및 미분류"/);
   assert.doesNotMatch(prompt, /학교에 확인 중이니/);
 });

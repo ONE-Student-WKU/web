@@ -251,7 +251,7 @@ export default {
   'grad.counseling.cohort.TRANSFER': '편입생',
   'grad.counseling.hug': '광역 계열전공은 Hug 심층진로상담으로 대체해요.',
   'grad.counseling.usuallyDone': '대부분 지도교수님이 학기마다 상담을 진행해 채워주세요.',
-  'grad.counseling.checkPath': '혹시 모르니 웹정보서비스 → 상담관리 → 지도교수 상담에서 확인해보세요.',
+  'grad.counseling.checkPath': '혹시 모르니 웹정보서비스 → 정보서비스 → 이수과목확인리스트 맨 아래 "상담 및 미분류"에서 다닌 학기마다 "자기계발심층상담"이 한 줄씩 있는지 확인해보세요.',
   'grad.sectionCerts': '졸업논문·졸업인증제',
   'grad.summaryTitle': '부족 요건 요약',
   // 서버 규정 판단 엔진의 신뢰도 라벨 — 한국어 화면은 서버가 내려준 라벨/사유를 그대로 쓰고,
@@ -260,7 +260,7 @@ export default {
   'grad.trust.INSUFFICIENT': '자료 불충분',
   'grad.trust.NO_DATA': '자료 없음',
   'grad.trust.more': '확인 중인 다른 이유 {n}가지',
-  'grad.absentDeptNote': '통폐합·개편 학과라 학번별 학점 기준이 그대로 적용되는지 학교에 한 번 더 확인하고 있어요. 지금은 2026 교육과정 책자의 경과조치 기준으로 계산했어요.',
+  'grad.absentDeptNote': '통폐합·개편 학과도 학번별 학점 기준은 2026 교육과정 책자의 경과조치를 그대로 따라요(학교 확인). 과목 편성은 학적에 적힌 학과 기준이에요.',
   'grad.trust.schedule4': '학칙 [별표 4]는 {a}학점, 교육과정 책자는 {b}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.',
 
   // 과목 관리

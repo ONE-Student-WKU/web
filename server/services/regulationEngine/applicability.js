@@ -243,7 +243,9 @@ const HANDLERS = {
       const byBasis = { AT_REVISION: c.offeredGrade < gradeAtRevision, AT_AS_OF: c.offeredGrade < gradeAtAsOf };
       const other = GRADE_BASES.find((b) => b !== basis);
       const alternatives = [];
-      if (byBasis[basis] !== byBasis[other]) {
+      // "재학 중인 학년"은 교육과정이 바뀐 해의 학년이다(2차 문의 B-3 ④). 기본(AT_REVISION)이면 갈려도 대안을 내지 않고,
+      // 정책으로 기준일 학년(AT_AS_OF)을 고른 경우에만 학교 답과 다른 해석이라 추정과 대안을 붙인다.
+      if (basis !== 'AT_REVISION' && byBasis[basis] !== byBasis[other]) {
         ambiguous = true;
         flags.push(makeFlag('TRANSITION_GRADE_BASIS_AMBIGUOUS'));
         alternatives.push({ gradeBasis: other, exempt: byBasis[other] });
@@ -257,7 +259,7 @@ const HANDLERS = {
       reason: `선택→필수 ${courses.length}개(면제 ${courses.filter((x) => x.exempt).length}개)${added.length ? `, 신설 필수 ${added.length}개(조문 미규정)` : ''}`,
       details: { gradeBasis: basis, courses, newRequired: added },
       flags: [...worstItemFlags(items), ...incompleteFlags(h)],
-      alternatives: ambiguous ? [{ gradeBasis: GRADE_BASES.find((b) => b !== basis), description: basis === 'AT_REVISION' ? '"재학 중인 학년"을 기준일의 학년으로 해석' : '"재학 중인 학년"을 개편 시점의 학년으로 해석' }] : [],
+      alternatives: ambiguous ? [{ gradeBasis: 'AT_REVISION', description: '"재학 중인 학년"을 개편 시점의 학년으로 해석(학교 답변 기준)' }] : [],
     };
   },
 
@@ -414,7 +416,13 @@ function historyStatus(count, grades) {
  */
 function schedule4Mismatch(ctx, deptName, rows) {
   const check = checkSchedule4Credits({ departmentName: deptName, admissionYear: ctx.admissionYear, rows });
-  return check && !check.match ? check : null;
+  return check && !check.match && !check.schoolConfirmed ? check : null;
+}
+
+/** 값은 다르지만 학교가 책자 값이 맞다고 답한 경우(간호·작업치료, 2차 문의 D-1). 추정이 아니라 안내로만 알린다. */
+function schedule4SchoolConfirmed(ctx, deptName, rows) {
+  const check = checkSchedule4Credits({ departmentName: deptName, admissionYear: ctx.admissionYear, rows });
+  return check && check.schoolConfirmed ? check : null;
 }
 
 // 졸업학점 표를 "적용"한다고 말하는 규칙들 — 학칙 [별표 4] 학번별 표 4개와 그 표를 가리키는 시행규칙 제118조.
@@ -422,6 +430,7 @@ const isSchedule4Rule = (row) => row.conditionCode === 'GRAD_CREDITS_SCHEDULE4' 
 
 function annotateRequirements(ctx, result, deptName, data = null) {
   const sched4 = schedule4Mismatch(ctx, deptName, data && data.rows);
+  const sched4Confirmed = schedule4SchoolConfirmed(ctx, deptName, data && data.rows);
   const { grade } = dq.dataGrade('REQUIREMENTS', ctx.admissionYear, deptName);
   const base = dq.gradeConfidence(grade);
   const holds = dq.pendingHoldsFor(ctx.admissionYear, deptName, 'REQUIREMENTS');
@@ -432,7 +441,8 @@ function annotateRequirements(ctx, result, deptName, data = null) {
 
   const rules = result.rules.map((rule) => {
     if (rule.id === 'REQUIREMENTS' && rule.value) {
-      const flags = dedupeFlags([...rule.flags, ...gradeFlags, ...holdFlag(holds), ...(sched4 ? [makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] : [])]);
+      const flags = dedupeFlags([...rule.flags, ...gradeFlags, ...holdFlag(holds), ...(sched4 ? [makeFlag('SCHEDULE4_CREDIT_MISMATCH', sched4)] : []),
+        ...(sched4Confirmed ? [makeFlag('SCHEDULE4_BOOKLET_CONFIRMED_BY_SCHOOL', { schedule4Credits: sched4Confirmed.schedule4Credits, bookCredits: sched4Confirmed.bookCredits })] : [])]);
       const unverified = dq.UNVERIFIED_REQUIREMENT_PARTS;
       const value = {
         ...rule.value,
