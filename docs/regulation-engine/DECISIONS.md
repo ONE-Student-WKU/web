@@ -921,3 +921,19 @@
   - [별표 4]는 학교가 확인한 숫자(`schedule4.js` `SCHOOL_CONFIRMED_BOOK_CREDITS`)와 책자 값이 같을 때만 `SCHEDULE4_BOOKLET_CONFIRMED_BY_SCHOOL`(안내)로 바꾼다. 시드가 바뀌어 숫자가 달라지면 다시 불일치로 알린다.
   - 디자인융합계열 졸업인증제 2행을 "가"(전공현장실습·캡스톤디자인·사회봉사)로, 패션디자인산업전공은 `trackCertificationRules.js`에서 "나" 1과목으로 바꿔 끼운다(세부전공 규칙에 `minCourseCount`를 더함).
   - 결과: 4가지 대표 재학 유형 2,427개 조합 중 졸업 기준 "확정"이 66% → 67%(일반 재학생 95% → 97%). 간호·작업치료 일반 학생의 졸업진단이 추정 → 확정.
+
+## D-84 한의학과 편입생은 본과 160학점을 확정으로 계산한다 — 한의과대학 답변 (2026-10-26)
+- **상황**: 의학과·치의학과·한의학과 편입생은 "단과대학 내규 확인"(`TRANSFER_MEDICAL_SCHOOL_BYLAW`)과 "총 학점 미정"(`TRANSFER_TOTAL_UNRESOLVED`)으로 추정이었고, 일반 편입생 규칙(편입 학년 가정 3학년, 4학년 편입 전공 21학점, 입력 학번 의미)도 그대로 붙었다. 한의과대학에 직접 물어 답을 받았다([답변 기록](../school-inquiry/한의과대학_답변_2026-10-26.md)).
+- **근거**: 한의과대학 학과사무실 서면 답변(2026-10-26) — 예과에서 본과로 올라온 학생은 편입이 아니고, "편입학생은 … 본과 4년 교육과정 이수해야 하며, 본과 이수 학점인 160학점 이상 취득이 필요합니다". 학칙 제36조 제2항(한의학과는 1학년 편입).
+- **결정**:
+  - 한의학과 편입생은 편입 학년·인정학점 입력과 관계없이 학과 졸업학점(본과 160학점)을 총 학점으로 보고 확정으로 계산한다(`constants.COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS`, 근거 `COLLEGE_ORIENTAL_MEDICINE_TRANSFER`). 편입 학년 가정·4학년 21학점·입력 학번 의미·총량 미해결은 붙이지 않는다 — 한의학과 편입은 본과 1학년뿐이고 2017~2026학번 시드가 모두 전공 160이다.
+  - "단과대학 내규 확인" 추정 대신 안내(INFO) 두 개를 붙인다: 본과 160학점이 학과 답변 기준이라는 것(`TRANSFER_TOTAL_FROM_COLLEGE_ANSWER`), 선수과목(예과 2학년 수업) 학점이 160학점에 들어가는지는 학과 확인이라는 것(`TRANSFER_ORIENTAL_MEDICINE_PREREQUISITE`).
+  - 교양은 지금처럼 3·4학년 편입생 기준(종교와원불교만 확인)을 따른다. 편입 학년 입력값은 쓰지 않고 6년 과정의 본과 1학년(= 3학년)으로 본다.
+  - 엔진 판단 함수가 학과에 따라 갈리므로, 학과 id만 받은 입력에도 찾은 학과 이름을 채워 넘긴다(`evaluate.js` `decisionCtx`).
+  - 의학과·치의학과 편입생은 답을 받지 못해 그대로 추정이다.
+- **결과**: 3,024개 조합 기준 졸업 기준 "확정" 1,627 → 1,636(53.8% → 54.1%, 한의학과 3학년 편입 9개).
+- **단점·다시 볼 조건**:
+  - 선수과목 학점이 본과 160학점에 들어가지 않는다면, 학생이 예과 과목까지 등록했을 때 이수 학점이 많게 보일 수 있다(다음 문의 후보 P-Q3, 안내로 알린다).
+  - 입력 화면의 편입 학년은 2~4학년이라 한의학과 편입생(본과 1학년)과 맞지 않는다. 계산은 학년과 무관하지만, 학번이 "편입 연도 − 학년 + 1"로 저장된다. 한의학과 기준이 학번별로 달라지면 입력 화면을 고쳐야 한다.
+  - 한의학과 시드가 학번별로 달라지면 `orientalMedicineTransfer.test.js`의 DB 검사가 실패한다.
+- **위치**: `server/services/regulationEngine/constants.js`(`COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS`, 근거), `decisions.js`(`isCollegeConfirmedTransfer`·`transferGradeOf`), `evaluate.js`, `profileCaveats.js`, `flags.js`, 테스트 `server/test/orientalMedicineTransfer.test.js`·`estimateCaveats.test.js`.

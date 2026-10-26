@@ -1,5 +1,6 @@
 const { makeFlag } = require('./flags');
 const { isTeacherCollegeDepartment } = require('../teachingCourse');
+const { COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS } = require('./constants');
 
 /**
  * server/services/regulationEngine/profileCaveats.js
@@ -68,7 +69,10 @@ function profileCaveats(ctx, departmentName, { adjustments = [], hasMajorAreaMin
     if (mc.grade != null && !allowedMajorChangeGrades(departmentName, ctx.admissionYear).includes(mc.grade)) flags.push(makeFlag('MAJOR_CHANGE_GRADE_NOT_ALLOWED', { inputGrade: mc.grade }));
   }
 
-  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && MEDICAL_SCHOOL_DEPARTMENTS.includes(departmentName)) flags.push(makeFlag('TRANSFER_MEDICAL_SCHOOL_BYLAW'));
+  // 본과 편입생의 졸업학점·선수과목은 단과대학 내규다. 한의학과는 한의과대학이 답해(본과 160학점, 2026-10-26) 추정 대신 선수과목 안내만 남긴다.
+  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && MEDICAL_SCHOOL_DEPARTMENTS.includes(departmentName)) {
+    flags.push(makeFlag(COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS.includes(departmentName) ? 'TRANSFER_ORIENTAL_MEDICINE_PREREQUISITE' : 'TRANSFER_MEDICAL_SCHOOL_BYLAW'));
+  }
 
   // 광역계열인데 기초·심화·응용 최소학점을 내지 않은 경우: 3·4학년 전과·편입(전공 완화) 또는 계열이 생기기 전 학번의 전과생.
   const isSeries = typeof departmentName === 'string' && departmentName.endsWith('계열');

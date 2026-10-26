@@ -1,4 +1,4 @@
-const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS,REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
 const { isBroadSeriesStudent } = require('../majorTrackType');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
@@ -172,6 +172,14 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     }
   }
 
+  // 본과 1학년 편입 학과(한의학과)는 학과 졸업학점(본과 학점)이 그대로 편입생 총 학점이다(한의과대학 답변 2026-10-26, D-84).
+  // 인정학점을 빼는 계산이 아니라서 위 인정학점 갈래와 겹치지 않는다(전공 완화가 없어 그 갈래에 들어가지 않는다).
+  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS.includes(departmentName)) {
+    flags.push(makeFlag('TRANSFER_TOTAL_FROM_COLLEGE_ANSWER', { graduationCredits: sum(rows.filter((r) => r.minCourseCount == null)) }));
+    basis.push('COLLEGE_ORIENTAL_MEDICINE_TRANSFER');
+    resolvedTransferTotal = true;
+  }
+
   // 광역 계열전공 이수유형(시행규칙 제7조 제2항, #378 E-3). 시드의 계열 전공 행은 전공심화형 기준이다 — 전공필수 36(기초·심화·응용 최소 학점의
   // 풀) + 전공선택 나머지(계열별 66~72). 다른 유형은 주전공 학점만 바꾸고, 줄어든 만큼은 일반선택이 흡수해 졸업학점은 그대로 둔다.
   // 전과·편입 완화를 받은 경우(최소전공 행)는 유형과 무관한 별도 기준이라 건드리지 않는다.
@@ -252,9 +260,11 @@ function evaluate(ctx, data) {
     return finalize(ctx, blocked, [makeRule('CURRICULUM_REVISIONS', RULE_LABELS.CURRICULUM_REVISIONS, { value: null, flags: [], basisKeys: [], critical: false })]);
   }
 
-  const relaxation = decideMajorRelaxation(ctx);
-  const liberal = decideLiberalArtsBasis(ctx);
-  const cap = decideLiberalArtsCap(ctx);
+  // 학생 행 입력은 학과 id만 갖고 오므로, 학과에 따라 갈리는 판단(본과 1학년 편입 학과 등)에는 찾은 학과 이름을 채워 넘긴다.
+  const decisionCtx = ctx.departmentName || !(data && data.department) ? ctx : { ...ctx, departmentName: data.department.name };
+  const relaxation = decideMajorRelaxation(decisionCtx);
+  const liberal = decideLiberalArtsBasis(decisionCtx);
+  const cap = decideLiberalArtsCap(decisionCtx);
 
   // 교양 29학점 판단 시점은 학생 본인의 소속변경 시점이다(2차 문의 B-7). 기본(MAJOR_CHANGE_DATE)이면 대안을 내지 않고,
   // 정책으로 "학사구조조정 시점"을 고른 경우에만 학교 답변 기준(전과 시점)의 결과가 다를 때 대안으로 함께 낸다.
