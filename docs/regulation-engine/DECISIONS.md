@@ -582,7 +582,7 @@
   - B-5 답이 오면: 학생 입력(학기별 체크 또는 횟수)과 판정을 붙이고, 이 안내 문구를 고친다(#367 3번).
 - **위치**: `server/services/counseling.js`, `graduationService.getGraduationStatus`(`counseling`), `aiClient.buildGraduationStatusNote`, `client/src/pages/GraduationStatus.jsx`.
 
-## D-66 디자인융합계열 졸업인증제는 그룹을 단정하지 않고 가·나 기본영역 과목을 모두 인정한다 — 학교 답변(D-2) 후 확정
+## D-66 디자인융합계열 졸업인증제는 그룹을 단정하지 않고 가·나 기본영역 과목을 모두 인정한다 — 학교 답변(D-2) 후 확정 (D-83에서 "가", 패션디자인산업전공만 "나"로 정해짐)
 - **상황**: 디자인융합계열은 2025·2026 책자의 졸업인증제 그룹(가·나) 목록 어디에도 없고, 교육혁신과 답변 A-4(2026-10-14)도 "정하지 못함"에 O를 줬다. 통합 전 학과가 가 그룹(시각정보·실내·산업디자인)과 나 그룹(패션디자인산업)으로 갈려 있어, 기존 시드가 2020~2025학번을 "나" 그룹으로 본 근거가 없었다. 후속 문의 D-2로 물어 둔 상태다.
 - **결정**:
   - 2020~2025학번 행과 2026학번 이후 행 모두 "학교 확인 중"을 밝히고, 가·나 기본영역 과목(전공현장실습·캡스톤디자인·사회봉사·기업연계프로젝트·종합설계) 중 1과목 이수로 본다.
@@ -900,3 +900,17 @@
 - **남긴 것**: 자기계발심층상담 충족 표시(D-81, 사용자 결정), 이름이 바뀐 과목을 재수강한 경우의 중복(동일과목 목록이 없어 감지 불가).
 - **다시 볼 조건**: 3차 문의 답이 오면 ○인 항목의 플래그를 지우거나 INFO로 낮춘다(위치가 `profileCaveats.js`·`graduationService.courseCountingCaveats` 두 곳에 모여 있다).
 - **위치**: `server/services/regulationEngine/profileCaveats.js`(새 파일), `evaluate.js`, `flags.js`, `server/services/graduationService.js`(재수강·`certificationRecognitionUnverified`·`courseCountingCaveats`·`inProgressCredits`), `liberalElectiveAreas.js`, `aiClient.js`, `client/src/utils/graduation.js`(`allMetMessage`·`otherReasons`), `pages/GraduationStatus.jsx`·`Home.jsx`·`Onboarding.jsx`, 테스트 `server/test/estimateCaveats.test.js`.
+
+## D-83 후속 문의(B·D) 답을 기준으로 정하고, 반영할 일을 나눈다 — D-66을 해소 (2026-10-26)
+- **상황**: 2026-10-14에 보낸 후속 문의(B 졸업사정 7건, D 지난 답변 추가 확인 5건)의 서면 답이 2026-10-26에 왔다([답변 기록](../school-inquiry/교육혁신과_답변_2026-10-26.md)). 대부분 지금 계산이 맞다는 확인이고, 추정으로 남겨 둔 경로 일부와 디자인융합계열 졸업인증 그룹(D-66)이 정해졌다.
+- **결정**:
+  - 지금 방식이 맞다고 확인됨(고칠 것 없음): 편입생·전과생 전공 학점(B-3 ②, D-79·D-80), 편입 유형은 학생이 앎(B-4), 교직기본이수는 졸업요건 아님(B-6), 옛 학과 학적 재학생은 옛 학과의 마지막 편성(D-3), 유사 교육과정은 학과 확인(D-5), 간호·작업치료 졸업학점은 책자 값(D-1, 시드 그대로).
+  - D-3은 표의 "이름만 바뀐 곳이면 ○"가 28곳 모두 ○였지만, 같은 답변의 덧붙임("옛 학과 학적 유지 학생은 옛 학과의 최신 교육과정을 따름")·학칙 부칙·재학생 학적 화면(2026 개편 뒤에도 옛 학과)과 맞춰 "저희 이해가 맞다"는 뜻으로 읽는다. 학적이 자동으로 새 계열로 바뀐다고 보지 않는다.
+  - 추정을 뺄 것: 복학생 학번 기준(`RETURNING_STUDENT_COHORT_UNVERIFIED`, B-1), 3·4학년 편입생 교양 상한(`LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED`, B-2), "재학 중인 학년" 해석(`TRANSITION_GRADE_BASIS_AMBIGUOUS`, B-3 ④), 교양 29학점 판단 시점(`LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS`, B-7 — 학생 본인의 소속변경 시점, 엔진 기본값 그대로).
+  - 문구를 바꿀 것: 간호·작업치료의 [별표 4] 불일치(`SCHEDULE4_CREDIT_MISMATCH`)는 "학교 확인으로 책자 값 적용" 안내로, 통폐합 학과 안내(`DEPARTMENT_ABSENT_IN_LATEST_BOOKLET`, 화면 `grad.absentDeptNote`)에서 "학번별 기준이 적용되는지 확인 중" 문장을 뺀다(D-4). 자기계발심층상담 확인 경로는 이수과목확인리스트 "상담 및 미분류"로 바꾼다(B-5). 판정은 계속 하지 않는다(D-81 유지 — 재학 중에는 늘 모자라 보이고 이번 학기 기록은 학기가 끝나야 찍힌다).
+  - 데이터를 바꿀 것(D-66 해소): 디자인융합계열 졸업인증제는 "가" 그룹(기본영역 1과목), 패션디자인산업전공만 세부전공 예외로 "나". 2025학번 패션디자인산업학과는 "나"(학과 행 그대로).
+- **단점·다시 볼 조건**:
+  - D-3은 직접 확인한 학적이 컴소공 한 곳이다. 다른 통폐합 학과 학생의 학적이 새 계열로 나오는 사례가 보이면 다시 묻는다.
+  - 디자인융합계열 데이터는 `db/seed/curriculum_requirements.json`을 바꾸므로 `main` 반영 때 db-reseed 승인이 필요하다. 공개 일정(2026-11-04 컴소공 공지)과 겹치지 않게 반영한다.
+  - B-2는 3·4학년 편입생 기준이다(시행규칙 제10조 제2항). 1·2학년 편입생 교양은 학번별 표 그대로 둔다.
+- **위치**: `server/services/regulationEngine/flags.js`·`decisions.js`·`evaluate.js`·`applicability.js`, `server/services/counseling.js`(확인 경로), `server/services/trackCertificationRules.js`, `db/seed/curriculum_requirements.json`(디자인융합계열 졸업인증제), `client/src/i18n/locales/ko.js`·`en.js`(`grad.absentDeptNote`), 기록 `docs/school-inquiry/교육혁신과_답변_2026-10-26.md`. 플래그·데이터 변경은 이어지는 작업으로 하고, 이 결정에는 기준만 적는다.
