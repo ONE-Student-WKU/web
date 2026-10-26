@@ -2336,6 +2336,19 @@ body {
   color: var(--color-text-muted);
 }
 
+/* 공지가 없을 때 관리자에게만 보이는 "공지 쓰기" 줄 — 안내 문장은 흐리게, 쓰기 버튼 자리는 강조색으로. */
+.notice-pin--empty .notice-pin-title {
+  color: var(--color-text-muted);
+}
+
+.notice-pin--empty .notice-pin-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
 /* 홈 메뉴 카드의 새 알림 점(새 공지·신고 처리 결과) — 하단 바 점과 같은 색·크기. 카드 테두리에 닿지 않게 안쪽으로 둔다. */
 .home-quick-dot {
   position: absolute;
