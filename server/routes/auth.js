@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const { OAuth2Client } = require('google-auth-library');
+const Sentry = require('@sentry/node');
 const router = express.Router();
 const studentService = require('../services/studentService');
 const emailAuthService = require('../services/emailAuthService');
@@ -102,7 +103,6 @@ router.get('/google/callback', async (req, res, next) => {
     const { code, state } = req.query;
     const expectedState = req.session.oauthState;
     delete req.session.oauthState;
-
     if (!state || !expectedState || state !== expectedState) {
       return redirectToApp('?authError=STATE_MISMATCH');
     }
@@ -271,6 +271,22 @@ async function guardResend(email, purpose, res) {
   return true;
 }
 
+// 코드를 만들어 메일로 보낸다. 발송이 실패하면(Resend 하루 한도 초과·장애 등) 코드를 지우고 503 EMAIL_SEND_FAILED로
+// 답해, 화면이 "잠시 후 다시"가 아니라 Google 로그인을 권하게 한다. 실패는 Sentry로 보내 운영자가 한도 초과를 알 수 있게 한다.
+async function sendCodeOrFail(email, purpose, res) {
+  const code = await emailAuthService.createLoginToken(email, purpose);
+  try {
+    await mailer.sendLoginCode(email, code, purpose);
+    return true;
+  } catch (err) {
+    console.error('[auth] 인증코드 메일 발송 실패:', err.message);
+    Sentry.captureException(err);
+    await emailAuthService.discardLoginToken(email, code, purpose);
+    res.status(503).json({ status: 503, code: 'EMAIL_SEND_FAILED', message: null, data: null });
+    return false;
+  }
+}
+
 // POST /api/auth/email/request — 이메일 입력 → 코드 생성 → 발송. 도메인 제한 없음(이슈 #137
 // 결정: 학교 이메일 인증 기각 — naver.com 등 어떤 이메일이든 가능).
 router.post('/email/request', requestCodeIpBackstop, requestCodeLimiter, async (req, res, next) => {
@@ -284,9 +300,7 @@ router.post('/email/request', requestCodeIpBackstop, requestCodeLimiter, async (
       return res.status(400).json({ status: 400, code: 'CONSENT_REQUIRED', message: null, data: null });
     }
     if (!(await guardResend(email, 'login', res))) return;
-
-    const code = await emailAuthService.createLoginToken(email);
-    await mailer.sendLoginCode(email, code);
+    if (!(await sendCodeOrFail(email, 'login', res))) return;
 
     return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
   } catch (err) {
@@ -361,9 +375,7 @@ router.post('/email/delete-reauth/request', requireAuth, requestCodeIpBackstop, 
       return res.status(400).json({ status: 400, code: 'NOT_EMAIL_ACCOUNT', message: null, data: null });
     }
     if (!(await guardResend(student.email, 'delete_reauth', res))) return;
-
-    const code = await emailAuthService.createLoginToken(student.email, 'delete_reauth');
-    await mailer.sendLoginCode(student.email, code, 'delete_reauth');
+    if (!(await sendCodeOrFail(student.email, 'delete_reauth', res))) return;
 
     return res.status(200).json({ status: 200, code: 'EMAIL_CODE_SENT', message: null, data: null });
   } catch (err) {
