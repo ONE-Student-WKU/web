@@ -43,13 +43,27 @@ function TeamAvatar() {
 
 /**
  * 전체 글 탭 맨 위의 공지(2026-10-23 개편). 안 읽은 공지가 있으면 몇 개인지와 최대 3개를 줄로 보여주고, 줄을 누르면 바로 그 공지가
- * 열린다. 다 읽었으면 최근 공지 한 줄로 줄어든다. 공지가 없으면 아무것도 그리지 않는다.
+ * 열린다. 다 읽었으면 최근 공지 한 줄로 줄어든다. 공지가 없으면 학생에게는 아무것도 그리지 않고, 관리자에게만 "공지 쓰기" 줄을
+ * 보여준다 — 공지 쓰기 버튼이 공지 목록 안에만 있어서, 예전에는 공지가 0개면 관리자도 첫 공지를 쓸 곳이 없었다(운영 사이트, 2026-10-26).
  * - notices: 공지 목록(최신 순)
  * - onOpenList(), onOpenNotice(notice)
  * - when(dateStr): 날짜 글자(커뮤니티 글과 같은 "오늘·어제·n일 전")
+ * - isAdmin, onWrite(): 관리자면 공지가 없을 때 onWrite로 공지 쓰기 화면을 연다
  */
-export function NoticePin({ notices, onOpenList, onOpenNotice, when }) {
+export function NoticePin({ notices, onOpenList, onOpenNotice, when, isAdmin = false, onWrite }) {
   const { t } = useI18n();
+  if (notices && notices.length === 0 && isAdmin && onWrite) {
+    return (
+      <button type="button" className="notice-pin notice-pin--empty" onClick={onWrite}>
+        <span className="notice-pin-label">{t('community.notice.badge')}</span>
+        <span className="notice-pin-title">{t('community.notice.emptyAdmin')}</span>
+        <span className="notice-pin-more">
+          <IconPlus size={13} />
+          {t('community.notice.write')}
+        </span>
+      </button>
+    );
+  }
   if (!notices || notices.length === 0) return null;
   const unread = notices.filter((n) => n.isNew);
   if (unread.length === 0) {

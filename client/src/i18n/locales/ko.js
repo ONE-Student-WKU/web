@@ -930,6 +930,7 @@ export default {
   'community.notice.markAll': '모두 읽음으로 표시',
   'community.notice.heading': '공지',
   'community.notice.empty': '아직 공지가 없어요.',
+  'community.notice.emptyAdmin': '공지 없음 · 관리자에게만 보여요',
   'community.notice.new': '새 공지',
   'community.notice.author': 'ONE Student 운영팀',
   'community.notice.edited': '수정됨',

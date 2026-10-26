@@ -981,6 +981,7 @@ export default {
   'community.notice.markAll': 'Mark all as read',
   'community.notice.heading': 'Notices',
   'community.notice.empty': 'No notices yet.',
+  'community.notice.emptyAdmin': 'No notices · Only admins see this',
   'community.notice.new': 'New',
   'community.notice.author': 'ONE Student team',
   'community.notice.edited': 'edited',
