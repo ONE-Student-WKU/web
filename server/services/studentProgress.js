@@ -3,6 +3,7 @@ const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 const { academicTermOf, termIndex, todayKst } = require('./regulationEngine/context');
 const { offeringCodeToRegularSemester } = require('./termCode');
 const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
+const { PREMED_DEPARTMENTS } = require('./regulationEngine/profileCaveats');
 
 /**
  * server/services/studentProgress.js
@@ -204,6 +205,9 @@ function canGraduateEarly(student, programYears) {
  * @returns {{ registered, required, earlyGraduation: number|null, estimated: boolean } | null}
  */
 function registrationTermsOf(student, { today = todayKst() } = {}) {
+  // 예과(의예·치의예·한의예과)는 졸업이 아니라 본과 진급 단계다. 수업연한은 본과까지 합친 6년이라, 예과 학점(80)을 다 채운 학생에게
+  // "졸업하려면 8학기 더 등록해야 해요"가 떴다(2026-10-26 점검). 예과에서는 등록기간을 따지지 않는다 — 본과에서 6년 기준으로 본다.
+  if (PREMED_DEPARTMENTS.includes(student.department_name)) return null;
   const standing = currentStandingOf(student, { today });
   if (!standing) return null;
   const isTransfer = student.enrollment_type === 'TRANSFER_ADMISSION';

@@ -283,6 +283,12 @@ test('등록 학기: 수업연한이 다른 학과 — 건축학과 10학기, �
   assert.deepEqual([of('외식조리과').required, of('외식조리과').registered], [4, 2]);
 });
 
+test('등록 학기: 예과(의예·치의예·한의예과)는 본과 진급 단계라 따지지 않는다(null) — 본과는 6년 기준 그대로', () => {
+  const of = (department_name) => registrationTermsOf({ admission_year: 2025, enrollment_type: 'GENERAL', leave_periods: '[]', department_name }, { today: TODAY });
+  for (const dept of ['의예과', '치의예과', '한의예과']) assert.equal(of(dept), null, dept);
+  for (const dept of ['의학과', '치의학과', '한의학과']) assert.equal(of(dept).required, 12, dept);
+});
+
 test('등록 학기: 입학 학기 전이거나 학번이 없으면 null', () => {
   assert.equal(registrationTermsOf({ admission_year: null }, { today: TODAY }), null);
 });
