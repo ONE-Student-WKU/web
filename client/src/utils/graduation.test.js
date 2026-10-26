@@ -331,6 +331,10 @@ describe('등록 학기(#378 H-2)', () => {
     expect(registrationTermShortage(status(6, 120), [])).toBe(0);
     expect(registrationTermShortage({ totalEarnedCredits: 130, totalRequiredCredits: 130 }, [])).toBe(0);
   });
+
+  it('예과처럼 서버가 등록 학기를 주지 않으면(null) 학점을 다 채워도 "몇 학기 더"를 띄우지 않는다', () => {
+    expect(registrationTermShortage({ totalEarnedCredits: 80, totalRequiredCredits: 80, registrationTerms: null }, [])).toBe(0);
+  });
 });
 
 describe('다전공(#378 G-2)', () => {
