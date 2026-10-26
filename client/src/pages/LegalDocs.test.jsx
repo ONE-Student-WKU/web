@@ -47,9 +47,18 @@ describe('개인정보처리방침', () => {
     }
   });
 
+  // 운영 보조 AI 분류(#458)와 서비스 전체 이용 정지(#457)는 기능보다 먼저 동의를 받는다(2026-10-26). 만들 때 이 문장과 어긋나지 않게.
+  it('AI 사전 분류의 전송 범위·보관, 이용 제한 기록, 정지 중 탈퇴 시 재가입 방지 정보를 적어 두었다', () => {
+    const { container } = render(<PrivacyPolicy onGoBack={() => {}} />);
+    const text = container.textContent.replace(/\s+/g, ' ');
+    for (const item of ['AI 분류 결과', '운영팀이 직접 판단', '부적절한 내용 사전 분류', '계정 정보는 보내지 않음', '이용 제한 기록', '서비스 전체 이용 정지', '삭제한 날부터 1년', '작성자와 연결되지 않은']) {
+      expect(text, item).toContain(item);
+    }
+  });
+
   it('개인정보 보호책임자와 시행일이 있다', () => {
     render(<PrivacyPolicy onGoBack={() => {}} />);
-    expect(screen.getByText(/시행일: 2026년 10월 23일/)).toBeInTheDocument();
+    expect(screen.getByText(/시행일: 2026년 10월 26일/)).toBeInTheDocument();
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);
   });
 });
@@ -67,6 +76,14 @@ describe('이용약관', () => {
     const text = container.textContent;
     expect(text).not.toContain('Google 계정으로 로그인해야 합니다');
     for (const item of ['이메일 인증코드', '커뮤니티 이용 규칙', '신고', '이용 정지', 'AI가 만들기', '추정', '본인의 성적표만']) {
+      expect(text, item).toContain(item);
+    }
+  });
+
+  it('이용 제한 조항: 서비스 전체 이용 정지, 정지 중에도 계정 삭제 가능, 재가입 제한, AI 분류만으로 제한하지 않음, 서비스 어디서든 욕설 금지', () => {
+    const { container } = render(<TermsOfService onGoBack={() => {}} />);
+    const text = container.textContent.replace(/\s+/g, ' ');
+    for (const item of ['6. 이용 제한', '서비스 전체 이용 정지', '계정 삭제는 할 수 있습니다', '다시 가입할 수 없습니다', 'AI 분류만으로 정하지 않고', '서비스 어디에서든', '시행일: 2026년 10월 26일']) {
       expect(text, item).toContain(item);
     }
   });
