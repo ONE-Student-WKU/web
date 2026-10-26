@@ -114,6 +114,9 @@ describe('로그인 폼의 필수 동의', () => {
   it('체크하면 버튼이 열리고, Google 로그인은 현재 약관 버전과 함께 시작된다', async () => {
     renderLogin();
     await userEvent.click(screen.getByRole('checkbox', { name: /이용약관.*개인정보처리방침.*동의합니다/ }));
+    // 약관 동의만으로는 막혀 있고, "학교 공식 서비스가 아님" 확인까지 해야 열린다
+    blocked(screen.getByRole('button', { name: /Google로 로그인/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /비공식 서비스임을 확인했습니다/ }));
 
     const google = screen.getByRole('button', { name: /Google로 로그인/ });
     open(google);
@@ -124,6 +127,7 @@ describe('로그인 폼의 필수 동의', () => {
 
   it('이 브라우저에서 현재 버전에 이미 동의했으면 처음부터 체크돼 있다', () => {
     localStorage.setItem('consent_version', CONSENT_VERSION);
+    localStorage.setItem('unofficial_notice_ack', '1');
     renderLogin();
     expect(screen.getByRole('checkbox', { name: /동의합니다/ })).toBeChecked();
     open(screen.getByRole('button', { name: /Google로 로그인/ }));
@@ -147,6 +151,7 @@ describe('로그인 폼의 필수 동의', () => {
     api.requestEmailCode.mockResolvedValue({});
     api.verifyEmailCode.mockResolvedValue({});
     localStorage.setItem('consent_version', CONSENT_VERSION);
+    localStorage.setItem('unofficial_notice_ack', '1');
     renderLogin();
 
     await userEvent.type(screen.getByLabelText('이메일 주소'), 'a@example.com');

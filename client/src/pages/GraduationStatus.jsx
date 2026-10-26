@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -31,7 +31,7 @@ export function resetGraduationCache() {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
+function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry, onReportResult }) {
   const { t, lang } = useI18n();
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
@@ -69,6 +69,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
   const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
+  // 기준 책자 학년도: 2025학번 이하는 엔진이 알려 주는 최신 책자(학번별 이수기준표), 그 밖에는 입학한 해의 책자.
+  const basisYear = status?.regulation?.basisBookletYear ?? user?.admissionYear ?? null;
 
   return (
     <div className="courses-page">
@@ -91,6 +93,12 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       </header>
 
       <div className="courses-body">
+        {/* 숫자를 보는 바로 그 자리에 비공식·기준·최종 확인처를 늘 보여준다(약관 속 문구는 읽히지 않는다 — 교육혁신과 통화 2026-10-26). */}
+        <p className="grad-basis-line">
+          <strong>{t('grad.basis.unofficial')}</strong>
+          {basisYear && <span>{t('grad.basis.booklet', { year: basisYear })}</span>}
+          <span>{t('grad.basis.call')}</span>
+        </p>
         {error && <p className="home-error">{t(error)}</p>}
         {onboardingRequired && <p className="home-error">{t('grad.needOnboarding')}</p>}
 
@@ -131,6 +139,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
 
         {status && !trust.noData && (
           <>
+            {isNearGraduation(status) && <p className="grad-near-graduation" role="note">{t('grad.nearGraduation')}</p>}
             <section className="home-card">
               <p className="home-card-label">
                 {t('grad.totalLabel')}
@@ -449,12 +458,19 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   ))}
                 </ul>
               ) : (
-                <p>
+                <p className="multiline-text">
                   {allMetMessage(status, t)}
                 </p>
               )}
             </section>
           </>
+        )}
+
+        {/* 틀린 자료를 빨리 찾는 통로 — 학과·학번·진단 숫자를 미리 채운 문의로 보낸다. */}
+        {status && onReportResult && (
+          <button type="button" className="grad-report-btn" onClick={() => onReportResult(buildResultReportDraft(status, user, t))}>
+            {t('grad.report.button')}
+          </button>
         )}
       </div>
     </div>

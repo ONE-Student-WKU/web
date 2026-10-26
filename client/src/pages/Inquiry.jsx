@@ -23,12 +23,19 @@ function formatDate(dateStr) {
  *
  * Props:
  * - onGoHome: function
+ * - draft: { title, content } | null — 다른 화면이 미리 채워 보낸 문의(예: 졸업요건 진단의 "결과가 이상해요")
+ * - onDraftConsumed: function — 미리 채운 값을 입력 칸에 옮긴 뒤 호출(App이 지워서 다음에 메뉴로 들어올 땐 빈 칸)
  */
-function Inquiry({ onGoHome }) {
+function Inquiry({ onGoHome, draft, onDraftConsumed }) {
   const { t } = useI18n();
   const [tab, setTab] = useState('write'); // 'write' | 'mine'
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState(draft?.title ?? '');
+  const [content, setContent] = useState(draft?.content ?? '');
+  // 입력 칸은 처음 그릴 때만 draft를 읽으므로, 옮긴 직후 App의 draft를 지워도 이 화면의 값은 그대로다.
+  useEffect(() => {
+    if (draft) onDraftConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 그릴 때 한 번만
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 

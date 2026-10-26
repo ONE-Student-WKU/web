@@ -196,3 +196,43 @@ describe('광역 계열전공 이수구분별 학점과 이수유형(#378 E-3)',
     expect(summary).toContain('심화전공 6학점');
   });
 });
+
+describe('GraduationStatus 안전장치(교육혁신과 통화 2026-10-26)', () => {
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    getGraduationStatus.mockReset();
+  });
+
+  it('맨 위에 비공식·기준 책자·학사지원과 최종 확인을 늘 보여 주고, 전화번호는 넣지 않는다', async () => {
+    await renderWith(status({ regulation: { ...status().regulation, basisBookletYear: 2026 } }));
+    const line = document.querySelector('.grad-basis-line');
+    expect(line).toHaveTextContent('비공식 참고용');
+    expect(line).toHaveTextContent('2026학년도 교육과정 책자 기준');
+    expect(line).toHaveTextContent('졸업 판단은 학사지원과에서 최종 확인');
+    expect(line.textContent).not.toMatch(/\d{3}-\d{3}-\d{4}/);
+    expect(line.querySelector('a')).toBeNull();
+  });
+
+  it('졸업까지 18학점 이하가 남으면 학사지원과 확인을 권한다', async () => {
+    await renderWith(status({ totalEarnedCredits: 125 }));
+    expect(screen.getByText(/졸업 요건을 한 번 확인받으세요/)).toBeInTheDocument();
+  });
+
+  it('많이 남았으면 졸업 임박 안내가 없다', async () => {
+    await renderWith(status());
+    expect(screen.queryByText(/졸업 요건을 한 번 확인받으세요/)).toBeNull();
+  });
+
+  it('"결과가 이상해요"는 학과·학번·진단 숫자를 채운 문의를 넘긴다', async () => {
+    getGraduationStatus.mockResolvedValue(status());
+    const onReportResult = vi.fn();
+    render(<GraduationStatus user={{ name: '홍길동', role: 'student', department: '컴퓨터·소프트웨어공학과', admissionYear: 2022 }} onGoHome={() => {}} onOpenCourses={() => {}} onLogout={() => {}} onOpenSettings={() => {}} onOpenOnboarding={() => {}} onOpenProfile={() => {}} onReportResult={onReportResult} />);
+    (await screen.findByRole('button', { name: '결과가 이상해요' })).click();
+    const draft = onReportResult.mock.calls[0][0];
+    expect(draft.title).toBe('졸업요건 진단 결과가 이상해요');
+    expect(draft.content).toContain('학과: 컴퓨터·소프트웨어공학과');
+    expect(draft.content).toContain('학번: 2022');
+    expect(draft.content).toContain('총 55 / 140학점 (신뢰도: 확정)');
+  });
+});

@@ -138,7 +138,7 @@ describe('Home — 졸업요건 자료가 없거나 진단하지 않는 학과·
     api.getGraduationStatus.mockResolvedValue(NO_DATA);
     const { container } = renderHome();
     expect(await screen.findByText('이 학과·학번은 홈에서 부족 요건을 알려드릴 수 없어요. 졸업요건 진단에서 이유를 확인해 주세요.')).toBeInTheDocument();
-    expect(screen.queryByText('모든 요건을 충족했어요!')).toBeNull();
+    expect(screen.queryByText(/이 앱 기준으로는 모든 요건을 채웠어요/)).toBeNull();
     expect(screen.queryByText('0%')).toBeNull();
     expect(container.querySelector('.home-progress-track')).toBeNull();
     expect(container.querySelector('.shortfall-ok')).toBeNull();
@@ -146,7 +146,7 @@ describe('Home — 졸업요건 자료가 없거나 진단하지 않는 학과·
   it('자료가 있는데 부족한 게 없으면 예전처럼 충족으로 보여 준다', async () => {
     api.getGraduationStatus.mockResolvedValue({ ...STATUS, regulation: { confidence: 'CONFIRMED', flags: [] } });
     renderHome();
-    expect(await screen.findByText('모든 요건을 충족했어요!')).toBeInTheDocument();
+    expect(await screen.findByText(/이 앱 기준으로는 모든 요건을 채웠어요\.\s+졸업사정은 학사지원과가 최종 판단해요/)).toBeInTheDocument();
   });
 });
 

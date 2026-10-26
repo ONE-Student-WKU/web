@@ -242,7 +242,35 @@ export function allMetMessage(status, t) {
     estimated ? t('home.allMetNote.estimated') : null,
     items ? t('home.allMetNote.unchecked', { items }) : null,
   ].filter(Boolean);
-  return notes.length ? [t('home.allMetQualified'), ...notes].join(' ') : t('home.allMet');
+  const headline = notes.length ? t('home.allMetQualified') : t('home.allMet');
+  // 확정 진단이어도 졸업사정은 학교가 한다 — "충족"을 단정하지 않게 늘 최종 확인을 붙인다(교육혁신과 통화 2026-10-26).
+  // 추정 안내(estimated)가 이미 학사지원과 확인을 말하므로 그때는 다시 붙이지 않는다.
+  if (!estimated) notes.push(t('home.allMetNote.final'));
+  // 문장마다 줄을 나눠 읽기 쉽게 한다(화면은 white-space: pre-line으로 \n을 줄바꿈으로 보여준다).
+  return [headline, ...notes].join('\n');
+}
+
+// 졸업까지 이만큼 이하가 남으면 "졸업 예정 학기 전 학사지원과 예비 확인"을 강조한다 — 한 학기 수강 상한(대략 18~21학점) 안쪽.
+// 잘못된 정보로 졸업을 못 하는 학생은 이 구간에서 나온다(교육혁신과 통화 2026-10-26).
+export const NEAR_GRADUATION_CREDITS = 18;
+
+export function isNearGraduation(status) {
+  if (!status || !(status.totalRequiredCredits > 0) || !(status.totalEarnedCredits > 0)) return false;
+  return status.totalRequiredCredits - status.totalEarnedCredits <= NEAR_GRADUATION_CREDITS;
+}
+
+// 졸업요건 진단 결과가 이상할 때 문의하기에 미리 채울 제목·내용. 학과·학번·진단 숫자를 같이 보내야 운영자가 재현할 수 있다.
+export function buildResultReportDraft(status, user, t) {
+  return {
+    title: t('grad.report.title'),
+    content: t('grad.report.body', {
+      department: [user?.department, user?.track].filter(Boolean).join(' ') || '-',
+      year: user?.admissionYear ?? '-',
+      earned: status?.totalEarnedCredits ?? '-',
+      required: status?.totalRequiredCredits ?? '-',
+      confidence: status?.regulation?.confidenceLabel ?? '-',
+    }),
+  };
 }
 
 // 졸업사정 등록기간(시행규칙 제118조 제1호)이 모자란 학기 수 — 학점·요건을 다 채웠을 때만 센다(#378 H-2 결정 A: 그 전에는
