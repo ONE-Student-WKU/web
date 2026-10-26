@@ -369,11 +369,12 @@ describe('추정이 섞인 진단을 확정처럼 말하지 않는다(2026-10-24
   });
 
   it('부족 요건이 없어도 추정이면 "모든 요건을 충족했어요"라고 하지 않고 학사지원과 확인을 권한다', () => {
-    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe(t('home.allMet'));
-    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t)).toBe(`${t('home.allMetQualified')} ${t('home.allMetNote.estimated')}`);
+    const confirmedAllMet = `${t('home.allMet')}\n${t('home.allMetNote.final')}`;
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe(confirmedAllMet);
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t)).toBe(`${t('home.allMetQualified')}\n${t('home.allMetNote.estimated')}`);
     expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 18, totalEarnedCredits: 130, totalRequiredCredits: 130 }, t)).toContain('18학점');
     // 수강 중 학점을 빼도 이미 졸업 학점을 채웠으면 조건을 붙이지 않는다
-    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 6, totalEarnedCredits: 140, totalRequiredCredits: 130 }, t)).toBe(t('home.allMet'));
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 6, totalEarnedCredits: 140, totalRequiredCredits: 130 }, t)).toBe(confirmedAllMet);
     expect(creditsDependOnInProgress({ inProgressCredits: 6, totalEarnedCredits: 134, totalRequiredCredits: 130 })).toBe(true);
     expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학과 졸업인증');
     expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학사지원과');
@@ -412,5 +413,19 @@ describe('certCourseRows', () => {
   it('과목이 하나뿐인 행(졸업논문)이나 서버가 값을 안 주면 아무것도 보여주지 않는다', () => {
     expect(certCourseRows({ requiredCourses: ['졸업논문'], minCourseCount: 1, completedCourses: [] })).toEqual([]);
     expect(certCourseRows(both)).toEqual([]);
+  });
+});
+
+describe('allMetMessage — 최종 확인 안내(교육혁신과 통화 2026-10-26)', () => {
+  const t = (key, params) => translate('ko', key, params);
+  it('확정이어도 "이 앱 기준"이고, 학사지원과가 최종 판단한다는 문장은 따로 한 줄로 나온다', () => {
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe('이 앱 기준으로는 모든 요건을 채웠어요.\n졸업사정은 학사지원과가 최종 판단해요.');
+  });
+  it('수강 중 학점이 섞인 확정 결과에도 최종 판단 안내를 붙이고, 추정이면 추정 안내만 붙인다', () => {
+    const inProgress = allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 18, totalEarnedCredits: 130, totalRequiredCredits: 130 }, t);
+    expect(inProgress).toContain('졸업사정은 학사지원과가 최종 판단해요');
+    const estimated = allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t);
+    expect(estimated).not.toContain('최종 판단');
+    expect(estimated).toContain('학사지원과에 확인해 주세요');
   });
 });

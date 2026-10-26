@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, allMetMessage } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, allMetMessage, isNearGraduation } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
@@ -282,7 +282,7 @@ function Home({
                       아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
                       아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
                   {!noData && shortfalls !== null && shortfalls.length === 0 && termShortage === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
-                  <span>
+                  <span className="multiline-text">
                     {noData
                       ? t('home.noData')
                       : noCourses
@@ -300,6 +300,7 @@ function Home({
                   </button>
                 )}
               </section>
+              {!noData && isNearGraduation(status) && <p className="grad-near-graduation" role="note">{t('grad.nearGraduation')}</p>}
               </>
             )}
           </>

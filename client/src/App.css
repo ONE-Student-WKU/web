@@ -442,6 +442,19 @@ body {
   margin: 0 0 32px;
 }
 
+/* 학교 공식 서비스로 오해하지 않게 로그인 화면 맨 위에 붙이는 표시(교육혁신과 통화 2026-10-26) */
+.auth-unofficial-badge {
+  align-self: center;
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
 .auth-field {
   margin-bottom: 20px;
 }
@@ -796,6 +809,11 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* 여러 문장을 \n으로 나눠 내려주는 문구(utils/graduation.js의 allMetMessage) — 문장마다 줄을 바꿔 보여준다. */
+.multiline-text {
+  white-space: pre-line;
+}
+
 .home-card-row svg {
   flex-shrink: 0;
   margin-top: 1px;
@@ -917,6 +935,45 @@ body {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   line-height: 1.5;
+}
+
+/* 졸업요건 진단 맨 위 기준 줄 — 비공식 · 기준 책자 · 최종 확인처(교육혁신과 통화 2026-10-26) */
+.grad-basis-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.grad-basis-line strong {
+  color: var(--color-text-secondary);
+}
+
+/* 졸업까지 한 학기 분량 이하가 남은 학생에게 졸업사정 예비 확인을 권한다 */
+.grad-near-graduation {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-frame));
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.grad-report-btn {
+  align-self: center;
+  margin: 4px auto 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
 }
 
 /* 한 줄 사유 말고 더 있는 추정 이유(펼쳐 보기) */
