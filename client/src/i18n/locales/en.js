@@ -281,14 +281,16 @@ export default {
   'grad.counseling.cohort.TRANSFER': 'Transfer students',
   'grad.counseling.hug': 'For broad-field (계열) majors, Hug 심층진로상담 (Hug In-depth Career Counseling) counts instead.',
   'grad.counseling.usuallyDone': 'Your advisor usually holds a counseling session every semester, so this is normally covered.',
-  'grad.counseling.checkPath': 'To be sure, check 웹정보서비스 (Web Information Service) → 상담관리 (Counseling) → 지도교수 상담 (Advisor Counseling).',
+  'grad.counseling.checkPath':
+    'To be sure, open 웹정보서비스 (Web Information Service) → 정보서비스 (Information Service) → 이수과목확인리스트 (Completed Course List) and check the "상담 및 미분류" (Counseling and Unclassified) section at the bottom: there should be one "자기계발심층상담" (In-depth Self-Development Counseling) row for each semester you were enrolled.',
   'grad.sectionCerts': 'Thesis & graduation certification',
   'grad.summaryTitle': 'Missing requirements summary',
   'grad.trust.ESTIMATED': 'Estimated',
   'grad.trust.INSUFFICIENT': 'Insufficient data',
   'grad.trust.NO_DATA': 'No data',
   'grad.trust.more': '{n} other reasons still being confirmed',
-  'grad.absentDeptNote': 'Your department was merged or reorganized, so we are double-checking with the university that the per-cohort credit table still applies. For now this follows the transition rules in the 2026 curriculum booklet.',
+  'grad.absentDeptNote':
+    'Your department was merged or reorganized, but the per-cohort credit table in the 2026 curriculum booklet (transition rules) still applies (confirmed by the university). Course offerings follow the department on your academic record.',
   'grad.trust.schedule4':
     'The Academic Regulations [Appendix 4] list {a} credits, but the curriculum booklet lists {b} credits. Please check with your department or the Academic Affairs Office.',
 

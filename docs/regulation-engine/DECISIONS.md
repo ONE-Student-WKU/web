@@ -914,3 +914,10 @@
   - 디자인융합계열 데이터는 `db/seed/curriculum_requirements.json`을 바꾸므로 `main` 반영 때 db-reseed 승인이 필요하다. 공개 일정(2026-11-04 컴소공 공지)과 겹치지 않게 반영한다.
   - B-2는 3·4학년 편입생 기준이다(시행규칙 제10조 제2항). 1·2학년 편입생 교양은 학번별 표 그대로 둔다.
 - **위치**: `server/services/regulationEngine/flags.js`·`decisions.js`·`evaluate.js`·`applicability.js`, `server/services/counseling.js`(확인 경로), `server/services/trackCertificationRules.js`, `db/seed/curriculum_requirements.json`(디자인융합계열 졸업인증제), `client/src/i18n/locales/ko.js`·`en.js`(`grad.absentDeptNote`), 기록 `docs/school-inquiry/교육혁신과_답변_2026-10-26.md`. 플래그·데이터 변경은 이어지는 작업으로 하고, 이 결정에는 기준만 적는다.
+- **반영(2026-10-26, 이어지는 PR)**:
+  - 복학생 비교(`returningCohortOf`)와 `RETURNING_STUDENT_COHORT_UNVERIFIED`를 지웠다.
+  - `LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED`는 1·2학년 편입생에게만 남겼다(학교 답이 학년을 나누지 않음 — 다음 문의 후보 P-Q1).
+  - "재학 중인 학년"·교양 29학점 시점은 기본 해석이면 추정·대안을 내지 않고, 정책으로 다른 해석(`AT_AS_OF`·`RESTRUCTURING_DATE`)을 고를 때만 학교 답과 다르다는 추정을 붙인다(비교용으로 남김).
+  - [별표 4]는 학교가 확인한 숫자(`schedule4.js` `SCHOOL_CONFIRMED_BOOK_CREDITS`)와 책자 값이 같을 때만 `SCHEDULE4_BOOKLET_CONFIRMED_BY_SCHOOL`(안내)로 바꾼다. 시드가 바뀌어 숫자가 달라지면 다시 불일치로 알린다.
+  - 디자인융합계열 졸업인증제 2행을 "가"(전공현장실습·캡스톤디자인·사회봉사)로, 패션디자인산업전공은 `trackCertificationRules.js`에서 "나" 1과목으로 바꿔 끼운다(세부전공 규칙에 `minCourseCount`를 더함).
+  - 결과: 4가지 대표 재학 유형 2,427개 조합 중 졸업 기준 "확정"이 66% → 67%(일반 재학생 95% → 97%). 간호·작업치료 일반 학생의 졸업진단이 추정 → 확정.

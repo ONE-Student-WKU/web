@@ -10,7 +10,7 @@ const {
   transferRecognizedCredits,
 } = require('./decisions');
 const { basisTextFlags } = require('./textVersion');
-const { profileCaveats, requirementSignature, originalCohortOf, returningCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS } = require('./profileCaveats');
+const { profileCaveats, requirementSignature, originalCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS } = require('./profileCaveats');
 
 /**
  * server/services/regulationEngine/evaluate.js
@@ -256,16 +256,12 @@ function evaluate(ctx, data) {
   const liberal = decideLiberalArtsBasis(ctx);
   const cap = decideLiberalArtsCap(ctx);
 
-  // 다른 해석(트리거)으로도 계산 가능하면 대안으로 함께 낸다 — 결과가 갈릴 때만.
+  // 교양 29학점 판단 시점은 학생 본인의 소속변경 시점이다(2차 문의 B-7). 기본(MAJOR_CHANGE_DATE)이면 대안을 내지 않고,
+  // 정책으로 "학사구조조정 시점"을 고른 경우에만 학교 답변 기준(전과 시점)의 결과가 다를 때 대안으로 함께 낸다.
   const liberalAlternatives = [];
-  if (ctx.enrollmentType === 'MAJOR_CHANGE') {
-    const otherTrigger = ctx.policy.liberalArtsCutoffTrigger === 'MAJOR_CHANGE_DATE' ? 'RESTRUCTURING_DATE' : 'MAJOR_CHANGE_DATE';
-    const other = decideLiberalArtsBasis(ctx, otherTrigger);
-    if (other.mode && other.mode !== liberal.mode) {
-      liberalAlternatives.push({ id: otherTrigger, description: otherTrigger === 'RESTRUCTURING_DATE' ? '책자 문구대로 "학사구조조정 시점" 기준' : '학생의 "전과 시점" 기준(현재 앱 동작)', mode: other.mode });
-    } else if (!other.mode && otherTrigger === 'RESTRUCTURING_DATE') {
-      liberalAlternatives.push({ id: otherTrigger, description: '책자 문구대로 "학사구조조정 시점" 기준 — 구조조정 시점(연도·학기)을 입력하면 비교할 수 있어요', mode: null });
-    }
+  if (ctx.enrollmentType === 'MAJOR_CHANGE' && ctx.policy.liberalArtsCutoffTrigger === 'RESTRUCTURING_DATE') {
+    const other = decideLiberalArtsBasis(ctx, 'MAJOR_CHANGE_DATE');
+    if (other.mode && other.mode !== liberal.mode) liberalAlternatives.push({ id: 'MAJOR_CHANGE_DATE', description: '학생의 "소속변경(전과) 시점" 기준(학교 답변 기준)', mode: other.mode });
   }
 
   // --- 졸업요건 행 ---
@@ -305,14 +301,6 @@ function evaluate(ctx, data) {
       const originalRows = (data.rows || []).filter((r) => rowAppliesToYear(r, originalCohort));
       const original = buildRequirementRows({ ...ctx, admissionYear: originalCohort }, originalRows, relaxation, liberal, department.name);
       if (requirementSignature(original.rows) !== requirementSignature(built.rows)) reqFlags.push(makeFlag('MAJOR_CHANGE_ORIGINAL_COHORT_DIFFERS', { originalCohort }));
-    }
-    // 복학생(2차 문의 B-1): 휴학한 만큼 뒤 학번으로 계산한 최종 요건이 입학 학번과 다를 때만 알린다. 전과생 비교와 같은 방식이다.
-    const returningCohort = returningCohortOf(ctx);
-    if (returningCohort != null && !data.cohortFallback && hasCoreRowsForYear(data.rows || [], returningCohort)
-      && !reqFlags.some((f) => f.code === 'MAJOR_CHANGE_ORIGINAL_COHORT_DIFFERS')) {
-      const returningRows = (data.rows || []).filter((r) => rowAppliesToYear(r, returningCohort));
-      const returning = buildRequirementRows({ ...ctx, admissionYear: returningCohort }, returningRows, relaxation, liberal, department.name);
-      if (requirementSignature(returning.rows) !== requirementSignature(built.rows)) reqFlags.push(makeFlag('RETURNING_STUDENT_COHORT_UNVERIFIED', { returningCohort }));
     }
     const majorRow = creditRows.filter((r) => MAJOR_CATEGORIES.includes(r.category));
     majorMinimumCredits = majorRow.length > 0 ? sum(majorRow) : null;

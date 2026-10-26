@@ -285,7 +285,7 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
     ? `등록 학기(졸업사정 등록기간, 학칙시행규칙 제118조 제1호 — 수업연한 이상 등록): 지금 학기까지 ${terms.registered}/${terms.required}학기${terms.earlyGraduation ? `(조기졸업자는 ${terms.earlyGraduation}학기 이상)` : ''}${terms.estimated ? ' — 휴학 시기를 몰라 추정한 값' : ''}. 휴학한 학기는 등록 학기가 아니다. 학점을 다 채워도 등록 학기가 모자라면 졸업할 수 없다는 점만 알리고, 졸업 가능 여부를 단정하지 마라. 이 내용은 학생이 학기·등록·졸업 시기를 묻거나, 학점을 다 채웠는데 등록 학기가 모자랄 때만 말하라(남은 학점만 물으면 꺼내지 마라).`
     : null;
   const counselingLine = counseling
-    ? `  - 자기계발심층상담: ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 대부분 지도교수가 학기마다 상담을 진행해 채워 주므로 부족 요건으로 말하지 마라. 학생이 직접 물으면 이렇게 설명하고, 혹시 모르니 웹정보서비스 → 상담관리 → 지도교수 상담에서 확인할 수 있다고 덧붙여라.`
+    ? `  - 자기계발심층상담: ${counselingCohort} 기준 ${counseling.required}학기(회) 이상${counseling.replacement === 'HUG' ? '(광역 계열전공은 Hug 심층진로상담으로 대체)' : ''}. 대부분 지도교수가 학기마다 상담을 진행해 채워 주므로 부족 요건으로 말하지 마라. 학생이 직접 물으면 이렇게 설명하고, 혹시 모르니 웹정보서비스 → 정보서비스 → 이수과목확인리스트 맨 아래 "상담 및 미분류"에서 다닌 학기마다 "자기계발심층상담"이 한 줄씩 있는지 확인할 수 있다고 덧붙여라(학기당 1회, 학교 답변 2026-10-26 B-5).`
     : null;
 
   // 파트 3: 졸업진단 요건은 규정 판단 엔진 결과다(graduationService). 신뢰도가 확정이 아니면 "몇 학점 남음"을 단정하지 않게 한다.
@@ -308,7 +308,7 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   // "학과에 확인"으로만 끝냈다(운영 점검 #378). 문장은 졸업요건 화면의 안내와 같은 것(regulationEngine/flags.js)을 쓴다.
   const absentFlag = regulation?.flags?.find((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET');
   if (absentFlag) {
-    caveats.push(`- 이 학생의 학과는 통폐합·개편 학과다. 학과 소속·과목 편성·개편 관련 질문에는 아래 안내를 근거로 답하라(학교 답변 2026-10-14 A-3):\n  ${absentFlag.message}`);
+    caveats.push(`- 이 학생의 학과는 통폐합·개편 학과다. 학과 소속·과목 편성·개편 관련 질문에는 아래 안내를 근거로 답하라(학교 답변 2026-10-14 A-3, 2026-10-26 D-3·D-4):\n  ${absentFlag.message}`);
   }
   // 성적이 아직 없는 이번 학기 과목도 이수 학점에 들어가 있다 — 졸업 학기 학생에게 "다 채웠다"고 단정하면 안 된다(2026-10-24 점검).
   if (Number(graduationStatus.inProgressCredits) > 0) {

@@ -147,12 +147,9 @@ test('복학생: 휴학한 만큼 뒤 학번으로 계산한 최종 요건이 �
     const { ctx: c } = normalizeInput({ admissionYear, enrollmentType: 'GENERAL', departmentName: '전기공학과', asOfDate: '2026-10-25', leavePeriods });
     return codes(evaluate(c, { department: { id: 1, name: '전기공학과' }, rows, latestDataYear: 2026 }).rules.find((x) => x.id === 'REQUIREMENTS').flags);
   };
-  // 2021학번이 2023~2024년 4학기 휴학 → 함께 다니는 학번 2023(교양 39) ≠ 2021(교양 23)
-  assert.ok(judge(2021, [{ startYear: 2023, startSemester: 1, semesters: 4 }]).includes('RETURNING_STUDENT_COHORT_UNVERIFIED'));
-  // 한 학기 휴학, 휴학 없음, 미응답은 붙지 않는다
-  assert.ok(!judge(2021, [{ startYear: 2023, startSemester: 1, semesters: 1 }]).includes('RETURNING_STUDENT_COHORT_UNVERIFIED'));
-  assert.ok(!judge(2021, []).includes('RETURNING_STUDENT_COHORT_UNVERIFIED'));
-  assert.ok(!judge(2021, null).includes('RETURNING_STUDENT_COHORT_UNVERIFIED'));
-  // 휴학했어도 두 학번 기준이 같으면 붙지 않는다(2022학번 → 2024학번)
-  assert.ok(!judge(2022, [{ startYear: 2023, startSemester: 1, semesters: 4 }]).includes('RETURNING_STUDENT_COHORT_UNVERIFIED'));
+  // 복학생도 입학 학번 표를 따른다(2차 문의 B-1) — 휴학해 함께 다니는 학번의 기준이 달라도 추정 사유가 아니다.
+  for (const periods of [[{ startYear: 2023, startSemester: 1, semesters: 4 }], [{ startYear: 2023, startSemester: 1, semesters: 1 }], [], null]) {
+    const flags = judge(2021, periods);
+    assert.ok(!flags.some((code) => code.startsWith('RETURNING_')), JSON.stringify(periods));
+  }
 });

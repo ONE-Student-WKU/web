@@ -1,7 +1,5 @@
 const { makeFlag } = require('./flags');
 const { isTeacherCollegeDepartment } = require('../teachingCourse');
-const { parseLeavePeriods, totalLeaveSemesters } = require('../leavePeriods');
-const { LATEST_BOOKLET_YEAR } = require('./constants');
 
 /**
  * server/services/regulationEngine/profileCaveats.js
@@ -32,7 +30,7 @@ function allowedMajorChangeGrades(departmentName, admissionYear = null) {
 const PREMED_DEPARTMENTS = ['의예과', '치의예과', '한의예과'];
 const MEDICAL_SCHOOL_DEPARTMENTS = ['의학과', '치의학과', '한의학과'];
 
-// 책자에 그룹이 없어 학교 답변을 해석해 그룹을 정한 계열(3차 문의 E-2 ⑥). 디자인융합계열은 판단 보류(D-66)로 따로 표시한다.
+// 책자에 그룹이 없어 학교 답변을 해석해 그룹을 정한 계열(3차 문의 E-2 ⑥). 디자인융합계열은 학교가 세부전공별 그룹을 직접 답해(2차 문의 D-2, D-83) 여기 넣지 않는다.
 const INTERPRETED_CERTIFICATION_GROUP = [{ departmentName: '의생명공학계열', fromCohort: 2026 }];
 
 /** 두 학번의 최종 요건(조정 후)이 같은지 비교하려고 학점 행을 "구분:학점" 목록으로 만든다. */
@@ -46,19 +44,6 @@ function originalCohortOf(ctx) {
   if (ctx.enrollmentType !== 'MAJOR_CHANGE' || !mc || mc.grade == null || mc.year == null) return null;
   const cohort = mc.year - mc.grade + 1;
   return cohort === ctx.admissionYear ? null : cohort;
-}
-
-/**
- * 복학해 함께 다니는 학번(입학 학번 + 휴학한 해 수). 휴학 기간을 입력한 학생만 본다(미응답 null·옛 누적 학기 수는 시기를 몰라 보지 않는다).
- * 1년(정규 2학기) 미만 휴학이거나 편입생(이미 편입 학년의 입학 학번을 쓴다)이면 null.
- */
-function returningCohortOf(ctx) {
-  if (ctx.enrollmentType === 'TRANSFER_ADMISSION') return null;
-  const periods = parseLeavePeriods(ctx.leavePeriods);
-  if (!periods) return null;
-  const years = Math.floor(totalLeaveSemesters(periods) / 2);
-  if (years < 1) return null;
-  return Math.min(ctx.admissionYear + years, LATEST_BOOKLET_YEAR);
 }
 
 // 시행규칙 제118조 제1항 제7호: 전문학사 과정은 졸업사정에서 졸업논문·졸업인증제를 뺀다. 엔진과 챗봇 근거가 같은 기준을 쓰게 여기 둔다.
@@ -95,4 +80,4 @@ function profileCaveats(ctx, departmentName, { adjustments = [], hasMajorAreaMin
   return flags;
 }
 
-module.exports = { profileCaveats, allowedMajorChangeGrades, requirementSignature, originalCohortOf, returningCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS, MEDICAL_SCHOOL_DEPARTMENTS, ASSOCIATE_DEGREE_DEPARTMENTS };
+module.exports = { profileCaveats, allowedMajorChangeGrades, requirementSignature, originalCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS, MEDICAL_SCHOOL_DEPARTMENTS, ASSOCIATE_DEGREE_DEPARTMENTS };

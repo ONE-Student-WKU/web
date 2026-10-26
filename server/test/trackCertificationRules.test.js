@@ -33,6 +33,18 @@ test('규칙: 세부전공을 모르면 공통 기준(1과목)으로 판정하�
   assert.ok(row.description.startsWith('나 그룹 1과목 — 단, 컴퓨터·소프트웨어공학전공이면 기업연계프로젝트1(종합설계1)·기업연계프로젝트2(종합설계2) 모두 필수'));
 });
 
+test('규칙: 디자인융합계열 패션디자인산업전공은 "나" 그룹 1과목, 세부전공을 모르면 설명에 "중 1과목" 예외를 적는다(2차 문의 D-2)', () => {
+  const GA = { category: '졸업인증제', description: '가 그룹 1과목', min_course_count: 1, requiredCourses: ['전공현장실습', '캡스톤디자인', '사회봉사'] };
+  const [fashion] = applyTrackCertificationRule([GA], { departmentName: '디자인융합계열', admissionYear: 2025, trackName: '패션디자인산업전공' });
+  assert.deepEqual([fashion.requiredCourses, fashion.min_course_count], [['캡스톤디자인', '기업연계프로젝트', '종합설계'], 1]);
+  const [unknown] = applyTrackCertificationRule([GA], { departmentName: '디자인융합계열', admissionYear: 2026, trackName: null });
+  assert.equal(unknown.min_course_count, 1);
+  assert.ok(unknown.description.startsWith('가 그룹 1과목 — 단, 패션디자인산업전공이면 캡스톤디자인·기업연계프로젝트·종합설계 중 1과목'), unknown.description);
+  assert.doesNotMatch(unknown.description, /모두 필수/);
+  assert.match(trackCertificationNotes('디자인융합계열', 2020)[0], /패션디자인산업전공/);
+  assert.deepEqual(trackCertificationNotes('디자인융합계열', 2019), []);
+});
+
 test('챗봇 근거: 공학3계열 2026학번 졸업요건에 세부전공 예외 줄을 붙인다', () => {
   const [line] = trackCertificationNotes('공학3계열', 2026);
   assert.match(line, /컴퓨터·소프트웨어공학전공/);
