@@ -71,8 +71,12 @@ test('광역계열에 전과·편입으로 들어와 기초·심화·응용을 �
   assert.ok(!codes(general).includes('BROAD_SERIES_AREAS_NOT_APPLIED'));
 });
 
-test('의학과·치의학과·한의학과 편입은 내규 확인 안내, 의생명공학계열 2026 졸업인증 그룹은 해석이라 추정', () => {
-  assert.ok(codes(profileCaveats(ctx({ enrollmentType: 'TRANSFER_ADMISSION', transfer: { grade: 3 } }), '의학과')).includes('TRANSFER_MEDICAL_SCHOOL_BYLAW'));
+test('의학과·치의학과 편입은 내규 확인 추정, 한의학과 편입은 학과 답변이 있어 선수과목 안내(INFO)만, 의생명공학계열 2026 졸업인증 그룹은 해석이라 추정', () => {
+  const transfer = ctx({ enrollmentType: 'TRANSFER_ADMISSION', transfer: { grade: 3 } });
+  for (const dept of ['의학과', '치의학과']) assert.ok(codes(profileCaveats(transfer, dept)).includes('TRANSFER_MEDICAL_SCHOOL_BYLAW'), dept);
+  const oriental = profileCaveats(transfer, '한의학과');
+  assert.ok(!codes(oriental).includes('TRANSFER_MEDICAL_SCHOOL_BYLAW'));
+  assert.deepEqual(oriental.filter((f) => f.code === 'TRANSFER_ORIENTAL_MEDICINE_PREREQUISITE').map((f) => f.level), ['INFO']);
   assert.ok(codes(profileCaveats(ctx({ admissionYear: 2026 }), '의생명공학계열', { hasCertificationRows: true, hasMajorAreaMinimums: true })).includes('CERTIFICATION_GROUP_INTERPRETED'));
   assert.ok(!codes(profileCaveats(ctx({ admissionYear: 2026 }), '공학3계열', { hasCertificationRows: true, hasMajorAreaMinimums: true })).includes('CERTIFICATION_GROUP_INTERPRETED'));
 });
