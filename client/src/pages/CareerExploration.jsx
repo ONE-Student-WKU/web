@@ -11,6 +11,7 @@ import {
 import AccountMenu from '../components/AccountMenu.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
+import LoadError from '../components/LoadError.jsx';
 import CareerRoadmapList, { groupRoadmapBySemester } from '../components/CareerRoadmapList.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import useChatAutoScroll from '../hooks/useChatAutoScroll.js';
@@ -121,9 +122,6 @@ function toggledSelection(question, selected, option) {
   const next = [...selected.filter((o) => !exclusive.includes(o)), option];
   return question.max && next.length > question.max ? next.slice(next.length - question.max) : next;
 }
-
-// 불러오기 실패처럼 이펙트 안에서 세팅되는 오류는 번역 함수에 의존하지 않도록 문구 대신 키를 담고, 렌더에서 번역한다.
-const LOAD_ERROR = { key: 'career.err.load' };
 
 // 처음 답변을 고친 기록(서버 services/careerAnswerUpdates.js와 같은 표식). 원래 답은 대화 맨 앞에 그대로 두고, 바뀐 내용을
 // 학생 메시지 하나로 남긴다 — 내용은 화면 언어와 무관한 표식 + JSON이라 화면은 번역해서 보여 준다(이슈 #245).
@@ -251,7 +249,13 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
 
   const bodyRef = useRef(null);
 
-  useEffect(() => {
+  // 지난 세션을 못 불러오면 질문 화면을 숨기고 다시 시도만 보여 준다 — 예전에는 오류 문구 아래에 1번 질문이 그대로 나와,
+  // 이미 대화한 학생도 처음부터 다시 답하게 됐다(2026-10-27 화면 점검).
+  const [loadFailed, setLoadFailed] = useState(false);
+  const sessionUnavailable = onboardingRequired || loadFailed;
+  const loadSession = () => {
+    setLoadFailed(false);
+    setLoading(true);
     getLatestCareerSession()
       .then((session) => {
         if (!session) return;
@@ -268,9 +272,13 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       })
       .catch((err) => {
         if (err.code === 'ONBOARDING_REQUIRED') setOnboardingRequired(true);
-        else setError(LOAD_ERROR);
+        else setLoadFailed(true);
       })
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    loadSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 진로 대화도 챗봇과 같은 규칙으로 스크롤한다 — 기다리는 동안은 맨 아래, 답이 오면 답의 첫 줄(UX 점검 2-1·2-2).
@@ -484,7 +492,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
         />
       </header>
 
-      {!loading && stage === 'questions' && currentQuestion && !onboardingRequired && (
+      {!loading && stage === 'questions' && currentQuestion && !sessionUnavailable && (
         <div className="career-progress" aria-label={t('career.q.progressAria', { n: stepIndex + 1, total: FIXED_QUESTIONS.length })}>
           <div className="career-progress-bar">
             <i style={{ width: `${((stepIndex + 1) / FIXED_QUESTIONS.length) * 100}%` }} />
@@ -499,6 +507,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       <div className="courses-body career-body" ref={bodyRef}>
         {errorText && <p className={error.support ? 'career-support-note' : 'home-error'} role={error.support ? 'status' : undefined}>{errorText}</p>}
         {onboardingRequired && <p className="home-error">{t('career.needOnboarding')}</p>}
+        {!loading && loadFailed && <LoadError message={t('career.err.load')} onRetry={loadSession} />}
 
         {loading && (
           <>
@@ -510,7 +519,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
           </>
         )}
 
-        {!loading && !onboardingRequired && stage === 'questions' && currentQuestion && (
+        {!loading && !sessionUnavailable && stage === 'questions' && currentQuestion && (
           <div className="career-question">
             <h2 className="career-q-title">{t(`career.q.${stepIndex}.title`)}</h2>
             <p className="career-q-sub">{currentQuestion.multi ? (currentQuestion.max ? t('career.q.multiMaxHint', { max: currentQuestion.max }) : t('career.q.multiHint')) : t('career.q.singleHint')}</p>
@@ -667,7 +676,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       </div>
 
       {/* 화면 아래에 붙는 버튼 — 질문(건너뛰기·다음), 답변 수정(이어서·처음부터), 대화(진로 추천 칸 + 입력창). */}
-      {!loading && !onboardingRequired && stage === 'questions' && currentQuestion && (
+      {!loading && !sessionUnavailable && stage === 'questions' && currentQuestion && (
         <div className="career-dock">
           <div className="career-dock-row">
             <button type="button" className="career-text-btn" onClick={() => advanceQuestion([])} disabled={startingChat}>

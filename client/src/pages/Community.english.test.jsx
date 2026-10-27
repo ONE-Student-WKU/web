@@ -205,9 +205,14 @@ describe('커뮤니티 영어 화면', () => {
     await waitFor(() => expect(api.markMyReportsSeen).toHaveBeenCalled());
   });
 
-  it('불러오기에 실패하면 영어 오류가 나온다', async () => {
-    api.getCommunityPosts.mockRejectedValue(new Error('boom'));
+  it('불러오기에 실패하면 영어 오류와 다시 시도가 나오고, "불러오는 중"은 같이 남지 않는다 — 다시 시도해 성공하면 목록이 나온다', async () => {
+    api.getCommunityPosts.mockRejectedValueOnce(new Error('boom'));
     renderEn();
-    expect(await screen.findByText("Couldn't load community posts. Please refresh and try again.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load community posts.")).toBeInTheDocument();
+    expect(screen.queryByText('Loading...')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(screen.queryByText("Couldn't load community posts.")).toBeNull());
+    expect(api.getCommunityPosts).toHaveBeenCalledTimes(2);
   });
 });

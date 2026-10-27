@@ -7,7 +7,7 @@ import {
   verifyDeleteReauthCode,
   getLatestConfirmedRoadmap,
 } from '../api/chatApi.js';
-import { IconChevronLeft } from '../components/icons.jsx';
+import { IconChevronLeft, IconUser } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -212,7 +212,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
         <div className="settings-page">
           <div className="profile-id">
             <span className="profile-id-avatar" aria-hidden="true">
-              {String(user?.name || '?').trim().charAt(0).toUpperCase()}
+              <IconUser size={28} />
             </span>
             <div className="profile-id-text">
               <b>{user?.name}</b>
@@ -250,32 +250,6 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                 )}
               </form>
 
-              {confirmedRoadmapLoading ? (
-                <div className="settings-row">
-                  <span>{t('profile.career')}</span>
-                  <span className="skeleton skeleton-text" style={{ width: 96, height: 14 }} />
-                </div>
-              ) : (
-                confirmedRoadmap && (
-                  <>
-                    <button type="button" className="settings-row" aria-expanded={roadmapExpanded} onClick={() => setRoadmapExpanded((v) => !v)}>
-                      <span>{t('profile.career')}</span>
-                      <span className="settings-row-value">
-                        {confirmedRoadmap.confirmedCareer}
-                        <span className={roadmapExpanded ? 'settings-chevron open' : 'settings-chevron'} aria-hidden="true">
-                          ›
-                        </span>
-                      </span>
-                    </button>
-                    {roadmapExpanded && (
-                      <div className="settings-row settings-row--stack profile-roadmap-list">
-                        <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
-                      </div>
-                    )}
-                  </>
-                )
-              )}
-
               {onOpenOnboarding && (
                 <button type="button" className="settings-row" onClick={onOpenOnboarding}>
                   <span>{t('profile.dept')}</span>
@@ -286,6 +260,27 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                     </span>
                   </span>
                 </button>
+              )}
+
+              {/* 확정한 진로는 받은 뒤 있을 때만 맨 아래에 붙인다 — 예전에는 받는 동안 스켈레톤 줄을 그렸다가, 진로를 확정하지 않은
+                  대부분의 학생에게서 줄이 통째로 사라지며 아래 줄이 올라붙었다(2026-10-27 화면 점검). */}
+              {!confirmedRoadmapLoading && confirmedRoadmap && (
+                <>
+                  <button type="button" className="settings-row" aria-expanded={roadmapExpanded} onClick={() => setRoadmapExpanded((v) => !v)}>
+                    <span>{t('profile.career')}</span>
+                    <span className="settings-row-value">
+                      {confirmedRoadmap.confirmedCareer}
+                      <span className={roadmapExpanded ? 'settings-chevron open' : 'settings-chevron'} aria-hidden="true">
+                        ›
+                      </span>
+                    </span>
+                  </button>
+                  {roadmapExpanded && (
+                    <div className="settings-row settings-row--stack profile-roadmap-list">
+                      <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>

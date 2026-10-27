@@ -100,7 +100,7 @@ describe('관리자 화면 새로고침', () => {
   });
 
   it('로그인이 안 된 상태에서는 표시가 있어도 로그인 화면이 먼저고, 이후 일반 학생으로 로그인하면 홈이다', async () => {
-    api.getMe.mockRejectedValueOnce(new Error('401'));
+    api.getMe.mockRejectedValueOnce(Object.assign(new Error('UNAUTHORIZED'), { status: 401 }));
     sessionStorage.setItem(KEY, '"admin"');
     render(<App />);
     expect(await screen.findByText('LOGIN')).toBeInTheDocument();
@@ -111,5 +111,24 @@ describe('관리자 화면 새로고침', () => {
     api.getMe.mockResolvedValue(admin);
     render(<App />);
     expect(await screen.findByText(/HOME/)).toBeInTheDocument();
+  });
+});
+
+describe('앱 시작 시 서버 연결 실패', () => {
+  it('로그인 안 됨(401)이 아닌 실패면 로그인 화면 대신 다시 시도를 보여 주고, 다시 시도해 성공하면 홈이다', async () => {
+    api.getMe.mockRejectedValueOnce(Object.assign(new Error('INTERNAL'), { status: 500 })).mockResolvedValue(student);
+    render(<App />);
+    expect(await screen.findByText('서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument();
+    expect(screen.queryByText('LOGIN')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText(/HOME/)).toBeInTheDocument();
+  });
+
+  it('네트워크 오류(상태 코드 없음)도 로그인 화면으로 보내지 않는다', async () => {
+    api.getMe.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<App />);
+    expect(await screen.findByRole('button', { name: '다시 시도' })).toBeInTheDocument();
+    expect(screen.queryByText('LOGIN')).toBeNull();
   });
 });
