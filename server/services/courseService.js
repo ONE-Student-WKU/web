@@ -2,6 +2,7 @@ const pool = require('../db');
 const { normalizeForSearch, prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
 const { expandAliases } = require('./searchAliases');
 const { majorAreaOf } = require('./categoryMap');
+const { normalizeCourseCode, resolveOfferingDepartments } = require('./courseOrigin');
 
 /**
  * server/services/courseService.js
@@ -399,22 +400,32 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
 // 덮어쓰지 않고 건너뛴다.
 async function bulkAddMyCourses(studentId, rows) {
   const [existingRows] = await pool.query(
-    'SELECT id, name, year, semester, letter_grade FROM student_courses WHERE student_id = ?',
+    'SELECT id, course_id, name, year, semester, letter_grade, course_code, offering_department_id FROM student_courses WHERE student_id = ?',
     [studentId]
   );
   const existingMap = new Map(existingRows.map((r) => [`${r.name}__${r.year}__${r.semester}`, r]));
+  // 성적표의 학수번호·개설학과 글자로 개설 학과를 찾는다(courseOrigin.js, 못 찾으면 null — 판정은 이름으로 맞춘다).
+  const offeringDepartments = await resolveOfferingDepartments(rows);
 
   let inserted = 0;
   let skipped = 0;
   let gradesFilled = 0;
 
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const key = `${row.name}__${row.year}__${row.semester}`;
     const letterGrade = row.letterGrade ?? null;
     const gpa = GRADE_POINT_MAP[letterGrade] ?? null;
     const existing = existingMap.get(key);
+    const courseCode = normalizeCourseCode(row.courseCode);
+    const offeringDepartmentId = offeringDepartments[index];
 
     if (existing) {
+      // PDF를 다시 올리면 예전에 가져온 과목에도 학수번호·개설 학과를 채운다(개설과목에서 고른 과목은 course_id로 알아서 두지 않는다).
+      if (existing.course_id == null && existing.course_code == null && existing.offering_department_id == null && (courseCode || offeringDepartmentId != null)) {
+        await pool.query('UPDATE student_courses SET course_code = ?, offering_department_id = ? WHERE id = ?', [courseCode, offeringDepartmentId, existing.id]);
+        existing.course_code = courseCode;
+        existing.offering_department_id = offeringDepartmentId;
+      }
       if (letterGrade && existing.letter_grade === null) {
         await pool.query('UPDATE student_courses SET letter_grade = ?, gpa = ? WHERE id = ?', [
           letterGrade,
@@ -430,10 +441,19 @@ async function bulkAddMyCourses(studentId, rows) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO student_courses (student_id, course_id, name, credits, category, major_area, year, semester, letter_grade, gpa) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [studentId, row.name, row.credits, row.category, majorAreaFor(row.category, row.majorArea), row.year, row.semester, letterGrade, gpa]
+      'INSERT INTO student_courses (student_id, course_id, name, credits, category, major_area, year, semester, letter_grade, gpa, course_code, offering_department_id) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [studentId, row.name, row.credits, row.category, majorAreaFor(row.category, row.majorArea), row.year, row.semester, letterGrade, gpa, courseCode, offeringDepartmentId]
     );
-    existingMap.set(key, { id: result.insertId, name: row.name, year: row.year, semester: row.semester, letter_grade: letterGrade });
+    existingMap.set(key, {
+      id: result.insertId,
+      course_id: null,
+      name: row.name,
+      year: row.year,
+      semester: row.semester,
+      letter_grade: letterGrade,
+      course_code: courseCode,
+      offering_department_id: offeringDepartmentId,
+    });
     inserted += 1;
   }
 

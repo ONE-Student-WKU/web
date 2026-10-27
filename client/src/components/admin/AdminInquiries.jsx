@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminInquiries, getReportedStudentSummary, resolveAdminInquiry, withdrawSanction } from '../../api/chatApi.js';
+import { getAdminInquiries, getReportedStudentSummary, resolveAdminInquiry, withdrawSanction, draftInquiryReply } from '../../api/chatApi.js';
 import { refreshAdminPending } from '../../utils/adminPending.js';
 import StudentSanctionDialog from '../StudentSanctionDialog.jsx';
 import AdminTabs from './AdminTabs.jsx';
-import { formatDate, SANCTION_SCOPE_LABEL } from './adminFormat.js';
+import { formatDate, SANCTION_SCOPE_LABEL, parseSuggestedAction } from './adminFormat.js';
+import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
 
 const NOTE_MAX_LENGTH = 500;
 const STATUS_TABS = [
@@ -31,6 +32,7 @@ function sanctionLine(summary) {
  * 관리자 문의함 — 목록에서 문의를 누르면 상세에서 학생의 학과·학번을 같이 보고, 답변을 적어 "답변 보내고 처리완료" 한 번으로 끝낸다.
  * 답변은 문의한 학생의 "내 문의"에 보인다. 비워 두면 답변 없이 처리완료만 표시된다.
  * 정지 화면에서 보낸 이의 제기(appealFor)는 어느 정지에 대한 것인지 보여주고, 받아들이면 바로 철회한다. 답변은 학생의 정지 화면에도 보인다.
+ * [AI 초안 만들기]는 누를 때만 답변 초안을 만들어 답변 칸에 채운다(server/services/inquiryDraftService.js, 정지 이의 제기 제외).
  *
  * Props:
  * - detailId: 상세로 연 문의 id(없으면 목록)
@@ -72,6 +74,14 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   const [withdrawConfirm, setWithdrawConfirm] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   useEffect(() => setWithdrawConfirm(false), [detailId]);
+  // 답변 AI 초안 — 누를 때만 만들어 답변 칸에 채운다(저장하지 않는다). drafted: 마지막 초안의 { action }(욕설 문의면 반영한 조치 이름).
+  const [drafting, setDrafting] = useState(false);
+  const [drafted, setDrafted] = useState(null);
+  const [draftError, setDraftError] = useState(null);
+  useEffect(() => {
+    setDrafted(null);
+    setDraftError(null);
+  }, [detailId]);
   useEffect(() => {
     if (studentId == null) return undefined;
     let cancelled = false;
@@ -100,6 +110,22 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
     }
   };
 
+  const handleDraft = async () => {
+    // 이미 쓴 답변은 덮어쓰기 전에 한 번 묻는다(방금 만든 초안을 다시 만드는 건 묻지 않는다).
+    if (note.trim() && !drafted && !window.confirm('지금 쓴 답변을 AI 초안으로 바꿀까요?')) return;
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const result = await draftInquiryReply(inquiry.id);
+      setNote(result.draft);
+      setDrafted({ action: result.action || null });
+    } catch {
+      setDraftError('초안을 만들지 못했어요. 잠시 후 다시 시도하거나 직접 써 주세요.');
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const handleWithdraw = async () => {
     setWithdrawing(true);
     setError(null);
@@ -120,6 +146,10 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   if (inquiry) {
     const open = inquiry.status === 'open';
     const appeal = inquiry.appealFor;
+    const suggestedAction = inquiry.aiSuggestion?.action;
+    const suggested = parseSuggestedAction(suggestedAction);
+    const suggestedScope = suggested ? suggested.scope : 'warning';
+    const suggestedDuration = suggested ? suggested.duration : undefined;
     return (
       <>
         <div className="admin-detail">
@@ -129,6 +159,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               {appeal ? ' · 정지 이의' : ''}
             </span>
             <span className="post-meta">{formatDate(inquiry.createdAt)}</span>
+            {open && <AiSuggestionBadge suggestion={inquiry.aiSuggestion} />}
           </div>
           <p className="admin-detail-title">{inquiry.title}</p>
           <p className="post-meta">{askerOf(inquiry)}</p>
@@ -169,15 +200,41 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               </button>
             </div>
           )}
-          <p className="admin-body admin-body--lead">{inquiry.content}</p>
+          <p className="admin-body admin-body--lead">
+            <HighlightedText text={inquiry.content} highlights={open ? inquiry.aiSuggestion?.highlights : []} />
+          </p>
+          {open && <AiSuggestionBox suggestion={inquiry.aiSuggestion} openLabel="학생 제재" />}
           {error && <p className="home-error">{error}</p>}
           {open ? (
             <>
               <label className="admin-section" htmlFor="inquiry-note">
                 학생에게 보낼 답변 <small>{appeal ? '정지 화면과 "내 문의"에 보여요' : '문의한 학생의 "내 문의"에 보여요'}</small>
               </label>
-              <textarea id="inquiry-note" className="post-input admin-textarea" rows={4} maxLength={NOTE_MAX_LENGTH} value={note} onChange={(e) => setNote(e.target.value)} />
-              <p className="courses-manual-hint">어떻게 처리했는지 알려주세요. 비워 두면 답변 없이 처리완료로만 표시돼요.</p>
+              <textarea
+                id="inquiry-note"
+                className="post-input admin-textarea"
+                rows={drafted ? 7 : 4}
+                maxLength={NOTE_MAX_LENGTH}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              {drafted ? (
+                <p className="ai-note">
+                  AI가 쓴 초안이에요. 사실과 다른 곳이 없는지 확인하고 고쳐서 보내세요.
+                  {drafted.action && ` 조치 문장은 "${drafted.action}" 기준이에요 — [학생 제재]로 같은 조치를 했는지 확인하세요.`}
+                </p>
+              ) : (
+                <p className="courses-manual-hint">어떻게 처리했는지 알려주세요. 비워 두면 답변 없이 처리완료로만 표시돼요.</p>
+              )}
+              {draftError && <p className="home-error">{draftError}</p>}
+              {/* 정지 이의 제기는 정지를 유지할지 철회할지 사람이 정할 일이라 초안을 만들지 않는다. */}
+              {!appeal && (
+                <span className="admin-actions left admin-draft-actions">
+                  <button type="button" className="post-btn post-btn--outline" onClick={handleDraft} disabled={drafting}>
+                    {drafting ? '초안 쓰는 중...' : drafted ? 'AI 초안 다시 만들기' : 'AI 초안 만들기'}
+                  </button>
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -191,7 +248,9 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
             studentId={inquiry.studentId}
             nickname={inquiry.student}
             title="학생 제재"
-            defaultScope="warning"
+            // AI 제안(#458)이 있으면 그 범위·기간을 미리 골라 두고, 없으면 문의의 첫 조치인 경고(docs/moderation-policy.md).
+            defaultScope={suggestedScope}
+            defaultDuration={suggestedDuration}
             onClose={() => setSanctionOpen(false)}
             onDone={(scope) => {
               setSanctionOpen(false);
@@ -234,6 +293,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
                   {i.appealFor ? ' · 정지 이의' : ''}
                 </span>
                 <span className="post-meta">{formatDate(i.createdAt)}</span>
+                {status === 'open' && <AiSuggestionBadge suggestion={i.aiSuggestion} />}
               </span>
               <span className="post-title">{i.title}</span>
               <span className="post-excerpt">{i.content}</span>

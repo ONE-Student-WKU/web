@@ -992,3 +992,16 @@
 - **결과**: 프로필에서 학과를 바꾸면 진단이 바로 바뀐 학과 기준으로 달라진다. 다른 학과 전공 과목을 고른 학생은 전공 학점이 줄 수 있다(규정상 맞는 방향, "전공으로 셈"으로 되돌릴 수 있음). DB 구조·약관·재시딩은 바뀌지 않는다.
 - **단점·다시 볼 조건**: 성적표·직접 입력 과목은 이름만 있어 다시 판정하지 못한다 — #412 "(선택) 학수번호·개설 학과 저장"이 들어가면 그 과목도 이 단계에 넣는다. 계열 안 다른 전공 과목을 어떻게 세는지 학교 기준이 나오면 학과 단위가 아니라 전공 단위로 좁힌다.
 - **위치**: `server/services/courseCounting.js`(`isOtherDepartmentMajorCourse`, `loadOwnDepartmentContext`), `graduationService.js`(`summarizeOtherDepartmentCourses`), `routes/myCourses.js`, `aiClient.js`, `regulationEngine/flags.js`, 클라이언트 `CourseManagement.jsx`·`GraduationStatus.jsx`, 테스트 `server/test/otherDepartmentCourses.test.js`·`client/src/pages/CourseManagement.countedMajor.test.jsx`.
+
+## D-89 성적표 과목의 학수번호·개설 학과를 저장해 전과·다전공 판정에 쓰고, D-88은 개설과목에서 고른 과목에만 둔다 (2026-10-28)
+- **상황**: 성적표(PDF)로 가져온 과목은 과목명만 저장돼, 전과 전 과목(D-77)과 다전공 배정(D-76)이 이름이 같은 다른 학과 과목에 틀릴 수 있었다. 전체성적조회 파서는 학수번호를 읽고도 버렸고, 이수과목확인리스트의 "개설학과(전공)" 칸은 읽지 않았다(#253 설계안 1, #412).
+- **결정**:
+  - `student_courses`에 `course_code`·`offering_department_id`를 둔다. 전체성적조회는 학수번호를 저장하고, 개설 학과는 학수번호 → 그 학기 개설과목 → 가장 가까운 해의 개설과목 → 교육과정 순으로 하나로 정해질 때만 찾는다. 이수과목확인리스트는 "개설학과(전공)" 글자를 학과 이름(띄어쓰기·가운뎃점 무시), 없으면 세부전공 이름의 학과로 맞춘다. 여러 학과로 갈리거나 못 찾으면 비우고 지금처럼 과목명으로 맞춘다(`server/services/courseOrigin.js`). 교양은 학과가 여는 과목이 아니라 찾지 않는다 — 학과 교육과정표에 교양 행이 실려 있어 그 학과로 잘못 잡혔다(실물 성적표 확인).
+  - 학과 id는 서버가 찾는다 — 화면은 성적표에서 읽은 글자(학수번호·개설학과)만 넘긴다.
+  - PDF를 다시 올리면 예전에 가져온 같은 과목(이름·연도·학기)에도 채운다. 개설과목에서 고른 과목은 `course_id`로 학과를 알아 건드리지 않는다. 원본 PDF를 보관하지 않아 다시 올리기 전에는 채울 수 없다.
+  - 전과 전 과목·다전공 배정은 개설과목 학과와 같이 이 학과를 쓴다(`secondMajorCredits.loadOfferingDepartments`가 출처를 함께 돌려준다).
+  - **D-88(다른 학과 전공 과목 → 일반선택)은 개설과목에서 고른 과목에만 둔다.** D-88 "다시 볼 조건"에는 학수번호가 들어오면 성적표 과목도 넣는다고 적었지만 바꿨다: 성적표 이수구분은 학교가 수강 당시 학생 기준으로 찍은 값이라 타학과 전공은 이미 일반선택으로 찍히고, 성적표가 "전공"이라고 찍은 과목은 다전공·통폐합처럼 학교가 맞게 판단한 경우가 대부분이다. 여기에 우리 학과 계보 연결이 하나라도 빠지면 맞는 전공 학점을 일반선택으로 잘못 내린다.
+  - 직접 입력 과목은 그대로다(학수번호 입력칸을 두려면 화면이 바뀐다).
+  - 개인정보처리방침 수집 항목에 "성적표에서 가져온 과목의 학수번호와 개설 학과"를 넣었다(동의 버전 2026-10-28.2, 문의 답변 AI 초안과 같은 개정).
+- **단점·다시 볼 조건**: 개설과목 자료(`course_offerings`)가 없는 옛 학기는 교육과정 학수번호로만 찾아, 같은 학수번호가 여러 학과 편성에 있으면 비운다. 실물 전체성적조회(2026-10-28, 전과생 성적표 38과목)로는 학수번호 38개를 모두 읽고 전공·일반선택 22과목의 개설 학과를 모두 맞게 찾았다(전과 전 학과의 일반선택 과목 포함). 이수과목확인리스트의 "개설학과(전공)" 글자 모양은 실물 PDF로 아직 확인하지 못했다 — 맞지 않으면 `departmentCandidates`·`nameKey`를 고친다.
+- **위치**: `server/services/courseOrigin.js`, `pdfImportService.js`, `aiClient.js`(추출 프롬프트), `courseService.bulkAddMyCourses`, `routes/myCourses.js`, `secondMajorCredits.loadOfferingDepartments`, `courseCounting.js`, 클라이언트 `CourseManagement.jsx`, 테스트 `server/test/courseOrigin.test.js`·`otherDepartmentCourses.test.js`·`pdfImportService.ruleBased.test.js`.

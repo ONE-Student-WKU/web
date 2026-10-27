@@ -6,6 +6,8 @@ const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const warningService = require('../services/warningService');
+const moderationLabelService = require('../services/moderationLabelService');
+const inquiryDraftService = require('../services/inquiryDraftService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
 const uiEventService = require('../services/uiEventService');
@@ -74,6 +76,7 @@ router.post('/community/posts/:id/approve', async (req, res, next) => {
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
+    await moderationLabelService.recordDecision('post', req.params.id, 'approve');
     res.status(200).json({ status: 200, code: 'POST_APPROVED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -91,6 +94,7 @@ router.post('/community/posts/:id/reject', async (req, res, next) => {
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
+    await moderationLabelService.recordDecision('post', req.params.id, 'reject');
     res.status(200).json({ status: 200, code: 'POST_REJECTED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -162,6 +166,8 @@ router.post('/community/reports/:id/resolve', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
     const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, note.value);
+    // 비교 합계는 관리자가 처리한 신고 하나로만 센다 — 같은 대상의 중복 신고가 정확도를 부풀리지 않게.
+    await moderationLabelService.recordDecision('report', report.id, 'none');
     res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
@@ -253,6 +259,7 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
     await communityService.resolveReport(report.id, resolutionNote.value);
     // 같은 대상의 다른 대기 신고도 같은 안내로 처리완료(대상 글·신청은 이미 지워졌다).
     const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, resolutionNote.value);
+    await moderationLabelService.recordDecision('report', report.id, moderationLabelService.actionKey(input.scope, req.body.duration));
     res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
@@ -376,7 +383,39 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'INQUIRY_NOT_FOUND', message: null, data: null });
     }
+    // 문의는 처리완료와 [학생 제재]가 따로라, 이 문의가 들어온 뒤 걸린 경고·제재로 관리자 판단을 정한다(moderationLabelService.js).
+    await moderationLabelService.recordDecision('inquiry', req.params.id, await moderationLabelService.inquiryDecision(req.params.id));
     res.status(200).json({ status: 200, code: 'INQUIRY_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/inquiries/:id/draft — 문의 답변 AI 초안(저장하지 않고 돌려주기만 한다, inquiryDraftService.js).
+const DRAFT_ERRORS = {
+  NOT_FOUND: [404, 'INQUIRY_NOT_FOUND'],
+  APPEAL: [400, 'DRAFT_NOT_FOR_APPEAL'],
+  EMPTY: [502, 'DRAFT_FAILED'],
+};
+router.post('/inquiries/:id/draft', async (req, res, next) => {
+  try {
+    const result = await inquiryDraftService.createDraft(req.params.id);
+    if (result.error) {
+      const [status, code] = DRAFT_ERRORS[result.error];
+      return res.status(status).json({ status, code, message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'INQUIRY_DRAFT', message: null, data: { draft: result.draft, action: result.action } });
+  } catch (err) {
+    console.error('[inquiryDraft] 초안 실패:', err.message);
+    res.status(502).json({ status: 502, code: 'DRAFT_FAILED', message: null, data: null });
+  }
+});
+
+// GET /api/admin/ai-labels/comparison — AI 사전 분류 비교표(#458). 대상별 비교한 건수와 맞힌 건수(작성자와 연결 없는 합계).
+router.get('/ai-labels/comparison', async (req, res, next) => {
+  try {
+    const comparison = await moderationLabelService.getComparison();
+    res.status(200).json({ status: 200, code: 'AI_LABEL_COMPARISON', message: null, data: comparison });
   } catch (err) {
     next(err);
   }

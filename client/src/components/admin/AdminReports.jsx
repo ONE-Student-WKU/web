@@ -3,7 +3,8 @@ import { getAdminReports, resolveAdminReport, sanctionReport, getReportedStudent
 import { refreshAdminPending } from '../../utils/adminPending.js';
 import AdminSheet from './AdminSheet.jsx';
 import AdminTabs from './AdminTabs.jsx';
-import { formatDate, SANCTION_SCOPE_LABEL, SANCTION_STATE_LABEL, sanctionState, warningSeenLabel } from './adminFormat.js';
+import { formatDate, SANCTION_SCOPE_LABEL, SANCTION_STATE_LABEL, sanctionState, warningSeenLabel, parseSuggestedAction } from './adminFormat.js';
+import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
 import { IconChevronRight } from '../icons.jsx';
 
 // 제재 사유 입력란의 기본값. 신고자가 쓴 신고 사유를 그대로 채우면 그 말이 제재받는 사용자에게 "제재 사유"로 전달된다
@@ -105,8 +106,11 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
 
   const openSheet = (kind) => {
     setNote(DEFAULT_RESOLUTION_NOTE);
-    setScope('post_apply');
-    setDuration('7d');
+    // AI 제안(#458)이 경고·제재면 그 범위·기간을 미리 골라 둔다 — 관리자는 확인만 하면 된다. 제안이 없으면 지금처럼 기본값.
+    const suggested = group?.first.aiSuggestion?.action;
+    const parsed = parseSuggestedAction(suggested);
+    setScope(suggested === 'warning' ? 'warning' : parsed ? parsed.scope : 'post_apply');
+    setDuration(parsed ? parsed.duration : '7d');
     setReason(DEFAULT_SANCTION_REASON);
     setSheet(kind);
   };
@@ -159,16 +163,20 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
     return (
       <>
         <div className="admin-detail">
-          <p className="post-meta">
-            {isApplication ? '신청 메시지 신고' : '글 신고'} · {formatDate(first.createdAt)}
-          </p>
+          <div className="admin-row-top">
+            <span className="post-meta">
+              {isApplication ? '신청 메시지 신고' : '글 신고'} · {formatDate(first.createdAt)}
+            </span>
+            {status === 'pending' && <AiSuggestionBadge suggestion={first.aiSuggestion} />}
+          </div>
           <p className="admin-detail-title">{first.targetTitle}</p>
           {first.targetBody && (
             <p className="post-quote">
               <span className="post-quote-label">{isApplication ? '신고된 신청 메시지' : '신고 당시 내용'}</span>
-              {first.targetBody}
+              <HighlightedText text={first.targetBody} highlights={status === 'pending' ? first.aiSuggestion?.highlights : []} />
             </p>
           )}
+          {status === 'pending' && <AiSuggestionBox suggestion={first.aiSuggestion} openLabel="제재하기" />}
           {first.targetExists && (
             <button type="button" className="post-btn post-btn--text admin-detail-link" onClick={() => onOpenPost(first.targetPostId)}>
               {isApplication ? '신청이 달린 글 보기' : '커뮤니티에서 글 보기'}
@@ -368,6 +376,7 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
                 <span className="post-meta">
                   {g.first.targetType === 'application' ? '신청 메시지' : '글'} · {formatDate(g.latest.createdAt)}
                 </span>
+                {status === 'pending' && <AiSuggestionBadge suggestion={g.first.aiSuggestion} />}
               </span>
               <span className="post-title">{g.first.targetTitle}</span>
               {g.first.targetBody && <span className="post-excerpt">{g.first.targetBody}</span>}

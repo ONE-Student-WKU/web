@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminStats } from '../../api/chatApi.js';
+import { getAdminStats, getAiLabelComparison } from '../../api/chatApi.js';
 import { IconSiren, IconMessageCircle, IconUsers, IconBan, IconBarChart, IconCheck, IconChevronRight } from '../icons.jsx';
 
 // 지난주(8~14일 전) 방문자 중 이번 주(최근 7일)에도 온 비율. 방문 기록이 2주가 안 돼 지난주 방문자가 없으면 "—".
@@ -44,6 +44,63 @@ function dayCompare(stats, key) {
   }
   const prev = stats.previous24h?.[key];
   return prev == null ? null : `어제 ${prev.toLocaleString()}`;
+}
+
+const AI_TARGETS = [
+  { key: 'post', label: '글 승인' },
+  { key: 'report', label: '신고' },
+  { key: 'inquiry', label: '문의' },
+];
+
+function ratio(n, total) {
+  return total > 0 ? `${n} (${Math.round((n / total) * 100)}%)` : '—';
+}
+
+// AI 사전 분류(#458) 비교표 — 관리자가 처리할 때마다 "제안 × 실제 조치"를 합계로만 센 것(누가 쓴 글인지는 남기지 않는다).
+// 대시보드 통계와 따로 불러, 실패하면 이 칸만 숨긴다(부가 기능이라 대시보드를 막지 않는다).
+function AiComparisonCard() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getAiLabelComparison()
+      .then((d) => !cancelled && setData(d))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!data) return null;
+  return (
+    <>
+      <p className="home-quick-label">AI 분류 비교</p>
+      <div className="home-card">
+        <table className="ai-compare">
+          <thead>
+            <tr>
+              <th>대상</th>
+              <th>비교한 건</th>
+              <th>조치 필요 여부</th>
+              <th>제안 그대로</th>
+            </tr>
+          </thead>
+          <tbody>
+            {AI_TARGETS.map(({ key, label }) => {
+              const s = data[key] || { total: 0, actionMatched: 0, resultMatched: 0 };
+              return (
+                <tr key={key}>
+                  <td>{label}</td>
+                  <td>{s.total}</td>
+                  <td>{ratio(s.actionMatched, s.total)}</td>
+                  <td>{ratio(s.resultMatched, s.total)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className="ai-note">"조치 필요 여부"는 AI가 위반인지 아닌지 맞힌 비율, "제안 그대로"는 제안한 조치(범위·기간)를 그대로 쓴 비율이에요.</p>
+      </div>
+    </>
+  );
 }
 
 /**
@@ -171,6 +228,8 @@ function AdminDashboard({ onOpen }) {
           </button>
         ))}
       </div>
+
+      <AiComparisonCard />
 
       <p className="home-quick-label">관리</p>
       <div className="admin-list">

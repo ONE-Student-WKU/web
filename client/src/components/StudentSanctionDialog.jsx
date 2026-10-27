@@ -16,7 +16,8 @@ import { IconAlertTriangle } from './icons.jsx';
  * - studentId: number — 제재 대상 계정 id (서버가 관리자 요청에만 내려주는 글의 authorId·문의의 studentId)
  * - nickname: string — 화면 표시용
  * - title: string (선택) — 팝업 제목(기본 "작성자 제재")
- * - defaultScope: string (선택) — 처음 골라 둘 범위(기본 글쓰기·신청 금지). 문의에서는 첫 조치가 경고라 'warning'(docs/moderation-policy.md)
+ * - defaultScope: string (선택) — 처음 골라 둘 범위(기본 글쓰기·신청 금지). 문의에서는 AI 제안이 있으면 그 범위, 없으면 첫 조치인 'warning'
+ * - defaultDuration: string (선택) — 처음 골라 둘 기간(기본 7d). AI 제안의 기간을 미리 골라 둘 때 쓴다(#458)
  * - onClose: function
  * - onDone: function(scope) — 제재(또는 경고)가 적용된 뒤 호출(팝업은 호출부가 닫는다)
  */
@@ -49,11 +50,11 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function StudentSanctionDialog({ studentId, nickname, title = '작성자 제재', defaultScope = 'post_apply', onClose, onDone }) {
+function StudentSanctionDialog({ studentId, nickname, title = '작성자 제재', defaultScope = 'post_apply', defaultDuration = '7d', onClose, onDone }) {
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
   const [scope, setScope] = useState(defaultScope);
-  const [duration, setDuration] = useState('7d');
+  const [duration, setDuration] = useState(defaultDuration);
   const [reason, setReason] = useState(DEFAULT_REASON);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);

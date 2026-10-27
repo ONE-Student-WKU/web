@@ -649,6 +649,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           category: r.category || '',
           // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
           majorArea: r.majorArea || null,
+          // 학수번호(전체성적조회)·개설학과 글자(이수과목확인리스트) — 화면에는 안 보이고 저장할 때 넘긴다(전과·다전공 판정용).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -691,6 +694,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           category: r.category || '',
           // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
           majorArea: r.majorArea || null,
+          // 학수번호(전체성적조회)·개설학과 글자(이수과목확인리스트) — 화면에는 안 보이고 저장할 때 넘긴다(전과·다전공 판정용).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -748,6 +754,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           year: Number(r.year),
           semester: Number(r.semester),
           letterGrade: r.letterGrade || null,
+          // 성적표에서 읽은 학수번호·개설학과 글자 — 서버가 개설 학과를 찾아 전과·다전공 판정에 쓴다(courseOrigin.js).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
         }))
       );
       resetAddForm();

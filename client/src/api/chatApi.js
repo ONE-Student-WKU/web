@@ -257,6 +257,10 @@ export const getAdminSanctions = (status = 'active') => apiRequest(`/admin/sanct
 export const liftSanction = (id) => apiRequest(`/admin/sanctions/${id}/lift`, { method: 'POST' });
 // 철회(잘못된 조치) — 해제와 달리 기록을 지운다.
 export const withdrawSanction = (id) => apiRequest(`/admin/sanctions/${id}`, { method: 'DELETE' });
+// 문의 답변 AI 초안 — { draft, action }(action: 욕설 문의일 때 초안에 반영한 조치 이름, 아니면 null). 저장하지 않는다.
+export const draftInquiryReply = (id) => apiRequest(`/admin/inquiries/${id}/draft`, { method: 'POST' });
+// AI 사전 분류(#458) 비교표 — { post|report|inquiry: { total, actionMatched, resultMatched } }
+export const getAiLabelComparison = () => apiRequest('/admin/ai-labels/comparison');
 // 경고 취소(잘못된 경고) — 기록을 지운다.
 export const deleteWarning = (id) => apiRequest(`/admin/warnings/${id}`, { method: 'DELETE' });
 

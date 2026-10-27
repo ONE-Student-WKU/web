@@ -21,6 +21,9 @@ vi.mock('../api/chatApi.js', () => ({
   getAdminStatsComposition: vi.fn(),
   getAdminFeatureUsage: vi.fn(),
   getReportedStudentSummary: vi.fn(),
+  getAiLabelComparison: vi.fn(),
+  draftInquiryReply: vi.fn(),
+  withdrawSanction: vi.fn(),
 }));
 
 import * as api from '../api/chatApi.js';
@@ -144,6 +147,11 @@ beforeEach(() => {
   sessionStorage.clear();
   window.history.replaceState(null, '', '/');
   api.getAdminStats.mockResolvedValue(stats());
+  api.getAiLabelComparison.mockResolvedValue({
+    post: { total: 0, actionMatched: 0, resultMatched: 0 },
+    report: { total: 0, actionMatched: 0, resultMatched: 0 },
+    inquiry: { total: 0, actionMatched: 0, resultMatched: 0 },
+  });
   api.getAdminPending.mockResolvedValue({ reports: 0, inquiries: 0, posts: 0, total: 0 });
   api.getAdminStatsTrend.mockImplementation(async (range) => trend(range));
   resetAdminTrendCache();
@@ -422,6 +430,22 @@ describe('문의함', () => {
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
     expect(await screen.findByText('문의함', { selector: '.screen-title' })).toBeInTheDocument();
     expect(api.resolveAdminInquiry).not.toHaveBeenCalled();
+  });
+
+  it('[AI 초안 만들기]는 초안을 답변 칸에 채우고, 욕설 문의면 반영한 조치를 알려준다', async () => {
+    api.draftInquiryReply.mockResolvedValue({ draft: '확인해서 다시 알려 드릴게요.', action: '경고' });
+    await openDetail();
+    await userEvent.click(screen.getByRole('button', { name: 'AI 초안 만들기' }));
+    expect(screen.getByRole('textbox', { name: /학생에게 보낼 답변/ })).toHaveValue('확인해서 다시 알려 드릴게요.');
+    expect(api.draftInquiryReply).toHaveBeenCalledWith(5);
+    expect(screen.getByText(/AI가 쓴 초안이에요/)).toHaveTextContent('"경고" 기준이에요');
+    expect(screen.getByRole('button', { name: 'AI 초안 다시 만들기' })).toBeInTheDocument();
+  });
+
+  it('정지 이의 제기에는 초안 버튼이 없다', async () => {
+    api.getAdminInquiries.mockResolvedValue([inquiry({ appealFor: { id: 9, scope: 'account', reason: '욕설', endsAt: null, liftedAt: null } })]);
+    await openDetail();
+    expect(screen.queryByRole('button', { name: 'AI 초안 만들기' })).not.toBeInTheDocument();
   });
 
   it('처리완료 탭에서는 보낸 답변을 보여주고, 답변이 없었으면 그렇게 표시한다', async () => {
