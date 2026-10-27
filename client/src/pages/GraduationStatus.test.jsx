@@ -251,14 +251,14 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     document.body.classList.remove('grad-printing');
   });
 
-  async function openSheet(data, wrap = (el) => el, buttonName = '한 장으로 저장·인쇄') {
+  async function openSheet(data, wrap = (el) => el, buttonName = 'PDF로 저장하기') {
     getGraduationStatus.mockResolvedValue(data);
     render(wrap(<GraduationStatus user={printUser} {...props} />));
     const button = await screen.findByRole('button', { name: buttonName });
     // 누르기 전에는 시트를 그리지 않는다(화면 DOM에 같은 숫자가 두 번 들어가지 않게).
     expect(document.querySelector('.grad-print-sheet')).toBeNull();
     button.click();
-    await screen.findByText(buttonName === '한 장으로 저장·인쇄' ? '졸업요건 진단 결과' : 'Graduation requirement check');
+    await screen.findByText(buttonName === 'PDF로 저장하기' ? '졸업요건 진단 결과' : 'Graduation requirement check');
     return document.querySelector('.grad-print-sheet');
   }
 
@@ -302,16 +302,32 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     expect(sheet).toHaveTextContent('학과 졸업인증(어학·자격증 등, 학과 공지)');
   });
 
+  it('졸업이 가까우면 안내 안의 저장 버튼으로도 같은 시트를 저장할 수 있다', async () => {
+    getGraduationStatus.mockResolvedValue(status({ totalEarnedCredits: 125 }));
+    render(<GraduationStatus user={printUser} {...props} />);
+    const near = await screen.findByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' });
+    expect(near.closest('.grad-near-graduation')).toHaveTextContent('졸업 요건을 한 번 확인받으세요');
+    near.click();
+    await screen.findByText('졸업요건 진단 결과');
+    expect(window.print).toHaveBeenCalledTimes(1);
+  });
+
+  it('많이 남았으면 안내 속 저장 버튼은 없고 아래 버튼만 있다', async () => {
+    await renderWith(status());
+    expect(screen.queryByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'PDF로 저장하기' })).toBeInTheDocument();
+  });
+
   it('자료가 없으면 버튼을 보여 주지 않는다', async () => {
     getGraduationStatus.mockResolvedValue(status({ totalRequiredCredits: 0, totalEarnedCredits: 0, categories: [], regulation: { confidence: 'NO_DATA', confidenceLabel: '자료 없음', flags: [] } }));
     render(<GraduationStatus user={printUser} {...props} />);
     await screen.findByText(/진단할 수 없어요/);
-    expect(screen.queryByRole('button', { name: '한 장으로 저장·인쇄' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'PDF로 저장하기' })).toBeNull();
   });
 
   it('영어 화면이면 시트 문구도 영어(학과명은 서버 값 그대로)', async () => {
     localStorage.setItem('language', 'en');
-    const sheet = await openSheet(status(), (el) => <LanguageProvider>{el}</LanguageProvider>, 'Save or print as one page');
+    const sheet = await openSheet(status(), (el) => <LanguageProvider>{el}</LanguageProvider>, 'Save as PDF');
     expect(sheet).toHaveTextContent('컴퓨터·소프트웨어공학과 · Class of 2022 · Regular student');
     expect(sheet).toHaveTextContent('Credits by category');
     expect(sheet).toHaveTextContent('General ed. (required)');

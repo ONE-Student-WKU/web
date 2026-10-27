@@ -294,8 +294,9 @@ export default {
   'grad.trust.schedule4':
     'The Academic Regulations [Appendix 4] list {a} credits, but the curriculum booklet lists {b} credits. Please check with your department or the Academic Affairs Office.',
   // One-page print of the diagnosis (#455)
-  'grad.print.button': 'Save or print as one page',
-  'grad.print.hint': "Choose 'Save as PDF' in the print window to get a file. Show it to your department office or the Academic Affairs Office (학사지원과) to have it checked.",
+  'grad.print.button': 'Save as PDF',
+  'grad.print.hint': "When the window opens, set the destination (printer) to 'Save as PDF'. Show the saved file to your department office or the Academic Affairs Office (학사지원과) to have it checked.",
+  'grad.print.nearButton': 'Save this result as a PDF to show when you check',
   'grad.print.title': 'Graduation requirement check',
   'grad.print.date': 'Printed {date}',
   'grad.print.nameLine': 'Name',

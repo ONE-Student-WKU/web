@@ -59,6 +59,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       .finally(() => setLoading(false));
   }, []);
 
+  // 대부분 프린터가 없어 PDF 저장이 주 용도다(인쇄 창의 'PDF로 저장'). 이미 시트가 붙어 있으면 창만 다시 연다.
+  const savePdf = () => (printing ? window.print() : setPrinting(true));
+
   // 시트가 그려진 뒤 인쇄 창을 연다. body 클래스가 붙어 있는 동안만 인쇄 CSS가 시트 말고 나머지를 숨긴다(App.css).
   // 모바일 브라우저는 window.print()가 바로 돌아오기도 해서, 시트는 afterprint에서 뗀다.
   useEffect(() => {
@@ -156,7 +159,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
 
         {status && !trust.noData && (
           <>
-            {isNearGraduation(status) && <p className="grad-near-graduation" role="note">{t('grad.nearGraduation')}</p>}
+            {/* 졸업이 가까우면 확인받을 때 들고 갈 결과를 바로 저장할 수 있게 같은 버튼을 이 안내 안에도 둔다. */}
+            {isNearGraduation(status) && (
+              <div className="grad-near-graduation" role="note">
+                <p>{t('grad.nearGraduation')}</p>
+                <button type="button" className="grad-near-save-btn" onClick={savePdf}>
+                  {t('grad.print.nearButton')}
+                </button>
+              </div>
+            )}
             <section className="home-card">
               <p className="home-card-label">
                 {t('grad.totalLabel')}
@@ -483,10 +494,10 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           </>
         )}
 
-        {/* 진단 결과 한 장(#455) — PDF로 저장하거나 뽑아서 과사무실·학사지원과에서 확인받는 용도. 자료가 없으면 보여 줄 게 없어 숨긴다. */}
+        {/* 진단 결과 한 장(#455) — 주로 PDF로 저장하고(필요하면 뽑아서) 과사무실·학사지원과에서 확인받는 용도. 자료가 없으면 보여 줄 게 없어 숨긴다. */}
         {status && !trust.noData && (
           <div className="grad-print-box">
-            <button type="button" className="grad-print-btn" onClick={() => (printing ? window.print() : setPrinting(true))}>
+            <button type="button" className="grad-print-btn" onClick={savePdf}>
               {t('grad.print.button')}
             </button>
             <p className="grad-flex-note">{t('grad.print.hint')}</p>

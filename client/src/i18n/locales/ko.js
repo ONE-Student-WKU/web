@@ -263,8 +263,9 @@ export default {
   'grad.absentDeptNote': '통폐합·개편 학과도 학번별 학점 기준은 2026 교육과정 책자의 경과조치를 그대로 따라요(학교 확인). 과목 편성은 학적에 적힌 학과 기준이에요.',
   'grad.trust.schedule4': '학칙 [별표 4]는 {a}학점, 교육과정 책자는 {b}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.',
   // 진단 결과 한 장 인쇄(#455) — 과사무실·학사지원과에 보여 주고 확인받는 용도. 신뢰도는 확정/추정 대신 높음·중간·낮음으로 쓴다.
-  'grad.print.button': '한 장으로 저장·인쇄',
-  'grad.print.hint': "인쇄 창에서 'PDF로 저장'을 고르면 파일이 돼요. 과사무실·학사지원과에 보여 주고 확인받으세요.",
+  'grad.print.button': 'PDF로 저장하기',
+  'grad.print.hint': "창이 열리면 대상(프린터)을 'PDF로 저장'으로 골라 주세요. 저장한 파일을 과사무실·학사지원과에 보여 주고 확인받으세요.",
+  'grad.print.nearButton': '확인받을 때 보여 줄 결과 PDF로 저장하기',
   'grad.print.title': '졸업요건 진단 결과',
   'grad.print.date': '{date} 출력',
   'grad.print.nameLine': '이름',

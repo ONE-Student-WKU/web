@@ -964,6 +964,22 @@ body {
   color: var(--color-text-primary);
 }
 
+.grad-near-graduation p {
+  margin: 0;
+}
+
+.grad-near-save-btn {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-ink);
+  border-radius: 8px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .grad-report-btn {
   align-self: center;
   margin: 4px auto 16px;
