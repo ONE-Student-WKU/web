@@ -24,6 +24,7 @@ const SANCTION_DURATIONS = [
 const SANCTION_SCOPES = [
   { value: 'post_apply', hint: '커뮤니티는 볼 수 있어요' },
   { value: 'full', hint: '커뮤니티에 들어올 수 없어요' },
+  { value: 'account', hint: '로그아웃·계정 삭제 말고는 모두 막혀요' },
 ];
 const STATUS_TABS = [
   { key: 'pending', label: '처리 대기' },

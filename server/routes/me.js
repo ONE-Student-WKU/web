@@ -4,6 +4,8 @@ const { PREMED_DEPARTMENTS } = require('../services/regulationEngine/profileCave
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const sanctionService = require('../services/sanctionService');
+const signupBlockService = require('../services/signupBlockService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
@@ -30,7 +32,14 @@ router.get('/me', requireAuth, async (req, res, next) => {
       return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
     }
 
-    return res.status(200).json({ status: 200, code: 'ME_SUCCESS', message: null, data: serializeStudent(student) });
+    // 서비스 전체 이용 정지 중이면 화면이 다른 화면 대신 정지 안내를 띄운다(#457 — 사유는 관리자가 쓴 글 그대로).
+    const suspension = await sanctionService.getActiveAccountSuspension(student.id);
+    return res.status(200).json({
+      status: 200,
+      code: 'ME_SUCCESS',
+      message: null,
+      data: { ...serializeStudent(student), suspension: suspension ? { reason: suspension.reason, endsAt: suspension.ends_at } : null },
+    });
   } catch (err) {
     next(err);
   }
@@ -334,6 +343,10 @@ router.delete('/me', requireAuth, async (req, res, next) => {
     if (!student) {
       return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
     }
+
+    // 서비스 전체 이용 정지 중이면 지우기 전에 재가입 제한 기록(해시·사유·기간)을 남긴다(#457, 약관 6항).
+    const suspension = await sanctionService.getActiveAccountSuspension(student.id);
+    if (suspension) await signupBlockService.recordBlock(student, suspension);
 
     await studentService.deleteStudent(req.session.userId);
 

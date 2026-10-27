@@ -14,7 +14,8 @@ export function shortDate(dateStr) {
 export const CATEGORY_LABEL = { study: '스터디', project: '팀 활동·공모전' };
 
 // 제재 범위 — 학생에게 보이는 제재 안내와 같은 뜻으로, 무엇이 막히는지 바로 알게 쓴다.
-export const SANCTION_SCOPE_LABEL = { post_apply: '글쓰기·신청 금지', full: '커뮤니티 이용 정지' };
+// account(#457)는 약관 6항의 이름 그대로 — 언제 고르는지는 docs/moderation-policy.md.
+export const SANCTION_SCOPE_LABEL = { post_apply: '글쓰기·신청 금지', full: '커뮤니티 이용 정지', account: '서비스 전체 이용 정지' };
 
 // 지금 적용 중인지·해제됐는지·기간이 끝났는지(서버 sanction state 또는 목록 행으로 판단).
 export function sanctionState(s, now = Date.now()) {

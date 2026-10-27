@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminInquiries, resolveAdminInquiry } from '../../api/chatApi.js';
+import { getAdminInquiries, getReportedStudentSummary, resolveAdminInquiry } from '../../api/chatApi.js';
 import { refreshAdminPending } from '../../utils/adminPending.js';
+import StudentSanctionDialog from '../StudentSanctionDialog.jsx';
 import AdminTabs from './AdminTabs.jsx';
-import { formatDate } from './adminFormat.js';
+import { formatDate, SANCTION_SCOPE_LABEL } from './adminFormat.js';
 
 const NOTE_MAX_LENGTH = 500;
 const STATUS_TABS = [
@@ -13,6 +14,16 @@ const STATUS_TABS = [
 // 문의한 학생 — 닉네임 · 학과 · 학번(졸업요건·과목 문의에 답할 때 필요). 서버가 학과·학번을 안 주는 예전 응답이면 닉네임만.
 function askerOf(i) {
   return [i.student, i.department, i.admissionYear ? `${i.admissionYear}학번` : null].filter(Boolean).join(' · ');
+}
+
+// 문의한 학생의 제재 이력 한 줄 — 문의하기 욕설은 반복 여부로 조치를 올리므로(docs/moderation-policy.md) 답하기 전에 본다.
+// 문의 답변으로 보낸 경고는 제재가 아니라 여기 세지 않는다.
+function sanctionLine(summary) {
+  const active = summary.sanctions.filter((s) => s.state === 'active');
+  const now = active.length
+    ? `적용 중: ${active.map((s) => `${SANCTION_SCOPE_LABEL[s.scope] || s.scope}(~${s.endsAt ? formatDate(s.endsAt) : '영구'})`).join(', ')}`
+    : '지금 적용 중인 제재 없음';
+  return `제재 이력 ${summary.sanctions.length}건 · ${now}`;
 }
 
 /**
@@ -51,6 +62,23 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   }, [missing, onCloseDetail]);
   useEffect(() => setNote(''), [detailId]);
 
+  // 상세로 연 문의의 학생 제재 이력(#457). 제재를 걸면 summaryVersion을 올려 다시 불러온다.
+  const studentId = inquiry?.studentId ?? null;
+  const [summary, setSummary] = useState(null);
+  const [summaryVersion, setSummaryVersion] = useState(0);
+  const [sanctionOpen, setSanctionOpen] = useState(false);
+  useEffect(() => {
+    if (studentId == null) return undefined;
+    let cancelled = false;
+    setSummary(null);
+    getReportedStudentSummary(studentId)
+      .then((data) => !cancelled && setSummary(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, summaryVersion]);
+
   const handleResolve = async () => {
     setSubmitting(true);
     setError(null);
@@ -78,6 +106,14 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
           </div>
           <p className="admin-detail-title">{inquiry.title}</p>
           <p className="post-meta">{askerOf(inquiry)}</p>
+          {inquiry.studentId != null && (
+            <div className="admin-inquiry-sanction">
+              <span className="post-meta">{summary ? sanctionLine(summary) : '제재 이력 불러오는 중...'}</span>
+              <button type="button" className="post-btn post-btn--outline" onClick={() => setSanctionOpen(true)}>
+                학생 제재
+              </button>
+            </div>
+          )}
           <p className="admin-body admin-body--lead">{inquiry.content}</p>
           {error && <p className="home-error">{error}</p>}
           {open ? (
@@ -95,6 +131,19 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
             </>
           )}
         </div>
+        {sanctionOpen && (
+          <StudentSanctionDialog
+            studentId={inquiry.studentId}
+            nickname={inquiry.student}
+            title="학생 제재"
+            onClose={() => setSanctionOpen(false)}
+            onDone={() => {
+              setSanctionOpen(false);
+              setSummaryVersion((v) => v + 1);
+              showToast('제재를 적용했어요.');
+            }}
+          />
+        )}
         {open && (
           <div className="admin-dock">
             <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={handleResolve} disabled={submitting}>

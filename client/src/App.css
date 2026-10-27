@@ -626,6 +626,20 @@ body {
   text-align: center;
 }
 
+/* 이용 정지 화면(SuspendedGate.jsx) — 사유·기간은 글 상세의 정보 줄(.post-facts)을, 계정 삭제는 프로필의 설정 줄을 그대로 쓴다. */
+.suspended-facts {
+  margin: 0 0 14px;
+}
+
+.suspended-appeal {
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.auth-body .suspended-delete {
+  margin: 12px 0 0;
+}
+
 .auth-toggle-text {
   margin-top: 28px;
   text-align: center;
@@ -7072,6 +7086,19 @@ select.onb-select {
   margin-top: 14px;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
+}
+
+/* 문의 상세의 학생 제재 이력 한 줄 + [학생 제재] 버튼(#457) */
+.admin-inquiry-sanction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.admin-inquiry-sanction .post-btn {
+  flex-shrink: 0;
 }
 
 .admin-note-line {

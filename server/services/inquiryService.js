@@ -55,6 +55,8 @@ async function listInquiriesForAdmin(status) {
     resolvedAt: row.resolved_at,
     resolutionNote: row.resolution_note,
     student: nicknameOf(row.student_name, row.student_id),
+    // 문의 상세에서 그 학생의 제재 이력을 보고 바로 제재할 때 쓴다(#457 — 문의하기 욕설은 커뮤니티 밖 위반).
+    studentId: row.student_id,
     // 졸업요건·과목 문의에 답하려면 학과·학번이 필요하다(관리자 문의 상세). 이메일 같은 다른 계정 정보는 내려주지 않는다.
     department: row.department_name,
     admissionYear: row.admission_year,

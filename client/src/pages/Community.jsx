@@ -746,6 +746,9 @@ function Community({
         // 상세를 다시 불러와 마감 표시로 바꾸되, openPost가 error를 비우므로 안내는 그 뒤에 채운다.
         openPost(selectedPost.id);
         setError(t('community.err.recruitEnded'));
+      } else if (err.code === 'POST_UNAVAILABLE') {
+        // 글을 연 뒤에 글쓴이가 계정 정지됐다(#457) — 상세를 다시 불러오면 신청 칸 대신 안내가 뜬다.
+        openPost(selectedPost.id);
       } else setError(t('community.err.applyFailed'));
     } finally {
       setApplySubmitting(false);
@@ -849,7 +852,8 @@ function Community({
     const writeLimited = sanction?.scope === 'post_apply';
     const applicantPeople = applicants.filter((a) => !a.hasAppliedBefore).length;
     const uncheckedCount = applicants.filter((a) => a.status === 'pending').length;
-    const canApply = !post.isMine && post.myApplication === null && !closed && !writeLimited && !post.contentHidden;
+    // authorUnavailable: 글쓴이가 계정 정지 중(#457) — 이유·기간 없이 "지금은 신청할 수 없어요"만 보여준다.
+    const canApply = !post.isMine && post.myApplication === null && !closed && !writeLimited && !post.contentHidden && !post.authorUnavailable;
 
     // 자주 쓰지 않는 동작(신고·수정·마감·삭제)은 글쓴이 옆 "⋯" 메뉴에 모은다.
     const menuItems = post.isMine
@@ -1056,7 +1060,12 @@ function Community({
                 <h3>{t('community.myApplication')}</h3>
                 <StatusText tone={APP_STATUS_TONE[post.myApplication.status]}>{t(`community.appStatus.${post.myApplication.status}`)}</StatusText>
               </div>
-              {post.myApplication.status === 'pending' && <p className="post-section-desc">{t('community.pendingDesc')}</p>}
+              {post.myApplication.status === 'pending' &&
+                (post.authorUnavailable ? (
+                  <p className="post-note">{t('community.authorUnavailable')}</p>
+                ) : (
+                  <p className="post-section-desc">{t('community.pendingDesc')}</p>
+                ))}
               {post.myApplication.status === 'accepted' &&
                 (post.myApplication.contactBlockedAt ? (
                   <ContactBlockedNote blockedAt={post.myApplication.contactBlockedAt} formatDate={formatDate} />
@@ -1078,6 +1087,8 @@ function Community({
                   <p className="post-section-desc">{t('community.notSelectedDesc')}</p>
                   {writeLimited ? (
                     <p className="post-note">{t('community.reapplyRestricted', { reason: sanction.reason })}</p>
+                  ) : post.authorUnavailable ? (
+                    <p className="post-note">{t('community.applyUnavailable')}</p>
                   ) : (
                     <form className="post-reapply" onSubmit={handleApply}>
                       <textarea
@@ -1103,6 +1114,8 @@ function Community({
             <p className="post-note">{t('community.recruitEndedLine', { date: formatDeadline(post.recruitEndDate) })}</p>
           ) : writeLimited ? (
             <p className="post-note">{t('community.applyRestricted', { reason: sanction.reason })}</p>
+          ) : post.authorUnavailable ? (
+            <p className="post-note">{t('community.applyUnavailable')}</p>
           ) : null}
         </div>
 
@@ -1544,6 +1557,7 @@ function Community({
                     </span>
                     <span className="post-title">{a.postTitle}</span>
                     <span className="post-meta">{t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}</span>
+                    {a.status === 'pending' && a.authorUnavailable && <span className="post-contact-line">{t('community.authorUnavailable')}</span>}
                     {a.contactBlockedAt ? (
                       <span className="post-contact-line">{t('community.contact.blockedBadge')}</span>
                     ) : (

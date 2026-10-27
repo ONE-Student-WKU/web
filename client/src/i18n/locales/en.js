@@ -202,6 +202,7 @@ export default {
   'login.err.tooManyAttempts': 'Too many attempts. Please request a new verification code.',
   'login.err.request': 'The request failed. Please try again in a moment.',
   'login.err.sendFailed': 'We can’t send verification emails right now. Please use Google login above.',
+  'login.err.signupBlocked': 'This account was deleted while suspended, so you can’t sign up again until the suspension ends.',
 
   // Consent screen (right after login, for accounts without a consent record)
   'consent.title': 'Agree to continue',
@@ -211,6 +212,18 @@ export default {
   'consent.saving': 'Saving...',
   'consent.decline': 'Leave without agreeing',
   'consent.err': "Couldn't save your agreement. Please try again in a moment.",
+
+  'suspended.title': 'Your account is suspended',
+  'suspended.body': 'You can use the service again when the suspension ends.',
+  'suspended.bodyPermanent': "You can't use the service unless the team lifts the suspension.",
+  'suspended.reason': 'Reason',
+  'suspended.period': 'Period',
+  'suspended.until': 'Until {date}',
+  'suspended.permanent': 'Permanent',
+  'suspended.appeal': 'If you disagree, email us at <b>{email}</b>.',
+  'suspended.logout': 'Log out',
+  'suspended.deleteNotice':
+    'If you delete your account while suspended, you can’t sign up again with the same email or Google account until the suspension ends (1 year for a permanent suspension).',
 
   // Graduation check
   'grad.err.load': "Couldn't load your graduation requirements. Please refresh and try again.",
@@ -980,6 +993,8 @@ export default {
   'community.apply': 'Apply',
   'community.myApplication': 'My application',
   'community.pendingDesc': "The author hasn't reviewed it yet.",
+  'community.authorUnavailable': "The author can't review applications right now.",
+  'community.applyUnavailable': "You can't apply to this post right now.",
   'community.acceptedDesc': 'Accepted! Contact the author at the email below.',
   'community.contact.hint': 'This is a forwarding address, not a real email. Mail sent to it reaches the other person, and neither of you sees the other’s real email.',
   'community.contact.block': 'Block contact',
