@@ -190,7 +190,7 @@ export default {
   'grad.basis.unofficial': '비공식 참고용',
   'grad.basis.booklet': '{year}학년도 교육과정 책자 기준',
   'grad.basis.call': '졸업 판단은 학사지원과에서 최종 확인',
-  'grad.nearGraduation': '졸업이 가까워요. 이 결과만 믿지 말고, 마지막 학기를 시작하기 전에 학사지원과나 학과 사무실에서 졸업 요건을 한 번 확인받으세요.',
+  'grad.nearGraduation': '졸업이 가까워요. 이 결과만 믿지 말고, 학사지원과나 학과 사무실에서 졸업 요건을 한 번 확인받으세요. 마지막 학기 수강신청 전에 확인받으면 빠진 과목을 그 학기에 채울 수 있어요.',
   'grad.report.button': '결과가 이상해요',
   'grad.report.title': '졸업요건 진단 결과가 이상해요',
   'grad.report.body': '학과: {department}\n학번: {year}\n진단: 총 {earned} / {required}학점 (신뢰도: {confidence})\n\n이상한 부분:\n',

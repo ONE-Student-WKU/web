@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -482,5 +482,23 @@ describe('인쇄용 시트 헬퍼(#455)', () => {
       electives: { coveredAreaCount: 1, requiredAreaCount: 2, satisfied: false },
     });
     expect(s).toEqual({ met: 1, total: 2, short: [{ area: 'AI와디지털', n: 1 }], electives: { covered: 1, required: 2, satisfied: false } });
+  });
+});
+
+describe('isNearGraduation — 학기 기준(2026-10-27)', () => {
+  const at = (completed, required = 8) => ({ registrationTerms: { registered: completed + 1, completed, required } });
+  it('수업이 끝난 학기가 졸업 학기 수 − 1 이상이면 띄운다(4년제는 4학년 1학기를 마친 뒤부터, 초과학기 포함)', () => {
+    expect(isNearGraduation(at(6))).toBe(false);
+    expect(isNearGraduation(at(7))).toBe(true);
+    expect(isNearGraduation(at(9))).toBe(true);
+    // 수업연한이 다른 학과: 건축학과 10학기면 9학기를 마친 뒤부터
+    expect(isNearGraduation(at(8, 10))).toBe(false);
+    expect(isNearGraduation(at(9, 10))).toBe(true);
+  });
+
+  it('등록 학기를 모르면(예과 null, 예전 응답에 completed 없음) 띄우지 않는다 — 학점은 보지 않는다', () => {
+    expect(isNearGraduation({ totalRequiredCredits: 130, totalEarnedCredits: 125, registrationTerms: null })).toBe(false);
+    expect(isNearGraduation({ registrationTerms: { registered: 8, required: 8 } })).toBe(false);
+    expect(isNearGraduation(null)).toBe(false);
   });
 });

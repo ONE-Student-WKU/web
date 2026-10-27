@@ -250,13 +250,13 @@ export function allMetMessage(status, t) {
   return [headline, ...notes].join('\n');
 }
 
-// 졸업까지 이만큼 이하가 남으면 "졸업 예정 학기 전 학사지원과 예비 확인"을 강조한다 — 한 학기 수강 상한(대략 18~21학점) 안쪽.
-// 잘못된 정보로 졸업을 못 하는 학생은 이 구간에서 나온다(교육혁신과 통화 2026-10-26).
-export const NEAR_GRADUATION_CREDITS = 18;
-
+// 마지막 학기 바로 앞부터(수업이 끝난 학기가 졸업 학기 수 − 1 이상, 보통 4학년 1학기를 마친 뒤) "학사지원과 예비 확인"을 강조한다.
+// 잘못된 정보로 졸업을 못 하는 학생은 이 구간에서 나온다(교육혁신과 통화 2026-10-26). 처음에는 남은 학점(18학점 이하)으로 정했지만
+// 학점은 학생마다 편차가 커서 학기 기준으로 바꿨다(2026-10-27). 등록 학기를 따지지 않는 예과(registrationTerms null)에는 띄우지 않는다.
 export function isNearGraduation(status) {
-  if (!status || !(status.totalRequiredCredits > 0) || !(status.totalEarnedCredits > 0)) return false;
-  return status.totalRequiredCredits - status.totalEarnedCredits <= NEAR_GRADUATION_CREDITS;
+  const terms = status && status.registrationTerms;
+  if (!terms || !Number.isFinite(terms.completed) || !(terms.required > 0)) return false;
+  return terms.completed >= terms.required - 1;
 }
 
 // 졸업요건 진단 결과가 이상할 때 문의하기에 미리 채울 제목·내용. 학과·학번·진단 숫자를 같이 보내야 운영자가 재현할 수 있다.

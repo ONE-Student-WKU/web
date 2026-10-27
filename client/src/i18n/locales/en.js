@@ -220,7 +220,7 @@ export default {
   'grad.basis.unofficial': 'Unofficial, for reference',
   'grad.basis.booklet': 'Based on the {year} curriculum booklet',
   'grad.basis.call': 'Final graduation check: Academic Affairs Office (학사지원과)',
-  'grad.nearGraduation': 'You are close to graduating. Don’t rely on this result alone — before your final semester starts, have the Academic Affairs Office (학사지원과) or your department office check your graduation requirements.',
+  'grad.nearGraduation': 'You are close to graduating. Don’t rely on this result alone — have the Academic Affairs Office (학사지원과) or your department office check your graduation requirements. If you check before registering for your final semester, you can still take any missing courses that semester.',
   'grad.report.button': 'This result looks wrong',
   'grad.report.title': 'Graduation check result looks wrong',
   'grad.report.body': 'Department: {department}\nAdmission year: {year}\nResult: {earned} / {required} credits (confidence: {confidence})\n\nWhat looks wrong:\n',

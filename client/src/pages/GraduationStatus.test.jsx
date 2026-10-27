@@ -215,13 +215,18 @@ describe('GraduationStatus 안전장치(교육혁신과 통화 2026-10-26)', () 
     expect(line.querySelector('a')).toBeNull();
   });
 
-  it('졸업까지 18학점 이하가 남으면 학사지원과 확인을 권한다', async () => {
-    await renderWith(status({ totalEarnedCredits: 125 }));
+  it('4학년 1학기를 마쳤으면(수업이 끝난 학기 7/8) 학점과 상관없이 학사지원과 확인을 권한다', async () => {
+    await renderWith(status({ registrationTerms: { registered: 7, completed: 7, required: 8, earlyGraduation: 6, estimated: false } }));
     expect(screen.getByText(/졸업 요건을 한 번 확인받으세요/)).toBeInTheDocument();
   });
 
-  it('많이 남았으면 졸업 임박 안내가 없다', async () => {
-    await renderWith(status());
+  it('4학년 1학기 수업 중(수업이 끝난 학기 6/8)이거나 등록 학기를 모르면 졸업 임박 안내가 없다', async () => {
+    await renderWith(status({ registrationTerms: { registered: 7, completed: 6, required: 8, earlyGraduation: 6, estimated: false } }));
+    expect(screen.queryByText(/졸업 요건을 한 번 확인받으세요/)).toBeNull();
+  });
+
+  it('학점을 거의 다 채웠어도 학기가 남았으면 졸업 임박 안내가 없다(학점 기준은 2026-10-27에 뺐다)', async () => {
+    await renderWith(status({ totalEarnedCredits: 130, registrationTerms: { registered: 5, completed: 4, required: 8, earlyGraduation: 6, estimated: false } }));
     expect(screen.queryByText(/졸업 요건을 한 번 확인받으세요/)).toBeNull();
   });
 
@@ -303,7 +308,7 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
   });
 
   it('졸업이 가까우면 안내 안의 저장 버튼으로도 같은 시트를 저장할 수 있다', async () => {
-    getGraduationStatus.mockResolvedValue(status({ totalEarnedCredits: 125 }));
+    getGraduationStatus.mockResolvedValue(status({ registrationTerms: { registered: 7, completed: 7, required: 8, earlyGraduation: 6, estimated: false } }));
     render(<GraduationStatus user={printUser} {...props} />);
     const near = await screen.findByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' });
     expect(near.closest('.grad-near-graduation')).toHaveTextContent('졸업 요건을 한 번 확인받으세요');
@@ -312,7 +317,7 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     expect(window.print).toHaveBeenCalledTimes(1);
   });
 
-  it('많이 남았으면 안내 속 저장 버튼은 없고 아래 버튼만 있다', async () => {
+  it('졸업 학기가 멀면 안내 속 저장 버튼은 없고 아래 버튼만 있다', async () => {
     await renderWith(status());
     expect(screen.queryByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' })).toBeNull();
     expect(screen.getByRole('button', { name: 'PDF로 저장하기' })).toBeInTheDocument();
