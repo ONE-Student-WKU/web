@@ -76,7 +76,7 @@ function profileDetailLines(student) {
   }
   const secondType = secondMajorTypeOf(student);
   lines.push(secondType
-    ? `다전공: ${SECOND_MAJOR_LABEL[secondType]} ${student.second_department_name || '(학과 미상)'}`
+    ? `다전공: ${SECOND_MAJOR_LABEL[secondType]} ${student.second_linked_major ? `${student.second_linked_major}(연계·복합전공)` : student.second_department_name || '(학과 미상)'}`
     : '다전공: 하지 않음');
   const teaching = parseTeachingCourse(student.teaching_course);
   if (teaching !== null) lines.push(`교직과정: ${teaching ? '이수 중' : '이수 안 함'}`);
@@ -263,7 +263,13 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   // 실제 AI 확인(2026-10-16 로컬)에서 주전공 최소전공(위 "전공" 행)을 "자료에 없다"고 하거나, 근거 문서의 일반 재학생 전공 학점(전필+전선)을
   // 복수전공 기준과 섞어 말해서, 두 숫자를 이 줄에 직접 적는다.
   const primaryMajorRow = categories.find((c) => c.category === '전공');
-  const secondMajorLine = second
+  const secondMajorLine = second && second.kind === 'LINKED'
+    ? [
+      `다전공: 연계·복합전공 ${second.linkedMajor}을(를) ${secondLabel}으로 이수 — ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 값: 연계전공 과목 목록으로 센 학점 + 교양 ${second.liberalCredits}학점(9학점까지) + 주전공과 같은 이름의 과목 ${second.overlapCredits}학점(1/3까지 중복 인정)).`,
+      '  - 연계·복합전공은 3~6개 학과 과목으로 짠 전공이다. 복수전공이면 그 전공의 이수학점(36·48), 부전공이면 21학점이다. 한 학과 과목은 16학점까지만 인정되는데 이 계산은 그 기준을 확인하지 못했다. 복수전공이면 연계전공 졸업논문(Pass)도 필요하다 — 확정은 전공주임교수·학과 사무실 확인을 안내하라.',
+      second.type === 'DOUBLE' && primaryMajorRow ? `  - 복수전공처럼 주전공 전공 기준을 ${primaryMajorRow.requiredCredits}학점(최소전공 인정학점)으로 줄여 계산했다(지금 ${primaryMajorRow.earnedCredits}학점). 연계전공도 같은 기준인지는 학교 확인 전 가정이다.` : null,
+    ].filter(Boolean).join('\n')
+    : second
     ? [
       `다전공: ${secondLabel} ${second.department} — 제2전공 ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 ${secondLabel} 기준)${second.thesis ? `, 복수전공 졸업논문(졸업논문2) ${second.thesis.satisfied ? '통과' : '미통과'}` : ''}.`,
       second.type === 'DOUBLE'

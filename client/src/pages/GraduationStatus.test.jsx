@@ -385,3 +385,36 @@ describe('GraduationStatus 학사경고·유급 안내(#412)', () => {
     expect(screen.getByText(/2025년 2학기 교양 F\(글쓰기\)는 유급 사유는 아니지만/)).toBeInTheDocument();
   });
 });
+
+describe('GraduationStatus 연계·복합전공·마이크로디그리(#412)', () => {
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    getGraduationStatus.mockReset();
+  });
+
+  it('연계전공 다전공 카드는 전공 이름·교양/중복 인정 학점을, 마이크로디그리 카드는 과정마다 학점과 맞춘 과목을 보여 준다', async () => {
+    await renderWith(status({
+      secondMajor: {
+        type: 'MINOR', kind: 'LINKED', linkedMajor: '문화유산학전공', department: '문화유산학전공', required: 21, earned: 12, satisfied: false,
+        basis: 'LINKED_MINOR_21', thesis: null, liberalCredits: 3, overlapCredits: 0, courses: [{ id: 1, name: '문화유산의이해', credits: 3, auto: true }],
+      },
+      microDegrees: [
+        { name: 'K-치유힐링 케어복지과정', programGroup: 'K-치유힐링사업단', required: 12, earned: 6, satisfied: false, courses: [{ name: '케어복지론', credits: 3 }, { name: '돌봄실습', credits: 3 }], missing: false },
+        { name: '사라진과정', programGroup: null, required: 12, earned: 0, satisfied: false, courses: [], missing: true },
+      ],
+    }));
+    expect(screen.getByText('부전공 · 문화유산학전공')).toBeInTheDocument();
+    expect(screen.getByText(/연계·복합 부전공은 자기 전공 밖의 과목으로 21학점 이상이에요/)).toBeInTheDocument();
+    expect(screen.getByText(/연계전공으로 센 교양 3학점/)).toBeInTheDocument();
+    expect(screen.getByText('마이크로디그리')).toBeInTheDocument();
+    expect(screen.getByText('K-치유힐링 케어복지과정')).toBeInTheDocument();
+    expect(screen.getByText('케어복지론, 돌봄실습')).toBeInTheDocument();
+    expect(screen.getByText(/과정 정보를 찾지 못했어요/)).toBeInTheDocument();
+  });
+
+  it('고른 마이크로디그리가 없으면 카드를 그리지 않는다', async () => {
+    await renderWith(status({ microDegrees: [] }));
+    expect(screen.queryByText('마이크로디그리')).not.toBeInTheDocument();
+  });
+});

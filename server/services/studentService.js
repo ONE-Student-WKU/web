@@ -87,8 +87,12 @@ function serializeStudent(student) {
     majorTrackType: student.major_track_type || null,
     secondDepartment: student.second_department_name,
     secondDepartmentId: student.second_department_id,
-    // 다전공 구분(DOUBLE 복수전공·MINOR 부전공). 학과가 없으면 null(server/services/secondMajor.js).
+    // 다전공을 연계·복합전공으로 하면 그 전공 이름(이때 secondDepartmentId는 null, #412).
+    secondLinkedMajor: student.second_linked_major || null,
+    // 다전공 구분(DOUBLE 복수전공·MINOR 부전공). 제2전공이 없으면 null(server/services/secondMajor.js).
     secondMajorType: secondMajorTypeOf(student),
+    // 이수 중인 마이크로디그리 이름(findById가 채운다, #412).
+    microDegrees: student.micro_degrees || [],
     careerCounselingCount: student.career_counseling_count,
     leaveSemesters: student.leave_semesters,
     // 휴학 기간. null이면 아직 휴학 질문에 답하지 않았다는 뜻이고 []는 휴학 없음(server/services/leavePeriods.js).
@@ -120,7 +124,10 @@ async function findById(id) {
      WHERE s.id = ?`,
     [id]
   );
-  return rows[0] || null;
+  if (!rows[0]) return null;
+  // 이수 중인 마이크로디그리(#412) — 응답(serializeStudent)과 진단이 같이 쓴다.
+  const [micro] = await pool.query('SELECT micro_degree_name FROM student_micro_degrees WHERE student_id = ? ORDER BY id', [id]);
+  return { ...rows[0], micro_degrees: micro.map((r) => r.micro_degree_name) };
 }
 
 // Google OAuth 등 provider가 발급한 식별자로 계정을 찾는다. provider별로 스코프가 다른
@@ -326,6 +333,7 @@ async function updateProfile(studentId, updates) {
     majorTrackType: 'major_track_type',
     secondDepartmentId: 'second_department_id',
     secondMajorType: 'second_major_type',
+    secondLinkedMajor: 'second_linked_major',
     careerCounselingCount: 'career_counseling_count',
     leaveSemesters: 'leave_semesters',
     language: 'language',

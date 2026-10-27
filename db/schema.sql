@@ -26,6 +26,8 @@
 --     학번의 의미와 편입 학년을 모르는 상태 — 규정 판단 엔진이 3학년 편입으로 가정하고 "추정"으로 표시한다)
 --   - students.second_department_id / second_major_type (다전공 대상 학과와 구분 — DOUBLE 복수전공, MINOR 부전공.
 --     제2전공은 하나만 받는다(#378 결정 4-2 A). 구분이 NULL인 옛 행은 복수전공으로 본다(server/services/secondMajor.js))
+--   - students.second_linked_major (제2전공이 연계·복합전공이면 그 전공 이름 — 학과 칸 대신 쓴다, #412)
+--   - student_micro_degrees (학생이 이수 중인 마이크로디그리 이름 목록, #412)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
 --     원문엔 없고 교육과정 책자 각주에만 있는 요건 — 세션별 로그는 안 남기고 총 횟수만 카운트)
 --   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
@@ -112,6 +114,8 @@ CREATE TABLE IF NOT EXISTS students (
   major_track_type          VARCHAR(16) NULL,  -- 광역 계열전공 이수유형(시행규칙 제7조 제2항): DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED, NULL = 묻지 않음.
   second_department_id      INT,      -- 다전공(복수전공·부전공) 대상 학과. 안 하면 NULL. 제2전공은 하나만(복수전공+부전공 동시는 스코프 제외)
   second_major_type         VARCHAR(16) NULL,  -- 다전공 구분: DOUBLE(복수전공)·MINOR(부전공). NULL + 학과 있음 = 옛 행(복수전공으로 봄)
+  second_linked_major       VARCHAR(100) NULL, -- 다전공을 학과가 아니라 연계·복합전공으로 할 때 그 전공 이름(linked_majors.name). second_department_id와 둘 중 하나만.
+                                               -- id가 아니라 이름인 이유: 재시딩(seed:linked-majors)이 행을 지우고 다시 넣어 id가 바뀐다
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
@@ -528,6 +532,18 @@ CREATE TABLE IF NOT EXISTS micro_degree_courses (
   offering_department  VARCHAR(50),
 
   FOREIGN KEY (micro_degree_id) REFERENCES micro_degrees(id) ON DELETE CASCADE
+);
+
+-- 학생이 이수 중인 마이크로디그리(#412). 진단에서 고른 과정마다 이수 학점을 보여 준다(졸업학점에는 영향 없음).
+-- micro_degrees.id가 아니라 이름으로 잇는다 — 재시딩(seed:linked-majors)이 행을 지우고 다시 넣어 id가 바뀐다(students.second_linked_major와 같은 이유).
+CREATE TABLE IF NOT EXISTS student_micro_degrees (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  student_id         INT NOT NULL,
+  micro_degree_name  VARCHAR(100) NOT NULL,
+  created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_student_micro_degree (student_id, micro_degree_name),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------

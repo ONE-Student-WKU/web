@@ -250,8 +250,9 @@ describe('온보딩 / 학과 선택', () => {
     expect(screen.getByText('경영학부')).toBeInTheDocument();
     expect(screen.getByText('2021 cohort')).toBeInTheDocument();
     expect(screen.getByText('Regular student')).toBeInTheDocument();
-    expect(screen.getByText('Leave of absence')).toBeInTheDocument();
-    expect(screen.getByText('None')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Leave of absence.*None/ })).toBeInTheDocument();
+    // 다전공·마이크로디그리 줄도 영어다(#412).
+    expect(screen.getByRole('button', { name: /Micro-degrees.*None/ })).toBeInTheDocument();
   });
 
   it('학번 단계가 영어로 그려지고 이후 학과 안내도 영어다', async () => {

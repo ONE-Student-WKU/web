@@ -165,6 +165,18 @@ async function ensureStudentSecondMajorTypeColumn(connection) {
   }
 }
 
+// 다전공을 연계·복합전공으로 하는 학생의 전공 이름 guard(#412). 학과 칸(second_department_id)과 둘 중 하나만 쓴다.
+async function ensureStudentSecondLinkedMajorColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'second_linked_major'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.second_linked_major 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN second_linked_major VARCHAR(100) NULL AFTER second_major_type');
+  }
+}
+
 // 다전공 학생이 과목을 어느 전공으로 셀지 직접 고른 값 guard(#378 G-2, 결정 4-3). NULL = 자동(개설 학과·편성표로 정한다,
 // server/services/secondMajorCredits.js). PRIMARY·SECOND는 학생이 예외로 고친 값이다.
 async function ensureStudentCourseCountedMajorColumn(connection) {
@@ -590,6 +602,7 @@ async function migrate() {
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentSecondMajorTypeColumn(connection);
+    await ensureStudentSecondLinkedMajorColumn(connection);
     await ensureStudentMajorChangeRecognitionColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentCourseCountedMajorColumn(connection);

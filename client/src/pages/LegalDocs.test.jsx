@@ -57,8 +57,10 @@ describe('개인정보처리방침', () => {
   });
 
   it('개인정보 보호책임자와 시행일이 있다', () => {
-    render(<PrivacyPolicy onGoBack={() => {}} />);
-    expect(screen.getByText(/시행일: 2026년 10월 26일/)).toBeInTheDocument();
+    const { container } = render(<PrivacyPolicy onGoBack={() => {}} />);
+    expect(screen.getByText(/시행일: 2026년 10월 27일/)).toBeInTheDocument();
+    // 2026-10-27: 수집 항목에 연계·복합전공과 이수 중인 마이크로디그리를 넣었다(#412).
+    expect(container.textContent).toContain('다전공(복수전공·부전공) 학과 또는 연계·복합전공과 그 구분, 이수 중인 마이크로디그리');
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);
   });
 });

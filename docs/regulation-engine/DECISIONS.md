@@ -948,3 +948,21 @@
 - **결과**: 6곳 2026학번 중 전공심화형을 고른 학생(의생명공학계열 제외)의 졸업 기준이 "추정"에서 "확정"이 된다. 이수유형을 고르지 않았거나 복수전공형·전공융합형이면 유형 안내(`MAJOR_TRACK_*`) 때문에 지금처럼 "추정"이다.
 - **단점·다시 볼 조건**: 학교가 책자의 자유선택(21·33)을 다른 뜻으로 쓴 것이라면(예: 계열마다 다른 교양 학점) 시드와 엔진 계산을 다시 본다. 2027 책자가 나오면 같은 대조를 다시 한다.
 - **위치**: `server/services/regulationEngine/dataQuality.js`(`PENDING_HOLDS` 주석), `docs/regulation-engine/DATA_AUDIT.md` §2-3 갱신, `EVAL_SET.md`·`server/test-helpers/regulationEvalSet.js` E17, 테스트 `server/test/regulationEngine.resolve.test.js`.
+
+## D-86 연계·복합전공을 제2전공 선택지로, 사업단 마이크로디그리를 따로 받는다 (2026-10-27)
+- **상황**: 다전공은 복수전공·부전공 "학과"만 받아(4-1 A) 연계·복합전공·마이크로디그리 학생은 진단에 아무것도 반영되지 않았다. 연계전공 26개·사업단 마이크로디그리 35개 자료는 DB에 있었다(#412).
+- **근거**: 2026 교육과정 책자 Ⅴ·Ⅵ장(`db/regulations/전공선택/2026_연계복합전공_이수안내.md`·`2026_마이크로디그리_이수안내.md`), 시행규칙 제8조 ①(복수전공 이수학생 최소전공).
+- **결정**:
+  - 제2전공은 계속 한 칸이다(4-2 A). 학과(`second_department_id`)나 연계·복합전공(`students.second_linked_major`) 중 하나와 구분(복수·부전공)을 받는다.
+  - 연계전공 학점: 복수전공이면 그 전공 이수학점(36·48), 부전공이면 21. 과목은 그 전공의 과목 목록과 과목명으로 맞추고(개설 학과로는 정하지 않음), 주전공 편성표에도 있는 과목은 주전공에 두되 연계전공 이수학점의 1/3까지 함께 인정한다. 교양은 학생이 과목 관리에서 옮긴 것만 9학점까지 센다.
+  - 연계전공 복수전공이면 주전공도 복수전공처럼 최소전공으로 줄인다(제8조 ① 가정). 한 학과 16학점 상한·연계전공 졸업논문은 판정하지 않고 안내만 한다(`LINKED_MAJOR_RULES_ESTIMATED`·`LINKED_MAJOR_THESIS`).
+  - 마이크로디그리는 여러 개 받고(`student_micro_degrees`), 과정마다 이수 학점만 보여 준다. 2026 책자대로 모두 12학점(시드에 남은 2025 과정별 학점은 쓰지 않음). 졸업 판정에는 넣지 않는다.
+  - 자율융합학부(68학점)는 연계전공이 아니라 학부라 목록에서 뺀다.
+  - 고른 값은 id가 아니라 이름으로 저장한다 — 재시딩(`seed:linked-majors`)이 행을 지우고 다시 넣어 id가 바뀐다.
+  - 수집 항목이 늘어 개인정보처리방침을 고치고 동의 버전을 2026-10-27로 올린다.
+- **결과**: 연계전공 학생은 진단의 다전공 카드에 연계전공 학점이, 마이크로디그리 학생은 과정별 학점이 보인다. 다전공 진단은 계속 "추정"이다.
+- **단점·다시 볼 조건**:
+  - "최소전공인정학점의 1/3"이 어느 쪽 최소전공인지 확정하지 못해 연계전공 이수학점으로 계산했다. 학교 답이 다르면 `graduationService.linkedMajorStatus`를 고친다.
+  - 과목명이 다른 같은 과목(개편·동일과목)은 맞추지 못한다.
+  - 학과·전공별 마이크로디그리(광역계열)와 전공융합형의 "타전공 MD 2개" 판정은 3단계(데이터화, 재시딩 필요)로 남는다.
+- **위치**: `server/services/linkedMajors.js`(신규), `secondMajor.js`, `secondMajorCredits.js`(`loadAssignmentContext`), `courseCounting.js`, `graduationService.js`(`linkedMajorStatus`), `routes/me.js`·`routes/onboarding.js`, `regulationEngine/flags.js`, `db/schema.sql`·`db/migrate.js`, 클라이언트 `Onboarding.jsx`·`GraduationStatus.jsx`·`components/MicroDegreeCard.jsx`·`PrivacyPolicy.jsx`, 테스트 `server/test/linkedMajor.test.js`.
