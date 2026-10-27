@@ -770,16 +770,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
   // 다전공 학생의 과목별 전공 표시 — 제2전공 학과 이름과 구분은 졸업요건 진단 응답(status.secondMajor)에서 가져온다.
   // 전과생은 전과 전 전공 과목을 "전공으로 인정 / 일반선택"으로 고친다(D-77). 다전공이면 "주전공 / 제2전공"(D-76).
+  // 다른 학과에서 연 전공 과목은 자동으로 일반선택이고, 학생이 "전공으로 셈"으로 되돌릴 수 있다(D-88).
   const hasSecondMajor = Boolean(status?.secondMajor);
   const isMajorChange = user?.enrollmentType === 'MAJOR_CHANGE';
   const countedMajorLabel = (major) => {
     if (major === 'SECOND') return tr(`courses.countedMajor.SECOND.${status?.secondMajor?.type || 'DOUBLE'}`, { department: status?.secondMajor?.department || '' });
     if (major === 'GENERAL') return tr('courses.countedMajor.GENERAL');
-    return tr(isMajorChange && !hasSecondMajor ? 'courses.countedMajor.PRIMARY.majorChange' : 'courses.countedMajor.PRIMARY');
+    if (hasSecondMajor) return tr('courses.countedMajor.PRIMARY');
+    return tr(isMajorChange ? 'courses.countedMajor.PRIMARY.majorChange' : 'courses.countedMajor.PRIMARY.otherDepartment');
   };
   const showCountedMajor = (c) =>
     Boolean(c.countedMajor) &&
-    ((hasSecondMajor && COUNTED_MAJOR_CATEGORIES.has(c.category)) || (isMajorChange && MAJOR_CATEGORIES.has(c.category)) || c.countedMajor !== 'PRIMARY');
+    ((hasSecondMajor && COUNTED_MAJOR_CATEGORIES.has(c.category)) || (isMajorChange && MAJOR_CATEGORIES.has(c.category)) || c.countedMajor !== 'PRIMARY' || c.countedMajorAuto === false);
 
   // 카탈로그 검색 화면의 본문 — 검색 전에는 안내, 결과가 없으면 그 사실을, 있으면 전체 높이로 목록을 보여준다.
   const renderCatalogResults = () => {
@@ -1027,7 +1029,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <p className="courses-list-item-meta">
                   {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
                 </p>
-                {/* 다전공 학생만(서버가 countedMajor를 붙인 경우) — 전공·일반선택 과목, 또는 이미 제2전공으로 센 과목 */}
+                {/* 서버가 countedMajor를 붙인 경우(전과·다전공·다른 학과 전공 과목) — 전공·일반선택 과목, 자동으로 바뀐 과목, 학생이 고친 과목 */}
                 {showCountedMajor(c) && (
                   <select
                     className="courses-major-select"
@@ -1035,7 +1037,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     value={c.countedMajorAuto ? 'AUTO' : c.countedMajor}
                     onChange={(e) => handleCountedMajorChange(c.id, e.target.value)}
                   >
-                    <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajor) })}</option>
+                    <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajorAutoValue ?? c.countedMajor) })}</option>
                     <option value="PRIMARY">{countedMajorLabel('PRIMARY')}</option>
                     {isMajorChange && <option value="GENERAL">{countedMajorLabel('GENERAL')}</option>}
                     {hasSecondMajor && <option value="SECOND">{countedMajorLabel('SECOND')}</option>}

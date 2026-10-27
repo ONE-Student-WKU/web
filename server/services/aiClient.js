@@ -285,6 +285,11 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   const priorLine = prior && (prior.demoted.length || prior.recognized.length)
     ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 바꿀 수 있다고 알려라(웹정보서비스 메뉴가 아니다).`
     : null;
+  // 다른 학과 전공 과목(D-88) — 개설 학과가 학생 학과가 아니고 학과 편성표에도 없는 전공 과목은 일반선택으로 셌다.
+  const otherDepartment = graduationStatus.otherDepartmentCourses;
+  const otherDepartmentLine = otherDepartment
+    ? `다른 학과 전공 과목(학칙시행규칙 제3조 제4항 제1호): 다른 학과에서 연 전공 과목 ${otherDepartment.credits}학점(${otherDepartment.courses.map((c) => c.name).join(', ')})은 일반선택으로 셌다(위 카테고리에 반영됨). 학생이 학과를 바꿨거나 학교가 전공으로 인정했다면 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 "전공으로 셈"으로 바꿀 수 있다고 안내하라(웹정보서비스 메뉴가 아니다).`
+    : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
   const registrationLine = terms
@@ -338,6 +343,7 @@ ${majorAreaLine || ''}
 ${liberalAreaLine || ''}
 ${secondMajorLine || ''}
 ${priorLine || ''}
+${otherDepartmentLine || ''}
 ${registrationLine || ''}
 
 주의:

@@ -106,9 +106,14 @@ router.get('/', async (req, res, next) => {
     const { year, semester } = req.query;
     const rows = await courseService.listMyCourses(req.session.userId, { year, semester });
     const student = await studentService.findById(req.session.userId);
-    // 전과생(전과 전 과목)이나 다전공 학생이면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
+    // 전과생(전과 전 과목)·다전공 학생이나 다른 학과 전공 과목이 있으면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
     const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
-    const data = rows.map(({ countedMajorChoice, ...r }) => (counting ? { ...r, countedMajor: counting.byId.get(r.id).counted, countedMajorAuto: counting.byId.get(r.id).auto } : r));
+    // 학생이 고친 과목은 자동으로 정했을 값(countedMajorAutoValue)도 붙인다. 다른 학과 전공 과목은 일반선택으로 센다(D-88).
+    const data = rows.map(({ countedMajorChoice, ...r }) => {
+      if (!counting) return r;
+      const c = counting.byId.get(r.id);
+      return { ...r, countedMajor: c.counted, countedMajorAuto: c.auto, ...(c.auto ? {} : { countedMajorAutoValue: c.autoCounted }) };
+    });
     res.status(200).json({ status: 200, code: 'MY_COURSES_SUCCESS', message: null, data });
   } catch (err) {
     next(err);

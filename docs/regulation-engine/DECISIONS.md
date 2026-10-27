@@ -978,3 +978,17 @@
 - **결과**: 계열 학생이 자기 전공·타전공 MD를 골라 과정별 학점을 볼 수 있다. 전공융합형 진단은 계속 "추정"이다. main 반영 때 재시딩 승인이 필요하다(`db/seed/micro_degrees.json`, `db/regulations/**`).
 - **단점·다시 볼 조건**: "임상병리학과 - 바이오빅데이터(유전체) 분석"은 표의 학점 합이 11이라 12를 채울 수 없다 — 책자 PDF와 대조한다. 학교가 "표의 과목을 모두 들어야 한다"고 답하면 과정별 요건을 표의 합으로 바꾼다. 2027 책자가 나오면 스크립트를 다시 돌린다.
 - **위치**: `scripts/audit/buildDepartmentMicroDegrees.js`, `db/seed/micro_degrees.json`, `server/services/linkedMajors.js`(`convergenceProgress`), `graduationService.js`, `regulationEngine/flags.js`(`MAJOR_TRACK_CONVERGENCE` 문구), 클라이언트 `components/MicroDegreeCard.jsx`·`Onboarding.jsx`, `docs/school-inquiry/다음문의_후보.md` M절.
+
+## D-88 다른 학과에서 연 전공 과목은 진단할 때 일반선택으로 센다 (2026-10-27)
+- **상황**: 개설과목에서 과목을 고르면 그 과목을 연 학과 기준의 구분(전공선택 등)이 저장되고(`courseService.addMyCourse`), 진단은 저장값을 그대로 더했다. 다시 판정하는 경우는 전과생(D-77)과 다전공(D-76)뿐이라, 전과·다전공이 아닌 학생이 프로필에서 학과를 바로잡으면 옛 학과 전공 과목이 새 학과 전공 학점으로 남았다. 다른 학과 전공 과목을 개설과목에서 고른 학생도 같았다(#253 설계안 2, #412).
+- **근거**: 학칙시행규칙 제3조 제4항 제1호(타 학과 전공 교과목을 이수하면 일반선택).
+- **결정**:
+  - 판정 순서(`courseCounting.js`) 맨 뒤에 한 단계를 둔다: 학생이 고친 값 → 전과 전 과목 → 다전공 배정 → **다른 학과 전공 과목**. 저장값은 바꾸지 않고 진단할 때마다 지금 소속과 대조한다 — 학과를 다시 고쳐도 결과가 그때그때 맞다.
+  - 일반선택으로 바꾸는 과목: 전공필수·전공선택·전공이고, 개설과목에서 골라 개설 학과를 알고, 개설 학과가 내 학과(통폐합 전후 `getDepartmentChain`, 예과↔본과)가 아니고, 내 학과 편성표에도 그 과목명이 없는 과목.
+  - 성적표(PDF)·직접 입력 과목은 개설 학과를 몰라 그대로 둔다(성적표는 학교가 찍은 구분, 직접 입력은 학생이 고른 구분).
+  - 모든 학생에게 적용한다. 학생은 과목 관리에서 "전공으로 셈"으로 바꾸고 "자동"으로 되돌릴 수 있다(`counted_major` PRIMARY). 고친 과목은 자동 값(`countedMajorAutoValue`)도 함께 내려 "자동: …" 칸이 자동 값을 보인다.
+  - 진단 화면에 "다른 학과에서 연 전공 과목 n학점은 일반선택으로 셌어요" 한 줄(`otherDepartmentCourses`)과 INFO 플래그 `OTHER_DEPARTMENT_MAJOR_COURSES`를 두고, 챗봇 맥락에도 같은 내용을 넣는다. 제13조④ 보정에서는 이 과목을 뺀다(전과 전 과목과 같은 처리).
+  - 광역 계열 안의 다른 전공 과목은 학과가 같아 건드리지 않는다.
+- **결과**: 프로필에서 학과를 바꾸면 진단이 바로 바뀐 학과 기준으로 달라진다. 다른 학과 전공 과목을 고른 학생은 전공 학점이 줄 수 있다(규정상 맞는 방향, "전공으로 셈"으로 되돌릴 수 있음). DB 구조·약관·재시딩은 바뀌지 않는다.
+- **단점·다시 볼 조건**: 성적표·직접 입력 과목은 이름만 있어 다시 판정하지 못한다 — #412 "(선택) 학수번호·개설 학과 저장"이 들어가면 그 과목도 이 단계에 넣는다. 계열 안 다른 전공 과목을 어떻게 세는지 학교 기준이 나오면 학과 단위가 아니라 전공 단위로 좁힌다.
+- **위치**: `server/services/courseCounting.js`(`isOtherDepartmentMajorCourse`, `loadOwnDepartmentContext`), `graduationService.js`(`summarizeOtherDepartmentCourses`), `routes/myCourses.js`, `aiClient.js`, `regulationEngine/flags.js`, 클라이언트 `CourseManagement.jsx`·`GraduationStatus.jsx`, 테스트 `server/test/otherDepartmentCourses.test.js`·`client/src/pages/CourseManagement.countedMajor.test.jsx`.
