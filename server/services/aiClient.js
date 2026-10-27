@@ -424,6 +424,8 @@ const PROGRESS_FLAG_NOTE = {
   // 다음 수강 학기 중 하나라도 수업연한을 넘기면 붙는다. 주어 없이 "초과학기다"라고만 쓰면 모델이 "지금 초과학기"로 읽어서
   // 4학년 2학기 학생에게 "현재 초과학기 재학 중"이라고 답했다(2026-10-15 운영 점검, #378). 그래서 무엇이 초과학기인지 못박는다.
   EXTENDED_TERM: '위 "다음에 수강신청할 학기" 중 수업연한(학과의 정규 학기 수)을 넘긴 학기가 있다(그 학기는 초과학기). 지금 학기가 초과학기라는 뜻이 아니다 — 지금 학년·학기는 위 "지금 학년·학기" 값이다. 학생이 학기·졸업 시기를 묻지 않으면 초과학기 이야기는 꺼내지 마라',
+  // 예과는 2년이라 3학년부터는 본과 학과다(studentProgress.markMedicalSchoolTerms). "예과 3학년"이라고 말하거나 예과 교육과정에서 3학년 과목을 찾지 않게 한다.
+  PREMED_TO_MEDICAL_SCHOOL: '위 "다음에 수강신청할 학기" 중 본과로 넘어간 학기가 있다(예과는 2년). 그 학기는 "예과 3학년"이 아니라 괄호 안 본과 학과·학년이다 — 그 학기 과목은 예과(학생 소속 학과) 교육과정이 아니라 근거에 있는 본과 학과의 교육과정·개설 과목에서 골라라. 본과 진급은 예과 과정을 마치고 진급 기준을 충족해야 한다는 점을 한 번 밝혀라',
 };
 
 // studentProgress.getStudentProgress() 결과를 시스템 프롬프트에 심는다. "현재 N학년"이라는 한 줄만 주면 모델이 학기를 즉흥으로
@@ -431,7 +433,7 @@ const PROGRESS_FLAG_NOTE = {
 function buildProgressNote(progress) {
   if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
 
-  const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.medicalSchool ? ` = 본과 ${t.medicalSchool.departmentName} ${t.medicalSchool.grade}학년` : ''}${t.extended ? ' 초과학기' : ''})`;
   const periodText = (periods) => (periods.length === 0
     ? '휴학한 적 없음'
     : periods.map(describeLeavePeriod).join(', '));

@@ -247,6 +247,26 @@ function completedCourseNames(rows, supersededIds = new Set()) {
   return names;
 }
 
+// 예과(2년)를 마치면 본과 학과로 진급한다(학년은 입학부터 이어서 센다 — 본과 1학년 = 3학년). 예과 학생의 다음 수강 학기가
+// 3학년 이상이면 "의예과 3학년"이 아니라 "의학과 1학년"이라, 다음 학기 과목은 본과 학과 교육과정에서 골라야 한다. 예전에는 "3학년"만
+// 넘겨 챗봇이 예과 교육과정에서 3학년 과목을 찾았다(#461에서 남긴 것, #412).
+const MEDICAL_SCHOOL_OF = Object.freeze({ 의예과: '의학과', 치의예과: '치의학과', 한의예과: '한의학과' });
+const PREMED_YEARS = 2;
+
+/** 예과 학생의 다음 수강 학기 중 본과로 넘어간 학기에 본과 학과·본과 학년을 붙이고 PREMED_TO_MEDICAL_SCHOOL 표시를 단다. */
+function markMedicalSchoolTerms(progress, departmentName) {
+  const medicalSchool = MEDICAL_SCHOOL_OF[departmentName];
+  if (!progress || !medicalSchool) return progress;
+  let crossed = false;
+  const upcomingTerms = progress.upcomingTerms.map((t) => {
+    if (t.grade <= PREMED_YEARS) return t;
+    crossed = true;
+    return { ...t, medicalSchool: { departmentName: medicalSchool, grade: t.grade - PREMED_YEARS } };
+  });
+  if (!crossed) return progress;
+  return { ...progress, upcomingTerms, flags: [...progress.flags, 'PREMED_TO_MEDICAL_SCHOOL'] };
+}
+
 async function getStudentProgress(studentId, student, { today = todayKst() } = {}) {
   if (!student || !student.admission_year) return null;
 
@@ -267,7 +287,7 @@ async function getStudentProgress(studentId, student, { today = todayKst() } = {
   if (!progress) return null;
 
   const supersededIds = await getSupersededCourseIds(studentId);
-  return { ...progress, completedCourseNames: completedCourseNames(rows, supersededIds) };
+  return { ...markMedicalSchoolTerms(progress, student.department_name), completedCourseNames: completedCourseNames(rows, supersededIds) };
 }
 
-module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel, currentStandingOf, registrationTermsOf, programYearsOf, PROGRAM_YEARS };
+module.exports = { computeProgress, completedCourseNames, getStudentProgress, termLabel, currentStandingOf, registrationTermsOf, programYearsOf, markMedicalSchoolTerms, PROGRAM_YEARS, MEDICAL_SCHOOL_OF };

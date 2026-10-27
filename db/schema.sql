@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS student_courses (
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
   major_area        ENUM('기초', '심화', '응용') NULL,  -- 광역 계열전공 과목의 원래 이수구분(시행규칙 제7조 제3항). NULL = 모름(편성표 과목명으로 찾는다)
-  counted_major     VARCHAR(16) NULL,  -- 다전공 학생이 이 과목을 어느 전공으로 셀지 고친 값(PRIMARY·SECOND). NULL = 자동(services/secondMajorCredits.js)
+  counted_major     VARCHAR(16) NULL,  -- 다전공·전과 학생이 이 과목을 어디로 셀지 고친 값(PRIMARY 주전공 · SECOND 제2전공 · GENERAL 일반선택, 전과생). NULL = 자동(services/courseCounting.js, secondMajorCredits.js)
   year              INT NOT NULL,
   semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
                                         -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —

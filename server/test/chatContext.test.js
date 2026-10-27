@@ -204,3 +204,37 @@ test('mergeChunks: 직전 turn의 다른 해 책자 청크는 이번 질문의 �
   });
   assert.deepEqual(merged.filter((c) => typeof c.chunkId === 'number').map((c) => c.chunkId), [2, 3]);
 });
+
+test('예과 학생이 앞으로 들을 과목을 묻고 다음 학기가 본과로 넘어가면 본과 학과로도 과목·개설을 조회한다(#412)', async () => {
+  assert.ok(D['의예과'] && D['의학과'], '의예과·의학과 시드 필요');
+  const calls = [];
+  const original = { lookupFromMessage: curriculumService.lookupFromMessage, lookupOfferingChunks: curriculumService.lookupOfferingChunks };
+  curriculumService.lookupFromMessage = async (message, student) => {
+    calls.push(['curriculum', student.department_name || student.department_id]);
+    return [];
+  };
+  curriculumService.lookupOfferingChunks = async (message, student) => {
+    calls.push(['offering', student.department_name || student.department_id]);
+    return { offering: [], remaining: [] };
+  };
+  try {
+    const student = { department_id: D['의예과'], department_name: '의예과', admission_year: 2025, track_id: null };
+    const progress = {
+      completedCourseNames: [],
+      upcomingTerms: [{ year: 2027, semester: 1, grade: 3, enrolledTermNumber: 5, medicalSchool: { departmentName: '의학과', grade: 1 } }],
+    };
+    const message = '다음 학기에 뭐 들어야 해?';
+    const planning = resolveYearContext({ message, profileCohort: 2025, availableBookYears: BOOKS, questionIntent: 'NEXT_TERM_PLANNING' });
+    await assembleStructuredChunks({ message, student, previousUserMessage: null, yearContext: planning, regulationJudgment: null, progress });
+    assert.ok(calls.some(([kind, dept]) => kind === 'curriculum' && dept === '의학과'));
+    assert.ok(calls.some(([kind, dept]) => kind === 'offering' && dept === '의학과'));
+
+    // 앞으로 들을 과목 질문이 아니면 본과 조회를 하지 않는다.
+    calls.length = 0;
+    const other = resolveYearContext({ message: '졸업요건 알려줘', profileCohort: 2025, availableBookYears: BOOKS });
+    await assembleStructuredChunks({ message: '졸업요건 알려줘', student, previousUserMessage: null, yearContext: other, regulationJudgment: null, progress });
+    assert.ok(!calls.some(([, dept]) => dept === '의학과'));
+  } finally {
+    Object.assign(curriculumService, original);
+  }
+});
