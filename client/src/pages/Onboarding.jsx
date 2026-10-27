@@ -865,14 +865,17 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
-        {summaryLoading && <p className="post-empty">{t('onb.loading')}</p>}
-
-        {current === 'summary' && !summaryLoading && (
+        {current === 'summary' && (
           <>
+            {/* 제목·안내는 고정 문구라 바로 보여 주고, 목록 자리만 기다린다 — 화면 전체를 "불러오는 중..."으로 두면 제목까지 늦게
+                나타나 덜 자연스러웠다(2026-10-27 피드백). */}
             <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
             <p className="onb-q-sub">
               {editMode ? t('onb.summary.editHint') : t('onb.summary.backHint')}
             </p>
+            {summaryLoading ? (
+              <p className="post-empty">{t('onb.loading')}</p>
+            ) : (
             <div className="onb-summary-list">
               <SummaryRow
                 label={t('onb.summary.department')}
@@ -988,6 +991,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 />
               </div>
             </div>
+            )}
           </>
         )}
 
