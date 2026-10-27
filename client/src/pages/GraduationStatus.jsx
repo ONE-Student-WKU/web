@@ -7,6 +7,7 @@ import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getP
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import AcademicWarningCard from '../components/AcademicWarningCard.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
@@ -158,6 +159,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
             </button>
           </section>
         )}
+
+        {/* 학사경고·유급은 졸업요건 자료가 없는 학과·학번에도 성적만으로 안내할 수 있어 자료 유무와 상관없이 둔다(대상 학기가 있을 때만 보인다). */}
+        {status && <AcademicWarningCard warnings={status.academicWarnings} />}
 
         {status && !trust.noData && (
           <>
