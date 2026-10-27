@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -431,5 +431,56 @@ describe('allMetMessage — 최종 확인 안내(교육혁신과 통화 2026-10-
     const estimated = allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t);
     expect(estimated).not.toContain('최종 판단');
     expect(estimated).toContain('학사지원과에 확인해 주세요');
+  });
+});
+
+describe('인쇄용 시트 헬퍼(#455)', () => {
+  it('printTrustLevel: 확정→높음, 추정→중간, 자료 불충분·없음→낮음, regulation 없으면 null', () => {
+    expect(printTrustLevel({ regulation: { confidence: 'CONFIRMED' } })).toBe('HIGH');
+    expect(printTrustLevel({ regulation: { confidence: 'ESTIMATED' } })).toBe('MEDIUM');
+    expect(printTrustLevel({ regulation: { confidence: 'INSUFFICIENT' } })).toBe('LOW');
+    expect(printTrustLevel({ regulation: { confidence: 'NO_DATA' } })).toBe('LOW');
+    expect(printTrustLevel({})).toBeNull();
+  });
+
+  it('buildPrintRows: 전공필수+전공선택을 "전공" 한 줄로 합치고 내역을 붙이며, 기본전공 하한 부족분을 남은 학점에 반영한다', () => {
+    const rows = buildPrintRows({
+      categories: [
+        { category: '교양필수', earnedCredits: 9, requiredCredits: 9, areas: [{ area: '건학이념', satisfied: false, missing: ['종교와원불교'] }] },
+        { category: '교양선택', earnedCredits: 20, requiredCredits: 23 },
+        { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+        { category: '전공선택', earnedCredits: 70, requiredCredits: 56 },
+        { category: '일반선택', earnedCredits: 0, requiredCredits: 0 },
+      ],
+    });
+    expect(rows.map((r) => r.category)).toEqual(['교양필수', '교양선택', '전공']);
+    const major = rows.find((r) => r.category === '전공');
+    expect(major).toMatchObject({ earned: 79, required: 75, remaining: 10 });
+    expect(major.parts.map((p) => p.category)).toEqual(['전공필수', '전공선택']);
+    // 교양필수는 학점을 채워도 영역 과목이 빠지면 미충족으로 남는다.
+    const liberal = rows.find((r) => r.category === '교양필수');
+    expect(liberal.remaining).toBe(0);
+    expect(liberal.missingAreas).toHaveLength(1);
+    expect(rows.find((r) => r.category === '교양선택').remaining).toBe(3);
+  });
+
+  it('buildPrintRows: 광역 계열전공은 기초·심화·응용 내역을 붙이고 구분별 부족분을 남은 학점에 반영한다', () => {
+    const rows = buildPrintRows({
+      categories: [
+        { category: '전공필수', earnedCredits: 0, requiredCredits: 19 },
+        { category: '전공선택', earnedCredits: 60, requiredCredits: 56 },
+      ],
+      majorAreaCredits: { areas: [{ area: '기초', earned: 3, required: 9 }, { area: '심화', earned: 30, required: 30 }], unknownCredits: 0 },
+    });
+    expect(rows[0]).toMatchObject({ category: '전공', remaining: 15, parts: [{ kind: 'area', category: '기초' }, { kind: 'area', category: '심화' }] });
+  });
+
+  it('summarizeLiberalAreasForPrint: 충족 영역 수와 모자란 영역만 추린다', () => {
+    expect(summarizeLiberalAreasForPrint(null)).toBeNull();
+    const s = summarizeLiberalAreasForPrint({
+      foundation: [{ area: 'AI와디지털', earned: 2, required: 3 }, { area: '논리와표현', earned: 3, required: 3 }],
+      electives: { coveredAreaCount: 1, requiredAreaCount: 2, satisfied: false },
+    });
+    expect(s).toEqual({ met: 1, total: 2, short: [{ area: 'AI와디지털', n: 1 }], electives: { covered: 1, required: 2, satisfied: false } });
   });
 });

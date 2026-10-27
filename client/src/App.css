@@ -976,6 +976,224 @@ body {
   cursor: pointer;
 }
 
+/* 진단 결과 한 장 저장·인쇄(#455) */
+.grad-print-box {
+  margin: 8px 0 4px;
+  text-align: center;
+}
+
+.grad-print-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-ink);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grad-print-box .grad-flex-note {
+  margin-top: 6px;
+}
+
+/* 인쇄용 시트는 화면에 그리지 않는다. 인쇄할 때(body.grad-printing)만 이 시트 하나만 찍힌다 — 다크 모드여도 흰 종이에 검은 글씨로. */
+.grad-print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 14mm 12mm;
+  }
+
+  body.grad-printing {
+    background: #fff !important;
+  }
+
+  body.grad-printing > *:not(.grad-print-sheet) {
+    display: none !important;
+  }
+
+  body.grad-printing .grad-print-sheet {
+    display: block;
+    color: #111;
+    background: #fff;
+    font-size: 10pt;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .grad-print-sheet h1 {
+    margin: 0 0 4pt;
+    font-size: 17pt;
+  }
+
+  .grad-print-sheet h2 {
+    margin: 12pt 0 4pt;
+    font-size: 11pt;
+  }
+
+  .grad-print-sheet section {
+    break-inside: avoid;
+  }
+
+  .gps-header {
+    padding-bottom: 8pt;
+    border-bottom: 1.5pt solid #111;
+  }
+
+  .gps-meta {
+    margin: 0;
+    color: #333;
+  }
+
+  .gps-fill {
+    display: flex;
+    gap: 28pt;
+    margin: 8pt 0 0;
+  }
+
+  .gps-fill span::after {
+    content: '';
+    display: inline-block;
+    width: 110pt;
+    margin-left: 6pt;
+    border-bottom: 0.75pt solid #555;
+  }
+
+  .gps-summary {
+    margin-top: 10pt;
+    padding: 8pt 10pt;
+    border: 1pt solid #999;
+    border-radius: 4pt;
+  }
+
+  .gps-remaining {
+    margin: 0 0 5pt;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  .gps-bar {
+    height: 7pt;
+    border-radius: 4pt;
+    background: #e5e5e5;
+    overflow: hidden;
+  }
+
+  .gps-bar > div {
+    height: 100%;
+    background: #333;
+  }
+
+  .gps-total-line {
+    margin: 5pt 0 0;
+  }
+
+  .gps-trust {
+    margin-top: 8pt;
+  }
+
+  .gps-trust p {
+    margin: 0;
+  }
+
+  .gps-trust ul {
+    margin: 3pt 0 0;
+    padding-left: 14pt;
+    color: #333;
+    font-size: 9pt;
+  }
+
+  .gps-trust-level {
+    font-weight: 700;
+  }
+
+  .gps-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .gps-table th,
+  .gps-table td {
+    padding: 4pt 6pt;
+    border-bottom: 0.5pt solid #bbb;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .gps-table th {
+    border-bottom: 1pt solid #111;
+    font-size: 9pt;
+    color: #333;
+  }
+
+  .gps-num {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gps-parts {
+    display: block;
+    color: #444;
+    font-size: 8.5pt;
+  }
+
+  .gps-total td {
+    border-top: 1pt solid #111;
+    border-bottom: none;
+    font-weight: 700;
+  }
+
+  .gps-met {
+    color: #1a6b35;
+    white-space: nowrap;
+  }
+
+  .gps-short {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .gps-note {
+    margin: 4pt 0 0;
+    color: #444;
+    font-size: 8.5pt;
+  }
+
+  .gps-checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gps-checklist li {
+    padding: 2pt 0;
+  }
+
+  .gps-checklist li > span {
+    display: inline-block;
+    min-width: 76pt;
+    margin-right: 6pt;
+  }
+
+  .gps-check {
+    color: #444;
+  }
+
+  .gps-footer {
+    margin-top: 14pt;
+    padding-top: 6pt;
+    border-top: 0.5pt solid #999;
+    color: #444;
+    font-size: 8pt;
+  }
+}
+
 /* 한 줄 사유 말고 더 있는 추정 이유(펼쳐 보기) */
 .grad-trust-more {
   margin: 4px 0 0;
