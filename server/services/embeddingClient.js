@@ -12,29 +12,58 @@ const MODEL = 'voyage-3-lite';
 // 요청 기준으로 낮게 잡고, 시딩 스크립트 쪽에서만 명시적으로 더 크게 넘긴다.
 const DEFAULT_MAX_RETRIES = 2;
 // 개별 시도마다의 상한 — Voyage가 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 둔다.
-// 429 사이의 의도된 대기(아래 delayMs)와는 별개다.
+// 429 사이의 의도된 대기(아래 delayMs)와는 별개다. 챗봇 실시간 요청 기준이고, 시딩은 더 길게 넘긴다.
 const REQUEST_TIMEOUT_MS = 20000;
+// 일시적 실패(시간 초과·연결 끊김·5xx) 재시도 사이의 기본 대기. 시도마다 늘린다(5초, 10초, 15초…).
+const TRANSIENT_RETRY_DELAY_MS = 5000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// 응답을 받기 전에 끊긴 경우 — AbortSignal.timeout은 TimeoutError, 연결 실패는 fetch가 TypeError를 던진다.
+function isTransientFetchError(err) {
+  return err && (err.name === 'TimeoutError' || err.name === 'AbortError' || err.name === 'TypeError');
+}
+
 // 결제수단 미등록 계정은 3 RPM으로 제한되는데(Voyage 정책), 시딩 스크립트가 문서 단위로
 // 연속 호출하다 보면 바로 걸린다. Retry-After 헤더가 있으면 그대로 따르고, 없으면 3 RPM
 // 주기(~20초)에 맞춘 백오프로 재시도 — 결제수단을 등록하면 자연히 재시도 없이 통과한다.
-async function requestEmbeddings(texts, inputType, maxRetries) {
+//
+// retryTransient: 시간 초과·연결 끊김·5xx도 재시도한다. 시딩에서만 켠다 — 로컬 재시딩에서 Voyage가 23.7초 만에 답해
+// 20초 상한에 3번 연속 걸렸고, 재시도 없이 실패하면 그 문서가 갱신되지 못했다(#412, 2026-10-17). 챗봇 실시간 요청은
+// 사용자를 오래 기다리게 하지 않도록 끄고(기본값) 지금처럼 바로 실패한다.
+async function requestEmbeddings(texts, inputType, { maxRetries, timeoutMs, retryTransient, transientDelayMs }) {
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(VOYAGE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.VOYAGE_API_KEY}`,
-      },
-      body: JSON.stringify({ model: MODEL, input: texts, input_type: inputType }),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+    let res;
+    try {
+      res = await fetch(VOYAGE_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.VOYAGE_API_KEY}`,
+        },
+        body: JSON.stringify({ model: MODEL, input: texts, input_type: inputType }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (err) {
+      if (retryTransient && attempt < maxRetries && isTransientFetchError(err)) {
+        const delayMs = transientDelayMs * (attempt + 1);
+        console.warn(`[RETRY] Voyage 요청 실패(${err.name}) — ${Math.round(delayMs / 1000)}초 대기 후 재시도 (${attempt + 1}/${maxRetries})`);
+        await sleep(delayMs);
+        continue;
+      }
+      throw err;
+    }
 
     if (res.ok) return res.json();
+
+    if (retryTransient && res.status >= 500 && attempt < maxRetries) {
+      const delayMs = transientDelayMs * (attempt + 1);
+      console.warn(`[RETRY] Voyage ${res.status} — ${Math.round(delayMs / 1000)}초 대기 후 재시도 (${attempt + 1}/${maxRetries})`);
+      await sleep(delayMs);
+      continue;
+    }
 
     if (res.status === 429 && attempt < maxRetries) {
       const retryAfterHeader = Number(res.headers.get('retry-after'));
@@ -53,9 +82,14 @@ async function requestEmbeddings(texts, inputType, maxRetries) {
 // Voyage가 비대칭 임베딩으로 검색 품질을 높여준다(생략 시 대칭 임베딩).
 //
 // maxRetries: 기본값은 챗봇 실시간 요청 기준(사용자를 오래 기다리게 하지 않도록 낮게).
-// 시딩 스크립트처럼 기다려도 되는 배치 작업은 더 큰 값을 명시적으로 넘긴다.
-async function getEmbeddings(texts, inputType, { maxRetries = DEFAULT_MAX_RETRIES } = {}) {
-  const data = await requestEmbeddings(texts, inputType, maxRetries);
+// 시딩 스크립트처럼 기다려도 되는 배치 작업은 더 큰 값과 timeoutMs·retryTransient를 명시적으로 넘긴다.
+async function getEmbeddings(texts, inputType, {
+  maxRetries = DEFAULT_MAX_RETRIES,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+  retryTransient = false,
+  transientDelayMs = TRANSIENT_RETRY_DELAY_MS,
+} = {}) {
+  const data = await requestEmbeddings(texts, inputType, { maxRetries, timeoutMs, retryTransient, transientDelayMs });
   return data.data.sort((a, b) => a.index - b.index).map((d) => d.embedding);
 }
 
