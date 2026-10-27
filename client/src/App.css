@@ -1304,6 +1304,18 @@ body {
   line-height: 1.5;
 }
 
+/* 마이크로디그리 과정 한 줄(components/MicroDegreeCard.jsx) — 과정마다 이름·학점·막대·맞춘 과목 */
+.grad-micro-item + .grad-micro-item {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.grad-micro-name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 .grad-subcheck-row {
   display: flex;
   align-items: center;
@@ -5823,6 +5835,12 @@ button.settings-row {
 .onb-option-card:hover:not(:disabled),
 .onb-option-card.active { background: var(--color-neutral-bg); }
 .onb-option-card.selected { border-color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); background: var(--color-neutral-bg); }
+/* 다전공: 학과 / 연계·복합전공 두 칸(#412) */
+.onb-kind-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+/* 마이크로디그리 고르기(#412) — 사업단별 묶음, 한 줄에 체크 하나 */
+.onb-micro-group { border: none; margin: 0 0 14px; padding: 0; }
+.onb-micro-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-top: 6px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 0.875rem; cursor: pointer; }
+.onb-micro-row.checked { border-color: var(--color-ink); background: var(--color-neutral-bg); }
 /* 키보드 포커스 표시를 브라우저 기본색(주황 등) 대신 강조색으로 — ↑↓로 학과를 옮길 때 지금 위치를 보여 준다. */
 .onb-option-card:focus-visible,
 .onb-college-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }

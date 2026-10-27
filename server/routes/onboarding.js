@@ -7,6 +7,7 @@ const studentService = require('../services/studentService');
 const { isIntInRange, isValidAdmissionYear } = require('../services/inputValidation');
 const { validateTeachingAndTransferCredits } = require('../services/teachingCourse');
 const { validateMajorTrackType } = require('../services/majorTrackType');
+const { listLinkedMajors, listMicroDegrees } = require('../services/linkedMajors');
 
 /**
  * Routes for Onboarding (/api/onboarding)
@@ -34,6 +35,24 @@ router.get('/tracks', async (req, res, next) => {
 
     const tracks = await studentService.listTracks(departmentId);
     res.status(200).json({ status: 200, code: 'TRACKS_SUCCESS', message: null, data: tracks });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/onboarding/linked-majors — 다전공으로 고를 수 있는 연계·복합전공(#412). [{ name, programGroup, requiredCredits }]
+router.get('/linked-majors', async (req, res, next) => {
+  try {
+    res.status(200).json({ status: 200, code: 'LINKED_MAJORS_SUCCESS', message: null, data: await listLinkedMajors() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/onboarding/micro-degrees — 고를 수 있는 마이크로디그리(사업단 과정, #412). [{ name, programGroup, requiredCredits }]
+router.get('/micro-degrees', async (req, res, next) => {
+  try {
+    res.status(200).json({ status: 200, code: 'MICRO_DEGREES_SUCCESS', message: null, data: await listMicroDegrees() });
   } catch (err) {
     next(err);
   }

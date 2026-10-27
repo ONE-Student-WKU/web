@@ -8,6 +8,7 @@ import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import AcademicWarningCard from '../components/AcademicWarningCard.jsx';
+import MicroDegreeCard from '../components/MicroDegreeCard.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
@@ -319,9 +320,19 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-subcheck-label">{t(status.secondMajor.thesis.satisfied ? 'grad.secondMajor.thesisMet' : 'grad.secondMajor.thesisUnmet')}</p>
                   </div>
                 )}
-                <p className="grad-flex-note">{t('grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}</p>
+                {/* 연계·복합전공(#412): 교양 9학점·주전공과 같은 과목 1/3 상한을 적용한 학점을 함께 알린다. */}
+                {status.secondMajor.kind === 'LINKED' && (
+                  <p className="grad-flex-note">
+                    {t('grad.secondMajor.linkedDetail', { liberal: status.secondMajor.liberalCredits, shared: status.secondMajor.overlapCredits })}
+                  </p>
+                )}
+                <p className="grad-flex-note">
+                  {t(status.secondMajor.kind === 'LINKED' ? 'grad.secondMajor.assignedLinked' : 'grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}
+                </p>
               </section>
             )}
+
+            <MicroDegreeCard microDegrees={status.microDegrees} />
 
             {groups?.liberalArts && (
               <section className="home-card">

@@ -7,6 +7,8 @@ vi.mock('../api/chatApi.js', async (importOriginal) => ({
   ...(await importOriginal()),
   getDepartments: vi.fn(),
   getTracks: vi.fn(),
+  getLinkedMajors: vi.fn(),
+  getMicroDegrees: vi.fn(),
   submitOnboarding: vi.fn(),
   updateProfile: vi.fn(),
   saveLeavePeriods: vi.fn(),
@@ -82,6 +84,14 @@ beforeEach(() => {
   api.updateProfile.mockResolvedValue({});
   api.saveLeavePeriods.mockResolvedValue({});
   api.getTracks.mockResolvedValue([]);
+  api.getLinkedMajors.mockResolvedValue([
+    { name: '문화유산학전공', programGroup: '인문사회', requiredCredits: 36 },
+    { name: 'JST 에너지신산업학부 이차전지전공', programGroup: 'JST공유대학', requiredCredits: 36 },
+  ]);
+  api.getMicroDegrees.mockResolvedValue([
+    { name: 'JST 에너지신산업학부 이차전지 기초', programGroup: 'JST공유대학', requiredCredits: 12 },
+    { name: 'K-치유힐링 케어복지과정', programGroup: 'K-치유힐링사업단', requiredCredits: 12 },
+  ]);
 });
 
 describe('학적정보 수정(Onboarding) 화면', () => {
@@ -491,6 +501,50 @@ describe('다전공(복수전공·부전공, #378 G-1)', () => {
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     await userEvent.click(saveButton());
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: null, secondMajorType: null }));
+  });
+});
+
+describe('연계·복합전공과 마이크로디그리(#412)', () => {
+  it('다전공을 연계·복합전공으로 고르면 학과 대신 전공 이름을 보낸다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /다전공/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^부전공/ }));
+    await userEvent.click(screen.getByRole('button', { name: '연계·복합전공' }));
+    expect(screen.getByRole('button', { name: '확인' })).toBeDisabled();
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '연계·복합전공' }), '문화유산학전공');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('button', { name: /다전공/ })).toHaveTextContent('부전공 · 문화유산학전공');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: null, secondLinkedMajor: '문화유산학전공', secondMajorType: 'MINOR' }));
+  });
+
+  it('저장된 연계전공은 요약에 그대로 보이고, 학과로 바꾸면 연계전공을 지워 보낸다', async () => {
+    render(<Onboarding user={{ ...USER, secondLinkedMajor: '문화유산학전공', secondMajorType: 'DOUBLE' }} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /다전공/ });
+    expect(row).toHaveTextContent('복수전공 · 문화유산학전공');
+    await userEvent.click(row);
+    await userEvent.click(screen.getByRole('button', { name: '다른 학과(전공)' }));
+    const group = screen.queryByRole('button', { name: /인문대학/ });
+    if (group) await userEvent.click(group);
+    await userEvent.click(screen.getByRole('button', { name: /^국어국문학과/ }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: 7, secondLinkedMajor: null, secondMajorType: 'DOUBLE' }));
+  });
+
+  it('마이크로디그리 줄은 처음에 "없음"이고, 과정을 고르면 이름 목록을 보낸다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    const row = await screen.findByRole('button', { name: /마이크로디그리/ });
+    expect(row).toHaveTextContent('없음');
+    await userEvent.click(row);
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'K-치유힐링 케어복지과정' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'JST 에너지신산업학부 이차전지 기초' }));
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('button', { name: /마이크로디그리/ })).toHaveTextContent('K-치유힐링 케어복지과정 외 1개');
+    await userEvent.click(saveButton());
+    expect(api.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ microDegrees: ['K-치유힐링 케어복지과정', 'JST 에너지신산업학부 이차전지 기초'] })
+    );
   });
 });
 

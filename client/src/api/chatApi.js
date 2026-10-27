@@ -68,6 +68,10 @@ export const getDepartments = () => apiRequest('/onboarding/departments');
 
 export const getTracks = (departmentId) => apiRequest(`/onboarding/tracks?departmentId=${departmentId}`);
 
+// 다전공으로 고를 수 있는 연계·복합전공과, 고를 수 있는 마이크로디그리(사업단 과정) — [{ name, programGroup, requiredCredits }](#412)
+export const getLinkedMajors = () => apiRequest('/onboarding/linked-majors');
+export const getMicroDegrees = () => apiRequest('/onboarding/micro-degrees');
+
 export const submitOnboarding = (payload) =>
   apiRequest('/onboarding', { method: 'POST', body: JSON.stringify(payload) });
 

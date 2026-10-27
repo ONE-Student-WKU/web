@@ -52,7 +52,8 @@ async function resolveCourseCounting(student, courses) {
   if (!prior && !second) return null;
   const offering = await loadOfferingDepartments(student.id);
   const byId = new Map(courses.map((c) => [c.id, countCourse({ ...c, offering_department_id: offering.get(c.id) ?? null }, { prior, second })]));
-  return { byId, priorApplies: Boolean(prior), secondApplies: Boolean(second) };
+  // linked: 제2전공이 연계·복합전공이면 그 전공(과목 목록 포함, services/linkedMajors.js) — 진단이 중복 인정·교양 인정 학점을 센다.
+  return { byId, priorApplies: Boolean(prior), secondApplies: Boolean(second), linked: second ? second.linked || null : null };
 }
 
 module.exports = { resolveCourseCounting, countCourse };

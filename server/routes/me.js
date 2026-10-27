@@ -10,6 +10,7 @@ const { validateHomeLayout } = require('../services/homeLayout');
 const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 const { validateMajorTrackType, isBroadSeriesStudent } = require('../services/majorTrackType');
 const { validateSecondMajor } = require('../services/secondMajor');
+const { findLinkedMajor, microDegreesExist, validateMicroDegreeList, setStudentMicroDegrees } = require('../services/linkedMajors');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -64,7 +65,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester, majorChangeRecognition, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
-      secondDepartmentId, secondMajorType, careerCounselingCount, leaveSemesters, language, homeLayout,
+      secondDepartmentId, secondMajorType, secondLinkedMajor, microDegrees, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
@@ -215,18 +216,32 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       const dept = await studentService.findDepartmentById(secondDepartmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
     }
-    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 학과를 지우면 구분도 지운다.
-    const effectiveSecondDepartmentId = secondDepartmentId !== undefined ? secondDepartmentId : student.second_department_id;
+    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 제2전공은 학과나 연계·복합전공(#412) 중 하나라,
+    // 한쪽을 새로 고르면 다른 쪽은 지운다. 둘 다 지우면 구분도 지운다.
+    const linkedGiven = secondLinkedMajor !== undefined;
+    const departmentGiven = secondDepartmentId !== undefined;
+    const effectiveSecondDepartmentId = departmentGiven ? secondDepartmentId : linkedGiven && secondLinkedMajor ? null : student.second_department_id;
+    const effectiveSecondLinkedMajor = linkedGiven ? secondLinkedMajor : departmentGiven && secondDepartmentId != null ? null : student.second_linked_major;
     const secondMajorError = validateSecondMajor(
-      { secondDepartmentId, secondMajorType },
-      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId }
+      { secondDepartmentId, secondMajorType, secondLinkedMajor },
+      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId, secondLinkedMajor: effectiveSecondLinkedMajor }
     );
     if (secondMajorError) return res.status(400).json({ status: 400, code: secondMajorError, message: null, data: null });
-    // 학과만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    if (secondLinkedMajor != null && !(await findLinkedMajor(secondLinkedMajor))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SECOND_LINKED_MAJOR', message: null, data: null });
+    }
+    // 학과·연계전공만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    const hasEffectiveSecond = effectiveSecondDepartmentId != null || Boolean(effectiveSecondLinkedMajor);
     let effectiveSecondMajorType; // undefined = 바꾸지 않음
-    if (effectiveSecondDepartmentId == null) effectiveSecondMajorType = null;
+    if (!hasEffectiveSecond) effectiveSecondMajorType = null;
     else if (secondMajorType !== undefined) effectiveSecondMajorType = secondMajorType || 'DOUBLE';
-    else if (secondDepartmentId !== undefined) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
+    else if (departmentGiven || linkedGiven) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
+    // 마이크로디그리(#412) — 이름 목록 전체를 바꾼다.
+    const microDegreeError = validateMicroDegreeList(microDegrees);
+    if (microDegreeError) return res.status(400).json({ status: 400, code: microDegreeError, message: null, data: null });
+    if (microDegrees !== undefined && !(await microDegreesExist(microDegrees))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MICRO_DEGREES', message: null, data: null });
+    }
 
     // trackId: 이번 요청에서 확정되는 departmentId(요청에 없으면 기존 값) 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
@@ -255,7 +270,9 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
       teachingCourse: clearTeaching ? null : teachingCourse,
       majorTrackType: clearTrackType ? null : majorTrackType,
-      secondDepartmentId,
+      // 연계전공을 고르면 학과 칸을, 학과를 고르면 연계전공 칸을 비운다(제2전공은 하나).
+      secondDepartmentId: effectiveSecondDepartmentId !== student.second_department_id || departmentGiven ? effectiveSecondDepartmentId : undefined,
+      secondLinkedMajor: effectiveSecondLinkedMajor !== student.second_linked_major || linkedGiven ? effectiveSecondLinkedMajor ?? null : undefined,
       secondMajorType: effectiveSecondMajorType,
       careerCounselingCount,
       leaveSemesters,
@@ -265,6 +282,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
       await studentService.revalidateLeavePeriods(req.session.userId);
     }
+    if (microDegrees !== undefined) await setStudentMicroDegrees(req.session.userId, microDegrees);
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
