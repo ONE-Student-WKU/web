@@ -335,3 +335,12 @@ test('적용범위 행이 하나도 없으면(운영 DB 미시딩 등) "해당 �
   assert.ok(res.flags.some((f) => f.code === 'APPLICABILITY_DATA_MISSING'));
   assert.equal(res.confidence, 'NO_DATA');
 });
+
+test('광역계열 6곳 2026학번은 판단 보류가 없다 — 책자 자유선택 차이는 이수유형별 전공 학점으로 설명된다(2026-10-27, #412)', () => {
+  // 책자 전공 칸 "69(전공심화형) 72(전공융합형/복수전공형)": 그린바이오 등 5곳의 자유선택 21은 72 기준, 의생명공학계열 33은 오기(dataQuality.js 주석).
+  for (const dept of ['의생명공학계열', '그린바이오계열', '스마트농업계열', '푸드테크계열', '디자인융합계열', '창의문화융합계열']) {
+    assert.deepEqual(dq.pendingHoldsFor(2026, dept, 'REQUIREMENTS'), [], dept);
+  }
+  // 남은 보류는 그대로다.
+  assert.equal(dq.pendingHoldsFor(2024, '건축학과', 'REQUIREMENTS').length, 1);
+});
