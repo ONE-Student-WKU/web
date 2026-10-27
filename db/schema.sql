@@ -835,6 +835,11 @@ CREATE TABLE IF NOT EXISTS community_posts (
   -- 관리자 재승인 대상이다(editPost). DATETIME이 아니라 DATE인 이유: 화면이 날짜만 받고, 서버 DB 시간대(UTC)와 한국
   -- 날짜가 어긋나는 문제를 피하려고 "오늘"을 앱(KST)에서 계산해 넘기기 때문이다.
   recruit_end_date   DATE NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE,
   -- status는 FK가 아니라 자동 인덱스가 안 붙는다. listApprovedPosts/listPostsForAdmin이
@@ -956,6 +961,11 @@ CREATE TABLE IF NOT EXISTS community_reports (
   resolution_note      TEXT NULL,
   -- 신고자가 처리 결과를 확인한 시각. status='resolved'인데 NULL이면 "읽지 않은 처리 결과"(커뮤니티 탭 점 표시).
   resolution_seen_at   DATETIME NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
   FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL,
@@ -1047,9 +1057,27 @@ CREATE TABLE IF NOT EXISTS inquiries (
   -- 정지 화면에서 보낸 이의 제기면 그 정지(student_sanctions.id). 정지 한 번에 1건만 받는다(server/services/appealService.js).
   -- 답변(resolution_note)은 학생의 정지 화면에 보인다. 제재를 철회하면 연결만 끊긴다. 기존 DB는 db/migrate.js가 추가한다.
   sanction_id  INT NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 11-1. AI 사전 분류 비교 합계(#458) — 관리자가 처리할 때마다 "AI 결과 × 실제 처리" 칸의 건수만 1 올린다.
+-- 누가 쓴 글인지는 남기지 않는다(개인정보처리방침 4항: 작성자와 연결되지 않은 분류 항목별 합계만). 관리자 대시보드의 비교표가 읽는다.
+-- target_type: post / report / inquiry. ai_result·admin_result: post는 approve/reject, 나머지는 none/warning/sanction.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS moderation_label_stats (
+  target_type   VARCHAR(20) NOT NULL,
+  ai_result     VARCHAR(20) NOT NULL,
+  admin_result  VARCHAR(20) NOT NULL,
+  count         INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (target_type, ai_result, admin_result)
 );
 
 -- ---------------------------------------------------------------------------

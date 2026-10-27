@@ -438,6 +438,26 @@ async function ensureInquiryResolutionNoteColumn(connection) {
   }
 }
 
+// AI 사전 분류(#458) guard — 글·신고·문의 표에 결과·형광펜·분류 시각 칸을 붙인다(server/services/moderationLabelService.js).
+async function ensureModerationLabelColumns(connection) {
+  for (const table of ['community_posts', 'community_reports', 'inquiries']) {
+    const [cols] = await connection.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'ai_result'`,
+      [table]
+    );
+    if (cols.length === 0) {
+      console.log(`[db:migrate] ${table}.ai_result·ai_highlights·ai_labeled_at 컬럼 추가...`);
+      await connection.query(
+        `ALTER TABLE ${table}
+           ADD COLUMN ai_result VARCHAR(20) NULL,
+           ADD COLUMN ai_highlights JSON NULL,
+           ADD COLUMN ai_labeled_at DATETIME NULL`
+      );
+    }
+  }
+}
+
 // 정지 이의 제기 guard — 정지 화면에서 보낸 이의는 문의함에 들어가고, 어느 정지에 대한 이의인지 sanction_id로 잇는다.
 // 제재를 철회(삭제)하면 연결만 끊긴다(ON DELETE SET NULL). student_sanctions가 schema.sql에서 먼저 만들어진 뒤라 FK를 걸 수 있다.
 async function ensureInquirySanctionColumn(connection) {
@@ -635,6 +655,7 @@ async function migrate() {
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureInquiryResolutionNoteColumn(connection);
     await ensureInquirySanctionColumn(connection);
+    await ensureModerationLabelColumns(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
     await ensureCareerCandidateRequestsColumn(connection);

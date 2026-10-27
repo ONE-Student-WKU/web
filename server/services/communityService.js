@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const pool = require('../db');
 const { replacePostDepartments, attachTargetDepartments } = require('./postDepartments');
 const { prepareEntry, prepareQuery, rankEntries } = require('./koreanSearch');
+const moderationLabelService = require('./moderationLabelService');
 
 /**
  * server/services/communityService.js
@@ -566,14 +567,14 @@ async function decideApplication(applicationId, authorId, status, reason = null)
 // 모집 학과·마감일은 학생 상세 화면과 같은 값을 붙인다 — 승인할 때 "어느 학과를 언제까지" 모으는 글인지 같이 보려고.
 async function listPostsForAdmin(status) {
   const [rows] = await pool.query(
-    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, ${RECRUIT_DATE_COLUMNS}, s.name AS author_name
+    `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.created_at, p.author_id, p.reject_reason, p.ai_result, p.ai_highlights, ${RECRUIT_DATE_COLUMNS}, s.name AS author_name
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.status = ?
      ORDER BY p.created_at ASC`,
     [status]
   );
-  const posts = rows.map((row) => ({
+  const posts = await Promise.all(rows.map(async (row) => ({
     id: row.id,
     title: row.title,
     body: row.body,
@@ -584,7 +585,9 @@ async function listPostsForAdmin(status) {
     author: nicknameOf(row.author_name, row.author_id),
     rejectReason: row.reject_reason,
     recruitEndDate: row.recruit_end_date,
-  }));
+    // AI 사전 분류(#458) — 제안(승인/반려)과 형광펜 조각. 분류 전·실패면 null.
+    aiSuggestion: await moderationLabelService.buildSuggestion('post', row),
+  })));
   return attachTargetDepartments(posts);
 }
 
@@ -719,7 +722,7 @@ async function getReportById(id) {
 async function listReportsForAdmin(status) {
   const [rows] = await pool.query(
     `SELECT r.id, r.target_type, r.target_id, r.reported_student_id, r.target_title, r.target_body,
-            r.reason, r.status, r.created_at, r.resolved_at, r.resolution_note,
+            r.reason, r.status, r.created_at, r.resolved_at, r.resolution_note, r.ai_result, r.ai_highlights,
             s.name AS reporter_name, s.id AS reporter_id,
             rs.name AS reported_name
      FROM community_reports r
@@ -761,6 +764,8 @@ async function listReportsForAdmin(status) {
       targetBody: row.target_body,
       targetExists: targetPostId !== null,
       targetPostId,
+      // AI 사전 분류(#458) — 심각도에 대상자의 이전 경고·제재 수를 더한 제안 조치와 형광펜 조각. 분류 전·실패면 null.
+      aiSuggestion: await moderationLabelService.buildSuggestion('report', row, { studentId: row.reported_student_id, createdAt: row.created_at }),
     });
   }
   return results;

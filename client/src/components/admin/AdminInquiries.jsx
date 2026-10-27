@@ -3,7 +3,8 @@ import { getAdminInquiries, getReportedStudentSummary, resolveAdminInquiry, with
 import { refreshAdminPending } from '../../utils/adminPending.js';
 import StudentSanctionDialog from '../StudentSanctionDialog.jsx';
 import AdminTabs from './AdminTabs.jsx';
-import { formatDate, SANCTION_SCOPE_LABEL } from './adminFormat.js';
+import { formatDate, SANCTION_SCOPE_LABEL, parseSuggestedAction } from './adminFormat.js';
+import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
 
 const NOTE_MAX_LENGTH = 500;
 const STATUS_TABS = [
@@ -120,6 +121,10 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   if (inquiry) {
     const open = inquiry.status === 'open';
     const appeal = inquiry.appealFor;
+    const suggestedAction = inquiry.aiSuggestion?.action;
+    const suggested = parseSuggestedAction(suggestedAction);
+    const suggestedScope = suggested ? suggested.scope : 'warning';
+    const suggestedDuration = suggested ? suggested.duration : undefined;
     return (
       <>
         <div className="admin-detail">
@@ -129,6 +134,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               {appeal ? ' · 정지 이의' : ''}
             </span>
             <span className="post-meta">{formatDate(inquiry.createdAt)}</span>
+            {open && <AiSuggestionBadge suggestion={inquiry.aiSuggestion} />}
           </div>
           <p className="admin-detail-title">{inquiry.title}</p>
           <p className="post-meta">{askerOf(inquiry)}</p>
@@ -169,7 +175,10 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               </button>
             </div>
           )}
-          <p className="admin-body admin-body--lead">{inquiry.content}</p>
+          <p className="admin-body admin-body--lead">
+            <HighlightedText text={inquiry.content} highlights={open ? inquiry.aiSuggestion?.highlights : []} />
+          </p>
+          {open && <AiSuggestionBox suggestion={inquiry.aiSuggestion} openLabel="학생 제재" />}
           {error && <p className="home-error">{error}</p>}
           {open ? (
             <>
@@ -191,7 +200,9 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
             studentId={inquiry.studentId}
             nickname={inquiry.student}
             title="학생 제재"
-            defaultScope="warning"
+            // AI 제안(#458)이 있으면 그 범위·기간을 미리 골라 두고, 없으면 문의의 첫 조치인 경고(docs/moderation-policy.md).
+            defaultScope={suggestedScope}
+            defaultDuration={suggestedDuration}
             onClose={() => setSanctionOpen(false)}
             onDone={(scope) => {
               setSanctionOpen(false);
@@ -234,6 +245,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
                   {i.appealFor ? ' · 정지 이의' : ''}
                 </span>
                 <span className="post-meta">{formatDate(i.createdAt)}</span>
+                {status === 'open' && <AiSuggestionBadge suggestion={i.aiSuggestion} />}
               </span>
               <span className="post-title">{i.title}</span>
               <span className="post-excerpt">{i.content}</span>

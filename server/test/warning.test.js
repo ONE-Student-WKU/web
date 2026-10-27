@@ -5,6 +5,7 @@ const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const warningService = require('../services/warningService');
 const communityService = require('../services/communityService');
+const moderationLabelService = require('../services/moderationLabelService');
 const meRouter = require('../routes/me');
 const adminRouter = require('../routes/admin');
 
@@ -43,6 +44,8 @@ before(async () => {
   mock.method(communityService, 'deletePost', async (id) => deleted.push(id));
   mock.method(communityService, 'resolveReport', async () => true);
   mock.method(communityService, 'resolvePendingReportsForTarget', async () => 0);
+  // AI 분류 비교 기록은 이 테스트의 대상이 아니고 실제 DB를 열어 프로세스가 끝나지 않게 하므로 막는다.
+  mock.method(moderationLabelService, 'recordDecision', async () => {});
 
   const app = express();
   app.use(express.json());

@@ -3,6 +3,7 @@ import { getAdminCommunityPosts, approveAdminPost, rejectAdminPost, deleteAdminP
 import { refreshAdminPending } from '../../utils/adminPending.js';
 import AdminTabs from './AdminTabs.jsx';
 import { formatDate, CATEGORY_LABEL } from './adminFormat.js';
+import { AiSuggestionBadge, HighlightedText } from './AiSuggestion.jsx';
 import { IconMore } from '../icons.jsx';
 
 const STATUS_TABS = [
@@ -110,6 +111,7 @@ function AdminApproval({ showToast }) {
                   <span className="post-meta">
                     {p.author} · {formatDate(p.createdAt)}
                   </span>
+                  {status === 'pending' && <AiSuggestionBadge suggestion={p.aiSuggestion} />}
                   <div className="admin-more" onClick={(e) => e.stopPropagation()}>
                     <button type="button" className="admin-more-btn" aria-label="더 보기" aria-expanded={menuId === p.id} onClick={() => setMenuId(menuId === p.id ? null : p.id)}>
                       <IconMore size={18} />
@@ -124,7 +126,9 @@ function AdminApproval({ showToast }) {
                   </div>
                 </div>
                 <p className="post-title admin-post-heading">{p.title}</p>
-                <p className="admin-body">{p.body}</p>
+                <p className="admin-body">
+                  <HighlightedText text={p.body} highlights={status === 'pending' ? p.aiSuggestion?.highlights : []} />
+                </p>
                 <dl className="admin-facts">
                   <div>
                     <dt>종류</dt>

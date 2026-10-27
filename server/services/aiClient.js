@@ -903,6 +903,12 @@ async function extractCourseListRows(rawText) {
   return parseJsonArray(text);
 }
 
+// 운영 보조 AI 사전 분류(#458) — 프롬프트와 결과 해석은 moderationLabelService.js가 맡고, 여기서는 호출만 한다.
+// 짧은 JSON 하나라 토큰을 작게, 뒤에서 도는 호출이라 시간 상한도 짧게 둔다.
+async function classifyForModeration(system, content) {
+  return callClaude(system, [{ role: 'user', content }], 300, 20000);
+}
+
 async function extractFullTranscriptRows(rawText) {
   const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
   return parseJsonArray(text);
@@ -926,4 +932,5 @@ module.exports = {
   fixBareHonorific,
   extractCourseListRows,
   extractFullTranscriptRows,
+  classifyForModeration,
 };

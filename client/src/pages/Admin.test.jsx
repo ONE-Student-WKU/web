@@ -21,6 +21,7 @@ vi.mock('../api/chatApi.js', () => ({
   getAdminStatsComposition: vi.fn(),
   getAdminFeatureUsage: vi.fn(),
   getReportedStudentSummary: vi.fn(),
+  getAiLabelComparison: vi.fn(),
 }));
 
 import * as api from '../api/chatApi.js';
@@ -144,6 +145,11 @@ beforeEach(() => {
   sessionStorage.clear();
   window.history.replaceState(null, '', '/');
   api.getAdminStats.mockResolvedValue(stats());
+  api.getAiLabelComparison.mockResolvedValue({
+    post: { total: 0, actionMatched: 0, resultMatched: 0 },
+    report: { total: 0, actionMatched: 0, resultMatched: 0 },
+    inquiry: { total: 0, actionMatched: 0, resultMatched: 0 },
+  });
   api.getAdminPending.mockResolvedValue({ reports: 0, inquiries: 0, posts: 0, total: 0 });
   api.getAdminStatsTrend.mockImplementation(async (range) => trend(range));
   resetAdminTrendCache();
