@@ -259,7 +259,15 @@ const { registrationTermsOf } = require('../services/studentProgress');
 
 test('등록 학기(졸업사정 등록기간, 시행규칙 제118조 제1호 — #378 H-2): 지금 학기까지 센 재학 학기, 4년제는 8학기·조기졸업 6학기', () => {
   const r = registrationTermsOf({ admission_year: 2023, enrollment_type: 'GENERAL', leave_periods: '[]', department_name: '경영학과' }, { today: TODAY });
-  assert.deepEqual(r, { registered: 8, required: 8, earlyGraduation: 6, estimated: false });
+  assert.deepEqual(r, { registered: 8, completed: 7, required: 8, earlyGraduation: 6, estimated: false });
+});
+
+test('수업이 끝난 학기(completed): 학기 중이면 지금 학기를 빼고, 방학이면 넣는다 — 4학년 1학기를 마친 여름방학에 7이 된다', () => {
+  const s = { admission_year: 2023, enrollment_type: 'GENERAL', leave_periods: '[]', department_name: '경영학과' };
+  const at = (today) => registrationTermsOf(s, { today });
+  assert.deepEqual([at('2026-05-10').registered, at('2026-05-10').completed], [7, 6]); // 4학년 1학기 수업 중
+  assert.deepEqual([at('2026-07-15').registered, at('2026-07-15').completed], [7, 7]); // 4학년 1학기를 마친 여름방학
+  assert.deepEqual([at('2027-01-20').registered, at('2027-01-20').completed], [8, 8]); // 4학년 2학기를 마친 겨울방학
 });
 
 test('등록 학기: 휴학한 학기는 빼고, 휴학 시기를 모르면 추정으로 표시한다', () => {

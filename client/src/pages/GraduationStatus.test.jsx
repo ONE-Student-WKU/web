@@ -11,6 +11,7 @@ vi.mock('../api/chatApi.js', () => ({ getGraduationStatus: vi.fn() }));
 
 import { getGraduationStatus } from '../api/chatApi.js';
 import GraduationStatus, { resetGraduationCache } from './GraduationStatus.jsx';
+import { LanguageProvider } from '../i18n/I18nContext.jsx';
 
 const categories = [
   { category: '교양필수', earnedCredits: 5, requiredCredits: 5, requiredCourses: [] },
@@ -214,13 +215,18 @@ describe('GraduationStatus 안전장치(교육혁신과 통화 2026-10-26)', () 
     expect(line.querySelector('a')).toBeNull();
   });
 
-  it('졸업까지 18학점 이하가 남으면 학사지원과 확인을 권한다', async () => {
-    await renderWith(status({ totalEarnedCredits: 125 }));
+  it('4학년 1학기를 마쳤으면(수업이 끝난 학기 7/8) 학점과 상관없이 학사지원과 확인을 권한다', async () => {
+    await renderWith(status({ registrationTerms: { registered: 7, completed: 7, required: 8, earlyGraduation: 6, estimated: false } }));
     expect(screen.getByText(/졸업 요건을 한 번 확인받으세요/)).toBeInTheDocument();
   });
 
-  it('많이 남았으면 졸업 임박 안내가 없다', async () => {
-    await renderWith(status());
+  it('4학년 1학기 수업 중(수업이 끝난 학기 6/8)이거나 등록 학기를 모르면 졸업 임박 안내가 없다', async () => {
+    await renderWith(status({ registrationTerms: { registered: 7, completed: 6, required: 8, earlyGraduation: 6, estimated: false } }));
+    expect(screen.queryByText(/졸업 요건을 한 번 확인받으세요/)).toBeNull();
+  });
+
+  it('학점을 거의 다 채웠어도 학기가 남았으면 졸업 임박 안내가 없다(학점 기준은 2026-10-27에 뺐다)', async () => {
+    await renderWith(status({ totalEarnedCredits: 130, registrationTerms: { registered: 5, completed: 4, required: 8, earlyGraduation: 6, estimated: false } }));
     expect(screen.queryByText(/졸업 요건을 한 번 확인받으세요/)).toBeNull();
   });
 
@@ -234,5 +240,103 @@ describe('GraduationStatus 안전장치(교육혁신과 통화 2026-10-26)', () 
     expect(draft.content).toContain('학과: 컴퓨터·소프트웨어공학과');
     expect(draft.content).toContain('학번: 2022');
     expect(draft.content).toContain('총 55 / 140학점 (신뢰도: 확정)');
+  });
+});
+
+describe('진단 결과 한 장 저장·인쇄(#455)', () => {
+  const printUser = { name: '홍길동', role: 'student', department: '컴퓨터·소프트웨어공학과', admissionYear: 2022, enrollmentType: 'GENERAL' };
+  const props = { onGoHome: () => {}, onOpenCourses: () => {}, onLogout: () => {}, onOpenSettings: () => {}, onOpenOnboarding: () => {}, onOpenProfile: () => {} };
+
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    localStorage.clear();
+    getGraduationStatus.mockReset();
+    window.print = vi.fn();
+    document.body.classList.remove('grad-printing');
+  });
+
+  async function openSheet(data, wrap = (el) => el, buttonName = 'PDF로 저장하기') {
+    getGraduationStatus.mockResolvedValue(data);
+    render(wrap(<GraduationStatus user={printUser} {...props} />));
+    const button = await screen.findByRole('button', { name: buttonName });
+    // 누르기 전에는 시트를 그리지 않는다(화면 DOM에 같은 숫자가 두 번 들어가지 않게).
+    expect(document.querySelector('.grad-print-sheet')).toBeNull();
+    button.click();
+    await screen.findByText(buttonName === 'PDF로 저장하기' ? '졸업요건 진단 결과' : 'Graduation requirement check');
+    return document.querySelector('.grad-print-sheet');
+  }
+
+  it('누르면 시트를 붙이고 인쇄 창을 연다 — 학과·학번·분류별 들은 학점/기준·합계·안내 문구', async () => {
+    const sheet = await openSheet(status());
+    expect(window.print).toHaveBeenCalledTimes(1);
+    expect(document.body).toHaveClass('grad-printing');
+    expect(sheet).toHaveTextContent('컴퓨터·소프트웨어공학과 · 2022학번 · 일반 재학생');
+    expect(sheet).toHaveTextContent('졸업까지 85학점 남음');
+    expect(sheet).toHaveTextContent('졸업 기준 140학점 중 55학점 이수');
+    const rows = [...sheet.querySelectorAll('.gps-table tbody tr')].map((tr) => tr.textContent);
+    expect(rows).toEqual(['교양필수5 / 5✓ 충족', '교양선택10 / 20' + '10학점 남음', '전공40 / 115' + '75학점 남음', '합계55 / 140' + '85학점 남음']);
+    expect(sheet).toHaveTextContent('소속 학과 사무실이나 학사지원과에 보여 주고 확인받으세요');
+    // 확정은 "높음"으로만 보여 주고 사유 목록이 없다.
+    expect(sheet.querySelector('.gps-trust-level')).toHaveTextContent('높음');
+    expect(sheet.querySelector('.gps-trust ul')).toBeNull();
+  });
+
+  it('추정이면 신뢰도 "중간"과 이유를 함께 싣는다', async () => {
+    const sheet = await openSheet(status({
+      regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: false, flags: [{ code: 'TRANSFER_TOTAL_UNRESOLVED', level: 'ESTIMATED', message: '편입생은 전적대학 인정학점이 있어 졸업에 필요한 총 학점을 단정할 수 없어요.' }], schedule4: null },
+    }));
+    expect(sheet.querySelector('.gps-trust-level')).toHaveTextContent('중간');
+    expect(sheet.querySelector('.gps-trust ul')).toHaveTextContent('편입생은 전적대학 인정학점이 있어');
+    expect(sheet).toHaveTextContent('(추정)');
+  });
+
+  it('졸업논문·졸업인증제·상담은 "학점 말고 필요한 것", 학과 졸업인증은 "따로 확인할 것"에 싣는다', async () => {
+    const sheet = await openSheet(status({
+      certifications: [
+        { category: '졸업논문', satisfied: true, description: '' },
+        { category: '졸업인증제', satisfied: false, description: '' },
+      ],
+      counseling: { required: 8, cohort: 'FROM_2020' },
+    }));
+    expect(sheet).toHaveTextContent('학점 말고 필요한 것');
+    expect(sheet).toHaveTextContent('✓ 충족졸업논문');
+    expect(sheet).toHaveTextContent('미충족졸업인증제');
+    expect(sheet).toHaveTextContent('학교 기록으로 확인자기계발심층상담');
+    expect(sheet).toHaveTextContent('따로 확인할 것');
+    expect(sheet).toHaveTextContent('학과 졸업인증(어학·자격증 등, 학과 공지)');
+  });
+
+  it('졸업이 가까우면 안내 안의 저장 버튼으로도 같은 시트를 저장할 수 있다', async () => {
+    getGraduationStatus.mockResolvedValue(status({ registrationTerms: { registered: 7, completed: 7, required: 8, earlyGraduation: 6, estimated: false } }));
+    render(<GraduationStatus user={printUser} {...props} />);
+    const near = await screen.findByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' });
+    expect(near.closest('.grad-near-graduation')).toHaveTextContent('졸업 요건을 한 번 확인받으세요');
+    near.click();
+    await screen.findByText('졸업요건 진단 결과');
+    expect(window.print).toHaveBeenCalledTimes(1);
+  });
+
+  it('졸업 학기가 멀면 안내 속 저장 버튼은 없고 아래 버튼만 있다', async () => {
+    await renderWith(status());
+    expect(screen.queryByRole('button', { name: '확인받을 때 보여 줄 결과 PDF로 저장하기' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'PDF로 저장하기' })).toBeInTheDocument();
+  });
+
+  it('자료가 없으면 버튼을 보여 주지 않는다', async () => {
+    getGraduationStatus.mockResolvedValue(status({ totalRequiredCredits: 0, totalEarnedCredits: 0, categories: [], regulation: { confidence: 'NO_DATA', confidenceLabel: '자료 없음', flags: [] } }));
+    render(<GraduationStatus user={printUser} {...props} />);
+    await screen.findByText(/진단할 수 없어요/);
+    expect(screen.queryByRole('button', { name: 'PDF로 저장하기' })).toBeNull();
+  });
+
+  it('영어 화면이면 시트 문구도 영어(학과명은 서버 값 그대로)', async () => {
+    localStorage.setItem('language', 'en');
+    const sheet = await openSheet(status(), (el) => <LanguageProvider>{el}</LanguageProvider>, 'Save as PDF');
+    expect(sheet).toHaveTextContent('컴퓨터·소프트웨어공학과 · Class of 2022 · Regular student');
+    expect(sheet).toHaveTextContent('Credits by category');
+    expect(sheet).toHaveTextContent('General ed. (required)');
+    expect(sheet.querySelector('.gps-trust-level')).toHaveTextContent('High');
+    expect(sheet.textContent).not.toMatch(/학점|충족|합계/);
   });
 });

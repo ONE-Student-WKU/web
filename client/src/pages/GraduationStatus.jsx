@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
+import GraduationPrintSheet from '../components/GraduationPrintSheet.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
@@ -38,6 +39,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   // 번역 키를 저장해 두고 렌더에서 t()로 바꾼다 — 로딩 이펙트가 번역 함수에 의존하지 않게 하려는 것.
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
+  // 한 장 인쇄(#455): 누르면 인쇄용 시트를 붙이고 인쇄 창을 연다. 평소에는 시트를 그리지 않아 화면 DOM에 같은 숫자가 두 번 들어가지 않는다.
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     getGraduationStatus()
@@ -55,6 +58,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // 대부분 프린터가 없어 PDF 저장이 주 용도다(인쇄 창의 'PDF로 저장'). 이미 시트가 붙어 있으면 창만 다시 연다.
+  const savePdf = () => (printing ? window.print() : setPrinting(true));
+
+  // 시트가 그려진 뒤 인쇄 창을 연다. body 클래스가 붙어 있는 동안만 인쇄 CSS가 시트 말고 나머지를 숨긴다(App.css).
+  // 모바일 브라우저는 window.print()가 바로 돌아오기도 해서, 시트는 afterprint에서 뗀다.
+  useEffect(() => {
+    if (!printing) return undefined;
+    const done = () => setPrinting(false);
+    document.body.classList.add('grad-printing');
+    window.addEventListener('afterprint', done);
+    window.print();
+    return () => {
+      window.removeEventListener('afterprint', done);
+      document.body.classList.remove('grad-printing');
+    };
+  }, [printing]);
 
   // 요건 자료가 없으면 총 요구학점이 0이라 0으로 나누면 NaN%가 됐다 — 이 경우는 아래에서 "진단할 수 없어요" 안내로 대신한다.
   // trust는 서버(규정 판단 엔진)가 내려준 근거 신뢰도·사유를 화면용으로 정리한 것(utils/graduation.js).
@@ -139,7 +159,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
 
         {status && !trust.noData && (
           <>
-            {isNearGraduation(status) && <p className="grad-near-graduation" role="note">{t('grad.nearGraduation')}</p>}
+            {/* 졸업이 가까우면 확인받을 때 들고 갈 결과를 바로 저장할 수 있게 같은 버튼을 이 안내 안에도 둔다. */}
+            {isNearGraduation(status) && (
+              <div className="grad-near-graduation" role="note">
+                <p>{t('grad.nearGraduation')}</p>
+                <button type="button" className="grad-near-save-btn" onClick={savePdf}>
+                  {t('grad.print.nearButton')}
+                </button>
+              </div>
+            )}
             <section className="home-card">
               <p className="home-card-label">
                 {t('grad.totalLabel')}
@@ -465,6 +493,17 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
             </section>
           </>
         )}
+
+        {/* 진단 결과 한 장(#455) — 주로 PDF로 저장하고(필요하면 뽑아서) 과사무실·학사지원과에서 확인받는 용도. 자료가 없으면 보여 줄 게 없어 숨긴다. */}
+        {status && !trust.noData && (
+          <div className="grad-print-box">
+            <button type="button" className="grad-print-btn" onClick={savePdf}>
+              {t('grad.print.button')}
+            </button>
+            <p className="grad-flex-note">{t('grad.print.hint')}</p>
+          </div>
+        )}
+        {printing && status && !trust.noData && <GraduationPrintSheet status={status} user={user} trust={trust} basisYear={basisYear} />}
 
         {/* 틀린 자료를 빨리 찾는 통로 — 학과·학번·진단 숫자를 미리 채운 문의로 보낸다. */}
         {status && onReportResult && (
