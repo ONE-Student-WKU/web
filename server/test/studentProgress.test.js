@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { computeProgress, completedCourseNames } = require('../services/studentProgress');
+const { computeProgress, completedCourseNames, markMedicalSchoolTerms } = require('../services/studentProgress');
 const { buildProgressNote, buildSystemPrompt } = require('../services/aiClient');
 
 // DB 없이 도는 순수 함수 테스트. 오늘은 2026-10-11(2026학년도 2학기 중)로 고정한다.
@@ -317,4 +317,31 @@ test('휴학 질문에 답한 학생은 이수 기록이 최근 학기까지 없
   assert.equal(p.needsConfirmation, false);
   assert.deepEqual([p.current.grade, p.current.gradeSemester], [3, 2]);
   assert.ok(!p.flags.includes('RECORDS_LEAVE_MISMATCH'));
+});
+
+test('예과 2학년 2학기 학생의 다음 학기는 "예과 3학년"이 아니라 본과(의학과) 1학년이다 — 챗봇에 본과 학과·학년과 표시를 넘긴다(#412)', () => {
+  // 2025학번 의예과, 휴학 없음: 지금 2026-2가 재학 4번째 학기(예과 2학년 2학기) → 다음 2027-1은 재학 5번째, 3학년 = 본과 1학년
+  const base = computeProgress({ admissionYear: 2025, leavePeriods: [], recordedTerms: [], today: TODAY, programYears: programYearsOf('의예과') });
+  const p = markMedicalSchoolTerms(base, '의예과');
+  assert.deepEqual(p.upcomingTerms.map((t) => [t.year, t.semester, t.grade, t.medicalSchool]), [
+    [2027, 1, 3, { departmentName: '의학과', grade: 1 }],
+    [2027, 2, 3, { departmentName: '의학과', grade: 1 }],
+  ]);
+  assert.ok(p.flags.includes('PREMED_TO_MEDICAL_SCHOOL'));
+
+  const note = buildProgressNote({ ...p, completedCourseNames: [] });
+  assert.match(note, /2027학년도 1학기\(재학 5번째 학기, 3학년 = 본과 의학과 1학년\)/);
+  assert.match(note, /"예과 3학년"이 아니라/);
+});
+
+test('예과 안에 머무는 다음 학기와 예과가 아닌 학과는 그대로 둔다', () => {
+  // 2026학번 치의예과: 다음 2027-1은 2학년 → 본과 표시 없음
+  const premed = markMedicalSchoolTerms(computeProgress({ admissionYear: 2026, leavePeriods: [], recordedTerms: [], today: TODAY, programYears: 6 }), '치의예과');
+  assert.ok(premed.upcomingTerms.every((t) => !t.medicalSchool));
+  assert.ok(!premed.flags.includes('PREMED_TO_MEDICAL_SCHOOL'));
+  // 의학과(본과) 학생, 일반 학과 3학년은 표시하지 않는다
+  for (const dept of ['의학과', '경영학과']) {
+    const p = markMedicalSchoolTerms(computeProgress({ admissionYear: 2024, leavePeriods: [], recordedTerms: [], today: TODAY, programYears: programYearsOf(dept) }), dept);
+    assert.ok(p.upcomingTerms.every((t) => !t.medicalSchool), dept);
+  }
 });
