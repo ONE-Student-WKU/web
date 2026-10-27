@@ -47,9 +47,12 @@ async function loadOwnDepartmentContext(student) {
   return { ids: new Set(ids), names: await curriculumNames(ids) };
 }
 
-/** 순수 함수 — 개설 학과가 내 학과가 아니고 내 편성표에도 없는 전공 과목인가. */
+/**
+ * 순수 함수 — 개설 학과가 내 학과가 아니고 내 편성표에도 없는 전공 과목인가(D-88).
+ * 개설과목에서 고른 과목만 본다 — 성적표 PDF 과목은 개설 학과를 알아도(courseOrigin.js) 이수구분을 학교가 찍은 값이라 바꾸지 않는다.
+ */
 function isOtherDepartmentMajorCourse(course, own) {
-  if (!own || !MAJOR_CATEGORIES.has(course.category) || course.offering_department_id == null) return false;
+  if (!own || !MAJOR_CATEGORIES.has(course.category) || course.offering_department_id == null || !course.offering_from_catalog) return false;
   if (own.ids.has(Number(course.offering_department_id))) return false;
   return !own.names.has(normalizeCourseName(String(course.name || '')));
 }
@@ -87,7 +90,8 @@ async function resolveCourseCounting(student, courses) {
     loadPriorContext(student), loadAssignmentContext(student), loadOwnDepartmentContext(student), loadOfferingDepartments(student.id),
   ]);
   const byId = new Map(courses.map((c) => {
-    const course = { ...c, offering_department_id: offering.get(c.id) ?? null };
+    const origin = offering.get(c.id);
+    const course = { ...c, offering_department_id: origin?.departmentId ?? null, offering_from_catalog: Boolean(origin?.fromCatalog) };
     const result = countCourse(course, { prior, second, own });
     // 학생이 고친 과목은 "자동"으로 되돌렸을 때의 값도 싣는다 — 과목 관리의 "자동: …" 칸이 고친 값이 아니라 자동 값을 보여 준다.
     return [c.id, result.auto ? result : { ...result, autoCounted: countCourse({ ...course, counted_major: null }, { prior, second, own }).counted }];

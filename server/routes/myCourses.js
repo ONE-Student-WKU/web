@@ -345,6 +345,12 @@ router.post('/import/confirm', async (req, res, next) => {
       if (row.majorArea !== undefined && row.majorArea !== null && !courseService.VALID_MAJOR_AREAS.includes(row.majorArea)) {
         return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_AREA', message: null, data: null });
       }
+      // 성적표에서 읽은 학수번호·개설학과 글자(선택). 학과 id는 서버가 찾는다 — 화면이 보낸 학과 id는 받지 않는다.
+      for (const key of ['courseCode', 'offeringDepartment']) {
+        if (row[key] !== undefined && row[key] !== null && (typeof row[key] !== 'string' || row[key].length > 100)) {
+          return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
+        }
+      }
       // student_courses.name은 VARCHAR(100) — 모바일에서 저장한 PDF는 표 레이아웃이 좁게
       // 잡혀 컬럼 구분이 깨지는 경우가 있어(실사용 확인), 과목명 파싱이 여러 행을 한 줄로
       // 합쳐버려 100자를 넘기면서 DB INSERT가 원인 불명 500으로 터지는 문제가 있었다.

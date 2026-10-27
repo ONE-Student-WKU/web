@@ -84,13 +84,26 @@ async function loadAssignmentContext(student) {
   };
 }
 
-/** 과목 행 id → 개설 학과 id(개설과목에서 고른 과목만). */
+/**
+ * 과목 행 id → { departmentId, fromCatalog } — 개설과목에서 고른 과목은 그 개설과목의 학과(fromCatalog: true),
+ * 성적표 PDF로 가져온 과목은 학수번호·개설학과 글자로 찾아 저장한 학과(student_courses.offering_department_id, courseOrigin.js).
+ * 어느 쪽도 모르면 빠진다(판정은 과목명으로 맞춘다).
+ */
 async function loadOfferingDepartments(studentId) {
   const [rows] = await pool.query(
-    `SELECT sc.id, co.department_id FROM student_courses sc JOIN course_offerings co ON co.id = sc.course_id WHERE sc.student_id = ?`,
+    `SELECT sc.id, co.department_id AS catalog_department_id, sc.offering_department_id
+     FROM student_courses sc LEFT JOIN course_offerings co ON co.id = sc.course_id
+     WHERE sc.student_id = ? AND (co.department_id IS NOT NULL OR sc.offering_department_id IS NOT NULL)`,
     [studentId]
   );
-  return new Map(rows.map((r) => [r.id, r.department_id]));
+  return new Map(
+    rows.map((r) => [
+      r.id,
+      r.catalog_department_id != null
+        ? { departmentId: r.catalog_department_id, fromCatalog: true }
+        : { departmentId: r.offering_department_id, fromCatalog: false },
+    ])
+  );
 }
 
 /**

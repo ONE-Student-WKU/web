@@ -1,6 +1,7 @@
 const { PDFParse } = require('pdf-parse');
 const { CATEGORY_MAP, majorAreaOf } = require('./categoryMap');
 const { extractCourseListRows, extractFullTranscriptRows } = require('./aiClient');
+const { normalizeCourseCode, normalizeDepartmentText } = require('./courseOrigin');
 
 /**
  * server/services/pdfImportService.js
@@ -148,6 +149,8 @@ async function parseCourseListText(rawText, { beforeAiCall } = {}) {
       category: CATEGORY_MAP[rawCategory] || null,
       // 광역 계열전공의 기초·심화·응용(시행규칙 제7조 제3항) — category가 전공선택으로 합쳐도 원래 구분을 남긴다.
       majorArea: majorAreaOf(rawCategory),
+      // 이수과목확인리스트의 "개설학과(전공)" 칸 — 학수번호가 없는 문서라 저장할 때 이 글자로 개설 학과를 찾는다(courseOrigin.js).
+      offeringDepartment: normalizeDepartmentText(item.offeringDepartment),
       name,
       year: Number(item.year),
       semester: Number(item.semester),
@@ -322,6 +325,8 @@ function finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnin
       category: CATEGORY_MAP[rawCategory] || null,
       // 광역 계열전공의 기초·심화·응용(시행규칙 제7조 제3항) — category가 전공선택으로 합쳐도 원래 구분을 남긴다.
       majorArea: majorAreaOf(rawCategory),
+      // 학수번호 — 저장할 때 개설 학과를 찾는다(courseOrigin.js). 모양이 이상하면 null.
+      courseCode: normalizeCourseCode(item.courseCode),
       name,
       year: Number(item.year),
       semester: Number(item.semester),
@@ -496,7 +501,7 @@ function tryParseFullTranscriptLines(text) {
       // inTable이어야만 과목으로 받는다 — 마지막 소계 뒤에도 currentYear/currentSemester는
       // 남아 있어서, 표 밖 장식 텍스트가 우연히 6칸 모양에 맞으면 허위 행이 될 수 있다.
       if (shapeOk && inTable) {
-        items.push({ rawCategory: code, name, year: currentYear, semester: currentSemester, credits: Number(credits), letterGrade: grade });
+        items.push({ rawCategory: code, courseCode: courseNo, name, year: currentYear, semester: currentSemester, credits: Number(credits), letterGrade: grade });
         i += 6;
         continue;
       }

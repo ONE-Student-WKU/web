@@ -866,7 +866,9 @@ const COURSE_LIST_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "이수과목�
 분류하면 된다.
 
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
-[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "isFail": false}]`;
+[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "isFail": false, "offeringDepartment": "개설학과(전공)"}]
+학점 뒤에는 "영역" 또는 "개설학과(전공)" 칸이 올 수 있다. 그 값이 학과·학부·계열·전공 이름(예: 컴퓨터·소프트웨어공학과,
+공학3계열(컴퓨터·소프트웨어공학전공))이면 offeringDepartment에 글자 그대로 옮겨 적고, 교양 영역 이름이거나 비어 있으면 null로 둬라.`;
 
 // "전체성적조회" 표 파싱용 — 학기별 섹션 구조와 등급까지 함께 추출한다.
 const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성적조회" 문서에서 이수한 과목 정보를 추출하는 도우미다.
@@ -894,7 +896,8 @@ const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성
 분류하면 된다.
 
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
-[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "letterGrade": "A+"}]`;
+[{"rawCategory": "이수구분 코드", "courseCode": "학수번호", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "letterGrade": "A+"}]
+courseCode에는 그 행의 학수번호(예: 003308, L00316)를 그대로 옮겨 적고, 없으면 null로 둬라.`;
 
 // 소계/카테고리 대조(pdfImportService.js)는 여기서 뽑은 rawCategory/credits를 그대로 쓰므로,
 // 이 프롬프트가 코드값을 변형 없이 옮기게 강제하는 게 대조 정확도에 중요하다.

@@ -13,13 +13,18 @@ const { countCourse, isOtherDepartmentMajorCourse, pairedMedicalDepartment } = r
  */
 
 const OWN = { ids: new Set([1]), names: new Set(['자료구조']) };
-const course = (over) => ({ name: '현대소설론', category: '전공선택', year: 2024, semester: 1, offering_department_id: 958, counted_major: null, ...over });
+const course = (over) => ({ name: '현대소설론', category: '전공선택', year: 2024, semester: 1, offering_department_id: 958, offering_from_catalog: true, counted_major: null, ...over });
 
 test('다른 학과 전공 과목: 개설 학과가 내 학과가 아니고 내 편성표에도 없는 전공 과목만 일반선택', () => {
   assert.deepEqual(countCourse(course(), { own: OWN }), { counted: 'GENERAL', category: '일반선택', reason: 'OTHER_DEPARTMENT', auto: true });
   assert.equal(isOtherDepartmentMajorCourse(course({ offering_department_id: 1 }), OWN), false, '내 학과(통폐합 전후 포함) 개설');
   assert.equal(isOtherDepartmentMajorCourse(course({ name: '자료 구조' }), OWN), false, '내 편성표에 있는 공통 과목');
   assert.equal(isOtherDepartmentMajorCourse(course({ offering_department_id: null }), OWN), false, '성적표·직접 입력 과목은 개설 학과를 몰라 그대로');
+  assert.equal(
+    isOtherDepartmentMajorCourse(course({ offering_from_catalog: false }), OWN),
+    false,
+    '성적표 과목은 학수번호로 개설 학과를 알아도 학교가 찍은 이수구분을 그대로 둔다'
+  );
   assert.equal(isOtherDepartmentMajorCourse(course({ category: '교양선택' }), OWN), false, '교양은 소속과 무관');
   assert.equal(isOtherDepartmentMajorCourse(course({ category: '일반선택' }), OWN), false);
   assert.equal(isOtherDepartmentMajorCourse(course(), null), false, '학과가 없으면(온보딩 전) 판정하지 않는다');
