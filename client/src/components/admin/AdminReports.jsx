@@ -3,7 +3,7 @@ import { getAdminReports, resolveAdminReport, sanctionReport, getReportedStudent
 import { refreshAdminPending } from '../../utils/adminPending.js';
 import AdminSheet from './AdminSheet.jsx';
 import AdminTabs from './AdminTabs.jsx';
-import { formatDate, SANCTION_SCOPE_LABEL, SANCTION_STATE_LABEL, sanctionState } from './adminFormat.js';
+import { formatDate, SANCTION_SCOPE_LABEL, SANCTION_STATE_LABEL, sanctionState, warningSeenLabel } from './adminFormat.js';
 import { IconChevronRight } from '../icons.jsx';
 
 // 제재 사유 입력란의 기본값. 신고자가 쓴 신고 사유를 그대로 채우면 그 말이 제재받는 사용자에게 "제재 사유"로 전달된다
@@ -22,6 +22,7 @@ const SANCTION_DURATIONS = [
   { value: 'permanent', label: '영구' },
 ];
 const SANCTION_SCOPES = [
+  { value: 'warning', hint: '기능은 막지 않고 기록만 남겨요' },
   { value: 'post_apply', hint: '커뮤니티는 볼 수 있어요' },
   { value: 'full', hint: '커뮤니티에 들어올 수 없어요' },
   { value: 'account', hint: '로그아웃·계정 삭제 말고는 모두 막혀요' },
@@ -137,7 +138,7 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
     setError(null);
     try {
       await sanctionReport(group.first.id, { scope, duration, reason: reason.trim(), resolutionNote: note.trim() || null });
-      finish('제재를 적용했어요.');
+      finish(scope === 'warning' ? '경고를 보냈어요.' : '제재를 적용했어요.');
     } catch {
       setError('제재를 적용하지 못했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -152,6 +153,9 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
     const isApplication = first.targetType === 'application';
     const reporters = [...new Set(group.reports.map((r) => r.reporter))].length;
     const durationLabel = SANCTION_DURATIONS.find((d) => d.value === duration).label;
+    // 경고는 기간이 없다 — 기간 칸을 숨기고 버튼·문구를 경고에 맞춘다.
+    const isWarning = scope === 'warning';
+    const warnings = summary?.warnings || [];
     return (
       <>
         <div className="admin-detail">
@@ -226,19 +230,31 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
                       <dd>{summary.reportsReceived.total}건</dd>
                     </div>
                     <div>
+                      <dt>경고</dt>
+                      <dd>{warnings.length ? `${warnings.length}회` : '없음'}</dd>
+                    </div>
+                    <div>
                       <dt>제재 이력</dt>
                       <dd>{summary.sanctions.length ? `${summary.sanctions.length}건` : '없음'}</dd>
                     </div>
                   </dl>
-                  {summary.sanctions.length > 0 && (
+                  {(summary.sanctions.length > 0 || warnings.length > 0) && (
                     <ul className="admin-person-sanctions">
                       {summary.sanctions.map((s) => (
-                        <li key={s.id}>
+                        <li key={`s-${s.id}`}>
                           <span className={`post-status ${sanctionState(s) === 'active' ? 'post-status--no' : 'post-status--mute'}`}>
                             {SANCTION_SCOPE_LABEL[s.scope] || s.scope} · {SANCTION_STATE_LABEL[sanctionState(s)]}
                           </span>
                           <span className="post-meta">
                             {formatDate(s.startsAt)} ~ {s.endsAt ? formatDate(s.endsAt) : '영구'} · 사유 {s.reason}
+                          </span>
+                        </li>
+                      ))}
+                      {warnings.map((w) => (
+                        <li key={`w-${w.id}`}>
+                          <span className="post-status post-status--mute">경고 · {warningSeenLabel(w)}</span>
+                          <span className="post-meta">
+                            {formatDate(w.createdAt)} · 사유 {w.reason}
                           </span>
                         </li>
                       ))}
@@ -284,7 +300,7 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
             title={`${first.reportedStudent} 제재하기`}
             onClose={() => setSheet(null)}
             onSubmit={handleSanction}
-            submitLabel={`${durationLabel} ${SANCTION_SCOPE_LABEL[scope]}`}
+            submitLabel={isWarning ? '경고 보내기' : `${durationLabel} ${SANCTION_SCOPE_LABEL[scope]}`}
             submitting={submitting}
             submitDisabled={!reason.trim()}
           >
@@ -297,24 +313,30 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
                 </button>
               ))}
             </div>
-            <p className="admin-section">기간</p>
-            <div className="seg admin-seg-full" role="radiogroup" aria-label="기간">
-              {SANCTION_DURATIONS.map((d) => (
-                <button key={d.value} type="button" role="radio" aria-checked={duration === d.value} className={duration === d.value ? 'active' : ''} onClick={() => setDuration(d.value)}>
-                  {d.label}
-                </button>
-              ))}
-            </div>
+            {!isWarning && (
+              <>
+                <p className="admin-section">기간</p>
+                <div className="seg admin-seg-full" role="radiogroup" aria-label="기간">
+                  {SANCTION_DURATIONS.map((d) => (
+                    <button key={d.value} type="button" role="radio" aria-checked={duration === d.value} className={duration === d.value ? 'active' : ''} onClick={() => setDuration(d.value)}>
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <label className="admin-section" htmlFor="sanction-reason">
-              제재 사유 <small>{first.reportedStudent}에게 보여요</small>
+              {isWarning ? '경고 사유' : '제재 사유'} <small>{first.reportedStudent}에게 보여요</small>
             </label>
             <textarea id="sanction-reason" className="post-input admin-textarea" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} required />
-            <p className="courses-manual-hint">신고 사유는 제재받는 사용자에게 전달되지 않아요. 이 "제재 사유"만 보여요.</p>
+            <p className="courses-manual-hint">신고 사유는 제재받는 사용자에게 전달되지 않아요. 이 "{isWarning ? '경고 사유' : '제재 사유'}"만 보여요.</p>
             <label className="admin-section" htmlFor="resolution-note">
               신고자에게 보낼 안내 <small>{reporters > 1 ? `신고한 ${reporters}명에게 보여요` : '신고자에게만 보여요'}</small>
             </label>
             <textarea id="resolution-note" className="post-input admin-textarea" rows={3} maxLength={RESOLUTION_NOTE_MAX_LENGTH} value={note} onChange={(e) => setNote(e.target.value)} />
-            <p className="admin-sheet-warn">제재하면 신고된 {isApplication ? '신청' : '글'}이 함께 지워지고 되돌릴 수 없어요.</p>
+            <p className="admin-sheet-warn">
+              {isWarning ? '경고해도' : '제재하면'} 신고된 {isApplication ? '신청' : '글'}이 함께 지워지고 되돌릴 수 없어요.
+            </p>
           </AdminSheet>
         )}
       </>

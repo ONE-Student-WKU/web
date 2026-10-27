@@ -15,7 +15,8 @@ export const CATEGORY_LABEL = { study: '스터디', project: '팀 활동·공모
 
 // 제재 범위 — 학생에게 보이는 제재 안내와 같은 뜻으로, 무엇이 막히는지 바로 알게 쓴다.
 // account(#457)는 약관 6항의 이름 그대로 — 언제 고르는지는 docs/moderation-policy.md.
-export const SANCTION_SCOPE_LABEL = { post_apply: '글쓰기·신청 금지', full: '커뮤니티 이용 정지', account: '서비스 전체 이용 정지' };
+// warning은 기능을 막지 않는 경고(기록만, student_warnings).
+export const SANCTION_SCOPE_LABEL = { warning: '경고', post_apply: '글쓰기·신청 금지', full: '커뮤니티 이용 정지', account: '서비스 전체 이용 정지' };
 
 // 지금 적용 중인지·해제됐는지·기간이 끝났는지(서버 sanction state 또는 목록 행으로 판단).
 export function sanctionState(s, now = Date.now()) {
@@ -26,6 +27,11 @@ export function sanctionState(s, now = Date.now()) {
 }
 
 export const SANCTION_STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
+
+// 경고를 학생이 봤는지 — 다음 접속 때 한 번 뜨는 안내에서 [확인]을 눌렀으면 acknowledgedAt이 있다.
+export function warningSeenLabel(w) {
+  return w.acknowledgedAt ? '학생 확인함' : '아직 안 봄';
+}
 
 // 남은 기간 — 오늘 끝나면 "오늘까지", 하루 넘게 남으면 "N일 남음".
 export function remainingLabel(endsAt, now = Date.now()) {

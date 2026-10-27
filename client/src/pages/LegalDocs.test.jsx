@@ -10,7 +10,7 @@ import TermsOfService from './TermsOfService.jsx';
  * 문의 이메일이 현재 운영 이메일인지 확인한다. 서비스에 외부 사업자나 로그인 수단을 추가하면 이 문서와 이 테스트를 같이 고친다.
  */
 
-const CONTACT = 'sicnro3241@gmail.com';
+const CONTACT = 'contact@onestudent.io.kr';
 
 describe('개인정보처리방침', () => {
   it('문의 이메일이 현재 운영 이메일이고 옛 이메일은 없다', () => {

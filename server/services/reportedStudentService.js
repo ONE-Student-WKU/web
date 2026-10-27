@@ -1,4 +1,5 @@
 const pool = require('../db');
+const warningService = require('./warningService');
 
 /**
  * server/services/reportedStudentService.js
@@ -46,6 +47,7 @@ async function getReportedStudentSummary(studentId, now = new Date()) {
     liftedAt: r.lifted_at,
     state: sanctionState(r, now),
   }));
+  const warnings = await warningService.listWarningsForStudent(studentId);
 
   return {
     id: student.id,
@@ -62,6 +64,8 @@ async function getReportedStudentSummary(studentId, now = new Date()) {
       total: Object.values(reportsByStatus).reduce((a, b) => a + b, 0),
     },
     sanctions,
+    // 경고(기능 제한 없음) — 제재 이력과 따로 센다. 반복 여부를 보고 조치를 한 단계 올리는 데 쓴다(docs/moderation-policy.md).
+    warnings,
   };
 }
 

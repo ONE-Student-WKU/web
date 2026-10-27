@@ -5,6 +5,7 @@ const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
+const warningService = require('../services/warningService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
 const uiEventService = require('../services/uiEventService');
@@ -186,18 +187,35 @@ router.get('/community/students/:id/summary', async (req, res, next) => {
 });
 
 // account = 서비스 전체 이용 정지(#457, 기준은 docs/moderation-policy.md).
-const SANCTION_SCOPES = ['post_apply', 'full', 'account'];
+// warning = 경고 — 기능을 막지 않고 기록만 남긴다(student_warnings, 기간 없음).
+const SANCTION_SCOPES = ['warning', 'post_apply', 'full', 'account'];
 // null = 영구정지.
 const SANCTION_DURATIONS = { '1d': 1, '3d': 3, '7d': 7, '30d': 30, permanent: null };
 
 // 제재 요청 본문(범위·기간·사유) 검증 — 신고함 제재와 글에서 바로 거는 제재가 같은 규칙을 쓴다. 문제가 있으면 { error: 코드 }.
+// 경고는 기간이 없어서 duration을 보지 않는다.
 function parseSanctionInput(body) {
   const { scope, duration, reason } = body || {};
   if (!SANCTION_SCOPES.includes(scope)) return { error: 'INVALID_SCOPE' };
-  if (!Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) return { error: 'INVALID_DURATION' };
+  if (scope !== 'warning' && !Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) return { error: 'INVALID_DURATION' };
   const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
   if (!trimmedReason) return { error: 'REQUIRED_REASON' };
-  return { scope, durationDays: SANCTION_DURATIONS[duration], reason: trimmedReason };
+  return { scope, durationDays: scope === 'warning' ? null : SANCTION_DURATIONS[duration], reason: trimmedReason };
+}
+
+// 경고면 경고 기록, 아니면 정지·제한 — 두 제재 라우트가 같이 쓴다.
+function applySanction(input, { studentId, createdBy, reportId = null }) {
+  if (input.scope === 'warning') {
+    return warningService.createWarning({ studentId, reason: input.reason, createdBy, reportId });
+  }
+  return sanctionService.createSanction({
+    studentId,
+    reason: input.reason,
+    scope: input.scope,
+    durationDays: input.durationDays,
+    createdBy,
+    reportId,
+  });
 }
 
 // POST /api/admin/community/reports/:id/sanction — "제재"(#201). 신고 대상 계정에 정지를
@@ -226,14 +244,8 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'NO_REPORTED_STUDENT', message: null, data: null });
     }
 
-    await sanctionService.createSanction({
-      studentId: report.reportedStudentId,
-      reason: input.reason,
-      scope: input.scope,
-      durationDays: input.durationDays,
-      createdBy: req.session.userId,
-      reportId: report.id,
-    });
+    // 경고도 제재와 같이 신고된 글·신청을 지우고 신고를 처리완료한다 — 경고할 만한 내용이면 커뮤니티에 남겨 두지 않는다.
+    await applySanction(input, { studentId: report.reportedStudentId, createdBy: req.session.userId, reportId: report.id });
 
     if (report.targetType === 'post') await communityService.deletePost(report.targetId);
     else await communityService.deleteApplication(report.targetId);
@@ -269,13 +281,7 @@ router.post('/community/students/:id/sanction', async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'CANNOT_SANCTION_ADMIN', message: null, data: null });
     }
 
-    await sanctionService.createSanction({
-      studentId,
-      reason: input.reason,
-      scope: input.scope,
-      durationDays: input.durationDays,
-      createdBy: req.session.userId,
-    });
+    await applySanction(input, { studentId, createdBy: req.session.userId });
     res.status(200).json({ status: 200, code: 'STUDENT_SANCTIONED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -290,8 +296,20 @@ router.get('/sanctions', async (req, res, next) => {
     if (status !== 'active' && status !== 'past') {
       return res.status(400).json({ status: 400, code: 'INVALID_STATUS', message: null, data: null });
     }
-    const sanctions = status === 'past' ? await sanctionService.listPastSanctions() : await sanctionService.listActiveSanctions();
-    res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
+    if (status === 'active') {
+      const sanctions = await sanctionService.listActiveSanctions();
+      return res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
+    }
+    // 지난 제재에는 경고도 섞는다(kind로 구분) — 경고는 기간이 없어 보낸 즉시 "지난" 기록이다. 해제·종료 시각(경고는 보낸 시각) 순.
+    const [past, warnings] = await Promise.all([sanctionService.listPastSanctions(), warningService.listRecentWarnings()]);
+    const rows = [
+      ...past.map((s) => ({ kind: 'sanction', ...s, sortAt: s.liftedAt || s.endsAt })),
+      ...warnings.map((w) => ({ kind: 'warning', ...w, sortAt: w.createdAt })),
+    ]
+      .sort((a, b) => new Date(b.sortAt) - new Date(a.sortAt))
+      .slice(0, 100)
+      .map(({ sortAt, ...row }) => row);
+    res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: rows });
   } catch (err) {
     next(err);
   }
@@ -305,6 +323,32 @@ router.post('/sanctions/:id/lift', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'SANCTION_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'SANCTION_LIFTED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/sanctions/:id — 철회(잘못된 조치). 조기 해제와 달리 기록을 지워 제재 이력·반복 판단에서 빠진다.
+router.delete('/sanctions/:id', async (req, res, next) => {
+  try {
+    const withdrawn = await sanctionService.withdrawSanction(req.params.id);
+    if (!withdrawn) {
+      return res.status(404).json({ status: 404, code: 'SANCTION_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'SANCTION_WITHDRAWN', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/warnings/:id — 경고 취소(잘못된 경고). 기록을 지워 횟수에서 빠진다.
+router.delete('/warnings/:id', async (req, res, next) => {
+  try {
+    const deleted = await warningService.deleteWarning(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'WARNING_DELETED', message: null, data: null });
   } catch (err) {
     next(err);
   }

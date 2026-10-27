@@ -48,6 +48,12 @@ export const verifyEmailCode = (email, code, remember = true, consent) =>
 
 // 로그인 직후 동의 화면(ConsentGate)에서 이용약관·개인정보 수집·이용에 동의한다.
 export const acceptConsent = (version) => apiRequest('/me/consent', { method: 'POST', body: JSON.stringify({ version }) });
+// 정지 화면의 이의 제기(정지 한 번에 1건) — 보낸 이의를 돌려준다.
+export const submitAppeal = (content) =>
+  apiRequest('/me/appeal', { method: 'POST', body: JSON.stringify({ content }) }).then((d) => d.appeal);
+// 경고 안내에서 [확인] — 다음에 보여줄 경고(없으면 null)를 돌려준다.
+export const acknowledgeWarning = (id) =>
+  apiRequest(`/me/warnings/${id}/acknowledge`, { method: 'POST' }).then((d) => d.pendingWarning);
 
 // 이메일 OTP로만 가입한 계정(oauth_id 없음)의 계정 삭제 재인증 — Google 계정은
 // startGoogleReauth를 그대로 쓴다. 대상 이메일은 서버가 세션의 본인 계정 것으로 고정하므로
@@ -249,6 +255,10 @@ export const getReportedStudentSummary = (studentId) => apiRequest(`/admin/commu
 export const getAdminSanctions = (status = 'active') => apiRequest(`/admin/sanctions?status=${status}`);
 
 export const liftSanction = (id) => apiRequest(`/admin/sanctions/${id}/lift`, { method: 'POST' });
+// 철회(잘못된 조치) — 해제와 달리 기록을 지운다.
+export const withdrawSanction = (id) => apiRequest(`/admin/sanctions/${id}`, { method: 'DELETE' });
+// 경고 취소(잘못된 경고) — 기록을 지운다.
+export const deleteWarning = (id) => apiRequest(`/admin/warnings/${id}`, { method: 'DELETE' });
 
 export const getMySanction = () => apiRequest('/community/my-sanction');
 

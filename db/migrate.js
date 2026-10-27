@@ -438,6 +438,23 @@ async function ensureInquiryResolutionNoteColumn(connection) {
   }
 }
 
+// 정지 이의 제기 guard — 정지 화면에서 보낸 이의는 문의함에 들어가고, 어느 정지에 대한 이의인지 sanction_id로 잇는다.
+// 제재를 철회(삭제)하면 연결만 끊긴다(ON DELETE SET NULL). student_sanctions가 schema.sql에서 먼저 만들어진 뒤라 FK를 걸 수 있다.
+async function ensureInquirySanctionColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inquiries' AND COLUMN_NAME = 'sanction_id'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] inquiries.sanction_id 컬럼 추가...');
+    await connection.query(
+      `ALTER TABLE inquiries
+         ADD COLUMN sanction_id INT NULL,
+         ADD CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL`
+    );
+  }
+}
+
 // 커뮤니티 status 필터 인덱스 도입용 guard — status는 FK가 아니라 CREATE TABLE IF NOT
 // EXISTS의 INDEX 선언이 기존 운영 테이블에는 반영되지 않으므로 직접 ALTER한다.
 // (listApprovedPosts/listPostsForAdmin/listReportsForAdmin이 status 단독으로 필터링함)
@@ -617,6 +634,7 @@ async function migrate() {
     await ensureCommunityStatusIndexes(connection);
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureInquiryResolutionNoteColumn(connection);
+    await ensureInquirySanctionColumn(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
     await ensureCareerCandidateRequestsColumn(connection);
