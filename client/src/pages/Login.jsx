@@ -30,6 +30,7 @@ function describeAuthError(code, t) {
   if (code === 'CONSENT_REQUIRED') return t('login.err.consentRequired');
   if (code === 'INVALID_CREDENTIALS') return t('login.err.generic');
   if (code === 'OAUTH_FAILED') return t('login.err.oauthFailed');
+  if (code === 'SIGNUP_BLOCKED') return t('login.err.signupBlocked');
   return t('login.err.generic');
 }
 
@@ -41,6 +42,7 @@ function describeEmailError(code, t) {
   if (code === 'INVALID_CODE') return t('login.err.invalidCode');
   if (code === 'TOO_MANY_ATTEMPTS') return t('login.err.tooManyAttempts');
   if (code === 'EMAIL_SEND_FAILED') return t('login.err.sendFailed');
+  if (code === 'SIGNUP_BLOCKED') return t('login.err.signupBlocked');
   return t('login.err.request');
 }
 

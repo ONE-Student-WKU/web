@@ -14,6 +14,10 @@ async function apiRequest(path, options = {}) {
   const body = await res.json();
 
   if (!res.ok) {
+    // 쓰는 도중에 서비스 전체 이용 정지가 걸리면(#457) 어느 화면에서 요청했든 App.jsx가 정지 화면으로 바꾼다.
+    if (body.code === 'ACCOUNT_SUSPENDED') {
+      window.dispatchEvent(new CustomEvent('account-suspended', { detail: body.data }));
+    }
     const err = new Error(body.code || 'REQUEST_FAILED');
     err.code = body.code;
     err.status = res.status;

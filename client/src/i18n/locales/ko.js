@@ -175,6 +175,7 @@ export default {
   'login.err.tooManyAttempts': '시도 횟수를 초과했어요. 인증코드를 다시 요청해주세요.',
   'login.err.request': '요청에 실패했어요. 잠시 후 다시 시도해주세요.',
   'login.err.sendFailed': '지금은 인증코드 메일을 보낼 수 없어요. 위의 Google 로그인을 이용해 주세요.',
+  'login.err.signupBlocked': '이용이 정지된 동안 삭제한 계정이라, 정지가 끝날 때까지 다시 가입할 수 없어요.',
 
   // 약관 동의 화면(로그인 직후, 동의 기록이 없는 계정)
   'consent.title': '서비스 이용 동의',
@@ -183,6 +184,18 @@ export default {
   'consent.saving': '저장 중...',
   'consent.decline': '동의하지 않고 나가기',
   'consent.err': '동의를 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
+
+  // 서비스 전체 이용 정지 화면(SuspendedGate.jsx, #457) — 사유는 관리자가 쓴 글이라 사전에 두지 않는다.
+  'suspended.title': '이용이 정지됐어요',
+  'suspended.body': '정지가 끝나면 다시 이용할 수 있어요.',
+  'suspended.bodyPermanent': '운영팀이 해제하기 전까지 이용할 수 없어요.',
+  'suspended.reason': '사유',
+  'suspended.period': '기간',
+  'suspended.until': '{date}까지',
+  'suspended.permanent': '영구 정지',
+  'suspended.appeal': '이의가 있으면 <b>{email}</b>으로 알려주세요.',
+  'suspended.logout': '로그아웃',
+  'suspended.deleteNotice': '정지 중에 계정을 삭제하면 정지가 끝날 때까지(영구 정지는 1년) 같은 이메일이나 Google 계정으로 다시 가입할 수 없어요.',
 
   // 졸업요건 진단
   'grad.err.load': '졸업요건 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
@@ -927,6 +940,9 @@ export default {
   'community.apply': '신청하기',
   'community.myApplication': '내 신청',
   'community.pendingDesc': '글쓴이가 아직 검토하지 않았어요.',
+  // 글쓴이가 계정 정지 중일 때(#457) — 이유·기간은 다른 학생에게 알리지 않는다.
+  'community.authorUnavailable': '지금은 글쓴이가 신청을 확인할 수 없어요.',
+  'community.applyUnavailable': '지금은 이 글에 신청할 수 없어요.',
   'community.acceptedDesc': '수락됐어요! 아래 연락 이메일로 글쓴이에게 연락해보세요.',
   // 매칭 연락 — 연락 이메일은 서비스가 만든 연결용 주소라 처음 보면 오류처럼 보여서 무엇인지 알린다. 닉네임은 번역하지 않는다.
   'community.contact.hint': '실제 이메일 대신 연결용 주소예요. 이 주소로 메일을 보내면 상대에게 전달되고, 서로의 실제 이메일은 보이지 않아요.',

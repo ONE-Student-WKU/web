@@ -10,8 +10,12 @@ import { IconAlertTriangle } from './icons.jsx';
  * 관리자 전용 도구라 Admin.jsx와 같이 한국어 문구를 그대로 쓴다(번역 사전 대상 아님).
  *
  * Props:
- * - studentId: number — 제재 대상 계정 id (서버가 관리자 요청에만 내려주는 글의 authorId)
+ * 문의 상세(AdminInquiries.jsx)에서도 문의한 학생을 바로 제재할 때 같은 팝업을 쓴다(#457 — 문의하기 욕설은 커뮤니티 밖 위반).
+ *
+ * Props:
+ * - studentId: number — 제재 대상 계정 id (서버가 관리자 요청에만 내려주는 글의 authorId·문의의 studentId)
  * - nickname: string — 화면 표시용
+ * - title: string (선택) — 팝업 제목(기본 "작성자 제재")
  * - onClose: function
  * - onDone: function — 제재가 적용된 뒤 호출(팝업은 호출부가 닫는다)
  */
@@ -28,8 +32,9 @@ const DURATIONS = [
 const SCOPES = [
   { value: 'post_apply', label: '경고성 (글쓰기·신청 금지)' },
   { value: 'full', label: '전면 정지 (커뮤니티 진입 차단)' },
+  { value: 'account', label: '계정 정지 (서비스 전체 이용 차단)' },
 ];
-const SCOPE_LABEL = { post_apply: '경고성', full: '전면 정지' };
+const SCOPE_LABEL = { post_apply: '경고성', full: '전면 정지', account: '계정 정지' };
 const STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
 const ERROR_TEXT = {
   CANNOT_SANCTION_ADMIN: '관리자 계정은 제재할 수 없어요.',
@@ -41,7 +46,7 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
+function StudentSanctionDialog({ studentId, nickname, title = '작성자 제재', onClose, onDone }) {
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
   const [scope, setScope] = useState('post_apply');
@@ -83,7 +88,7 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
   return (
     <div className="career-confirm-overlay" onClick={onClose}>
       <form className="career-confirm-modal student-sanction-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <p className="admin-post-title">작성자 제재</p>
+        <p className="admin-post-title">{title}</p>
         <p className="community-detail-meta">
           대상 · <b>{nickname}</b>
         </p>
@@ -133,7 +138,11 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
           <label htmlFor="direct-sanction-reason">제재 사유 (사용자에게 보여요)</label>
           <textarea id="direct-sanction-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} required />
         </div>
-        <p className="courses-manual-hint">글은 지워지지 않아요. 글 처리는 커뮤니티 관리(승인·삭제)에서 따로 해주세요.</p>
+        <p className="courses-manual-hint">
+          {scope === 'account'
+            ? '로그아웃·계정 삭제 말고는 모든 기능이 막혀요. 이 학생의 모집 글은 정지 동안 목록에서 숨겨져요.'
+            : '글은 지워지지 않아요. 글 처리는 커뮤니티 관리(승인·삭제)에서 따로 해주세요.'}
+        </p>
 
         {error && <p className="home-error">{error}</p>}
 

@@ -176,8 +176,17 @@ function normalizeSearchQuery(q) {
   return q.normalize('NFC').trim().slice(0, SEARCH_MAX_LENGTH);
 }
 
+// 이 학생이 지금 서비스 전체 이용 정지(#457) 중인지 — SQL 안에서 글쓴이·신청자 열에 붙여 쓴다.
+// sanctionService.getActiveSanction의 "유효" 정의(해제 안 됐고 기간이 남았거나 영구)와 같다.
+function accountSuspendedSql(studentIdColumn) {
+  return `EXISTS(SELECT 1 FROM student_sanctions ss
+                 WHERE ss.student_id = ${studentIdColumn} AND ss.scope = 'account'
+                   AND ss.lifted_at IS NULL AND (ss.ends_at IS NULL OR ss.ends_at > NOW()))`;
+}
+
 // query가 비어 있으면 검색하지 않고 전체 목록(기존 동작)을 돌려준다.
 // viewerDepartmentId: 보는 학생의 학과 — 글마다 모집 학과와 "내 학과" 여부(isMyDepartment)를 붙인다.
+// 글쓴이가 계정 정지 중인 글은 정지 동안 목록·검색에서 뺀다(#457) — 지우지 않으므로 풀리면 바로 다시 보인다.
 async function listApprovedPosts({ query, viewerDepartmentId = null } = {}) {
   const keyword = normalizeSearchQuery(query);
   const [rows] = await pool.query(
@@ -185,7 +194,7 @@ async function listApprovedPosts({ query, viewerDepartmentId = null } = {}) {
             ${RECRUIT_DATE_COLUMNS}
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
-     WHERE p.status = 'approved'
+     WHERE p.status = 'approved' AND NOT ${accountSuspendedSql('p.author_id')}
      ORDER BY p.created_at DESC`
   );
   const today = todayKst();
@@ -213,12 +222,15 @@ async function listApprovedPosts({ query, viewerDepartmentId = null } = {}) {
 // 글이 여러 개면 "어느 글에 신청이 왔는지"를 목록에서 바로 알아볼 수 있어야 해서, 글마다 받은
 // 신청 수(전체/대기중)를 같이 내려준다 — 상세를 하나씩 열어보지 않아도 새 신청이 달린 글을
 // 찾을 수 있다. 신청 테이블을 읽기만 하는 상관 서브쿼리라 스키마·기존 필드는 그대로다.
+// 계정 정지 중인 학생의 대기 중 신청은 신청자 목록(getApplicantsForPost)처럼 세지 않는다(#457).
 async function listMyPosts(studentId) {
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at,
             ${RECRUIT_DATE_COLUMNS},
-            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id) AS application_count,
-            (SELECT COUNT(*) FROM community_applications a WHERE a.post_id = p.id AND a.status = 'pending') AS pending_application_count
+            (SELECT COUNT(*) FROM community_applications a
+             WHERE a.post_id = p.id AND NOT (a.status = 'pending' AND ${accountSuspendedSql('a.applicant_id')})) AS application_count,
+            (SELECT COUNT(*) FROM community_applications a
+             WHERE a.post_id = p.id AND a.status = 'pending' AND NOT ${accountSuspendedSql('a.applicant_id')}) AS pending_application_count
      FROM community_posts p
      WHERE p.author_id = ?
      ORDER BY p.created_at DESC`,
@@ -247,7 +259,8 @@ async function listMyPosts(studentId) {
 async function getPostById(id, { studentId, includeAuthorId = false, viewerDepartmentId = null }) {
   const [rows] = await pool.query(
     `SELECT p.id, p.title, p.body, p.category, p.capacity, p.status, p.closed_at, p.created_at, p.author_id, p.reject_reason, s.name AS author_name,
-            ${RECRUIT_DATE_COLUMNS}
+            ${RECRUIT_DATE_COLUMNS},
+            ${accountSuspendedSql('p.author_id')} AS author_suspended
      FROM community_posts p
      JOIN students s ON s.id = p.author_id
      WHERE p.id = ?`,
@@ -308,6 +321,9 @@ async function getPostById(id, { studentId, includeAuthorId = false, viewerDepar
     myApplication,
     rejectReason: isMine ? row.reject_reason : null,
     contentHidden,
+    // 글쓴이가 계정 정지 중이라 지금은 신청을 받거나 확인할 수 없음(#457). 이유·기간은 다른 학생에게 알리지 않는다
+    // (개인정보처리방침 3항의 공개 범위) — 화면은 "지금은 신청할 수 없어요"만 보여준다.
+    authorUnavailable: Boolean(Number(row.author_suspended)),
   };
 }
 
@@ -424,7 +440,8 @@ async function getMyApplications(studentId) {
     `SELECT a.id, a.post_id, a.message, a.status, a.created_at, a.decided_at,
             p.title AS post_title, p.category AS post_category, p.closed_at AS post_closed_at,
             DATE_FORMAT(p.recruit_end_date, '%Y-%m-%d') AS recruit_end_date,
-            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
+            s.name AS author_name, s.id AS author_id, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at,
+            ${accountSuspendedSql('p.author_id')} AS author_suspended
      FROM community_applications a
      JOIN community_posts p ON p.id = a.post_id
      JOIN students s ON s.id = p.author_id
@@ -449,6 +466,8 @@ async function getMyApplications(studentId) {
     // 연락을 차단한 매칭은 연락 주소를 내려주지 않고 차단 시각만 준다(누가 차단했는지는 보여주지 않는다).
     contactEmail: row.status === 'accepted' && !row.contact_blocked_at ? row.contact_proxy_email : null,
     contactBlockedAt: row.contact_blocked_at || null,
+    // 글쓴이가 계정 정지 중(#457) — 신청은 그대로 두고 "지금은 글쓴이가 신청을 확인할 수 없어요"만 보여준다.
+    authorUnavailable: Boolean(Number(row.author_suspended)),
   }));
 }
 
@@ -456,10 +475,12 @@ async function getMyApplications(studentId) {
 // 2단계 승인/반려 라우트와 동일 패턴). hasAppliedBefore는 같은 신청자가 이 글에 이전에도
 // 신청한 적이 있는지(반려 후 재신청 포함) 표시 — 닉네임을 바꿔도 applicant_id는 고정이라
 // 글쓴이가 "예전에 왔던 사람"인지 알아볼 수 있게 해준다.
+// 계정 정지 중인 학생의 대기 중 신청은 정지 동안 빼고 보여준다(#457) — 수락해도 연락이 막혀 있어서다.
 async function getApplicantsForPost(postId) {
   const [rows] = await pool.query(
     `SELECT a.id, a.applicant_id, a.message, a.status, a.created_at, a.decided_at, a.reject_reason,
-            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at
+            s.name AS applicant_name, ep.proxy_email AS contact_proxy_email, cb.blocked_at AS contact_blocked_at,
+            ${accountSuspendedSql('a.applicant_id')} AS applicant_suspended
      FROM community_applications a
      JOIN students s ON s.id = a.applicant_id
      LEFT JOIN community_email_proxies ep ON ep.application_id = a.id AND ep.owner_id = a.applicant_id
@@ -469,9 +490,10 @@ async function getApplicantsForPost(postId) {
     [postId]
   );
   const seenApplicants = new Set();
-  return rows.map((row) => {
+  return rows.flatMap((row) => {
     const hasAppliedBefore = seenApplicants.has(row.applicant_id);
     seenApplicants.add(row.applicant_id);
+    if (row.status === 'pending' && Number(row.applicant_suspended)) return [];
     return {
       id: row.id,
       message: row.message,

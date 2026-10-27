@@ -7,6 +7,7 @@ const Sentry = require('@sentry/node');
 const router = express.Router();
 const studentService = require('../services/studentService');
 const emailAuthService = require('../services/emailAuthService');
+const signupBlockService = require('../services/signupBlockService');
 const mailer = require('../services/mailer');
 const { requireAuth } = require('../middleware/auth');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
@@ -160,6 +161,10 @@ router.get('/google/callback', async (req, res, next) => {
         });
         student = existingByEmail;
       } else {
+        // 정지 중에 탈퇴한 계정은 정지가 끝날 때까지 같은 이메일·Google 계정으로 다시 가입할 수 없다(#457, 약관 6항).
+        if (await signupBlockService.isBlocked({ email: payload.email, oauthId: payload.sub })) {
+          return redirectToApp('?authError=SIGNUP_BLOCKED');
+        }
         // 닉네임은 가입 시 자동 배정(user{id}) — 구글 실명을 그대로 노출하지 않고, 동명이인
         // 중복도 기본키 기반이라 원천 차단된다. 원하면 나중에 Profile 화면에서 직접 변경 가능.
         const id = await studentService.createOauthStudent({
@@ -334,6 +339,10 @@ router.post('/email/verify', verifyCodeLimiter, async (req, res, next) => {
 
     let student = await studentService.findByEmail(email);
     if (!student) {
+      // 정지 중에 탈퇴한 계정은 정지가 끝날 때까지 같은 이메일로 다시 가입할 수 없다(#457, 약관 6항).
+      if (await signupBlockService.isBlocked({ email })) {
+        return res.status(403).json({ status: 403, code: 'SIGNUP_BLOCKED', message: null, data: null });
+      }
       // 닉네임은 구글 가입과 동일하게 자동 배정(user{id}) — 별도 가입 단계 없이 이 한 번의
       // INSERT로 끝난다.
       const id = await studentService.createEmailStudent({ email });

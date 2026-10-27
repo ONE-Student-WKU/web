@@ -967,14 +967,14 @@ CREATE TABLE IF NOT EXISTS community_reports (
 -- 10-1. 사용자 제재 (#201) — 커뮤니티 신고에서 이어지는 계정 단위 조치(정지).
 -- students 컬럼이 아니라 별도 테이블로 둔 이유: 이력이 남아야 하고(관리자가 신고와 무관하게
 -- 직접 내리는 조치도 있을 수 있음), 한 계정에 여러 번 제재가 쌓일 수 있어서다. "지금 유효한
--- 제재"는 lifted_at이 비어있고 ends_at이 지나지 않은 것 중 가장 최근 것 하나로 판단한다
--- (server/services/sanctionService.js).
+-- 제재"는 lifted_at이 비어있고 ends_at이 지나지 않은 것 중 가장 무거운 것(account > full > post_apply,
+-- 같으면 최근 것) 하나로 판단한다(server/services/sanctionService.js).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS student_sanctions (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   student_id    INT NOT NULL,
   reason        TEXT NOT NULL,
-  scope         VARCHAR(20) NOT NULL,  -- 'post_apply'(글쓰기·신청만 금지) / 'full'(커뮤니티 진입 자체 차단)
+  scope         VARCHAR(20) NOT NULL,  -- 'post_apply'(글쓰기·신청만 금지) / 'full'(커뮤니티 진입 자체 차단) / 'account'(서비스 전체 이용 정지, #457)
   starts_at     DATETIME NOT NULL,
   ends_at       DATETIME NULL,          -- NULL = 영구정지
   lifted_at     DATETIME NULL,          -- 관리자가 조기 해제한 시각
@@ -985,6 +985,27 @@ CREATE TABLE IF NOT EXISTS student_sanctions (
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES students(id),
   FOREIGN KEY (report_id) REFERENCES community_reports(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 10-2. 정지 중 탈퇴 계정의 재가입 제한 (#457) — 서비스 전체 이용 정지 중에 계정을 삭제하고 같은
+-- 이메일·Google 계정으로 다시 가입해 정지를 피하는 일을 막는다. 개인정보처리방침 4항대로 이메일과
+-- Google 고유 식별자는 되돌릴 수 없게 변환한 값(SHA-256 해시)만, 정지 사유·기간과 함께 보관하고
+-- expires_at(정지가 끝나는 때, 영구 정지는 삭제한 날부터 1년)이 지나면 지운다
+-- (server/services/signupBlockService.js). 계정이 지워진 뒤의 기록이라 students를 참조하지 않는다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS suspended_signup_blocks (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  email_hash      CHAR(64) NOT NULL,
+  oauth_id_hash   CHAR(64) NULL,          -- Google로 가입한 계정만
+  reason          TEXT NOT NULL,          -- 정지 사유(관리자가 쓴 글 그대로)
+  suspension_ends_at DATETIME NULL,       -- 정지가 끝나는 때, NULL = 영구 정지
+  expires_at      DATETIME NOT NULL,      -- 이 기록을 지우는 때(재가입 제한이 풀리는 때)
+  created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_signup_blocks_email (email_hash),
+  INDEX idx_signup_blocks_oauth (oauth_id_hash),
+  INDEX idx_signup_blocks_expires (expires_at)
 );
 
 -- ---------------------------------------------------------------------------

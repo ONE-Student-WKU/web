@@ -2,7 +2,7 @@ const pool = require('../db');
 
 /**
  * server/services/sanctionService.js
- * 커뮤니티 사용자 제재(#201) — 정지 부여/해제/조회. 신고함(admin.js)에서 이어지는
+ * 사용자 제재(#201, 계정 정지 #457) — 정지 부여/해제/조회. 신고함(admin.js)에서 이어지는
  * 조치로만 쓰이지만, report_id는 nullable이라 향후 신고 없이 직접 거는 조치도 스키마
  * 변경 없이 얹을 수 있다.
  */
@@ -23,16 +23,24 @@ async function liftSanction(id) {
 }
 
 // 한 계정에 제재가 여러 번 쌓일 수 있어서(이력 보존), "지금 실제로 적용 중인 제재"는
-// 해제 안 됐고(lifted_at NULL) 기간이 남아있거나 영구인 것 중 가장 최근 것 하나로 정의한다.
+// 해제 안 됐고(lifted_at NULL) 기간이 남아있거나 영구인 것 중 가장 무거운 것 하나로 정의한다
+// (같은 무게면 최근 것). 최근 것만 보면 계정 정지 중에 가벼운 커뮤니티 제한이 하나 더 걸렸을 때
+// 계정 정지가 가려진다(#457).
 async function getActiveSanction(studentId) {
   const [rows] = await pool.query(
     `SELECT id, scope, reason, ends_at
      FROM student_sanctions
      WHERE student_id = ? AND lifted_at IS NULL AND (ends_at IS NULL OR ends_at > NOW())
-     ORDER BY created_at DESC LIMIT 1`,
+     ORDER BY FIELD(scope, 'account', 'full', 'post_apply'), created_at DESC LIMIT 1`,
     [studentId]
   );
   return rows[0] || null;
+}
+
+// 서비스 전체 이용 정지(scope='account') 중이면 그 제재, 아니면 null.
+async function getActiveAccountSuspension(studentId) {
+  const sanction = await getActiveSanction(studentId);
+  return sanction && sanction.scope === 'account' ? sanction : null;
 }
 
 // 관리자 "제재 관리" 탭 — 지금 유효한 제재 전체(계정별로 여러 건이어도 최신 것만 남기지
@@ -80,6 +88,7 @@ module.exports = {
   createSanction,
   liftSanction,
   getActiveSanction,
+  getActiveAccountSuspension,
   listActiveSanctions,
   listPastSanctions,
 };

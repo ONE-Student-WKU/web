@@ -90,7 +90,7 @@ function AdminSanctions({ showToast }) {
                   (confirmId === s.id ? (
                     <span className="admin-confirm">
                       <span>
-                        <b>{s.student}</b>의 제재를 지금 해제할까요? 바로 {s.scope === 'full' ? '커뮤니티에 들어올' : '글쓰기·신청을 할'} 수 있게 돼요.
+                        <b>{s.student}</b>의 제재를 지금 해제할까요? 바로 {s.scope === 'account' ? '서비스를 다시 이용할' : s.scope === 'full' ? '커뮤니티에 들어올' : '글쓰기·신청을 할'} 수 있게 돼요.
                       </span>
                       <span className="admin-actions">
                         <button type="button" className="post-btn post-btn--text" onClick={() => setConfirmId(null)}>

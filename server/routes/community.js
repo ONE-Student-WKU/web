@@ -381,6 +381,10 @@ router.post('/:id/apply', requireNotWritingSanctioned, async (req, res, next) =>
     if (post.recruitState === 'ended') {
       return res.status(400).json({ status: 400, code: 'RECRUIT_ENDED', message: null, data: null });
     }
+    // 글쓴이가 계정 정지 중이면 정지 동안 신청을 받지 않는다(#457). 이유는 알리지 않는 중립 코드다.
+    if (post.authorUnavailable) {
+      return res.status(409).json({ status: 409, code: 'POST_UNAVAILABLE', message: null, data: null });
+    }
 
     const result = await communityService.applyToPost(req.params.id, req.session.userId, message);
     if (!result.ok) {

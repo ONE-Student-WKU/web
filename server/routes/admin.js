@@ -185,7 +185,8 @@ router.get('/community/students/:id/summary', async (req, res, next) => {
   }
 });
 
-const SANCTION_SCOPES = ['post_apply', 'full'];
+// account = 서비스 전체 이용 정지(#457, 기준은 docs/moderation-policy.md).
+const SANCTION_SCOPES = ['post_apply', 'full', 'account'];
 // null = 영구정지.
 const SANCTION_DURATIONS = { '1d': 1, '3d': 3, '7d': 7, '30d': 30, permanent: null };
 

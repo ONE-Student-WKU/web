@@ -25,7 +25,9 @@ const emailRelayRoutes = require('./routes/emailRelay');
 const inquiriesRoutes = require('./routes/inquiries');
 const uiEventsRoutes = require('./routes/uiEvents');
 const { trackActivity } = require('./middleware/activityTracker');
+const { blockSuspendedAccount } = require('./middleware/accountSuspension');
 const { startVisitRollup } = require('./services/visitStatsService');
+const { startSignupBlockCleanup } = require('./services/signupBlockService');
 const { securityHeaders, requireStringQuery, TRUST_PROXY_HOPS } = require('./middleware/security');
 
 const app = express();
@@ -89,6 +91,9 @@ app.use(
 // 관리자 대시보드 "현재 접속자" 집계용 — 로그인된 요청마다 계정별 마지막 활동 시각을 기록한다.
 app.use(trackActivity);
 
+// 서비스 전체 이용 정지 계정은 허용 목록(로그아웃·정지 안내·계정 삭제) 밖의 /api 요청을 전부 막는다(#457).
+app.use('/api', blockSuspendedAccount);
+
 // Routes mounting
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
@@ -136,6 +141,8 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   // 14일이 지난 하루 방문 기록을 날짜별 합계로 옮긴다(개인정보처리방침의 보관 기간).
   startVisitRollup();
+  // 정지 중 탈퇴 계정의 재가입 제한 기록은 정지가 끝나면(영구 정지는 1년 뒤) 지운다(개인정보처리방침 4항).
+  startSignupBlockCleanup();
 });
 
 module.exports = app;
