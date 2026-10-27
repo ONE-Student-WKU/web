@@ -137,7 +137,7 @@ test('민감 정보 비노출: 실제 이메일·비밀번호·OAuth 식별자·
   for (const key of ['email', 'password', 'oauth', 'role', 'student_number', 'studentNumber']) {
     assert.ok(!new RegExp(`"${key}`, 'i').test(raw), `응답에 ${key} 필드가 있다`);
   }
-  assert.deepEqual(Object.keys(JSON.parse(raw).data).sort(), ['admissionYear', 'applicationCount', 'department', 'id', 'joinedAt', 'nickname', 'postCount', 'reportsReceived', 'sanctions']);
+  assert.deepEqual(Object.keys(JSON.parse(raw).data).sort(), ['admissionYear', 'applicationCount', 'department', 'id', 'joinedAt', 'nickname', 'postCount', 'reportsReceived', 'sanctions', 'warnings']);
 });
 
 test('없는 학생·잘못된 id는 404(탈퇴한 대상자도 서버가 죽지 않는다)', async () => {

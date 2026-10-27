@@ -72,7 +72,7 @@ async function sanction(studentId, body) {
 test('관리자가 학생을 직접 제재하면 신고 없이(report_id 없이) 제재가 만들어진다', async () => {
   const r = await sanction(2, { scope: 'post_apply', duration: '7d', reason: '  욕설 ' });
   assert.deepEqual(r, { status: 200, code: 'STUDENT_SANCTIONED' });
-  assert.deepEqual(created, [{ studentId: 2, reason: '욕설', scope: 'post_apply', durationDays: 7, createdBy: 1 }]);
+  assert.deepEqual(created, [{ studentId: 2, reason: '욕설', scope: 'post_apply', durationDays: 7, createdBy: 1, reportId: null }]);
 });
 
 test('영구정지는 기간이 null이다', async () => {

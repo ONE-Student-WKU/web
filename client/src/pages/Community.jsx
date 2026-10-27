@@ -1591,9 +1591,9 @@ function Community({
           studentId={sanctionPost.authorId}
           nickname={sanctionPost.author}
           onClose={() => setSanctionPost(null)}
-          onDone={() => {
+          onDone={(scope) => {
             setSanctionPost(null);
-            showToast(t('community.toast.sanctioned'));
+            showToast(t(scope === 'warning' ? 'community.toast.warned' : 'community.toast.sanctioned'));
           }}
         />
       )}

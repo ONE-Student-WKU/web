@@ -5,6 +5,9 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
+const warningService = require('../services/warningService');
+const appealService = require('../services/appealService');
+const { notifyAdmin } = require('../services/adminAlertService');
 const signupBlockService = require('../services/signupBlockService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 const { validateLeavePeriods } = require('../services/leavePeriods');
@@ -34,12 +37,60 @@ router.get('/me', requireAuth, async (req, res, next) => {
 
     // 서비스 전체 이용 정지 중이면 화면이 다른 화면 대신 정지 안내를 띄운다(#457 — 사유는 관리자가 쓴 글 그대로).
     const suspension = await sanctionService.getActiveAccountSuspension(student.id);
+    // 정지 화면 안에서 보낸 이의 제기와 운영팀 답변(정지 한 번에 1건, appealService.js).
+    const appeal = suspension ? await appealService.getAppeal(suspension.id, student.id) : null;
+    // 아직 확인하지 않은 경고가 있으면 화면이 한 번 사유를 보여주고 확인받는다(약관 6항 — 사유를 서비스 안에서 안내).
+    const pendingWarning = await warningService.getPendingWarning(student.id);
     return res.status(200).json({
       status: 200,
       code: 'ME_SUCCESS',
       message: null,
-      data: { ...serializeStudent(student), suspension: suspension ? { reason: suspension.reason, endsAt: suspension.ends_at } : null },
+      data: {
+        ...serializeStudent(student),
+        suspension: suspension ? { reason: suspension.reason, endsAt: suspension.ends_at, appeal } : null,
+        pendingWarning,
+      },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/appeal — 정지 화면에서 이의 제기(정지 중에도 허용, middleware/accountSuspension.js). 정지 한 번에 1건.
+// 문의함에 들어가고 관리자 알림이 간다 — 정지 중에는 문의하기가 막혀 있어 이것이 유일한 서비스 안 통로다(약관 6항).
+router.post('/me/appeal', requireAuth, async (req, res, next) => {
+  try {
+    const suspension = await sanctionService.getActiveAccountSuspension(req.session.userId);
+    if (!suspension) {
+      return res.status(409).json({ status: 409, code: 'NOT_SUSPENDED', message: null, data: null });
+    }
+    if (!appealService.isValidAppealContent(req.body.content)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CONTENT', message: null, data: null });
+    }
+    const appeal = await appealService.createAppeal(req.session.userId, suspension.id, req.body.content);
+    if (!appeal) {
+      return res.status(409).json({ status: 409, code: 'APPEAL_EXISTS', message: null, data: null });
+    }
+    notifyAdmin('inquiry'); // 기다리지 않는다(adminAlertService.js)
+    return res.status(201).json({ status: 201, code: 'APPEAL_CREATED', message: null, data: { appeal } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/warnings/:id/acknowledge — 경고 안내에서 [확인]. 다음에 확인할 경고가 있으면 그것을 돌려준다(없으면 null).
+router.post('/me/warnings/:id/acknowledge', requireAuth, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    const acknowledged = await warningService.acknowledgeWarning(id, req.session.userId);
+    if (!acknowledged) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    const pendingWarning = await warningService.getPendingWarning(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'WARNING_ACKNOWLEDGED', message: null, data: { pendingWarning } });
   } catch (err) {
     next(err);
   }

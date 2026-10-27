@@ -631,9 +631,12 @@ body {
   margin: 0 0 14px;
 }
 
+/* 정지 화면의 이의 제기 칸 — 위 사실 목록과 아래 로그아웃 사이 */
 .suspended-appeal {
   margin: 0 0 20px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .auth-body .suspended-delete {
@@ -7099,6 +7102,14 @@ select.onb-select {
 
 .admin-inquiry-sanction .post-btn {
   flex-shrink: 0;
+}
+
+/* 문의 상세 — 정지 이의 제기의 대상 정지와 철회 버튼 */
+.admin-appeal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .admin-note-line {

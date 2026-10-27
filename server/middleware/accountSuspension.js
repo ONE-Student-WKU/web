@@ -6,7 +6,7 @@ const sanctionService = require('../services/sanctionService');
  *
  * 막을 라우트를 하나씩 고르는 대신 로그인한 정지 계정의 요청을 전부 막고 아래 허용 목록만 통과시킨다 —
  * 나중에 새 기능을 만들고 가드를 깜빡해도 정지 계정은 쓸 수 없다. 약관 6항이 정지 중에도 허용한
- * 정지 사유 확인(GET /me), 로그아웃, 계정 삭제(재인증 포함)만 연다. 로그인·재인증 라우트(/api/auth/*)는
+ * 정지 사유 확인(GET /me), 이의 제기(POST /me/appeal, 정지 한 번에 1건), 로그아웃, 계정 삭제(재인증 포함)만 연다. 로그인·재인증 라우트(/api/auth/*)는
  * 로그인 전에도 쓰고, 정지 계정도 로그인해야 정지 안내를 보고 계정을 지울 수 있어서 통째로 연다.
  *
  * 정지·해제가 바로 반영되도록 세션에 담아두지 않고 요청마다 조회한다.
@@ -16,6 +16,7 @@ function isAllowed(req) {
   const path = req.originalUrl.split('?')[0];
   if (path.startsWith('/api/auth/')) return true;
   if (path === '/api/me') return req.method === 'GET' || req.method === 'DELETE';
+  if (path === '/api/me/appeal') return req.method === 'POST';
   return false;
 }
 

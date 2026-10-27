@@ -22,6 +22,13 @@ async function liftSanction(id) {
   return result.affectedRows > 0;
 }
 
+// 철회 — 잘못된 조치(이의 제기를 받아들인 경우 등)라 기록을 지운다. 조기 해제(liftSanction)와 달리 제재 이력에도 남지 않아
+// 다음 판단 때 반복으로 세지 않는다. 이 정지에 대한 이의 제기 문의는 남고 연결(sanction_id)만 끊긴다.
+async function withdrawSanction(id) {
+  const [result] = await pool.query('DELETE FROM student_sanctions WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
 // 한 계정에 제재가 여러 번 쌓일 수 있어서(이력 보존), "지금 실제로 적용 중인 제재"는
 // 해제 안 됐고(lifted_at NULL) 기간이 남아있거나 영구인 것 중 가장 무거운 것 하나로 정의한다
 // (같은 무게면 최근 것). 최근 것만 보면 계정 정지 중에 가벼운 커뮤니티 제한이 하나 더 걸렸을 때
@@ -87,6 +94,7 @@ async function listPastSanctions() {
 module.exports = {
   createSanction,
   liftSanction,
+  withdrawSanction,
   getActiveSanction,
   getActiveAccountSuspension,
   listActiveSanctions,

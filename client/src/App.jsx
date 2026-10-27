@@ -14,6 +14,7 @@ import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
 import SuspendedGate from './pages/SuspendedGate.jsx';
+import WarningNotice from './components/WarningNotice.jsx';
 import LeaveGate from './pages/LeaveGate.jsx';
 import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -578,6 +579,10 @@ function App() {
             isLocked={(v) => isLockedView(v, user)}
             communityBadge={communityBadge}
           />
+        )}
+        {/* 아직 확인하지 않은 경고 — 정지·동의·필수 질문 화면이 끝난 뒤 어느 화면 위에든 한 번 띄운다(기능은 막지 않는다). */}
+        {authChecked && user && user.pendingWarning && !user.suspension && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && (
+          <WarningNotice key={user.pendingWarning.id} warning={user.pendingWarning} onDone={(next) => setUser((u) => ({ ...u, pendingWarning: next }))} />
         )}
       </div>
     </div>

@@ -12,6 +12,8 @@ const pool = require('../db');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const signupBlockService = require('../services/signupBlockService');
+const warningService = require('../services/warningService');
+const appealService = require('../services/appealService');
 const communityService = require('../services/communityService');
 const emailAuthService = require('../services/emailAuthService');
 const { CURRENT_CONSENT_VERSION } = require('../services/consent');
@@ -41,12 +43,20 @@ let session;
 let suspension;
 let recorded;
 let deleted;
+let appeal;
 
 before(async () => {
   mock.method(studentService, 'findById', async (id) => (id === STUDENT.id ? { ...STUDENT } : null));
   mock.method(studentService, 'deleteStudent', async (id) => deleted.push(id));
   mock.method(sanctionService, 'getActiveAccountSuspension', async () => suspension);
   mock.method(sanctionService, 'getActiveSanction', async () => null);
+  mock.method(warningService, 'getPendingWarning', async () => null);
+  mock.method(appealService, 'getAppeal', async () => appeal);
+  mock.method(appealService, 'createAppeal', async (studentId, sanctionId, content) => {
+    if (appeal) return null;
+    appeal = { content: content.trim(), createdAt: new Date(), status: 'open', reply: null, sanctionId };
+    return appeal;
+  });
   mock.method(signupBlockService, 'recordBlock', async (student, s) => recorded.push({ student, s }));
 
   const app = express();
@@ -79,6 +89,7 @@ beforeEach(() => {
   suspension = SUSPENSION;
   recorded = [];
   deleted = [];
+  appeal = null;
 });
 
 async function call(method, path, body) {
@@ -124,6 +135,29 @@ describe('허용 목록', () => {
   test('로그인하지 않은 요청은 가드가 건드리지 않는다', async () => {
     session = {};
     assert.equal((await call('GET', '/api/courses')).status, 200);
+  });
+});
+
+describe('정지 이의 제기', () => {
+  test('정지 중에도 보낼 수 있고, /api/me의 정지 안내에 실린다', async () => {
+    const r = await call('POST', '/api/me/appeal', { content: '  다른 사람이 쓴 거예요  ' });
+    assert.equal(r.status, 201);
+    assert.equal(r.body.data.appeal.content, '다른 사람이 쓴 거예요');
+    assert.equal(appeal.sanctionId, SUSPENSION.id);
+    assert.equal((await call('GET', '/api/me')).body.data.suspension.appeal.content, '다른 사람이 쓴 거예요');
+  });
+
+  test('정지 한 번에 1건만 — 두 번째는 409 APPEAL_EXISTS', async () => {
+    await call('POST', '/api/me/appeal', { content: '첫 번째' });
+    const r = await call('POST', '/api/me/appeal', { content: '두 번째' });
+    assert.equal(r.status, 409);
+    assert.equal(r.body.code, 'APPEAL_EXISTS');
+  });
+
+  test('빈 내용은 400, 정지가 아니면 409 NOT_SUSPENDED', async () => {
+    assert.equal((await call('POST', '/api/me/appeal', { content: '   ' })).body.code, 'INVALID_CONTENT');
+    suspension = null;
+    assert.equal((await call('POST', '/api/me/appeal', { content: '내용' })).body.code, 'NOT_SUSPENDED');
   });
 });
 

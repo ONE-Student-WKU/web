@@ -988,6 +988,27 @@ CREATE TABLE IF NOT EXISTS student_sanctions (
 );
 
 -- ---------------------------------------------------------------------------
+-- 10-1-1. 경고 기록 — 약관 6항의 "경고". 기능을 막지 않고 기록만 남긴다. 운영 기준(docs/moderation-policy.md)이
+-- 반복하면 한 단계씩 올리는데, 예전에는 경고를 문의 답변으로만 보내 횟수를 셀 수 없었다.
+-- student_sanctions에 넣지 않은 이유: 그 표는 ends_at NULL을 영구 정지로 보고 "지금 적용 중인 제재"를 여러 곳에서
+-- 같은 조건으로 찾는다 — 경고를 섞으면 그 조건마다 경고를 빼야 하고, 하나라도 빠지면 경고받은 학생이 영구 정지처럼 막힌다.
+-- 학생은 다음 접속 때 사유를 한 번 보고 확인한다(acknowledged_at, server/services/warningService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS student_warnings (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  student_id       INT NOT NULL,
+  reason           TEXT NOT NULL,
+  created_by       INT NOT NULL,          -- 경고한 관리자 id
+  report_id        INT NULL,              -- 신고함에서 이어진 경고면 그 신고 id
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  acknowledged_at  DATETIME NULL,         -- 학생이 안내를 보고 [확인]을 누른 시각(NULL = 아직 안 봄)
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES students(id),
+  FOREIGN KEY (report_id) REFERENCES community_reports(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
 -- 10-2. 정지 중 탈퇴 계정의 재가입 제한 (#457) — 서비스 전체 이용 정지 중에 계정을 삭제하고 같은
 -- 이메일·Google 계정으로 다시 가입해 정지를 피하는 일을 막는다. 개인정보처리방침 4항대로 이메일과
 -- Google 고유 식별자는 되돌릴 수 없게 변환한 값(SHA-256 해시)만, 정지 사유·기간과 함께 보관하고
@@ -1023,8 +1044,12 @@ CREATE TABLE IF NOT EXISTS inquiries (
   resolved_at  DATETIME NULL,
   -- 관리자가 처리완료할 때 문의자에게 남기는 답변(선택). 문의자 본인 화면("내 문의")에만 보인다. NULL이면 답변 없이 처리완료.
   resolution_note TEXT NULL,
+  -- 정지 화면에서 보낸 이의 제기면 그 정지(student_sanctions.id). 정지 한 번에 1건만 받는다(server/services/appealService.js).
+  -- 답변(resolution_note)은 학생의 정지 화면에 보인다. 제재를 철회하면 연결만 끊긴다. 기존 DB는 db/migrate.js가 추가한다.
+  sanction_id  INT NULL,
 
-  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------
