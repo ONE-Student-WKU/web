@@ -143,51 +143,69 @@ function splitIntoBatches(chunks) {
   return batches;
 }
 
-async function insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks }) {
-  // 임베딩을 전부 성공시킨 뒤에야 DB에 쓴다 — 문서 행을 먼저 넣어두면, 배치 중간에 실패했을 때
-  // 청크 없는 빈 문서만 남고 재실행 시 findExistingDocument가 "이미 있음"으로 건너뛰어버려서
-  // 영영 재시도가 안 되는 문제가 생긴다.
+// 배치 시딩은 몇 분 기다려도 무방하니(챗봇 실시간 요청과 달리 사용자가 기다리는 게 아님) 기본값보다 훨씬 관대하게 재시도한다 —
+// 429는 물론, 시간 초과·연결 끊김·5xx도 재시도하고(retryTransient) 요청당 상한도 60초로 늘린다. 로컬 재시딩에서 Voyage가 23.7초 만에
+// 답해 20초 상한에 3번 연속 걸린 적이 있다(#412, 2026-10-17).
+const SEED_EMBEDDING_OPTIONS = { maxRetries: 6, timeoutMs: 60000, retryTransient: true };
+
+async function embedChunks(chunks) {
   const embeddings = [];
   for (const batch of splitIntoBatches(chunks)) {
-    // 배치 시딩은 몇 분 기다려도 무방하니(챗봇 실시간 요청과 달리 사용자가 기다리는 게 아님)
-    // 기본값보다 훨씬 관대하게 재시도해서 429 때문에 시딩 자체가 실패하지 않게 한다.
-    const batchEmbeddings = await embeddingClient.getEmbeddings(batch, 'document', { maxRetries: 6 });
+    const batchEmbeddings = await embeddingClient.getEmbeddings(batch, 'document', SEED_EMBEDDING_OPTIONS);
     embeddings.push(...batchEmbeddings);
   }
+  return embeddings;
+}
 
-  const [result] = await pool.query(
+async function writeDocument(conn, { title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks }, embeddings) {
+  const [result] = await conn.query(
     'INSERT INTO regulation_documents (title, category, source_type, source_url, effective_date, book_year) VALUES (?, ?, ?, ?, ?, ?)',
     [title, category, sourceType, sourceUrl ?? null, effectiveDate ?? null, bookYear ?? null]
   );
   const documentId = result.insertId;
 
   for (let i = 0; i < chunks.length; i++) {
-    await pool.query(
+    await conn.query(
       'INSERT INTO regulation_chunks (document_id, chunk_index, content, embedding) VALUES (?, ?, ?, ?)',
       [documentId, i, chunks[i], JSON.stringify(embeddings[i])]
     );
   }
-  return chunks.length;
 }
 
-async function seedDocument({ title, category, sourceType, sourceUrl, effectiveDate, bookYear = null, chunks }) {
+/**
+ * 문서 하나를 시딩한다. 임베딩을 전부 성공시킨 뒤에야 DB에 쓰고, --force면 옛 문서 삭제와 새 문서 저장을 한 트랜잭션으로 한다.
+ * - 문서 행을 먼저 넣으면 배치 중간에 실패했을 때 청크 없는 빈 문서만 남고, 재실행 때 "이미 있음"으로 건너뛰어 영영 재시도가 안 된다.
+ * - --force에서 옛 문서를 먼저 지우면 임베딩이 실패했을 때 그 문서가 검색에서 빠진 채로 남는다(운영 재시딩은 --force다). 그래서
+ *   임베딩이 끝난 뒤 삭제·저장을 같이 하고, 실패하면 옛 문서가 그대로 남는다.
+ */
+async function seedDocument({ title, category, sourceType, sourceUrl, effectiveDate, bookYear = null, chunks }, { force = FORCE } = {}) {
   if (chunks.length === 0) {
     console.warn(`[SKIP] ${title}: 청크가 비어있음`);
     return 0;
   }
 
   const existing = await findExistingDocument(title, sourceType);
-  if (existing && !FORCE) {
+  if (existing && !force) {
     console.log(`[SKIP] ${title} (이미 임베딩됨, 재실행하려면 --force)`);
     return 0;
   }
-  if (existing && FORCE) {
-    await pool.query('DELETE FROM regulation_documents WHERE id = ?', [existing.id]); // chunks는 CASCADE로 같이 삭제
-  }
 
-  const count = await insertDocumentWithChunks({ title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks });
-  console.log(`[OK] ${title}: ${count}개 청크`);
-  return count;
+  const embeddings = await embedChunks(chunks);
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    if (existing) await conn.query('DELETE FROM regulation_documents WHERE id = ?', [existing.id]); // chunks는 CASCADE로 같이 삭제
+    await writeDocument(conn, { title, category, sourceType, sourceUrl, effectiveDate, bookYear, chunks }, embeddings);
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+  console.log(`[OK] ${title}: ${chunks.length}개 청크`);
+  return chunks.length;
 }
 
 async function seedCuratedDocs() {
@@ -247,4 +265,7 @@ async function run() {
   }
 }
 
-run();
+// 직접 실행하면 시딩한다. 테스트와 CI 래퍼(scripts/ci/seed-regulations-stub.js)는 불러온 뒤 필요한 함수를 부른다.
+if (require.main === module) run();
+
+module.exports = { run, seedDocument };

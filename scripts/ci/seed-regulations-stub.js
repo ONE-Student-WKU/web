@@ -32,4 +32,4 @@ embeddingClient.getEmbeddings = async (texts) => texts.map((t, i) => {
 });
 
 process.chdir(serverDir);
-require(path.join(serverDir, 'scripts', 'seedRegulations.js'));
+require(path.join(serverDir, 'scripts', 'seedRegulations.js')).run();
