@@ -92,10 +92,11 @@ describe('학적정보 수정(Onboarding) 화면', () => {
     expect(screen.getByText('일반 재학생')).toBeInTheDocument();
   });
 
-  it('목록을 다 받기 전에는 요약 대신 "불러오는 중..."만 보인다 — 학과가 잠깐 "선택 필요"로 보이지 않는다', async () => {
+  it('목록을 다 받기 전에는 제목·안내는 바로 보이고 목록 자리만 "불러오는 중..." — 학과가 잠깐 "선택 필요"로 보이지 않는다', async () => {
     let resolveTracks;
     api.getTracks.mockReturnValue(new Promise((resolve) => (resolveTracks = resolve)));
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    expect(screen.getByRole('heading', { name: '입력한 정보를 확인해주세요' })).toBeInTheDocument();
     expect(screen.getByText('불러오는 중...')).toBeInTheDocument();
     expect(screen.queryByText('선택 필요')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument();
