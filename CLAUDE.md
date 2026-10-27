@@ -6,7 +6,7 @@
 
 - **운영 서버에서 `seed` 명령을 직접 실행하라고 안내하지 않는다.** `main`에 `db/regulations/**`, `db/curriculum/**`, `db/seed/*.json`(일부) 변경이 push되면 `.github/workflows/db-reseed.yml`이 자동으로 시작되고, Actions 탭에서 `db-reseed` 환경을 **승인**하면 Railway Cron Job이 재시딩한다. 승인자 목록은 GitHub 환경 설정(Settings → Environments → `db-reseed`)에서 확인한다. 승인자에 포함된 BE 담당자는 운영 담당자에게 따로 요청할 필요가 없다.
 - 반영 시점은 `develop` 머지가 아니라 **`main` 반영**이다. `db-reseed` 환경은 `main` 브랜치만 허용한다.
-- 재시딩은 `seed:regulations -- --force`라서 **새 문서 하나만 추가하는 게 아니라 규정 문서 전체를 다시 임베딩**한다(Voyage 비용·시간, 실행 중 일부 문서가 잠깐 검색에서 빈다).
+- 재시딩은 `seed:regulations -- --force`라서 **새 문서 하나만 추가하는 게 아니라 규정 문서 전체를 다시 임베딩**한다(Voyage 비용·시간). 문서마다 임베딩을 먼저 다 받은 뒤 옛 문서 삭제와 새 문서 저장을 한 트랜잭션으로 바꿔 넣어서, 실행 중에도 검색에서 빠지는 문서는 없다. 임베딩 시간 초과·5xx는 재시도하고(`[RETRY]` 로그), 끝내 실패하면 그 문서와 뒤 문서는 옛 버전으로 남는다(#465).
 - Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
 - 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
 
