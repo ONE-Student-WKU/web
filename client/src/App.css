@@ -797,6 +797,112 @@ body {
   margin-bottom: 12px;
 }
 
+/* 바뀐 자료 알림(ChangeNotice.jsx) — 홈의 진행률·부족 요건 자리에 대신 나온다. 강조색 테두리로 평소 카드와 구분한다. */
+.change-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-bg);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.change-card h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.change-source {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.change-list,
+.change-updates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.change-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.change-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8125rem;
+}
+
+.change-what {
+  color: var(--color-text-secondary);
+}
+
+.change-delta {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.change-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.change-tag--good {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success);
+}
+
+.change-tag--bad {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+
+/* 출처 펼치기 — 작은 글자 링크면 놓치기 쉬워 카드 폭 전체를 쓰는 버튼으로 둔다 */
+.change-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.change-updates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.change-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.change-actions .post-btn {
+  flex: 1;
+}
+
 /* 홈 화면 최초 진입 시(캐시된 데이터 없음) 서버 응답을 기다리는 동안 보여주는 스켈레톤.
    "학과 정보 없음"/"0학점" 같은 빈 기본값 대신 로딩 중임을 형태로 드러낸다. */
 @keyframes skeleton-pulse {

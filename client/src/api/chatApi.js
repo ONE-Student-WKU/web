@@ -89,6 +89,9 @@ export const getCourseSummary = () => apiRequest('/my-courses/summary');
 
 export const getGraduationStatus = () => apiRequest('/graduation/status');
 
+// 바뀐 자료 알림 확인 — 지금 진단 결과가 다음 비교의 기준이 된다(server/services/changeNoticeService.js).
+export const acknowledgeChangeNotice = () => apiRequest('/graduation/change-notice/acknowledge', { method: 'POST' });
+
 export const getSemesters = () => apiRequest('/my-courses/semesters');
 
 export const getRetakeEligibleCourses = () => apiRequest('/my-courses/retake-eligible');
