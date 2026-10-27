@@ -7,6 +7,7 @@ const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
 const warningService = require('../services/warningService');
 const moderationLabelService = require('../services/moderationLabelService');
+const inquiryDraftService = require('../services/inquiryDraftService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
 const uiEventService = require('../services/uiEventService');
@@ -387,6 +388,26 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
     res.status(200).json({ status: 200, code: 'INQUIRY_RESOLVED', message: null, data: null });
   } catch (err) {
     next(err);
+  }
+});
+
+// POST /api/admin/inquiries/:id/draft — 문의 답변 AI 초안(저장하지 않고 돌려주기만 한다, inquiryDraftService.js).
+const DRAFT_ERRORS = {
+  NOT_FOUND: [404, 'INQUIRY_NOT_FOUND'],
+  APPEAL: [400, 'DRAFT_NOT_FOR_APPEAL'],
+  EMPTY: [502, 'DRAFT_FAILED'],
+};
+router.post('/inquiries/:id/draft', async (req, res, next) => {
+  try {
+    const result = await inquiryDraftService.createDraft(req.params.id);
+    if (result.error) {
+      const [status, code] = DRAFT_ERRORS[result.error];
+      return res.status(status).json({ status, code, message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'INQUIRY_DRAFT', message: null, data: { draft: result.draft, action: result.action } });
+  } catch (err) {
+    console.error('[inquiryDraft] 초안 실패:', err.message);
+    res.status(502).json({ status: 502, code: 'DRAFT_FAILED', message: null, data: null });
   }
 });
 

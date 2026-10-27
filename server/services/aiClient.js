@@ -909,6 +909,11 @@ async function classifyForModeration(system, content) {
   return callClaude(system, [{ role: 'user', content }], 300, 20000);
 }
 
+// 문의 답변 초안 — 프롬프트와 근거는 inquiryDraftService.js가 만들고 여기서는 호출만 한다. 관리자가 기다리는 요청이라 30초 안에 끝낸다.
+async function draftInquiryReply(system, content) {
+  return callClaude(system, [{ role: 'user', content }], 600, 30000);
+}
+
 async function extractFullTranscriptRows(rawText) {
   const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
   return parseJsonArray(text);
@@ -933,4 +938,5 @@ module.exports = {
   extractCourseListRows,
   extractFullTranscriptRows,
   classifyForModeration,
+  draftInquiryReply,
 };

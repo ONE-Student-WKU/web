@@ -631,6 +631,12 @@ body {
   margin: 0 0 14px;
 }
 
+/* 이의 제기 내용과 운영팀 답변은 사람이 쓴 여러 줄 글이라 줄을 그대로 보여준다. */
+.suspended-facts dd {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* 정지 화면의 이의 제기 칸 — 위 사실 목록과 아래 로그아웃 사이 */
 .suspended-appeal {
   margin: 0 0 20px;
@@ -3533,6 +3539,8 @@ button.post-row:active {
 
 .post-quote--answer {
   background: var(--color-accent-bg);
+  /* 운영팀 답변은 줄바꿈·번호 목록으로 나눠 쓴다(문의 답변 초안 템플릿) — 줄을 그대로 보여준다. */
+  white-space: pre-wrap;
 }
 
 .post-note {
@@ -7175,6 +7183,11 @@ mark.ai-mark {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   margin: 6px 0 0;
+}
+
+/* 문의 상세 — 답변 칸 아래의 [AI 초안 만들기] */
+.admin-draft-actions {
+  margin-top: 10px;
 }
 
 /* 문의 상세 — 정지 이의 제기의 대상 정지와 철회 버튼 */

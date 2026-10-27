@@ -14,6 +14,7 @@ import { IconChevronLeft } from '../components/icons.jsx';
  *   실사용자가 생기기 전에 동의부터 받기로 했다(사용자 결정 2026-10-26).
  * 2026-10-28: 이의 제기 경로를 문의하기(정지 중에는 정지 화면, server/services/appealService.js)로 바꾸고, 잘못된 조치는
  *   기록을 지운다고 적었다(경고 취소·제재 철회). 문의 이메일을 서비스 도메인 주소로 바꿨다(ImprovMX 전달).
+ * 2026-10-28(2차): 7항의 이용 범위에 문의 답변 AI 초안(server/services/inquiryDraftService.js)을 넣었다(동의 버전 2026-10-28.2).
  * 의미 있게 고치면 동의 버전을 같이 올려야 한다 — CLAUDE.md "약관·개인정보 동의" 참고
  * (server/services/consent.js, client/src/utils/consent.js).
  * 법적 문서라 아직 번역하지 않고 한국어로만 제공한다.
@@ -125,7 +126,7 @@ function TermsOfService({ onGoBack }) {
           <p className="home-card-label">7. 게시물과 입력 정보의 권리</p>
           <p className="settings-field-hint">
             이용자가 쓴 글, 신청 메시지, 문의 내용의 권리는 이용자에게 있습니다. 다만 서비스를 운영하기 위해 필요한
-            범위(게시, 승인 심사, 신고와 문의 처리, 이를 돕기 위한 AI 분류)에서는 서비스가 이를 이용할 수 있습니다. 계정을
+            범위(게시, 승인 심사, 신고와 문의 처리, 이를 돕기 위한 AI 분류와 문의 답변 초안 작성)에서는 서비스가 이를 이용할 수 있습니다. 계정을
             삭제하면 이용자의 글과 신청은 함께 삭제됩니다.
           </p>
         </section>
@@ -158,7 +159,8 @@ function TermsOfService({ onGoBack }) {
             문의: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </p>
           <p className="settings-field-hint">
-            · 2026년 10월 28일: 이용 제한에 대한 이의는 문의하기(정지 중에는 정지 안내 화면)로 받고, 잘못된 조치로 확인되면
+            · 2026년 10월 28일(2차): 문의 처리를 돕기 위한 AI 답변 초안 작성을 게시물·입력 정보의 이용 범위(7항)에 추가
+            <br />· 2026년 10월 28일: 이용 제한에 대한 이의는 문의하기(정지 중에는 정지 안내 화면)로 받고, 잘못된 조치로 확인되면
             기록을 지운다는 내용을 추가. 문의 이메일을 서비스 주소(contact@onestudent.io.kr)로 변경
             <br />· 2026년 10월 26일: "이용 제한" 조항을 새로 두어 서비스 전체 이용 정지, 정지 중 계정 삭제 후 재가입 제한, AI를
             이용한 사전 분류(이용 제한은 운영팀이 판단)를 적고, 금지 행위에 서비스 어디에서든 욕설·비방·협박을 하는 행위를 추가
