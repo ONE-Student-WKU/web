@@ -84,16 +84,32 @@ function generalTotalCredits(rows, year) {
   return applicable.length ? applicable.reduce((s, r) => s + Number(r.requiredCredits), 0) : null;
 }
 
+// 학교가 [별표 4]와 다른 책자 값이 맞다고 확인한 학과·학번(2차 문의 D-1, 교육혁신과·학사지원과 답변 2026-10-26, D-83).
+// 책자 값이 이 숫자와 같을 때만 "학교 확인"으로 본다 — 시드가 바뀌어 숫자가 달라지면 다시 불일치로 알린다.
+const SCHOOL_CONFIRMED_BOOK_CREDITS = [
+  { departmentName: '간호학과', min: 2017, max: 2023, credits: 140 },
+  { departmentName: '간호학과', min: 2024, max: null, credits: 130 },
+  { departmentName: '작업치료학과', min: 2017, max: 2024, credits: 140 },
+  { departmentName: '작업치료학과', min: 2025, max: null, credits: 130 },
+];
+
+function schoolConfirmedCredits(departmentName, admissionYear) {
+  const hit = SCHOOL_CONFIRMED_BOOK_CREDITS.find((c) => c.departmentName === departmentName && inRange(c, admissionYear));
+  return hit ? hit.credits : null;
+}
+
 /**
  * 대조 결과. null = 대조할 수 없음(표에 학과가 직접 안 적혔거나 책자 자료 없음), { match: true } = 같음,
- * { match: false, schedule4Credits, bookCredits, ... } = 다름. 다를 때 어느 쪽이 맞는지는 판단하지 않는다.
+ * { match: false, schedule4Credits, bookCredits, ... } = 다름. 다를 때 어느 쪽이 맞는지는 판단하지 않는다 —
+ * 학교가 책자 값이 맞다고 답한 경우만 schoolConfirmed: true를 붙인다(SCHOOL_CONFIRMED_BOOK_CREDITS).
  */
 function checkSchedule4Credits({ departmentName, admissionYear, rows, schedule = loadSchedule4() }) {
   const entry = findSchedule4Entry(schedule, departmentName, admissionYear);
   const book = generalTotalCredits(rows, admissionYear);
   if (!entry || book == null) return null;
   const base = { tableTitle: entry.tableTitle, entryName: entry.entryName, schedule4Credits: entry.credits, bookCredits: book };
-  return entry.credits === book ? { match: true, ...base } : { match: false, ...base };
+  if (entry.credits === book) return { match: true, ...base };
+  return schoolConfirmedCredits(departmentName, admissionYear) === book ? { match: false, schoolConfirmed: true, ...base } : { match: false, ...base };
 }
 
-module.exports = { loadSchedule4, loadSchedule1Colleges, collegeOf, findSchedule4Entry, generalTotalCredits, checkSchedule4Credits };
+module.exports = { loadSchedule4, loadSchedule1Colleges, collegeOf, findSchedule4Entry, generalTotalCredits, checkSchedule4Credits, schoolConfirmedCredits };

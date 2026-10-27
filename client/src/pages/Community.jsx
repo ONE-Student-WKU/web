@@ -1388,7 +1388,14 @@ function Community({
                     </button>
                   )}
                 </div>
-                <NoticePin notices={notices} onOpenList={() => setNoticeView({ mode: 'list' })} onOpenNotice={openNotice} when={noticeWhen} />
+                <NoticePin
+                  notices={notices}
+                  onOpenList={() => setNoticeView({ mode: 'list' })}
+                  onOpenNotice={openNotice}
+                  when={noticeWhen}
+                  isAdmin={user?.role === 'admin'}
+                  onWrite={() => setNoticeView({ mode: 'write' })}
+                />
               </>
             )}
 

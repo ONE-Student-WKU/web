@@ -180,7 +180,8 @@ test('편입생: 편입 학년을 모르면 3학년으로 가정(추정), 총량
   }
   assert.ok(!codes(r, 'REQUIREMENTS').includes('TRANSFER_TOTAL_UNRESOLVED'), '총량을 계산했으면 미해결 플래그를 빼야 한다');
   assert.ok(codes(r, 'LIBERAL_ARTS_BASIS').includes('TRANSFER_LIBERAL_DEEMED_MET'));
-  assert.ok(codes(r, 'LIBERAL_ARTS_CAP').includes('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
+  // 3·4학년 편입생은 교양 이수기준을 충족한 것으로 보므로(2차 문의 B-2) 상한 확인 사유가 없다.
+  assert.ok(!codes(r, 'LIBERAL_ARTS_CAP').includes('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
   assert.equal(r.confidence, 'ESTIMATED');
 });
 
@@ -283,16 +284,17 @@ test('컷오프 해석 선택: 구조조정 시점 해석은 시점 입력이 �
 
   const given = await resolve({ ...base, restructuring: { year: 2020, semester: 1 }, policy: { liberalArtsCutoffTrigger: 'RESTRUCTURING_DATE' } });
   assert.equal(rule(given, 'LIBERAL_ARTS_BASIS').value.mode, 'FIXED_29');
-  assert.ok(codes(given, 'LIBERAL_ARTS_BASIS').includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'), '구조조정 시점 해석은 학교 전과 안내와 달라질 수 있어 추정 플래그가 붙는다');
+  assert.ok(codes(given, 'LIBERAL_ARTS_BASIS').includes('LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS'), '구조조정 시점 해석은 학교 답변(B-7, 소속변경 시점)과 다른 해석이라 추정 플래그가 붙는다');
   assert.deepEqual(rule(given, 'LIBERAL_ARTS_BASIS').alternatives.map((a) => [a.id, a.mode]), [['MAJOR_CHANGE_DATE', 'COHORT_TABLE']]);
   assert.equal(credits(given).교양선택, 24);
   assert.equal(credits(given).일반선택, 136 - 48 - 29, '구조조정 시점 해석에서도 총량은 136(전공 48·교양 29 외 나머지를 일반선택이 흡수)');
   assert.equal(rule(given, 'REQUIREMENTS').value.totalRequiredCredits, 136);
 
-  // 기본 해석에서도, 구조조정 시점을 알려주면 결과가 갈릴 때 대안으로 보여준다.
+  // 기본 해석(소속변경 시점)은 학교가 확인했으므로(2차 문의 B-7) 구조조정 시점을 알려줘도 대안을 내지 않는다.
   const dflt = await resolve({ ...base, restructuring: { year: 2020, semester: 1 } });
   assert.equal(rule(dflt, 'LIBERAL_ARTS_BASIS').value.mode, 'COHORT_TABLE');
-  assert.deepEqual(rule(dflt, 'LIBERAL_ARTS_BASIS').alternatives.map((a) => [a.id, a.mode]), [['RESTRUCTURING_DATE', 'FIXED_29']]);
+  assert.equal(rule(dflt, 'LIBERAL_ARTS_BASIS').confidence, 'CONFIRMED');
+  assert.deepEqual(rule(dflt, 'LIBERAL_ARTS_BASIS').alternatives, []);
 });
 
 test('교육과정 변경 이력: 이 학번 이후 변경이 있으면 INFO 안내와 시행규칙 제13조 근거가 붙지만 신뢰도는 낮추지 않는다', async () => {

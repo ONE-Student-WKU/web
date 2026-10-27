@@ -1,4 +1,4 @@
-const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
+const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS,REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
 const { isBroadSeriesStudent } = require('../majorTrackType');
 const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
@@ -10,6 +10,7 @@ const {
   transferRecognizedCredits,
 } = require('./decisions');
 const { basisTextFlags } = require('./textVersion');
+const { profileCaveats, requirementSignature, originalCohortOf, isAssociateExcludedRequirement, PREMED_DEPARTMENTS } = require('./profileCaveats');
 
 /**
  * server/services/regulationEngine/evaluate.js
@@ -171,6 +172,14 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
     }
   }
 
+  // 본과 1학년 편입 학과(한의학과)는 학과 졸업학점(본과 학점)이 그대로 편입생 총 학점이다(한의과대학 답변 2026-10-26, D-84).
+  // 인정학점을 빼는 계산이 아니라서 위 인정학점 갈래와 겹치지 않는다(전공 완화가 없어 그 갈래에 들어가지 않는다).
+  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS.includes(departmentName)) {
+    flags.push(makeFlag('TRANSFER_TOTAL_FROM_COLLEGE_ANSWER', { graduationCredits: sum(rows.filter((r) => r.minCourseCount == null)) }));
+    basis.push('COLLEGE_ORIENTAL_MEDICINE_TRANSFER');
+    resolvedTransferTotal = true;
+  }
+
   // 광역 계열전공 이수유형(시행규칙 제7조 제2항, #378 E-3). 시드의 계열 전공 행은 전공심화형 기준이다 — 전공필수 36(기초·심화·응용 최소 학점의
   // 풀) + 전공선택 나머지(계열별 66~72). 다른 유형은 주전공 학점만 바꾸고, 줄어든 만큼은 일반선택이 흡수해 졸업학점은 그대로 둔다.
   // 전과·편입 완화를 받은 경우(최소전공 행)는 유형과 무관한 별도 기준이라 건드리지 않는다.
@@ -251,20 +260,18 @@ function evaluate(ctx, data) {
     return finalize(ctx, blocked, [makeRule('CURRICULUM_REVISIONS', RULE_LABELS.CURRICULUM_REVISIONS, { value: null, flags: [], basisKeys: [], critical: false })]);
   }
 
-  const relaxation = decideMajorRelaxation(ctx);
-  const liberal = decideLiberalArtsBasis(ctx);
-  const cap = decideLiberalArtsCap(ctx);
+  // 학생 행 입력은 학과 id만 갖고 오므로, 학과에 따라 갈리는 판단(본과 1학년 편입 학과 등)에는 찾은 학과 이름을 채워 넘긴다.
+  const decisionCtx = ctx.departmentName || !(data && data.department) ? ctx : { ...ctx, departmentName: data.department.name };
+  const relaxation = decideMajorRelaxation(decisionCtx);
+  const liberal = decideLiberalArtsBasis(decisionCtx);
+  const cap = decideLiberalArtsCap(decisionCtx);
 
-  // 다른 해석(트리거)으로도 계산 가능하면 대안으로 함께 낸다 — 결과가 갈릴 때만.
+  // 교양 29학점 판단 시점은 학생 본인의 소속변경 시점이다(2차 문의 B-7). 기본(MAJOR_CHANGE_DATE)이면 대안을 내지 않고,
+  // 정책으로 "학사구조조정 시점"을 고른 경우에만 학교 답변 기준(전과 시점)의 결과가 다를 때 대안으로 함께 낸다.
   const liberalAlternatives = [];
-  if (ctx.enrollmentType === 'MAJOR_CHANGE') {
-    const otherTrigger = ctx.policy.liberalArtsCutoffTrigger === 'MAJOR_CHANGE_DATE' ? 'RESTRUCTURING_DATE' : 'MAJOR_CHANGE_DATE';
-    const other = decideLiberalArtsBasis(ctx, otherTrigger);
-    if (other.mode && other.mode !== liberal.mode) {
-      liberalAlternatives.push({ id: otherTrigger, description: otherTrigger === 'RESTRUCTURING_DATE' ? '책자 문구대로 "학사구조조정 시점" 기준' : '학생의 "전과 시점" 기준(현재 앱 동작)', mode: other.mode });
-    } else if (!other.mode && otherTrigger === 'RESTRUCTURING_DATE') {
-      liberalAlternatives.push({ id: otherTrigger, description: '책자 문구대로 "학사구조조정 시점" 기준 — 구조조정 시점(연도·학기)을 입력하면 비교할 수 있어요', mode: null });
-    }
+  if (ctx.enrollmentType === 'MAJOR_CHANGE' && ctx.policy.liberalArtsCutoffTrigger === 'RESTRUCTURING_DATE') {
+    const other = decideLiberalArtsBasis(ctx, 'MAJOR_CHANGE_DATE');
+    if (other.mode && other.mode !== liberal.mode) liberalAlternatives.push({ id: 'MAJOR_CHANGE_DATE', description: '학생의 "소속변경(전과) 시점" 기준(학교 답변 기준)', mode: other.mode });
   }
 
   // --- 졸업요건 행 ---
@@ -279,6 +286,8 @@ function evaluate(ctx, data) {
   else if (NON_DEGREE_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('NON_DEGREE_DEPARTMENT'));
   // 규정상 전과할 수 없는 학과의 전과생(시행규칙 제111조 제4호) — 있을 수 없는 프로필이라 다른 학과 자료로 추정하지 않는다.
   else if (ctx.enrollmentType === 'MAJOR_CHANGE' && MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('MAJOR_CHANGE_INTO_CLOSED_DEPARTMENT'));
+  // 2년 과정인 예과에는 편입학이 없다(학칙 제36조) — 있을 수 없는 프로필이라 다른 학과 자료로 추정하지 않는다.
+  else if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && PREMED_DEPARTMENTS.includes(department.name)) dataFlags.push(makeFlag('TRANSFER_INTO_PREMED_NOT_OFFERED'));
   // 상한이 열린 행(max=NULL)은 "그 이후 개편이 확인될 때까지 유효"라는 뜻이지 미래 학번에 대한 확인이 아니다. 시스템이 아는
   // 가장 최신 학년도보다 뒤의 학번에는 외삽하지 않는다.
   else if (data.latestDataYear != null && ctx.admissionYear > data.latestDataYear) {
@@ -293,7 +302,16 @@ function evaluate(ctx, data) {
     // 편입 인정학점으로 총량을 계산했으면 "총량 미해결"은 더 이상 사실이 아니다(인정학점 가정은 TRANSFER_RECOGNIZED_CREDITS_ASSUMED가 알린다).
     if (built.resolvedTransferTotal) reqFlags = reqFlags.filter((f) => f.code !== 'TRANSFER_TOTAL_UNRESOLVED');
     const creditRows = orderCategories(built.rows.filter((r) => r.minCourseCount == null));
-    const certRows = built.rows.filter((r) => r.minCourseCount != null);
+    // 전문학사 과정은 졸업논문·졸업인증제를 졸업사정에서 뺀다(시행규칙 제118조 제1항 제7호) — 시드에는 책자 총괄표대로 행이 있다.
+    const certRows = built.rows.filter((r) => r.minCourseCount != null && !isAssociateExcludedRequirement(department.name, r.category));
+    if (built.rows.some((r) => r.minCourseCount != null && isAssociateExcludedRequirement(department.name, r.category))) reqFlags.push(makeFlag('ASSOCIATE_DEGREE_THESIS_CERT_EXCLUDED'));
+    // 전과생 기준 학번(3차 문의 E-1 ①): 휴학 등으로 "전과한 학년의 당초 입학자" 학번이 입학 학번과 다를 때, 그 학번으로 계산한 최종 요건이 실제로 다를 때만 알린다.
+    const originalCohort = originalCohortOf(ctx);
+    if (originalCohort != null && !data.cohortFallback && hasCoreRowsForYear(data.rows || [], originalCohort)) {
+      const originalRows = (data.rows || []).filter((r) => rowAppliesToYear(r, originalCohort));
+      const original = buildRequirementRows({ ...ctx, admissionYear: originalCohort }, originalRows, relaxation, liberal, department.name);
+      if (requirementSignature(original.rows) !== requirementSignature(built.rows)) reqFlags.push(makeFlag('MAJOR_CHANGE_ORIGINAL_COHORT_DIFFERS', { originalCohort }));
+    }
     const majorRow = creditRows.filter((r) => MAJOR_CATEGORIES.includes(r.category));
     majorMinimumCredits = majorRow.length > 0 ? sum(majorRow) : null;
     requirementsValue = {
@@ -338,6 +356,13 @@ function evaluate(ctx, data) {
   }
   // 학과 내규로 전공 과목을 정하는 학과(constants.BYLAW_MAJOR_DEPARTMENTS) — 숫자는 그대로 두고 학과 확인 안내만 붙인다.
   if (built && department && BYLAW_MAJOR_DEPARTMENTS.includes(department.name)) reqFlags.push(makeFlag('DEPARTMENT_BYLAW_MAJOR'));
+  // 학교 답변 전이라 틀릴 수 있는 가정·규정상 맞지 않는 입력(profileCaveats.js) — 플래그가 없으면 결과가 "확정"으로 나가므로 여기서 붙인다.
+  if (built && department) {
+    reqFlags.push(...profileCaveats(ctx, department.name, {
+      adjustments: built.adjustments,
+      hasMajorAreaMinimums: requirementsValue.majorAreaMinimums != null, hasCertificationRows: requirementsValue.certifications.length > 0,
+    }));
+  }
   // 학과가 생기기 전 학번의 전과생 — dbProvider가 학과 첫 학번 행과 학번별 표로 만든 행이다(newDepartmentCohort.js, #378).
   // 전공 학점은 첫 학번 값이라 추정이고, 교양·졸업학점을 표에서 못 찾았으면 그것도 첫 학번 값이라 따로 알린다.
   if (built && data.cohortFallback) {

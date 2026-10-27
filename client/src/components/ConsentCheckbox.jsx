@@ -15,10 +15,13 @@ const NUDGE_MS = 1800;
  * - nudgeKey: number (선택) — 값이 바뀔 때마다(동의 안 한 채 로그인 버튼 등을 눌렀을 때) 이 체크를 붉은 블럭으로 잠깐 강조한다.
  *   0이면 강조하지 않는다. 연속으로 눌러도 강조 시간(NUDGE_MS)이 처음부터 다시 센다.
  * - nudgeFocus: boolean (선택) — 강조할 때 체크박스로 포커스도 옮길지. 입력 칸을 누르다 강조되는 경우엔 타이핑을 끊지 않도록 false.
+ * - textKey: string (선택) — 약관 링크가 없는 다른 필수 체크(예: 'login.unofficialAck')에 쓸 문구 키. 없으면 약관 동의 문구.
+ *   이 문구는 tRich로 렌더해 사전의 <b>강조</b>를 굵게 보여준다.
  */
-function ConsentCheckbox({ checked, onChange, onOpenTerms, onOpenPrivacy, nudgeKey = 0, nudgeFocus = false }) {
-  const { t } = useI18n();
-  const parts = t('login.consent').split(/(\{terms\}|\{privacy\})/).filter(Boolean);
+function ConsentCheckbox({ checked, onChange, onOpenTerms, onOpenPrivacy, nudgeKey = 0, nudgeFocus = false, textKey = 'login.consent' }) {
+  const { t, tRich } = useI18n();
+  const parts = t(textKey).split(/(\{terms\}|\{privacy\})/).filter(Boolean);
+  const isTermsConsent = textKey === 'login.consent';
   const labelRef = useRef(null);
   const inputRef = useRef(null);
   const [nudging, setNudging] = useState(false);
@@ -38,7 +41,7 @@ function ConsentCheckbox({ checked, onChange, onOpenTerms, onOpenPrivacy, nudgeK
     <label ref={labelRef} className={`auth-consent-field${nudgeClass}`}>
       <input ref={inputRef} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>
-        {parts.map((part, i) => {
+        {!isTermsConsent ? tRich(textKey) : parts.map((part, i) => {
           if (part === '{terms}') {
             return (
               <button key={i} type="button" className="auth-toggle-link auth-consent-link" onClick={onOpenTerms}>

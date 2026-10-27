@@ -170,8 +170,32 @@ body {
 }
 
 .screen-title.screen-title-brand {
+  white-space: nowrap;
   font-weight: 800;
   color: var(--color-ink);
+}
+
+/* 로고(8학기 원, BrandTitle.jsx)가 "ONE"의 O 자리에 들어간다. 크기는 굵은 O의 높이(대문자 높이 + 둥근 글자 넘침)에 맞추고,
+   아래 끝을 글자 기준선에 둔다. 지난 학기는 이수학점 진행 막대와 같은 파랑(--color-accent), 이번 학기는 노랑(두 테마 공통).
+   남은 학기 조각은 --color-accent-bg보다 한 단계 진하게 잡아야 흰 머리 위에서 보인다. */
+.brand-mark {
+  display: inline-block;
+  width: 0.74em;
+  height: 0.74em;
+  vertical-align: -0.01em;
+  margin-right: 0.08em;
+}
+.brand-mark-done {
+  stroke: var(--color-accent);
+}
+.brand-mark-now {
+  stroke: #f2b33d;
+}
+.brand-mark-rest {
+  stroke: #2a3f6b;
+}
+:root[data-theme='light'] .brand-mark-rest {
+  stroke: #dbe6fb;
 }
 
 .back-btn {
@@ -416,6 +440,19 @@ body {
   color: var(--color-text-muted);
   text-align: center;
   margin: 0 0 32px;
+}
+
+/* 학교 공식 서비스로 오해하지 않게 로그인 화면 맨 위에 붙이는 표시(교육혁신과 통화 2026-10-26) */
+.auth-unofficial-badge {
+  align-self: center;
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .auth-field {
@@ -772,6 +809,11 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* 여러 문장을 \n으로 나눠 내려주는 문구(utils/graduation.js의 allMetMessage) — 문장마다 줄을 바꿔 보여준다. */
+.multiline-text {
+  white-space: pre-line;
+}
+
 .home-card-row svg {
   flex-shrink: 0;
   margin-top: 1px;
@@ -893,6 +935,296 @@ body {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   line-height: 1.5;
+}
+
+/* 졸업요건 진단 맨 위 기준 줄 — 비공식 · 기준 책자 · 최종 확인처(교육혁신과 통화 2026-10-26) */
+.grad-basis-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.grad-basis-line strong {
+  color: var(--color-text-secondary);
+}
+
+/* 졸업까지 한 학기 분량 이하가 남은 학생에게 졸업사정 예비 확인을 권한다 */
+.grad-near-graduation {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-frame));
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.grad-near-graduation p {
+  margin: 0;
+}
+
+.grad-near-save-btn {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-ink);
+  border-radius: 8px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grad-report-btn {
+  align-self: center;
+  margin: 4px auto 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+/* 진단 결과 한 장 저장·인쇄(#455) */
+.grad-print-box {
+  margin: 8px 0 4px;
+  text-align: center;
+}
+
+.grad-print-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-ink);
+  border-radius: 10px;
+  background: var(--color-bg-frame);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grad-print-box .grad-flex-note {
+  margin-top: 6px;
+}
+
+/* 인쇄용 시트는 화면에 그리지 않는다. 인쇄할 때(body.grad-printing)만 이 시트 하나만 찍힌다 — 다크 모드여도 흰 종이에 검은 글씨로. */
+.grad-print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 14mm 12mm;
+  }
+
+  body.grad-printing {
+    background: #fff !important;
+  }
+
+  body.grad-printing > *:not(.grad-print-sheet) {
+    display: none !important;
+  }
+
+  body.grad-printing .grad-print-sheet {
+    display: block;
+    color: #111;
+    background: #fff;
+    font-size: 10pt;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .grad-print-sheet h1 {
+    margin: 0 0 4pt;
+    font-size: 17pt;
+  }
+
+  .grad-print-sheet h2 {
+    margin: 12pt 0 4pt;
+    font-size: 11pt;
+  }
+
+  .grad-print-sheet section {
+    break-inside: avoid;
+  }
+
+  .gps-header {
+    padding-bottom: 8pt;
+    border-bottom: 1.5pt solid #111;
+  }
+
+  .gps-meta {
+    margin: 0;
+    color: #333;
+  }
+
+  .gps-fill {
+    display: flex;
+    gap: 28pt;
+    margin: 8pt 0 0;
+  }
+
+  .gps-fill span::after {
+    content: '';
+    display: inline-block;
+    width: 110pt;
+    margin-left: 6pt;
+    border-bottom: 0.75pt solid #555;
+  }
+
+  .gps-summary {
+    margin-top: 10pt;
+    padding: 8pt 10pt;
+    border: 1pt solid #999;
+    border-radius: 4pt;
+  }
+
+  .gps-remaining {
+    margin: 0 0 5pt;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  .gps-bar {
+    height: 7pt;
+    border-radius: 4pt;
+    background: #e5e5e5;
+    overflow: hidden;
+  }
+
+  .gps-bar > div {
+    height: 100%;
+    background: #333;
+  }
+
+  .gps-total-line {
+    margin: 5pt 0 0;
+  }
+
+  .gps-trust {
+    margin-top: 8pt;
+  }
+
+  .gps-trust p {
+    margin: 0;
+  }
+
+  .gps-trust ul {
+    margin: 3pt 0 0;
+    padding-left: 14pt;
+    color: #333;
+    font-size: 9pt;
+  }
+
+  .gps-trust-level {
+    font-weight: 700;
+  }
+
+  .gps-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .gps-table th,
+  .gps-table td {
+    padding: 4pt 6pt;
+    border-bottom: 0.5pt solid #bbb;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .gps-table th {
+    border-bottom: 1pt solid #111;
+    font-size: 9pt;
+    color: #333;
+  }
+
+  .gps-num {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gps-parts {
+    display: block;
+    color: #444;
+    font-size: 8.5pt;
+  }
+
+  .gps-total td {
+    border-top: 1pt solid #111;
+    border-bottom: none;
+    font-weight: 700;
+  }
+
+  .gps-met {
+    color: #1a6b35;
+    white-space: nowrap;
+  }
+
+  .gps-short {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .gps-note {
+    margin: 4pt 0 0;
+    color: #444;
+    font-size: 8.5pt;
+  }
+
+  .gps-checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gps-checklist li {
+    padding: 2pt 0;
+  }
+
+  .gps-checklist li > span {
+    display: inline-block;
+    min-width: 76pt;
+    margin-right: 6pt;
+  }
+
+  .gps-check {
+    color: #444;
+  }
+
+  .gps-footer {
+    margin-top: 14pt;
+    padding-top: 6pt;
+    border-top: 0.5pt solid #999;
+    color: #444;
+    font-size: 8pt;
+  }
+}
+
+/* 한 줄 사유 말고 더 있는 추정 이유(펼쳐 보기) */
+.grad-trust-more {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.grad-trust-more summary {
+  cursor: pointer;
+}
+
+.grad-trust-more ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 
 .grad-overflow-note {
@@ -2236,6 +2568,19 @@ body {
   flex-shrink: 0;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+/* 공지가 없을 때 관리자에게만 보이는 "공지 쓰기" 줄 — 안내 문장은 흐리게, 쓰기 버튼 자리는 강조색으로. */
+.notice-pin--empty .notice-pin-title {
+  color: var(--color-text-muted);
+}
+
+.notice-pin--empty .notice-pin-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 /* 홈 메뉴 카드의 새 알림 점(새 공지·신고 처리 결과) — 하단 바 점과 같은 색·크기. 카드 테두리에 닿지 않게 안쪽으로 둔다. */

@@ -5,10 +5,19 @@ const {
   TRANSFER_4TH_YEAR_MAJOR_MINIMUM,
   DEFAULT_TRANSFER_GRADE,
   TRANSFER_RECOGNIZED_CREDITS,
+  COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS,
   CITATIONS,
 } = require('./constants');
 const { makeFlag } = require('./flags');
 const { termIndex } = require('./context');
+
+/** 단과대학이 편입생 졸업 총학점을 답한 학과(본과 1학년 편입)의 편입생인가 — 편입 학년 입력과 무관하게 판정한다. */
+function isCollegeConfirmedTransfer(ctx) {
+  return ctx.enrollmentType === 'TRANSFER_ADMISSION' && COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS.includes(ctx.departmentName);
+}
+
+// 편입 학년. 본과 1학년 편입 학과는 입력 화면의 2~4학년 선택과 맞지 않으므로 입력값을 쓰지 않고, 6년 과정의 본과 1학년(= 3학년)으로 본다.
+const transferGradeOf = (ctx) => (isCollegeConfirmedTransfer(ctx) ? DEFAULT_TRANSFER_GRADE : ((ctx.transfer && ctx.transfer.grade) ?? DEFAULT_TRANSFER_GRADE));
 
 /**
  * server/services/regulationEngine/decisions.js
@@ -95,6 +104,13 @@ function decideMajorRelaxation(ctx) {
     return { mode: 'RELAXED', relaxedRows: true, overrideMajorCredits: null, flags, basis };
   }
 
+  // 본과 1학년 편입 학과(한의학과): 학과 졸업학점(본과 학점)이 편입생 총 학점이라는 단과대학 답변이 있다. 편입 학년 가정·4학년 21학점·
+  // 입력 학번 의미·총량 미해결은 해당하지 않는다(학과의 모든 학번 기준이 같다 — constants.COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS).
+  if (isCollegeConfirmedTransfer(ctx)) {
+    basis.push('ACAD_ART36_2_TRANSFER_GRADE', 'COLLEGE_ORIENTAL_MEDICINE_TRANSFER');
+    return { mode: 'FULL', relaxedRows: false, overrideMajorCredits: null, flags, basis, transferGrade: null };
+  }
+
   // TRANSFER_ADMISSION — 편입 학년을 입력하지 않은 옛 계정은 가정이 필요하다.
   let grade = ctx.transfer.grade;
   const gradeKnown = grade != null;
@@ -145,8 +161,9 @@ function isBeforeLiberalArtsCutoff({ year, semester }) {
  * 해석 선택(policy.liberalArtsCutoffTrigger) — 책자 문구와 학교 전과 안내가 서로 다른 "시점"을 말해서 둘 다 구조로 지원한다:
  *  - MAJOR_CHANGE_DATE(기본): 학생의 "전과 시점"이 2022-2 이전이면 29학점. 학교 전과 안내(10항)가 "2022-1학기 전과생까지
  *    교양필수 5 + 교양선택 24, 2022-2학기 전과생부터 새 기준"이라고 전과한 시점을 기준으로 적고 있어 확정이다(D-52).
+ *    학사지원과도 "학생의 소속변경의 시점으로 판단"한다고 답했다(2차 문의 B-7, D-83).
  *  - RESTRUCTURING_DATE: 책자 문구 그대로 "학사구조조정이 이루어진 시점"이 2022-2 이전이면 29학점. 구조조정 시점 입력이 필요하고
- *    학교 전과 안내와 달라질 수 있어, 이 해석으로 29학점 갈래가 나올 때만 LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS 플래그(추정)를 붙인다.
+ *    학교 답변과 다른 해석이라 이 해석을 고르면 LIBERAL_CUTOFF_TRIGGER_AMBIGUOUS 플래그(추정)를 붙인다. 앱은 쓰지 않고 비교용으로만 남긴다.
  */
 function decideLiberalArtsBasis(ctx, triggerOverride) {
   const flags = [];
@@ -161,7 +178,7 @@ function decideLiberalArtsBasis(ctx, triggerOverride) {
   if (ctx.enrollmentType === 'TRANSFER_ADMISSION') {
     // 시행규칙 제10조②: 3·4학년 편입생은 "종교와 원불교"를 뺀 영역별 교양 기준을 충족한 것으로 본다(1·2학년 편입은 제외 — 학번표 그대로).
     // 편입 학년을 모르면 decideMajorRelaxation과 같은 가정(3학년)을 쓴다.
-    const grade = ctx.transfer.grade ?? DEFAULT_TRANSFER_GRADE;
+    const grade = transferGradeOf(ctx);
     if (grade <= 2) {
       basis.push('BOOKLET_ROWS');
       return { mode: 'COHORT_TABLE', trigger: null, flags, basis };
@@ -221,9 +238,12 @@ function decideLiberalArtsCap(ctx) {
   } else {
     basis.push('BOOKLET_2026_LIBERAL_CAP', 'SITE_GRADUATION_LIBERAL_CAP');
   }
-  // 편입생에게 상한이 적용되는지는 학교 확인 중(B-2)이지만, 2021학번 이하는 상한 자체가 없어 물을 것이 없다. 실제 교양 학점이 상한 이하면
-  // 결과가 같으므로 졸업진단(graduationService.settleTransferLiberalCap)이 과목을 보고 안내(INFO)로 낮춘다.
-  if (ctx.enrollmentType === 'TRANSFER_ADMISSION' && cap != null) flags.push(makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
+  // 3·4학년 편입생은 "종교와원불교"를 뺀 교양 이수기준을 충족한 것으로 본다(2차 문의 B-2, 시행규칙 제10조②) — 교양은 일반선택으로 세므로
+  // 상한이 결과를 바꾸지 않아 따로 표시하지 않는다. 학교 답이 학년을 나누지 않은 1·2학년 편입생만 학번별 표에 상한이 붙는지 남는다.
+  // 2021학번 이하는 상한 자체가 없어 물을 것이 없다. 실제 교양 학점이 상한 이하면 결과가 같으므로 졸업진단
+  // (graduationService.settleTransferLiberalCap)이 과목을 보고 안내(INFO)로 낮춘다.
+  const transferGrade = ctx.enrollmentType === 'TRANSFER_ADMISSION' ? transferGradeOf(ctx) : null;
+  if (transferGrade != null && transferGrade <= 2 && cap != null) flags.push(makeFlag('LIBERAL_CAP_TRANSFER_EXEMPTION_UNVERIFIED'));
   return { cap, flags, basis, alternatives };
 }
 

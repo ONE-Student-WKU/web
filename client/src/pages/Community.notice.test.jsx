@@ -102,6 +102,27 @@ describe('전체 글 위 공지', () => {
     await screen.findByRole('button', { name: /글 검색/ });
     expect(pin()).toBeNull();
   });
+
+  // 공지 쓰기 버튼은 공지 목록 안에만 있어서, 공지가 0개면 관리자도 첫 공지를 쓸 곳이 없었다(운영 사이트, 2026-10-26).
+  it('공지가 없으면 관리자에게만 "공지 쓰기" 줄이 보이고, 누르면 바로 공지 쓰기 화면이 열린다', async () => {
+    api.getNotices.mockResolvedValue([]);
+    api.createNotice.mockResolvedValue({ id: 1 });
+    render(<Community {...props('admin')} />);
+    const row = await screen.findByRole('button', { name: /관리자에게만 보여요/ });
+    expect(row).toHaveClass('notice-pin--empty');
+    await userEvent.click(row);
+    expect(screen.getByText(/공지는 승인 없이 바로 모든 학생에게 보여요/)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('제목'), '첫 공지');
+    await userEvent.type(screen.getByLabelText('내용'), '본문');
+    await userEvent.click(screen.getByRole('button', { name: '공지 올리기' }));
+    await waitFor(() => expect(api.createNotice).toHaveBeenCalledWith({ title: '첫 공지', body: '본문' }));
+  });
+
+  it('공지가 있으면 관리자에게도 "공지 쓰기" 줄 대신 평소 공지 줄이 보인다', async () => {
+    render(<Community {...props('admin')} />);
+    await screen.findByRole('button', { name: /전체 2/ });
+    expect(screen.queryByText(/관리자에게만 보여요/)).toBeNull();
+  });
 });
 
 describe('공지 목록·상세', () => {

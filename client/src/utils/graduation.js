@@ -206,7 +206,71 @@ export function uncheckedRequirementKeys(status) {
   if (status.designatedMajorCourses) keys.push('home.unchecked.designated');
   if (status.secondMajor && status.secondMajor.type === 'MINOR') keys.push('home.unchecked.minorDesignated');
   if (status.majorTrackType === 'CONVERGENCE') keys.push('home.unchecked.microDegree');
+  // 졸업인증제 학과(부)·전공영역(어학·자격증 등)은 학과 공지라 자료가 없다(컴소공 기업연계프로젝트 같은 일부만 있음) — 충족으로 단정하지 않게 늘 알린다.
+  if ((status.certifications || []).some((c) => c.category === '졸업인증제')) keys.push('home.unchecked.deptCertification');
   return keys;
+}
+
+/**
+ * 부족 요건이 없을 때의 한 줄. 진단에 추정(학교 확인 중인 기준)이 섞였으면 "모든 요건을 충족했어요"라고 단정하지 않는다(2026-10-24 점검).
+ * @param {object} status getGraduationStatus 응답
+ * @param {Function} t 번역 함수
+ */
+/**
+ * 최신(2026) 책자에 학과 단위로 실려 있지 않은 통폐합·개편 학과인가(서버 DEPARTMENT_ABSENT_IN_LATEST_BOOKLET, 안내 수준).
+ * 학번별 학점 기준을 그대로 적용하는지 학교에 다시 확인하고 있어(2차 문의 D-4) 화면에 한 줄 알린다. 신뢰도는 바꾸지 않는다(2026-10-25 결정).
+ */
+export function isAbsentInLatestBooklet(status) {
+  return Boolean(status && status.regulation && (status.regulation.flags || []).some((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'));
+}
+
+/**
+ * 졸업 학점을 다 채운 것이 이번 학기 수강 중 학점 덕분인가(성적이 나와야 확정). 수강 중 학점을 빼도 채웠으면 false.
+ * @param {object} status getGraduationStatus 응답
+ */
+export function creditsDependOnInProgress(status) {
+  const inProgress = Number(status && status.inProgressCredits) || 0;
+  return inProgress > 0 && status.totalEarnedCredits - inProgress < status.totalRequiredCredits;
+}
+
+export function allMetMessage(status, t) {
+  const items = uncheckedRequirementKeys(status).map((k) => t(k)).join(', ');
+  const inProgress = creditsDependOnInProgress(status) ? Number(status.inProgressCredits) : 0;
+  const estimated = Boolean(status && status.regulation && status.regulation.confidence !== 'CONFIRMED');
+  const notes = [
+    inProgress > 0 ? t('home.allMetNote.inProgress', { n: inProgress }) : null,
+    estimated ? t('home.allMetNote.estimated') : null,
+    items ? t('home.allMetNote.unchecked', { items }) : null,
+  ].filter(Boolean);
+  const headline = notes.length ? t('home.allMetQualified') : t('home.allMet');
+  // 확정 진단이어도 졸업사정은 학교가 한다 — "충족"을 단정하지 않게 늘 최종 확인을 붙인다(교육혁신과 통화 2026-10-26).
+  // 추정 안내(estimated)가 이미 학사지원과 확인을 말하므로 그때는 다시 붙이지 않는다.
+  if (!estimated) notes.push(t('home.allMetNote.final'));
+  // 문장마다 줄을 나눠 읽기 쉽게 한다(화면은 white-space: pre-line으로 \n을 줄바꿈으로 보여준다).
+  return [headline, ...notes].join('\n');
+}
+
+// 마지막 학기 바로 앞부터(수업이 끝난 학기가 졸업 학기 수 − 1 이상, 보통 4학년 1학기를 마친 뒤) "학사지원과 예비 확인"을 강조한다.
+// 잘못된 정보로 졸업을 못 하는 학생은 이 구간에서 나온다(교육혁신과 통화 2026-10-26). 처음에는 남은 학점(18학점 이하)으로 정했지만
+// 학점은 학생마다 편차가 커서 학기 기준으로 바꿨다(2026-10-27). 등록 학기를 따지지 않는 예과(registrationTerms null)에는 띄우지 않는다.
+export function isNearGraduation(status) {
+  const terms = status && status.registrationTerms;
+  if (!terms || !Number.isFinite(terms.completed) || !(terms.required > 0)) return false;
+  return terms.completed >= terms.required - 1;
+}
+
+// 졸업요건 진단 결과가 이상할 때 문의하기에 미리 채울 제목·내용. 학과·학번·진단 숫자를 같이 보내야 운영자가 재현할 수 있다.
+export function buildResultReportDraft(status, user, t) {
+  return {
+    title: t('grad.report.title'),
+    content: t('grad.report.body', {
+      department: [user?.department, user?.track].filter(Boolean).join(' ') || '-',
+      year: user?.admissionYear ?? '-',
+      earned: status?.totalEarnedCredits ?? '-',
+      required: status?.totalRequiredCredits ?? '-',
+      confidence: status?.regulation?.confidenceLabel ?? '-',
+    }),
+  };
 }
 
 // 졸업사정 등록기간(시행규칙 제118조 제1호)이 모자란 학기 수 — 학점·요건을 다 채웠을 때만 센다(#378 H-2 결정 A: 그 전에는
@@ -267,6 +331,15 @@ function pickTrustReason(regulation, lang) {
   return flags.reduce((best, f) => ((FLAG_SEVERITY[f.level] || 0) > (FLAG_SEVERITY[best.level] || 0) ? f : best)).message;
 }
 
+function otherTrustReasons(regulation, shown) {
+  const seen = new Set([shown]);
+  // [별표 4] 불일치는 한 줄 사유가 두 값을 담은 문장으로 따로 말하므로(pickTrustReason) 같은 내용을 펼쳐 보기에 또 넣지 않는다.
+  return (regulation.flags || [])
+    .filter((f) => f.level !== 'INFO' && f.message && !(regulation.schedule4 && f.code === 'SCHEDULE4_CREDIT_MISMATCH'))
+    .map((f) => f.message)
+    .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
+}
+
 /**
  * status → 화면 표시용 정보.
  *  - noData: 졸업요건 자료가 없어 진단할 수 없음(총 요구학점 0 또는 자료없음) → 0/0 대신 안내
@@ -279,7 +352,7 @@ function pickTrustReason(regulation, lang) {
 export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
-  if (!regulation) return { noData, badge: null, reason: null, totalEstimated: false };
+  if (!regulation) return { noData, badge: null, reason: null, otherReasons: [], totalEstimated: false };
   // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준
   // 졸업요건처럼 읽혀 "비공식 참고용" 안내와도 부딪힌다. 예외(추정·자료 없음)만 표시해야 눈에 띈다(2026-10-17).
   const confirmed = regulation.confidence === 'CONFIRMED';
@@ -288,6 +361,88 @@ export function describeRequirementTrust(status, lang = 'ko') {
     noData,
     badge: confirmed ? null : { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
+    // 한 줄 사유 말고도 추정 이유가 더 있으면 펼쳐 볼 수 있게 나머지를 준다(서버가 만든 한국어 문장, 중복 제거).
+    otherReasons: regulation.confidence === 'CONFIRMED' ? [] : otherTrustReasons(regulation, pickTrustReason(regulation, 'ko')),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
+  };
+}
+
+/**
+ * 진단 결과 한 장 인쇄(#455)의 결과 신뢰도 3단계. 서버 confidence를 학생이 바로 읽는 말로 줄인다 — "확정"은 학교가 확정해 준 것처럼
+ * 읽혀서 쓰지 않는다(2026-10-27 결정). regulation이 없는 예전 응답이면 null(표시하지 않음).
+ * @param {object} status getGraduationStatus 응답
+ * @returns {'HIGH'|'MEDIUM'|'LOW'|null}
+ */
+export function printTrustLevel(status) {
+  const confidence = status && status.regulation ? status.regulation.confidence : null;
+  if (!confidence) return null;
+  if (confidence === 'CONFIRMED') return 'HIGH';
+  return confidence === 'ESTIMATED' ? 'MEDIUM' : 'LOW';
+}
+
+/**
+ * 인쇄용 분류별 이수 학점 표. 과사무실에서 한눈에 읽히도록 분류마다 들은 학점·기준·남은 학점을 모두 싣는다(부족한 것만 남기지 않는다).
+ * 전공필수(기본전공)+전공선택은 한 풀이라(graduationService) "전공" 한 줄로 합치고 내역(parts)을 붙인다. 남은 학점은 풀 부족분과
+ * 기본전공·계열 이수구분 하한 부족분 중 큰 값이다 — 하한은 풀 안의 최소치라 더하지 않는다. 기준이 0인 일반선택은 뺀다.
+ * @param {object} status getGraduationStatus 응답
+ */
+export function buildPrintRows(status) {
+  const categories = (status && status.categories) || [];
+  const find = (name) => categories.find((c) => c.category === name);
+  const majorRequired = find(MAJOR_REQUIRED_KEY);
+  const majorElective = find(MAJOR_ELECTIVE_KEY);
+  const areas = status && status.majorAreaCredits ? status.majorAreaCredits.areas : null;
+  const areaShortfall = (areas || []).reduce((sum, a) => sum + Math.max(0, a.required - a.earned), 0);
+  const areaParts = (areas || []).map((a) => ({ kind: 'area', category: a.area, earned: a.earned, required: a.required }));
+  const rows = [];
+
+  for (const c of categories) {
+    if (c.category === MAJOR_ELECTIVE_KEY && majorRequired) continue;
+    if (c.category === '일반선택' && !(c.requiredCredits > 0)) continue;
+    if (c.category === MAJOR_REQUIRED_KEY && majorElective) {
+      const earned = c.earnedCredits + majorElective.earnedCredits;
+      const required = c.requiredCredits + majorElective.requiredCredits;
+      const baseShortfall = areas ? 0 : Math.max(0, c.requiredCredits - c.earnedCredits);
+      rows.push({
+        category: MAJOR_MERGED_KEY,
+        earned,
+        required,
+        remaining: Math.max(0, required - earned, baseShortfall, areaShortfall),
+        parts: areas
+          ? areaParts
+          : [
+              { kind: 'category', category: MAJOR_REQUIRED_KEY, earned: c.earnedCredits, required: c.requiredCredits },
+              { kind: 'category', category: MAJOR_ELECTIVE_KEY, earned: majorElective.earnedCredits, required: majorElective.requiredCredits },
+            ],
+        missingAreas: [],
+      });
+      continue;
+    }
+    const isMajor = c.category === MAJOR_MERGED_KEY;
+    rows.push({
+      category: c.category,
+      earned: c.earnedCredits,
+      required: c.requiredCredits,
+      remaining: Math.max(0, c.requiredCredits - c.earnedCredits, isMajor ? areaShortfall : 0),
+      parts: isMajor ? areaParts : [],
+      // 교양필수는 학점을 채워도 영역 과목(건학이념 등)을 안 들었으면 미충족이다.
+      missingAreas: c.category === '교양필수' ? missingLiberalAreas(categories) : [],
+    });
+  }
+  return rows;
+}
+
+/**
+ * 2025학번부터의 교양 영역(교양기초 영역별 학점, 교양선택 영역 수)을 인쇄용 한 줄로 줄인 값. 영역 판정이 없으면 null.
+ * @param {object|null} areas status.liberalElectiveAreas
+ */
+export function summarizeLiberalAreasForPrint(areas) {
+  if (!areas) return null;
+  const short = areas.foundation.filter((a) => a.earned < a.required).map((a) => ({ area: a.area, n: a.required - a.earned }));
+  return {
+    met: areas.foundation.length - short.length,
+    total: areas.foundation.length,
+    short,
+    electives: areas.electives ? { covered: areas.electives.coveredAreaCount, required: areas.electives.requiredAreaCount, satisfied: areas.electives.satisfied } : null,
   };
 }

@@ -14,7 +14,11 @@ const NOW_YEAR = new Date().getFullYear();
 // 휴학은 다음 학기 것까지 받는다 — 2학기(9월~)에는 다음 학기가 다음 학년도 1학기다.
 const LEAVE_LAST_YEAR = new Date().getMonth() >= 8 ? NOW_YEAR + 1 : NOW_YEAR;
 
+// 2년 과정인 예과에는 편입학이 없다(학칙 제36조: 편입은 의학과·치의학과·한의학과 1학년). 서버 엔진도 같은 조합을 판정하지 않는다.
+const NO_TRANSFER_DEPARTMENTS = ['의예과', '치의예과', '한의예과'];
+
 function isTransferAvailable(department) {
+  if (NO_TRANSFER_DEPARTMENTS.includes(department.name)) return false;
   const range = getYearRange(department, 'TRANSFER_ADMISSION');
   return range.min <= range.max;
 }
@@ -589,7 +593,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <span className="onb-option-caption">
                   {transferAvailable
                     ? t('onb.type.TRANSFER_ADMISSION.caption')
-                    : t('onb.type.TRANSFER_ADMISSION.unavailable', { dept: selectedDepartment?.name || '' })}
+                    : NO_TRANSFER_DEPARTMENTS.includes(selectedDepartment?.name)
+                      ? t('onb.type.TRANSFER_ADMISSION.premed', { dept: selectedDepartment.name })
+                      : t('onb.type.TRANSFER_ADMISSION.unavailable', { dept: selectedDepartment?.name || '' })}
                 </span>
               </button>
               <button

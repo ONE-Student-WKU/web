@@ -4,6 +4,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
 import { acceptConsent } from '../api/chatApi.js';
 import { CONSENT_VERSION, storeConsent } from '../utils/consent.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 /**
  * ConsentGate Page
@@ -46,7 +47,7 @@ function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
-        <span className="screen-title screen-title-brand">ONE Student</span>
+        <BrandTitle />
         <LanguageSwitcher />
       </header>
 

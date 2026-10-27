@@ -227,7 +227,7 @@ def render(md, contact=None):
     for s in secs:
         if s['level'] == 1:
             toc.append(f'<li class="grp">{inline(s["title"])}</li>')
-        elif s['level'] == 2 and re.match(r'[A-D]-\d', s['title']):
+        elif s['level'] == 2 and re.match(r'[A-F]-\d', s['title']):
             toc.append(f'<li>{inline(s["title"])}</li>')
 
     in_appendix = False
@@ -249,7 +249,7 @@ def render(md, contact=None):
             else:
                 body.append(render_blocks(lines))
         elif s['level'] == 2:
-            m = re.match(r'([A-D]-\d)\. (.+)', t)
+            m = re.match(r'([A-F]-\d+)\. (.+)', t)
             if m:
                 no, qt = m.groups()
                 badge = ''

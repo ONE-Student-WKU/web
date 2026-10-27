@@ -121,12 +121,16 @@ test('파서 단위: 제목→학번 구간, 칸 텍스트→항목(괄호 note�
 
 const row = (category, credits, over = {}) => ({ category, requiredCredits: credits, enrollmentType: null, minCourseCount: null, minAdmissionYear: 2017, maxAdmissionYear: 2024, requiredCourses: [], ...over });
 const ROWS_140 = [row('교양필수', 5), row('교양선택', 20), row('전공', 115), row('졸업논문', 0, { minCourseCount: 1 })];
+// 학교가 확인한 값(간호 2017~2023학번 140, 2차 문의 D-1)과도 다른 가상의 책자 값 — 불일치 처리 자체를 시험한다.
+const ROWS_145 = [row('교양필수', 5), row('교양선택', 20), row('전공', 120), row('졸업논문', 0, { minCourseCount: 1 })];
 
 test('대조: 학과가 표에 직접 적혀 있을 때만 — 같으면 match, 다르면 두 값, 대학 단위·표에 없는 학과는 null', () => {
   const s = loadSchedule4();
   assert.equal(generalTotalCredits(ROWS_140, 2023), 140, '졸업인증제 행은 총량에서 제외');
   const nurse = checkSchedule4Credits({ departmentName: '간호학과', admissionYear: 2023, rows: ROWS_140, schedule: s });
-  assert.deepEqual([nurse.match, nurse.schedule4Credits, nurse.bookCredits], [false, 130, 140]);
+  assert.deepEqual([nurse.match, nurse.schedule4Credits, nurse.bookCredits, nurse.schoolConfirmed], [false, 130, 140, true], '간호 2023 책자 140은 학교 확인(2차 문의 D-1)');
+  const unconfirmed = checkSchedule4Credits({ departmentName: '간호학과', admissionYear: 2023, rows: ROWS_145, schedule: s });
+  assert.deepEqual([unconfirmed.match, unconfirmed.bookCredits, unconfirmed.schoolConfirmed], [false, 145, undefined], '학교가 확인한 숫자와 다르면 다시 불일치');
   assert.equal(checkSchedule4Credits({ departmentName: '간호학과', admissionYear: 2024, rows: [row('전공', 130)], schedule: s }).match, true);
   assert.equal(checkSchedule4Credits({ departmentName: '국어교육과', admissionYear: 2023, rows: ROWS_140, schedule: s }), null, '사범대학은 대학 단위 항목이라 대조하지 않는다');
   assert.equal(checkSchedule4Credits({ departmentName: '간호학과', admissionYear: 2023, rows: [], schedule: s }), null, '책자 자료가 없으면 대조 불가');
@@ -134,7 +138,7 @@ test('대조: 학과가 표에 직접 적혀 있을 때만 — 같으면 match, 
   assert.equal(findSchedule4Entry(s, '간호학과', 2012).credits, 140, '~2012학번은 ④ 표(140)');
 });
 
-test('판단: 불일치면 요건 규칙과 [별표 4]·제118조 규칙이 "추정"이 되고 두 값이 실린다, 일치면 영향 없음', () => {
+test('판단: 불일치면 요건 규칙과 [별표 4]·제118조 규칙이 "추정"이 되고 두 값이 실린다, 일치·학교 확인이면 영향 없음', () => {
   const seed = loadSeed();
   const byRef = new Map(seed.articles.map((a) => [`${a.docCode}:${a.articleKey}`, a]));
   const rules = seed.applicability.map((r) => {
@@ -146,11 +150,11 @@ test('판단: 불일치면 요건 규칙과 [별표 4]·제118조 규칙이 "추
   const requirements = (rows) => ({ department: dept, rows, latestDataYear: 2026, candidates: [], history: null });
   const input = (y) => ({ admissionYear: y, enrollmentType: 'GENERAL', departmentId: 72, asOfDate: '2026-10-05' });
 
-  const bad = resolveApplicableRules(input(2023), { ...base, requirements: requirements(ROWS_140) });
+  const bad = resolveApplicableRules(input(2023), { ...base, requirements: requirements(ROWS_145) });
   const req = bad.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   assert.equal(req.confidence, 'ESTIMATED');
-  assert.equal(req.value.totalRequiredCredits, 140, '숫자는 바꾸지 않는다(어느 쪽이 맞는지 판단하지 않음)');
-  assert.deepEqual([req.value.schedule4.schedule4Credits, req.value.schedule4.bookCredits], [130, 140]);
+  assert.equal(req.value.totalRequiredCredits, 145, '숫자는 바꾸지 않는다(어느 쪽이 맞는지 판단하지 않음)');
+  assert.deepEqual([req.value.schedule4.schedule4Credits, req.value.schedule4.bookCredits], [130, 145]);
   for (const code of ['ACAD_SCHED4_3_2013_2024', 'ENF118_GRAD_CREDITS_BY_COHORT']) {
     const r = bad.rules.find((x) => x.ruleCode === code);
     assert.equal(r.confidence, 'ESTIMATED', code);
@@ -159,6 +163,14 @@ test('판단: 불일치면 요건 규칙과 [별표 4]·제118조 규칙이 "추
   assert.equal(bad.rules.find((x) => x.ruleCode === 'ENF5_CURRICULUM_AT_ADMISSION').confidence, 'CONFIRMED', '제5조는 영향 없음');
   assert.ok(bad.flags.some((f) => f.code === 'SCHEDULE4_CREDIT_MISMATCH'));
 
+  // 학교가 책자 값(140)이 맞다고 답한 간호 2023: 불일치로 보지 않고 안내(INFO)만 붙인다.
+  const confirmed = resolveApplicableRules(input(2023), { ...base, requirements: requirements(ROWS_140) });
+  const creq = confirmed.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
+  assert.equal(creq.value.schedule4, null);
+  assert.ok(creq.flags.some((f) => f.code === 'SCHEDULE4_BOOKLET_CONFIRMED_BY_SCHOOL' && f.level === 'INFO'));
+  assert.ok(!confirmed.flags.some((f) => f.code === 'SCHEDULE4_CREDIT_MISMATCH'));
+  assert.notEqual(confirmed.rules.find((x) => x.ruleCode === 'ACAD_SCHED4_3_2013_2024').confidence, 'ESTIMATED');
+
   const ok = resolveApplicableRules(input(2024), { ...base, requirements: requirements([row('교양필수', 5), row('전공', 125)]) });
   assert.equal(ok.requirements.rules.find((r) => r.id === 'REQUIREMENTS').value.schedule4, null);
   assert.ok(!ok.flags.some((f) => f.code === 'SCHEDULE4_CREDIT_MISMATCH'));
@@ -166,15 +178,15 @@ test('판단: 불일치면 요건 규칙과 [별표 4]·제118조 규칙이 "추
 
 // --- DB(로컬 시드) ---
 
-test('DB: 간호학과 2023 진단 — 총학점 140은 그대로, 신뢰도 추정 + 두 값(학칙 130 / 책자 140), 2025는 확정', async () => {
+test('DB: 간호학과 2023 진단 — 총학점 140, 학교가 책자 값을 확인해 [별표 4] 불일치 추정 없음(2차 문의 D-1), 2025는 확정', async () => {
   const [[d]] = await pool.query("SELECT id FROM departments WHERE name = '간호학과'");
   const [r] = await pool.query("INSERT INTO students (email, name, onboarding_completed_at, department_id, admission_year, enrollment_type) VALUES (?, ?, NOW(), ?, 2023, 'GENERAL')", [`sched4-${Date.now()}@example.test`, `sched4${Date.now()}`, d.id]);
   try {
     const s = await getGraduationStatus(r.insertId);
     assert.equal(s.totalRequiredCredits, 140);
-    assert.equal(s.regulation.confidence, 'ESTIMATED');
-    assert.deepEqual([s.regulation.schedule4.schedule4Credits, s.regulation.schedule4.bookCredits], [130, 140]);
-    assert.ok(s.regulation.flags.some((f) => f.code === 'SCHEDULE4_CREDIT_MISMATCH'));
+    assert.equal(s.regulation.schedule4, null);
+    assert.ok(!s.regulation.flags.some((f) => f.code === 'SCHEDULE4_CREDIT_MISMATCH'));
+    assert.ok(s.regulation.flags.some((f) => f.code === 'SCHEDULE4_BOOKLET_CONFIRMED_BY_SCHOOL'));
     await pool.query('UPDATE students SET admission_year = 2025 WHERE id = ?', [r.insertId]);
     const ok = await getGraduationStatus(r.insertId);
     assert.equal(ok.regulation.confidence, 'CONFIRMED');
@@ -182,13 +194,12 @@ test('DB: 간호학과 2023 진단 — 총학점 140은 그대로, 신뢰도 추
   } finally { await pool.query('DELETE FROM students WHERE id = ?', [r.insertId]); }
 });
 
-test('DB 챗봇: 간호학과 2023 졸업학점 질문 — 판단 청크에 두 값과 "단정하지 말고 두 값을 모두 밝혀라"가 들어간다', async () => {
+test('DB 챗봇: 간호학과 2023 졸업학점 질문 — 학교가 책자 값을 확인했으므로 두 값을 함께 밝히라는 지시가 없다(2차 문의 D-1)', async () => {
   const [[d]] = await pool.query("SELECT id FROM departments WHERE name = '간호학과'");
   const student = { department_id: d.id, admission_year: 2023, enrollment_type: 'GENERAL' };
   const message = '졸업하려면 몇 학점이야?';
   const yc = resolveYearContext({ message, profileCohort: 2023, availableBookYears: [2023, 2024, 2025, 2026], today: '2026-10-05' });
   const merged = mergeChunks({ structured: await assembleStructuredChunks({ message, searchText: message, student, yearContext: yc }), yearContext: yc });
-  assert.match(merged[0].content, /학칙 \[별표 4\].*간호학과 130학점 이상, 교육과정 책자 기준은 140학점/);
-  assert.match(merged[0].content, /한쪽이 맞다고 단정하지 말고 두 값을 모두 밝힌 뒤/);
-  assert.match(merged[0].documentTitle, /신뢰도: 추정/);
+  assert.match(merged[0].content, /140/);
+  assert.doesNotMatch(merged[0].content, /두 값을 모두 밝힌 뒤/);
 });

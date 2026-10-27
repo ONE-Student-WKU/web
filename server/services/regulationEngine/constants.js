@@ -51,6 +51,11 @@ const MAJOR_CHANGE_CLOSED_DEPARTMENTS = Object.freeze(['의예과', '의학과',
 // "학과의 전공이수학점에 따른다"(학교 편입생 교육과정 3항 단서) — 전공 학점이 줄지 않는다는 규정이라 "줄어든 기준 자료 없음"이 아니다.
 const MED_PHARM_DEPARTMENTS = Object.freeze(['의예과', '의학과', '치의예과', '치의학과', '한의예과', '한의학과', '약학과', '한약학과', '간호학과']);
 
+// 단과대학이 편입생의 졸업 총학점을 직접 답한 학과. 이 학과 편입은 본과 1학년 편입뿐이라(학칙 제36조 제2항) 편입 학년·4학년 21학점·
+// 인정학점 계산이 해당하지 않고, 학과 졸업학점(본과 학점)이 그대로 편입생의 총 학점이다.
+// 한의학과: "편입학생은 … 본과 이수 학점인 160학점 이상"(한의과대학 답변 2026-10-26, DECISIONS D-84). 2017~2026학번 시드가 모두 전공 160이다.
+const COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS = Object.freeze(['한의학과']);
+
 // 편입생 인정학점(전적대학 학점 중 본교 졸업학점으로 인정하는 학점). 학교 홈페이지 편입생 교육과정 "1. 편입생 학점인정"
 // (docs/school-inquiry/근거_학교홈페이지/편입생교육과정_2026-10-12.txt). 표가 학과 이름이 아니라 대학·계열로 적혀 있어
 // 학과의 졸업학점으로 대학을 가른다: 136학점 = 창의공과대학, 140학점 = 사범대학·간호학과(2023학번까지)·작업치료학과(2024학번까지),
@@ -275,6 +280,11 @@ const CITATIONS = Object.freeze({
     file: 'db/regulations/교육과정/2026_교육과정_해설.md',
     quote: '학사구조조정이 2022학년도 2학기 이전에 이루어진 경우 교양필수 5학점, 교양선택 24학점(영역 구분 없음)을 이수한다',
   },
+  COLLEGE_ORIENTAL_MEDICINE_TRANSFER: {
+    kind: 'CASE', doc: '한의과대학 학과사무실 서면 답변(2026-10-26)', article: '문의 1 — 편입학생은 본과 4년, 본과 160학점',
+    file: 'docs/school-inquiry/한의과대학_답변_2026-10-26.md',
+    quote: '본과 이수 학점인 160학점 이상 취득이 필요합니다',
+  },
   CASE_MAJOR_CHANGE_AFTER_CUTOFF: {
     kind: 'CASE', doc: '학교(학사지원과) 안내 사례',
     article: '2022학번이 2025-2학기에 전과 → 교양필수5+교양선택34(=39학점), 학사지원과 회신으로 정상 적용 확인',
@@ -313,6 +323,7 @@ module.exports = {
   BYLAW_MAJOR_DEPARTMENTS,
   MAJOR_CHANGE_CLOSED_DEPARTMENTS,
   MED_PHARM_DEPARTMENTS,
+  COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS,
   TRANSFER_RECOGNIZED_CREDITS,
   REGULATION_MIN_MAJOR_BY_DEPARTMENT,
   BROAD_SERIES_AREA_MINIMUMS,

@@ -50,6 +50,15 @@ async function createLoginToken(email, purpose = 'login') {
   return code;
 }
 
+// 메일 발송이 실패한 코드는 지운다. 남겨 두면 받지도 못한 코드가 재전송 쿨다운(5분)과 하루 발송 한도에 잡혀,
+// 발송 서비스가 되살아나도 그 사이 다시 요청하지 못한다(Resend 무료 플랜 하루 100통 한도에 걸렸을 때 실제로 생기는 일).
+async function discardLoginToken(email, code, purpose = 'login') {
+  await pool.query(
+    'DELETE FROM email_login_tokens WHERE email = ? AND purpose = ? AND code_hash = ? AND consumed_at IS NULL',
+    [email, purpose, hashCode(code)]
+  );
+}
+
 // 코드를 검증한다. 같은 이메일+purpose에 대해 아직 소비되지 않고 만료되지 않은 가장 최근
 // 토큰만 대상.
 async function verifyLoginToken(email, code, purpose = 'login') {
@@ -120,4 +129,4 @@ async function checkResendAllowed(email, purpose = 'login') {
   return { ok: true };
 }
 
-module.exports = { createLoginToken, verifyLoginToken, checkResendAllowed };
+module.exports = { createLoginToken, discardLoginToken, verifyLoginToken, checkResendAllowed };

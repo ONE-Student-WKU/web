@@ -3,6 +3,7 @@ const { FAILING_GRADES, getSupersededCourseIds } = require('./courseService');
 const { academicTermOf, termIndex, todayKst } = require('./regulationEngine/context');
 const { offeringCodeToRegularSemester } = require('./termCode');
 const { parseLeavePeriods, countLeaveBetween } = require('./leavePeriods');
+const { PREMED_DEPARTMENTS } = require('./regulationEngine/profileCaveats');
 
 /**
  * server/services/studentProgress.js
@@ -203,14 +204,27 @@ function canGraduateEarly(student, programYears) {
  * - 지금 다니는 학기도 등록한 학기로 센다.
  * @returns {{ registered, required, earlyGraduation: number|null, estimated: boolean } | null}
  */
+// 학기 수업이 열리는 달(1학기 3~6월, 2학기 9~12월). academicTermOf는 방학(7~8월, 1~2월)을 직전 학기로 본다.
+function isClassMonth(isoDate) {
+  const m = Number(isoDate.split('-')[1]);
+  return (m >= 3 && m <= 6) || m >= 9;
+}
+
 function registrationTermsOf(student, { today = todayKst() } = {}) {
+  // 예과(의예·치의예·한의예과)는 졸업이 아니라 본과 진급 단계다. 수업연한은 본과까지 합친 6년이라, 예과 학점(80)을 다 채운 학생에게
+  // "졸업하려면 8학기 더 등록해야 해요"가 떴다(2026-10-26 점검). 예과에서는 등록기간을 따지지 않는다 — 본과에서 6년 기준으로 본다.
+  if (PREMED_DEPARTMENTS.includes(student.department_name)) return null;
   const standing = currentStandingOf(student, { today });
   if (!standing) return null;
   const isTransfer = student.enrollment_type === 'TRANSFER_ADMISSION';
   const startGrade = isTransfer ? (student.transfer_grade != null ? Number(student.transfer_grade) : TRANSFER_START_GRADE) : 1;
   const programYears = programYearsOf(student.department_name);
+  const registered = standing.enrolledTermNumber + (startGrade - 1) * 2;
   return {
-    registered: standing.enrolledTermNumber + (startGrade - 1) * 2,
+    registered,
+    // 수업이 끝난 학기 수. 지금 학기 수업 중(3~6월·9~12월)이면 지금 학기를 빼고, 방학(7~8월·1~2월)이거나 지금 학기를 휴학 중이면 그대로다.
+    // 화면의 "졸업이 가까워요" 안내가 이 값으로 마지막 학기 바로 앞(보통 4학년 1학기를 마친 뒤)부터 뜬다(2026-10-27 결정).
+    completed: !standing.onLeave && isClassMonth(today) ? registered - 1 : registered,
     required: programYears * 2,
     // 조기졸업 6학기는 신청할 수 있는 학생에게만 안내한다(제126조 제2항 — 2026-10-16 규정 대조에서 찾음).
     earlyGraduation: canGraduateEarly(student, programYears) ? EARLY_GRADUATION_TERMS : null,

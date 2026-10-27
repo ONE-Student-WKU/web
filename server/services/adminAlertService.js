@@ -12,10 +12,11 @@ const { getPendingCounts } = require('./adminStatsService');
  *   이 함수는 절대 throw하지 않는다.
  */
 
+// tag·username은 종류를 한눈에 가르려는 것이다 — 폰 푸시 배너의 제목(보낸 이름)과 본문 맨 앞만 봐도 무엇이 왔는지 안다.
 const KINDS = {
-  inquiry: { label: '새 문의가 들어왔어요', pendingKey: 'inquiries' },
-  report: { label: '새 신고가 접수됐어요', pendingKey: 'reports' },
-  post: { label: '승인을 기다리는 새 글이 있어요', pendingKey: 'posts' },
+  inquiry: { tag: '문의', username: 'ONE 문의', label: '새 문의가 들어왔어요', pendingKey: 'inquiries' },
+  report: { tag: '신고', username: 'ONE 신고', label: '새 신고가 접수됐어요', pendingKey: 'reports' },
+  post: { tag: '글 승인', username: 'ONE 글 승인', label: '승인을 기다리는 새 글이 있어요', pendingKey: 'posts' },
 };
 
 const TIMEOUT_MS = 5000;
@@ -24,19 +25,20 @@ const TIMEOUT_MS = 5000;
 const DISCORD_USER_ID = /^\d{17,20}$/;
 
 // 웹훅에 보낼 본문. pending은 getPendingCounts()의 결과(실패하면 null — 건수 없이 보낸다).
-// mentionUserId가 있으면 맨 앞에서 그 사람을 멘션한다 — 채널 알림이 "@멘션만"이어도 폰 푸시가 오게 하려는 것(2026-10-24).
+// mentionUserId가 있으면 첫 줄 끝에서 그 사람을 멘션한다 — 채널 알림이 "@멘션만"이어도 폰 푸시가 오게 하려는 것(2026-10-24).
+// 멘션을 끝에 두는 건 푸시 미리보기에서 [종류] 표시가 맨 앞에 보이게 하려는 것이다.
 function buildAdminAlertMessage(kind, pending, siteUrl, mentionUserId = null) {
   const spec = KINDS[kind];
   if (!spec) return null;
   const parts = [spec.label];
   if (pending && Number.isFinite(pending[spec.pendingKey])) parts.push(`미처리 ${pending[spec.pendingKey]}건`);
-  let content = parts.join(' · ');
-  if (siteUrl) content += `\n관리자 페이지에서 보기: <${siteUrl}>`;
+  let content = `[${spec.tag}] ${parts.join(' · ')}`;
   const mention = DISCORD_USER_ID.test(mentionUserId || '') ? mentionUserId : null;
-  if (mention) content = `<@${mention}> ${content}`;
+  if (mention) content += ` <@${mention}>`;
+  if (siteUrl) content += `\n관리자 페이지에서 보기: <${siteUrl}>`;
   // allowed_mentions: @everyone·역할 멘션은 막고, 지정한 사용자 한 명만 멘션을 허용한다.
   const allowed_mentions = mention ? { parse: [], users: [mention] } : { parse: [] };
-  return { username: 'ONE 알림', content, allowed_mentions };
+  return { username: spec.username, content, allowed_mentions };
 }
 
 // 옵션은 테스트용 주입 지점이다(DB·네트워크 없이 검증).

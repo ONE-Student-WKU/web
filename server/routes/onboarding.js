@@ -1,5 +1,6 @@
 const express = require('express');
 const { MAJOR_CHANGE_CLOSED_DEPARTMENTS } = require('../services/regulationEngine/constants');
+const { PREMED_DEPARTMENTS } = require('../services/regulationEngine/profileCaveats');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
@@ -63,6 +64,10 @@ router.post('/', requireAuth, async (req, res, next) => {
     // 의·치·한의예(학)과·약학대학으로는 전과할 수 없다(학칙시행규칙 제111조 제4호).
     if (enrollmentType === 'MAJOR_CHANGE' && MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(department.name)) {
       return res.status(400).json({ status: 400, code: 'MAJOR_CHANGE_CLOSED_DEPARTMENT', message: null, data: null });
+    }
+    // 2년 과정인 예과에는 편입학이 없다(학칙 제36조).
+    if (enrollmentType === 'TRANSFER_ADMISSION' && PREMED_DEPARTMENTS.includes(department.name)) {
+      return res.status(400).json({ status: 400, code: 'TRANSFER_INTO_PREMED', message: null, data: null });
     }
 
     // majorChangeGrade/Year/Semester: 전과생(MAJOR_CHANGE)만 필수, 그 외 유형이면 애초에 의미가 없는 값이므로 거부.

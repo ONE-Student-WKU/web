@@ -4,6 +4,7 @@ import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, leaveErrorKey }
 import { saveLeavePeriods } from '../api/chatApi.js';
 import { transferYearOf } from '../utils/onboardingYears.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 const NOW_YEAR = new Date().getFullYear();
 // 휴학은 다음 학기 것까지 받는다(Onboarding.jsx와 같은 기준).
@@ -45,7 +46,7 @@ function LeaveGate({ user, onSaved }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
-        <span className="screen-title screen-title-brand">ONE Student</span>
+        <BrandTitle />
         <LanguageSwitcher />
       </header>
 

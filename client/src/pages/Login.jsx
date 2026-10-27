@@ -3,8 +3,9 @@ import { startGoogleLogin, requestEmailCode, verifyEmailCode } from '../api/chat
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
 import ConsentCheckbox from '../components/ConsentCheckbox.jsx';
 import { IconGoogle } from '../components/icons.jsx';
-import { CONSENT_VERSION, readStoredConsent, storeConsent } from '../utils/consent.js';
+import { CONSENT_VERSION, readStoredConsent, storeConsent, readStoredNoticeAck, storeNoticeAck } from '../utils/consent.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 // 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
 // data.retryAt(ISO 문자열)을 같이 내려준다 — 일일 한도까지 걸리면 몇 시간 단위로 남을 수
@@ -39,6 +40,7 @@ function describeEmailError(code, t) {
   if (code === 'NOT_FOUND') return t('login.err.notFound');
   if (code === 'INVALID_CODE') return t('login.err.invalidCode');
   if (code === 'TOO_MANY_ATTEMPTS') return t('login.err.tooManyAttempts');
+  if (code === 'EMAIL_SEND_FAILED') return t('login.err.sendFailed');
   return t('login.err.request');
 }
 
@@ -60,11 +62,19 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   const [remember, setRemember] = useState(true);
   // 이용약관·개인정보 수집·이용 동의(필수) — 체크하기 전에는 Google/이메일 로그인 버튼을 모두 막는다. 이 브라우저에서 현재 버전에
   // 이미 동의했으면 처음부터 체크돼 있다(약관 링크를 보러 갔다 와도 유지된다). 서버에도 같은 검사가 있다(routes/auth.js).
-  const [consented, setConsented] = useState(readStoredConsent);
+  const [termsAgreed, setTermsAgreed] = useState(readStoredConsent);
   const handleConsentChange = (checked) => {
-    setConsented(checked);
+    setTermsAgreed(checked);
     storeConsent(checked);
   };
+  // "[필수] 학교 공식 서비스가 아님" 확인 — 약관 동의와 함께 둘 다 체크해야 로그인 버튼이 열린다(교육혁신과 통화 2026-10-26).
+  // 학생이 학교가 만든 앱으로 오해하지 않게 하려는 화면 단계의 확인이라 서버에는 보내지 않는다.
+  const [noticeAcked, setNoticeAcked] = useState(readStoredNoticeAck);
+  const handleNoticeChange = (checked) => {
+    setNoticeAcked(checked);
+    storeNoticeAck(checked);
+  };
+  const consented = termsAgreed && noticeAcked;
   // 동의하지 않은 채 로그인 버튼이나 입력 칸을 누르면 막기만 하지 않고, 어떤 항목이 빠졌는지 동의 체크를 강조해서 알려준다.
   // 버튼은 disabled가 아니라 aria-disabled로 둬야 클릭 자체가 들어와 이 안내를 띄울 수 있다(disabled 버튼은 클릭 이벤트가 없다).
   // focus: 버튼을 눌렀을 땐 체크박스로 포커스도 옮기고, 입력 칸에 포커스가 간 경우엔 타이핑을 끊지 않으려고 옮기지 않는다.
@@ -156,11 +166,12 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   return (
     <div className="auth-page">
       <header className="screen-header">
-        <span className="screen-title screen-title-brand">ONE Student</span>
+        <BrandTitle />
         <LanguageSwitcher />
       </header>
 
       <div className="auth-body">
+        <p className="auth-unofficial-badge">{t('login.unofficialBadge')}</p>
         <h2 className="auth-heading">{t('login.title')}</h2>
         <p className="auth-subheading">{t('login.subtitle')}</p>
 
@@ -172,12 +183,19 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
         </label>
 
         <ConsentCheckbox
-          checked={consented}
+          checked={termsAgreed}
           onChange={handleConsentChange}
           onOpenTerms={onOpenTerms}
           onOpenPrivacy={onOpenPrivacy}
           nudgeKey={consentNudge.key}
-          nudgeFocus={consentNudge.focus}
+          nudgeFocus={consentNudge.focus && !termsAgreed}
+        />
+        <ConsentCheckbox
+          checked={noticeAcked}
+          onChange={handleNoticeChange}
+          textKey="login.unofficialAck"
+          nudgeKey={consentNudge.key}
+          nudgeFocus={consentNudge.focus && termsAgreed}
         />
 
         <button

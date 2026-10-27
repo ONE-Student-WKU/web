@@ -2,6 +2,7 @@ import React from 'react';
 import AccountMenu from './AccountMenu.jsx';
 import { IconChevronLeft } from './icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from './BrandTitle.jsx';
 
 /**
  * Sidebar Component
@@ -25,7 +26,7 @@ function Sidebar({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, o
             <IconChevronLeft />
           </button>
         )}
-        <span className="screen-title screen-title-brand">ONE Student</span>
+        <BrandTitle />
       </div>
       <AccountMenu
         user={user}

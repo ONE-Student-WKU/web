@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -155,7 +155,7 @@ describe('describeRequirementTrust', () => {
 
   it('확정: 배지·사유·추정 표시가 모두 없다(예외만 표시)', () => {
     const t = describeRequirementTrust({ ...base, regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', flags: [], totalDefinitive: true, schedule4: null } });
-    expect(t).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(t).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
   });
 
   it('추정: 가장 심각한 플래그 하나를 사유로, 총량은 추정 표기', () => {
@@ -193,9 +193,9 @@ describe('describeRequirementTrust', () => {
   });
 
   it('예전 응답(regulation 없음)도 그대로 동작: 배지·사유 없음, 총량 0이면 noData', () => {
-    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(base)).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
     expect(describeRequirementTrust({ ...base, totalRequiredCredits: 0 }).noData).toBe(true);
-    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, totalEstimated: false });
+    expect(describeRequirementTrust(null)).toEqual({ noData: false, badge: null, reason: null, otherReasons: [], totalEstimated: false });
   });
 });
 
@@ -331,6 +331,10 @@ describe('등록 학기(#378 H-2)', () => {
     expect(registrationTermShortage(status(6, 120), [])).toBe(0);
     expect(registrationTermShortage({ totalEarnedCredits: 130, totalRequiredCredits: 130 }, [])).toBe(0);
   });
+
+  it('예과처럼 서버가 등록 학기를 주지 않으면(null) 학점을 다 채워도 "몇 학기 더"를 띄우지 않는다', () => {
+    expect(registrationTermShortage({ totalEarnedCredits: 80, totalRequiredCredits: 80, registrationTerms: null }, [])).toBe(0);
+  });
 });
 
 describe('다전공(#378 G-2)', () => {
@@ -359,6 +363,44 @@ describe('판정하지 않는 요건(2026-10-16 규정 대조)', () => {
   });
 });
 
+describe('추정이 섞인 진단을 확정처럼 말하지 않는다(2026-10-24 점검)', () => {
+  const t = (key, params) => translate('ko', key, params);
+  const cert = { category: '졸업인증제', satisfied: true };
+
+  it('졸업인증제가 있으면 학과 졸업인증(어학·자격증 등)은 늘 직접 확인할 항목이다', () => {
+    expect(uncheckedRequirementKeys({ certifications: [cert] })).toEqual(['home.unchecked.deptCertification']);
+    expect(uncheckedRequirementKeys({ certifications: [{ category: '졸업논문', satisfied: true }] })).toEqual([]);
+  });
+
+  it('부족 요건이 없어도 추정이면 "모든 요건을 충족했어요"라고 하지 않고 학사지원과 확인을 권한다', () => {
+    const confirmedAllMet = `${t('home.allMet')}\n${t('home.allMetNote.final')}`;
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe(confirmedAllMet);
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t)).toBe(`${t('home.allMetQualified')}\n${t('home.allMetNote.estimated')}`);
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 18, totalEarnedCredits: 130, totalRequiredCredits: 130 }, t)).toContain('18학점');
+    // 수강 중 학점을 빼도 이미 졸업 학점을 채웠으면 조건을 붙이지 않는다
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 6, totalEarnedCredits: 140, totalRequiredCredits: 130 }, t)).toBe(confirmedAllMet);
+    expect(creditsDependOnInProgress({ inProgressCredits: 6, totalEarnedCredits: 134, totalRequiredCredits: 130 })).toBe(true);
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학과 졸업인증');
+    expect(allMetMessage({ regulation: { confidence: 'ESTIMATED' }, certifications: [cert] }, t)).toContain('학사지원과');
+  });
+
+  it('추정 이유가 여러 개면 한 줄 사유 말고 나머지도 펼쳐 볼 수 있게 준다(중복 제거)', () => {
+    const regulation = { confidence: 'ESTIMATED', flags: [
+      { level: 'ESTIMATED', message: '가' }, { level: 'INFO', message: '안내' }, { level: 'ESTIMATED', message: '나' }, { level: 'ESTIMATED', message: '나' },
+    ] };
+    const trust = describeRequirementTrust({ totalRequiredCredits: 130, regulation });
+    expect(trust.reason).toBe('가');
+    expect(trust.otherReasons).toEqual(['나']);
+  });
+
+  it('[별표 4] 불일치는 한 줄 사유가 이미 말하므로 펼쳐 보기에 다시 넣지 않는다', () => {
+    const regulation = { confidence: 'ESTIMATED', schedule4: { schedule4Credits: 130, bookCredits: 140 }, flags: [
+      { code: 'SCHEDULE4_CREDIT_MISMATCH', level: 'ESTIMATED', message: '별표4 문장' }, { code: 'X', level: 'ESTIMATED', message: '다른 이유' },
+    ] };
+    expect(describeRequirementTrust({ totalRequiredCredits: 130, regulation }).otherReasons).toEqual(['다른 이유']);
+  });
+});
+
 describe('certCourseRows', () => {
   const both = { requiredCourses: ['기업연계프로젝트1', '기업연계프로젝트2'], minCourseCount: 2 };
   it('모두 들어야 하는 졸업인증제는 과목마다 이수/남음을 보여준다', () => {
@@ -375,5 +417,88 @@ describe('certCourseRows', () => {
   it('과목이 하나뿐인 행(졸업논문)이나 서버가 값을 안 주면 아무것도 보여주지 않는다', () => {
     expect(certCourseRows({ requiredCourses: ['졸업논문'], minCourseCount: 1, completedCourses: [] })).toEqual([]);
     expect(certCourseRows(both)).toEqual([]);
+  });
+});
+
+describe('allMetMessage — 최종 확인 안내(교육혁신과 통화 2026-10-26)', () => {
+  const t = (key, params) => translate('ko', key, params);
+  it('확정이어도 "이 앱 기준"이고, 학사지원과가 최종 판단한다는 문장은 따로 한 줄로 나온다', () => {
+    expect(allMetMessage({ regulation: { confidence: 'CONFIRMED' } }, t)).toBe('이 앱 기준으로는 모든 요건을 채웠어요.\n졸업사정은 학사지원과가 최종 판단해요.');
+  });
+  it('수강 중 학점이 섞인 확정 결과에도 최종 판단 안내를 붙이고, 추정이면 추정 안내만 붙인다', () => {
+    const inProgress = allMetMessage({ regulation: { confidence: 'CONFIRMED' }, inProgressCredits: 18, totalEarnedCredits: 130, totalRequiredCredits: 130 }, t);
+    expect(inProgress).toContain('졸업사정은 학사지원과가 최종 판단해요');
+    const estimated = allMetMessage({ regulation: { confidence: 'ESTIMATED' } }, t);
+    expect(estimated).not.toContain('최종 판단');
+    expect(estimated).toContain('학사지원과에 확인해 주세요');
+  });
+});
+
+describe('인쇄용 시트 헬퍼(#455)', () => {
+  it('printTrustLevel: 확정→높음, 추정→중간, 자료 불충분·없음→낮음, regulation 없으면 null', () => {
+    expect(printTrustLevel({ regulation: { confidence: 'CONFIRMED' } })).toBe('HIGH');
+    expect(printTrustLevel({ regulation: { confidence: 'ESTIMATED' } })).toBe('MEDIUM');
+    expect(printTrustLevel({ regulation: { confidence: 'INSUFFICIENT' } })).toBe('LOW');
+    expect(printTrustLevel({ regulation: { confidence: 'NO_DATA' } })).toBe('LOW');
+    expect(printTrustLevel({})).toBeNull();
+  });
+
+  it('buildPrintRows: 전공필수+전공선택을 "전공" 한 줄로 합치고 내역을 붙이며, 기본전공 하한 부족분을 남은 학점에 반영한다', () => {
+    const rows = buildPrintRows({
+      categories: [
+        { category: '교양필수', earnedCredits: 9, requiredCredits: 9, areas: [{ area: '건학이념', satisfied: false, missing: ['종교와원불교'] }] },
+        { category: '교양선택', earnedCredits: 20, requiredCredits: 23 },
+        { category: '전공필수', earnedCredits: 9, requiredCredits: 19 },
+        { category: '전공선택', earnedCredits: 70, requiredCredits: 56 },
+        { category: '일반선택', earnedCredits: 0, requiredCredits: 0 },
+      ],
+    });
+    expect(rows.map((r) => r.category)).toEqual(['교양필수', '교양선택', '전공']);
+    const major = rows.find((r) => r.category === '전공');
+    expect(major).toMatchObject({ earned: 79, required: 75, remaining: 10 });
+    expect(major.parts.map((p) => p.category)).toEqual(['전공필수', '전공선택']);
+    // 교양필수는 학점을 채워도 영역 과목이 빠지면 미충족으로 남는다.
+    const liberal = rows.find((r) => r.category === '교양필수');
+    expect(liberal.remaining).toBe(0);
+    expect(liberal.missingAreas).toHaveLength(1);
+    expect(rows.find((r) => r.category === '교양선택').remaining).toBe(3);
+  });
+
+  it('buildPrintRows: 광역 계열전공은 기초·심화·응용 내역을 붙이고 구분별 부족분을 남은 학점에 반영한다', () => {
+    const rows = buildPrintRows({
+      categories: [
+        { category: '전공필수', earnedCredits: 0, requiredCredits: 19 },
+        { category: '전공선택', earnedCredits: 60, requiredCredits: 56 },
+      ],
+      majorAreaCredits: { areas: [{ area: '기초', earned: 3, required: 9 }, { area: '심화', earned: 30, required: 30 }], unknownCredits: 0 },
+    });
+    expect(rows[0]).toMatchObject({ category: '전공', remaining: 15, parts: [{ kind: 'area', category: '기초' }, { kind: 'area', category: '심화' }] });
+  });
+
+  it('summarizeLiberalAreasForPrint: 충족 영역 수와 모자란 영역만 추린다', () => {
+    expect(summarizeLiberalAreasForPrint(null)).toBeNull();
+    const s = summarizeLiberalAreasForPrint({
+      foundation: [{ area: 'AI와디지털', earned: 2, required: 3 }, { area: '논리와표현', earned: 3, required: 3 }],
+      electives: { coveredAreaCount: 1, requiredAreaCount: 2, satisfied: false },
+    });
+    expect(s).toEqual({ met: 1, total: 2, short: [{ area: 'AI와디지털', n: 1 }], electives: { covered: 1, required: 2, satisfied: false } });
+  });
+});
+
+describe('isNearGraduation — 학기 기준(2026-10-27)', () => {
+  const at = (completed, required = 8) => ({ registrationTerms: { registered: completed + 1, completed, required } });
+  it('수업이 끝난 학기가 졸업 학기 수 − 1 이상이면 띄운다(4년제는 4학년 1학기를 마친 뒤부터, 초과학기 포함)', () => {
+    expect(isNearGraduation(at(6))).toBe(false);
+    expect(isNearGraduation(at(7))).toBe(true);
+    expect(isNearGraduation(at(9))).toBe(true);
+    // 수업연한이 다른 학과: 건축학과 10학기면 9학기를 마친 뒤부터
+    expect(isNearGraduation(at(8, 10))).toBe(false);
+    expect(isNearGraduation(at(9, 10))).toBe(true);
+  });
+
+  it('등록 학기를 모르면(예과 null, 예전 응답에 completed 없음) 띄우지 않는다 — 학점은 보지 않는다', () => {
+    expect(isNearGraduation({ totalRequiredCredits: 130, totalEarnedCredits: 125, registrationTerms: null })).toBe(false);
+    expect(isNearGraduation({ registrationTerms: { registered: 8, required: 8 } })).toBe(false);
+    expect(isNearGraduation(null)).toBe(false);
   });
 });

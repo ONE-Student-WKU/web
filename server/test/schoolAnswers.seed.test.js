@@ -15,7 +15,7 @@ const COURSES_2026 = require(path.join(ROOT, 'db', 'curriculum', '_source', '202
 const cert2026 = (dept) =>
   SEED.filter((r) => r.departmentName === dept && r.category === '졸업인증제' && r.minAdmissionYear === 2026 && r.maxAdmissionYear === null);
 
-test('A-4: 개편된 2026 학과·계열의 졸업인증제 그룹이 확정 값이다(디자인융합계열만 학교 확인 안내)', () => {
+test('A-4·D-2: 개편된 2026 학과·계열의 졸업인증제 그룹이 확정 값이다(디자인융합계열은 "가", 패션디자인산업전공만 "나")', () => {
   const expected = {
     나: ['공학1계열', '공학2계열', '공학3계열', '그린바이오계열', '스마트농업계열', '푸드테크계열', '뷰티디자인학과', '의생명공학계열'],
     가: ['창의문화융합계열', '경영계열', '경제금융·회계세무계열', '경찰·공공행정계열', '소방행정·방재계열', '보건행정학과', '사회복지학과'],
@@ -27,14 +27,26 @@ test('A-4: 개편된 2026 학과·계열의 졸업인증제 그룹이 확정 값
       assert.match(rows[0].description, new RegExp(`졸업인증제 "${group}" 그룹`), dept);
     }
   }
-  assert.match(cert2026('디자인융합계열')[0].description, /학교에 확인/);
-  // 디자인융합계열은 가·나 그룹을 단정하지 않고 두 그룹의 기본영역 과목을 모두 인정한다(D-66). 2020~2025학번 행도 같다.
+  // 디자인융합계열은 "가" 그룹이다(2차 문의 D-2, D-83 — D-66의 판단 보류를 해소). 2020~2025학번 행도 같다.
+  // 패션디자인산업전공만 "나" 그룹이라 세부전공 예외(trackCertificationRules.js)로 바꿔 끼운다.
   const design = SEED.filter((r) => r.departmentName === '디자인융합계열' && r.category === '졸업인증제');
   assert.equal(design.length, 2);
   for (const row of design) {
-    assert.match(row.description, /학교에 확인/);
-    assert.deepEqual([...row.requiredCourses].sort(), ['기업연계프로젝트', '사회봉사', '전공현장실습', '종합설계', '캡스톤디자인'].sort());
+    assert.match(row.description, /졸업인증제 "가" 그룹/);
+    assert.doesNotMatch(row.description, /학교에 확인 중/);
+    assert.deepEqual(row.requiredCourses, ['전공현장실습', '캡스톤디자인', '사회봉사']);
     assert.equal(row.minCourseCount, 1);
+  }
+  const { applyTrackCertificationRule } = require('../services/trackCertificationRules');
+  const toEngineRow = (r) => ({ category: r.category, description: r.description, requiredCourses: r.requiredCourses, min_course_count: r.minCourseCount });
+  for (const admissionYear of [2025, 2026]) {
+    const base = toEngineRow(design.find((r) => admissionYear >= r.minAdmissionYear && (r.maxAdmissionYear == null || admissionYear <= r.maxAdmissionYear)));
+    const [fashion] = applyTrackCertificationRule([base], { departmentName: '디자인융합계열', admissionYear, trackName: '패션디자인산업전공' });
+    assert.deepEqual([fashion.requiredCourses, fashion.min_course_count], [['캡스톤디자인', '기업연계프로젝트', '종합설계'], 1], `${admissionYear} 패션`);
+    assert.match(fashion.description, /"나" 그룹/);
+    for (const trackName of ['시각정보디자인전공', '실내·산업디자인전공', '파인아트전공', '공예문화·주얼리디자인전공']) {
+      assert.deepEqual(applyTrackCertificationRule([base], { departmentName: '디자인융합계열', admissionYear, trackName }), [base], `${admissionYear} ${trackName}`);
+    }
   }
 });
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
+import GraduationPrintSheet from '../components/GraduationPrintSheet.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, uncheckedRequirementKeys, certCourseRows } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -31,13 +32,15 @@ export function resetGraduationCache() {
  * - onOpenOnboarding: function
  * - onOpenProfile: function
  */
-function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry }) {
+function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSettings, onOpenOnboarding, onOpenProfile, onOpenAdmin, onOpenInquiry, onReportResult }) {
   const { t, lang } = useI18n();
   const [status, setStatus] = useState(cachedStatus);
   const [loading, setLoading] = useState(cachedStatus === null);
   // 번역 키를 저장해 두고 렌더에서 t()로 바꾼다 — 로딩 이펙트가 번역 함수에 의존하지 않게 하려는 것.
   const [error, setError] = useState(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
+  // 한 장 인쇄(#455): 누르면 인쇄용 시트를 붙이고 인쇄 창을 연다. 평소에는 시트를 그리지 않아 화면 DOM에 같은 숫자가 두 번 들어가지 않는다.
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     getGraduationStatus()
@@ -56,6 +59,23 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       .finally(() => setLoading(false));
   }, []);
 
+  // 대부분 프린터가 없어 PDF 저장이 주 용도다(인쇄 창의 'PDF로 저장'). 이미 시트가 붙어 있으면 창만 다시 연다.
+  const savePdf = () => (printing ? window.print() : setPrinting(true));
+
+  // 시트가 그려진 뒤 인쇄 창을 연다. body 클래스가 붙어 있는 동안만 인쇄 CSS가 시트 말고 나머지를 숨긴다(App.css).
+  // 모바일 브라우저는 window.print()가 바로 돌아오기도 해서, 시트는 afterprint에서 뗀다.
+  useEffect(() => {
+    if (!printing) return undefined;
+    const done = () => setPrinting(false);
+    document.body.classList.add('grad-printing');
+    window.addEventListener('afterprint', done);
+    window.print();
+    return () => {
+      window.removeEventListener('afterprint', done);
+      document.body.classList.remove('grad-printing');
+    };
+  }, [printing]);
+
   // 요건 자료가 없으면 총 요구학점이 0이라 0으로 나누면 NaN%가 됐다 — 이 경우는 아래에서 "진단할 수 없어요" 안내로 대신한다.
   // trust는 서버(규정 판단 엔진)가 내려준 근거 신뢰도·사유를 화면용으로 정리한 것(utils/graduation.js).
   const trust = status ? describeRequirementTrust(status, lang) : null;
@@ -69,6 +89,8 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   // 일반선택은 전공도 교양도 아니라 두 카드 어디에도 안 붙이고, "총량을 채우는 데 쓰인
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
   const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
+  // 기준 책자 학년도: 2025학번 이하는 엔진이 알려 주는 최신 책자(학번별 이수기준표), 그 밖에는 입학한 해의 책자.
+  const basisYear = status?.regulation?.basisBookletYear ?? user?.admissionYear ?? null;
 
   return (
     <div className="courses-page">
@@ -91,6 +113,12 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
       </header>
 
       <div className="courses-body">
+        {/* 숫자를 보는 바로 그 자리에 비공식·기준·최종 확인처를 늘 보여준다(약관 속 문구는 읽히지 않는다 — 교육혁신과 통화 2026-10-26). */}
+        <p className="grad-basis-line">
+          <strong>{t('grad.basis.unofficial')}</strong>
+          {basisYear && <span>{t('grad.basis.booklet', { year: basisYear })}</span>}
+          <span>{t('grad.basis.call')}</span>
+        </p>
         {error && <p className="home-error">{t(error)}</p>}
         {onboardingRequired && <p className="home-error">{t('grad.needOnboarding')}</p>}
 
@@ -131,6 +159,15 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
 
         {status && !trust.noData && (
           <>
+            {/* 졸업이 가까우면 확인받을 때 들고 갈 결과를 바로 저장할 수 있게 같은 버튼을 이 안내 안에도 둔다. */}
+            {isNearGraduation(status) && (
+              <div className="grad-near-graduation" role="note">
+                <p>{t('grad.nearGraduation')}</p>
+                <button type="button" className="grad-near-save-btn" onClick={savePdf}>
+                  {t('grad.print.nearButton')}
+                </button>
+              </div>
+            )}
             <section className="home-card">
               <p className="home-card-label">
                 {t('grad.totalLabel')}
@@ -140,8 +177,20 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 <span className="home-credit-number">{status.totalEarnedCredits}</span>
                 <span className="home-credit-total">{t('grad.totalCredits', { total: status.totalRequiredCredits })}</span>
                 {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
+                {status.inProgressCredits > 0 && <span className="grad-trust-tag">{t('grad.inProgressIncluded', { n: status.inProgressCredits })}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
+              {isAbsentInLatestBooklet(status) && <p className="grad-trust-reason">{t('grad.absentDeptNote')}</p>}
+              {trust.otherReasons.length > 0 && (
+                <details className="grad-trust-more">
+                  <summary>{t('grad.trust.more', { n: trust.otherReasons.length })}</summary>
+                  <ul>
+                    {trust.otherReasons.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               <div className="home-progress-track">
                 <div
                   className="home-progress-fill"
@@ -150,7 +199,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </div>
               <p className="grad-remaining-text">
                 {progressPercent}% ·{' '}
-                {remaining > 0 ? t('grad.remaining', { n: remaining }) : t('grad.complete')}
+                {remaining > 0 ? t('grad.remaining', { n: remaining }) : creditsDependOnInProgress(status) ? t('grad.completeInProgress', { n: status.inProgressCredits }) : t('grad.complete')}
               </p>
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
@@ -437,14 +486,30 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                   ))}
                 </ul>
               ) : (
-                <p>
-                  {uncheckedRequirementKeys(status).length > 0
-                    ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
-                    : t('home.allMet')}
+                <p className="multiline-text">
+                  {allMetMessage(status, t)}
                 </p>
               )}
             </section>
           </>
+        )}
+
+        {/* 진단 결과 한 장(#455) — 주로 PDF로 저장하고(필요하면 뽑아서) 과사무실·학사지원과에서 확인받는 용도. 자료가 없으면 보여 줄 게 없어 숨긴다. */}
+        {status && !trust.noData && (
+          <div className="grad-print-box">
+            <button type="button" className="grad-print-btn" onClick={savePdf}>
+              {t('grad.print.button')}
+            </button>
+            <p className="grad-flex-note">{t('grad.print.hint')}</p>
+          </div>
+        )}
+        {printing && status && !trust.noData && <GraduationPrintSheet status={status} user={user} trust={trust} basisYear={basisYear} />}
+
+        {/* 틀린 자료를 빨리 찾는 통로 — 학과·학번·진단 숫자를 미리 채운 문의로 보낸다. */}
+        {status && onReportResult && (
+          <button type="button" className="grad-report-btn" onClick={() => onReportResult(buildResultReportDraft(status, user, t))}>
+            {t('grad.report.button')}
+          </button>
         )}
       </div>
     </div>

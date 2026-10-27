@@ -15,13 +15,34 @@ const DEPARTMENTS = require(path.join(ROOT, 'db', 'seed', 'departments.json'));
 
 const row = (courseCode, section = '01') => ({ grade: '1', category: '기전', courseCode, courseName: courseCode, section, credits: '3.0', time: '월12' });
 
-test('같은 학과·학기가 전 학과 원본에 있으면 옛 원본은 건너뛰고(새 자료가 대체), 없는 학기는 옛 원본을 쓴다', () => {
-  const legacy = { '컴퓨터·소프트웨어공학과_2026_2': [row('OLD2')], '컴퓨터·소프트웨어공학과_2026_1': [row('OLD1')] };
-  const all = { entries: [{ department: '컴퓨터·소프트웨어공학과', track: null, college: '창의공과대학', printedName: '컴퓨터·소프트웨어공학과', year: 2026, semester: 2, rows: [row('NEW2')] }] };
+test('같은 학과·학기가 전 학과 원본에 있으면 같은 분반은 새 자료를 쓰고, 새 자료에 없는 분반만 옛 원본에서 보충한다. 없는 학기는 옛 원본을 쓴다', () => {
+  const legacy = {
+    '컴퓨터·소프트웨어공학과_2026_2': [row('SAME'), row('SAME', '02'), row('OLDONLY')],
+    '컴퓨터·소프트웨어공학과_2026_1': [row('OLD1')],
+  };
+  const all = {
+    entries: [
+      { department: '컴퓨터·소프트웨어공학과', track: null, college: '창의공과대학', printedName: '컴퓨터·소프트웨어공학과', year: 2026, semester: 2, rows: [row('SAME'), row('NEW2')] },
+    ],
+  };
   const ds = buildDatasets(legacy, all);
   // 원본 학기 번호(1·2)는 DB 학기 코드(1=1학기, 3=2학기)로 바뀐다.
-  const bySem = Object.fromEntries(ds.map((d) => [d.semester, d.rows.map((r) => r.courseCode)]));
-  assert.deepEqual(bySem, { 3: ['NEW2'], 1: ['OLD1'] });
+  const sem3 = ds.filter((d) => d.semester === 3).flatMap((d) => d.rows.map((r) => `${r.courseCode}-${r.section}`));
+  assert.deepEqual(sem3.sort(), ['NEW2-01', 'OLDONLY-01', 'SAME-01', 'SAME-02']);
+  assert.deepEqual(ds.filter((d) => d.semester === 1).flatMap((d) => d.rows.map((r) => r.courseCode)), ['OLD1']);
+});
+
+test('실제 원본: 컴소공 2026-2에 3학년 과목(데이터베이스·기업연계프로젝트1)과 졸업논문이 들어간다(전 학과 원본에서 빠진 분반 보충)', () => {
+  const LEGACY = require(path.join(ROOT, 'db', 'curriculum', '_source', '전공시간표_2017-2026.json'));
+  const rows = buildDatasets(LEGACY, ALL)
+    .filter((d) => d.departmentName === '컴퓨터·소프트웨어공학과' && d.year === 2026 && d.semester === 3)
+    .flatMap((d) => d.rows);
+  const names = new Set(rows.map((r) => r.courseName));
+  for (const name of ['데이터베이스', '컴퓨터네트워크', '기업연계프로젝트1(종합설계1)', '졸업(시험.작품)논문', '알고리즘', '알고리즘특론']) {
+    assert.ok(names.has(name), name);
+  }
+  const keys = rows.map((r) => `${r.courseCode}-${r.section}`);
+  assert.equal(new Set(keys).size, keys.length, '같은 분반이 두 번 들어가지 않는다');
 });
 
 test('앱 학과로 연결되지 않은 항목(department 없음)은 넣지 않고, 트랙은 항목에 적힌 그대로 넘긴다', () => {

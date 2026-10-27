@@ -163,14 +163,18 @@ async function insertOffering(row) {
 // 두 원본을 같은 모양의 묶음 목록으로 만든다(순수 함수 — DB 없이 테스트).
 //  - 전 학과 원본: 항목마다 학과·트랙이 있다. 사이트가 같은 학과를 옛 대학·새 대학 아래 둘 다 보여 줘(예: 간호학과 — 의과대학·간호대학)
 //    같은 학과·학기 묶음이 여러 개일 수 있다. 둘 다 그 학과의 실제 개설이라 모두 넣고, 같은 분반의 중복은 insert 단계에서 거른다.
-//  - 옛 원본(컴소공·공학3계열 2017~2026): 같은 학과·학기가 전 학과 원본에 있으면 건너뛴다(전 학과 원본이 더 최신).
+//  - 옛 원본(컴소공·공학3계열 2017~2026): 같은 학과·학기가 전 학과 원본에 있으면 같은 분반(학수번호+분반)은 전 학과 원본을 쓰고,
+//    전 학과 원본에 없는 분반만 보충한다. 전 학과 원본의 컴소공 2026-2는 PDF를 덜 받아 3학년 과목 전부(데이터베이스·컴퓨터네트워크·
+//    기업연계프로젝트1 등)와 졸업논문이 빠져 있었다(18행, 옛 원본 52행 — 2026-10-26 점검). 통째로 건너뛰면 3학년이 이번 학기 과목을 못 찾는다.
 function buildDatasets(legacyByKey, allDepartments) {
   const datasets = [];
-  const covered = new Set();
+  const coveredSections = new Map(); // `학과|연도|학기` → 전 학과 원본에 있는 `학수번호-분반` 집합
   for (const e of (allDepartments && allDepartments.entries) || []) {
     const semester = LEGACY_SEMESTER_TO_CURRENT[Number(e.semester)];
     if (!e.department || !semester) continue;
-    covered.add(`${e.department}|${e.year}|${semester}`);
+    const coverKey = `${e.department}|${e.year}|${semester}`;
+    if (!coveredSections.has(coverKey)) coveredSections.set(coverKey, new Set());
+    for (const r of e.rows) coveredSections.get(coverKey).add(`${r.courseCode}-${r.section}`);
     datasets.push({ label: `${e.college || ''} > ${e.printedName}`, departmentName: e.department, trackName: e.track || null, year: e.year, semester, rows: e.rows });
   }
   for (const [key, rows] of Object.entries(legacyByKey || {})) {
@@ -184,7 +188,14 @@ function buildDatasets(legacyByKey, allDepartments) {
       console.warn(`[SKIP] ${key}: 학과 매핑 없음 (${parsed.deptKey})`);
       continue;
     }
-    if (covered.has(`${departmentName}|${parsed.year}|${parsed.semester}`)) continue;
+    const covered = coveredSections.get(`${departmentName}|${parsed.year}|${parsed.semester}`);
+    if (covered) {
+      const missing = rows.filter((r) => !covered.has(`${r.courseCode}-${r.section}`));
+      if (missing.length) {
+        datasets.push({ label: `${key} (전 학과 원본에 없는 분반 보충)`, departmentName, trackName: null, year: parsed.year, semester: parsed.semester, rows: missing });
+      }
+      continue;
+    }
     datasets.push({ label: key, departmentName, trackName: null, year: parsed.year, semester: parsed.semester, rows });
   }
   return datasets;

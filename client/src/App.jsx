@@ -76,6 +76,8 @@ function App() {
   // Profile 화면에 있었다는 사실 자체가 사라지는데(모든 React 상태가 초기화됨), 기본값인
   // 'home'으로 떨어지면 재인증 후 계정 삭제 버튼이 뜨는 Profile로 못 돌아간다(실제로 겪은
   // 버그) — 그래서 이 두 쿼리가 있으면 시작 화면을 'profile'로 잡는다.
+  // 졸업요건 진단의 "결과가 이상해요"가 문의하기에 미리 채워 보내는 제목·내용(Inquiry가 옮긴 뒤 지운다).
+  const [inquiryDraft, setInquiryDraft] = useState(null);
   const [view, setView] = useState(() => {
     const path = window.location.pathname.replace(/\/+$/, '');
     if (path === '/privacy') return 'privacy';
@@ -400,6 +402,10 @@ function App() {
             onOpenProfile={() => setView('profile')}
             onOpenAdmin={() => setView('admin')}
             onOpenInquiry={() => setView('inquiry')}
+            onReportResult={(draft) => {
+              setInquiryDraft(draft);
+              setView('inquiry');
+            }}
           />
         ) : view === 'career' ? (
           <CareerExploration
@@ -478,7 +484,7 @@ function App() {
             }}
           />
         ) : view === 'inquiry' ? (
-          <Inquiry onGoHome={() => setView('home')} />
+          <Inquiry onGoHome={() => setView('home')} draft={inquiryDraft} onDraftConsumed={() => setInquiryDraft(null)} />
         ) : view === 'homeEdit' ? (
           <HomeEdit
             user={user}

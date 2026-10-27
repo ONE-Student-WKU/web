@@ -5,6 +5,7 @@ const dq = require('./regulationEngine/dataQuality');
 const { loadLatestDataYear } = require('./regulationEngine/dbProvider');
 const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
 const { trackCertificationNotes } = require('./trackCertificationRules');
+const { isAssociateExcludedRequirement } = require('./regulationEngine/profileCaveats');
 
 /**
  * server/services/curriculumContextService.js
@@ -209,7 +210,8 @@ async function graduationRequirementChunk(department, year, judgment = null) {
   if (resolved.rows.length === 0) return noRequirementChunk(department, year);
 
   const resolvedName = await deptName(resolved.departmentId);
-  const lines = formatRequirementLines(resolved.rows);
+  // 전문학사 과정의 졸업논문·졸업인증제는 졸업사정에서 빠진다(시행규칙 제118조 제1항 제7호, 엔진과 같은 기준).
+  const lines = formatRequirementLines(resolved.rows.filter((r) => !isAssociateExcludedRequirement(resolvedName, r.category)));
   lines.push(...trackCertificationNotes(resolvedName, year));
   if (year < LATEST_BOOKLET_YEAR) lines.push(latestBookletBasisLine(year));
   let lineageNote = '';

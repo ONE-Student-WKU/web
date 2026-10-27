@@ -89,6 +89,7 @@ test('패리티: 일반 재학생 — 전 학과 × 자료가 있는 첫/마지�
 
 // 의·치·한의예(학)과·약학대학으로는 전과할 수 없어(시행규칙 제111조 제4호) 엔진이 판정하지 않는다 — 전과 패리티에서 뺀다(2026-10-17).
 const { MAJOR_CHANGE_CLOSED_DEPARTMENTS } = require('../services/regulationEngine/constants');
+const { PREMED_DEPARTMENTS } = require('../services/regulationEngine/profileCaveats');
 const openForMajorChange = (list) => list.filter((d) => !MAJOR_CHANGE_CLOSED_DEPARTMENTS.includes(d.name));
 
 test('패리티: 3학년 전과 — 컷오프 이전(2021-2) / 이후(2022-2 경계 포함) × 전 학과', async () => {
@@ -108,7 +109,8 @@ test('패리티: 1·2학년 전과(컷오프 이후) × 전 학과', async () =>
 });
 
 test('패리티: 편입생(편입 학년 미입력 = 3학년 가정) — 총 요구학점은 제외하고 카테고리 비교', async () => {
-  for (const d of departments) {
+  // 예과에는 편입학이 없어(학칙 제36조) 엔진이 판정하지 않는다(TRANSFER_INTO_PREMED_NOT_OFFERED).
+  for (const d of departments.filter((x) => !PREMED_DEPARTMENTS.includes(x.name))) {
     for (const y of yearsOf(d)) await compare(`${d.name} ${y} 편입`, d, y, 'TRANSFER_ADMISSION', null, { skipTotal: true });
   }
 });

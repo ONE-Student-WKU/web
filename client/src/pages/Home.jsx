@@ -4,9 +4,10 @@ import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx'
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
 import AccountMenu from '../components/AccountMenu.jsx';
-import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, uncheckedRequirementKeys } from '../utils/graduation.js';
+import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, getPercent, describeRequirementTrust, registrationTermShortage, allMetMessage, isNearGraduation } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import BrandTitle from '../components/BrandTitle.jsx';
 
 // 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
@@ -168,7 +169,7 @@ function Home({
     <div className="home-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <span className="screen-title screen-title-brand">ONE Student</span>
+          <BrandTitle />
         </div>
         <div className="home-header-actions">
           <button
@@ -281,7 +282,7 @@ function Home({
                       아이콘이지" 하고 헷갈리게 된다(실사용 확인) — 다 충족했을 때는 체크
                       아이콘으로 바꿔서 모양 자체가 상태와 맞게 한다. */}
                   {!noData && shortfalls !== null && shortfalls.length === 0 && termShortage === 0 ? <IconCheck size={15} /> : <IconAlertTriangle />}
-                  <span>
+                  <span className="multiline-text">
                     {noData
                       ? t('home.noData')
                       : noCourses
@@ -290,10 +291,7 @@ function Home({
                       ? t('home.shortfallCheck')
                       : termShortage > 0
                       ? t('grad.registrationShort', { n: termShortage })
-                      : formatShortfallSentence(shortfalls, lang) ||
-                        (uncheckedRequirementKeys(status).length > 0
-                          ? t('home.allMetUnchecked', { items: uncheckedRequirementKeys(status).map((k) => t(k)).join(', ') })
-                          : t('home.allMet'))}
+                      : formatShortfallSentence(shortfalls, lang) || allMetMessage(status, t)}
                   </span>
                 </div>
                 {noCourses && (
@@ -302,6 +300,7 @@ function Home({
                   </button>
                 )}
               </section>
+              {!noData && isNearGraduation(status) && <p className="grad-near-graduation" role="note">{t('grad.nearGraduation')}</p>}
               </>
             )}
           </>

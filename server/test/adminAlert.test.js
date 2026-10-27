@@ -21,29 +21,36 @@ function fakeFetch(response = { ok: true, status: 204 }) {
   return fn;
 }
 
-test('종류별 문구와 그 종류의 미처리 건수, 사이트 링크를 넣는다', () => {
+test('종류별 [표시]·보낸 이름·문구와 그 종류의 미처리 건수, 사이트 링크를 넣는다', () => {
   const msg = buildAdminAlertMessage('inquiry', PENDING, 'https://one.example');
-  assert.equal(msg.content, '새 문의가 들어왔어요 · 미처리 3건\n관리자 페이지에서 보기: <https://one.example>');
-  assert.equal(msg.username, 'ONE 알림');
+  assert.equal(msg.content, '[문의] 새 문의가 들어왔어요 · 미처리 3건\n관리자 페이지에서 보기: <https://one.example>');
+  assert.equal(msg.username, 'ONE 문의');
   assert.deepEqual(msg.allowed_mentions, { parse: [] });
-  assert.match(buildAdminAlertMessage('report', PENDING, null).content, /^새 신고가 접수됐어요 · 미처리 1건$/);
-  assert.match(buildAdminAlertMessage('post', PENDING, null).content, /^승인을 기다리는 새 글이 있어요 · 미처리 2건$/);
+  const report = buildAdminAlertMessage('report', PENDING, null);
+  assert.equal(report.content, '[신고] 새 신고가 접수됐어요 · 미처리 1건');
+  assert.equal(report.username, 'ONE 신고');
+  const post = buildAdminAlertMessage('post', PENDING, null);
+  assert.equal(post.content, '[글 승인] 승인을 기다리는 새 글이 있어요 · 미처리 2건');
+  assert.equal(post.username, 'ONE 글 승인');
 });
 
 test('건수를 못 구하면 건수 없이 보낸다', () => {
-  assert.equal(buildAdminAlertMessage('inquiry', null, null).content, '새 문의가 들어왔어요');
+  assert.equal(buildAdminAlertMessage('inquiry', null, null).content, '[문의] 새 문의가 들어왔어요');
 });
 
-test('멘션할 사용자 ID가 있으면 맨 앞에서 그 사람만 멘션한다', () => {
-  const msg = buildAdminAlertMessage('inquiry', PENDING, null, '123456789012345678');
-  assert.equal(msg.content, '<@123456789012345678> 새 문의가 들어왔어요 · 미처리 3건');
+test('멘션할 사용자 ID가 있으면 첫 줄 끝에서 그 사람만 멘션한다([표시]가 맨 앞에 남는다)', () => {
+  const msg = buildAdminAlertMessage('inquiry', PENDING, 'https://one.example', '123456789012345678');
+  assert.equal(
+    msg.content,
+    '[문의] 새 문의가 들어왔어요 · 미처리 3건 <@123456789012345678>\n관리자 페이지에서 보기: <https://one.example>'
+  );
   assert.deepEqual(msg.allowed_mentions, { parse: [], users: ['123456789012345678'] });
 });
 
 test('사용자 ID 형식이 아니면 멘션 없이 보낸다', () => {
   for (const bad of ['', 'abc', '123', '<@123456789012345678>', '@everyone']) {
     const msg = buildAdminAlertMessage('inquiry', PENDING, null, bad);
-    assert.equal(msg.content, '새 문의가 들어왔어요 · 미처리 3건');
+    assert.equal(msg.content, '[문의] 새 문의가 들어왔어요 · 미처리 3건');
     assert.deepEqual(msg.allowed_mentions, { parse: [] });
   }
 });
@@ -65,7 +72,8 @@ test('웹훅 주소로 JSON POST를 보낸다', async () => {
   assert.equal(fetchImpl.calls.length, 1);
   assert.equal(fetchImpl.calls[0].url, URL);
   assert.equal(fetchImpl.calls[0].init.method, 'POST');
-  assert.match(fetchImpl.calls[0].body.content, /^새 신고가 접수됐어요 · 미처리 1건/);
+  assert.match(fetchImpl.calls[0].body.content, /^\[신고\] 새 신고가 접수됐어요 · 미처리 1건/);
+  assert.equal(fetchImpl.calls[0].body.username, 'ONE 신고');
 });
 
 test('건수 조회가 실패해도 알림은 보낸다', async () => {
@@ -73,8 +81,8 @@ test('건수 조회가 실패해도 알림은 보낸다', async () => {
   const getPending = async () => {
     throw new Error('db down');
   };
-  assert.equal(await notifyAdmin('inquiry', { fetchImpl, webhookUrl: URL, getPending }), true);
-  assert.match(fetchImpl.calls[0].body.content, /^새 문의가 들어왔어요(\n|$)/);
+  assert.equal(await notifyAdmin('inquiry', { fetchImpl, webhookUrl: URL, mentionUserId: '', getPending }), true);
+  assert.match(fetchImpl.calls[0].body.content, /^\[문의\] 새 문의가 들어왔어요(\n|$)/);
 });
 
 test('전송이 실패하거나 Discord가 에러를 돌려줘도 throw하지 않는다', async () => {

@@ -25,6 +25,10 @@ test('통폐합 학과면 소속 유지 안내(A-3)가 챗봇 근거에 들어�
   const prompt = buildSystemPrompt(null, statusWith([flag]), null);
   assert.match(prompt, /통폐합·개편 학과다/);
   assert.match(prompt, /소속변경을 신청하지 않았다면 옛 학과 소속이 그대로 유지/);
+  // 2차 문의 D-3·D-4: 옛 학과 학적이면 옛 학과의 마지막 편성, 학번별 학점 기준은 그대로 — "확인 중" 문장은 없다.
+  assert.match(prompt, /옛 학과의 최신\(마지막\) 교육과정/);
+  assert.match(prompt, /학번별 학점 기준은 그대로 적용돼요/);
+  assert.doesNotMatch(prompt, /확인하고 있어요/);
 });
 
 test('신뢰도가 추정이어도 INFO 안내는 이유 목록이 아니라 따로 한 번만 들어간다', () => {
