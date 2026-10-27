@@ -381,6 +381,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const currentSemesterSummary = summary?.bySemester?.find(
     (s) => s.year === current.year && s.semester === current.semester
   );
+  // 고른 학기가 학사경고·유급 대상일 수 있는지(졸업요건 응답의 academicWarnings — 정규 학기 번호라 DB 학기 코드 1·3을 1·2로 바꿔 찾는다).
+  const currentTermWarning = (status?.academicWarnings?.terms || []).find(
+    (w) => w.flagged && w.year === current.year && w.semester === { 1: 1, 3: 2 }[current.semester]
+  );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
   // 카탈로그 검색은 "지금 학기에 뭘 들을지 찾아보는" 용도라 실제 현재 학기(isViewingRealCurrentSemester)
@@ -950,6 +954,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <p className="courses-summary-value">{currentSemesterSummary?.gpa ?? '-'}</p>
               </div>
             </div>
+            {currentTermWarning && (
+              <p className="courses-warning-note" role="note">
+                {tr(status.academicWarnings.regime === 'REPEAT' ? 'courses.warn.repeat' : 'courses.warn.warning')}
+              </p>
+            )}
 
             <div className="courses-summary-row courses-summary-row-total">
               <div className={'courses-summary-stat' + (totalCreditsHighlight ? ' settings-highlight' : '')}>

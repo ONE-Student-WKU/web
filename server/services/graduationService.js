@@ -12,6 +12,7 @@ const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
 const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
 const { registrationTermsOf } = require('./studentProgress');
+const { getAcademicWarnings } = require('./academicWarning');
 const { secondMajorTypeOf } = require('./secondMajor');
 const { secondMajorRequirement, hasSecondThesis, isRestrictedCombination } = require('./secondMajorCredits');
 const { resolveCourseCounting } = require('./courseCounting');
@@ -550,6 +551,7 @@ async function getGraduationStatus(studentId) {
   });
   const extraFlags = [...registrationFlags, ...teachingFlags, ...(secondMajor ? secondMajor.flags : []), ...priorFlags, ...countingFlags];
   const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(extraFlags)]);
+  const academicWarnings = await getAcademicWarnings(studentId, student);
 
   // regulation: 이 진단의 근거 신뢰도와 사유(엔진 플래그). 화면·챗봇이 "확정/추정/자료없음"을 표시하는 데 쓴다.
   // 기존 필드(totalRequiredCredits/totalEarnedCredits/categories/certifications)는 모양이 그대로라 기존 화면은 영향이 없다.
@@ -576,6 +578,8 @@ async function getGraduationStatus(studentId) {
     priorMajorCourses,
     // 다전공(복수전공·부전공) 판정 — { type, departmentId, department, required, earned, satisfied, basis, thesis, courses } | null(secondMajorCredits.js)
     secondMajor: secondMajor ? secondMajor.status : null,
+    // 학기 성적으로 본 학사경고(일반 학과)·유급(의·치·한·약·간호) 대상일 수 있는 학기 — academicWarning.js. 판정이 아니라 안내용이다.
+    academicWarnings,
     // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.
     majorTrackType: student.major_track_type || null,
     regulation: {

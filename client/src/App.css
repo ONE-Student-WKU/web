@@ -989,6 +989,34 @@ body {
 }
 
 /* 졸업까지 한 학기 분량 이하가 남은 학생에게 졸업사정 예비 확인을 권한다 */
+/* 학사경고·유급 대상일 수 있는 학기(components/AcademicWarningCard.jsx) — 졸업 임박 안내와 같은 주의 색 */
+.grad-warning-card {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+}
+.grad-warning-card .home-card-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-danger);
+}
+.grad-warning-lead {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.grad-warning-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+/* 과목 관리: 고른 학기가 학사경고·유급 대상일 수 있을 때 요약 아래 한 줄 */
+.courses-warning-note {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+}
+
 .grad-near-graduation {
   margin: 0 0 12px;
   padding: 12px 14px;

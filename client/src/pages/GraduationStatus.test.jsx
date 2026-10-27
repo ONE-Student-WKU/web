@@ -340,3 +340,48 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     expect(sheet.textContent).not.toMatch(/학점|충족|합계/);
   });
 });
+
+describe('GraduationStatus 학사경고·유급 안내(#412)', () => {
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    getGraduationStatus.mockReset();
+  });
+
+  const term = (over) => ({ year: 2025, semester: 1, gpa: 3.2, judged: true, flagged: false, reasons: [], liberalArtsF: [], ...over });
+
+  it('대상 학기가 없으면 카드를 보이지 않는다', async () => {
+    await renderWith(status({ academicWarnings: { regime: 'WARNING', threshold: 1.75, terms: [term()], flaggedCount: 0, consecutiveCount: 0 } }));
+    expect(screen.queryByText('학사경고 확인')).not.toBeInTheDocument();
+  });
+
+  it('학사경고 대상일 수 있는 학기와 평균, 통산·연속 횟수와 제적 기준, 참고용 안내를 보여 준다', async () => {
+    await renderWith(status({
+      academicWarnings: {
+        regime: 'WARNING', threshold: 1.75, flaggedCount: 1, consecutiveCount: 1,
+        terms: [term(), term({ year: 2025, semester: 2, gpa: 1.62, flagged: true, reasons: ['GPA_BELOW'] })],
+      },
+    }));
+    expect(screen.getByText('학사경고 확인')).toBeInTheDocument();
+    expect(screen.getByText('학사경고 대상일 수 있는 학기가 1개 있어요')).toBeInTheDocument();
+    expect(screen.getByText('2025년 2학기').closest('li')).toHaveTextContent('학기 평균 1.62 (1.75 미만)');
+    expect(screen.getByText(/통산 1회 · 최근 연속 1회/)).toBeInTheDocument();
+    expect(screen.getByText(/실제 판정은 학기 말 성적사정과 학교 통보가 기준이에요/)).toBeInTheDocument();
+  });
+
+  it('유급: 전공필수 F 과목명과 유급휴학 안내, 교양 F는 "재학 중 다시 이수" 안내로 따로 보여 준다', async () => {
+    await renderWith(status({
+      academicWarnings: {
+        regime: 'REPEAT', threshold: 2.0, flaggedCount: 1, consecutiveCount: 1,
+        terms: [
+          term({ flagged: true, reasons: ['MAJOR_REQUIRED_F'], failedCourses: ['해부학'] }),
+          term({ semester: 2, liberalArtsF: ['글쓰기'] }),
+        ],
+      },
+    }));
+    expect(screen.getByText('유급 확인')).toBeInTheDocument();
+    expect(screen.getByText('2025년 1학기').closest('li')).toHaveTextContent('전공필수 F: 해부학');
+    expect(screen.getByText('유급하면 다음 학기에 유급휴학을 해야 해요.')).toBeInTheDocument();
+    expect(screen.getByText(/2025년 2학기 교양 F\(글쓰기\)는 유급 사유는 아니지만/)).toBeInTheDocument();
+  });
+});
