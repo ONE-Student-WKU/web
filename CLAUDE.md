@@ -9,6 +9,7 @@
 - 재시딩은 `seed:regulations -- --force`라서 **새 문서 하나만 추가하는 게 아니라 규정 문서 전체를 다시 임베딩**한다(Voyage 비용·시간). 문서마다 임베딩을 먼저 다 받은 뒤 옛 문서 삭제와 새 문서 저장을 한 트랜잭션으로 바꿔 넣어서, 실행 중에도 검색에서 빠지는 문서는 없다. 임베딩 시간 초과·5xx는 재시도하고(`[RETRY]` 로그), 끝내 실패하면 그 문서와 뒤 문서는 옛 버전으로 남는다(#465).
 - Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
 - 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
+- 학생의 졸업요건 진단 결과가 바뀔 수 있는 자료·규칙(규정·교육과정 문서, 요건 시드, `graduationService`·`regulationEngine`)을 `main`에 반영할 때는 `server/services/dataUpdates.js`에 날짜와 학생이 읽을 한 마디를 추가한다. 홈의 "바뀐 자료 알림"은 학생마다 마지막으로 본 결과와 지금 결과를 비교해 뜨므로 빠뜨려도 뜨지만, "반영된 갱신" 목록이 비어 보인다(`changeNoticeService.js`).
 
 ## 교육과정 적용 원칙 — 최신 책자가 모든 학번에 적용된다
 

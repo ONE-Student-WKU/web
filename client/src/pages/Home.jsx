@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { getGraduationStatus } from '../api/chatApi.js';
+import { getGraduationStatus, acknowledgeChangeNotice } from '../api/chatApi.js';
 import { IconAlertTriangle, IconCheck, IconEdit } from '../components/icons.jsx';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { resolveLayout, TAB_LABEL_KEYS, isLockedView } from '../utils/homeLayout.js';
@@ -9,6 +9,7 @@ import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
 import LoadError from '../components/LoadError.jsx';
+import ChangeNotice from '../components/ChangeNotice.jsx';
 
 // 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
@@ -136,6 +137,14 @@ function Home({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 바뀐 자료 알림을 확인하면 바로 원래 카드를 보여 준다. 서버에 확인을 못 남겼으면 다음에 다시 뜰 뿐이라 기다리지 않는다.
+  const dismissChangeNotice = () => {
+    const next = { ...status, changeNotice: null };
+    setStatus(next);
+    setHomeCache('status', next);
+    acknowledgeChangeNotice().catch(() => {});
+  };
+
   // 부족 요건 문구는 화면 언어에 따라 달라져서 완성된 문장이 아니라 서버 응답(status)만 캐시하고
   // 매 렌더에서 조립한다 — 언어를 바꿨을 때 이전 언어로 만든 문구가 캐시에 남지 않게.
   // status가 아직 없으면(첫 로딩/실패) null — 카드에 기존 안내 문구를 그대로 둔다.
@@ -261,6 +270,17 @@ function Home({
                 <p className="home-card-label">{t('home.creditProgress')}</p>
                 <LoadError message={t('home.err.status')} onRetry={loadStatus} />
               </section>
+            ) : status.changeNotice ? (
+              // 바뀐 자료 알림이 있으면 진행률·부족 요건 대신 보여 준다 — 바뀐 숫자와 새 진행률이 한 화면에 같이 있으면 어느 쪽이 지금
+              // 기준인지 헷갈린다. 확인하면 원래 카드가 나온다.
+              <ChangeNotice
+                notice={status.changeNotice}
+                onConfirm={dismissChangeNotice}
+                onViewDiagnosis={() => {
+                  dismissChangeNotice();
+                  onOpenGraduation?.();
+                }}
+              />
             ) : (
               <>
               <section className="home-card">
