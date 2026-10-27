@@ -136,7 +136,7 @@ describe('진로 탐색', () => {
   it('불러오기에 실패하면 영어 오류가 나온다', async () => {
     api.getLatestCareerSession.mockRejectedValue(new Error('boom'));
     renderEn(<CareerExploration user={{ name: 'x' }} onGoHome={() => {}} />);
-    expect(await screen.findByText("Couldn't load your career exploration. Please refresh and try again.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load your career exploration.")).toBeInTheDocument();
   });
 
   it('대화 화면: 보낸 메시지에 language: en이 따라가고, 추천받기 모달이 영어다', async () => {
@@ -171,6 +171,17 @@ describe('문의하기 / 계정 정보 수정', () => {
     await userEvent.click(screen.getByRole('button', { name: 'My inquiries' }));
     expect(await screen.findByText("You haven't sent any inquiries yet")).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write an inquiry' })).toBeInTheDocument();
+  });
+
+  it('내 문의를 못 불러오면 "아직 보낸 문의가 없어요" 대신 오류와 다시 시도만 보인다', async () => {
+    api.getMyInquiries.mockRejectedValueOnce(new Error('boom'));
+    renderEn(<Inquiry onGoHome={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'My inquiries' }));
+    expect(await screen.findByText("Couldn't load your inquiries.")).toBeInTheDocument();
+    expect(screen.queryByText("You haven't sent any inquiries yet")).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText("You haven't sent any inquiries yet")).toBeInTheDocument();
   });
 
   it('내 문의 목록: 상태 배지는 번역되고, 사용자가 쓴 제목·내용은 그대로 보인다', async () => {

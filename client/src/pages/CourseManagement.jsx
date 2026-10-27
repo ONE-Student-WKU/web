@@ -223,7 +223,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   }, [addMode]);
   // "PDF 가져오기" 탭으로 유도하는 말풍선 — 같은 이유로 매번 보여준다: 기본 탭(카탈로그
   // 검색)에 남아있고 아직 등록한 과목이 없을 때 항상 표시.
-  const showAddModeHint = addMode === 'catalog' && myCourses.length === 0;
+  // 과목을 받기 전에는 띄우지 않는다 — 받는 동안 비어 있는 목록을 "과목 없음"으로 읽어 말풍선이 떴다가 사라졌다(2026-10-27 화면 점검).
+  const showAddModeHint = addMode === 'catalog' && !semesterLoading && !pageLoading && myCourses.length === 0;
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
   const searchRequestIdRef = useRef(0);
@@ -247,19 +248,19 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   useEffect(() => {
-    getCourseSummary()
+    const summaryReq = getCourseSummary()
       .then((data) => {
         setSummary(data);
         setCourseMgmtCache('summary', data);
       })
       .catch(() => setError(LOAD_ERROR));
-    getSemesters()
+    const semestersReq = getSemesters()
       .then((data) => {
         setSemesters(data);
         setCourseMgmtCache('semesters', data);
       })
       .catch(() => setError(LOAD_ERROR));
-    getRetakeEligibleCourses()
+    const retakeReq = getRetakeEligibleCourses()
       .then((data) => {
         setRetakeEligible(data);
         setCourseMgmtCache('retakeEligible', data);
@@ -268,13 +269,16 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     // "전체 이수학점"은 getCourseSummary()의 상한 없는 raw 합계가 아니라 이 값(졸업요건 계산과
     // 동일한 상한 적용 총계)을 써야 홈/졸업요건 진단 화면과 숫자가 일치한다 — 온보딩 전이면
     // 실패할 수 있는 부가 정보라 조용히 무시(그러면 아래에서 raw 합계로 폴백).
-    getGraduationStatus()
+    const statusReq = getGraduationStatus()
       .then((data) => {
         setStatus(data);
         setCourseMgmtCache('status', data);
       })
-      .catch(() => setStatus(null))
-      .finally(() => setPageLoading(false));
+      .catch(() => setStatus(null));
+    // 맨 위 안내(재수강 가능·학번 변경)는 학기 목록·재수강 목록을 받아야 정해진다. 처음 열 때 이것들이 늦게 와서 안내가 위에
+    // 끼어들면 연도 탭·과목 목록이 통째로 밀려 누르려던 과목 대신 다른 과목을 누르게 됐다(2026-10-27 화면 점검) — 넷을 다 받을
+    // 때까지 스켈레톤으로 기다렸다가 한 번에 보여 준다. 두 번째부터는 기억해 둔 값으로 바로 보인다.
+    Promise.allSettled([summaryReq, semestersReq, retakeReq, statusReq]).then(() => setPageLoading(false));
   }, []);
 
   // 학기 탭을 이미 본 적 있으면 캐시된 값을 즉시 보여준 뒤 뒤에서 조용히 최신화하고,
@@ -836,13 +840,13 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
       <div className="courses-body">
         {errorText && !errorInForm && <p className="home-error">{errorText}</p>}
 
-        {outOfRangeYears.length > 0 && (
+        {!pageLoading && outOfRangeYears.length > 0 && (
           <p className="home-error">
             {tr('courses.outOfRange', { years: outOfRangeYears.join(', ') })}
           </p>
         )}
 
-        {retakeEligible.length > 0 && (
+        {!pageLoading && retakeEligible.length > 0 && (
           <div className="courses-retake-notice">
             <p className="courses-section-label">{tr('courses.retake.title')}</p>
             <div className="courses-retake-list">
@@ -858,6 +862,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </div>
         )}
 
+        {pageLoading ? (
+          <div className="skeleton skeleton-text skeleton-row" />
+        ) : (
+        <>
         <div className="courses-year-tabs">
           {years.map((y) => (
             <button
@@ -899,6 +907,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             ›
           </button>
         </div>
+        </>
+        )}
 
         {pageLoading ? (
           <>
@@ -928,7 +938,12 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
             <div className="courses-summary-row">
               <div className="courses-summary-stat">
                 <p className="home-card-label">{tr('courses.summary.registered')}</p>
-                <p className="courses-summary-value">{tr('courses.credits', { n: registeredCredits })}</p>
+                {/* 그 학기 과목을 받기 전에는 0학점이 아니라 스켈레톤(새로고침 뒤 학기 자료는 기억해 두지 않는다) */}
+                {semesterLoading ? (
+                  <div className="skeleton skeleton-text skeleton-row" />
+                ) : (
+                  <p className="courses-summary-value">{tr('courses.credits', { n: registeredCredits })}</p>
+                )}
               </div>
               <div className="courses-summary-stat">
                 <p className="home-card-label">{tr('courses.summary.gpa')}</p>
@@ -951,10 +966,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           </>
         )}
 
-        {isViewingRealCurrentSemester && (semesterLoading || myCourses.length > 0) && (
+        {isViewingRealCurrentSemester && (semesterLoading || pageLoading || myCourses.length > 0) && (
           <>
             <p className="courses-section-label">{tr('courses.timetable')}</p>
-            {semesterLoading ? (
+            {semesterLoading || pageLoading ? (
               <div className="home-card skeleton-card">
                 <div className="skeleton skeleton-bar" />
                 <div className="skeleton skeleton-bar" />
@@ -991,9 +1006,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
         <p className="courses-section-label">{tr('courses.list.title')}</p>
         <div className="courses-list">
-          {semesterLoading && <div className="skeleton skeleton-text skeleton-row" />}
-          {!semesterLoading && myCourses.length === 0 && <p className="courses-empty">{tr('courses.list.empty')}</p>}
-          {myCourses.map((c) => (
+          {(semesterLoading || pageLoading) && <div className="skeleton skeleton-text skeleton-row" />}
+          {!semesterLoading && !pageLoading && myCourses.length === 0 && <p className="courses-empty">{tr('courses.list.empty')}</p>}
+          {(pageLoading ? [] : myCourses).map((c) => (
             <div key={c.id} className="courses-list-item">
               <div className="courses-list-item-info">
                 <p className="courses-list-item-name">

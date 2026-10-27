@@ -28,8 +28,13 @@ function useChat() {
   const [messages, setMessages] = useState(chatCache.messages || []);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(chatCache.messages === null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
+  // 대화를 못 불러오면 예전에는 콘솔에만 남겨, 질문을 보내도 입력 칸만 비워지고 아무 반응이 없었다(2026-10-27 화면 점검).
+  // 이제 실패를 화면에 알리고(loadFailed) 다시 시도할 수 있게 한다.
+  const loadConversation = useCallback(() => {
+    setLoadFailed(false);
+    setInitialLoading(chatCache.messages === null);
     getCurrentConversation()
       .then((data) => {
         setConversationId(data.conversationId);
@@ -43,9 +48,16 @@ function useChat() {
         chatCache.conversationId = data.conversationId;
         writeCache('chat_conversationId', data.conversationId);
       })
-      .catch((error) => console.error('Failed to load conversation:', error))
+      .catch((error) => {
+        console.error('Failed to load conversation:', error);
+        setLoadFailed(true);
+      })
       .finally(() => setInitialLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadConversation();
+  }, [loadConversation]);
 
   // 대화 화면을 나갔다가 돌아왔을 때 직전 메시지를 바로 보여줄 수 있도록, 메시지가
   // 바뀔 때마다(전송/응답 도착 포함) 캐시도 같이 갱신해둔다.
@@ -90,6 +102,10 @@ function useChat() {
     loading,
     initialLoading,
     sendMessage,
+    // 대화 번호가 있어야 보낼 수 있다(이전에 받아 둔 번호가 있으면 새로 받기에 실패해도 보낼 수 있다).
+    canSend: Boolean(conversationId),
+    loadFailed,
+    reload: loadConversation,
   };
 }
 

@@ -257,6 +257,45 @@ describe('HomeEdit', () => {
     expect(api.updateProfile).toHaveBeenCalledWith({ homeLayout: null });
   });
 
+  it('저장 버튼은 화면 아래에 떠 있는 영역에 있다', () => {
+    const { container } = renderEdit();
+    expect(container.querySelector('.onb-float-action')).toContainElement(screen.getByRole('button', { name: '저장' }));
+  });
+
+  it('바꾸지 않았으면 뒤로 버튼으로 바로 나가고, 바꿨으면 한 번 묻는다(취소하면 남는다)', async () => {
+    const onCancel = vi.fn();
+    const confirm = vi.spyOn(window, 'confirm');
+    render(<HomeEdit user={USER} onCancel={onCancel} onSaved={() => {}} />);
+    const back = screen.getByRole('button', { name: '저장하지 않고 나가기' });
+
+    await userEvent.click(back);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(menuSwitch('과목 관리'));
+    confirm.mockReturnValueOnce(false);
+    await userEvent.click(back);
+    expect(confirm).toHaveBeenCalledWith('바꾼 내용이 아직 저장되지 않았어요. 저장하지 않고 나갈까요?');
+    expect(onCancel).toHaveBeenCalledTimes(1);
+
+    confirm.mockReturnValueOnce(true);
+    await userEvent.click(back);
+    expect(onCancel).toHaveBeenCalledTimes(2);
+    confirm.mockRestore();
+  });
+
+  it('뒤로가기 확인 자리(leaveGuardRef)에 같은 확인을 넣어 두고, 화면이 사라지면 비운다', async () => {
+    const leaveGuardRef = { current: null };
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const { unmount } = render(<HomeEdit user={USER} onCancel={() => {}} onSaved={() => {}} leaveGuardRef={leaveGuardRef} />);
+    expect(leaveGuardRef.current()).toBe(true);
+    await userEvent.click(menuSwitch('과목 관리'));
+    expect(leaveGuardRef.current()).toBe(false);
+    unmount();
+    expect(leaveGuardRef.current).toBeNull();
+    confirm.mockRestore();
+  });
+
   it('저장에 실패하면 알려 준다', async () => {
     api.updateProfile.mockRejectedValue(new Error('x'));
     renderEdit();

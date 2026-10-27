@@ -173,3 +173,29 @@ describe('Home — 입학하자마자 휴학해 다닌 학기가 없을 때(#378
     expect(screen.queryByText(/null/)).toBeNull();
   });
 });
+
+describe('Home — 학점 정보 불러오기 실패(2026-10-27 화면 점검)', () => {
+  const serverError = () => Object.assign(new Error('INTERNAL'), { status: 500 });
+
+  it('직전에 받은 숫자가 있으면 0으로 바꾸지 않고 그대로 두며, 최신 정보를 못 받았다고 작게 알린다', async () => {
+    const { unmount } = renderHome();
+    expect(await screen.findByText('/ 130학점')).toBeInTheDocument();
+    unmount();
+
+    api.getGraduationStatus.mockRejectedValue(serverError());
+    renderHome();
+    expect(await screen.findByText('최신 정보를 불러오지 못해 마지막으로 받은 값을 보여 드려요.')).toBeInTheDocument();
+    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.queryByText('0%')).toBeNull();
+  });
+
+  it('받은 적이 없으면 0학점 대신 다시 시도를 보여 주고, 다시 시도해 성공하면 숫자가 나온다', async () => {
+    api.getGraduationStatus.mockRejectedValueOnce(serverError());
+    renderHome();
+    expect(await screen.findByText('학점 정보를 불러오지 못했어요.')).toBeInTheDocument();
+    expect(screen.queryByText('0%')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText('/ 130학점')).toBeInTheDocument();
+  });
+});

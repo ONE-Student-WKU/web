@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
+import LoadError from '../components/LoadError.jsx';
 import useChat from '../hooks/useChat.js';
 import useChatAutoScroll from '../hooks/useChatAutoScroll.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -20,7 +21,7 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  */
 function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOpenProfile }) {
   const { t } = useI18n();
-  const { messages, sendMessage, loading, initialLoading } = useChat();
+  const { messages, sendMessage, loading, initialLoading, canSend, loadFailed, reload } = useChat();
   const listRef = useRef(null);
   // 모바일에서 입력창에 포커스가 가면(키보드가 뜨면) 화면이 좁아지므로, 입력창 자체를
   // 제외한 주변 UI(안내 문구)를 잠깐 접어 입력 공간을 확보한다. 하단 탭바는 App.jsx가
@@ -53,6 +54,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
             <div className="skeleton skeleton-text skeleton-row" />
           </div>
         )}
+        {loadFailed && !canSend && <LoadError message={t('chat.err.load')} onRetry={reload} />}
         {messages.map((msg, index) => (
           <ChatBubble key={index} message={msg} />
         ))}
@@ -67,7 +69,7 @@ function Chat({ user, onLogout, onGoHome, onOpenSettings, onOpenOnboarding, onOp
           </div>
         )}
       </div>
-      <ChatInput onSendMessage={sendMessage} disabled={loading} onFocusChange={setInputFocused} />
+      <ChatInput onSendMessage={sendMessage} disabled={loading} sendBlocked={!canSend} onFocusChange={setInputFocused} />
       {!inputFocused && (
         <div className="chat-disclaimer">
           {t('chat.disclaimer')}

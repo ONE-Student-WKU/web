@@ -8,6 +8,7 @@ import { summarizeShortfalls, formatShortfallSentence, mergeMajorCategories, get
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
+import LoadError from '../components/LoadError.jsx';
 
 // 모듈이 살아있는 동안(SPA 내 화면 전환) 유지되는 메모리 캐시 — sessionStorage에서 초기값을
 // 복원해서, 탭이 살아있는 채로 페이지가 다시 로드되는 경우(모바일 백그라운드 재로드, PC
@@ -103,13 +104,13 @@ function Home({
     setShowEditHint(false);
   };
 
-  useEffect(() => {
-    // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
-    // 항상 맞는다 — 예전엔 진행률 카드가 courseService.getSummary()의 카테고리 상한 없는
-    // 단순 합계를 썼는데, 부족 요건 쪽은 상한이 적용된 총계를 써서 같은 화면에서 "15학점
-    // 남음"과 "전공 20학점 부족"처럼 서로 안 맞는 숫자가 나오는 문제가 있었다(실사용 확인).
-    // 졸업요건 진단은 온보딩 전이면 실패할 수 있는 정보라, 홈 화면 전체를 깨뜨리지 않도록
-    // 별도로 조용히 처리(실패 시 카드에 기존 안내 문구를 그대로 둠).
+  // 이수학점 진행률/부족 요건 모두 같은 소스(getGraduationStatus)를 써야 두 카드 숫자가
+  // 항상 맞는다 — 예전엔 진행률 카드가 courseService.getSummary()의 카테고리 상한 없는
+  // 단순 합계를 썼는데, 부족 요건 쪽은 상한이 적용된 총계를 써서 같은 화면에서 "15학점
+  // 남음"과 "전공 20학점 부족"처럼 서로 안 맞는 숫자가 나오는 문제가 있었다(실사용 확인).
+  // 졸업요건 진단은 온보딩 전이면 실패할 수 있는 정보라, 홈 화면 전체를 깨뜨리지 않도록 카드 안에서만 처리한다.
+  const loadStatus = () => {
+    setStatusFailed(false);
     getGraduationStatus()
       .then((data) => {
         setStatus(data);
@@ -117,12 +118,22 @@ function Home({
       })
       .catch((err) => {
         // 예전엔 실패를 조용히 삼켜 status가 계속 비어 있었고, 그게 "첫 로딩"으로 판정돼 스켈레톤이 끝나지 않았다(학과를 나중에
-        // 선택한 계정은 서버가 ONBOARDING_REQUIRED로 거절). 캐시에 남은 값(다른 계정 등)도 그대로 보이지 않게 비운다.
-        resetHomeCache();
-        setStatus(null);
-        setNeedsOnboarding(err.code === 'ONBOARDING_REQUIRED');
+        // 선택한 계정은 서버가 ONBOARDING_REQUIRED로 거절).
         setStatusFailed(true);
+        if (err.code === 'ONBOARDING_REQUIRED') {
+          resetHomeCache();
+          setStatus(null);
+          setNeedsOnboarding(true);
+          return;
+        }
+        // 네트워크·서버 오류면 직전에 받은 숫자를 그대로 둔다 — 예전에는 여기서도 캐시를 비워, 보이던 "45/130"이 오류 안내 없이
+        // "0학점 · 0%"로 바뀌었다(2026-10-27 화면 점검). 받은 적이 없으면 0 대신 다시 시도 안내를 보여 준다.
+        setNeedsOnboarding(false);
       });
+  };
+  useEffect(() => {
+    loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 부족 요건 문구는 화면 언어에 따라 달라져서 완성된 문장이 아니라 서버 응답(status)만 캐시하고
@@ -245,6 +256,11 @@ function Home({
                   {t('home.chooseDepartment')}
                 </button>
               </section>
+            ) : status === null ? (
+              <section className="home-card">
+                <p className="home-card-label">{t('home.creditProgress')}</p>
+                <LoadError message={t('home.err.status')} onRetry={loadStatus} />
+              </section>
             ) : (
               <>
               <section className="home-card">
@@ -265,6 +281,7 @@ function Home({
                     <p className="grad-remaining-text">{progressPercent}%</p>
                   </>
                 )}
+                {statusFailed && <p className="home-stale-note">{t('home.staleStatus')}</p>}
               </section>
 
               <section className="home-card">

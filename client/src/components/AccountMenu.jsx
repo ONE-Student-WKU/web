@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { IconUser } from './icons.jsx';
+import { IconSettings } from './icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import { useAdminPending } from '../utils/adminPending.js';
 
 /**
  * AccountMenu Component
- * 아바타 버튼 — 클릭하면 설정/학과·학번 수정/로그아웃 드롭다운을 연다.
+ * 톱니바퀴 버튼 — 클릭하면 설정/학과·학번 수정/로그아웃 드롭다운을 연다(사람 모양은 계정 정보 화면의 내 계정 표시로 옮김, 2026-10-27 피드백).
  * 모든 화면 헤더(Home/Sidebar/CourseManagement/GraduationStatus)에서 공유.
  *
  * Props:
@@ -43,7 +43,7 @@ function AccountMenu({ user, onLogout, onOpenSettings, onOpenOnboarding, onOpenP
         title={menuLabel}
         aria-label={pendingTotal > 0 ? `${menuLabel}, ${t('account.adminPending', { n: pendingTotal })}` : undefined}
       >
-        <IconUser />
+        <IconSettings />
       </button>
       {pendingTotal > 0 && <span className="account-avatar-dot" aria-hidden="true" />}
       {open && (

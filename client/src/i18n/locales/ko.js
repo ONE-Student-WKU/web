@@ -7,6 +7,7 @@
 export default {
   // 공통
   'common.backHome': '홈으로',
+  'common.retry': '다시 시도',
 
   // 검색 전용 화면(SearchScreen) 공통
   'search.close': '검색 닫기',
@@ -50,6 +51,7 @@ export default {
 
   // 채팅
   'chat.placeholder': '무엇이든 물어보세요',
+  'chat.err.load': '대화를 불러오지 못했어요.',
   'chat.send': '전송',
   'chat.citationsHide': '참고한 자료 접기',
   'chat.citationsMore': '참고한 자료 보기',
@@ -74,6 +76,8 @@ export default {
   'home.creditsUnit': '학점',
   'home.shortfall': '부족 요건',
   'home.shortfallCheck': '졸업요건 진단에서 확인해보세요.',
+  'home.err.status': '학점 정보를 불러오지 못했어요.',
+  'home.staleStatus': '최신 정보를 불러오지 못해 마지막으로 받은 값을 보여 드려요.',
   'home.needOnboarding': '학과·학번을 입력하면 이수학점 진행률과 부족 요건을 볼 수 있어요.',
   'home.chooseDepartment': '학과 선택하기',
   'home.allMet': '이 앱 기준으로는 모든 요건을 채웠어요.',
@@ -95,6 +99,7 @@ export default {
   'homeEdit.hintClose': '안내 닫기',
   'homeEdit.title': '홈 화면 편집',
   'homeEdit.cancel': '저장하지 않고 나가기',
+  'homeEdit.confirmLeave': '바꾼 내용이 아직 저장되지 않았어요. 저장하지 않고 나갈까요?',
   'homeEdit.showTabBar': '하단 바 사용',
   'homeEdit.showTabBar.on': '켜져 있어요. 아래에서 자리를 골라 주세요.',
   'homeEdit.showTabBar.off': '꺼져 있어요. 챗봇 버튼을 포함한 하단 바가 모든 화면에서 사라져요.',
@@ -133,6 +138,7 @@ export default {
 
   // 로그인
   'login.title': '로그인',
+  'app.err.connect': '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
   'login.subtitle': '졸업까지 남은 요건을 한눈에 확인하고, 궁금한 학사 규정은 챗봇에게 물어보세요.',
   'login.unofficialBadge': '학생 프로젝트 · 비공식',
   'login.remember': '로그인 상태 유지',
@@ -442,7 +448,7 @@ export default {
   'inquiry.tab.mine': '내 문의',
   'inquiry.status.open': '답변 기다리는 중',
   'inquiry.status.resolved': '답변 완료',
-  'inquiry.err.load': '문의 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
+  'inquiry.err.load': '문의 목록을 불러오지 못했어요.',
   'inquiry.toast.sent': '문의를 보냈어요.',
   'inquiry.err.send': '문의를 보내지 못했어요. 잠시 후 다시 시도해주세요.',
   'inquiry.field.title': '제목',
@@ -653,6 +659,7 @@ export default {
   'onb.next': '다음',
   'onb.cancel': '취소',
   'onb.later': '나중에 선택하기',
+  'onb.loading': '불러오는 중...',
   'onb.noDept.title': '학과를 선택하지 않으셨어요',
   'onb.noDept.body': '이대로 하시겠어요? 학번·입학 유형 같은 나머지 질문은 학과를 기준으로 해서 함께 건너뛰어요. 나중에 오른쪽 위 계정 메뉴의 "{menu}"에서 입력할 수 있어요.',
   'onb.noDept.skip': '이대로 넘어가기',
@@ -727,7 +734,7 @@ export default {
   'career.q.progressAria': '질문 {n} / {total}',
 
   // 진로 탐색 — 화면
-  'career.err.load': '진로 탐색 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
+  'career.err.load': '진로 탐색 정보를 불러오지 못했어요.',
   'career.err.start': '진로 탐색을 시작하지 못했어요. 잠시 후 다시 시도해주세요.',
   'career.err.saveAnswers': '답변을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
   'career.err.candidatesEmpty': '아직 판단할 만한 이야기가 부족해요. 조금 더 대화한 뒤 다시 시도해주세요.',
@@ -805,10 +812,10 @@ export default {
   'community.sanctionFull.permanent': '커뮤니티 전체 이용이 영구 제한됩니다.',
   'community.sanctionFull.reason': '<b>사유</b> · {reason}',
   'community.sanctionFull.footer': '문의사항은 프로필 메뉴의 문의하기를 이용해주세요',
-  'community.err.loadPosts': '커뮤니티 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
-  'community.err.loadMine': '내가 쓴 글을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
-  'community.err.loadReports': '신고 내역을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
-  'community.err.loadApps': '신청 목록을 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
+  'community.err.loadPosts': '커뮤니티 글을 불러오지 못했어요.',
+  'community.err.loadMine': '내가 쓴 글을 불러오지 못했어요.',
+  'community.err.loadReports': '신고 내역을 불러오지 못했어요.',
+  'community.err.loadApps': '신청 목록을 불러오지 못했어요.',
   'community.err.loadApplicants': '신청자 목록을 불러오지 못했어요.',
   'community.err.loadPost': '글을 불러오지 못했어요.',
   'community.err.writeSanctioned': '글 작성이 제한된 계정이에요.',

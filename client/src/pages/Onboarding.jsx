@@ -172,11 +172,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 재진입 시 기존에 선택돼 있던 학과의 세부전공 목록을 불러온다(있어야 hasTracks가 맞게
   // 계산되고, 요약 화면에 세부전공 이름을 보여줄 수 있다). selectDepartment와 달리 기존
   // 선택값(trackId 등)은 이미 유효한 값이라 건드리지 않는다.
+  const [tracksLoading, setTracksLoading] = useState(editMode && !!user?.departmentId);
   useEffect(() => {
     if (!editMode || !user?.departmentId) return;
     getTracks(user.departmentId)
       .then(setTracks)
-      .catch(() => setTracks([]));
+      .catch(() => setTracks([]))
+      .finally(() => setTracksLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -215,6 +217,10 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 요약 화면 자체로의 점프('summary')는 "선형 흐름 재시작"이 아니라 "필드 하나만 고치고
   // 돌아가는 중"인 다른 상태와 구분해야 다음/뒤로 버튼 동작을 다르게 줄 수 있다.
   const editingFromSummary = manualStep !== null && manualStep !== 'summary';
+  // 학적정보 수정으로 들어오면 요약 화면부터 보이는데, 학과 이름·세부전공 줄은 학과 목록과 세부전공 목록을 받아야 채워진다.
+  // 받기 전에 그리면 학과가 잠깐 빨간 "선택 필요"로 보이고 줄이 뒤늦게 생겨 오류처럼 보였다(2026-10-27 피드백) — 다 받을 때까지
+  // 커뮤니티처럼 "불러오는 중..."만 보여 준다. 학과 목록을 못 받으면 오류 문구가 대신 뜬다.
+  const summaryLoading = current === 'summary' && (departmentsLoading || tracksLoading);
 
   // highlightLeaveSemesters는 Onboarding 화면에 머무는 동안 계속 true로 유지되는데, 요약
   // 화면은 다른 질문으로 점프했다 돌아올 때마다 새로 마운트된다 — CSS 애니메이션은 새로
@@ -223,11 +229,11 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 요약 화면에 도달한 시점에 "다 썼다"고 표시해서 이후 재마운트에는 더 이상 안 켜지게 한다.
   const [leaveHighlightArmed, setLeaveHighlightArmed] = useState(highlightLeaveSemesters);
   useEffect(() => {
-    if (current !== 'summary' || !leaveHighlightArmed) return;
+    if (current !== 'summary' || summaryLoading || !leaveHighlightArmed) return;
     const timer = setTimeout(() => setLeaveHighlightArmed(false), 2100);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  }, [current, summaryLoading]);
 
   // 사범대학은 선발 없이 교직과정을 이수하므로 "이수하고 있어요"를 미리 골라 둔다. 교직을 포기한 학생은 직접 바꾼다(D-67).
   useEffect(() => {
@@ -859,7 +865,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
-        {current === 'summary' && (
+        {summaryLoading && <p className="post-empty">{t('onb.loading')}</p>}
+
+        {current === 'summary' && !summaryLoading && (
           <>
             <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
             <p className="onb-q-sub">
@@ -994,7 +1002,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
 
         {/* 주 버튼(다음·저장 등)은 내용이 길어도 화면 아래에 떠 있게 한다 — 학과 목록처럼 길어지면 맨 끝까지 내려가야 눌렀다. */}
         <div className="onb-float-action">
-          {current === 'summary' ? (
+          {summaryLoading ? null : current === 'summary' ? (
             <button className="auth-submit-btn" onClick={handleSubmit} disabled={submitting || summaryIncomplete}>
               {submitting ? t('onb.saving') : editMode ? t('profile.save') : t('onb.start')}
             </button>

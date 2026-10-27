@@ -15,8 +15,10 @@ const MAX_TEXTAREA_HEIGHT = 120;
  * - onFocusChange: function(boolean) — optional, 입력창 포커스/블러 시점을 부모에 알림
  * - placeholder: string — optional, 입력창 안내 글(없으면 기본 "무엇이든 물어보세요")
  *   (모바일에서 키보드가 뜨는 동안 하단 탭바/안내문 같은 주변 UI를 잠깐 접어 공간을 확보하는 용도)
+ * - sendBlocked: boolean — optional, 아직 보낼 수 없을 때(대화를 못 불러옴) 보내기만 막는다. 입력 칸은 그대로 쓸 수 있고
+ *   쓴 글도 지우지 않는다 — disabled로 막으면 풀리는 순간 위 포커스 복원이 돌아 들어오자마자 키보드가 뜬다.
  */
-function ChatInput({ onSendMessage, disabled, onFocusChange, placeholder }) {
+function ChatInput({ onSendMessage, disabled, onFocusChange, placeholder, sendBlocked = false }) {
   const { t } = useI18n();
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
@@ -44,7 +46,7 @@ function ChatInput({ onSendMessage, disabled, onFocusChange, placeholder }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (disabled || !text.trim()) return;
+    if (disabled || sendBlocked || !text.trim()) return;
     onSendMessage(text);
     setText('');
   };
@@ -76,7 +78,7 @@ function ChatInput({ onSendMessage, disabled, onFocusChange, placeholder }) {
         type="submit"
         className="prompt-send-btn"
         aria-label={t('chat.send')}
-        disabled={disabled}
+        disabled={disabled || sendBlocked}
         // 탭 시 버튼이 입력창의 포커스를 가로채면(=입력창 blur) 탭바/안내문이 다시 나타나며
         // 레이아웃이 바뀌어 버튼이 손가락 아래에서 살짝 움직인다 — 그 결과 첫 탭은 키보드만
         // 닫히고 전송은 안 돼서 두 번 눌러야 했다(모바일 실사용 확인). mousedown 시점에
