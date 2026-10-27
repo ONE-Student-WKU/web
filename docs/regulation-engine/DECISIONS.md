@@ -966,3 +966,15 @@
   - 과목명이 다른 같은 과목(개편·동일과목)은 맞추지 못한다.
   - 학과·전공별 마이크로디그리(광역계열)와 전공융합형의 "타전공 MD 2개" 판정은 3단계(데이터화, 재시딩 필요)로 남는다.
 - **위치**: `server/services/linkedMajors.js`(신규), `secondMajor.js`, `secondMajorCredits.js`(`loadAssignmentContext`), `courseCounting.js`, `graduationService.js`(`linkedMajorStatus`), `routes/me.js`·`routes/onboarding.js`, `regulationEngine/flags.js`, `db/schema.sql`·`db/migrate.js`, 클라이언트 `Onboarding.jsx`·`GraduationStatus.jsx`·`components/MicroDegreeCard.jsx`·`PrivacyPolicy.jsx`, 테스트 `server/test/linkedMajor.test.js`.
+
+## D-87 학과·전공별 마이크로디그리를 데이터로 넣고, 전공융합형은 판정 대신 안내한다 (2026-10-27)
+- **상황**: 광역 계열전공 전공융합형은 "주전공 48학점 + 타전공 MD 2개(각 12학점)"인데, 학과·전공별 MD(책자 Ⅶ장 각 학과 페이지)는 규정 문서에만 있어 학생이 고를 수도, 진단에 보일 수도 없었다. 엔진은 줄어든 전공 학점만 계산하고 MD는 "따로 확인" 안내뿐이었다(#412 3단계).
+- **근거**: 2026 교육과정 책자 Ⅶ장 "마이크로디그리 이수체계" 표(`db/regulations/교육과정/2026_전공별_마이크로디그리_이수체계.md`, 90개 과정·452과목·학수번호 모두 있음), Ⅵ장 "모든 마이크로디그리는 총 이수학점 12학점", 해설 19~20쪽(전공융합형 "교내에 개설된 모든 MD 중에서 타전공 MD 2개"), 시행규칙 제7조 제2항 제3호.
+- **결정**:
+  - 표를 `db/seed/micro_degrees.json`에 사업단 과정과 같은 형식으로 넣는다(`scripts/audit/buildDepartmentMicroDegrees.js --apply`, 다시 돌려도 같은 결과). 이름은 "<전공> - <과정>", 묶음은 "학과·전공별 MD · <계열>", 이수학점 12, 과목 이수구분은 표에 없어 전공선택.
+  - 2단계의 마이크로디그리 선택·과정별 학점 표시를 그대로 쓴다. 목록이 125개로 길어 선택 화면에 이름 찾기를 둔다.
+  - 전공융합형은 충족을 판정하지 않는다. 고른 과정 중 자기 세부전공 MD("<세부전공> - …")가 아닌 과정이 12학점에 이른 개수만 안내한다(`microDegreeConvergence`, 추정). 과목 세는 방법·타전공 범위·2025 농생명바이오계열은 다음 문의 후보 M-Q1~M-Q4.
+  - 규정 문서 머리말의 "전공심화형도 자기 전공 MD 2개 이수" 문장은 책자 해설에 없어 고친다.
+- **결과**: 계열 학생이 자기 전공·타전공 MD를 골라 과정별 학점을 볼 수 있다. 전공융합형 진단은 계속 "추정"이다. main 반영 때 재시딩 승인이 필요하다(`db/seed/micro_degrees.json`, `db/regulations/**`).
+- **단점·다시 볼 조건**: "임상병리학과 - 바이오빅데이터(유전체) 분석"은 표의 학점 합이 11이라 12를 채울 수 없다 — 책자 PDF와 대조한다. 학교가 "표의 과목을 모두 들어야 한다"고 답하면 과정별 요건을 표의 합으로 바꾼다. 2027 책자가 나오면 스크립트를 다시 돌린다.
+- **위치**: `scripts/audit/buildDepartmentMicroDegrees.js`, `db/seed/micro_degrees.json`, `server/services/linkedMajors.js`(`convergenceProgress`), `graduationService.js`, `regulationEngine/flags.js`(`MAJOR_TRACK_CONVERGENCE` 문구), 클라이언트 `components/MicroDegreeCard.jsx`·`Onboarding.jsx`, `docs/school-inquiry/다음문의_후보.md` M절.

@@ -532,6 +532,18 @@ describe('연계·복합전공과 마이크로디그리(#412)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: 7, secondLinkedMajor: null, secondMajorType: 'DOUBLE' }));
   });
 
+  it('마이크로디그리 목록은 이름으로 찾을 수 있고, 없으면 없다고 알린다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /마이크로디그리/ }));
+    await screen.findByRole('checkbox', { name: 'K-치유힐링 케어복지과정' });
+    await userEvent.type(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }), '이차 전지');
+    expect(screen.getByRole('checkbox', { name: 'JST 에너지신산업학부 이차전지 기초' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'K-치유힐링 케어복지과정' })).toBeNull();
+    await userEvent.clear(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }), '없는과정');
+    expect(screen.getByText('찾는 과정이 없어요.')).toBeInTheDocument();
+  });
+
   it('마이크로디그리 줄은 처음에 "없음"이고, 과정을 고르면 이름 목록을 보낸다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     const row = await screen.findByRole('button', { name: /마이크로디그리/ });

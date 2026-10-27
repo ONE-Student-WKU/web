@@ -3802,5 +3802,4793 @@
         "offeringDepartment": "원광대학교"
       }
     ]
+  },
+  {
+    "name": "의생명공학전공 - 의생명의료기기",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02001",
+        "courseName": "인체해부학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02006",
+        "courseName": "바이오센서공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02009",
+        "courseName": "의공AIoTPBL1",
+        "credits": "1"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02010",
+        "courseName": "의료기기법규와인증",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02011",
+        "courseName": "생체의공학종합설계",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02014",
+        "courseName": "임상의학의이해",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02017",
+        "courseName": "의공AIoTPBL2",
+        "credits": "1"
+      }
+    ]
+  },
+  {
+    "name": "의생명공학전공 - 의생명 AI분석진단",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02005",
+        "courseName": "의료영상처리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02004",
+        "courseName": "의공AI신호처리PBL1",
+        "credits": "1"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02008",
+        "courseName": "생체신호와인공지능",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02013",
+        "courseName": "의료인공지능프로그래밍",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02015",
+        "courseName": "바이오신호처리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02016",
+        "courseName": "의료IoT시스템",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F02017",
+        "courseName": "의공AI신호처리PBL2",
+        "credits": "1"
+      }
+    ]
+  },
+  {
+    "name": "의생명소재공학전공 - 스마트바이오공정",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03001",
+        "courseName": "바이오공정학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03007",
+        "courseName": "기능성바이오소재설계",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03008",
+        "courseName": "스마트바이오공정PBL1",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03014",
+        "courseName": "GMP생산/품질시스템",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03015",
+        "courseName": "바이오센서공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03018",
+        "courseName": "스마트바이오공정PBL2",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "의생명소재공학전공 - 재생의학",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03004",
+        "courseName": "조직공학및재생의학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03006",
+        "courseName": "재생의학PBL1",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03012",
+        "courseName": "약물전달시스템",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03016",
+        "courseName": "생체모사공학및재생의료소재",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03017",
+        "courseName": "재생의학PBL2",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F03019",
+        "courseName": "세포/유전자치료제",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "의생명첨단바이오전공 - 매드바이오규제과학",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04001",
+        "courseName": "의료-바이오규제과학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04002",
+        "courseName": "규제과학문서작성법",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04003",
+        "courseName": "의료-바이오규제과학PBL1",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04013",
+        "courseName": "바이오의약품및GMP",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04014",
+        "courseName": "의료기기규제과학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04015",
+        "courseName": "의료-바이오규제과학PBL2",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "의생명첨단바이오전공 - 차세대의약개발",
+    "programGroup": "학과·전공별 MD · 의생명공학계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04005",
+        "courseName": "약리학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04007",
+        "courseName": "첨단바이오신약개론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04008",
+        "courseName": "제약산업입문",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04009",
+        "courseName": "차세대의약개발PBL1",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04017",
+        "courseName": "바이오의약개발창의설계",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04018",
+        "courseName": "유전자기반진단기술",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "F04020",
+        "courseName": "차세대의약개발PBL2",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "산림환경학전공 - 산림치유학",
+    "programGroup": "학과·전공별 MD · 그린바이오계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01004",
+        "courseName": "정원설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01007",
+        "courseName": "치유생태관광",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01009",
+        "courseName": "웰니스공간워크숍",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G02009",
+        "courseName": "산림휴양및실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01013",
+        "courseName": "산림치유학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "산림환경학전공 - 산림문화학",
+    "programGroup": "학과·전공별 MD · 그린바이오계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01001",
+        "courseName": "숲과경관",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G02002",
+        "courseName": "산림산업학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G02005",
+        "courseName": "산림복지학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G02007",
+        "courseName": "산림경영학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G02008",
+        "courseName": "산림정책학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "조경·정원학전공 - 기후적응형 조경과자연기반솔루션",
+    "programGroup": "학과·전공별 MD · 그린바이오계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G03003",
+        "courseName": "조경계획",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01005",
+        "courseName": "환경생태계획",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G03010",
+        "courseName": "여가공간설계",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01008",
+        "courseName": "경관분석및계획",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "조경·정원학전공 - 자연치유학",
+    "programGroup": "학과·전공별 MD · 그린바이오계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01004",
+        "courseName": "정원설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01007",
+        "courseName": "치유생태관광",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01006",
+        "courseName": "도시숲설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G01013",
+        "courseName": "산림치유학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "원예산업학전공 - 치유원예",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04002",
+        "courseName": "원예학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05009",
+        "courseName": "화훼원예학및실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05010",
+        "courseName": "채소원예학및실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05011",
+        "courseName": "도시원예학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05019",
+        "courseName": "치유농업",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "원예산업학전공 - 지도사",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04005",
+        "courseName": "재배학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05004",
+        "courseName": "토양환경관리학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05005",
+        "courseName": "식물육종학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05003",
+        "courseName": "원예작물생리학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G05018",
+        "courseName": "농촌지도론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식물생산과학전공 - 종자생산",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04005",
+        "courseName": "재배학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06005",
+        "courseName": "식물생리학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06006",
+        "courseName": "육종학원론및실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06007",
+        "courseName": "종자학및실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06019",
+        "courseName": "RISE산학옴니버스",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식물생산과학전공 - 식물의학",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04003",
+        "courseName": "생명환경과학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06002",
+        "courseName": "재배환경학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06014",
+        "courseName": "식물영양비료학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06018",
+        "courseName": "식물보호학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G06020",
+        "courseName": "농업컴퓨터프로그래밍",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "생명환경학전공 - 환경보건기초",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04003",
+        "courseName": "생명환경과학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04004",
+        "courseName": "기초화학및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07004",
+        "courseName": "토양학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07014",
+        "courseName": "해충관리학및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07016",
+        "courseName": "생물자원유전자분석학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "생명환경학전공 - 바이오기초",
+    "programGroup": "학과·전공별 MD · 스마트농업계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G04006",
+        "courseName": "기초생물학및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07005",
+        "courseName": "식품위생학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07007",
+        "courseName": "식품의약품안전관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07011",
+        "courseName": "식품독성및위해평가",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G07015",
+        "courseName": "생명공학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식품산업전공 - 스마트식품가공",
+    "programGroup": "학과·전공별 MD · 푸드테크계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13005",
+        "courseName": "스마트식품공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13007",
+        "courseName": "식품공정공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13002",
+        "courseName": "식품성분분석실무",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13004",
+        "courseName": "식품저장학및실험",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식품산업전공 - 푸드비즈니스",
+    "programGroup": "학과·전공별 MD · 푸드테크계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13006",
+        "courseName": "푸드테크마케팅전략",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13003",
+        "courseName": "식품표시와규제",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13008",
+        "courseName": "감각인지공학및평가",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G13001",
+        "courseName": "식품아이디어설계",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식품안전전공 - 식품품질분석",
+    "programGroup": "학과·전공별 MD · 푸드테크계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14003",
+        "courseName": "식품물성학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14007",
+        "courseName": "식품효소공학및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14006",
+        "courseName": "식품품질관리실무(미생물학)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14008",
+        "courseName": "식품품질관리실무(이화학)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "식품안전전공 - 식품위해관리",
+    "programGroup": "학과·전공별 MD · 푸드테크계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14001",
+        "courseName": "식품위생학및법규",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14005",
+        "courseName": "식품안전공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14004",
+        "courseName": "식품첨가물학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "G14002",
+        "courseName": "식품안전사례연구",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "임상병리학과 - 바이오빅데이터(유전체) 분석",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02016",
+        "courseName": "임상분자생물학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02017",
+        "courseName": "임상분자생물학실습",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02011",
+        "courseName": "기능생화학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02035",
+        "courseName": "진단세포유전검사학 및 실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "임상병리학과 - 바이오메디컬",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02023",
+        "courseName": "임상조직검사학(I)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02010",
+        "courseName": "임상진단세포",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02024",
+        "courseName": "임상조직검사학 및 실습",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02028",
+        "courseName": "임상조직검사학및실습(II)",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02007",
+        "courseName": "기초조직학",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H02031",
+        "courseName": "실험동물의학 및 실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "물리치료학과 - 스마트헬스케어재활융합형MD",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03002",
+        "courseName": "인체해부학Ⅰ",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03007",
+        "courseName": "인체해부학Ⅱ",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03019",
+        "courseName": "운동조절및학습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03021",
+        "courseName": "순환호흡계평가및중재실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03027",
+        "courseName": "재활훈련학",
+        "credits": "2"
+      },
+      {
+        "semester": "동계",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03031",
+        "courseName": "물리치료사현장실습Ⅰ",
+        "credits": "0"
+      }
+    ]
+  },
+  {
+    "name": "물리치료학과 - 디지털헬스케어재활특화형MD",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03008",
+        "courseName": "기능해부학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03012",
+        "courseName": "측정및평가",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03014",
+        "courseName": "임상운동학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03020",
+        "courseName": "임상의사결정",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H03026",
+        "courseName": "운동치료학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "방사선학과 - 방사선 디지털영상품질관리 전문가",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04010",
+        "courseName": "DX인체해부학실습",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04014",
+        "courseName": "DX진료영상학1-2",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04019",
+        "courseName": "DX전산화단층촬영기술",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04021",
+        "courseName": "DX방사선치료학2",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04025",
+        "courseName": "DX자기공명영상학",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04045",
+        "courseName": "DX의료기창업과기업가정신",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04049",
+        "courseName": "DX진료영상학3실습",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H04047",
+        "courseName": "병원실무",
+        "credits": "1"
+      }
+    ]
+  },
+  {
+    "name": "치위생학과 - 디지털커뮤니티케어",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06017",
+        "courseName": "예방치과실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06024",
+        "courseName": "노인치위생관리실습",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06039",
+        "courseName": "치위생연구방법론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06040",
+        "courseName": "지역사회구강보건실습",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06043",
+        "courseName": "치과영양학",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "치위생학과 - 치과 디지털 실무",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06013",
+        "courseName": "치과재료학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06018",
+        "courseName": "치과재료실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06020",
+        "courseName": "치과방사선학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06031",
+        "courseName": "치위생관리기초실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H06038",
+        "courseName": "디지털치과임상",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "안경광학과 - 노안케어전문가",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H07012",
+        "courseName": "안경조제학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H07018",
+        "courseName": "기초콘택트렌즈",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H07030",
+        "courseName": "안경원고객응대",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H07031",
+        "courseName": "자각식굴절검사",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "H07033",
+        "courseName": "다초점안경조제학 및 실습",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "미용피부관리과 - k-헤어 뷰티",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07005",
+        "courseName": "샴푸&트리트먼트",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07009",
+        "courseName": "두피모발관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07014",
+        "courseName": "베이직헤어커트",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07026",
+        "courseName": "고객서비스상담",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07028",
+        "courseName": "헤어미용실무실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "미용피부관리과 - 피부미용사 실무",
+    "programGroup": "학과·전공별 MD · 광역계열 외 학과",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07011",
+        "courseName": "기초얼굴관리테크닉",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07021",
+        "courseName": "바디관리실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07031",
+        "courseName": "피부미용살롱실무",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07036",
+        "courseName": "취업준비실무실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "I07033",
+        "courseName": "바디관리응용테크닉",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "패션디자인산업전공 - 패션메이킹",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "11J002",
+        "courseName": "패션쏘잉",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "11J005",
+        "courseName": "베이직패턴메이킹",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "11J006",
+        "courseName": "서양의복구성1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "11J017",
+        "courseName": "기초한복구성",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J022",
+        "courseName": "테일러링",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "패션디자인산업전공 - 패션비즈니스",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J007",
+        "courseName": "패션마케팅",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J012",
+        "courseName": "패션브랜드런칭",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J018",
+        "courseName": "슈즈패션비즈니스",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J026",
+        "courseName": "패션리테일샵마스터",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01J028",
+        "courseName": "패션VMD",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "파인아트전공 - 아트프로덕션",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J006",
+        "courseName": "아트워크제작",
+        "credits": "2"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J016",
+        "courseName": "스토리텔링과 이미지메이킹",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J022",
+        "courseName": "컨템포러리아트",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J027",
+        "courseName": "아트프로덕션",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J031",
+        "courseName": "전시디자인",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "파인아트전공 - 아트팩토리",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J015",
+        "courseName": "세라믹디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J021",
+        "courseName": "세라믹스튜디오",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J025",
+        "courseName": "아트콜라보레이션",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12J029",
+        "courseName": "아트프로덕트",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "공예문화·주얼리디자인전공 - 공예·문화상품디자인 MD",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J003",
+        "courseName": "(기초)형태와 구조",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J001",
+        "courseName": "(기초)금속공예기법1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J004",
+        "courseName": "(기초)재료및기법연구1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J010",
+        "courseName": "공예·문화상품디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J014",
+        "courseName": "공예·문화상품디자인프로젝트",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "공예문화·주얼리디자인전공 - 주얼리디자인산업MD",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J017",
+        "courseName": "주얼리기초렌더링",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J023",
+        "courseName": "주얼리메이킹실무",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J025",
+        "courseName": "주얼리제품디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J024",
+        "courseName": "주얼리CAD모델링",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13J028",
+        "courseName": "주얼리제품캡스톤디자인",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "실내·산업디자인전공 - 실내·건축디자인",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J004",
+        "courseName": "상업공간디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J006",
+        "courseName": "주거공간디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J010",
+        "courseName": "공공실내건축디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J011",
+        "courseName": "무대디자인",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "실내·산업디자인전공 - 제품·운송산업디자인",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J020",
+        "courseName": "서비스경험디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J022",
+        "courseName": "산업디자인브랜딩",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J023",
+        "courseName": "전기전자제품디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14J036",
+        "courseName": "산업디자인UX/UI디자인1",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "시각정보디자인전공 - 시각·커뮤니케이션디자인",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J023",
+        "courseName": "브랜딩&아이덴티티",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J026",
+        "courseName": "아이덴티티디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J027",
+        "courseName": "문화콘텐츠디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J029",
+        "courseName": "문화콘텐츠디자인제작",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "시각정보디자인전공 - 광고·영상콘텐츠디자인",
+    "programGroup": "학과·전공별 MD · 디자인융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J020",
+        "courseName": "3D애니메이션",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J025",
+        "courseName": "영상프리프로덕션",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J028",
+        "courseName": "광고·영상콘텐츠디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15J030",
+        "courseName": "광고·영상콘텐츠프로젝트",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "건축공학전공 - 취업연계형",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01002",
+        "courseName": "건축CAD",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01005",
+        "courseName": "건축기초역학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01014",
+        "courseName": "건축급배수위생설비",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01017",
+        "courseName": "건축공학설계2",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "건축공학전공 - 자격증 연계형",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01006",
+        "courseName": "건축재료학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01013",
+        "courseName": "건축시공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01016",
+        "courseName": "건축철근콘크리트구조설계1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M01026",
+        "courseName": "건축시스템디자인",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "건설환경공학전공 - 건설환경자격증필수",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02005",
+        "courseName": "수리학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02012",
+        "courseName": "응용역학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02014",
+        "courseName": "철근콘크리트공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02016",
+        "courseName": "토질역학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02018",
+        "courseName": "상수도공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02027",
+        "courseName": "측량학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "건설환경공학전공 - 건설환경인프라특화",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02015",
+        "courseName": "수문학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02020",
+        "courseName": "구조역학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02023",
+        "courseName": "지반공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02024",
+        "courseName": "하폐수공학및설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02033",
+        "courseName": "실무CAD",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M02035",
+        "courseName": "교량공학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "도시공학전공 - 미래도시",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03006",
+        "courseName": "디지털환경디자인",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03021",
+        "courseName": "도시환경생태론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03020",
+        "courseName": "커뮤니티개발론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03010",
+        "courseName": "도시및농촌환경론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03025",
+        "courseName": "스마트도시론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "도시공학전공 - 도시계획·설계",
+    "programGroup": "학과·전공별 MD · 공학1계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03012",
+        "courseName": "도시개발론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03004",
+        "courseName": "도시조사분석",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03019",
+        "courseName": "도시계획사",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03015",
+        "courseName": "단지계획",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M03022",
+        "courseName": "공간종합계획및설계",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "기계공학전공 - 기계설계전문",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04007",
+        "courseName": "2D제도실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04012",
+        "courseName": "3D캐드실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04014",
+        "courseName": "수치해석실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04016",
+        "courseName": "구조해석실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04021",
+        "courseName": "열유체해석실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "기계공학전공 - 기계역학전문",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04008",
+        "courseName": "고체역학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04009",
+        "courseName": "열역학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04013",
+        "courseName": "유체역학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04019",
+        "courseName": "동역학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M04020",
+        "courseName": "기계공작법및실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "전기공학전공 - 전기에너지",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05017",
+        "courseName": "전기기기및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05019",
+        "courseName": "에너지변환공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05021",
+        "courseName": "전기물성및재료",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05028",
+        "courseName": "반도체공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05030",
+        "courseName": "전력변환기및실험",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "전기공학전공 - 전기시스템",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05014",
+        "courseName": "제어공학1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05015",
+        "courseName": "전력시스템공학1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05022",
+        "courseName": "신호처리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05025",
+        "courseName": "전력전자및실험",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M05027",
+        "courseName": "전기설비설계",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "전자공학전공 - 반도체전공트랙",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06020",
+        "courseName": "반도체소자",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06022",
+        "courseName": "전자회로2",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06025",
+        "courseName": "전자파해석및안테나설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06029",
+        "courseName": "반도체공정",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "전자공학전공 - AIOT임베디드시스템설계",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06016",
+        "courseName": "마이크로프로세서",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06019",
+        "courseName": "머신러닝소프트웨어",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06024",
+        "courseName": "지능형마이크로프로세서시스템설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06026",
+        "courseName": "인공지능",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M06030",
+        "courseName": "사물인터넷응용",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "철도시스템공학전공 - 전기철도",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07003",
+        "courseName": "전기자기학1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07015",
+        "courseName": "철도전기기기",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07020",
+        "courseName": "철도전력공학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07026",
+        "courseName": "전기철도구조물공학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "철도시스템공학전공 - 철도신호",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07005",
+        "courseName": "디지털공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07004",
+        "courseName": "회로이론1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07018",
+        "courseName": "전자회로1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07017",
+        "courseName": "제어공학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M07028",
+        "courseName": "철도신호제어및실습",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "화학공학전공 - 에너지",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08020",
+        "courseName": "열및물질전달",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08026",
+        "courseName": "기초전기화학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08029",
+        "courseName": "수치해석",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08032",
+        "courseName": "에너지소재",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08033",
+        "courseName": "촉매공학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "화학공학전공 - 소재",
+    "programGroup": "학과·전공별 MD · 공학2계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08019",
+        "courseName": "고분자화학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08024",
+        "courseName": "분석화학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08027",
+        "courseName": "바이오의약품",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08028",
+        "courseName": "무기화학소재",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M08031",
+        "courseName": "고분자공학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "컴퓨터·소프트웨어공학전공 - 인공지능",
+    "programGroup": "학과·전공별 MD · 공학3계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M09003",
+        "courseName": "파이썬프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10014",
+        "courseName": "인공지능",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10017",
+        "courseName": "영상처리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10025",
+        "courseName": "머신러닝",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10028",
+        "courseName": "지능정보시스템",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "컴퓨터·소프트웨어공학전공 - 웹프로그래밍",
+    "programGroup": "학과·전공별 MD · 공학3계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10003",
+        "courseName": "Java와객체지향프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M09004",
+        "courseName": "데이터구조",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M09005",
+        "courseName": "웹(HTML5)프로그래밍",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10016",
+        "courseName": "데이터베이스",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M10024",
+        "courseName": "빅데이터처리",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "게임콘텐츠학전공 - 게임기획가",
+    "programGroup": "학과·전공별 MD · 공학3계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11001",
+        "courseName": "콘텐츠크리에이터",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11007",
+        "courseName": "게임분석과평가",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11016",
+        "courseName": "게임프로젝트관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11021",
+        "courseName": "게임마케팅과산업",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11024",
+        "courseName": "게임기획과구성",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11027",
+        "courseName": "디지털콘텐츠응용",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "게임콘텐츠학전공 - 게임아티스트",
+    "programGroup": "학과·전공별 MD · 공학3계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11006",
+        "courseName": "컴퓨터게임그래픽",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11014",
+        "courseName": "3D게임콘텐츠설계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11015",
+        "courseName": "게임개발UI/UX설계",
+        "credits": "2"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11020",
+        "courseName": "캐릭터애니메이션실습",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11023",
+        "courseName": "캡스톤디자인2",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "M11026",
+        "courseName": "실감형혼합현실",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "경영학전공 - Pre-MBA",
+    "programGroup": "학과·전공별 MD · 경영계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01003",
+        "courseName": "마케팅원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01009",
+        "courseName": "국제경영학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01004",
+        "courseName": "인사관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01005",
+        "courseName": "재무관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01007",
+        "courseName": "캡스톤디자인(운영관리)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "경영학전공 - 기업가정신",
+    "programGroup": "학과·전공별 MD · 경영계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01001",
+        "courseName": "경영학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01006",
+        "courseName": "소비자행동론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01011",
+        "courseName": "조직행동론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01013",
+        "courseName": "국제마케팅",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N02007",
+        "courseName": "보험론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "글로컬경영전공 - 전문경영인",
+    "programGroup": "학과·전공별 MD · 경영계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01003",
+        "courseName": "마케팅원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01009",
+        "courseName": "국제경영학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01007",
+        "courseName": "캡스톤디자인(운영관리)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01004",
+        "courseName": "인사관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01005",
+        "courseName": "재무관리",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "글로컬경영전공 - 글로벌경영리더",
+    "programGroup": "학과·전공별 MD · 경영계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01001",
+        "courseName": "경영학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01008",
+        "courseName": "증권시장론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01013",
+        "courseName": "국제마케팅",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N01011",
+        "courseName": "조직행동론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N03005",
+        "courseName": "유통의이해",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "회계세무학전공 - 실무전문가",
+    "programGroup": "학과·전공별 MD · 경제금융·회계세무계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N04002",
+        "courseName": "경영학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05009",
+        "courseName": "부가가치세회계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05012",
+        "courseName": "원가관리회계연습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05018",
+        "courseName": "전략적원가관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05017",
+        "courseName": "기업법",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05020",
+        "courseName": "법인세회계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05021",
+        "courseName": "고급회계",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "회계세무학전공 - 프로그램전문가",
+    "programGroup": "학과·전공별 MD · 경제금융·회계세무계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05007",
+        "courseName": "재무회계연습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05008",
+        "courseName": "재무관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05019",
+        "courseName": "전산세무회계",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05022",
+        "courseName": "재무제표분석",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N05023",
+        "courseName": "회계실무(캡스톤디자인)",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "경제금융학전공 - 금융전문가실무",
+    "programGroup": "학과·전공별 MD · 경제금융·회계세무계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06002",
+        "courseName": "경제금융기초이론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06009",
+        "courseName": "거시경제학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06011",
+        "courseName": "화폐금융론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06016",
+        "courseName": "파이낸셜 시스템의 이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06025",
+        "courseName": "핀테크세미나",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "경제금융학전공 - 공공경제실무",
+    "programGroup": "학과·전공별 MD · 경제금융·회계세무계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N04002",
+        "courseName": "경제학원론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06008",
+        "courseName": "미시경제학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06009",
+        "courseName": "거시경제학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06020",
+        "courseName": "국제금융이론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "N06027",
+        "courseName": "국제경제세미나",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "경찰행정학전공 - 경찰관리",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01001",
+        "courseName": "경찰학1",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01003",
+        "courseName": "경찰학2",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01006",
+        "courseName": "경찰인사관리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01011",
+        "courseName": "경찰조직관리",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01014",
+        "courseName": "경찰행정법",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "경찰행정학전공 - 경찰실무",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01016",
+        "courseName": "경찰보안론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01019",
+        "courseName": "경찰경비론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01015",
+        "courseName": "경찰운용론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01026",
+        "courseName": "방범경찰론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O01027",
+        "courseName": "범죄수사론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "교정보호학전공 - 보호학",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02004",
+        "courseName": "교정보호관련법",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02007",
+        "courseName": "소년범죄론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02008",
+        "courseName": "보호관찰론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02013",
+        "courseName": "전자감독제도론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "교정보호학전공 - 교정학",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02001",
+        "courseName": "교정학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02002",
+        "courseName": "심리학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02003",
+        "courseName": "형사정책론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O02012",
+        "courseName": "교정처우론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "행정공공기관학전공 - 공직 마이크로디그리",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03002",
+        "courseName": "인간과행정1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03004",
+        "courseName": "사회학",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03012",
+        "courseName": "재무행정론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03014",
+        "courseName": "관광정책론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03019",
+        "courseName": "행정규제론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "행정공공기관학전공 - 공공관리마이크로디그리",
+    "programGroup": "학과·전공별 MD · 경찰·공공행정계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03008",
+        "courseName": "사회과학방법론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03021",
+        "courseName": "인사행정론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03023",
+        "courseName": "공기업과NCS실전론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03003",
+        "courseName": "공기업론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O03011",
+        "courseName": "기획과공공관리론",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "소방행정학전공 - 소방행정",
+    "programGroup": "학과·전공별 MD · 소방행정·방재계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04008",
+        "courseName": "소방인사론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04011",
+        "courseName": "소방재정론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04012",
+        "courseName": "소방조직론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04010",
+        "courseName": "행정법1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04014",
+        "courseName": "행정법2",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "소방행정학전공 - 방재안전",
+    "programGroup": "학과·전공별 MD · 소방행정·방재계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04009",
+        "courseName": "소방점검실무",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04013",
+        "courseName": "화재학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04017",
+        "courseName": "재난관리론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04022",
+        "courseName": "화재진압론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04024",
+        "courseName": "소방건축법",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "소방방재학전공 - 소방행정",
+    "programGroup": "학과·전공별 MD · 소방행정·방재계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04008",
+        "courseName": "소방인사론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04011",
+        "courseName": "소방재정론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04012",
+        "courseName": "소방조직론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04010",
+        "courseName": "행정법1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04014",
+        "courseName": "행정법2",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "소방방재학전공 - 방재안전",
+    "programGroup": "학과·전공별 MD · 소방행정·방재계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04009",
+        "courseName": "소방점검실무",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04013",
+        "courseName": "화재학",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04017",
+        "courseName": "재난관리론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04022",
+        "courseName": "화재진압론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "O04024",
+        "courseName": "소방건축법",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "중국어통번역전공 - 비즈니스중국어전문가",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P003",
+        "courseName": "초급중국어",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P016",
+        "courseName": "생활중국어1",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P024",
+        "courseName": "생활중국어2",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P027",
+        "courseName": "비즈니스중국어",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "중국어통번역전공 - 중국문화전문가",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P006",
+        "courseName": "한자와중국문화",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P008",
+        "courseName": "중국지역문화",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P011",
+        "courseName": "중국소설콘텐츠",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "01P018",
+        "courseName": "중국대중문화",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "국어국문학전공 - 한국어문학과K-컬처",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P011",
+        "courseName": "대중문화론",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P015",
+        "courseName": "한국문학과K-컬처",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P017",
+        "courseName": "문학과언어",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P023",
+        "courseName": "방언과한국문화",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P028",
+        "courseName": "미디어와문학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "국어국문학전공 - 문학치료",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P004",
+        "courseName": "한국문학읽기",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P006",
+        "courseName": "텍스트의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P012",
+        "courseName": "서사와문학치료",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P022",
+        "courseName": "서사와문체",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "12P026",
+        "courseName": "한국문학과여성",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "글로컬역사전공 - 글로컬 마한백제",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P005",
+        "courseName": "기록과공간으로본한국고대",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P006",
+        "courseName": "문화유산학의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P008",
+        "courseName": "고고학첫걸음",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P011",
+        "courseName": "중국고대인의이야기",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P017",
+        "courseName": "마한백제의역사와고고학",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "글로컬역사전공 - 글로컬역사콘텐츠·스토리텔링",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P007",
+        "courseName": "역사문화콘텐츠의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P019",
+        "courseName": "찾아가는근현대박물관",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P022",
+        "courseName": "박물관과미술관으로읽는유럽역사",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P024",
+        "courseName": "캡스톤디자인(역사를따라걷다)",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "13P025",
+        "courseName": "역사현장답사를통해본중국",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "영어영문학전공 - 영미문화콘텐츠",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P020",
+        "courseName": "영문학, 영화되다",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P019",
+        "courseName": "영미문화",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P023",
+        "courseName": "역사와 영화로 읽는 영미사회",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P025",
+        "courseName": "미술과 영화로 보는 영미문화",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "영어영문학전공 - 실무영어",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P006",
+        "courseName": "시사텍스트강독",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P028",
+        "courseName": "영어작문",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P024",
+        "courseName": "실전영어회화",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "14P030",
+        "courseName": "영어면접과 발표",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "문예창작전공 - 문예글쓰기지도콘텐츠",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P001",
+        "courseName": "문예창작의기초",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P005",
+        "courseName": "인문융합의시읽기",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P010",
+        "courseName": "아동청소년문학의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P016",
+        "courseName": "비평의이해",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P020",
+        "courseName": "문화콘텐츠문장연습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P026",
+        "courseName": "독서논술지도론",
+        "credits": "2"
+      }
+    ]
+  },
+  {
+    "name": "문예창작전공 - 뉴미디어문화콘텐츠",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P006",
+        "courseName": "뉴미디어문화콘텐츠의기초",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P011",
+        "courseName": "웹소설의이해와창작",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P014",
+        "courseName": "캐릭터와스토리",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P018",
+        "courseName": "K-컬처와글로벌콘텐츠",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P022",
+        "courseName": "브랜드공연의이해와감상",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "15P027",
+        "courseName": "문화콘텐츠와문화산업",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "미디어커뮤니케이션광고PR전공 - 미디어콘텐츠",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P005",
+        "courseName": "미디어영상콘텐츠이해",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P007",
+        "courseName": "AI와멀티미디어제작",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P013",
+        "courseName": "영상촬영과 화면구성",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P020",
+        "courseName": "AI와방송영상콘텐츠제작",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P023",
+        "courseName": "디지털영화영상제작",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P029",
+        "courseName": "AI와 미디어리터러시윤리법제",
+        "credits": "3"
+      }
+    ]
+  },
+  {
+    "name": "미디어커뮤니케이션광고PR전공 - 광고PR기획",
+    "programGroup": "학과·전공별 MD · 창의문화융합계열",
+    "requiredCredits": 12,
+    "leadProfessor": null,
+    "courses": [
+      {
+        "semester": "2",
+        "grade": "1",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P002",
+        "courseName": "광고학개론",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P014",
+        "courseName": "창의적아이디어발상",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "2",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P011",
+        "courseName": "광고와소비자행동",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P017",
+        "courseName": "광고카피라이팅실습",
+        "credits": "3"
+      },
+      {
+        "semester": "2",
+        "grade": "3",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P024",
+        "courseName": "뉴미디어광고PR",
+        "credits": "3"
+      },
+      {
+        "semester": "1",
+        "grade": "4",
+        "category": "전공선택",
+        "categoryRaw": "MD",
+        "courseCode": "16P025",
+        "courseName": "광고PR캠페인기획실습",
+        "credits": "3"
+      }
+    ]
   }
 ]
