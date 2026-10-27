@@ -10,7 +10,7 @@ const { normalizeCourseName } = require('./courseNameMatch');
  *    주전공(또는 복수전공)과 과목명이 같으면 최소전공인정학점의 1/3까지 중복 인정, 교양은 9학점까지 연계전공 학점으로 인정(교양과 중복 인정 안 됨),
  *    한 학과(부) 교육과정은 16학점까지.
  *  - 마이크로디그리: 2026 책자는 모든 과정이 12학점이다(옛 2025 표의 과정별 학점은 쓰지 않는다 — 2026-10-27 결정).
- *    졸업학점에 따로 더해지지 않는다(들은 과목이 MD 조건도 채운다). 학과·전공별 MD(광역계열)는 아직 데이터가 없다(3단계).
+ *    졸업학점에 따로 더해지지 않는다(들은 과목이 MD 조건도 채운다). 학과·전공별 MD(책자 Ⅶ장, 전공마다 2개)도 같은 표에 "학과·전공별 MD · <계열>" 묶음으로 들어 있다(3단계, scripts/audit/buildDepartmentMicroDegrees.js).
  *
  * 학생이 고른 값은 id가 아니라 이름으로 저장한다 — 재시딩(seed:linked-majors)이 행을 지우고 다시 넣어 id가 바뀐다.
  */
@@ -127,6 +127,14 @@ async function loadMicroDegreePrograms(names) {
   return names.map((n) => byName.get(n) || { name: n, programGroup: null, courseNames: new Set(), missing: true });
 }
 
+// 전공융합형 타전공 MD 개수(시행규칙 제7조 제2항 제3호). 학과·전공별 MD는 이름이 "<전공> - <과정>"이라, 학생 세부전공 이름으로 시작하면 자기 전공 MD로 본다.
+const CONVERGENCE_MICRO_DEGREES = 2;
+function convergenceProgress(microDegrees, trackName) {
+  const isOwn = (m) => Boolean(trackName) && m.name.startsWith(`${trackName} - `);
+  const others = microDegrees.filter((m) => !m.missing && !isOwn(m));
+  return { required: CONVERGENCE_MICRO_DEGREES, reached: others.filter((m) => m.satisfied).length, otherChosen: others.length };
+}
+
 async function getMicroDegreeStatus(studentId, courses) {
   const names = await getStudentMicroDegrees(studentId);
   if (names.length === 0) return [];
@@ -136,5 +144,5 @@ async function getMicroDegreeStatus(studentId, courses) {
 module.exports = {
   EXCLUDED_LINKED_MAJORS, LINKED_MINOR_CREDITS, LINKED_LIBERAL_MAX, MICRO_DEGREE_CREDITS, MAX_MICRO_DEGREES,
   listLinkedMajors, listMicroDegrees, findLinkedMajor, microDegreesExist, validateMicroDegreeList,
-  getStudentMicroDegrees, setStudentMicroDegrees, evaluateMicroDegrees, getMicroDegreeStatus,
+  getStudentMicroDegrees, setStudentMicroDegrees, evaluateMicroDegrees, getMicroDegreeStatus, convergenceProgress, CONVERGENCE_MICRO_DEGREES,
 };

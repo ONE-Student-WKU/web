@@ -12,7 +12,7 @@ const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
 const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
 const { registrationTermsOf } = require('./studentProgress');
-const { getMicroDegreeStatus, LINKED_MINOR_CREDITS, LINKED_LIBERAL_MAX } = require('./linkedMajors');
+const { getMicroDegreeStatus, convergenceProgress, LINKED_MINOR_CREDITS, LINKED_LIBERAL_MAX } = require('./linkedMajors');
 const { getAcademicWarnings } = require('./academicWarning');
 const { secondMajorTypeOf } = require('./secondMajor');
 const { secondMajorRequirement, hasSecondThesis, isRestrictedCombination } = require('./secondMajorCredits');
@@ -602,6 +602,12 @@ async function getGraduationStatus(studentId) {
     : null;
   // 이수 중인 마이크로디그리(#412) — 졸업 판정에는 넣지 않고 과정마다 이수 학점만 보여 준다.
   const microDegrees = await getMicroDegreeStatus(studentId, countedCourses);
+  // 광역 계열전공 전공융합형은 타전공 MD 2개(각 12학점)가 필요하다(시행규칙 제7조 제2항 제3호). 충족은 판정하지 않고(D-87, 다음 문의 후보 M-Q1~Q4)
+  // 고른 과정 중 자기 전공이 아닌 과정이 12학점에 이른 개수만 안내한다.
+  const microDegreeConvergence = student.major_track_type === 'CONVERGENCE'
+    && isBroadSeriesStudent({ departmentName: student.department_name, admissionYear: student.admission_year })
+    ? convergenceProgress(microDegrees, student.track_name)
+    : null;
   const priorMajorCourses = counting && counting.priorApplies ? summarizePriorMajorCourses(student, storedCourses, counting.byId) : null;
   const priorFlags = student.enrollment_type === 'MAJOR_CHANGE' && !(counting && counting.priorApplies) ? [makeFlag('MAJOR_CHANGE_TERM_UNKNOWN_FOR_COURSES')]
     : priorMajorCourses ? [makeFlag('MAJOR_CHANGE_PRIOR_COURSES')] : [];
@@ -640,6 +646,8 @@ async function getGraduationStatus(studentId) {
     secondMajor: secondMajor ? secondMajor.status : null,
     // 마이크로디그리 — [{ name, programGroup, required, earned, satisfied, courses, missing }](linkedMajors.js). 고른 게 없으면 []
     microDegrees,
+    // 전공융합형 학생만 — { required: 2, reached, otherChosen } 타전공 과정 중 12학점에 이른 개수(추정, 판정 아님). 그 밖에는 null
+    microDegreeConvergence,
     // 학기 성적으로 본 학사경고(일반 학과)·유급(의·치·한·약·간호) 대상일 수 있는 학기 — academicWarning.js. 판정이 아니라 안내용이다.
     academicWarnings,
     // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.

@@ -413,6 +413,16 @@ describe('GraduationStatus 연계·복합전공·마이크로디그리(#412)', (
     expect(screen.getByText(/과정 정보를 찾지 못했어요/)).toBeInTheDocument();
   });
 
+  it('전공융합형이면 타전공 MD 2개 중 12학점에 이른 개수를 안내하고, 고른 과정이 없으면 고르라고 알린다', async () => {
+    await renderWith(status({ microDegrees: [{ name: '게임콘텐츠학전공 - 게임기획가', programGroup: '학과·전공별 MD · 공학3계열', required: 12, earned: 12, satisfied: true, courses: [], missing: false }], microDegreeConvergence: { required: 2, reached: 1, otherChosen: 1 } }));
+    expect(screen.getByText(/고른 타전공 과정 중 1개가 12학점에 이르렀어요/)).toBeInTheDocument();
+  });
+
+  it('전공융합형인데 고른 과정이 없으면 카드에 고르라는 안내만 보인다', async () => {
+    await renderWith(status({ microDegrees: [], microDegreeConvergence: { required: 2, reached: 0, otherChosen: 0 } }));
+    expect(screen.getByText(/학과·학번 수정에서 이수 중인 과정을 골라 주세요/)).toBeInTheDocument();
+  });
+
   it('고른 마이크로디그리가 없으면 카드를 그리지 않는다', async () => {
     await renderWith(status({ microDegrees: [] }));
     expect(screen.queryByText('마이크로디그리')).not.toBeInTheDocument();

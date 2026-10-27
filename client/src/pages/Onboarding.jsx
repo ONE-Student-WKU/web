@@ -178,6 +178,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 연계·복합전공·마이크로디그리 목록 — 학과·학번 수정에서만 쓴다(#412). 못 불러오면 빈 목록이라 고를 수 없을 뿐 다른 항목은 그대로 고친다.
   const [linkedMajors, setLinkedMajors] = useState([]);
   const [microDegreeOptions, setMicroDegreeOptions] = useState([]);
+  // 마이크로디그리 목록이 사업단 35개 + 학과·전공별 90개로 길어 이름(과정·전공·묶음)으로 걸러 보여 준다. 고른 과정은 걸러져도 그대로 남는다.
+  const [microSearch, setMicroSearch] = useState('');
+  const microQuery = microSearch.replace(/\s+/g, '');
+  const visibleMicroDegrees = microQuery
+    ? microDegreeOptions.filter((m) => `${m.name}${m.programGroup || ''}`.replace(/\s+/g, '').includes(microQuery))
+    : microDegreeOptions;
   useEffect(() => {
     if (!editMode) return;
     getLinkedMajors().then(setLinkedMajors).catch(() => setLinkedMajors([]));
@@ -862,7 +868,16 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           <>
             <h2 className="onb-q-title">{t('onb.micro.title')}</h2>
             <p className="onb-q-sub">{t('onb.micro.sub')}</p>
-            {groupByProgram(microDegreeOptions).map(([group, items]) => (
+            <input
+              type="search"
+              className="onb-select onb-micro-search"
+              placeholder={t('onb.micro.search')}
+              aria-label={t('onb.micro.search')}
+              value={microSearch}
+              onChange={(e) => setMicroSearch(e.target.value)}
+            />
+            {visibleMicroDegrees.length === 0 && microQuery && <p className="onb-q-sub onb-q-sub-note">{t('onb.micro.empty')}</p>}
+            {groupByProgram(visibleMicroDegrees).map(([group, items]) => (
               <fieldset key={group} className="onb-micro-group">
                 <legend className="onb-field-label">{group}</legend>
                 {items.map((m) => {

@@ -332,7 +332,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </section>
             )}
 
-            <MicroDegreeCard microDegrees={status.microDegrees} />
+            <MicroDegreeCard microDegrees={status.microDegrees} convergence={status.microDegreeConvergence} />
 
             {groups?.liberalArts && (
               <section className="home-card">

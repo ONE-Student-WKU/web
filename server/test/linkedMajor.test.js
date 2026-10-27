@@ -157,3 +157,46 @@ test('진단: 연계전공 부전공 학생은 다전공 카드가 연계전공�
   assert.deepEqual(status.microDegrees.map((m) => m.name), [microName]);
   assert.equal(status.microDegrees[0].required, MICRO_DEGREE_CREDITS);
 });
+
+test('학과·전공별 MD: 문서 표를 과정으로 옮긴다 — 시드에 90개 과정이 12학점·"학과·전공별 MD · <계열>" 묶음으로 들어 있다(#412 3단계)', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { parseDepartmentMicroDegrees, GROUP_PREFIX } = require('../../scripts/audit/buildDepartmentMicroDegrees');
+  const md = [
+    '## 공학3계열',
+    '### 컴퓨터·소프트웨어공학전공 마이크로디그리 이수체계 (책자 1쪽)',
+    '#### 컴퓨터·소프트웨어공학전공 - 인공지능',
+    '| 학수번호 | 과목명 | 학년 | 학기 | 학점 |',
+    '|---|---|---|---|---|',
+    '| C01 | 기계학습 | 3 | 1 | 3 |',
+    '| C02 | 딥러닝 | 3 | 2 | 3 |',
+  ].join('\n');
+  const [p] = parseDepartmentMicroDegrees(md);
+  assert.equal(p.name, '컴퓨터·소프트웨어공학전공 - 인공지능');
+  assert.equal(p.programGroup, `${GROUP_PREFIX}공학3계열`);
+  assert.equal(p.requiredCredits, 12);
+  assert.deepEqual(p.courses.map((c) => [c.courseCode, c.courseName, c.grade, c.semester, c.credits]), [['C01', '기계학습', '3', '1', '3'], ['C02', '딥러닝', '3', '2', '3']]);
+
+  // 시드가 문서와 맞는지(스크립트를 다시 돌리지 않고 문서만 고치면 실패한다).
+  const ROOT = path.resolve(__dirname, '..', '..');
+  const fromDoc = parseDepartmentMicroDegrees(fs.readFileSync(path.join(ROOT, 'db', 'regulations', '교육과정', '2026_전공별_마이크로디그리_이수체계.md'), 'utf8'));
+  const seed = JSON.parse(fs.readFileSync(path.join(ROOT, 'db', 'seed', 'micro_degrees.json'), 'utf8'));
+  const inSeed = seed.filter((m) => String(m.programGroup).startsWith(GROUP_PREFIX));
+  assert.equal(inSeed.length, 90);
+  assert.deepEqual(inSeed.map((m) => m.name), fromDoc.map((m) => m.name));
+  assert.ok(inSeed.every((m) => m.requiredCredits === 12 && m.courses.every((c) => c.courseCode)));
+  assert.equal(new Set(seed.map((m) => m.name)).size, seed.length, '과정 이름이 겹치면 안 된다(이름으로 저장한다)');
+});
+
+test('전공융합형: 자기 세부전공 MD는 빼고, 타전공 과정 중 12학점에 이른 개수만 센다(판정 아님)', () => {
+  const { convergenceProgress } = require('../services/linkedMajors');
+  const m = (name, satisfied, missing = false) => ({ name, satisfied, missing });
+  const r = convergenceProgress([
+    m('컴퓨터·소프트웨어공학전공 - 인공지능', true), // 자기 전공 — 세지 않는다
+    m('게임콘텐츠학전공 - 게임기획가', true),
+    m('JST 에너지신산업학부 이차전지 기초', false),
+    m('사라진과정', true, true),
+  ], '컴퓨터·소프트웨어공학전공');
+  assert.deepEqual(r, { required: 2, reached: 1, otherChosen: 2 });
+  assert.deepEqual(convergenceProgress([], '컴퓨터·소프트웨어공학전공'), { required: 2, reached: 0, otherChosen: 0 });
+});
