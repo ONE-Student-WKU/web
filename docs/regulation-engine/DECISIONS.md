@@ -937,3 +937,14 @@
   - 입력 화면의 편입 학년은 2~4학년이라 한의학과 편입생(본과 1학년)과 맞지 않는다. 계산은 학년과 무관하지만, 학번이 "편입 연도 − 학년 + 1"로 저장된다. 한의학과 기준이 학번별로 달라지면 입력 화면을 고쳐야 한다.
   - 한의학과 시드가 학번별로 달라지면 `orientalMedicineTransfer.test.js`의 DB 검사가 실패한다.
 - **위치**: `server/services/regulationEngine/constants.js`(`COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS`, 근거), `decisions.js`(`isCollegeConfirmedTransfer`·`transferGradeOf`), `evaluate.js`, `profileCaveats.js`, `flags.js`, 테스트 `server/test/orientalMedicineTransfer.test.js`·`estimateCaveats.test.js`.
+
+## D-85 광역계열 6곳 2026학번 판단 보류를 푼다 — 책자 자유선택 차이는 이수유형별 전공 학점 (2026-10-27)
+- **상황**: 2026 총괄표의 자유선택이 "졸업 130 − 교양 37 − 전공"과 맞지 않아 의생명공학·그린바이오·스마트농업·푸드테크·디자인융합·창의문화융합계열 2026학번 졸업 기준을 판단 보류(`#260-2026-free`)로 "추정"에 묶어 두었다. 보류할 때는 이수유형(시행규칙 제7조)을 반영하지 않아 차이를 설명할 수 없었다(#412).
+- **근거**: 총괄표 계열 전공 칸이 "69(전공심화형) 72(전공융합형/복수전공형)"처럼 이수유형별 두 값이다(`db/curriculum/_source/2026_학과별_이수학점_총괄표.json`). 시행규칙 제6조 ④(공학계열 72, 자연계열 69, 인문·사회·예체능 66), 제7조 ②(이수유형).
+- **결정**:
+  - 그린바이오·스마트농업·푸드테크(69/72)·디자인융합·창의문화융합(66/72)의 책자 자유선택 21은 72 기준(130 − 37 − 72) 값이다. 시드는 전공심화형 기준(일반선택 24·27)이 맞고, 다른 유형은 엔진이 학생 이수유형으로 다시 계산한다(D-70). 보류를 푼다.
+  - 의생명공학계열은 공학계열이라 두 유형 모두 전공 72이고 교양 37(항목 합)·졸업 130이라 자유선택은 21뿐이다. 책자의 33은 오기로 보고 보류를 푼다. 졸업인증 그룹이 해석값(`CERTIFICATION_GROUP_INTERPRETED`)이라 진단은 계속 "추정"이다.
+  - 시드 숫자는 바꾸지 않는다(재시딩 없음).
+- **결과**: 6곳 2026학번 중 전공심화형을 고른 학생(의생명공학계열 제외)의 졸업 기준이 "추정"에서 "확정"이 된다. 이수유형을 고르지 않았거나 복수전공형·전공융합형이면 유형 안내(`MAJOR_TRACK_*`) 때문에 지금처럼 "추정"이다.
+- **단점·다시 볼 조건**: 학교가 책자의 자유선택(21·33)을 다른 뜻으로 쓴 것이라면(예: 계열마다 다른 교양 학점) 시드와 엔진 계산을 다시 본다. 2027 책자가 나오면 같은 대조를 다시 한다.
+- **위치**: `server/services/regulationEngine/dataQuality.js`(`PENDING_HOLDS` 주석), `docs/regulation-engine/DATA_AUDIT.md` §2-3 갱신, `EVAL_SET.md`·`server/test-helpers/regulationEvalSet.js` E17, 테스트 `server/test/regulationEngine.resolve.test.js`.

@@ -136,11 +136,11 @@ const SCENARIOS = [
     why: '교육혁신과 서면 답변 A-5(2026-10-14): 의·치·한 본과는 교양 없이 전공 160이 맞다. 전공 과목은 학과 내규라 학과 확인 안내(INFO)만 붙는다',
   },
   {
-    id: 'E17', title: '의생명공학계열 2026학번 — 자유선택 33→21(#260 [2026] 1)',
+    id: 'E17', title: '의생명공학계열 2026학번 — 옛 보류(자유선택 33 vs 21, #260 [2026] 1)는 해소, 졸업인증 그룹 해석·이수유형 미입력으로 추정',
     input: { department: '의생명공학계열', admissionYear: 2026, enrollmentType: 'GENERAL' },
-    expected: { confidence: 'ESTIMATED', review: NEEDS_HUMAN_REVIEW, flags: ['DATA_PENDING_HOLD'] },
-    graduation: { confidence: 'ESTIMATED', holdFlag: true },
-    why: '#260 [2026] 1 표의 의생명공학계열 항목',
+    expected: { confidence: 'ESTIMATED', flags: ['CERTIFICATION_GROUP_INTERPRETED', 'MAJOR_TRACK_UNANSWERED'], notFlags: ['DATA_PENDING_HOLD'] },
+    graduation: { confidence: 'ESTIMATED' },
+    why: '공학계열은 전공 72(시행규칙 제6조 ④, 이수유형 두 값이 같음)·교양 37(항목 합)·졸업 130이라 자유선택은 21뿐이다 — 책자의 33은 오기(2026-10-27 해소, #412). 추정인 이유는 졸업인증 "나" 그룹이 교육혁신과 답변의 해석이고(CERTIFICATION_GROUP_INTERPRETED) 이수유형을 아직 입력하지 않아서다',
   },
   {
     id: 'E18', title: '탄소융합공학과 2021학번 — 2022 과목 누락·이름 차이(N-1)',
