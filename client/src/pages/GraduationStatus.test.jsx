@@ -423,6 +423,11 @@ describe('GraduationStatus 연계·복합전공·마이크로디그리(#412)', (
     expect(screen.getByText(/학과·학번 수정에서 이수 중인 과정을 골라 주세요/)).toBeInTheDocument();
   });
 
+  it('다른 학과에서 연 전공 과목을 일반선택으로 셌으면 학점과 바꾸는 방법을 알린다', async () => {
+    await renderWith(status({ otherDepartmentCourses: { courses: [{ id: 1, name: '현대소설론', credits: 3 }], credits: 3 } }));
+    expect(screen.getByText(/다른 학과에서 연 전공 과목 3학점은 일반선택으로 셌어요/)).toBeInTheDocument();
+  });
+
   it('고른 마이크로디그리가 없으면 카드를 그리지 않는다', async () => {
     await renderWith(status({ microDegrees: [] }));
     expect(screen.queryByText('마이크로디그리')).not.toBeInTheDocument();

@@ -264,6 +264,10 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       : ` ${t(status.priorMajorCourses.recognitionApplied ? 'grad.prior.appliedNone' : 'grad.prior.notApplied')}`}
                   </p>
                 )}
+                {/* 다른 학과에서 연 전공 과목은 일반선택(시행규칙 제3조 제4항, D-88) — 학과를 고쳤거나 다른 학과 전공 과목을 고른 경우 */}
+                {status.otherDepartmentCourses && (
+                  <p className="grad-flex-note">{t('grad.otherDepartment', { n: status.otherDepartmentCourses.credits })}</p>
+                )}
                 {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
                 {status.majorAreaCredits && (
                   <>
