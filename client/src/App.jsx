@@ -26,6 +26,7 @@ import { resetChatCache } from './hooks/useChat.js';
 import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
 import useClearClickCaret from './hooks/useClearClickCaret.js';
+import LoadError from './components/LoadError.jsx';
 import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile } from './api/chatApi.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
@@ -61,9 +62,10 @@ function resetAllUserCaches() {
  * Handles simple routing state (Login/Home/Chat/CourseManagement/GraduationStatus/Settings/Onboarding/Profile pages)
  */
 function App() {
-  const { lang, languageChosen, setLang } = useI18n();
+  const { t, lang, languageChosen, setLang } = useI18n();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [connectError, setConnectError] = useState(false);
   // 'home' | 'chat' | 'courses' | 'graduation' | 'career' | 'settings' | 'onboarding' | 'profile'
   // | 'admin' | 'inquiry' | 'privacy' | 'terms'
   // privacy/terms는 Google OAuth 동의 화면 검증용으로 로그인 여부와 무관하게 접근 가능해야
@@ -129,35 +131,22 @@ function App() {
               ? 'home'
               : 'onboarding'
         );
+        setConnectError(false);
       })
-      .catch(() => {});
+      .catch((err) => {
+        // 로그인이 안 된 것(401)만 로그인 화면으로 보낸다. 서버가 늦게 깨거나 오류가 나 연결하지 못한 것까지 삼키면, 로그인한
+        // 학생도 로그아웃된 것처럼 로그인 화면을 봤다(2026-10-27 화면 점검) — 그때는 다시 시도 화면을 보여 준다.
+        if (err?.status !== 401) setConnectError(true);
+      });
+  };
+  const retryConnect = () => {
+    setConnectError(false);
+    setAuthChecked(false);
+    loadUser().finally(() => setAuthChecked(true));
   };
 
   useEffect(() => {
     loadUser().finally(() => setAuthChecked(true));
-  }, []);
-
-  // 모바일 키보드가 뜨면 .app-frame의 높이를 실제 보이는 영역(visualViewport)에 맞춰
-  // 갱신한다 — CSS의 100dvh만으로는 브라우저에 따라 키보드가 떠도 줄어들지 않는 경우가
-  // 있어(특히 iOS Safari 구버전), 레이아웃 뷰포트가 키보드에 가려진 만큼 문서가 화면보다
-  // 커진 것으로 처리돼 브라우저가 포커스된 입력창을 보이게 하려고 페이지 전체를 스크롤해
-  // 버린다. 그 결과 상단 헤더까지 화면 밖으로 밀려났다(실사용 피드백). visualViewport
-  // 높이를 CSS 변수로 직접 반영하면 .app-frame이 실제 보이는 만큼만 차지해 그런 스크롤이
-  // 애초에 필요 없어진다.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const syncViewportHeight = () => {
-      document.documentElement.style.setProperty('--app-vh', `${vv.height}px`);
-      window.scrollTo(0, 0);
-    };
-    syncViewportHeight();
-    vv.addEventListener('resize', syncViewportHeight);
-    vv.addEventListener('scroll', syncViewportHeight);
-    return () => {
-      vv.removeEventListener('resize', syncViewportHeight);
-      vv.removeEventListener('scroll', syncViewportHeight);
-    };
   }, []);
 
   // 관리자 화면에 있는 동안만 표시를 남기고, 다른 화면으로 가면(로그아웃 포함 — handleLogout이 view를 home으로 돌림) 지운다.
@@ -235,6 +224,37 @@ function App() {
   // 입력 공간을 확보한다 — 채팅·진로 탐색뿐 아니라 커뮤니티 글쓰기/검색, 과목 검색·직접 입력 등
   // 탭바가 보이는 모든 화면이 같은 기준을 쓴다(화면마다 콜백을 내려주지 않아도 된다).
   const textInputFocused = useTextInputFocused(view);
+
+  // 모바일 키보드가 떠 있는 동안 .app-frame의 높이를 실제 보이는 영역(visualViewport)에 맞춰
+  // 갱신한다 — CSS의 100dvh만으로는 브라우저에 따라 키보드가 떠도 줄어들지 않는 경우가
+  // 있어(특히 iOS Safari 구버전), 레이아웃 뷰포트가 키보드에 가려진 만큼 문서가 화면보다
+  // 커진 것으로 처리돼 브라우저가 포커스된 입력창을 보이게 하려고 페이지 전체를 스크롤해
+  // 버린다. 그 결과 상단 헤더까지 화면 밖으로 밀려났다(실사용 피드백). visualViewport
+  // 높이를 CSS 변수로 직접 반영하면 .app-frame이 실제 보이는 만큼만 차지해 그런 스크롤이
+  // 애초에 필요 없어진다.
+  // 키보드가 없을 때는 변수를 지워 100dvh(브라우저가 직접 계산)를 쓴다 — iOS Chrome은 새로고침 직후
+  // visualViewport 높이가 실제보다 작게 잡히고 뒤이은 resize가 오지 않아, 하단 바 아래가 빈 채로
+  // 하단 바가 위로 떠 있었다(2026-10-27 피드백, Safari는 정상).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const rootStyle = document.documentElement.style;
+    if (!vv || !textInputFocused) {
+      rootStyle.removeProperty('--app-vh');
+      window.scrollTo(0, 0);
+      return;
+    }
+    const syncViewportHeight = () => {
+      rootStyle.setProperty('--app-vh', `${vv.height}px`);
+      window.scrollTo(0, 0);
+    };
+    syncViewportHeight();
+    vv.addEventListener('resize', syncViewportHeight);
+    vv.addEventListener('scroll', syncViewportHeight);
+    return () => {
+      vv.removeEventListener('resize', syncViewportHeight);
+      vv.removeEventListener('scroll', syncViewportHeight);
+    };
+  }, [textInputFocused]);
   // 홈 등에서 글자를 클릭해 둔 채 다른 화면으로 가면 그 자리의 커서가 허공에 남는 문제 방지.
   useClearStaleSelection(view);
   // 입력 칸 밖에서 클릭으로 생긴 커서는 바로 지운다 — 바뀌지 않는 글자 위에서 커서가 깜빡이지 않게(2026-10-22 피드백).
@@ -248,9 +268,16 @@ function App() {
   // 변경은 다시 push하지 않도록 skipHistoryPush로 구분한다.
   const skipHistoryPush = useRef(true);
   const previousView = useRef(view);
+  // 지금 화면이 떠나기 전에 확인을 받아야 하면(저장하지 않은 홈 화면 편집) 그 화면이 확인 함수를 넣어 둔다.
+  // 뒤로가기(제스처 포함)에서 확인을 취소하면 방금 빠진 히스토리 항목을 다시 쌓고 화면을 그대로 둔다.
+  const leaveGuard = useRef(null);
 
   useEffect(() => {
     function handlePopState(event) {
+      if (leaveGuard.current && !leaveGuard.current()) {
+        window.history.pushState({ view: previousView.current }, '');
+        return;
+      }
       const nextView = event.state?.view || 'home';
       // 화면이 실제로 바뀔 때만 다음 이펙트의 히스토리 쌓기를 건너뛴다 — 같은 화면 안의 하위 화면(검색 화면, 커뮤니티 상세 등)을
       // 닫는 뒤로가기에서도 켜 두면, 이펙트가 돌지 않아 표시가 남았다가 다음 화면 이동이 히스토리를 쌓지 않게 된다.
@@ -350,7 +377,11 @@ function App() {
           <PrivacyPolicy onGoBack={() => setView(user ? 'profile' : 'home')} />
         ) : view === 'terms' ? (
           <TermsOfService onGoBack={() => setView(user ? 'profile' : 'home')} />
-        ) : !authChecked ? null : !user ? (
+        ) : !authChecked ? null : !user && connectError ? (
+          <div className="app-connect-error">
+            <LoadError message={t('app.err.connect')} onRetry={retryConnect} />
+          </div>
+        ) : !user ? (
           <Login
             error={authError}
             onOpenPrivacy={() => setView('privacy')}
@@ -452,6 +483,11 @@ function App() {
               // onboardingCompleted만 patch하면 방금 입력한 학과/학번/트랙 등은 user에 반영이
               // 안 돼(Home/CourseManagement가 그 값들을 user prop에서 직접 읽으므로) — 서버에서
               // 다시 fetch해서 완전히 최신 상태로 맞춘다.
+              // 학과·학번·휴학이 바뀌면 학점·요건도 바뀌므로 화면별로 기억해 둔 값을 지운다 — 남겨 두면 학과 이름은 새 학과인데
+              // 숫자·부족 요건은 옛 학과 기준으로 잠깐 보였다(2026-10-27 화면 점검). 지우면 각 화면은 스켈레톤 뒤 새 값을 보여 준다.
+              resetHomeCache();
+              resetGraduationCache();
+              resetCourseMgmtCache();
               loadUser().finally(() => setView('home'));
             }}
             onSkip={() => {
@@ -488,6 +524,7 @@ function App() {
         ) : view === 'homeEdit' ? (
           <HomeEdit
             user={user}
+            leaveGuardRef={leaveGuard}
             onCancel={() => setView('home')}
             onSaved={(updated) => {
               setUser(updated);

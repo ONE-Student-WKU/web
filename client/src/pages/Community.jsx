@@ -32,6 +32,7 @@ import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
 import MoreMenu from '../components/MoreMenu.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
+import LoadError from '../components/LoadError.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import { track } from '../utils/track.js';
@@ -43,6 +44,7 @@ const communityCache = {
   posts: readCache('community_posts'),
   myPosts: readCache('community_myPosts'),
   myApplications: readCache('community_myApplications'),
+  notices: readCache('community_notices'),
 };
 
 function setCommunityCache(key, value) {
@@ -56,9 +58,11 @@ export function resetCommunityCache() {
   communityCache.posts = null;
   communityCache.myPosts = null;
   communityCache.myApplications = null;
+  communityCache.notices = null;
   clearCache('community_posts');
   clearCache('community_myPosts');
   clearCache('community_myApplications');
+  clearCache('community_notices');
 }
 
 // 상태·구분 라벨과 기본 처리 안내 문구는 i18n 사전(community.postStatus.* / appStatus.* / reportStatus.* / category.* / defaultResolution)에 있다.
@@ -74,6 +78,7 @@ const ERR = {
   loadApplicants: { key: 'community.err.loadApplicants' },
   loadPost: { key: 'community.err.loadPost' },
 };
+const LOAD_ERR_BY_TAB = { list: ERR.loadPosts, mine: ERR.loadMine, reports: ERR.loadReports, applications: ERR.loadApps };
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -279,7 +284,18 @@ function Community({
   // 내 신고 내역(처리 상태 + 관리자 처리 안내). 열 때마다 새로 불러오고 캐시하지 않는다 — 처리 결과는 그때그때 최신이어야 한다.
   const [myReports, setMyReports] = useState(null);
   const [error, setError] = useState(null);
+  // 지금 탭의 목록을 못 불러왔는지(그 탭 이름) — 다시 시도는 reloadKey를 올려 같은 탭을 다시 받는다.
+  const [loadFailedTab, setLoadFailedTab] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const errorText = error && (typeof error === 'object' ? t(error.key) : error);
+  const currentTabData = { list: posts, mine: myPosts, reports: myReports, applications: myApplications }[tab];
+  // 목록이 아직 없을 때 그 자리 — 받는 중이면 "불러오는 중...", 못 받았으면 다시 시도만 보여 준다.
+  const listPlaceholder = () =>
+    loadFailedTab === tab ? (
+      <LoadError message={t(LOAD_ERR_BY_TAB[tab].key)} onRetry={() => setReloadKey((k) => k + 1)} />
+    ) : (
+      <p className="post-empty">{t('community.loading')}</p>
+    );
 
   // 사용자 제재(#201) — null이면 정지 아님. scope==='full'이면 이 화면 진입 자체가 서버에서
   // 이미 막혀 있어서(전체 탭 fetch의 catch에서 SANCTIONED로 채워짐) 커뮤니티 전체를 안내
@@ -305,14 +321,21 @@ function Community({
 
   // 공지(운영팀 글, 읽기 전용). notices는 전체 글 탭 맨 위 고정 줄과 공지 목록에 같이 쓴다. noticeView가 있으면 공지 화면을 보는 중이다
   // ({ mode: 'list' | 'detail' | 'write', notice }).
-  const [notices, setNotices] = useState(null);
+  // 공지도 글 목록처럼 기억해 둔다 — 예전에는 매번 null에서 시작해, 글 목록이 먼저 뜬 뒤 공지 줄이 늦게 끼어들며 목록이 한 줄
+  // 밀렸다(누르려던 글 대신 다른 글을 누르게 됨, 2026-10-27 화면 점검). 처음 한 번은 글 목록과 함께 공지까지 받은 뒤 보여 준다.
+  const [notices, setNoticesRaw] = useState(communityCache.notices);
+  const setNotices = (list) => {
+    setNoticesRaw(list);
+    setCommunityCache('notices', list);
+  };
   const [noticeView, setNoticeView] = useState(null);
   const loadNotices = () =>
     getNotices()
       .then(setNotices)
-      .catch(() => setNotices([])); // 공지를 못 불러와도 커뮤니티는 그대로 쓸 수 있어야 해서 조용히 빈 목록으로 둔다
+      .catch(() => setNoticesRaw((prev) => prev ?? [])); // 공지를 못 불러와도 커뮤니티는 그대로 쓸 수 있어야 해서 조용히 넘어간다(빈 목록은 기억하지 않는다)
   useEffect(() => {
     loadNotices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // 공지는 상세를 열어야 읽은 것이 된다(목록을 여는 것만으로는 아니다 — 2026-10-23). 화면은 바로 고치고 기록은 뒤에서 보낸다
   // (기록이 실패해도 다음에 목록을 다시 받으면 서버 값으로 맞춰진다). 남은 안 읽은 공지 수로 App의 커뮤니티 점을 고친다.
@@ -471,10 +494,13 @@ function Community({
     // 전면 정지(scope='full')는 서버가 이 라우터 전체를 403 SANCTIONED로 막으므로, 셋 중
     // 어느 탭을 불러오든 이 catch로 잡힌다 — 그 경우 일반 에러 대신 sanction 상태를 채워서
     // 화면 전체를 안내 화면으로 대체한다(아래 return의 sanction?.scope === 'full' 분기).
-    function handleFetchError(err, fallbackMessage) {
+    // 목록을 못 받은 것은 위쪽 오류 문구(error) 대신 그 탭의 목록 자리에 다시 시도로 보여 준다 — 예전에는 오류와
+    // "불러오는 중..."이 같이 계속 떠 있었고, 다른 탭으로 옮겨 잘 불러와도 오류가 남았다(2026-10-27 화면 점검).
+    function handleFetchError(err) {
       if (err.code === 'SANCTIONED') setSanction(err.data);
-      else setError(fallbackMessage);
+      else setLoadFailedTab(tab);
     }
+    setLoadFailedTab(null);
 
     if (tab === 'list') {
       getCommunityPosts()
@@ -482,14 +508,14 @@ function Community({
           setPosts(list);
           setCommunityCache('posts', list);
         })
-        .catch((err) => handleFetchError(err, ERR.loadPosts));
+        .catch((err) => handleFetchError(err));
     } else if (tab === 'mine') {
       getMyCommunityPosts()
         .then((mine) => {
           setMyPosts(mine);
           setCommunityCache('myPosts', mine);
         })
-        .catch((err) => handleFetchError(err, ERR.loadMine));
+        .catch((err) => handleFetchError(err));
     } else if (tab === 'reports') {
       getMyReports()
         .then((reports) => {
@@ -501,16 +527,16 @@ function Community({
               .catch(() => {}); // 확인 표시 실패는 조용히 무시 — 다음에 열 때 다시 시도된다
           }
         })
-        .catch((err) => handleFetchError(err, ERR.loadReports));
+        .catch((err) => handleFetchError(err));
     } else {
       getMyCommunityApplications()
         .then((myApps) => {
           setMyApplications(myApps);
           setCommunityCache('myApplications', myApps);
         })
-        .catch((err) => handleFetchError(err, ERR.loadApps));
+        .catch((err) => handleFetchError(err));
     }
-  }, [tab]);
+  }, [tab, reloadKey]);
 
   const openPost = (id) => {
     setDetailLoading(true);
@@ -1412,9 +1438,10 @@ function Community({
               </div>
             )}
 
+            {loadFailedTab === tab && currentTabData !== null && <p className="home-stale-note">{t(LOAD_ERR_BY_TAB[tab].key)}</p>}
             {tab === 'list' ? (
-              posts === null ? (
-                <p className="post-empty">{t('community.loading')}</p>
+              posts === null || notices === null ? (
+                listPlaceholder()
               ) : posts.length === 0 ? (
                 <p className="post-empty">{t('community.empty.posts')}</p>
               ) : visiblePosts.length === 0 ? (
@@ -1424,7 +1451,7 @@ function Community({
               )
             ) : tab === 'mine' ? (
               myPosts === null ? (
-                <p className="post-empty">{t('community.loading')}</p>
+                listPlaceholder()
               ) : myPosts.length === 0 ? (
                 <p className="post-empty">{t('community.empty.mine')}</p>
               ) : (
@@ -1461,7 +1488,7 @@ function Community({
               )
             ) : tab === 'reports' ? (
               myReports === null ? (
-                <p className="post-empty">{t('community.loading')}</p>
+                listPlaceholder()
               ) : myReports.length === 0 ? (
                 <p className="post-empty">{t('community.empty.reports')}</p>
               ) : (
@@ -1496,7 +1523,7 @@ function Community({
                 </div>
               )
             ) : myApplications === null ? (
-              <p className="post-empty">{t('community.loading')}</p>
+              listPlaceholder()
             ) : myApplications.length === 0 ? (
               <p className="post-empty">{t('community.empty.apps')}</p>
             ) : (

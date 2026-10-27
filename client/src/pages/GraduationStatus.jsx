@@ -90,7 +90,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   // 학점"이라는 원래 성격에 맞게 전체 이수학점 카드 쪽에 참고로만 붙인다.
   const generalElectiveCredits = status?.categories.find((c) => c.category === '일반선택')?.earnedCredits ?? 0;
   // 기준 책자 학년도: 2025학번 이하는 엔진이 알려 주는 최신 책자(학번별 이수기준표), 그 밖에는 입학한 해의 책자.
-  const basisYear = status?.regulation?.basisBookletYear ?? user?.admissionYear ?? null;
+  // 응답이 오기 전에는 비워 둔다 — 입학년도로 미리 채우면 "2019학년도 책자 기준"이 잠깐 보였다가 2026으로 바뀌어
+  // 최신 책자 원칙과 반대 문구가 보였다(2026-10-27 화면 점검).
+  const basisYear = status ? (status.regulation?.basisBookletYear ?? user?.admissionYear ?? null) : null;
 
   return (
     <div className="courses-page">

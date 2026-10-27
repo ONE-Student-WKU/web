@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { updateProfile } from '../api/chatApi.js';
 import { TAB_ICONS } from '../components/BottomTabBar.jsx';
 import { IconChevronLeft, IconMessageCircle } from '../components/icons.jsx';
@@ -16,17 +16,34 @@ import { resolveLayout, isDefaultLayout, TAB_OPTIONS, MENU_VIEWS, TAB_LABEL_KEYS
  * - 자리 옮기기(두 미리보기 공통, hooks/useSwapSlots.js): 끌어서 다른 자리에 놓거나, 누른 뒤 다른 자리를 누르면 두 자리를 맞바꾼다.
  * 이수학점 진행률·부족 요건 카드는 고정이라 여기서 다루지 않는다. 메뉴와 하단 바를 모두 비워도 막지 않는다(이 화면에서 언제든 되돌린다).
  * 저장하면 계정(students.home_layout)에 남아 기기가 바뀌어도 같다. 기본 배치와 같으면 null로 보내 "편집한 적 없음"과 같게 둔다.
+ * 저장 버튼은 목록이 길어도 화면 아래에 떠 있고, 바꾼 것을 저장하지 않고 나가려 하면(헤더 뒤로 버튼·뒤로가기) 한 번 묻는다
+ * — 저장 버튼이 맨 아래에만 있어 바꿔 두고 그냥 나가는 흐름이 생길 수 있었다(2026-10-27 피드백).
  *
  * Props:
  * - user: 현재 학생(homeLayout)
  * - onCancel: function — 저장하지 않고 나가기
  * - onSaved(student): 저장된 뒤 서버가 돌려준 학생 정보로 호출
+ * - leaveGuardRef: (선택) App의 뒤로가기 확인 자리 — 이 화면이 떠 있는 동안 "나가도 되는지" 함수를 넣어 둔다
  */
-function HomeEdit({ user, onCancel, onSaved }) {
+function HomeEdit({ user, onCancel, onSaved, leaveGuardRef }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState(() => resolveLayout(user?.homeLayout));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(resolveLayout(user?.homeLayout));
+  const confirmLeave = () => !dirty || window.confirm(t('homeEdit.confirmLeave'));
+  const handleCancel = () => {
+    if (confirmLeave()) onCancel();
+  };
+
+  useEffect(() => {
+    if (!leaveGuardRef) return undefined;
+    leaveGuardRef.current = confirmLeave;
+    return () => {
+      leaveGuardRef.current = null;
+    };
+  });
 
   const filledCount = draft.tabs.filter(Boolean).length;
   const emptyIndex = draft.tabs.indexOf(null);
@@ -131,7 +148,7 @@ function HomeEdit({ user, onCancel, onSaved }) {
     <div className="courses-page">
       <header className="screen-header">
         <div className="screen-header-left">
-          <button className="back-btn" onClick={onCancel} aria-label={t('homeEdit.cancel')}>
+          <button className="back-btn" onClick={handleCancel} aria-label={t('homeEdit.cancel')}>
             <IconChevronLeft />
           </button>
           <span className="screen-title">{t('homeEdit.title')}</span>
@@ -206,11 +223,6 @@ function HomeEdit({ user, onCancel, onSaved }) {
           </section>
         )}
 
-        {error && <p className="home-error">{t('homeEdit.err')}</p>}
-
-        <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving}>
-          {saving ? t('homeEdit.saving') : t('homeEdit.save')}
-        </button>
         <button
           type="button"
           className="onb-skip-link"
@@ -223,6 +235,14 @@ function HomeEdit({ user, onCancel, onSaved }) {
         >
           {t('homeEdit.reset')}
         </button>
+
+        {/* 저장 버튼은 온보딩 주 버튼처럼 화면 아래에 떠 있게 한다 — 내용 끝까지 내리지 않아도 보인다. */}
+        <div className="onb-float-action">
+          {error && <p className="home-error">{t('homeEdit.err')}</p>}
+          <button type="button" className="auth-submit-btn" onClick={handleSave} disabled={saving}>
+            {saving ? t('homeEdit.saving') : t('homeEdit.save')}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createInquiry, getMyInquiries } from '../api/chatApi.js';
 import { IconChevronLeft, IconCheck, IconHelpCircle, IconPlus } from '../components/icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import LoadError from '../components/LoadError.jsx';
 import { track } from '../utils/track.js';
 
 // 상태는 커뮤니티와 같은 점 + 글자(post-status)로 보여준다 — 답변 기다리는 중은 노랑, 답변 완료는 초록.
 const STATUS_TONE = { open: 'wait', resolved: 'ok' };
-// 목록 불러오기 실패는 이펙트가 부르는 loadMine 안에서 세팅되므로, 번역 함수에 의존하지 않게 문구 대신 키를 담고 렌더에서 번역한다.
-const LOAD_ERROR = { key: 'inquiry.err.load' };
 const TITLE_MAX_LENGTH = 50;
 const CONTENT_MAX_LENGTH = 2000;
 
@@ -39,8 +38,11 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const [myInquiries, setMyInquiries] = useState([]);
+  // null = 아직 받지 않음("불러오는 중..."). 예전에는 []로 시작해, 보낸 직후 "내 문의"로 넘어갈 때 한순간 "아직 보낸 문의가 없어요"가
+  // 보였고, 못 불러오면 오류와 그 안내가 같이 나와 보낸 문의가 사라진 것처럼 읽혔다(2026-10-27 화면 점검).
+  const [myInquiries, setMyInquiries] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -53,10 +55,11 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
 
   const loadMine = () => {
     setLoading(true);
+    setLoadFailed(false);
     setError(null);
     getMyInquiries()
       .then(setMyInquiries)
-      .catch(() => setError(LOAD_ERROR))
+      .catch(() => setLoadFailed(true))
       .finally(() => setLoading(false));
   };
 
@@ -75,6 +78,7 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
       showToast(t('inquiry.toast.sent'));
       setTitle('');
       setContent('');
+      setMyInquiries(null); // 방금 보낸 문의가 들어간 목록을 새로 받는 동안 "불러오는 중..."
       setTab('mine');
     } catch {
       setError(t('inquiry.err.send'));
@@ -166,7 +170,9 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
               </button>
             </div>
           </form>
-        ) : loading ? (
+        ) : loadFailed ? (
+          <LoadError message={t('inquiry.err.load')} onRetry={loadMine} />
+        ) : loading || myInquiries === null ? (
           <p className="post-empty">{t('inquiry.loading')}</p>
         ) : myInquiries.length === 0 ? (
           <div className="post-empty-state">

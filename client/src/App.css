@@ -125,7 +125,7 @@ body {
   max-width: 420px;
   height: 100vh;
   height: 100dvh; /* 모바일에서 하단 prompt-bar가 주소창 뒤로 잘리는 문제 보정 (dvh 미지원 브라우저는 100vh로 폴백) */
-  height: var(--app-vh, 100dvh); /* 키보드가 떠 있는 동안 App.jsx가 visualViewport 기준으로 갱신 — dvh만으로는 일부 브라우저에서 반영이 안 돼 헤더까지 화면 밖으로 밀려나는 문제가 있었음 */
+  height: var(--app-vh, 100dvh); /* 키보드가 떠 있는 동안만 App.jsx가 visualViewport 기준으로 갱신 — dvh만으로는 일부 브라우저에서 반영이 안 돼 헤더까지 화면 밖으로 밀려나는 문제가 있었음. 키보드가 없으면 변수를 지워 100dvh */
   max-height: 900px;
   background: var(--color-bg-frame);
   display: flex;
@@ -693,6 +693,42 @@ body {
   font-size: 0.875rem;
   margin: 0 0 12px;
   white-space: pre-wrap;
+}
+
+/* 불러오기 실패 안내 + 다시 시도(components/LoadError.jsx) — 목록·숫자 자리 가운데에 둔다 */
+.load-error {
+  padding: 28px 20px;
+  text-align: center;
+}
+.load-error p {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+}
+/* 앱을 열 때 서버에 연결하지 못했을 때(App.jsx) — 화면 가운데 */
+.app-connect-error {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.load-error-retry {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 홈 이수학점 카드: 새로 받기에 실패해 직전 숫자를 보여 주는 중이라는 작은 안내 */
+.home-stale-note {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .home-greeting {
@@ -1504,6 +1540,11 @@ body {
 .home-edit-btn.hinted { background: var(--color-neutral-bg); color: var(--color-ink); box-shadow: 0 0 0 2px var(--color-ink); }
 .home-edit-hint-close { background: none; border: none; color: inherit; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0; }
 .home-edit-body { display: flex; flex-direction: column; gap: 14px; }
+/* 떠 있는 저장 버튼 위의 오류 문구 — 아래 카드 글자와 겹쳐 보이지 않게 바탕을 깐다 */
+.home-edit-body .onb-float-action .home-error {
+  margin: 0 0 8px; padding: 8px 12px; border-radius: 10px;
+  background: var(--color-bg-card); border: 1px solid var(--color-border);
+}
 .home-edit-preview { margin: 10px 0 4px; border: 1px solid var(--color-border); border-radius: 12px; }
 .home-edit-preview .bottom-tab-chat { cursor: default; }
 .home-edit-preview-empty { border: 1.5px dashed var(--color-border-strong); }
@@ -4518,8 +4559,6 @@ button.settings-row {
   height: 56px;
   border-radius: 50%;
   background: var(--color-neutral-bg);
-  font-size: 1.25rem;
-  font-weight: 800;
   color: var(--color-text-secondary);
 }
 

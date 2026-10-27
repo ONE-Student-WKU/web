@@ -92,6 +92,20 @@ describe('학적정보 수정(Onboarding) 화면', () => {
     expect(screen.getByText('일반 재학생')).toBeInTheDocument();
   });
 
+  it('목록을 다 받기 전에는 요약 대신 "불러오는 중..."만 보인다 — 학과가 잠깐 "선택 필요"로 보이지 않는다', async () => {
+    let resolveTracks;
+    api.getTracks.mockReturnValue(new Promise((resolve) => (resolveTracks = resolve)));
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    expect(screen.getByText('불러오는 중...')).toBeInTheDocument();
+    expect(screen.queryByText('선택 필요')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument();
+
+    resolveTracks([]);
+    expect(await screen.findByText('경영학부')).toBeInTheDocument();
+    expect(screen.queryByText('불러오는 중...')).not.toBeInTheDocument();
+    expect(saveButton()).toBeInTheDocument();
+  });
+
   it('학번 항목을 눌러 "몇 학번이에요?" 단계로 가면 오류 없이 그려지고 이후 학과 안내가 보인다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     await userEvent.click(await screen.findByRole('button', { name: /학번.*2021학번/ }));

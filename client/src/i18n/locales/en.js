@@ -12,6 +12,7 @@ export default {
   'search.loading': 'Searching…',
 
   'common.backHome': 'Back to home',
+  'common.retry': 'Try again',
 
   // Settings
   'settings.title': 'Settings',
@@ -49,6 +50,7 @@ export default {
 
   // Chat
   'chat.placeholder': 'Ask me anything',
+  'chat.err.load': "Couldn't load the conversation.",
   'chat.send': 'Send',
   'chat.citationsHide': 'Hide sources',
   'chat.citationsMore': 'View sources',
@@ -74,6 +76,8 @@ export default {
   'home.creditsUnit': ' credits',
   'home.shortfall': 'Missing requirements',
   'home.shortfallCheck': 'See the Graduation check screen for details.',
+  'home.err.status': "Couldn't load your credit information.",
+  'home.staleStatus': "Couldn't load the latest information, so this shows the last values received.",
   'home.needOnboarding': 'Enter your department and admission year to see your credit progress and missing requirements.',
   'home.chooseDepartment': 'Choose your department',
   'home.shortfallSentence': 'Still missing: {items}.',
@@ -96,6 +100,7 @@ export default {
   'homeEdit.hintClose': 'Close tip',
   'homeEdit.title': 'Edit home screen',
   'homeEdit.cancel': 'Leave without saving',
+  'homeEdit.confirmLeave': "Your changes haven't been saved. Leave without saving?",
   'homeEdit.showTabBar': 'Use the bottom bar',
   'homeEdit.showTabBar.on': 'On. Choose its slots below.',
   'homeEdit.showTabBar.off': 'Off. The bottom bar, including the chatbot button, is hidden on every screen.',
@@ -160,6 +165,7 @@ export default {
 
   // Login
   'login.title': 'Log in',
+  'app.err.connect': "Couldn't connect to the server. Please try again in a moment.",
   'login.subtitle': 'See what’s left for graduation at a glance, and ask the chatbot about academic rules.',
   'login.unofficialBadge': 'Student project · Unofficial',
   'login.remember': 'Keep me logged in',
@@ -491,7 +497,7 @@ export default {
   'inquiry.tab.mine': 'My inquiries',
   'inquiry.status.open': 'Waiting for a reply',
   'inquiry.status.resolved': 'Answered',
-  'inquiry.err.load': "Couldn't load your inquiries. Please refresh and try again.",
+  'inquiry.err.load': "Couldn't load your inquiries.",
   'inquiry.toast.sent': 'Your inquiry was sent.',
   'inquiry.err.send': "Couldn't send your inquiry. Please try again in a moment.",
   'inquiry.field.title': 'Title',
@@ -705,6 +711,7 @@ export default {
   'onb.next': 'Next',
   'onb.cancel': 'Cancel',
   'onb.later': 'Choose later',
+  'onb.loading': 'Loading...',
   'onb.noDept.title': "You haven't chosen a department",
   'onb.noDept.body': 'Continue without one? The remaining questions, such as your admission year and enrollment type, depend on your department, so they will be skipped too. You can fill them in later from "{menu}" in the account menu at the top right.',
   'onb.noDept.skip': 'Continue without it',
@@ -778,7 +785,7 @@ export default {
   'career.q.progressAria': 'Question {n} of {total}',
 
   // Career exploration — screen
-  'career.err.load': "Couldn't load your career exploration. Please refresh and try again.",
+  'career.err.load': "Couldn't load your career exploration.",
   'career.err.start': "Couldn't start career exploration. Please try again in a moment.",
   'career.err.saveAnswers': "Couldn't save your answers. Please try again in a moment.",
   'career.err.candidatesEmpty': "We don't have enough to go on yet. Please chat a little more and try again.",
@@ -858,10 +865,10 @@ export default {
   'community.sanctionFull.permanent': 'Your access to the whole community is permanently restricted.',
   'community.sanctionFull.reason': '<b>Reason</b> · {reason}',
   'community.sanctionFull.footer': 'If you have questions, please use Contact us in the profile menu.',
-  'community.err.loadPosts': "Couldn't load community posts. Please refresh and try again.",
-  'community.err.loadMine': "Couldn't load your posts. Please refresh and try again.",
-  'community.err.loadReports': "Couldn't load your reports. Please refresh and try again.",
-  'community.err.loadApps': "Couldn't load your applications. Please refresh and try again.",
+  'community.err.loadPosts': "Couldn't load community posts.",
+  'community.err.loadMine': "Couldn't load your posts.",
+  'community.err.loadReports': "Couldn't load your reports.",
+  'community.err.loadApps': "Couldn't load your applications.",
   'community.err.loadApplicants': "Couldn't load the applicants.",
   'community.err.loadPost': "Couldn't load the post.",
   'community.err.writeSanctioned': 'Your account is restricted from writing posts.',
