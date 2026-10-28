@@ -937,3 +937,71 @@
   - 입력 화면의 편입 학년은 2~4학년이라 한의학과 편입생(본과 1학년)과 맞지 않는다. 계산은 학년과 무관하지만, 학번이 "편입 연도 − 학년 + 1"로 저장된다. 한의학과 기준이 학번별로 달라지면 입력 화면을 고쳐야 한다.
   - 한의학과 시드가 학번별로 달라지면 `orientalMedicineTransfer.test.js`의 DB 검사가 실패한다.
 - **위치**: `server/services/regulationEngine/constants.js`(`COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS`, 근거), `decisions.js`(`isCollegeConfirmedTransfer`·`transferGradeOf`), `evaluate.js`, `profileCaveats.js`, `flags.js`, 테스트 `server/test/orientalMedicineTransfer.test.js`·`estimateCaveats.test.js`.
+
+## D-85 광역계열 6곳 2026학번 판단 보류를 푼다 — 책자 자유선택 차이는 이수유형별 전공 학점 (2026-10-27)
+- **상황**: 2026 총괄표의 자유선택이 "졸업 130 − 교양 37 − 전공"과 맞지 않아 의생명공학·그린바이오·스마트농업·푸드테크·디자인융합·창의문화융합계열 2026학번 졸업 기준을 판단 보류(`#260-2026-free`)로 "추정"에 묶어 두었다. 보류할 때는 이수유형(시행규칙 제7조)을 반영하지 않아 차이를 설명할 수 없었다(#412).
+- **근거**: 총괄표 계열 전공 칸이 "69(전공심화형) 72(전공융합형/복수전공형)"처럼 이수유형별 두 값이다(`db/curriculum/_source/2026_학과별_이수학점_총괄표.json`). 시행규칙 제6조 ④(공학계열 72, 자연계열 69, 인문·사회·예체능 66), 제7조 ②(이수유형).
+- **결정**:
+  - 그린바이오·스마트농업·푸드테크(69/72)·디자인융합·창의문화융합(66/72)의 책자 자유선택 21은 72 기준(130 − 37 − 72) 값이다. 시드는 전공심화형 기준(일반선택 24·27)이 맞고, 다른 유형은 엔진이 학생 이수유형으로 다시 계산한다(D-70). 보류를 푼다.
+  - 의생명공학계열은 공학계열이라 두 유형 모두 전공 72이고 교양 37(항목 합)·졸업 130이라 자유선택은 21뿐이다. 책자의 33은 오기로 보고 보류를 푼다. 졸업인증 그룹이 해석값(`CERTIFICATION_GROUP_INTERPRETED`)이라 진단은 계속 "추정"이다.
+  - 시드 숫자는 바꾸지 않는다(재시딩 없음).
+- **결과**: 6곳 2026학번 중 전공심화형을 고른 학생(의생명공학계열 제외)의 졸업 기준이 "추정"에서 "확정"이 된다. 이수유형을 고르지 않았거나 복수전공형·전공융합형이면 유형 안내(`MAJOR_TRACK_*`) 때문에 지금처럼 "추정"이다.
+- **단점·다시 볼 조건**: 학교가 책자의 자유선택(21·33)을 다른 뜻으로 쓴 것이라면(예: 계열마다 다른 교양 학점) 시드와 엔진 계산을 다시 본다. 2027 책자가 나오면 같은 대조를 다시 한다.
+- **위치**: `server/services/regulationEngine/dataQuality.js`(`PENDING_HOLDS` 주석), `docs/regulation-engine/DATA_AUDIT.md` §2-3 갱신, `EVAL_SET.md`·`server/test-helpers/regulationEvalSet.js` E17, 테스트 `server/test/regulationEngine.resolve.test.js`.
+
+## D-86 연계·복합전공을 제2전공 선택지로, 사업단 마이크로디그리를 따로 받는다 (2026-10-27)
+- **상황**: 다전공은 복수전공·부전공 "학과"만 받아(4-1 A) 연계·복합전공·마이크로디그리 학생은 진단에 아무것도 반영되지 않았다. 연계전공 26개·사업단 마이크로디그리 35개 자료는 DB에 있었다(#412).
+- **근거**: 2026 교육과정 책자 Ⅴ·Ⅵ장(`db/regulations/전공선택/2026_연계복합전공_이수안내.md`·`2026_마이크로디그리_이수안내.md`), 시행규칙 제8조 ①(복수전공 이수학생 최소전공).
+- **결정**:
+  - 제2전공은 계속 한 칸이다(4-2 A). 학과(`second_department_id`)나 연계·복합전공(`students.second_linked_major`) 중 하나와 구분(복수·부전공)을 받는다.
+  - 연계전공 학점: 복수전공이면 그 전공 이수학점(36·48), 부전공이면 21. 과목은 그 전공의 과목 목록과 과목명으로 맞추고(개설 학과로는 정하지 않음), 주전공 편성표에도 있는 과목은 주전공에 두되 연계전공 이수학점의 1/3까지 함께 인정한다. 교양은 학생이 과목 관리에서 옮긴 것만 9학점까지 센다.
+  - 연계전공 복수전공이면 주전공도 복수전공처럼 최소전공으로 줄인다(제8조 ① 가정). 한 학과 16학점 상한·연계전공 졸업논문은 판정하지 않고 안내만 한다(`LINKED_MAJOR_RULES_ESTIMATED`·`LINKED_MAJOR_THESIS`).
+  - 마이크로디그리는 여러 개 받고(`student_micro_degrees`), 과정마다 이수 학점만 보여 준다. 2026 책자대로 모두 12학점(시드에 남은 2025 과정별 학점은 쓰지 않음). 졸업 판정에는 넣지 않는다.
+  - 자율융합학부(68학점)는 연계전공이 아니라 학부라 목록에서 뺀다.
+  - 고른 값은 id가 아니라 이름으로 저장한다 — 재시딩(`seed:linked-majors`)이 행을 지우고 다시 넣어 id가 바뀐다.
+  - 수집 항목이 늘어 개인정보처리방침을 고치고 동의 버전을 2026-10-27로 올린다.
+- **결과**: 연계전공 학생은 진단의 다전공 카드에 연계전공 학점이, 마이크로디그리 학생은 과정별 학점이 보인다. 다전공 진단은 계속 "추정"이다.
+- **단점·다시 볼 조건**:
+  - "최소전공인정학점의 1/3"이 어느 쪽 최소전공인지 확정하지 못해 연계전공 이수학점으로 계산했다. 학교 답이 다르면 `graduationService.linkedMajorStatus`를 고친다.
+  - 과목명이 다른 같은 과목(개편·동일과목)은 맞추지 못한다.
+  - 학과·전공별 마이크로디그리(광역계열)와 전공융합형의 "타전공 MD 2개" 판정은 3단계(데이터화, 재시딩 필요)로 남는다.
+- **위치**: `server/services/linkedMajors.js`(신규), `secondMajor.js`, `secondMajorCredits.js`(`loadAssignmentContext`), `courseCounting.js`, `graduationService.js`(`linkedMajorStatus`), `routes/me.js`·`routes/onboarding.js`, `regulationEngine/flags.js`, `db/schema.sql`·`db/migrate.js`, 클라이언트 `Onboarding.jsx`·`GraduationStatus.jsx`·`components/MicroDegreeCard.jsx`·`PrivacyPolicy.jsx`, 테스트 `server/test/linkedMajor.test.js`.
+
+## D-87 학과·전공별 마이크로디그리를 데이터로 넣고, 전공융합형은 판정 대신 안내한다 (2026-10-27)
+- **상황**: 광역 계열전공 전공융합형은 "주전공 48학점 + 타전공 MD 2개(각 12학점)"인데, 학과·전공별 MD(책자 Ⅶ장 각 학과 페이지)는 규정 문서에만 있어 학생이 고를 수도, 진단에 보일 수도 없었다. 엔진은 줄어든 전공 학점만 계산하고 MD는 "따로 확인" 안내뿐이었다(#412 3단계).
+- **근거**: 2026 교육과정 책자 Ⅶ장 "마이크로디그리 이수체계" 표(`db/regulations/교육과정/2026_전공별_마이크로디그리_이수체계.md`, 90개 과정·452과목·학수번호 모두 있음), Ⅵ장 "모든 마이크로디그리는 총 이수학점 12학점", 해설 19~20쪽(전공융합형 "교내에 개설된 모든 MD 중에서 타전공 MD 2개"), 시행규칙 제7조 제2항 제3호.
+- **결정**:
+  - 표를 `db/seed/micro_degrees.json`에 사업단 과정과 같은 형식으로 넣는다(`scripts/audit/buildDepartmentMicroDegrees.js --apply`, 다시 돌려도 같은 결과). 이름은 "<전공> - <과정>", 묶음은 "학과·전공별 MD · <계열>", 이수학점 12, 과목 이수구분은 표에 없어 전공선택.
+  - 2단계의 마이크로디그리 선택·과정별 학점 표시를 그대로 쓴다. 목록이 125개로 길어 선택 화면에 이름 찾기를 둔다.
+  - 전공융합형은 충족을 판정하지 않는다. 고른 과정 중 자기 세부전공 MD("<세부전공> - …")가 아닌 과정이 12학점에 이른 개수만 안내한다(`microDegreeConvergence`, 추정). 과목 세는 방법·타전공 범위·2025 농생명바이오계열은 다음 문의 후보 M-Q1~M-Q4.
+  - 규정 문서 머리말의 "전공심화형도 자기 전공 MD 2개 이수" 문장은 책자 해설에 없어 고친다.
+- **결과**: 계열 학생이 자기 전공·타전공 MD를 골라 과정별 학점을 볼 수 있다. 전공융합형 진단은 계속 "추정"이다. main 반영 때 재시딩 승인이 필요하다(`db/seed/micro_degrees.json`, `db/regulations/**`).
+- **단점·다시 볼 조건**: "임상병리학과 - 바이오빅데이터(유전체) 분석"은 표의 학점 합이 11이라 12를 채울 수 없다 — 책자 PDF와 대조한다. 학교가 "표의 과목을 모두 들어야 한다"고 답하면 과정별 요건을 표의 합으로 바꾼다. 2027 책자가 나오면 스크립트를 다시 돌린다.
+- **위치**: `scripts/audit/buildDepartmentMicroDegrees.js`, `db/seed/micro_degrees.json`, `server/services/linkedMajors.js`(`convergenceProgress`), `graduationService.js`, `regulationEngine/flags.js`(`MAJOR_TRACK_CONVERGENCE` 문구), 클라이언트 `components/MicroDegreeCard.jsx`·`Onboarding.jsx`, `docs/school-inquiry/다음문의_후보.md` M절.
+
+## D-88 다른 학과에서 연 전공 과목은 진단할 때 일반선택으로 센다 (2026-10-27)
+- **상황**: 개설과목에서 과목을 고르면 그 과목을 연 학과 기준의 구분(전공선택 등)이 저장되고(`courseService.addMyCourse`), 진단은 저장값을 그대로 더했다. 다시 판정하는 경우는 전과생(D-77)과 다전공(D-76)뿐이라, 전과·다전공이 아닌 학생이 프로필에서 학과를 바로잡으면 옛 학과 전공 과목이 새 학과 전공 학점으로 남았다. 다른 학과 전공 과목을 개설과목에서 고른 학생도 같았다(#253 설계안 2, #412).
+- **근거**: 학칙시행규칙 제3조 제4항 제1호(타 학과 전공 교과목을 이수하면 일반선택).
+- **결정**:
+  - 판정 순서(`courseCounting.js`) 맨 뒤에 한 단계를 둔다: 학생이 고친 값 → 전과 전 과목 → 다전공 배정 → **다른 학과 전공 과목**. 저장값은 바꾸지 않고 진단할 때마다 지금 소속과 대조한다 — 학과를 다시 고쳐도 결과가 그때그때 맞다.
+  - 일반선택으로 바꾸는 과목: 전공필수·전공선택·전공이고, 개설과목에서 골라 개설 학과를 알고, 개설 학과가 내 학과(통폐합 전후 `getDepartmentChain`, 예과↔본과)가 아니고, 내 학과 편성표에도 그 과목명이 없는 과목.
+  - 성적표(PDF)·직접 입력 과목은 개설 학과를 몰라 그대로 둔다(성적표는 학교가 찍은 구분, 직접 입력은 학생이 고른 구분).
+  - 모든 학생에게 적용한다. 학생은 과목 관리에서 "전공으로 셈"으로 바꾸고 "자동"으로 되돌릴 수 있다(`counted_major` PRIMARY). 고친 과목은 자동 값(`countedMajorAutoValue`)도 함께 내려 "자동: …" 칸이 자동 값을 보인다.
+  - 진단 화면에 "다른 학과에서 연 전공 과목 n학점은 일반선택으로 셌어요" 한 줄(`otherDepartmentCourses`)과 INFO 플래그 `OTHER_DEPARTMENT_MAJOR_COURSES`를 두고, 챗봇 맥락에도 같은 내용을 넣는다. 제13조④ 보정에서는 이 과목을 뺀다(전과 전 과목과 같은 처리).
+  - 광역 계열 안의 다른 전공 과목은 학과가 같아 건드리지 않는다.
+- **결과**: 프로필에서 학과를 바꾸면 진단이 바로 바뀐 학과 기준으로 달라진다. 다른 학과 전공 과목을 고른 학생은 전공 학점이 줄 수 있다(규정상 맞는 방향, "전공으로 셈"으로 되돌릴 수 있음). DB 구조·약관·재시딩은 바뀌지 않는다.
+- **단점·다시 볼 조건**: 성적표·직접 입력 과목은 이름만 있어 다시 판정하지 못한다 — #412 "(선택) 학수번호·개설 학과 저장"이 들어가면 그 과목도 이 단계에 넣는다. 계열 안 다른 전공 과목을 어떻게 세는지 학교 기준이 나오면 학과 단위가 아니라 전공 단위로 좁힌다.
+- **위치**: `server/services/courseCounting.js`(`isOtherDepartmentMajorCourse`, `loadOwnDepartmentContext`), `graduationService.js`(`summarizeOtherDepartmentCourses`), `routes/myCourses.js`, `aiClient.js`, `regulationEngine/flags.js`, 클라이언트 `CourseManagement.jsx`·`GraduationStatus.jsx`, 테스트 `server/test/otherDepartmentCourses.test.js`·`client/src/pages/CourseManagement.countedMajor.test.jsx`.
+
+## D-89 성적표 과목의 학수번호·개설 학과를 저장해 전과·다전공 판정에 쓰고, D-88은 개설과목에서 고른 과목에만 둔다 (2026-10-28)
+- **상황**: 성적표(PDF)로 가져온 과목은 과목명만 저장돼, 전과 전 과목(D-77)과 다전공 배정(D-76)이 이름이 같은 다른 학과 과목에 틀릴 수 있었다. 전체성적조회 파서는 학수번호를 읽고도 버렸고, 이수과목확인리스트의 "개설학과(전공)" 칸은 읽지 않았다(#253 설계안 1, #412).
+- **결정**:
+  - `student_courses`에 `course_code`·`offering_department_id`를 둔다. 전체성적조회는 학수번호를 저장하고, 개설 학과는 학수번호 → 그 학기 개설과목 → 가장 가까운 해의 개설과목 → 교육과정 순으로 하나로 정해질 때만 찾는다. 이수과목확인리스트는 "개설학과(전공)" 글자를 학과 이름(띄어쓰기·가운뎃점 무시), 없으면 세부전공 이름의 학과로 맞춘다. 여러 학과로 갈리거나 못 찾으면 비우고 지금처럼 과목명으로 맞춘다(`server/services/courseOrigin.js`). 교양은 학과가 여는 과목이 아니라 찾지 않는다 — 학과 교육과정표에 교양 행이 실려 있어 그 학과로 잘못 잡혔다(실물 성적표 확인).
+  - 학과 id는 서버가 찾는다 — 화면은 성적표에서 읽은 글자(학수번호·개설학과)만 넘긴다.
+  - PDF를 다시 올리면 예전에 가져온 같은 과목(이름·연도·학기)에도 채운다. 개설과목에서 고른 과목은 `course_id`로 학과를 알아 건드리지 않는다. 원본 PDF를 보관하지 않아 다시 올리기 전에는 채울 수 없다.
+  - 전과 전 과목·다전공 배정은 개설과목 학과와 같이 이 학과를 쓴다(`secondMajorCredits.loadOfferingDepartments`가 출처를 함께 돌려준다).
+  - **D-88(다른 학과 전공 과목 → 일반선택)은 개설과목에서 고른 과목에만 둔다.** D-88 "다시 볼 조건"에는 학수번호가 들어오면 성적표 과목도 넣는다고 적었지만 바꿨다: 성적표 이수구분은 학교가 수강 당시 학생 기준으로 찍은 값이라 타학과 전공은 이미 일반선택으로 찍히고, 성적표가 "전공"이라고 찍은 과목은 다전공·통폐합처럼 학교가 맞게 판단한 경우가 대부분이다. 여기에 우리 학과 계보 연결이 하나라도 빠지면 맞는 전공 학점을 일반선택으로 잘못 내린다.
+  - 직접 입력 과목은 그대로다(학수번호 입력칸을 두려면 화면이 바뀐다).
+  - 개인정보처리방침 수집 항목에 "성적표에서 가져온 과목의 학수번호와 개설 학과"를 넣었다(동의 버전 2026-10-28.2, 문의 답변 AI 초안과 같은 개정).
+- **단점·다시 볼 조건**: 개설과목 자료(`course_offerings`)가 없는 옛 학기는 교육과정 학수번호로만 찾아, 같은 학수번호가 여러 학과 편성에 있으면 비운다. 실물 전체성적조회(2026-10-28, 전과생 성적표 38과목)로는 학수번호 38개를 모두 읽고 전공·일반선택 22과목의 개설 학과를 모두 맞게 찾았다(전과 전 학과의 일반선택 과목 포함). 이수과목확인리스트의 "개설학과(전공)" 글자 모양은 실물 PDF로 아직 확인하지 못했다 — 맞지 않으면 `departmentCandidates`·`nameKey`를 고친다.
+- **위치**: `server/services/courseOrigin.js`, `pdfImportService.js`, `aiClient.js`(추출 프롬프트), `courseService.bulkAddMyCourses`, `routes/myCourses.js`, `secondMajorCredits.loadOfferingDepartments`, `courseCounting.js`, 클라이언트 `CourseManagement.jsx`, 테스트 `server/test/courseOrigin.test.js`·`otherDepartmentCourses.test.js`·`pdfImportService.ruleBased.test.js`.

@@ -21,6 +21,9 @@ vi.mock('../api/chatApi.js', () => ({
   getAdminStatsComposition: vi.fn(),
   getAdminFeatureUsage: vi.fn(),
   getReportedStudentSummary: vi.fn(),
+  getAiLabelComparison: vi.fn(),
+  draftInquiryReply: vi.fn(),
+  withdrawSanction: vi.fn(),
 }));
 
 import * as api from '../api/chatApi.js';
@@ -144,6 +147,11 @@ beforeEach(() => {
   sessionStorage.clear();
   window.history.replaceState(null, '', '/');
   api.getAdminStats.mockResolvedValue(stats());
+  api.getAiLabelComparison.mockResolvedValue({
+    post: { total: 0, actionMatched: 0, resultMatched: 0 },
+    report: { total: 0, actionMatched: 0, resultMatched: 0 },
+    inquiry: { total: 0, actionMatched: 0, resultMatched: 0 },
+  });
   api.getAdminPending.mockResolvedValue({ reports: 0, inquiries: 0, posts: 0, total: 0 });
   api.getAdminStatsTrend.mockImplementation(async (range) => trend(range));
   resetAdminTrendCache();
@@ -225,11 +233,12 @@ describe('첫 화면', () => {
     expect(await screen.findByText('방문 기록이 2주 쌓이면 보여요')).toBeInTheDocument();
   });
 
-  it('최근 24시간은 어제와 비교하고, 답 못 찾은 질문은 질문 중 비율로 보여준다', async () => {
+  it('최근 24시간은 어제와 비교하고, 답 못 찾은 질문은 첫 화면에 두지 않는다(통계 추이에만 남김)', async () => {
     render(<Admin {...baseProps} />);
     expect(await screen.findByText('어제 30')).toBeInTheDocument(); // 챗봇 질문
-    expect(screen.getByText('질문의 13%')).toBeInTheDocument(); // 6/45
     expect(screen.getByText('어제 1')).toBeInTheDocument(); // 신규 가입
+    expect(screen.queryByRole('button', { name: /답 못 찾은 질문/ })).toBeNull();
+    expect(screen.queryByText('질문의 13%')).toBeNull();
   });
 
   it('통계를 한 번만 불러온다(신고·문의 목록 전체를 불러와 건수를 세지 않는다)', async () => {
@@ -422,6 +431,22 @@ describe('문의함', () => {
     await userEvent.click(screen.getByRole('button', { name: '뒤로' }));
     expect(await screen.findByText('문의함', { selector: '.screen-title' })).toBeInTheDocument();
     expect(api.resolveAdminInquiry).not.toHaveBeenCalled();
+  });
+
+  it('[AI 초안 만들기]는 초안을 답변 칸에 채우고, 욕설 문의면 반영한 조치를 알려준다', async () => {
+    api.draftInquiryReply.mockResolvedValue({ draft: '확인해서 다시 알려 드릴게요.', action: '경고' });
+    await openDetail();
+    await userEvent.click(screen.getByRole('button', { name: 'AI 초안 만들기' }));
+    expect(screen.getByRole('textbox', { name: /학생에게 보낼 답변/ })).toHaveValue('확인해서 다시 알려 드릴게요.');
+    expect(api.draftInquiryReply).toHaveBeenCalledWith(5);
+    expect(screen.getByText(/AI가 쓴 초안이에요/)).toHaveTextContent('"경고" 기준이에요');
+    expect(screen.getByRole('button', { name: 'AI 초안 다시 만들기' })).toBeInTheDocument();
+  });
+
+  it('정지 이의 제기에는 초안 버튼이 없다', async () => {
+    api.getAdminInquiries.mockResolvedValue([inquiry({ appealFor: { id: 9, scope: 'account', reason: '욕설', endsAt: null, liftedAt: null } })]);
+    await openDetail();
+    expect(screen.queryByRole('button', { name: 'AI 초안 만들기' })).not.toBeInTheDocument();
   });
 
   it('처리완료 탭에서는 보낸 답변을 보여주고, 답변이 없었으면 그렇게 표시한다', async () => {

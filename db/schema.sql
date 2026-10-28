@@ -26,6 +26,8 @@
 --     학번의 의미와 편입 학년을 모르는 상태 — 규정 판단 엔진이 3학년 편입으로 가정하고 "추정"으로 표시한다)
 --   - students.second_department_id / second_major_type (다전공 대상 학과와 구분 — DOUBLE 복수전공, MINOR 부전공.
 --     제2전공은 하나만 받는다(#378 결정 4-2 A). 구분이 NULL인 옛 행은 복수전공으로 본다(server/services/secondMajor.js))
+--   - students.second_linked_major (제2전공이 연계·복합전공이면 그 전공 이름 — 학과 칸 대신 쓴다, #412)
+--   - student_micro_degrees (학생이 이수 중인 마이크로디그리 이름 목록, #412)
 --   - students.career_counseling_count (자기계발심층상담 누적 참여 횟수. 학칙/시행규칙
 --     원문엔 없고 교육과정 책자 각주에만 있는 요건 — 세션별 로그는 안 남기고 총 횟수만 카운트)
 --   - students.leave_semesters (누적 휴학 학기 수. 입학년도만으로 학년을 계산하면 군복무 등
@@ -112,6 +114,8 @@ CREATE TABLE IF NOT EXISTS students (
   major_track_type          VARCHAR(16) NULL,  -- 광역 계열전공 이수유형(시행규칙 제7조 제2항): DOUBLE_MAJOR·INTENSIVE·CONVERGENCE·UNDECIDED, NULL = 묻지 않음.
   second_department_id      INT,      -- 다전공(복수전공·부전공) 대상 학과. 안 하면 NULL. 제2전공은 하나만(복수전공+부전공 동시는 스코프 제외)
   second_major_type         VARCHAR(16) NULL,  -- 다전공 구분: DOUBLE(복수전공)·MINOR(부전공). NULL + 학과 있음 = 옛 행(복수전공으로 봄)
+  second_linked_major       VARCHAR(100) NULL, -- 다전공을 학과가 아니라 연계·복합전공으로 할 때 그 전공 이름(linked_majors.name). second_department_id와 둘 중 하나만.
+                                               -- id가 아니라 이름인 이유: 재시딩(seed:linked-majors)이 행을 지우고 다시 넣어 id가 바뀐다
   career_counseling_count   INT NOT NULL DEFAULT 0,  -- 자기계발심층상담 누적 참여 횟수(세션별 로그는 안 남김)
   leave_semesters           INT NOT NULL DEFAULT 0,  -- 누적 휴학 학기 수. 입학년도만으로는 휴학 여부를 알 수 없어
                                                        -- 홈 화면 학년 표시가 실제보다 높게 나오는 문제(실사용 확인,
@@ -257,7 +261,12 @@ CREATE TABLE IF NOT EXISTS student_courses (
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
   major_area        ENUM('기초', '심화', '응용') NULL,  -- 광역 계열전공 과목의 원래 이수구분(시행규칙 제7조 제3항). NULL = 모름(편성표 과목명으로 찾는다)
-  counted_major     VARCHAR(16) NULL,  -- 다전공 학생이 이 과목을 어느 전공으로 셀지 고친 값(PRIMARY·SECOND). NULL = 자동(services/secondMajorCredits.js)
+  counted_major     VARCHAR(16) NULL,  -- 학생이 이 과목을 어디로 셀지 고친 값(PRIMARY 주전공·전공으로 셈 · SECOND 제2전공 · GENERAL 일반선택, 전과생). 다른 학과 전공 과목은 자동으로 일반선택(D-88). NULL = 자동(services/courseCounting.js, secondMajorCredits.js)
+  -- 성적표 PDF에서 가져온 과목의 학수번호(전체성적조회)와 개설 학과(학수번호로 찾거나, 이수과목확인리스트의 "개설학과(전공)" 칸).
+  -- 개설과목에서 고른 과목은 course_id로 학과를 알아서 비워 둔다. 못 찾으면 NULL — 판정은 지금처럼 과목명으로 맞춘다
+  -- (#253 설계안 1, server/services/courseOrigin.js). 기존 DB는 db/migrate.js가 추가한다.
+  course_code             VARCHAR(20) NULL,
+  offering_department_id  INT NULL,
   year              INT NOT NULL,
   semester          TINYINT NOT NULL,  -- 학사력 시간순 코드: 1=1학기, 2=여름 계절학기, 3=2학기,
                                         -- 4=겨울 계절학기. course_offerings.semester 주석 참고 —
@@ -275,6 +284,7 @@ CREATE TABLE IF NOT EXISTS student_courses (
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (course_id) REFERENCES course_offerings(id) ON DELETE SET NULL,
+  CONSTRAINT fk_student_courses_offering_department FOREIGN KEY (offering_department_id) REFERENCES departments(id) ON DELETE SET NULL,
   INDEX idx_student_courses_course_id (course_id),  -- course_id 단독 인덱스. name UNIQUE만 있으면
                                                       -- course_id FK를 지원할 인덱스가 없어 MySQL이 거부함
   -- 과목명 기준으로 같은 학기에 중복 등록을 막는다. course_id 기준(분반 단위)이었다가,
@@ -528,6 +538,18 @@ CREATE TABLE IF NOT EXISTS micro_degree_courses (
   offering_department  VARCHAR(50),
 
   FOREIGN KEY (micro_degree_id) REFERENCES micro_degrees(id) ON DELETE CASCADE
+);
+
+-- 학생이 이수 중인 마이크로디그리(#412). 진단에서 고른 과정마다 이수 학점을 보여 준다(졸업학점에는 영향 없음).
+-- micro_degrees.id가 아니라 이름으로 잇는다 — 재시딩(seed:linked-majors)이 행을 지우고 다시 넣어 id가 바뀐다(students.second_linked_major와 같은 이유).
+CREATE TABLE IF NOT EXISTS student_micro_degrees (
+  id                 INT AUTO_INCREMENT PRIMARY KEY,
+  student_id         INT NOT NULL,
+  micro_degree_name  VARCHAR(100) NOT NULL,
+  created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_student_micro_degree (student_id, micro_degree_name),
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------------
@@ -819,6 +841,11 @@ CREATE TABLE IF NOT EXISTS community_posts (
   -- 관리자 재승인 대상이다(editPost). DATETIME이 아니라 DATE인 이유: 화면이 날짜만 받고, 서버 DB 시간대(UTC)와 한국
   -- 날짜가 어긋나는 문제를 피하려고 "오늘"을 앱(KST)에서 계산해 넘기기 때문이다.
   recruit_end_date   DATE NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
   FOREIGN KEY (author_id) REFERENCES students(id) ON DELETE CASCADE,
   -- status는 FK가 아니라 자동 인덱스가 안 붙는다. listApprovedPosts/listPostsForAdmin이
@@ -940,6 +967,11 @@ CREATE TABLE IF NOT EXISTS community_reports (
   resolution_note      TEXT NULL,
   -- 신고자가 처리 결과를 확인한 시각. status='resolved'인데 NULL이면 "읽지 않은 처리 결과"(커뮤니티 탭 점 표시).
   resolution_seen_at   DATETIME NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
   FOREIGN KEY (reporter_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (reported_student_id) REFERENCES students(id) ON DELETE SET NULL,
@@ -951,14 +983,14 @@ CREATE TABLE IF NOT EXISTS community_reports (
 -- 10-1. 사용자 제재 (#201) — 커뮤니티 신고에서 이어지는 계정 단위 조치(정지).
 -- students 컬럼이 아니라 별도 테이블로 둔 이유: 이력이 남아야 하고(관리자가 신고와 무관하게
 -- 직접 내리는 조치도 있을 수 있음), 한 계정에 여러 번 제재가 쌓일 수 있어서다. "지금 유효한
--- 제재"는 lifted_at이 비어있고 ends_at이 지나지 않은 것 중 가장 최근 것 하나로 판단한다
--- (server/services/sanctionService.js).
+-- 제재"는 lifted_at이 비어있고 ends_at이 지나지 않은 것 중 가장 무거운 것(account > full > post_apply,
+-- 같으면 최근 것) 하나로 판단한다(server/services/sanctionService.js).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS student_sanctions (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   student_id    INT NOT NULL,
   reason        TEXT NOT NULL,
-  scope         VARCHAR(20) NOT NULL,  -- 'post_apply'(글쓰기·신청만 금지) / 'full'(커뮤니티 진입 자체 차단)
+  scope         VARCHAR(20) NOT NULL,  -- 'post_apply'(글쓰기·신청만 금지) / 'full'(커뮤니티 진입 자체 차단) / 'account'(서비스 전체 이용 정지, #457)
   starts_at     DATETIME NOT NULL,
   ends_at       DATETIME NULL,          -- NULL = 영구정지
   lifted_at     DATETIME NULL,          -- 관리자가 조기 해제한 시각
@@ -969,6 +1001,48 @@ CREATE TABLE IF NOT EXISTS student_sanctions (
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES students(id),
   FOREIGN KEY (report_id) REFERENCES community_reports(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 10-1-1. 경고 기록 — 약관 6항의 "경고". 기능을 막지 않고 기록만 남긴다. 운영 기준(docs/moderation-policy.md)이
+-- 반복하면 한 단계씩 올리는데, 예전에는 경고를 문의 답변으로만 보내 횟수를 셀 수 없었다.
+-- student_sanctions에 넣지 않은 이유: 그 표는 ends_at NULL을 영구 정지로 보고 "지금 적용 중인 제재"를 여러 곳에서
+-- 같은 조건으로 찾는다 — 경고를 섞으면 그 조건마다 경고를 빼야 하고, 하나라도 빠지면 경고받은 학생이 영구 정지처럼 막힌다.
+-- 학생은 다음 접속 때 사유를 한 번 보고 확인한다(acknowledged_at, server/services/warningService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS student_warnings (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  student_id       INT NOT NULL,
+  reason           TEXT NOT NULL,
+  created_by       INT NOT NULL,          -- 경고한 관리자 id
+  report_id        INT NULL,              -- 신고함에서 이어진 경고면 그 신고 id
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  acknowledged_at  DATETIME NULL,         -- 학생이 안내를 보고 [확인]을 누른 시각(NULL = 아직 안 봄)
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES students(id),
+  FOREIGN KEY (report_id) REFERENCES community_reports(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 10-2. 정지 중 탈퇴 계정의 재가입 제한 (#457) — 서비스 전체 이용 정지 중에 계정을 삭제하고 같은
+-- 이메일·Google 계정으로 다시 가입해 정지를 피하는 일을 막는다. 개인정보처리방침 4항대로 이메일과
+-- Google 고유 식별자는 되돌릴 수 없게 변환한 값(SHA-256 해시)만, 정지 사유·기간과 함께 보관하고
+-- expires_at(정지가 끝나는 때, 영구 정지는 삭제한 날부터 1년)이 지나면 지운다
+-- (server/services/signupBlockService.js). 계정이 지워진 뒤의 기록이라 students를 참조하지 않는다.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS suspended_signup_blocks (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  email_hash      CHAR(64) NOT NULL,
+  oauth_id_hash   CHAR(64) NULL,          -- Google로 가입한 계정만
+  reason          TEXT NOT NULL,          -- 정지 사유(관리자가 쓴 글 그대로)
+  suspension_ends_at DATETIME NULL,       -- 정지가 끝나는 때, NULL = 영구 정지
+  expires_at      DATETIME NOT NULL,      -- 이 기록을 지우는 때(재가입 제한이 풀리는 때)
+  created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_signup_blocks_email (email_hash),
+  INDEX idx_signup_blocks_oauth (oauth_id_hash),
+  INDEX idx_signup_blocks_expires (expires_at)
 );
 
 -- ---------------------------------------------------------------------------
@@ -986,8 +1060,30 @@ CREATE TABLE IF NOT EXISTS inquiries (
   resolved_at  DATETIME NULL,
   -- 관리자가 처리완료할 때 문의자에게 남기는 답변(선택). 문의자 본인 화면("내 문의")에만 보인다. NULL이면 답변 없이 처리완료.
   resolution_note TEXT NULL,
+  -- 정지 화면에서 보낸 이의 제기면 그 정지(student_sanctions.id). 정지 한 번에 1건만 받는다(server/services/appealService.js).
+  -- 답변(resolution_note)은 학생의 정지 화면에 보인다. 제재를 철회하면 연결만 끊긴다. 기존 DB는 db/migrate.js가 추가한다.
+  sanction_id  INT NULL,
+  -- AI 사전 분류(#458) — 관리자 화면에만 보이는 결과 하나와 근거가 된 원문 조각(형광펜). 행과 함께 지워진다(개인정보처리방침 4항).
+  -- 저장 직후 뒤에서 채운다(server/services/moderationLabelService.js). 실패하면 NULL로 남고 화면은 지금 그대로다. 기존 DB는 db/migrate.js가 추가한다.
+  ai_result      VARCHAR(20) NULL,
+  ai_highlights  JSON NULL,
+  ai_labeled_at  DATETIME NULL,
 
-  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- 11-1. AI 사전 분류 비교 합계(#458) — 관리자가 처리할 때마다 "AI 결과 × 실제 처리" 칸의 건수만 1 올린다.
+-- 누가 쓴 글인지는 남기지 않는다(개인정보처리방침 4항: 작성자와 연결되지 않은 분류 항목별 합계만). 관리자 대시보드의 비교표가 읽는다.
+-- target_type: post / report / inquiry. ai_result·admin_result: post는 approve/reject, 나머지는 none/warning/sanction.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS moderation_label_stats (
+  target_type   VARCHAR(20) NOT NULL,
+  ai_result     VARCHAR(20) NOT NULL,
+  admin_result  VARCHAR(20) NOT NULL,
+  count         INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (target_type, ai_result, admin_result)
 );
 
 -- ---------------------------------------------------------------------------
@@ -1049,6 +1145,23 @@ CREATE TABLE IF NOT EXISTS pdf_import_logs (
   student_id  INT NOT NULL,
   period      VARCHAR(10) NOT NULL,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 14. 졸업요건 진단 요약 (바뀐 자료 알림)
+-- 학생이 마지막으로 확인한 진단 요약(필요 학점·남은 학점·졸업인증)과 그때의 입력 지문을 한 줄로 둔다.
+-- 입력(학과·학번·과목 등)은 그대로인데 요약이 달라지면 학교 기준·자료가 바뀐 것이라 홈에 알린다.
+-- 알림 목록을 쌓지 않고 "마지막으로 본 요약 → 지금 요약"만 비교해서, 오래 안 들어와도 한 장으로 합쳐진다
+-- (server/services/changeNoticeService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS graduation_snapshots (
+  student_id       INT PRIMARY KEY,
+  input_hash       CHAR(64) NOT NULL,     -- 진단 입력(학생 정보 중 진단에 쓰는 칸 + 과목 목록)의 SHA-256
+  summary          JSON NOT NULL,         -- 학생이 마지막으로 확인한 요약(비교 기준)
+  pending_summary  JSON NULL,             -- 기준과 다른 지금 요약(알림이 떠 있는 동안). [확인]하면 이 값이 새 기준이 된다
+  seen_at          DATETIME NOT NULL,     -- 기준을 마지막으로 맞춘 시각(알림의 "지난 접속"과 반영된 갱신 목록의 시작점)
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );

@@ -76,7 +76,7 @@ function profileDetailLines(student) {
   }
   const secondType = secondMajorTypeOf(student);
   lines.push(secondType
-    ? `다전공: ${SECOND_MAJOR_LABEL[secondType]} ${student.second_department_name || '(학과 미상)'}`
+    ? `다전공: ${SECOND_MAJOR_LABEL[secondType]} ${student.second_linked_major ? `${student.second_linked_major}(연계·복합전공)` : student.second_department_name || '(학과 미상)'}`
     : '다전공: 하지 않음');
   const teaching = parseTeachingCourse(student.teaching_course);
   if (teaching !== null) lines.push(`교직과정: ${teaching ? '이수 중' : '이수 안 함'}`);
@@ -263,7 +263,13 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   // 실제 AI 확인(2026-10-16 로컬)에서 주전공 최소전공(위 "전공" 행)을 "자료에 없다"고 하거나, 근거 문서의 일반 재학생 전공 학점(전필+전선)을
   // 복수전공 기준과 섞어 말해서, 두 숫자를 이 줄에 직접 적는다.
   const primaryMajorRow = categories.find((c) => c.category === '전공');
-  const secondMajorLine = second
+  const secondMajorLine = second && second.kind === 'LINKED'
+    ? [
+      `다전공: 연계·복합전공 ${second.linkedMajor}을(를) ${secondLabel}으로 이수 — ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 값: 연계전공 과목 목록으로 센 학점 + 교양 ${second.liberalCredits}학점(9학점까지) + 주전공과 같은 이름의 과목 ${second.overlapCredits}학점(1/3까지 중복 인정)).`,
+      '  - 연계·복합전공은 3~6개 학과 과목으로 짠 전공이다. 복수전공이면 그 전공의 이수학점(36·48), 부전공이면 21학점이다. 한 학과 과목은 16학점까지만 인정되는데 이 계산은 그 기준을 확인하지 못했다. 복수전공이면 연계전공 졸업논문(Pass)도 필요하다 — 확정은 전공주임교수·학과 사무실 확인을 안내하라.',
+      second.type === 'DOUBLE' && primaryMajorRow ? `  - 복수전공처럼 주전공 전공 기준을 ${primaryMajorRow.requiredCredits}학점(최소전공 인정학점)으로 줄여 계산했다(지금 ${primaryMajorRow.earnedCredits}학점). 연계전공도 같은 기준인지는 학교 확인 전 가정이다.` : null,
+    ].filter(Boolean).join('\n')
+    : second
     ? [
       `다전공: ${secondLabel} ${second.department} — 제2전공 ${second.earned}/${second.required ?? '기준 모름'}학점(이 서비스가 계산한 ${secondLabel} 기준)${second.thesis ? `, 복수전공 졸업논문(졸업논문2) ${second.thesis.satisfied ? '통과' : '미통과'}` : ''}.`,
       second.type === 'DOUBLE'
@@ -278,6 +284,11 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   const sumCredits = (list) => list.reduce((s, c) => s + c.credits, 0);
   const priorLine = prior && (prior.demoted.length || prior.recognized.length)
     ? `전과 전 학과 과목(학칙시행규칙 제3조 제4항·제115조): 전과 전 학과에서 들은 전공 과목 ${sumCredits(prior.demoted)}학점은 일반선택으로 셌다(위 카테고리에 반영됨). 전공학점 인정 신청: ${prior.recognitionApplied ? '했음' : '안 했음(답하지 않았으면 안 한 것으로 봄)'}${prior.recognized.length ? `, 전과한 학과와 같은 과목 ${sumCredits(prior.recognized)}학점은 전공선택으로 셌다` : ''}. 전과한 학과와 같은 과목은 신청기간(3월·9월)에 인정 신청을 해야 전공선택으로 인정된다고 안내하고, 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 바꿀 수 있다고 알려라(웹정보서비스 메뉴가 아니다).`
+    : null;
+  // 다른 학과 전공 과목(D-88) — 개설 학과가 학생 학과가 아니고 학과 편성표에도 없는 전공 과목은 일반선택으로 셌다.
+  const otherDepartment = graduationStatus.otherDepartmentCourses;
+  const otherDepartmentLine = otherDepartment
+    ? `다른 학과 전공 과목(학칙시행규칙 제3조 제4항 제1호): 다른 학과에서 연 전공 과목 ${otherDepartment.credits}학점(${otherDepartment.courses.map((c) => c.name).join(', ')})은 일반선택으로 셌다(위 카테고리에 반영됨). 학생이 학과를 바꿨거나 학교가 전공으로 인정했다면 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 "전공으로 셈"으로 바꿀 수 있다고 안내하라(웹정보서비스 메뉴가 아니다).`
     : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
@@ -332,6 +343,7 @@ ${majorAreaLine || ''}
 ${liberalAreaLine || ''}
 ${secondMajorLine || ''}
 ${priorLine || ''}
+${otherDepartmentLine || ''}
 ${registrationLine || ''}
 
 주의:
@@ -424,6 +436,8 @@ const PROGRESS_FLAG_NOTE = {
   // 다음 수강 학기 중 하나라도 수업연한을 넘기면 붙는다. 주어 없이 "초과학기다"라고만 쓰면 모델이 "지금 초과학기"로 읽어서
   // 4학년 2학기 학생에게 "현재 초과학기 재학 중"이라고 답했다(2026-10-15 운영 점검, #378). 그래서 무엇이 초과학기인지 못박는다.
   EXTENDED_TERM: '위 "다음에 수강신청할 학기" 중 수업연한(학과의 정규 학기 수)을 넘긴 학기가 있다(그 학기는 초과학기). 지금 학기가 초과학기라는 뜻이 아니다 — 지금 학년·학기는 위 "지금 학년·학기" 값이다. 학생이 학기·졸업 시기를 묻지 않으면 초과학기 이야기는 꺼내지 마라',
+  // 예과는 2년이라 3학년부터는 본과 학과다(studentProgress.markMedicalSchoolTerms). "예과 3학년"이라고 말하거나 예과 교육과정에서 3학년 과목을 찾지 않게 한다.
+  PREMED_TO_MEDICAL_SCHOOL: '위 "다음에 수강신청할 학기" 중 본과로 넘어간 학기가 있다(예과는 2년). 그 학기는 "예과 3학년"이 아니라 괄호 안 본과 학과·학년이다 — 그 학기 과목은 예과(학생 소속 학과) 교육과정이 아니라 근거에 있는 본과 학과의 교육과정·개설 과목에서 골라라. 본과 진급은 예과 과정을 마치고 진급 기준을 충족해야 한다는 점을 한 번 밝혀라',
 };
 
 // studentProgress.getStudentProgress() 결과를 시스템 프롬프트에 심는다. "현재 N학년"이라는 한 줄만 주면 모델이 학기를 즉흥으로
@@ -431,7 +445,7 @@ const PROGRESS_FLAG_NOTE = {
 function buildProgressNote(progress) {
   if (!progress || !progress.upcomingTerms || progress.upcomingTerms.length === 0) return null;
 
-  const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.extended ? ' 초과학기' : ''})`;
+  const termLine = (t) => `${t.year}학년도 ${t.semester}학기(재학 ${t.enrolledTermNumber}번째 학기, ${t.grade}학년${t.medicalSchool ? ` = 본과 ${t.medicalSchool.departmentName} ${t.medicalSchool.grade}학년` : ''}${t.extended ? ' 초과학기' : ''})`;
   const periodText = (periods) => (periods.length === 0
     ? '휴학한 적 없음'
     : periods.map(describeLeavePeriod).join(', '));
@@ -852,7 +866,9 @@ const COURSE_LIST_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "이수과목�
 분류하면 된다.
 
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
-[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "isFail": false}]`;
+[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "isFail": false, "offeringDepartment": "개설학과(전공)"}]
+학점 뒤에는 "영역" 또는 "개설학과(전공)" 칸이 올 수 있다. 그 값이 학과·학부·계열·전공 이름(예: 컴퓨터·소프트웨어공학과,
+공학3계열(컴퓨터·소프트웨어공학전공))이면 offeringDepartment에 글자 그대로 옮겨 적고, 교양 영역 이름이거나 비어 있으면 null로 둬라.`;
 
 // "전체성적조회" 표 파싱용 — 학기별 섹션 구조와 등급까지 함께 추출한다.
 const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성적조회" 문서에서 이수한 과목 정보를 추출하는 도우미다.
@@ -880,13 +896,25 @@ const FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT = `너는 원광대학교 "전체성
 분류하면 된다.
 
 그 외 설명이나 인사말 없이, 반드시 아래 JSON 배열 형식으로만 출력하라:
-[{"rawCategory": "이수구분 코드", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "letterGrade": "A+"}]`;
+[{"rawCategory": "이수구분 코드", "courseCode": "학수번호", "name": "교과목명", "year": 2024, "semester": 1, "credits": 3, "letterGrade": "A+"}]
+courseCode에는 그 행의 학수번호(예: 003308, L00316)를 그대로 옮겨 적고, 없으면 null로 둬라.`;
 
 // 소계/카테고리 대조(pdfImportService.js)는 여기서 뽑은 rawCategory/credits를 그대로 쓰므로,
 // 이 프롬프트가 코드값을 변형 없이 옮기게 강제하는 게 대조 정확도에 중요하다.
 async function extractCourseListRows(rawText) {
   const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
   return parseJsonArray(text);
+}
+
+// 운영 보조 AI 사전 분류(#458) — 프롬프트와 결과 해석은 moderationLabelService.js가 맡고, 여기서는 호출만 한다.
+// 짧은 JSON 하나라 토큰을 작게, 뒤에서 도는 호출이라 시간 상한도 짧게 둔다.
+async function classifyForModeration(system, content) {
+  return callClaude(system, [{ role: 'user', content }], 300, 20000);
+}
+
+// 문의 답변 초안 — 프롬프트와 근거는 inquiryDraftService.js가 만들고 여기서는 호출만 한다. 관리자가 기다리는 요청이라 30초 안에 끝낸다.
+async function draftInquiryReply(system, content) {
+  return callClaude(system, [{ role: 'user', content }], 600, 30000);
 }
 
 async function extractFullTranscriptRows(rawText) {
@@ -912,4 +940,6 @@ module.exports = {
   fixBareHonorific,
   extractCourseListRows,
   extractFullTranscriptRows,
+  classifyForModeration,
+  draftInquiryReply,
 };

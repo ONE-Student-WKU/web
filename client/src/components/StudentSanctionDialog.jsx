@@ -10,10 +10,16 @@ import { IconAlertTriangle } from './icons.jsx';
  * 관리자 전용 도구라 Admin.jsx와 같이 한국어 문구를 그대로 쓴다(번역 사전 대상 아님).
  *
  * Props:
- * - studentId: number — 제재 대상 계정 id (서버가 관리자 요청에만 내려주는 글의 authorId)
+ * 문의 상세(AdminInquiries.jsx)에서도 문의한 학생을 바로 제재할 때 같은 팝업을 쓴다(#457 — 문의하기 욕설은 커뮤니티 밖 위반).
+ *
+ * Props:
+ * - studentId: number — 제재 대상 계정 id (서버가 관리자 요청에만 내려주는 글의 authorId·문의의 studentId)
  * - nickname: string — 화면 표시용
+ * - title: string (선택) — 팝업 제목(기본 "작성자 제재")
+ * - defaultScope: string (선택) — 처음 골라 둘 범위(기본 글쓰기·신청 금지). 문의에서는 AI 제안이 있으면 그 범위, 없으면 첫 조치인 'warning'
+ * - defaultDuration: string (선택) — 처음 골라 둘 기간(기본 7d). AI 제안의 기간을 미리 골라 둘 때 쓴다(#458)
  * - onClose: function
- * - onDone: function — 제재가 적용된 뒤 호출(팝업은 호출부가 닫는다)
+ * - onDone: function(scope) — 제재(또는 경고)가 적용된 뒤 호출(팝업은 호출부가 닫는다)
  */
 
 // 제재 사유 기본값 — 사유는 제재받는 사용자에게 그대로 보이므로 중립 고정 문구로 두고 필요하면 관리자가 고쳐 쓴다(Admin.jsx와 같은 기준).
@@ -25,11 +31,14 @@ const DURATIONS = [
   { value: '30d', label: '30일' },
   { value: 'permanent', label: '영구정지' },
 ];
+// warning = 경고(기능 제한 없음, 기록만) — 예전에 "경고성"이라 부르던 post_apply와 헷갈리지 않게 그쪽은 신고함과 같은 이름으로 바꿨다.
 const SCOPES = [
-  { value: 'post_apply', label: '경고성 (글쓰기·신청 금지)' },
+  { value: 'warning', label: '경고 (기능 제한 없음)' },
+  { value: 'post_apply', label: '글쓰기·신청 금지' },
   { value: 'full', label: '전면 정지 (커뮤니티 진입 차단)' },
+  { value: 'account', label: '계정 정지 (서비스 전체 이용 차단)' },
 ];
-const SCOPE_LABEL = { post_apply: '경고성', full: '전면 정지' };
+const SCOPE_LABEL = { post_apply: '글쓰기·신청 금지', full: '전면 정지', account: '계정 정지' };
 const STATE_LABEL = { active: '적용 중', lifted: '해제됨', expired: '기간 종료' };
 const ERROR_TEXT = {
   CANNOT_SANCTION_ADMIN: '관리자 계정은 제재할 수 없어요.',
@@ -41,11 +50,11 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
+function StudentSanctionDialog({ studentId, nickname, title = '작성자 제재', defaultScope = 'post_apply', defaultDuration = '7d', onClose, onDone }) {
   const [summary, setSummary] = useState(null);
   const [summaryError, setSummaryError] = useState(null);
-  const [scope, setScope] = useState('post_apply');
-  const [duration, setDuration] = useState('7d');
+  const [scope, setScope] = useState(defaultScope);
+  const [duration, setDuration] = useState(defaultDuration);
   const [reason, setReason] = useState(DEFAULT_REASON);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -71,7 +80,7 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
     setError(null);
     try {
       await sanctionStudent(studentId, { scope, duration, reason: reason.trim() });
-      onDone();
+      onDone(scope);
     } catch (err) {
       setError(ERROR_TEXT[err.code] || '제재를 적용하지 못했어요. 잠시 후 다시 시도해주세요.');
       setSubmitting(false);
@@ -79,11 +88,12 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
   }
 
   const activeSanctions = summary ? summary.sanctions.filter((s) => s.state === 'active') : [];
+  const isWarning = scope === 'warning';
 
   return (
     <div className="career-confirm-overlay" onClick={onClose}>
       <form className="career-confirm-modal student-sanction-dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <p className="admin-post-title">작성자 제재</p>
+        <p className="admin-post-title">{title}</p>
         <p className="community-detail-meta">
           대상 · <b>{nickname}</b>
         </p>
@@ -97,7 +107,7 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
             </p>
             <p className="community-detail-meta">
               작성한 글 {summary.postCount}개 · 낸 신청 {summary.applicationCount}건 · 받은 신고 {summary.reportsReceived.total}건 (대기{' '}
-              {summary.reportsReceived.pending}건) · 제재 이력 {summary.sanctions.length}건
+              {summary.reportsReceived.pending}건) · 경고 {summary.warnings?.length ?? 0}회 · 제재 이력 {summary.sanctions.length}건
             </p>
             {activeSanctions.length > 0 && (
               <div className="admin-reject-reason" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
@@ -120,26 +130,36 @@ function StudentSanctionDialog({ studentId, nickname, onClose, onDone }) {
           ))}
         </div>
 
-        <p className="community-section-label">기간</p>
-        <div className="admin-sub-tabs" style={{ flexWrap: 'wrap' }}>
-          {DURATIONS.map((d) => (
-            <button key={d.value} type="button" className={`admin-sub-tab ${duration === d.value ? 'active' : ''}`} onClick={() => setDuration(d.value)}>
-              {d.label}
-            </button>
-          ))}
-        </div>
+        {!isWarning && (
+          <>
+            <p className="community-section-label">기간</p>
+            <div className="admin-sub-tabs" style={{ flexWrap: 'wrap' }}>
+              {DURATIONS.map((d) => (
+                <button key={d.value} type="button" className={`admin-sub-tab ${duration === d.value ? 'active' : ''}`} onClick={() => setDuration(d.value)}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="auth-field">
-          <label htmlFor="direct-sanction-reason">제재 사유 (사용자에게 보여요)</label>
+          <label htmlFor="direct-sanction-reason">{isWarning ? '경고 사유' : '제재 사유'} (사용자에게 보여요)</label>
           <textarea id="direct-sanction-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} required />
         </div>
-        <p className="courses-manual-hint">글은 지워지지 않아요. 글 처리는 커뮤니티 관리(승인·삭제)에서 따로 해주세요.</p>
+        <p className="courses-manual-hint">
+          {isWarning
+            ? '기능은 막히지 않아요. 학생은 다음 접속 때 이 사유를 한 번 보고 확인해요.'
+            : scope === 'account'
+              ? '로그아웃·계정 삭제 말고는 모든 기능이 막혀요. 이 학생의 모집 글은 정지 동안 목록에서 숨겨져요.'
+              : '글은 지워지지 않아요. 글 처리는 커뮤니티 관리(승인·삭제)에서 따로 해주세요.'}
+        </p>
 
         {error && <p className="home-error">{error}</p>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button type="submit" className="community-close-btn" disabled={submitting || !reason.trim()}>
-            {submitting ? '적용하는 중...' : '제재 확정'}
+            {submitting ? '적용하는 중...' : isWarning ? '경고 보내기' : '제재 확정'}
           </button>
           <button type="button" className="community-outline-btn" onClick={onClose}>
             취소

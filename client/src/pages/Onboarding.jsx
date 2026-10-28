@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { isMajorChangeClosed } from '../utils/majorChange.js';
-import { getDepartments, getTracks, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
+import { getDepartments, getTracks, getLinkedMajors, getMicroDegrees, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from '../utils/onboardingYears.js';
 import { isBroadSeriesStudent } from '../utils/majorTrackType.js';
 import MajorTrackTypeOptions from '../components/MajorTrackTypeOptions.jsx';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
+import MicroDegreePicker from '../components/MicroDegreePicker.jsx';
 import { pickTrackForFormer } from '../utils/departmentTree.js';
+import { groupByProgram, findMyMicroDegreeGroup } from '../utils/microDegreeSearch.js';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -157,7 +159,22 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     // 다전공(복수전공 DOUBLE·부전공 MINOR, #378 G-1). 학과·학번 수정에서만 받는다 — 다전공은 2학년부터 신청해 처음 가입할 때는 없다.
     secondMajorType: editMode ? user.secondMajorType ?? null : null,
     secondDepartmentId: editMode ? user.secondDepartmentId ?? null : null,
+    // 제2전공을 학과(DEPARTMENT)로 하는지 연계·복합전공(LINKED)으로 하는지, 연계전공이면 그 이름(#412).
+    secondMajorKind: editMode && user.secondLinkedMajor ? 'LINKED' : 'DEPARTMENT',
+    secondLinkedMajor: editMode ? user.secondLinkedMajor ?? null : null,
+    // 이수 중인 마이크로디그리(사업단 과정) 이름 목록(#412). 학과·학번 수정에서만 받는다.
+    microDegrees: editMode ? user.microDegrees ?? [] : [],
   });
+
+  // 연계·복합전공·마이크로디그리 목록 — 학과·학번 수정에서만 쓴다(#412). 못 불러오면 빈 목록이라 고를 수 없을 뿐 다른 항목은 그대로 고친다.
+  const [linkedMajors, setLinkedMajors] = useState([]);
+  const [microDegreeOptions, setMicroDegreeOptions] = useState([]);
+  useEffect(() => {
+    if (!editMode) return;
+    getLinkedMajors().then(setLinkedMajors).catch(() => setLinkedMajors([]));
+    getMicroDegrees().then(setMicroDegreeOptions).catch(() => setMicroDegreeOptions([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     getDepartments()
@@ -189,6 +206,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     ? [{ id: NO_TRACK, name: t(noTrackOption.nameKey), captionKey: noTrackOption.captionKey }, ...tracks.map((tr) => ({ ...tr, captionKey: noTrackOption.trackCaptionKeys[tr.name] || null }))]
     : tracks;
   const selectedTrackName = trackChoices.find((tr) => tr.id === answers.trackId)?.name;
+  // 마이크로디그리 고르기에서 펼쳐 둘 학생 학과의 계열 묶음 — 학과·세부전공·이후 학과 이름으로 찾는다(못 찾으면 모두 접는다).
+  const myMicroDegreeGroup = findMyMicroDegreeGroup(microDegreeOptions, [
+    selectedDepartment?.name,
+    selectedTrackName,
+    ...(selectedDepartment?.successors || []).map((s) => s.name),
+  ]);
   const secondDepartment = departments.find((d) => d.id === answers.secondDepartmentId) || null;
   // 다전공 학과 목록에서 주전공 학과는 뺀다(서버도 같은 학과를 거절한다).
   const secondDepartmentChoices = departments.filter((d) => d.id !== answers.departmentId);
@@ -466,7 +489,14 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       teachingCourse: teachingAvailable ? answers.teachingCourse : null,
       majorTrackType: trackTypeAvailable ? answers.majorTrackType : null,
       // 다전공은 학과·학번 수정에서만 받는다(처음 가입하는 온보딩 API는 받지 않는다).
-      ...(editMode ? { secondDepartmentId: answers.secondMajorType ? answers.secondDepartmentId : null, secondMajorType: answers.secondMajorType } : {}),
+      ...(editMode
+        ? {
+            secondDepartmentId: answers.secondMajorType && answers.secondMajorKind === 'DEPARTMENT' ? answers.secondDepartmentId : null,
+            secondLinkedMajor: answers.secondMajorType && answers.secondMajorKind === 'LINKED' ? answers.secondLinkedMajor : null,
+            secondMajorType: answers.secondMajorType,
+            microDegrees: answers.microDegrees,
+          }
+        : {}),
     };
     try {
       if (user?.onboardingCompleted) {
@@ -498,7 +528,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
     (current === 'teaching' && answers.teachingCourse === null) ||
     (current === 'trackType' && answers.majorTrackType === null) ||
-    (current === 'secondMajor' && answers.secondMajorType !== null && !answers.secondDepartmentId) ||
+    (current === 'secondMajor' && answers.secondMajorType !== null &&
+      (answers.secondMajorKind === 'LINKED' ? !answers.secondLinkedMajor : !answers.secondDepartmentId)) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
     (current === 'leave' && periodsFromDraft(answers.leaveDraft) === null);
 
@@ -769,16 +800,71 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             </div>
             {answers.secondMajorType && (
               <>
-                <p className="onb-field-label">{t('onb.secondMajor.department')}</p>
-                {secondDepartmentChoices.length > 0 && (
-                  <DepartmentPicker
-                    departments={secondDepartmentChoices}
-                    selectedId={answers.secondDepartmentId}
-                    onSelect={(dept) => setAnswers((a) => ({ ...a, secondDepartmentId: dept.id }))}
-                  />
+                {/* 제2전공은 학과나 연계·복합전공 중 하나(#412) — 연계전공은 여러 학과 과목으로 짠 전공이라 학과 목록에 없다. */}
+                <p className="onb-field-label">{t('onb.secondMajor.kind')}</p>
+                <div className="onb-kind-toggle">
+                  {['DEPARTMENT', 'LINKED'].map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      className={'onb-option-card' + (answers.secondMajorKind === kind ? ' selected' : '')}
+                      onClick={() => setAnswers((a) => ({ ...a, secondMajorKind: kind }))}
+                    >
+                      <span className="onb-option-title">{t(`onb.secondMajor.kind.${kind}`)}</span>
+                    </button>
+                  ))}
+                </div>
+                {answers.secondMajorKind === 'LINKED' ? (
+                  <div className="onb-field-group">
+                    <label className="onb-field-label" htmlFor="onb-linked-major">{t('onb.secondMajor.linked')}</label>
+                    <select
+                      id="onb-linked-major"
+                      className="onb-select"
+                      value={answers.secondLinkedMajor ?? ''}
+                      onChange={(e) => setAnswers((a) => ({ ...a, secondLinkedMajor: e.target.value || null }))}
+                    >
+                      <option value="" disabled>
+                        {t('onb.select')}
+                      </option>
+                      {groupByProgram(linkedMajors).map(([group, items]) => (
+                        <optgroup key={group} label={group}>
+                          {items.map((m) => (
+                            <option key={m.name} value={m.name}>
+                              {m.requiredCredits ? t('onb.secondMajor.linkedOption', { name: m.name, n: m.requiredCredits }) : m.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    <p className="onb-q-sub onb-q-sub-note">{t('onb.secondMajor.linkedHint')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="onb-field-label">{t('onb.secondMajor.department')}</p>
+                    {secondDepartmentChoices.length > 0 && (
+                      <DepartmentPicker
+                        departments={secondDepartmentChoices}
+                        selectedId={answers.secondDepartmentId}
+                        onSelect={(dept) => setAnswers((a) => ({ ...a, secondDepartmentId: dept.id }))}
+                      />
+                    )}
+                  </>
                 )}
               </>
             )}
+          </>
+        )}
+
+        {current === 'microDegree' && (
+          <>
+            <h2 className="onb-q-title">{t('onb.micro.title')}</h2>
+            <p className="onb-q-sub">{t('onb.micro.sub')}</p>
+            <MicroDegreePicker
+              options={microDegreeOptions}
+              selected={answers.microDegrees}
+              onChange={(names) => setAnswers((a) => ({ ...a, microDegrees: names }))}
+              myGroup={myMicroDegreeGroup}
+            />
           </>
         )}
 
@@ -865,14 +951,17 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           </>
         )}
 
-        {summaryLoading && <p className="post-empty">{t('onb.loading')}</p>}
-
-        {current === 'summary' && !summaryLoading && (
+        {current === 'summary' && (
           <>
+            {/* 제목·안내는 고정 문구라 바로 보여 주고, 목록 자리만 기다린다 — 화면 전체를 "불러오는 중..."으로 두면 제목까지 늦게
+                나타나 덜 자연스러웠다(2026-10-27 피드백). */}
             <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
             <p className="onb-q-sub">
               {editMode ? t('onb.summary.editHint') : t('onb.summary.backHint')}
             </p>
+            {summaryLoading ? (
+              <p className="post-empty">{t('onb.loading')}</p>
+            ) : (
             <div className="onb-summary-list">
               <SummaryRow
                 label={t('onb.summary.department')}
@@ -971,12 +1060,30 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   value={
                     answers.secondMajorType === null
                       ? t('onb.secondMajor.NONE')
-                      : secondDepartment
-                        ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: secondDepartment.name })
-                        : null
+                      : answers.secondMajorKind === 'LINKED'
+                        ? answers.secondLinkedMajor
+                          ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: answers.secondLinkedMajor })
+                          : null
+                        : secondDepartment
+                          ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: secondDepartment.name })
+                          : null
                   }
                   editable
                   onClick={() => setManualStep('secondMajor')}
+                />
+              )}
+              {editMode && (
+                <SummaryRow
+                  label={t('onb.summary.micro')}
+                  value={
+                    answers.microDegrees.length === 0
+                      ? t('onb.micro.none')
+                      : answers.microDegrees.length === 1
+                        ? answers.microDegrees[0]
+                        : t('onb.micro.count', { name: answers.microDegrees[0], n: answers.microDegrees.length - 1 })
+                  }
+                  editable
+                  onClick={() => setManualStep('microDegree')}
                 />
               )}
               <div className={leaveHighlightArmed ? 'settings-highlight' : undefined}>
@@ -988,6 +1095,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 />
               </div>
             </div>
+            )}
           </>
         )}
 

@@ -5,6 +5,9 @@ const communityService = require('../services/communityService');
 const inquiryService = require('../services/inquiryService');
 const studentService = require('../services/studentService');
 const sanctionService = require('../services/sanctionService');
+const warningService = require('../services/warningService');
+const moderationLabelService = require('../services/moderationLabelService');
+const inquiryDraftService = require('../services/inquiryDraftService');
 const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
 const uiEventService = require('../services/uiEventService');
@@ -73,6 +76,7 @@ router.post('/community/posts/:id/approve', async (req, res, next) => {
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
+    await moderationLabelService.recordDecision('post', req.params.id, 'approve');
     res.status(200).json({ status: 200, code: 'POST_APPROVED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -90,6 +94,7 @@ router.post('/community/posts/:id/reject', async (req, res, next) => {
     if (!decided) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
+    await moderationLabelService.recordDecision('post', req.params.id, 'reject');
     res.status(200).json({ status: 200, code: 'POST_REJECTED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -161,6 +166,8 @@ router.post('/community/reports/:id/resolve', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'REPORT_NOT_FOUND', message: null, data: null });
     }
     const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, note.value);
+    // 비교 합계는 관리자가 처리한 신고 하나로만 센다 — 같은 대상의 중복 신고가 정확도를 부풀리지 않게.
+    await moderationLabelService.recordDecision('report', report.id, 'none');
     res.status(200).json({ status: 200, code: 'REPORT_RESOLVED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
@@ -185,18 +192,36 @@ router.get('/community/students/:id/summary', async (req, res, next) => {
   }
 });
 
-const SANCTION_SCOPES = ['post_apply', 'full'];
+// account = 서비스 전체 이용 정지(#457, 기준은 docs/moderation-policy.md).
+// warning = 경고 — 기능을 막지 않고 기록만 남긴다(student_warnings, 기간 없음).
+const SANCTION_SCOPES = ['warning', 'post_apply', 'full', 'account'];
 // null = 영구정지.
 const SANCTION_DURATIONS = { '1d': 1, '3d': 3, '7d': 7, '30d': 30, permanent: null };
 
 // 제재 요청 본문(범위·기간·사유) 검증 — 신고함 제재와 글에서 바로 거는 제재가 같은 규칙을 쓴다. 문제가 있으면 { error: 코드 }.
+// 경고는 기간이 없어서 duration을 보지 않는다.
 function parseSanctionInput(body) {
   const { scope, duration, reason } = body || {};
   if (!SANCTION_SCOPES.includes(scope)) return { error: 'INVALID_SCOPE' };
-  if (!Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) return { error: 'INVALID_DURATION' };
+  if (scope !== 'warning' && !Object.prototype.hasOwnProperty.call(SANCTION_DURATIONS, duration)) return { error: 'INVALID_DURATION' };
   const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
   if (!trimmedReason) return { error: 'REQUIRED_REASON' };
-  return { scope, durationDays: SANCTION_DURATIONS[duration], reason: trimmedReason };
+  return { scope, durationDays: scope === 'warning' ? null : SANCTION_DURATIONS[duration], reason: trimmedReason };
+}
+
+// 경고면 경고 기록, 아니면 정지·제한 — 두 제재 라우트가 같이 쓴다.
+function applySanction(input, { studentId, createdBy, reportId = null }) {
+  if (input.scope === 'warning') {
+    return warningService.createWarning({ studentId, reason: input.reason, createdBy, reportId });
+  }
+  return sanctionService.createSanction({
+    studentId,
+    reason: input.reason,
+    scope: input.scope,
+    durationDays: input.durationDays,
+    createdBy,
+    reportId,
+  });
 }
 
 // POST /api/admin/community/reports/:id/sanction — "제재"(#201). 신고 대상 계정에 정지를
@@ -225,14 +250,8 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'NO_REPORTED_STUDENT', message: null, data: null });
     }
 
-    await sanctionService.createSanction({
-      studentId: report.reportedStudentId,
-      reason: input.reason,
-      scope: input.scope,
-      durationDays: input.durationDays,
-      createdBy: req.session.userId,
-      reportId: report.id,
-    });
+    // 경고도 제재와 같이 신고된 글·신청을 지우고 신고를 처리완료한다 — 경고할 만한 내용이면 커뮤니티에 남겨 두지 않는다.
+    await applySanction(input, { studentId: report.reportedStudentId, createdBy: req.session.userId, reportId: report.id });
 
     if (report.targetType === 'post') await communityService.deletePost(report.targetId);
     else await communityService.deleteApplication(report.targetId);
@@ -240,6 +259,7 @@ router.post('/community/reports/:id/sanction', async (req, res, next) => {
     await communityService.resolveReport(report.id, resolutionNote.value);
     // 같은 대상의 다른 대기 신고도 같은 안내로 처리완료(대상 글·신청은 이미 지워졌다).
     const others = await communityService.resolvePendingReportsForTarget(report.targetType, report.targetId, resolutionNote.value);
+    await moderationLabelService.recordDecision('report', report.id, moderationLabelService.actionKey(input.scope, req.body.duration));
     res.status(200).json({ status: 200, code: 'REPORT_SANCTIONED', message: null, data: { resolvedCount: 1 + others } });
   } catch (err) {
     next(err);
@@ -268,13 +288,7 @@ router.post('/community/students/:id/sanction', async (req, res, next) => {
       return res.status(400).json({ status: 400, code: 'CANNOT_SANCTION_ADMIN', message: null, data: null });
     }
 
-    await sanctionService.createSanction({
-      studentId,
-      reason: input.reason,
-      scope: input.scope,
-      durationDays: input.durationDays,
-      createdBy: req.session.userId,
-    });
+    await applySanction(input, { studentId, createdBy: req.session.userId });
     res.status(200).json({ status: 200, code: 'STUDENT_SANCTIONED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -289,8 +303,20 @@ router.get('/sanctions', async (req, res, next) => {
     if (status !== 'active' && status !== 'past') {
       return res.status(400).json({ status: 400, code: 'INVALID_STATUS', message: null, data: null });
     }
-    const sanctions = status === 'past' ? await sanctionService.listPastSanctions() : await sanctionService.listActiveSanctions();
-    res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
+    if (status === 'active') {
+      const sanctions = await sanctionService.listActiveSanctions();
+      return res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: sanctions });
+    }
+    // 지난 제재에는 경고도 섞는다(kind로 구분) — 경고는 기간이 없어 보낸 즉시 "지난" 기록이다. 해제·종료 시각(경고는 보낸 시각) 순.
+    const [past, warnings] = await Promise.all([sanctionService.listPastSanctions(), warningService.listRecentWarnings()]);
+    const rows = [
+      ...past.map((s) => ({ kind: 'sanction', ...s, sortAt: s.liftedAt || s.endsAt })),
+      ...warnings.map((w) => ({ kind: 'warning', ...w, sortAt: w.createdAt })),
+    ]
+      .sort((a, b) => new Date(b.sortAt) - new Date(a.sortAt))
+      .slice(0, 100)
+      .map(({ sortAt, ...row }) => row);
+    res.status(200).json({ status: 200, code: 'ADMIN_SANCTIONS_LIST', message: null, data: rows });
   } catch (err) {
     next(err);
   }
@@ -304,6 +330,32 @@ router.post('/sanctions/:id/lift', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'SANCTION_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'SANCTION_LIFTED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/sanctions/:id — 철회(잘못된 조치). 조기 해제와 달리 기록을 지워 제재 이력·반복 판단에서 빠진다.
+router.delete('/sanctions/:id', async (req, res, next) => {
+  try {
+    const withdrawn = await sanctionService.withdrawSanction(req.params.id);
+    if (!withdrawn) {
+      return res.status(404).json({ status: 404, code: 'SANCTION_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'SANCTION_WITHDRAWN', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/admin/warnings/:id — 경고 취소(잘못된 경고). 기록을 지워 횟수에서 빠진다.
+router.delete('/warnings/:id', async (req, res, next) => {
+  try {
+    const deleted = await warningService.deleteWarning(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'WARNING_DELETED', message: null, data: null });
   } catch (err) {
     next(err);
   }
@@ -331,7 +383,39 @@ router.post('/inquiries/:id/resolve', async (req, res, next) => {
     if (!resolved) {
       return res.status(404).json({ status: 404, code: 'INQUIRY_NOT_FOUND', message: null, data: null });
     }
+    // 문의는 처리완료와 [학생 제재]가 따로라, 이 문의가 들어온 뒤 걸린 경고·제재로 관리자 판단을 정한다(moderationLabelService.js).
+    await moderationLabelService.recordDecision('inquiry', req.params.id, await moderationLabelService.inquiryDecision(req.params.id));
     res.status(200).json({ status: 200, code: 'INQUIRY_RESOLVED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/admin/inquiries/:id/draft — 문의 답변 AI 초안(저장하지 않고 돌려주기만 한다, inquiryDraftService.js).
+const DRAFT_ERRORS = {
+  NOT_FOUND: [404, 'INQUIRY_NOT_FOUND'],
+  APPEAL: [400, 'DRAFT_NOT_FOR_APPEAL'],
+  EMPTY: [502, 'DRAFT_FAILED'],
+};
+router.post('/inquiries/:id/draft', async (req, res, next) => {
+  try {
+    const result = await inquiryDraftService.createDraft(req.params.id);
+    if (result.error) {
+      const [status, code] = DRAFT_ERRORS[result.error];
+      return res.status(status).json({ status, code, message: null, data: null });
+    }
+    res.status(200).json({ status: 200, code: 'INQUIRY_DRAFT', message: null, data: { draft: result.draft, action: result.action } });
+  } catch (err) {
+    console.error('[inquiryDraft] 초안 실패:', err.message);
+    res.status(502).json({ status: 502, code: 'DRAFT_FAILED', message: null, data: null });
+  }
+});
+
+// GET /api/admin/ai-labels/comparison — AI 사전 분류 비교표(#458). 대상별 비교한 건수와 맞힌 건수(작성자와 연결 없는 합계).
+router.get('/ai-labels/comparison', async (req, res, next) => {
+  try {
+    const comparison = await moderationLabelService.getComparison();
+    res.status(200).json({ status: 200, code: 'AI_LABEL_COMPARISON', message: null, data: comparison });
   } catch (err) {
     next(err);
   }

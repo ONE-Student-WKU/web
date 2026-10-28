@@ -165,6 +165,18 @@ async function ensureStudentSecondMajorTypeColumn(connection) {
   }
 }
 
+// 다전공을 연계·복합전공으로 하는 학생의 전공 이름 guard(#412). 학과 칸(second_department_id)과 둘 중 하나만 쓴다.
+async function ensureStudentSecondLinkedMajorColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME = 'second_linked_major'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] students.second_linked_major 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN second_linked_major VARCHAR(100) NULL AFTER second_major_type');
+  }
+}
+
 // 다전공 학생이 과목을 어느 전공으로 셀지 직접 고른 값 guard(#378 G-2, 결정 4-3). NULL = 자동(개설 학과·편성표로 정한다,
 // server/services/secondMajorCredits.js). PRIMARY·SECOND는 학생이 예외로 고친 값이다.
 async function ensureStudentCourseCountedMajorColumn(connection) {
@@ -426,6 +438,60 @@ async function ensureInquiryResolutionNoteColumn(connection) {
   }
 }
 
+// AI 사전 분류(#458) guard — 글·신고·문의 표에 결과·형광펜·분류 시각 칸을 붙인다(server/services/moderationLabelService.js).
+async function ensureModerationLabelColumns(connection) {
+  for (const table of ['community_posts', 'community_reports', 'inquiries']) {
+    const [cols] = await connection.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'ai_result'`,
+      [table]
+    );
+    if (cols.length === 0) {
+      console.log(`[db:migrate] ${table}.ai_result·ai_highlights·ai_labeled_at 컬럼 추가...`);
+      await connection.query(
+        `ALTER TABLE ${table}
+           ADD COLUMN ai_result VARCHAR(20) NULL,
+           ADD COLUMN ai_highlights JSON NULL,
+           ADD COLUMN ai_labeled_at DATETIME NULL`
+      );
+    }
+  }
+}
+
+// 학수번호·개설 학과 guard(#253 설계안 1) — 성적표 PDF로 가져온 과목도 어느 학과 과목인지 알 수 있게 한다(server/services/courseOrigin.js).
+async function ensureStudentCourseOriginColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_courses' AND COLUMN_NAME = 'course_code'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] student_courses.course_code·offering_department_id 컬럼 추가...');
+    await connection.query(
+      `ALTER TABLE student_courses
+         ADD COLUMN course_code VARCHAR(20) NULL AFTER counted_major,
+         ADD COLUMN offering_department_id INT NULL AFTER course_code,
+         ADD CONSTRAINT fk_student_courses_offering_department FOREIGN KEY (offering_department_id) REFERENCES departments(id) ON DELETE SET NULL`
+    );
+  }
+}
+
+// 정지 이의 제기 guard — 정지 화면에서 보낸 이의는 문의함에 들어가고, 어느 정지에 대한 이의인지 sanction_id로 잇는다.
+// 제재를 철회(삭제)하면 연결만 끊긴다(ON DELETE SET NULL). student_sanctions가 schema.sql에서 먼저 만들어진 뒤라 FK를 걸 수 있다.
+async function ensureInquirySanctionColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inquiries' AND COLUMN_NAME = 'sanction_id'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] inquiries.sanction_id 컬럼 추가...');
+    await connection.query(
+      `ALTER TABLE inquiries
+         ADD COLUMN sanction_id INT NULL,
+         ADD CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL`
+    );
+  }
+}
+
 // 커뮤니티 status 필터 인덱스 도입용 guard — status는 FK가 아니라 CREATE TABLE IF NOT
 // EXISTS의 INDEX 선언이 기존 운영 테이블에는 반영되지 않으므로 직접 ALTER한다.
 // (listApprovedPosts/listPostsForAdmin/listReportsForAdmin이 status 단독으로 필터링함)
@@ -590,6 +656,7 @@ async function migrate() {
     await ensureStudentTeachingAndTransferCreditColumns(connection);
     await ensureStudentMajorTrackTypeColumn(connection);
     await ensureStudentSecondMajorTypeColumn(connection);
+    await ensureStudentSecondLinkedMajorColumn(connection);
     await ensureStudentMajorChangeRecognitionColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentCourseCountedMajorColumn(connection);
@@ -604,6 +671,9 @@ async function migrate() {
     await ensureCommunityStatusIndexes(connection);
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureInquiryResolutionNoteColumn(connection);
+    await ensureInquirySanctionColumn(connection);
+    await ensureModerationLabelColumns(connection);
+    await ensureStudentCourseOriginColumns(connection);
     await ensureCurriculumVersioningColumns(connection);
     await ensureRegulationBookYear(connection);
     await ensureCareerCandidateRequestsColumn(connection);

@@ -626,6 +626,29 @@ body {
   text-align: center;
 }
 
+/* 이용 정지 화면(SuspendedGate.jsx) — 사유·기간은 글 상세의 정보 줄(.post-facts)을, 계정 삭제는 프로필의 설정 줄을 그대로 쓴다. */
+.suspended-facts {
+  margin: 0 0 14px;
+}
+
+/* 이의 제기 내용과 운영팀 답변은 사람이 쓴 여러 줄 글이라 줄을 그대로 보여준다. */
+.suspended-facts dd {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 정지 화면의 이의 제기 칸 — 위 사실 목록과 아래 로그아웃 사이 */
+.suspended-appeal {
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-body .suspended-delete {
+  margin: 12px 0 0;
+}
+
 .auth-toggle-text {
   margin-top: 28px;
   text-align: center;
@@ -772,6 +795,112 @@ body {
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 12px;
+}
+
+/* 바뀐 자료 알림(ChangeNotice.jsx) — 홈의 진행률·부족 요건 자리에 대신 나온다. 강조색 테두리로 평소 카드와 구분한다. */
+.change-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-bg);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.change-card h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.change-source {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.change-list,
+.change-updates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.change-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.change-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8125rem;
+}
+
+.change-what {
+  color: var(--color-text-secondary);
+}
+
+.change-delta {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.change-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.change-tag--good {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+  color: var(--color-success);
+}
+
+.change-tag--bad {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+
+/* 출처 펼치기 — 작은 글자 링크면 놓치기 쉬워 카드 폭 전체를 쓰는 버튼으로 둔다 */
+.change-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.change-updates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.change-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.change-actions .post-btn {
+  flex: 1;
 }
 
 /* 홈 화면 최초 진입 시(캐시된 데이터 없음) 서버 응답을 기다리는 동안 보여주는 스켈레톤.
@@ -989,6 +1118,34 @@ body {
 }
 
 /* 졸업까지 한 학기 분량 이하가 남은 학생에게 졸업사정 예비 확인을 권한다 */
+/* 학사경고·유급 대상일 수 있는 학기(components/AcademicWarningCard.jsx) — 졸업 임박 안내와 같은 주의 색 */
+.grad-warning-card {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+}
+.grad-warning-card .home-card-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-danger);
+}
+.grad-warning-lead {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.grad-warning-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+/* 과목 관리: 고른 학기가 학사경고·유급 대상일 수 있을 때 요약 아래 한 줄 */
+.courses-warning-note {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+}
+
 .grad-near-graduation {
   margin: 0 0 12px;
   padding: 12px 14px;
@@ -1274,6 +1431,23 @@ body {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   line-height: 1.5;
+}
+
+/* 마이크로디그리 과정 한 줄(components/MicroDegreeCard.jsx) — 과정마다 이름·학점·막대·맞춘 과목 */
+.grad-micro-item + .grad-micro-item {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.grad-micro-convergence {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.grad-micro-name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .grad-subcheck-row {
@@ -3471,6 +3645,8 @@ button.post-row:active {
 
 .post-quote--answer {
   background: var(--color-accent-bg);
+  /* 운영팀 답변은 줄바꿈·번호 목록으로 나눠 쓴다(문의 답변 초안 템플릿) — 줄을 그대로 보여준다. */
+  white-space: pre-wrap;
 }
 
 .post-note {
@@ -5795,6 +5971,15 @@ button.settings-row {
 .onb-option-card:hover:not(:disabled),
 .onb-option-card.active { background: var(--color-neutral-bg); }
 .onb-option-card.selected { border-color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-ink); background: var(--color-neutral-bg); }
+/* 다전공: 학과 / 연계·복합전공 두 칸(#412) */
+.onb-kind-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+/* 마이크로디그리 고르기(MicroDegreePicker.jsx, #412) — 학과 고르기와 같은 검색 진입 버튼·묶음 트리, 한 줄에 체크 하나.
+   체크박스는 앱의 다른 체크박스(로그인 유지·홈 편집)와 같은 20px·잉크색. */
+.onb-micro-chosen { margin-bottom: 14px; }
+.onb-micro-group { margin: 0 0 14px; }
+.onb-micro-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-top: 6px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 0.875rem; cursor: pointer; }
+.onb-micro-row input { width: 20px; height: 20px; margin: 0; flex-shrink: 0; accent-color: var(--color-ink); }
+.onb-micro-row.checked { border-color: var(--color-ink); background: var(--color-neutral-bg); }
 /* 키보드 포커스 표시를 브라우저 기본색(주황 등) 대신 강조색으로 — ↑↓로 학과를 옮길 때 지금 위치를 보여 준다. */
 .onb-option-card:focus-visible,
 .onb-college-head:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -6448,10 +6633,6 @@ select.onb-select {
   font-variant-numeric: tabular-nums;
 }
 
-.admin-list-row.warn .admin-list-value {
-  color: var(--color-danger);
-}
-
 .admin-list-sub {
   min-width: 64px;
   text-align: right;
@@ -7020,6 +7201,105 @@ select.onb-select {
   margin-top: 14px;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
+}
+
+/* 문의 상세의 학생 제재 이력 한 줄 + [학생 제재] 버튼(#457) */
+.admin-inquiry-sanction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.admin-inquiry-sanction .post-btn {
+  flex-shrink: 0;
+}
+
+/* AI 사전 분류(#458) — 관리자 화면의 제안 배지·형광펜·제안 상자·비교표 */
+.ai-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+}
+.ai-result::before {
+  content: '제안';
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.ai-result--warn {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.ai-result--danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+mark.ai-mark {
+  background: color-mix(in srgb, var(--color-warning) 35%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.ai-suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+}
+.ai-suggest b {
+  font-size: 0.875rem;
+}
+.ai-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.ai-compare th,
+.ai-compare td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: right;
+}
+.ai-compare th:first-child,
+.ai-compare td:first-child {
+  text-align: left;
+}
+.ai-compare th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+.ai-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
+}
+
+/* 문의 상세 — 답변 칸 아래의 [AI 초안 만들기] */
+.admin-draft-actions {
+  margin-top: 10px;
+}
+
+/* 문의 상세 — 정지 이의 제기의 대상 정지와 철회 버튼 */
+.admin-appeal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .admin-note-line {

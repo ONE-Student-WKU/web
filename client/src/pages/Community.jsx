@@ -31,7 +31,7 @@ import { ContactBox, ContactBlockedNote, BlockContactDialog } from '../component
 import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
 import MoreMenu from '../components/MoreMenu.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
-import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch, IconUser } from '../components/icons.jsx';
 import LoadError from '../components/LoadError.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -197,11 +197,12 @@ function StatusText({ tone, end = false, children }) {
   return <span className={`post-status post-status--${tone || 'mute'}${end ? ' post-status--end' : ''}`}>{children}</span>;
 }
 
-// 닉네임 첫 글자 동그라미 — 글쓴이·신청자를 한눈에 구분하는 자리표시(사진은 받지 않는다).
-function Avatar({ name }) {
+// 글쓴이·신청자 자리표시 — 계정 정보 화면(Profile.jsx)과 같은 회원 아이콘을 모두에게 쓴다(사진은 받지 않는다, 2026-10-28 피드백).
+// 예전에는 닉네임 첫 글자였는데, 기본 닉네임이 'user123' 꼴이라 대부분 'U'로 보였다. 운영팀 공지는 같은 아이콘에 체크 배지를 붙여 구별한다.
+function Avatar() {
   return (
     <span className="post-avatar" aria-hidden="true">
-      {String(name || '?').trim().charAt(0).toUpperCase()}
+      <IconUser size={17} />
     </span>
   );
 }
@@ -746,6 +747,9 @@ function Community({
         // 상세를 다시 불러와 마감 표시로 바꾸되, openPost가 error를 비우므로 안내는 그 뒤에 채운다.
         openPost(selectedPost.id);
         setError(t('community.err.recruitEnded'));
+      } else if (err.code === 'POST_UNAVAILABLE') {
+        // 글을 연 뒤에 글쓴이가 계정 정지됐다(#457) — 상세를 다시 불러오면 신청 칸 대신 안내가 뜬다.
+        openPost(selectedPost.id);
       } else setError(t('community.err.applyFailed'));
     } finally {
       setApplySubmitting(false);
@@ -849,7 +853,8 @@ function Community({
     const writeLimited = sanction?.scope === 'post_apply';
     const applicantPeople = applicants.filter((a) => !a.hasAppliedBefore).length;
     const uncheckedCount = applicants.filter((a) => a.status === 'pending').length;
-    const canApply = !post.isMine && post.myApplication === null && !closed && !writeLimited && !post.contentHidden;
+    // authorUnavailable: 글쓴이가 계정 정지 중(#457) — 이유·기간 없이 "지금은 신청할 수 없어요"만 보여준다.
+    const canApply = !post.isMine && post.myApplication === null && !closed && !writeLimited && !post.contentHidden && !post.authorUnavailable;
 
     // 자주 쓰지 않는 동작(신고·수정·마감·삭제)은 글쓴이 옆 "⋯" 메뉴에 모은다.
     const menuItems = post.isMine
@@ -904,7 +909,7 @@ function Community({
           <h2 className="post-detail-title">{post.contentHidden ? t('community.hiddenTitle') : post.title}</h2>
 
           <div className="post-author">
-            <Avatar name={post.author} />
+            <Avatar />
             <div className="post-author-text">
               {isAdmin && !post.isMine && post.authorId ? (
                 <button type="button" className="post-author-name community-author-link" onClick={() => setSanctionPost(post)} aria-label={t('community.sanctionAuthorAria', { author: post.author })}>
@@ -969,7 +974,7 @@ function Community({
                 <div className="applicant-list">
                   {applicants.map((a) => (
                     <div className="applicant-row" key={a.id}>
-                      <Avatar name={a.applicant} />
+                      <Avatar />
                       <div className="applicant-main">
                         <div className="applicant-top">
                           <span className="applicant-name">{a.applicant}</span>
@@ -1056,7 +1061,12 @@ function Community({
                 <h3>{t('community.myApplication')}</h3>
                 <StatusText tone={APP_STATUS_TONE[post.myApplication.status]}>{t(`community.appStatus.${post.myApplication.status}`)}</StatusText>
               </div>
-              {post.myApplication.status === 'pending' && <p className="post-section-desc">{t('community.pendingDesc')}</p>}
+              {post.myApplication.status === 'pending' &&
+                (post.authorUnavailable ? (
+                  <p className="post-note">{t('community.authorUnavailable')}</p>
+                ) : (
+                  <p className="post-section-desc">{t('community.pendingDesc')}</p>
+                ))}
               {post.myApplication.status === 'accepted' &&
                 (post.myApplication.contactBlockedAt ? (
                   <ContactBlockedNote blockedAt={post.myApplication.contactBlockedAt} formatDate={formatDate} />
@@ -1078,6 +1088,8 @@ function Community({
                   <p className="post-section-desc">{t('community.notSelectedDesc')}</p>
                   {writeLimited ? (
                     <p className="post-note">{t('community.reapplyRestricted', { reason: sanction.reason })}</p>
+                  ) : post.authorUnavailable ? (
+                    <p className="post-note">{t('community.applyUnavailable')}</p>
                   ) : (
                     <form className="post-reapply" onSubmit={handleApply}>
                       <textarea
@@ -1103,6 +1115,8 @@ function Community({
             <p className="post-note">{t('community.recruitEndedLine', { date: formatDeadline(post.recruitEndDate) })}</p>
           ) : writeLimited ? (
             <p className="post-note">{t('community.applyRestricted', { reason: sanction.reason })}</p>
+          ) : post.authorUnavailable ? (
+            <p className="post-note">{t('community.applyUnavailable')}</p>
           ) : null}
         </div>
 
@@ -1544,6 +1558,7 @@ function Community({
                     </span>
                     <span className="post-title">{a.postTitle}</span>
                     <span className="post-meta">{t('community.appItem.date', { author: a.author, date: formatDate(a.createdAt) })}</span>
+                    {a.status === 'pending' && a.authorUnavailable && <span className="post-contact-line">{t('community.authorUnavailable')}</span>}
                     {a.contactBlockedAt ? (
                       <span className="post-contact-line">{t('community.contact.blockedBadge')}</span>
                     ) : (
@@ -1577,9 +1592,9 @@ function Community({
           studentId={sanctionPost.authorId}
           nickname={sanctionPost.author}
           onClose={() => setSanctionPost(null)}
-          onDone={() => {
+          onDone={(scope) => {
             setSanctionPost(null);
-            showToast(t('community.toast.sanctioned'));
+            showToast(t(scope === 'warning' ? 'community.toast.warned' : 'community.toast.sanctioned'));
           }}
         />
       )}

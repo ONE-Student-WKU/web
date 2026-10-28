@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const inquiryService = require('../services/inquiryService');
 const { notifyAdmin } = require('../services/adminAlertService');
+const moderationLabelService = require('../services/moderationLabelService');
 const { perUserLimiter } = require('../middleware/security');
 
 /**
@@ -41,6 +42,7 @@ router.post('/', inquiryWriteLimiter, async (req, res, next) => {
 
     const id = await inquiryService.createInquiry(req.session.userId, title, content);
     notifyAdmin('inquiry'); // 기다리지 않는다 — 알림 실패가 응답에 영향을 주지 않게(adminAlertService.js)
+    moderationLabelService.scheduleLabel('inquiry', id); // AI 사전 분류(#458) — 기다리지 않는다
     res.status(201).json({ status: 201, code: 'INQUIRY_CREATED', message: null, data: { id } });
   } catch (err) {
     next(err);

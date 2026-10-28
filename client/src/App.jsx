@@ -13,6 +13,8 @@ import Admin from './pages/Admin.jsx';
 import { resetAdminTrendCache } from './components/AdminTrendView.jsx';
 import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
+import SuspendedGate from './pages/SuspendedGate.jsx';
+import WarningNotice from './components/WarningNotice.jsx';
 import LeaveGate from './pages/LeaveGate.jsx';
 import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -149,6 +151,14 @@ function App() {
     loadUser().finally(() => setAuthChecked(true));
   }, []);
 
+  // 화면을 쓰는 도중에 서비스 전체 이용 정지가 걸리면 서버가 403 ACCOUNT_SUSPENDED를 주고, chatApi.js가 이 이벤트를 보낸다(#457).
+  useEffect(() => {
+    // 이미 정지 화면이면 같은 객체를 돌려준다 — 새 객체로 바꾸면 user에 기대는 이펙트가 다시 돌고, 그 요청이 또 403을 받아 끝없이 반복된다.
+    const onSuspended = (e) => setUser((u) => (u && !u.suspension ? { ...u, suspension: e.detail } : u));
+    window.addEventListener('account-suspended', onSuspended);
+    return () => window.removeEventListener('account-suspended', onSuspended);
+  }, []);
+
   // 관리자 화면에 있는 동안만 표시를 남기고, 다른 화면으로 가면(로그아웃 포함 — handleLogout이 view를 home으로 돌림) 지운다.
   // 로그인 확인이 끝난 뒤에만 쓴다 — 확인 전에 지우면 새로고침 직후 초기값 'admin'이 사라진다.
   useEffect(() => {
@@ -202,7 +212,7 @@ function App() {
   // 커뮤니티 글 상세·글쓰기 중 — 화면 아래에 붙는 신청·등록 버튼을 탭바(떠 있는 채팅 버튼)가 가리지 않게 숨긴다.
   const [communityFocus, setCommunityFocus] = useState(false);
   useEffect(() => {
-    if (!user || view === 'community') return;
+    if (!user || user.suspension || view === 'community') return;
     let cancelled = false;
     getUnseenReportCount()
       .then((count) => {
@@ -388,6 +398,15 @@ function App() {
             onOpenTerms={() => setView('terms')}
             onLoginSuccess={loadUser}
           />
+        ) : user.suspension ? (
+          // 서비스 전체 이용 정지(#457) — 동의 화면보다 먼저 띄운다. 정지 사유 확인·로그아웃·계정 삭제는 동의 없이도 할 수 있어야 한다(약관 6항).
+          <SuspendedGate
+            user={user}
+            suspension={user.suspension}
+            onLogout={handleLogout}
+            onAccountDeleted={handleAccountDeleted}
+            justReauthenticated={justReauthenticated}
+          />
         ) : user.consentRequired ? (
           // 이용약관·개인정보 수집·이용 동의 기록이 없거나 옛 버전이면 동의할 때까지 다른 화면에 들어가지 못한다.
           <ConsentGate
@@ -552,7 +571,7 @@ function App() {
             }}
           />
         )}
-        {authChecked && user && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && tabBarVisible && !textInputFocused && (
+        {authChecked && user && !user.suspension && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && tabBarVisible && !textInputFocused && (
           <BottomTabBar
             tabs={layoutTabs}
             active={tabPeers.has(view) ? view : null}
@@ -560,6 +579,10 @@ function App() {
             isLocked={(v) => isLockedView(v, user)}
             communityBadge={communityBadge}
           />
+        )}
+        {/* 아직 확인하지 않은 경고 — 정지·동의·필수 질문 화면이 끝난 뒤 어느 화면 위에든 한 번 띄운다(기능은 막지 않는다). */}
+        {authChecked && user && user.pendingWarning && !user.suspension && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && (
+          <WarningNotice key={user.pendingWarning.id} warning={user.pendingWarning} onDone={(next) => setUser((u) => ({ ...u, pendingWarning: next }))} />
         )}
       </div>
     </div>

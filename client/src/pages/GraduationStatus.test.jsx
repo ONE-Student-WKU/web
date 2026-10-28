@@ -340,3 +340,96 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     expect(sheet.textContent).not.toMatch(/학점|충족|합계/);
   });
 });
+
+describe('GraduationStatus 학사경고·유급 안내(#412)', () => {
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    getGraduationStatus.mockReset();
+  });
+
+  const term = (over) => ({ year: 2025, semester: 1, gpa: 3.2, judged: true, flagged: false, reasons: [], liberalArtsF: [], ...over });
+
+  it('대상 학기가 없으면 카드를 보이지 않는다', async () => {
+    await renderWith(status({ academicWarnings: { regime: 'WARNING', threshold: 1.75, terms: [term()], flaggedCount: 0, consecutiveCount: 0 } }));
+    expect(screen.queryByText('학사경고 확인')).not.toBeInTheDocument();
+  });
+
+  it('학사경고 대상일 수 있는 학기와 평균, 통산·연속 횟수와 제적 기준, 참고용 안내를 보여 준다', async () => {
+    await renderWith(status({
+      academicWarnings: {
+        regime: 'WARNING', threshold: 1.75, flaggedCount: 1, consecutiveCount: 1,
+        terms: [term(), term({ year: 2025, semester: 2, gpa: 1.62, flagged: true, reasons: ['GPA_BELOW'] })],
+      },
+    }));
+    expect(screen.getByText('학사경고 확인')).toBeInTheDocument();
+    expect(screen.getByText('학사경고 대상일 수 있는 학기가 1개 있어요')).toBeInTheDocument();
+    expect(screen.getByText('2025년 2학기').closest('li')).toHaveTextContent('학기 평균 1.62 (1.75 미만)');
+    expect(screen.getByText(/통산 1회 · 최근 연속 1회/)).toBeInTheDocument();
+    expect(screen.getByText(/실제 판정은 학기 말 성적사정과 학교 통보가 기준이에요/)).toBeInTheDocument();
+  });
+
+  it('유급: 전공필수 F 과목명과 유급휴학 안내, 교양 F는 "재학 중 다시 이수" 안내로 따로 보여 준다', async () => {
+    await renderWith(status({
+      academicWarnings: {
+        regime: 'REPEAT', threshold: 2.0, flaggedCount: 1, consecutiveCount: 1,
+        terms: [
+          term({ flagged: true, reasons: ['MAJOR_REQUIRED_F'], failedCourses: ['해부학'] }),
+          term({ semester: 2, liberalArtsF: ['글쓰기'] }),
+        ],
+      },
+    }));
+    expect(screen.getByText('유급 확인')).toBeInTheDocument();
+    expect(screen.getByText('2025년 1학기').closest('li')).toHaveTextContent('전공필수 F: 해부학');
+    expect(screen.getByText('유급하면 다음 학기에 유급휴학을 해야 해요.')).toBeInTheDocument();
+    expect(screen.getByText(/2025년 2학기 교양 F\(글쓰기\)는 유급 사유는 아니지만/)).toBeInTheDocument();
+  });
+});
+
+describe('GraduationStatus 연계·복합전공·마이크로디그리(#412)', () => {
+  beforeEach(() => {
+    resetGraduationCache();
+    sessionStorage.clear();
+    getGraduationStatus.mockReset();
+  });
+
+  it('연계전공 다전공 카드는 전공 이름·교양/중복 인정 학점을, 마이크로디그리 카드는 과정마다 학점과 맞춘 과목을 보여 준다', async () => {
+    await renderWith(status({
+      secondMajor: {
+        type: 'MINOR', kind: 'LINKED', linkedMajor: '문화유산학전공', department: '문화유산학전공', required: 21, earned: 12, satisfied: false,
+        basis: 'LINKED_MINOR_21', thesis: null, liberalCredits: 3, overlapCredits: 0, courses: [{ id: 1, name: '문화유산의이해', credits: 3, auto: true }],
+      },
+      microDegrees: [
+        { name: 'K-치유힐링 케어복지과정', programGroup: 'K-치유힐링사업단', required: 12, earned: 6, satisfied: false, courses: [{ name: '케어복지론', credits: 3 }, { name: '돌봄실습', credits: 3 }], missing: false },
+        { name: '사라진과정', programGroup: null, required: 12, earned: 0, satisfied: false, courses: [], missing: true },
+      ],
+    }));
+    expect(screen.getByText('부전공 · 문화유산학전공')).toBeInTheDocument();
+    expect(screen.getByText(/연계·복합 부전공은 자기 전공 밖의 과목으로 21학점 이상이에요/)).toBeInTheDocument();
+    expect(screen.getByText(/연계전공으로 센 교양 3학점/)).toBeInTheDocument();
+    expect(screen.getByText('마이크로디그리')).toBeInTheDocument();
+    expect(screen.getByText('K-치유힐링 케어복지과정')).toBeInTheDocument();
+    expect(screen.getByText('케어복지론, 돌봄실습')).toBeInTheDocument();
+    expect(screen.getByText(/과정 정보를 찾지 못했어요/)).toBeInTheDocument();
+  });
+
+  it('전공융합형이면 타전공 MD 2개 중 12학점에 이른 개수를 안내하고, 고른 과정이 없으면 고르라고 알린다', async () => {
+    await renderWith(status({ microDegrees: [{ name: '게임콘텐츠학전공 - 게임기획가', programGroup: '학과·전공별 MD · 공학3계열', required: 12, earned: 12, satisfied: true, courses: [], missing: false }], microDegreeConvergence: { required: 2, reached: 1, otherChosen: 1 } }));
+    expect(screen.getByText(/고른 타전공 과정 중 1개가 12학점에 이르렀어요/)).toBeInTheDocument();
+  });
+
+  it('전공융합형인데 고른 과정이 없으면 카드에 고르라는 안내만 보인다', async () => {
+    await renderWith(status({ microDegrees: [], microDegreeConvergence: { required: 2, reached: 0, otherChosen: 0 } }));
+    expect(screen.getByText(/학과·학번 수정에서 이수 중인 과정을 골라 주세요/)).toBeInTheDocument();
+  });
+
+  it('다른 학과에서 연 전공 과목을 일반선택으로 셌으면 학점과 바꾸는 방법을 알린다', async () => {
+    await renderWith(status({ otherDepartmentCourses: { courses: [{ id: 1, name: '현대소설론', credits: 3 }], credits: 3 } }));
+    expect(screen.getByText(/다른 학과에서 연 전공 과목 3학점은 일반선택으로 셌어요/)).toBeInTheDocument();
+  });
+
+  it('고른 마이크로디그리가 없으면 카드를 그리지 않는다', async () => {
+    await renderWith(status({ microDegrees: [] }));
+    expect(screen.queryByText('마이크로디그리')).not.toBeInTheDocument();
+  });
+});

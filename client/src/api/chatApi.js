@@ -14,6 +14,10 @@ async function apiRequest(path, options = {}) {
   const body = await res.json();
 
   if (!res.ok) {
+    // 쓰는 도중에 서비스 전체 이용 정지가 걸리면(#457) 어느 화면에서 요청했든 App.jsx가 정지 화면으로 바꾼다.
+    if (body.code === 'ACCOUNT_SUSPENDED') {
+      window.dispatchEvent(new CustomEvent('account-suspended', { detail: body.data }));
+    }
     const err = new Error(body.code || 'REQUEST_FAILED');
     err.code = body.code;
     err.status = res.status;
@@ -44,6 +48,12 @@ export const verifyEmailCode = (email, code, remember = true, consent) =>
 
 // 로그인 직후 동의 화면(ConsentGate)에서 이용약관·개인정보 수집·이용에 동의한다.
 export const acceptConsent = (version) => apiRequest('/me/consent', { method: 'POST', body: JSON.stringify({ version }) });
+// 정지 화면의 이의 제기(정지 한 번에 1건) — 보낸 이의를 돌려준다.
+export const submitAppeal = (content) =>
+  apiRequest('/me/appeal', { method: 'POST', body: JSON.stringify({ content }) }).then((d) => d.appeal);
+// 경고 안내에서 [확인] — 다음에 보여줄 경고(없으면 null)를 돌려준다.
+export const acknowledgeWarning = (id) =>
+  apiRequest(`/me/warnings/${id}/acknowledge`, { method: 'POST' }).then((d) => d.pendingWarning);
 
 // 이메일 OTP로만 가입한 계정(oauth_id 없음)의 계정 삭제 재인증 — Google 계정은
 // startGoogleReauth를 그대로 쓴다. 대상 이메일은 서버가 세션의 본인 계정 것으로 고정하므로
@@ -68,12 +78,19 @@ export const getDepartments = () => apiRequest('/onboarding/departments');
 
 export const getTracks = (departmentId) => apiRequest(`/onboarding/tracks?departmentId=${departmentId}`);
 
+// 다전공으로 고를 수 있는 연계·복합전공과, 고를 수 있는 마이크로디그리(사업단 과정) — [{ name, programGroup, requiredCredits }](#412)
+export const getLinkedMajors = () => apiRequest('/onboarding/linked-majors');
+export const getMicroDegrees = () => apiRequest('/onboarding/micro-degrees');
+
 export const submitOnboarding = (payload) =>
   apiRequest('/onboarding', { method: 'POST', body: JSON.stringify(payload) });
 
 export const getCourseSummary = () => apiRequest('/my-courses/summary');
 
 export const getGraduationStatus = () => apiRequest('/graduation/status');
+
+// 바뀐 자료 알림 확인 — 지금 진단 결과가 다음 비교의 기준이 된다(server/services/changeNoticeService.js).
+export const acknowledgeChangeNotice = () => apiRequest('/graduation/change-notice/acknowledge', { method: 'POST' });
 
 export const getSemesters = () => apiRequest('/my-courses/semesters');
 
@@ -241,6 +258,14 @@ export const getReportedStudentSummary = (studentId) => apiRequest(`/admin/commu
 export const getAdminSanctions = (status = 'active') => apiRequest(`/admin/sanctions?status=${status}`);
 
 export const liftSanction = (id) => apiRequest(`/admin/sanctions/${id}/lift`, { method: 'POST' });
+// 철회(잘못된 조치) — 해제와 달리 기록을 지운다.
+export const withdrawSanction = (id) => apiRequest(`/admin/sanctions/${id}`, { method: 'DELETE' });
+// 문의 답변 AI 초안 — { draft, action }(action: 욕설 문의일 때 초안에 반영한 조치 이름, 아니면 null). 저장하지 않는다.
+export const draftInquiryReply = (id) => apiRequest(`/admin/inquiries/${id}/draft`, { method: 'POST' });
+// AI 사전 분류(#458) 비교표 — { post|report|inquiry: { total, actionMatched, resultMatched } }
+export const getAiLabelComparison = () => apiRequest('/admin/ai-labels/comparison');
+// 경고 취소(잘못된 경고) — 기록을 지운다.
+export const deleteWarning = (id) => apiRequest(`/admin/warnings/${id}`, { method: 'DELETE' });
 
 export const getMySanction = () => apiRequest('/community/my-sanction');
 

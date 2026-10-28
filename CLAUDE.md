@@ -9,6 +9,7 @@
 - 재시딩은 `seed:regulations -- --force`라서 **새 문서 하나만 추가하는 게 아니라 규정 문서 전체를 다시 임베딩**한다(Voyage 비용·시간). 문서마다 임베딩을 먼저 다 받은 뒤 옛 문서 삭제와 새 문서 저장을 한 트랜잭션으로 바꿔 넣어서, 실행 중에도 검색에서 빠지는 문서는 없다. 임베딩 시간 초과·5xx는 재시도하고(`[RETRY]` 로그), 끝내 실패하면 그 문서와 뒤 문서는 옛 버전으로 남는다(#465).
 - Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
 - 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
+- 학생의 졸업요건 진단 결과가 바뀔 수 있는 자료·규칙(규정·교육과정 문서, 요건 시드, `graduationService`·`regulationEngine`)을 `main`에 반영할 때는 `server/services/dataUpdates.js`에 날짜와 학생이 읽을 한 마디를 추가한다. 홈의 "바뀐 자료 알림"은 학생마다 마지막으로 본 결과와 지금 결과를 비교해 뜨므로 빠뜨려도 뜨지만, "반영된 갱신" 목록이 비어 보인다(`changeNoticeService.js`).
 
 ## 교육과정 적용 원칙 — 최신 책자가 모든 학번에 적용된다
 
@@ -71,6 +72,15 @@
 ### 확인
 - `cd client && npm test`: `I18nContext.test.jsx`가 영어 사전에 빠진 키와 한국어에 없는 영어 키를 잡아낸다. 한국어를 코드에 직접 쓴 경우는 못 잡으므로 영어 모드에서 화면을 직접 확인한다.
 - 새 언어를 추가할 때는 `locales/<code>.js`를 만들고 `I18nContext.jsx`의 `DICTIONARIES`와 `SUPPORTED_LANGUAGES`에 등록한 뒤, 위 완전성 테스트를 그 언어에도 적용한다.
+
+## 시안·화면 비교 보여 주기
+
+UI 시안이나 브랜치 사이 화면 차이를 보여 달라고 하면 **손으로 그린 목업을 쓰지 않는다.** 위치·간격이 조금씩 달라 UI 피드백에 쓸 수 없다(사용자 결정 2026-10-28). 대신 로컬에서 띄운 실제 화면의 DOM을 떠서, 그 브랜치의 `App.css`와 Pretendard로 다시 그린 HTML 리포트를 Artifact로 게시한다. 도구와 순서는 [scripts/dev/screen-report/README.md](scripts/dev/screen-report/README.md)에 있다. 오래 걸려도 이 방식으로 한다.
+
+- 시안은 가능하면 **먼저 구현하고 구현한 화면을 뜬다**(작업 트리 vs `develop`). 구현 전에 보여 줘야 하면 develop 캡처를 기존 클래스로 고친 패치로 만들고, 새 CSS는 App.css에 그대로 옮길 수 있는 몇 줄로만 쓴다.
+- 게시 전에 `verify.js`로 원본 CSS 렌더와 요소마다 대조하고, 남은 차이는 리포트에 적는다.
+- 데이터는 로컬 DB의 테스트 계정(`npm run dev:login`)에만 넣고 끝나면 지운다. 실제 AI를 부르는 버튼은 누르지 않는다.
+- 비교용 worktree를 지울 때는 `node_modules` junction을 **먼저 끊는다**. 연결을 둔 채 `git worktree remove`를 하면 프로젝트 `node_modules`가 지워진다.
 
 ## 약관·개인정보 동의
 

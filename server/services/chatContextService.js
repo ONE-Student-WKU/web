@@ -1,3 +1,4 @@
+const pool = require('../db');
 const curriculumService = require('./curriculumService');
 const curriculumContext = require('./curriculumContextService');
 const regulationContext = require('./regulationContextService');
@@ -36,11 +37,15 @@ async function assembleStructuredChunks({ message, searchText, student, previous
     curriculumService.lookupMicroDegreesFromMessage(message),
   ]);
   const regulation = judgment ? judgment.chunks : [];
-  const second = await secondMajorChunks({ message, student, yearContext, progress });
+  const [second, medical] = await Promise.all([
+    secondMajorChunks({ message, student, yearContext, progress }),
+    medicalSchoolChunks({ message, student, yearContext, progress }),
+  ]);
   return {
     regulation, judgment: judgment ? judgment.judgment : null, graduation, history,
-    curriculum: [...curriculum, ...second.curriculum], requirement,
-    offering: [...offeringResult.offering, ...second.offering], remaining: [...offeringResult.remaining, ...second.remaining],
+    curriculum: [...curriculum, ...second.curriculum, ...medical.curriculum], requirement,
+    offering: [...offeringResult.offering, ...second.offering, ...medical.offering],
+    remaining: [...offeringResult.remaining, ...second.remaining, ...medical.remaining],
     linkedMajor, microDegree,
     service: serviceGuideChunks(message),
   };
@@ -51,12 +56,34 @@ async function assembleStructuredChunks({ message, searchText, student, previous
 const SECOND_MAJOR_RE = /복수\s*전공|복전|부\s*전공|제\s*2\s*전공|다전공/;
 async function secondMajorChunks({ message, student, yearContext, progress }) {
   const empty = { curriculum: [], offering: [], remaining: [] };
-  if (!student || student.second_department_id == null || !SECOND_MAJOR_RE.test(message || '')) return empty;
+  if (!student) return empty;
+  // 연계·복합전공 학생(#412)이 "내 연계전공 과목"처럼 전공 이름 없이 물으면 그 전공의 과목 목록을 근거로 넣는다.
+  if (student.second_department_id == null && student.second_linked_major) {
+    if (!SECOND_MAJOR_RE.test(message || '') && !/연계|복합\s*전공/.test(message || '')) return empty;
+    return { ...empty, curriculum: await curriculumService.lookupLinkedMajorsFromMessage(student.second_linked_major) };
+  }
+  if (student.second_department_id == null || !SECOND_MAJOR_RE.test(message || '')) return empty;
   // 제2전공 학과 기준으로 조회한다 — 세부전공(트랙)은 주전공 것이라 뺀다. 학번은 그대로(제2전공도 같은 학번의 편성을 따른다).
   const asSecond = { ...student, department_id: student.second_department_id, department_name: student.second_department_name, track_id: null, track_name: null };
   const [curriculum, offering] = await Promise.all([
     curriculumService.lookupFromMessage(message, asSecond, yearContext),
     curriculumService.lookupOfferingChunks(message, asSecond, yearContext, { completedCourseNames: progress ? progress.completedCourseNames : [] }),
+  ]);
+  return { curriculum, offering: offering.offering, remaining: offering.remaining };
+}
+
+// 예과 학생이 앞으로 들을 과목을 물었는데 다음 수강 학기가 본과로 넘어가면(studentProgress.markMedicalSchoolTerms), 주전공(예과) 조회만으로는
+// 그 학기 과목이 근거에 없다 — 본과 학과로도 같은 조회를 한다(#412, 예과 2학년 다음 학기). 세부전공은 없고 학번은 그대로다.
+async function medicalSchoolChunks({ message, student, yearContext, progress }) {
+  const empty = { curriculum: [], offering: [], remaining: [] };
+  const term = progress && (progress.upcomingTerms || []).find((t) => t.medicalSchool);
+  if (!student || !term || !yearContext || yearContext.questionIntent !== 'NEXT_TERM_PLANNING') return empty;
+  const [[dept]] = await pool.query('SELECT id, name FROM departments WHERE name = ?', [term.medicalSchool.departmentName]);
+  if (!dept) return empty;
+  const asMedical = { ...student, department_id: dept.id, department_name: dept.name, track_id: null, track_name: null };
+  const [curriculum, offering] = await Promise.all([
+    curriculumService.lookupFromMessage(message, asMedical, yearContext),
+    curriculumService.lookupOfferingChunks(message, asMedical, yearContext, { completedCourseNames: progress.completedCourseNames || [] }),
   ]);
   return { curriculum, offering: offering.offering, remaining: offering.remaining };
 }

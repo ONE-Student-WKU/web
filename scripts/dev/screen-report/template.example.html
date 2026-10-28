@@ -1,0 +1,36 @@
+<meta charset="utf-8">
+<title>화면 비교</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+{{FONTS}}
+/* 리포트 바깥(설명·배치)만 이 파일에서 꾸민다. 폰 안은 Shadow DOM이라 여기 스타일이 닿지 않는다.
+   html의 글자 크기는 16px 그대로 둔다 — 앱의 rem이 문서 html 기준이라 바꾸면 폰 안 글자 크기가 달라진다. */
+:root { --bg: #f3f4f7; --fg: #171a21; --muted: #6a707b; --line: #dfe2e8; --shell: #d5d9e1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #111318; --fg: #f1f3f6; --muted: #9aa0ab; --line: #2e333d; --shell: #2a2e37; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #111318; --fg: #f1f3f6; --muted: #9aa0ab; --line: #2e333d; --shell: #2a2e37; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font-family: 'Pretendard', sans-serif; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+.shots { display: flex; flex-wrap: wrap; gap: 20px; }
+figure { margin: 0; width: 375px; max-width: 100%; display: flex; flex-direction: column; gap: 8px; }
+figcaption { font-size: 0.85rem; color: var(--muted); }
+/* 폰 틀 — 좁은 화면에서는 runtime.js가 --s로 비율대로 줄인다 */
+.phone { width: 375px; max-width: 100%; height: calc(812px * var(--s, 1)); border-radius: 18px; overflow: hidden; background: var(--shell); box-shadow: 0 0 0 1px var(--line); }
+.phone-viewport { width: 375px; height: 812px; transform: scale(var(--s, 1)); transform-origin: 0 0; contain: layout paint; }
+.seg button[aria-pressed="true"] { font-weight: 700; }
+</style>
+
+<h1>화면 비교</h1>
+<p class="seg">앱 테마 <button type="button" data-phone-theme="light">라이트</button><button type="button" data-phone-theme="dark">다크</button>
+  · 표시 <button type="button" data-phone-marks="on">켜기</button><button type="button" data-phone-marks="off">끄기</button></p>
+
+<div class="shots">
+  <!-- data-cap: cap/<이름>.json, data-css: cap/<이름>.scoped.css. 걸리는 곳은 data-pins(번호), 새 것은 "kind":"new". -->
+  <figure><figcaption>develop</figcaption>
+    <div class="phone" data-cap="dev-home" data-css="develop" data-pins='[{"sel":".home-card","n":1}]'></div></figure>
+  <!-- 시안: data-proposal로 cap/proposal.scoped.css를 얹고, data-patch로 patches/<이름>.js가 캡처 DOM을 고친다. -->
+  <figure><figcaption>시안</figcaption>
+    <div class="phone" data-cap="dev-home" data-css="develop" data-proposal data-patch="example"></div></figure>
+</div>
+
+{{CSS}}
+{{CAPTURES}}
+{{RUNTIME}}

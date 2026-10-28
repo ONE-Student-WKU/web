@@ -381,6 +381,10 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const currentSemesterSummary = summary?.bySemester?.find(
     (s) => s.year === current.year && s.semester === current.semester
   );
+  // 고른 학기가 학사경고·유급 대상일 수 있는지(졸업요건 응답의 academicWarnings — 정규 학기 번호라 DB 학기 코드 1·3을 1·2로 바꿔 찾는다).
+  const currentTermWarning = (status?.academicWarnings?.terms || []).find(
+    (w) => w.flagged && w.year === current.year && w.semester === { 1: 1, 3: 2 }[current.semester]
+  );
   const registeredCredits = myCourses.reduce((sum, c) => sum + c.credits, 0);
 
   // 카탈로그 검색은 "지금 학기에 뭘 들을지 찾아보는" 용도라 실제 현재 학기(isViewingRealCurrentSemester)
@@ -645,6 +649,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           category: r.category || '',
           // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
           majorArea: r.majorArea || null,
+          // 학수번호(전체성적조회)·개설학과 글자(이수과목확인리스트) — 화면에는 안 보이고 저장할 때 넘긴다(전과·다전공 판정용).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -687,6 +694,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           category: r.category || '',
           // 광역 계열전공의 원래 이수구분(기초·심화·응용) — 화면에는 안 보이고 저장할 때 그대로 넘긴다(시행규칙 제7조 제3항 판정용).
           majorArea: r.majorArea || null,
+          // 학수번호(전체성적조회)·개설학과 글자(이수과목확인리스트) — 화면에는 안 보이고 저장할 때 넘긴다(전과·다전공 판정용).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
           year: r.year,
           semester: r.semester,
           isFail: r.isFail,
@@ -744,6 +754,9 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
           year: Number(r.year),
           semester: Number(r.semester),
           letterGrade: r.letterGrade || null,
+          // 성적표에서 읽은 학수번호·개설학과 글자 — 서버가 개설 학과를 찾아 전과·다전공 판정에 쓴다(courseOrigin.js).
+          courseCode: r.courseCode || null,
+          offeringDepartment: r.offeringDepartment || null,
         }))
       );
       resetAddForm();
@@ -766,16 +779,18 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
   // 다전공 학생의 과목별 전공 표시 — 제2전공 학과 이름과 구분은 졸업요건 진단 응답(status.secondMajor)에서 가져온다.
   // 전과생은 전과 전 전공 과목을 "전공으로 인정 / 일반선택"으로 고친다(D-77). 다전공이면 "주전공 / 제2전공"(D-76).
+  // 다른 학과에서 연 전공 과목은 자동으로 일반선택이고, 학생이 "전공으로 셈"으로 되돌릴 수 있다(D-88).
   const hasSecondMajor = Boolean(status?.secondMajor);
   const isMajorChange = user?.enrollmentType === 'MAJOR_CHANGE';
   const countedMajorLabel = (major) => {
     if (major === 'SECOND') return tr(`courses.countedMajor.SECOND.${status?.secondMajor?.type || 'DOUBLE'}`, { department: status?.secondMajor?.department || '' });
     if (major === 'GENERAL') return tr('courses.countedMajor.GENERAL');
-    return tr(isMajorChange && !hasSecondMajor ? 'courses.countedMajor.PRIMARY.majorChange' : 'courses.countedMajor.PRIMARY');
+    if (hasSecondMajor) return tr('courses.countedMajor.PRIMARY');
+    return tr(isMajorChange ? 'courses.countedMajor.PRIMARY.majorChange' : 'courses.countedMajor.PRIMARY.otherDepartment');
   };
   const showCountedMajor = (c) =>
     Boolean(c.countedMajor) &&
-    ((hasSecondMajor && COUNTED_MAJOR_CATEGORIES.has(c.category)) || (isMajorChange && MAJOR_CATEGORIES.has(c.category)) || c.countedMajor !== 'PRIMARY');
+    ((hasSecondMajor && COUNTED_MAJOR_CATEGORIES.has(c.category)) || (isMajorChange && MAJOR_CATEGORIES.has(c.category)) || c.countedMajor !== 'PRIMARY' || c.countedMajorAuto === false);
 
   // 카탈로그 검색 화면의 본문 — 검색 전에는 안내, 결과가 없으면 그 사실을, 있으면 전체 높이로 목록을 보여준다.
   const renderCatalogResults = () => {
@@ -950,6 +965,11 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <p className="courses-summary-value">{currentSemesterSummary?.gpa ?? '-'}</p>
               </div>
             </div>
+            {currentTermWarning && (
+              <p className="courses-warning-note" role="note">
+                {tr(status.academicWarnings.regime === 'REPEAT' ? 'courses.warn.repeat' : 'courses.warn.warning')}
+              </p>
+            )}
 
             <div className="courses-summary-row courses-summary-row-total">
               <div className={'courses-summary-stat' + (totalCreditsHighlight ? ' settings-highlight' : '')}>
@@ -1018,7 +1038,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                 <p className="courses-list-item-meta">
                   {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
                 </p>
-                {/* 다전공 학생만(서버가 countedMajor를 붙인 경우) — 전공·일반선택 과목, 또는 이미 제2전공으로 센 과목 */}
+                {/* 서버가 countedMajor를 붙인 경우(전과·다전공·다른 학과 전공 과목) — 전공·일반선택 과목, 자동으로 바뀐 과목, 학생이 고친 과목 */}
                 {showCountedMajor(c) && (
                   <select
                     className="courses-major-select"
@@ -1026,7 +1046,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                     value={c.countedMajorAuto ? 'AUTO' : c.countedMajor}
                     onChange={(e) => handleCountedMajorChange(c.id, e.target.value)}
                   >
-                    <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajor) })}</option>
+                    <option value="AUTO">{tr('courses.countedMajor.auto', { major: countedMajorLabel(c.countedMajorAutoValue ?? c.countedMajor) })}</option>
                     <option value="PRIMARY">{countedMajorLabel('PRIMARY')}</option>
                     {isMajorChange && <option value="GENERAL">{countedMajorLabel('GENERAL')}</option>}
                     {hasSecondMajor && <option value="SECOND">{countedMajorLabel('SECOND')}</option>}

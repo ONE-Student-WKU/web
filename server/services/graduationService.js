@@ -12,6 +12,8 @@ const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
 const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
 const { registrationTermsOf } = require('./studentProgress');
+const { getMicroDegreeStatus, convergenceProgress, LINKED_MINOR_CREDITS, LINKED_LIBERAL_MAX } = require('./linkedMajors');
+const { getAcademicWarnings } = require('./academicWarning');
 const { secondMajorTypeOf } = require('./secondMajor');
 const { secondMajorRequirement, hasSecondThesis, isRestrictedCombination } = require('./secondMajorCredits');
 const { resolveCourseCounting } = require('./courseCounting');
@@ -385,8 +387,63 @@ function computeCreditStatus(creditRows, earnedByCategory, liberalArtsCap) {
  * 제2전공 요건과 이수 현황(#378 G-2). 복수전공 최소전공은 제2전공 학과·같은 학번의 3·4학년 전과 기준(최소전공 인정학점)을 엔진으로 구한다 —
  * 시행규칙 제8조 제1항이 복수전공 이수학생과 전과생을 같은 기준으로 묶는다. 학과가 생기기 전 학번이면 엔진이 첫 학번 값으로 추정한다(D-68).
  */
-async function buildSecondMajorStatus(student, secondCourses, courseMajors, allCourseRows) {
+const LIBERAL_CATEGORIES_SET = new Set(['교양필수', '교양선택']);
+const PRIMARY_MAJOR_CATEGORIES = new Set(['전공필수', '전공선택', '전공']);
+
+/**
+ * 연계·복합전공 이수 현황(#412, 순수 함수). 연계전공 이수안내(2026 책자 78쪽)의 계산을 따른다.
+ *  - 요건: 복수전공이면 그 전공의 이수학점(36·48), 부전공이면 21학점
+ *  - 연계전공으로 센 교양(학생이 과목 관리에서 옮긴 것)은 9학점까지
+ *  - 주전공 편성표에도 있는 같은 이름의 과목(주전공으로 센 과목)은 연계전공 이수학점의 1/3까지 함께 인정(중복 인정)
+ *    — 규정은 "최소전공인정학점의 1/3"이라 어느 쪽 최소전공인지 확정하지 못해 연계전공 이수학점으로 계산한다(LINKED_MAJOR_RULES_ESTIMATED).
+ */
+function linkedMajorStatus({ type, linked, secondCourses, primaryCourses, courseMajors }) {
+  const required = type === 'MINOR' ? LINKED_MINOR_CREDITS : linked.requiredCredits;
+  const credit = (list) => list.reduce((s, c) => s + Number(c.credits), 0);
+  const liberal = secondCourses.filter((c) => LIBERAL_CATEGORIES_SET.has(c.category));
+  const major = secondCourses.filter((c) => !LIBERAL_CATEGORIES_SET.has(c.category));
+  const liberalCredits = Math.min(credit(liberal), LINKED_LIBERAL_MAX);
+  const overlap = primaryCourses.filter((c) => PRIMARY_MAJOR_CATEGORIES.has(c.category) && linked.majorNames.has(normalizeCourseName(String(c.name || ''))));
+  const overlapCap = required != null ? Math.floor(required / 3) : 0;
+  const overlapCredits = Math.min(credit(overlap), overlapCap);
+  const earned = credit(major) + liberalCredits + overlapCredits;
+  return {
+    type,
+    kind: 'LINKED',
+    linkedMajor: linked.name,
+    departmentId: null,
+    // 화면·인쇄·부족 요건 문장이 학과 이름 자리에 그대로 쓰도록 연계전공 이름을 넣는다(kind로 학과와 구분).
+    department: linked.name,
+    required,
+    earned,
+    satisfied: required != null && earned >= required,
+    basis: type === 'MINOR' ? 'LINKED_MINOR_21' : 'LINKED_REQUIRED',
+    thesis: null,
+    liberalCredits,
+    overlapCredits,
+    courses: [
+      ...secondCourses.map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), auto: courseMajors.get(c.id).auto })),
+      // 주전공으로 센 공통 과목 — 연계전공에도 함께 인정(중복 인정 상한 안에서). 화면은 "주전공과 함께 인정"으로 표시한다.
+      ...overlap.map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), auto: true, shared: true })),
+    ],
+  };
+}
+
+async function buildSecondMajorStatus(student, secondCourses, courseMajors, allCourseRows, { linked = null, primaryCourses = [] } = {}) {
   const type = secondMajorTypeOf(student);
+  if (linked) {
+    const status = linkedMajorStatus({ type, linked, secondCourses, primaryCourses, courseMajors });
+    const flags = [
+      makeFlag('SECOND_MAJOR_COURSES_ASSIGNED'),
+      makeFlag('SECOND_MAJOR_RULES_UNVERIFIED'),
+      makeFlag('LINKED_MAJOR_RULES_ESTIMATED'),
+      ...(type === 'DOUBLE' ? [makeFlag('LINKED_MAJOR_THESIS')] : []),
+      ...(status.required == null ? [makeFlag('SECOND_MAJOR_MINIMUM_UNKNOWN')] : []),
+      // 의·치·한·약·건축학과 소속은 다전공을 신청할 수 없다(연계전공도 다전공이다).
+      ...(isRestrictedCombination(student.department_name, null) ? [makeFlag('SECOND_MAJOR_RESTRICTED')] : []),
+    ];
+    return { flags, status };
+  }
   const broadSeriesDoubleMajorTrack = type === 'DOUBLE' && student.major_track_type === 'DOUBLE_MAJOR'
     && isBroadSeriesStudent({ departmentName: student.department_name, admissionYear: student.admission_year });
   let minimumMajorCredits = null;
@@ -447,6 +504,16 @@ function summarizePriorMajorCourses(student, courses, byId) {
   };
 }
 
+/**
+ * 다른 학과 전공 과목 중 일반선택으로 센 과목(시행규칙 제3조 제4항 제1호, D-88). 학과를 고쳤거나 다른 학과 전공 과목을 개설과목에서 고른 경우다.
+ * 화면·챗봇 안내용. 없으면 null.
+ */
+function summarizeOtherDepartmentCourses(courses, byId) {
+  const list = courses.filter((c) => byId.get(c.id).reason === 'OTHER_DEPARTMENT')
+    .map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits) }));
+  return list.length ? { courses: list, credits: list.reduce((sum, c) => sum + c.credits, 0) } : null;
+}
+
 async function getGraduationStatus(studentId) {
   const student = await studentService.findById(studentId);
   if (!student || !student.department_id) {
@@ -473,7 +540,8 @@ async function getGraduationStatus(studentId) {
   // 제13조④(수강 학년도 기준 이수구분)로 다시 본 과목은 학점을 옮겨 합산한다(registrationCategory.js, D-46). 옮긴 과목은 결과에 그대로 싣는다.
   const supersededIds = await getSupersededCourseIds(studentId);
   const storedCourses = await fetchCountedCourses(studentId, supersededIds);
-  // 과목을 어떻게 셀지(courseCounting.js): 전과생의 전과 전 전공 과목은 일반선택(D-77), 다전공 학생은 주전공·제2전공으로 나눈다(D-76).
+  // 과목을 어떻게 셀지(courseCounting.js): 전과생의 전과 전 전공 과목은 일반선택(D-77), 다전공 학생은 주전공·제2전공으로 나눈다(D-76),
+  // 개설 학과가 내 학과가 아니고 내 편성표에도 없는 전공 과목은 일반선택(D-88).
   // 제2전공으로 센 과목은 주전공 쪽에서 일반선택이다. 해당이 없으면 저장된 구분 그대로다.
   const counting = await resolveCourseCounting(student, storedCourses);
   const countedCourses = counting ? storedCourses.map((c) => ({ ...c, category: counting.byId.get(c.id).category })) : storedCourses;
@@ -540,16 +608,29 @@ async function getGraduationStatus(studentId) {
   const teachingFlags = teachingAllowed && teachingCourse === false && isTeacherCollegeDepartment(student.department_name)
     ? [makeFlag('TEACHER_COLLEGE_TEACHING_DROPPED')]
     : [];
-  const secondMajor = counting && counting.secondApplies ? await buildSecondMajorStatus(student, secondCourses, counting.byId, allCourseRows) : null;
+  const secondMajor = counting && counting.secondApplies
+    ? await buildSecondMajorStatus(student, secondCourses, counting.byId, allCourseRows, { linked: counting.linked, primaryCourses })
+    : null;
+  // 이수 중인 마이크로디그리(#412) — 졸업 판정에는 넣지 않고 과정마다 이수 학점만 보여 준다.
+  const microDegrees = await getMicroDegreeStatus(studentId, countedCourses);
+  // 광역 계열전공 전공융합형은 타전공 MD 2개(각 12학점)가 필요하다(시행규칙 제7조 제2항 제3호). 충족은 판정하지 않고(D-87, 다음 문의 후보 M-Q1~Q4)
+  // 고른 과정 중 자기 전공이 아닌 과정이 12학점에 이른 개수만 안내한다.
+  const microDegreeConvergence = student.major_track_type === 'CONVERGENCE'
+    && isBroadSeriesStudent({ departmentName: student.department_name, admissionYear: student.admission_year })
+    ? convergenceProgress(microDegrees, student.track_name)
+    : null;
   const priorMajorCourses = counting && counting.priorApplies ? summarizePriorMajorCourses(student, storedCourses, counting.byId) : null;
+  const otherDepartmentCourses = counting ? summarizeOtherDepartmentCourses(storedCourses, counting.byId) : null;
   const priorFlags = student.enrollment_type === 'MAJOR_CHANGE' && !(counting && counting.priorApplies) ? [makeFlag('MAJOR_CHANGE_TERM_UNKNOWN_FOR_COURSES')]
     : priorMajorCourses ? [makeFlag('MAJOR_CHANGE_PRIOR_COURSES')] : [];
   const countingFlags = courseCountingCaveats({
     categories, liberalElectiveAreas, majorAreaCredits, primaryCourses, teachingCourse, certificationRows, allCourseRows,
     isSeriesDepartment: String(student.department_name || '').endsWith('계열'),
   });
-  const extraFlags = [...registrationFlags, ...teachingFlags, ...(secondMajor ? secondMajor.flags : []), ...priorFlags, ...countingFlags];
+  const otherDepartmentFlags = otherDepartmentCourses ? [makeFlag('OTHER_DEPARTMENT_MAJOR_COURSES')] : [];
+  const extraFlags = [...registrationFlags, ...teachingFlags, ...(secondMajor ? secondMajor.flags : []), ...priorFlags, ...otherDepartmentFlags, ...countingFlags];
   const confidence = worstConfidence([regulation.confidence, confidenceFromFlags(extraFlags)]);
+  const academicWarnings = await getAcademicWarnings(studentId, student);
 
   // regulation: 이 진단의 근거 신뢰도와 사유(엔진 플래그). 화면·챗봇이 "확정/추정/자료없음"을 표시하는 데 쓴다.
   // 기존 필드(totalRequiredCredits/totalEarnedCredits/categories/certifications)는 모양이 그대로라 기존 화면은 영향이 없다.
@@ -574,8 +655,16 @@ async function getGraduationStatus(studentId) {
     registrationTerms: registrationTermsOf(student),
     // 전과생의 전과 전 전공 과목 — { recognitionApplied, demoted: [{ id, name, credits, auto }], recognized: [...] } | null(D-77)
     priorMajorCourses,
+    // 다른 학과 전공 과목으로 일반선택으로 센 과목 — { courses: [{ id, name, credits }], credits } | null(D-88)
+    otherDepartmentCourses,
     // 다전공(복수전공·부전공) 판정 — { type, departmentId, department, required, earned, satisfied, basis, thesis, courses } | null(secondMajorCredits.js)
     secondMajor: secondMajor ? secondMajor.status : null,
+    // 마이크로디그리 — [{ name, programGroup, required, earned, satisfied, courses, missing }](linkedMajors.js). 고른 게 없으면 []
+    microDegrees,
+    // 전공융합형 학생만 — { required: 2, reached, otherChosen } 타전공 과정 중 12학점에 이른 개수(추정, 판정 아님). 그 밖에는 null
+    microDegreeConvergence,
+    // 학기 성적으로 본 학사경고(일반 학과)·유급(의·치·한·약·간호) 대상일 수 있는 학기 — academicWarning.js. 판정이 아니라 안내용이다.
+    academicWarnings,
     // 광역 계열전공 이수유형(students.major_track_type) — 화면이 어떤 유형 기준인지 적는 데 쓴다.
     majorTrackType: student.major_track_type || null,
     regulation: {
@@ -599,4 +688,4 @@ async function getGraduationStatus(studentId) {
   };
 }
 
-module.exports = { getGraduationStatus, settleTransferLiberalCap, computeCreditStatus, computeMajorAreaCredits, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis, certificationRecognitionUnverified, courseCountingCaveats, inProgressCredits };
+module.exports = { getGraduationStatus, settleTransferLiberalCap, computeCreditStatus, computeMajorAreaCredits, evaluateCertifications, requirementRowsFromJudgment, liberalArtsCapForDiagnosis, certificationRecognitionUnverified, courseCountingCaveats, inProgressCredits, linkedMajorStatus };

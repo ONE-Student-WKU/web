@@ -8,6 +8,7 @@ const { perUserLimiter } = require('../middleware/security');
 const studentService = require('../services/studentService');
 const noticeService = require('../services/noticeService');
 const { notifyAdmin } = require('../services/adminAlertService');
+const moderationLabelService = require('../services/moderationLabelService');
 const { normalizeDepartmentIds, departmentsExist } = require('../services/postDepartments');
 
 /**
@@ -135,6 +136,7 @@ async function handleReport(req, res, next, targetType) {
       return res.status(status).json({ status, code: result.reason, message: null, data: null });
     }
     notifyAdmin('report'); // 기다리지 않는다(adminAlertService.js)
+    moderationLabelService.scheduleLabel('report', result.id); // AI 사전 분류(#458) — 기다리지 않는다
     res.status(201).json({ status: 201, code: 'COMMUNITY_REPORT_CREATED', message: null, data: { id: result.id } });
   } catch (err) {
     next(err);
@@ -203,6 +205,7 @@ router.post('/', requireNotWritingSanctioned, async (req, res, next) => {
       departmentIds: departments.value || [],
     });
     notifyAdmin('post'); // 승인 대기 글 — 기다리지 않는다(adminAlertService.js)
+    moderationLabelService.scheduleLabel('post', id); // AI 사전 분류(#458) — 기다리지 않는다
     res.status(201).json({ status: 201, code: 'COMMUNITY_POST_CREATED', message: null, data: { id } });
   } catch (err) {
     next(err);
@@ -321,6 +324,8 @@ router.patch('/:id', requireNotWritingSanctioned, async (req, res, next) => {
     if (!edited) {
       return res.status(404).json({ status: 404, code: 'POST_NOT_FOUND', message: null, data: null });
     }
+    // 고친 글은 다시 승인 대기라 다시 분류한다 — 옛 내용의 라벨은 먼저 지운다.
+    moderationLabelService.scheduleLabel('post', Number(req.params.id), { clearFirst: true });
     res.status(200).json({ status: 200, code: 'COMMUNITY_POST_UPDATED', message: null, data: null });
   } catch (err) {
     next(err);
@@ -380,6 +385,10 @@ router.post('/:id/apply', requireNotWritingSanctioned, async (req, res, next) =>
     // 모집 마감일(선택) — 마감일이 지났으면 신청할 수 없다. closed_at은 그대로라 글쓴이가 마감일을 고쳐(재승인) 다시 열 수 있다.
     if (post.recruitState === 'ended') {
       return res.status(400).json({ status: 400, code: 'RECRUIT_ENDED', message: null, data: null });
+    }
+    // 글쓴이가 계정 정지 중이면 정지 동안 신청을 받지 않는다(#457). 이유는 알리지 않는 중립 코드다.
+    if (post.authorUnavailable) {
+      return res.status(409).json({ status: 409, code: 'POST_UNAVAILABLE', message: null, data: null });
     }
 
     const result = await communityService.applyToPost(req.params.id, req.session.userId, message);

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IconArrowRight, IconSearch } from './icons.jsx';
 import SearchScreen from './SearchScreen.jsx';
+import Highlighted from './Highlighted.jsx';
 import { closeSearchScreen } from './searchScreenHistory.js';
 import useSearchInput from '../hooks/useSearchInput.js';
 import { getYearRange, describeSuccessors } from '../utils/onboardingYears.js';
@@ -23,20 +24,6 @@ import { useI18n } from '../i18n/I18nContext.jsx';
  * - onSelectSuccessor: (successor, former) => void (선택) — 있으면 이전 학과 카드 아래에 "○○학번부터는 △△" 바로가기를 둔다.
  *   학교 문서로 확인된(confirmed) 이후 학과만. 이름이 비슷해서 이은 추정 연결은 잘못 보낼 수 있어 글자 안내만 남긴다.
  */
-
-// 검색어와 일치한 글자를 칠한다(검색 결과에서만 — 목록에서는 query가 비어 그대로).
-function Highlighted({ text, query }) {
-  if (!query) return text;
-  return splitByMatch(text, query).map((part, i) =>
-    part.hit ? (
-      <mark key={i} className="search-hit">
-        {part.text}
-      </mark>
-    ) : (
-      <React.Fragment key={i}>{part.text}</React.Fragment>
-    )
-  );
-}
 
 // cohortLabel: 개편 전후 묶음 안에서 카드 맨 앞에 붙는 학번 기준("2025학번까지" / "2026학번부터"). 묶음 안에서는 "이후 학과" 안내와 바로가기를 뺀다.
 function DepartmentCard({ department, selected, active = false, onSelect, showCollege, query = '', shortcuts = [], onSelectSuccessor, cohortLabel = null, cohortOld = false }) {

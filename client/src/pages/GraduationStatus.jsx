@@ -7,6 +7,8 @@ import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getP
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
+import AcademicWarningCard from '../components/AcademicWarningCard.jsx';
+import MicroDegreeCard from '../components/MicroDegreeCard.jsx';
 
 // Home.jsx와 동일한 이유(재진입 시 빈 화면 깜빡임 방지)로 모듈 스코프에 마지막으로
 // 불러온 졸업요건 데이터를 캐시해둔다. sessionStorage에서 초기값을 복원해서, 탭이 살아있는
@@ -159,6 +161,9 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
           </section>
         )}
 
+        {/* 학사경고·유급은 졸업요건 자료가 없는 학과·학번에도 성적만으로 안내할 수 있어 자료 유무와 상관없이 둔다(대상 학기가 있을 때만 보인다). */}
+        {status && <AcademicWarningCard warnings={status.academicWarnings} />}
+
         {status && !trust.noData && (
           <>
             {/* 졸업이 가까우면 확인받을 때 들고 갈 결과를 바로 저장할 수 있게 같은 버튼을 이 안내 안에도 둔다. */}
@@ -259,6 +264,10 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                       : ` ${t(status.priorMajorCourses.recognitionApplied ? 'grad.prior.appliedNone' : 'grad.prior.notApplied')}`}
                   </p>
                 )}
+                {/* 다른 학과에서 연 전공 과목은 일반선택(시행규칙 제3조 제4항, D-88) — 학과를 고쳤거나 다른 학과 전공 과목을 고른 경우 */}
+                {status.otherDepartmentCourses && (
+                  <p className="grad-flex-note">{t('grad.otherDepartment', { n: status.otherDepartmentCourses.credits })}</p>
+                )}
                 {/* 광역 계열전공: 이수구분별 최소 학점(시행규칙 제7조 제3항)과 이수유형. 구분을 모르는 학점은 어느 구분에도 넣지 않는다(서버 computeMajorAreaCredits). */}
                 {status.majorAreaCredits && (
                   <>
@@ -315,9 +324,19 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                     <p className="grad-subcheck-label">{t(status.secondMajor.thesis.satisfied ? 'grad.secondMajor.thesisMet' : 'grad.secondMajor.thesisUnmet')}</p>
                   </div>
                 )}
-                <p className="grad-flex-note">{t('grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}</p>
+                {/* 연계·복합전공(#412): 교양 9학점·주전공과 같은 과목 1/3 상한을 적용한 학점을 함께 알린다. */}
+                {status.secondMajor.kind === 'LINKED' && (
+                  <p className="grad-flex-note">
+                    {t('grad.secondMajor.linkedDetail', { liberal: status.secondMajor.liberalCredits, shared: status.secondMajor.overlapCredits })}
+                  </p>
+                )}
+                <p className="grad-flex-note">
+                  {t(status.secondMajor.kind === 'LINKED' ? 'grad.secondMajor.assignedLinked' : 'grad.secondMajor.assigned', { n: status.secondMajor.courses.length })}
+                </p>
               </section>
             )}
+
+            <MicroDegreeCard microDegrees={status.microDegrees} convergence={status.microDegreeConvergence} />
 
             {groups?.liberalArts && (
               <section className="home-card">

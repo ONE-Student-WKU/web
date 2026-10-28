@@ -33,6 +33,11 @@ test('탭 구분 붙여넣기를 규칙 기반으로 파싱한다', () => {
   assertParsedFixture(parseFullTranscriptTextRuleBased(buildTableText()));
 });
 
+test('행마다 학수번호를 함께 남긴다(개설 학과를 찾는 데 쓴다, #253 설계안 1)', () => {
+  const { rows } = parseFullTranscriptTextRuleBased(buildTableText());
+  assert.deepEqual(rows.slice(0, 4).map((r) => r.courseCode), ['009001', '009002', '900001', 'L09001']);
+});
+
 test('탭이 줄바꿈으로 바뀐 붙여넣기도 같은 결과를 낸다', () => {
   assertParsedFixture(parseFullTranscriptTextRuleBased(buildTableText().replace(/\t/g, '\n')));
 });

@@ -2,6 +2,7 @@ const pool = require('../db');
 const { normalizeCourseName } = require('./courseNameMatch');
 const { getDepartmentChain } = require('./curriculumHistoryService');
 const { isTeacherCollegeDepartment } = require('./teachingCourse');
+const { findLinkedMajor } = require('./linkedMajors');
 
 /**
  * server/services/secondMajorCredits.js
@@ -53,9 +54,26 @@ async function curriculumNames(departmentIds) {
   return new Set(rows.map((r) => normalizeCourseName(r.course_name)));
 }
 
-/** 판정에 쓸 학과·편성표 문맥. 제2전공이 없으면 null. */
+/**
+ * 판정에 쓸 학과·편성표 문맥. 제2전공이 없으면 null.
+ * 연계·복합전공(#412)은 학과가 아니라 여러 학과 과목으로 짠 전공이라, 개설 학과로는 정하지 않고(secondIds 비움) 그 전공의 과목 목록(전공 과목명)으로 정한다.
+ * 주전공 편성표에도 있는 과목(공통 과목)은 지금 규칙대로 주전공에 두고, 연계전공 쪽 중복 인정은 진단에서 따로 센다(graduationService).
+ */
 async function loadAssignmentContext(student) {
-  if (!student || student.second_department_id == null) return null;
+  if (!student) return null;
+  if (student.second_department_id == null && student.second_linked_major) {
+    const linked = await findLinkedMajor(student.second_linked_major);
+    if (!linked) return null;
+    const primary = await getDepartmentChain(student.department_id);
+    return {
+      primaryIds: new Set(primary.departmentIds.map(Number)),
+      secondIds: new Set(),
+      primaryNames: await curriculumNames(primary.departmentIds),
+      secondNames: linked.majorNames,
+      linked,
+    };
+  }
+  if (student.second_department_id == null) return null;
   const [primary, second] = await Promise.all([getDepartmentChain(student.department_id), getDepartmentChain(student.second_department_id)]);
   const [primaryNames, secondNames] = await Promise.all([curriculumNames(primary.departmentIds), curriculumNames(second.departmentIds)]);
   return {
@@ -66,13 +84,26 @@ async function loadAssignmentContext(student) {
   };
 }
 
-/** 과목 행 id → 개설 학과 id(개설과목에서 고른 과목만). */
+/**
+ * 과목 행 id → { departmentId, fromCatalog } — 개설과목에서 고른 과목은 그 개설과목의 학과(fromCatalog: true),
+ * 성적표 PDF로 가져온 과목은 학수번호·개설학과 글자로 찾아 저장한 학과(student_courses.offering_department_id, courseOrigin.js).
+ * 어느 쪽도 모르면 빠진다(판정은 과목명으로 맞춘다).
+ */
 async function loadOfferingDepartments(studentId) {
   const [rows] = await pool.query(
-    `SELECT sc.id, co.department_id FROM student_courses sc JOIN course_offerings co ON co.id = sc.course_id WHERE sc.student_id = ?`,
+    `SELECT sc.id, co.department_id AS catalog_department_id, sc.offering_department_id
+     FROM student_courses sc LEFT JOIN course_offerings co ON co.id = sc.course_id
+     WHERE sc.student_id = ? AND (co.department_id IS NOT NULL OR sc.offering_department_id IS NOT NULL)`,
     [studentId]
   );
-  return new Map(rows.map((r) => [r.id, r.department_id]));
+  return new Map(
+    rows.map((r) => [
+      r.id,
+      r.catalog_department_id != null
+        ? { departmentId: r.catalog_department_id, fromCatalog: true }
+        : { departmentId: r.offering_department_id, fromCatalog: false },
+    ])
+  );
 }
 
 /**

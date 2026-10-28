@@ -4,12 +4,18 @@ const { PREMED_DEPARTMENTS } = require('../services/regulationEngine/profileCave
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const studentService = require('../services/studentService');
+const sanctionService = require('../services/sanctionService');
+const warningService = require('../services/warningService');
+const appealService = require('../services/appealService');
+const { notifyAdmin } = require('../services/adminAlertService');
+const signupBlockService = require('../services/signupBlockService');
 const { isCurrentConsent, CURRENT_CONSENT_VERSION } = require('../services/consent');
 const { validateLeavePeriods } = require('../services/leavePeriods');
 const { validateHomeLayout } = require('../services/homeLayout');
 const { validateTeachingAndTransferCredits, canTakeTeachingCourse } = require('../services/teachingCourse');
 const { validateMajorTrackType, isBroadSeriesStudent } = require('../services/majorTrackType');
 const { validateSecondMajor } = require('../services/secondMajor');
+const { findLinkedMajor, microDegreesExist, validateMicroDegreeList, setStudentMicroDegrees } = require('../services/linkedMajors');
 
 /**
  * Routes for the current logged-in student (/api/me)
@@ -29,7 +35,62 @@ router.get('/me', requireAuth, async (req, res, next) => {
       return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
     }
 
-    return res.status(200).json({ status: 200, code: 'ME_SUCCESS', message: null, data: serializeStudent(student) });
+    // 서비스 전체 이용 정지 중이면 화면이 다른 화면 대신 정지 안내를 띄운다(#457 — 사유는 관리자가 쓴 글 그대로).
+    const suspension = await sanctionService.getActiveAccountSuspension(student.id);
+    // 정지 화면 안에서 보낸 이의 제기와 운영팀 답변(정지 한 번에 1건, appealService.js).
+    const appeal = suspension ? await appealService.getAppeal(suspension.id, student.id) : null;
+    // 아직 확인하지 않은 경고가 있으면 화면이 한 번 사유를 보여주고 확인받는다(약관 6항 — 사유를 서비스 안에서 안내).
+    const pendingWarning = await warningService.getPendingWarning(student.id);
+    return res.status(200).json({
+      status: 200,
+      code: 'ME_SUCCESS',
+      message: null,
+      data: {
+        ...serializeStudent(student),
+        suspension: suspension ? { reason: suspension.reason, endsAt: suspension.ends_at, appeal } : null,
+        pendingWarning,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/appeal — 정지 화면에서 이의 제기(정지 중에도 허용, middleware/accountSuspension.js). 정지 한 번에 1건.
+// 문의함에 들어가고 관리자 알림이 간다 — 정지 중에는 문의하기가 막혀 있어 이것이 유일한 서비스 안 통로다(약관 6항).
+router.post('/me/appeal', requireAuth, async (req, res, next) => {
+  try {
+    const suspension = await sanctionService.getActiveAccountSuspension(req.session.userId);
+    if (!suspension) {
+      return res.status(409).json({ status: 409, code: 'NOT_SUSPENDED', message: null, data: null });
+    }
+    if (!appealService.isValidAppealContent(req.body.content)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CONTENT', message: null, data: null });
+    }
+    const appeal = await appealService.createAppeal(req.session.userId, suspension.id, req.body.content);
+    if (!appeal) {
+      return res.status(409).json({ status: 409, code: 'APPEAL_EXISTS', message: null, data: null });
+    }
+    notifyAdmin('inquiry'); // 기다리지 않는다(adminAlertService.js)
+    return res.status(201).json({ status: 201, code: 'APPEAL_CREATED', message: null, data: { appeal } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/me/warnings/:id/acknowledge — 경고 안내에서 [확인]. 다음에 확인할 경고가 있으면 그것을 돌려준다(없으면 null).
+router.post('/me/warnings/:id/acknowledge', requireAuth, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    const acknowledged = await warningService.acknowledgeWarning(id, req.session.userId);
+    if (!acknowledged) {
+      return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
+    }
+    const pendingWarning = await warningService.getPendingWarning(req.session.userId);
+    return res.status(200).json({ status: 200, code: 'WARNING_ACKNOWLEDGED', message: null, data: { pendingWarning } });
   } catch (err) {
     next(err);
   }
@@ -64,7 +125,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     const {
       name, departmentId, admissionYear, enrollmentType, trackId,
       majorChangeGrade, majorChangeYear, majorChangeSemester, majorChangeRecognition, transferGrade, transferRecognizedCredits, teachingCourse, majorTrackType,
-      secondDepartmentId, secondMajorType, careerCounselingCount, leaveSemesters, language, homeLayout,
+      secondDepartmentId, secondMajorType, secondLinkedMajor, microDegrees, careerCounselingCount, leaveSemesters, language, homeLayout,
     } = req.body;
 
     // name은 문자열이어야 한다(숫자·객체가 오면 아래 .trim()에서 서버가 500으로 터졌다).
@@ -215,18 +276,32 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       const dept = await studentService.findDepartmentById(secondDepartmentId);
       if (!dept) return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
     }
-    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 학과를 지우면 구분도 지운다.
-    const effectiveSecondDepartmentId = secondDepartmentId !== undefined ? secondDepartmentId : student.second_department_id;
+    // 다전공(복수전공·부전공, #378 G-1) — 이번 요청으로 확정되는 주전공·제2전공 기준으로 검사한다. 제2전공은 학과나 연계·복합전공(#412) 중 하나라,
+    // 한쪽을 새로 고르면 다른 쪽은 지운다. 둘 다 지우면 구분도 지운다.
+    const linkedGiven = secondLinkedMajor !== undefined;
+    const departmentGiven = secondDepartmentId !== undefined;
+    const effectiveSecondDepartmentId = departmentGiven ? secondDepartmentId : linkedGiven && secondLinkedMajor ? null : student.second_department_id;
+    const effectiveSecondLinkedMajor = linkedGiven ? secondLinkedMajor : departmentGiven && secondDepartmentId != null ? null : student.second_linked_major;
     const secondMajorError = validateSecondMajor(
-      { secondDepartmentId, secondMajorType },
-      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId }
+      { secondDepartmentId, secondMajorType, secondLinkedMajor },
+      { departmentId: departmentId !== undefined ? departmentId : student.department_id, secondDepartmentId: effectiveSecondDepartmentId, secondLinkedMajor: effectiveSecondLinkedMajor }
     );
     if (secondMajorError) return res.status(400).json({ status: 400, code: secondMajorError, message: null, data: null });
-    // 학과만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    if (secondLinkedMajor != null && !(await findLinkedMajor(secondLinkedMajor))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SECOND_LINKED_MAJOR', message: null, data: null });
+    }
+    // 학과·연계전공만 새로 고르고 구분을 안 보내면 복수전공으로 둔다(이전 화면·옛 클라이언트).
+    const hasEffectiveSecond = effectiveSecondDepartmentId != null || Boolean(effectiveSecondLinkedMajor);
     let effectiveSecondMajorType; // undefined = 바꾸지 않음
-    if (effectiveSecondDepartmentId == null) effectiveSecondMajorType = null;
+    if (!hasEffectiveSecond) effectiveSecondMajorType = null;
     else if (secondMajorType !== undefined) effectiveSecondMajorType = secondMajorType || 'DOUBLE';
-    else if (secondDepartmentId !== undefined) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
+    else if (departmentGiven || linkedGiven) effectiveSecondMajorType = student.second_major_type || 'DOUBLE';
+    // 마이크로디그리(#412) — 이름 목록 전체를 바꾼다.
+    const microDegreeError = validateMicroDegreeList(microDegrees);
+    if (microDegreeError) return res.status(400).json({ status: 400, code: microDegreeError, message: null, data: null });
+    if (microDegrees !== undefined && !(await microDegreesExist(microDegrees))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_MICRO_DEGREES', message: null, data: null });
+    }
 
     // trackId: 이번 요청에서 확정되는 departmentId(요청에 없으면 기존 값) 소속 트랙인지 검증.
     if (trackId !== undefined && trackId !== null) {
@@ -255,7 +330,9 @@ router.patch('/me', requireAuth, async (req, res, next) => {
       transferRecognizedCredits: enrollmentType !== undefined && enrollmentType !== 'TRANSFER_ADMISSION' ? null : transferRecognizedCredits,
       teachingCourse: clearTeaching ? null : teachingCourse,
       majorTrackType: clearTrackType ? null : majorTrackType,
-      secondDepartmentId,
+      // 연계전공을 고르면 학과 칸을, 학과를 고르면 연계전공 칸을 비운다(제2전공은 하나).
+      secondDepartmentId: effectiveSecondDepartmentId !== student.second_department_id || departmentGiven ? effectiveSecondDepartmentId : undefined,
+      secondLinkedMajor: effectiveSecondLinkedMajor !== student.second_linked_major || linkedGiven ? effectiveSecondLinkedMajor ?? null : undefined,
       secondMajorType: effectiveSecondMajorType,
       careerCounselingCount,
       leaveSemesters,
@@ -265,6 +342,7 @@ router.patch('/me', requireAuth, async (req, res, next) => {
     if (admissionYear !== undefined || enrollmentType !== undefined || transferGrade !== undefined) {
       await studentService.revalidateLeavePeriods(req.session.userId);
     }
+    if (microDegrees !== undefined) await setStudentMicroDegrees(req.session.userId, microDegrees);
 
     const updated = await studentService.findById(req.session.userId);
     return res.status(200).json({ status: 200, code: 'ME_UPDATE_SUCCESS', message: null, data: serializeStudent(updated) });
@@ -316,6 +394,10 @@ router.delete('/me', requireAuth, async (req, res, next) => {
     if (!student) {
       return res.status(401).json({ status: 401, code: 'UNAUTHORIZED', message: null, data: null });
     }
+
+    // 서비스 전체 이용 정지 중이면 지우기 전에 재가입 제한 기록(해시·사유·기간)을 남긴다(#457, 약관 6항).
+    const suspension = await sanctionService.getActiveAccountSuspension(student.id);
+    if (suspension) await signupBlockService.recordBlock(student, suspension);
 
     await studentService.deleteStudent(req.session.userId);
 

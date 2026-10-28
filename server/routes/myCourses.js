@@ -106,9 +106,14 @@ router.get('/', async (req, res, next) => {
     const { year, semester } = req.query;
     const rows = await courseService.listMyCourses(req.session.userId, { year, semester });
     const student = await studentService.findById(req.session.userId);
-    // 전과생(전과 전 과목)이나 다전공 학생이면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
+    // 전과생(전과 전 과목)·다전공 학생이나 다른 학과 전공 과목이 있으면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
     const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
-    const data = rows.map(({ countedMajorChoice, ...r }) => (counting ? { ...r, countedMajor: counting.byId.get(r.id).counted, countedMajorAuto: counting.byId.get(r.id).auto } : r));
+    // 학생이 고친 과목은 자동으로 정했을 값(countedMajorAutoValue)도 붙인다. 다른 학과 전공 과목은 일반선택으로 센다(D-88).
+    const data = rows.map(({ countedMajorChoice, ...r }) => {
+      if (!counting) return r;
+      const c = counting.byId.get(r.id);
+      return { ...r, countedMajor: c.counted, countedMajorAuto: c.auto, ...(c.auto ? {} : { countedMajorAutoValue: c.autoCounted }) };
+    });
     res.status(200).json({ status: 200, code: 'MY_COURSES_SUCCESS', message: null, data });
   } catch (err) {
     next(err);
@@ -339,6 +344,12 @@ router.post('/import/confirm', async (req, res, next) => {
       // 성적표에서 읽은 광역 계열전공 원래 이수구분(기초·심화·응용). 없으면 그대로 두고, 다른 값은 거절한다.
       if (row.majorArea !== undefined && row.majorArea !== null && !courseService.VALID_MAJOR_AREAS.includes(row.majorArea)) {
         return res.status(400).json({ status: 400, code: 'INVALID_MAJOR_AREA', message: null, data: null });
+      }
+      // 성적표에서 읽은 학수번호·개설학과 글자(선택). 학과 id는 서버가 찾는다 — 화면이 보낸 학과 id는 받지 않는다.
+      for (const key of ['courseCode', 'offeringDepartment']) {
+        if (row[key] !== undefined && row[key] !== null && (typeof row[key] !== 'string' || row[key].length > 100)) {
+          return res.status(400).json({ status: 400, code: 'INVALID_ROW', message: null, data: null });
+        }
       }
       // student_courses.name은 VARCHAR(100) — 모바일에서 저장한 PDF는 표 레이아웃이 좁게
       // 잡혀 컬럼 구분이 깨지는 경우가 있어(실사용 확인), 과목명 파싱이 여러 행을 한 줄로
