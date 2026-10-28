@@ -15,6 +15,7 @@ import { IconChevronLeft } from '../components/icons.jsx';
  * 2026-10-28: 이의 제기 경로를 문의하기(정지 중에는 정지 화면, server/services/appealService.js)로 바꾸고, 잘못된 조치는
  *   기록을 지운다고 적었다(경고 취소·제재 철회). 문의 이메일을 서비스 도메인 주소로 바꿨다(ImprovMX 전달).
  * 2026-10-28(2차): 7항의 이용 범위에 문의 답변 AI 초안(server/services/inquiryDraftService.js)을 넣었다(동의 버전 2026-10-28.2).
+ *   시행일을 마지막 개정일(2026-10-28)에 맞췄다 — 26일로 남아 있었다. 날짜만 바꿔 동의 버전은 그대로다.
  * 의미 있게 고치면 동의 버전을 같이 올려야 한다 — CLAUDE.md "약관·개인정보 동의" 참고
  * (server/services/consent.js, client/src/utils/consent.js).
  * 법적 문서라 아직 번역하지 않고 한국어로만 제공한다.
@@ -34,7 +35,7 @@ function TermsOfService({ onGoBack }) {
       </header>
 
       <div className="courses-body">
-        <p className="settings-field-hint">시행일: 2026년 10월 26일</p>
+        <p className="settings-field-hint">시행일: 2026년 10월 28일</p>
 
         <section className="home-card">
           <p className="home-card-label">1. 서비스 소개</p>
