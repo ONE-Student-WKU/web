@@ -69,7 +69,7 @@ router.get('/conversations/current', async (req, res, next) => {
 });
 
 // POST /api/chat/messages
-// 질문 임베딩 → regulation_chunks 코사인 유사도 검색 → Claude Haiku 4.5로 답변 생성 → 출처 포함 응답.
+// 질문 임베딩 → regulation_chunks 코사인 유사도 검색 → Claude Haiku 5.5로 답변 생성 → 출처 포함 응답.
 // 관련 청크를 하나도 못 찾으면 AI 호출 없이 바로 안내 문구를 반환한다.
 // 하루 한도는 "세고 → 저장"이 따로라 동시 요청으로 넘을 수 있어, 같은 사용자의 질문은 한 번에 하나씩만 처리한다.
 router.post('/messages', oneRequestPerUser(), async (req, res, next) => {
