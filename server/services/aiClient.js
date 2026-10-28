@@ -1,6 +1,6 @@
 /**
  * server/services/aiClient.js
- * Claude Haiku 4.5 (Anthropic Messages API) 클라이언트.
+ * Claude Haiku 5.5 (Anthropic Messages API) 클라이언트.
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
@@ -10,8 +10,25 @@ const { parseTeachingCourse } = require('./teachingCourse');
 const { secondMajorTypeOf } = require('./secondMajor');
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-haiku-5-5';
 const ANTHROPIC_VERSION = '2023-06-01';
+// Haiku 5.5는 요청에 thinking을 적지 않아도 답하기 전에 생각한다(적응형). 생각한 양도 max_tokens와 출력 요금에 들어가므로
+// 모든 호출을 가장 가벼운 단계(low)로 둔다 — 근거 문서 안에서 답하는 챗봇·분류·추출이라 깊이 생각할 일이 적다(D-91).
+// 같은 글이 Haiku 4.5보다 토큰을 약 30% 더 쓰는 것도 감안해 각 호출의 max_tokens를 넉넉히 잡았다.
+const OUTPUT_CONFIG = { effort: 'low' };
+
+/**
+ * 응답에서 답변 글자만 꺼낸다. Haiku 5.5 응답은 앞에 thinking 블록이 붙을 수 있어 text 블록만 모은다.
+ * 안전 분류기가 요청을 거절하면(HTTP 200, stop_reason "refusal") 빈 글자를 답으로 쓰지 않게 오류로 던진다 —
+ * 호출부는 지금처럼 실패 경로(챗봇 오류 안내, 신고 분류는 사람 검토로 남김 등)를 탄다.
+ */
+function responseText(data) {
+  if (data.stop_reason === 'refusal') {
+    const category = data.stop_details && data.stop_details.category ? data.stop_details.category : 'unknown';
+    throw new Error(`ANTHROPIC_REFUSAL: ${category}`);
+  }
+  return (data.content || []).filter((block) => block.type === 'text').map((block) => block.text).join('');
+}
 
 const SYSTEM_PROMPT = `너는 원광대학교 학생의 학사 규정 질문에 답하는 챗봇이다.
 아래 "근거 문서"에 제공된 내용만 근거로 답변하고, 임의로 해석하거나 추측하지 마라.
@@ -565,7 +582,8 @@ async function analyzeQuestion(rawQuery) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 200,
+        max_tokens: 1024,
+        output_config: OUTPUT_CONFIG,
         system: QUERY_ANALYSIS_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: rawQuery }],
       }),
@@ -577,7 +595,7 @@ async function analyzeQuestion(rawQuery) {
     if (!res.ok) return fallback;
 
     const data = await res.json();
-    return parseQuestionAnalysis(data.content.map((block) => block.text).join(''), rawQuery);
+    return parseQuestionAnalysis(responseText(data), rawQuery);
   } catch {
     return fallback;
   }
@@ -612,7 +630,8 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1024,
+      max_tokens: 2048,
+      output_config: OUTPUT_CONFIG,
       system: buildSystemPrompt(student, graduationStatus, yearContext, language, progress),
       messages,
     }),
@@ -626,7 +645,7 @@ async function getAIChatResponse(userMessage, relevantChunks, history = [], stud
   }
 
   const data = await res.json();
-  return data.content.map((block) => block.text).join('');
+  return responseText(data);
 }
 
 // 진로 상담(후속 질문·후보·로드맵)의 답변 언어 지시 — 챗봇의 ENGLISH_ANSWER_NOTE와 같은 방식으로, 영어 화면일 때만 덧붙인다.
@@ -751,7 +770,7 @@ function buildCareerStudentNote(student, completedCourses) {
   return [`이 학생의 프로필 — ${parts.join(', ')}.`, nameInstruction, courseNote].filter(Boolean).join('\n');
 }
 
-// timeoutMs: max_tokens이 클수록(예: PDF 추출 8000) 생성에 오래 걸릴 수 있어 호출부가
+// timeoutMs: max_tokens이 클수록(예: PDF 추출 12000) 생성에 오래 걸릴 수 있어 호출부가
 // 필요에 맞게 늘려 잡을 수 있게 파라미터로 뺐다.
 async function callClaude(system, messages, maxTokens = 500, timeoutMs = 30000) {
   const res = await fetch(ANTHROPIC_API_URL, {
@@ -761,7 +780,7 @@ async function callClaude(system, messages, maxTokens = 500, timeoutMs = 30000) 
       'x-api-key': process.env.AI_API_KEY,
       'anthropic-version': ANTHROPIC_VERSION,
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, output_config: OUTPUT_CONFIG, system, messages }),
     // Anthropic이 응답을 안 주면 이 요청이 무기한 붙잡혀 있게 되므로 상한을 둔다.
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -772,7 +791,7 @@ async function callClaude(system, messages, maxTokens = 500, timeoutMs = 30000) 
   }
 
   const data = await res.json();
-  return data.content.map((block) => block.text).join('');
+  return responseText(data);
 }
 
 // 모델이 JSON 앞뒤로 ```json 코드펜스나 잡담을 붙이는 경우가 있어, 첫 '['부터 마지막 ']'까지만
@@ -801,7 +820,7 @@ function fixBareHonorific(text, student, language = 'ko') {
 async function getCareerFollowUp(history, student, completedCourses, language = 'ko') {
   const studentNote = buildCareerStudentNote(student, completedCourses);
   const system = [CAREER_FOLLOWUP_SYSTEM_PROMPT, FIXED_ANSWER_READING_NOTE, studentNote, buildCareerLanguageNote(language), CAREER_FOLLOWUP_STYLE_REMINDER].filter(Boolean).join('\n\n');
-  const text = await callClaude(system, withEnglishReminder(history, language), 300);
+  const text = await callClaude(system, withEnglishReminder(history, language), 1024);
   return fixBareHonorific(text, student, language);
 }
 
@@ -820,7 +839,7 @@ async function generateCareerCandidates(history, student, completedCourses, lang
       ? 'Based on the conversation so far, suggest career candidates. Write careerName and reasoning in English.'
       : '여기까지의 대화를 바탕으로 진로 후보를 알려줘.';
   const messages = [...history, { role: 'user', content: closing }];
-  const text = await callClaude(system, messages, 800);
+  const text = await callClaude(system, messages, 2048);
   const candidates = parseJsonArray(text);
   return candidates.map((c) => (c && typeof c.reasoning === 'string' ? { ...c, reasoning: fixBareHonorific(c.reasoning, student, language) } : c));
 }
@@ -839,7 +858,7 @@ async function generateCareerRoadmap(careerName, careerReasoning, remainingCours
   const englishReminder =
     language === 'en' ? '\n\n[Write each "reason" in English. Keep every "courseName" exactly as written in the list above.]' : '';
   const userContent = `목표 진로: ${careerName}\n추천 이유: ${careerReasoning}\n\n남은 교육과정 목록:\n${courseListText}${englishReminder}`;
-  const text = await callClaude(system, [{ role: 'user', content: userContent }], 1000);
+  const text = await callClaude(system, [{ role: 'user', content: userContent }], 2048);
   const roadmap = parseJsonArray(text);
   return roadmap.map((item) => (item && typeof item.reason === 'string' ? { ...item, reason: fixBareHonorific(item.reason, student, language) } : item));
 }
@@ -906,23 +925,23 @@ courseCode에는 그 행의 학수번호(예: 003308, L00316)를 그대로 옮�
 // 소계/카테고리 대조(pdfImportService.js)는 여기서 뽑은 rawCategory/credits를 그대로 쓰므로,
 // 이 프롬프트가 코드값을 변형 없이 옮기게 강제하는 게 대조 정확도에 중요하다.
 async function extractCourseListRows(rawText) {
-  const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
+  const text = await callClaude(COURSE_LIST_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 12000, 90000);
   return parseJsonArray(text);
 }
 
 // 운영 보조 AI 사전 분류(#458) — 프롬프트와 결과 해석은 moderationLabelService.js가 맡고, 여기서는 호출만 한다.
 // 짧은 JSON 하나라 토큰을 작게, 뒤에서 도는 호출이라 시간 상한도 짧게 둔다.
 async function classifyForModeration(system, content) {
-  return callClaude(system, [{ role: 'user', content }], 300, 20000);
+  return callClaude(system, [{ role: 'user', content }], 1024, 20000);
 }
 
 // 문의 답변 초안 — 프롬프트와 근거는 inquiryDraftService.js가 만들고 여기서는 호출만 한다. 관리자가 기다리는 요청이라 30초 안에 끝낸다.
 async function draftInquiryReply(system, content) {
-  return callClaude(system, [{ role: 'user', content }], 600, 30000);
+  return callClaude(system, [{ role: 'user', content }], 1536, 30000);
 }
 
 async function extractFullTranscriptRows(rawText) {
-  const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 8000, 60000);
+  const text = await callClaude(FULL_TRANSCRIPT_EXTRACT_SYSTEM_PROMPT, [{ role: 'user', content: rawText }], 12000, 90000);
   return parseJsonArray(text);
 }
 

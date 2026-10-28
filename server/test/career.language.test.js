@@ -98,7 +98,7 @@ test('시스템 프롬프트: 영어일 때만 답변 언어 지시가 붙고, �
   const systems = [];
   global.fetch = async (url, options) => {
     systems.push(JSON.parse(options.body).system);
-    return { ok: true, json: async () => ({ content: [{ text: '[]' }] }), text: async () => '' };
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: '[]' }] }), text: async () => '' };
   };
   const student = { name: '학생', department_name: '컴퓨터·소프트웨어공학과', admission_year: 2022, leave_semesters: 0 };
 
