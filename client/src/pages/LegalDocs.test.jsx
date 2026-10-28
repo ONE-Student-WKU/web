@@ -58,7 +58,8 @@ describe('개인정보처리방침', () => {
 
   it('개인정보 보호책임자와 시행일이 있다', () => {
     const { container } = render(<PrivacyPolicy onGoBack={() => {}} />);
-    expect(screen.getByText(/시행일: 2026년 10월 27일/)).toBeInTheDocument();
+    // 시행일은 마지막 개정일(2026-10-28)이다.
+    expect(screen.getByText(/시행일: 2026년 10월 28일/)).toBeInTheDocument();
     // 2026-10-27: 수집 항목에 연계·복합전공과 이수 중인 마이크로디그리를 넣었다(#412).
     expect(container.textContent).toContain('다전공(복수전공·부전공) 학과 또는 연계·복합전공과 그 구분, 이수 중인 마이크로디그리');
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);
@@ -85,7 +86,7 @@ describe('이용약관', () => {
   it('이용 제한 조항: 서비스 전체 이용 정지, 정지 중에도 계정 삭제 가능, 재가입 제한, AI 분류만으로 제한하지 않음, 서비스 어디서든 욕설 금지', () => {
     const { container } = render(<TermsOfService onGoBack={() => {}} />);
     const text = container.textContent.replace(/\s+/g, ' ');
-    for (const item of ['6. 이용 제한', '서비스 전체 이용 정지', '계정 삭제는 할 수 있습니다', '다시 가입할 수 없습니다', 'AI 분류만으로 정하지 않고', '서비스 어디에서든', '시행일: 2026년 10월 26일']) {
+    for (const item of ['6. 이용 제한', '서비스 전체 이용 정지', '계정 삭제는 할 수 있습니다', '다시 가입할 수 없습니다', 'AI 분류만으로 정하지 않고', '서비스 어디에서든', '시행일: 2026년 10월 28일']) {
       expect(text, item).toContain(item);
     }
   });

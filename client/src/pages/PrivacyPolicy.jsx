@@ -25,6 +25,7 @@ import { IconChevronLeft } from '../components/icons.jsx';
  *   기록을 지운다고 적었다(경고 취소·제재 철회). 문의 이메일을 서비스 도메인 주소로 바꿨다.
  * 2026-10-28(2차): 문의 답변 AI 초안(server/services/inquiryDraftService.js)을 이용 목적과 Anthropic·Voyage AI 위탁 목적에 넣었다.
  *   같은 날 1차 개정(동의 버전 2026-10-28)이 먼저 배포될 수 있어 동의 버전을 2026-10-28.2로 따로 올렸다.
+ *   시행일을 마지막 개정일(2026-10-28)에 맞췄다 — 27일로 남아 있었다. 날짜만 바꿔 동의 버전은 그대로다.
  *   같은 2차 개정에 수강 이력의 "성적표에서 가져온 과목의 학수번호와 개설 학과"(server/services/courseOrigin.js, #253 설계안 1)를 넣었다
  *   (둘 다 배포 전이라 동의 버전을 한 번만 올린다).
  *   같은 2차 개정에 "졸업요건 진단 요약"(바뀐 자료 알림, server/services/changeNoticeService.js)을 넣었다 — 아직 배포 전이라 동의 버전은 그대로다.
@@ -47,7 +48,7 @@ function PrivacyPolicy({ onGoBack }) {
       </header>
 
       <div className="courses-body">
-        <p className="settings-field-hint">시행일: 2026년 10월 27일</p>
+        <p className="settings-field-hint">시행일: 2026년 10월 28일</p>
         <p className="settings-field-hint">
           ONE Student(이하 "서비스")는 이용자의 개인정보를 소중히 다루며, 아래와 같이 어떤 정보를 왜 수집하고 어디에서
           처리하는지 알려드립니다. 로그인 화면에서 이 방침과 이용약관에 동의하면 아래 내용(위탁과 국외 이전 포함)에
