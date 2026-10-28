@@ -47,6 +47,23 @@ test('아직 안 정했으면 기초·심화·응용 최소(36)만, 답하지 �
   assert.ok(unanswered.codes.includes('MAJOR_TRACK_UNANSWERED'));
 });
 
+test('복수전공인데 이수유형이 전공심화형·전공융합형이면 입력이 맞지 않아 추정으로 알린다(MODELING_AUDIT M-01)', async () => {
+  const second = (await studentService.listDepartments()).find((x) => x.name === '경영학과');
+  const withDouble = { second_department_id: second.id, second_major_type: 'DOUBLE' };
+  for (const type of ['INTENSIVE', 'CONVERGENCE']) {
+    const r = await requirementsFor('공학3계열', 2026, { major_track_type: type, ...withDouble });
+    assert.ok(r.codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'), type);
+    assert.equal(r.rule.confidence, 'ESTIMATED', type);
+  }
+  // 숫자는 고른 유형 그대로(전공심화형 72) — 판정을 바꾸지 않고 알리기만 한다
+  const intensive = await requirementsFor('공학3계열', 2026, { major_track_type: 'INTENSIVE', ...withDouble });
+  assert.equal(intensive.credits['전공필수'] + intensive.credits['전공선택'], 72);
+  // 복수전공형·부전공·제2전공 없음은 해당 없음
+  assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'DOUBLE_MAJOR', ...withDouble })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
+  assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'INTENSIVE', second_department_id: second.id, second_major_type: 'MINOR' })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
+  assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'INTENSIVE' })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
+});
+
 test('이수구분별 최소 학점: 경영계열 18·12·6, 그 외 계열 12·15·9, 계열이 아니면 없음', async () => {
   assert.deepEqual((await requirementsFor('경영계열', 2026, { major_track_type: 'INTENSIVE' })).rule.value.majorAreaMinimums, { 기초: 18, 심화: 12, 응용: 6 });
   assert.deepEqual((await requirementsFor('공학1계열', 2026, { major_track_type: 'INTENSIVE' })).rule.value.majorAreaMinimums, { 기초: 12, 심화: 15, 응용: 9 });

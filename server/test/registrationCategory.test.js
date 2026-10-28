@@ -44,6 +44,21 @@ test('학교 공지 override가 있으면 그 구분이 우선한다', () => {
   assert.deepEqual(r.adjusted.map((a) => [a.applied, a.source]), [['일반선택', 'OVERRIDE']]);
 });
 
+test('수강 내역의 4칸 학기 코드를 정규 학기로 바꿔 학기 지정 override와 비교하고, 계절학기는 학년도 전체 override만 따른다(MODELING_AUDIT M-08)', () => {
+  const override = (semester, category) => ({ courseKey: 'C:1', academicYear: 2020, semester, category, basisArticleRef: 'ENFORCEMENT_RULES:제13조④' });
+  // 2학기(DB 코드 3)에 들은 과목 — 2학기 지정 override(정규 학기 2)가 맞아야 한다
+  const second = classifyByRegistration([course({ year: 2020, semester: 3, category: '전공필수' })], [change()], [override(2, '일반선택')]);
+  assert.deepEqual(second.adjusted.map((a) => [a.applied, a.source]), [['일반선택', 'OVERRIDE']]);
+  // 1학기(코드 1) 과목에는 2학기 override가 걸리지 않는다
+  const first = classifyByRegistration([course({ year: 2020, semester: 1, category: '전공필수' })], [change()], [override(2, '일반선택')]);
+  assert.deepEqual(first.adjusted, []);
+  // 여름 계절학기(코드 2)는 2학기 override를 따르지 않고, 학년도 전체 override는 따른다
+  const summer = classifyByRegistration([course({ year: 2020, semester: 2, category: '전공필수' })], [change()], [override(2, '일반선택')]);
+  assert.deepEqual(summer.adjusted, []);
+  const summerYear = classifyByRegistration([course({ year: 2020, semester: 2, category: '전공필수' })], [change()], [override(null, '일반선택')]);
+  assert.deepEqual(summerYear.adjusted.map((a) => a.source), ['OVERRIDE']);
+});
+
 test('applyAdjustments: 원본 맵은 그대로, 새 맵에서 학점이 이동한다', () => {
   const base = { 전공선택: 6, 전공필수: 3 };
   const out = applyAdjustments(base, [{ entered: '전공선택', applied: '전공필수', credits: 3 }]);

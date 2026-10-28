@@ -9,7 +9,8 @@ import {
   translateCategory,
   displayCategory,
   getPercent,
-  creditsDependOnInProgress,
+  remainingLabel,
+  isPremed,
 } from '../utils/graduation.js';
 
 function today() {
@@ -69,17 +70,13 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
 
       <section className="gps-summary">
         <p className="gps-remaining">
-          {remaining > 0
-            ? t('grad.remaining', { n: remaining })
-            : creditsDependOnInProgress(status)
-              ? t('grad.completeInProgress', { n: status.inProgressCredits })
-              : t('grad.complete')}
+          {remainingLabel(status, t)}
         </p>
         <div className="gps-bar">
           <div style={{ width: `${getPercent(status.totalEarnedCredits, status.totalRequiredCredits)}%` }} />
         </div>
         <p className="gps-total-line">
-          {t('grad.print.totalLine', { required: status.totalRequiredCredits, earned: status.totalEarnedCredits })}
+          {t(isPremed(status) ? 'grad.print.totalLine.premed' : 'grad.print.totalLine', { required: status.totalRequiredCredits, earned: status.totalEarnedCredits })}
           {status.inProgressCredits > 0 && ` (${t('grad.inProgressIncluded', { n: status.inProgressCredits })})`}
           {trust.totalEstimated && ` ${t('grad.estimated')}`}
         </p>

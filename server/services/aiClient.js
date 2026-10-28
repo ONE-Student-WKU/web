@@ -4,7 +4,7 @@
  * 근거: 위키 API-설계 3장 - https://github.com/ONE-Student-wku/web/wiki/API-설계
  */
 
-const { currentStandingOf } = require('./studentProgress');
+const { currentStandingOf, MEDICAL_SCHOOL_OF } = require('./studentProgress');
 const { parseLeavePeriods, totalLeaveSemesters } = require('./leavePeriods');
 const { parseTeachingCourse } = require('./teachingCourse');
 const { secondMajorTypeOf } = require('./secondMajor');
@@ -325,6 +325,10 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   if (Number(graduationStatus.inProgressCredits) > 0) {
     caveats.push(`- 아래 이수 학점에는 성적이 아직 나오지 않은(이번 학기 수강 중) ${graduationStatus.inProgressCredits}학점이 포함돼 있다. 요건을 채웠다고 답할 때는 "수강 중인 과목을 모두 이수하면"이라는 조건을 붙여라.`);
   }
+  // 예과 학점은 졸업요건이 아니라 본과 진급 전 단계의 이수 기준이다(MODELING_AUDIT M-02). 진급 기준(성적 등)은 학과 내규라 단정하지 않는다.
+  if (graduationStatus.premedTo) {
+    caveats.push(`- 이 학생은 예과 학생이다. 아래 학점은 졸업요건이 아니라 예과 이수 기준(본과 ${graduationStatus.premedTo} 진급 전 단계)이다. "졸업"이라고 말하지 말고 "예과 이수"라고 말하라. 예과 학점을 다 채웠어도 본과 진급 기준(성적 등)은 학과 내규라 학과 사무실에서 확인하라고 안내하고, 졸업요건은 본과에서 따로 계산한다고 알려라.`);
+  }
   if (regulation && regulation.totalDefinitive === false) {
     caveats.push('- 편입생은 전적대학 인정학점에 따라 졸업 총학점이 달라져 아래 "총 이수학점"의 분모는 확정값이 아니다(학교 기준 인정학점을 뺀 "본교에서 이수할 학점"으로 계산했을 수 있다). 카테고리별 기준 위주로 설명하라.');
   }
@@ -333,7 +337,7 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
 문서보다 이 데이터를 우선해서 "몇 학점 남았는지", "뭐가 부족한지" 같은 질문에 구체적인 숫자로
 답하라. 이 데이터에 없는 내용(등록금, 수강신청 절차 등)에만 근거 문서를 사용하라.
 
-총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (졸업까지 ${remaining}학점 남음)
+총 이수학점: ${totalEarnedCredits}/${totalRequiredCredits}학점 (${graduationStatus.premedTo ? '예과 이수' : '졸업'}까지 ${remaining}학점 남음)
 카테고리별:
 ${categoryLines}
 ${specialRules.length ? `이 학생에게 적용한 특례(위 기준이 일반 학생과 다른 이유 — 설명할 때 이 문장대로 바뀌기 전후 숫자를 말하라):\n${specialRules.join('\n')}` : ''}

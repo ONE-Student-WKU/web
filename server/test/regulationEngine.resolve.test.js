@@ -199,6 +199,10 @@ test('학과 개편(제14조): 입학 후 개편이면 재량 규정 적용(추�
   // 개편 전에 입학(2023)했는데 개편 후 학과(20)로 조회 → 입학 당시 학과 기준이라는 경고
   const successor = resolveApplicableRules(input({ departmentId: 20 }), base({ department: { id: 20, name: '테스트계열' }, lineage }));
   assert.ok(successor.flags.some((f) => f.code === 'DEPARTMENT_IS_SUCCESSOR_OF_COHORT'));
+  // 전과생에게는 옮긴 학과 기준이 맞으므로 "입학 당시 학과로 다시 조회"로 단정하지 않는다(MODELING_AUDIT M-07)
+  const successorMessage = successor.flags.find((f) => f.code === 'DEPARTMENT_IS_SUCCESSOR_OF_COHORT').message;
+  assert.match(successorMessage, /전과했다면 옮긴 학과의 입학 학번 기준/);
+  assert.doesNotMatch(successorMessage, /입학 당시 학과로 다시 조회/);
   // 개편 이후 입학(2025)이면 개편은 이 학생에게 경과조치 대상이 아니다
   const after = resolveApplicableRules(input({ admissionYear: 2025, departmentId: 20 }), base({ department: { id: 20, name: '테스트계열' }, lineage }));
   assert.equal(rule(after, 'ENF14_1_REORG_EQUIVALENT_COURSES').status, 'NOT_APPLICABLE');

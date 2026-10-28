@@ -1,4 +1,5 @@
 const { categoryAtRegistration } = require('./applicability');
+const { offeringCodeToRegularSemester } = require('../termCode');
 
 /**
  * server/services/regulationEngine/registrationCategory.js
@@ -39,7 +40,11 @@ function classifyByRegistration(courses, changes, overrides = []) {
     if (!keys || keys.size !== 1) continue; // 이수구분 변경이 없는 과목, 또는 같은 이름이 여러 학수번호(어느 과목인지 알 수 없음)
     const courseKey = [...keys][0];
     const ownChanges = changes.filter((c) => c.subjectKey === courseKey && c.field === 'category');
-    const r = categoryAtRegistration({ courseKey, year: course.year, semester: course.semester }, ownChanges, overrides, null);
+    // 수강 내역의 학기는 4칸 코드(1·여름2·2학기3·겨울4)이고 예외 행(course_category_overrides.semester)은 정규 학기(1|2)다 — 바꿔서 비교한다.
+    // 계절학기는 1·2학기 예외를 따르지 않고 학년도 전체 예외(semester NULL)만 따른다(MODELING_AUDIT M-08).
+    const semester = offeringCodeToRegularSemester(Number(course.semester));
+    const courseOverrides = semester == null ? overrides.filter((o) => o.semester == null) : overrides;
+    const r = categoryAtRegistration({ courseKey, year: course.year, semester }, ownChanges, courseOverrides, null);
     if (!r.category || r.category === course.category) continue;
     const base = { name: course.name, year: course.year, semester: course.semester, entered: course.category, applied: r.category };
     if (COUNTABLE_CATEGORIES.has(r.category)) adjusted.push({ ...base, credits: Number(course.credits), source: r.source });
