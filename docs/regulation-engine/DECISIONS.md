@@ -1022,12 +1022,13 @@
 - **위치**: `server/services/regulationEngine/{evaluate,context,flags,applicability,registrationCategory}.js`, `db/regulation-engine/applicability.json`, `server/services/{graduationService,aiClient,curriculumContextService,courseService,dataUpdates}.js`, `client/src/utils/graduation.js`, `client/src/pages/GraduationStatus.jsx`, `client/src/components/GraduationPrintSheet.jsx`, `client/src/i18n/locales/{ko,en}.js`, `.github/workflows/db-reseed.yml`, `docs/deployment.md`, `docs/regulation-engine/DESIGN.md`, `db/schema.sql`(주석).
 
 ## D-91 AI 모델을 Claude Haiku 4.5에서 Haiku 5.5(effort low)로 바꾼다 — 프롬프트는 그대로 (2026-10-28)
-- **상황**: 챗봇·진로 탐색·성적표 PDF 추출·신고 분류·문의 초안이 모두 `claude-haiku-4-5` 하나를 쓴다(`server/services/aiClient.js`). Haiku 5.5는 100만 토큰당 입력 $0.10·출력 $0.50으로 Haiku 4.5($1·$5)의 10분의 1이고, 지시 따르기가 더 낫다(Anthropic 전환 안내). 같은 글이 약 30% 더 많은 토큰으로 세지고 답하기 전 생각(적응형)이 기본으로 켜져 있어, 실제 절감은 대화 1회 기준 약 5~7배로 추정했다(로컬 API 키가 무효라 토큰 수는 글자 수로 추정). Max 요금제의 월 API 크레딧($100)을 운영 조직에 연결해 둔 상태다(2026-10-28).
+- **상황**: 챗봇·진로 탐색·성적표 PDF 추출·신고 분류·문의 초안이 모두 `claude-haiku-4-5` 하나를 쓴다(`server/services/aiClient.js`). Haiku 5.5는 100만 토큰당 입력 $0.10·출력 $0.50으로 Haiku 4.5($1·$5)의 10분의 1이고, 지시 따르기가 더 낫다(Anthropic 전환 안내). Anthropic 안내는 같은 글이 약 30% 더 많은 토큰으로 세진다고 하지만, 이 프로젝트의 한국어 프롬프트는 count_tokens로 재 보니 거의 같았다(챗봇 답변 요청 8,003→8,045토큰, ×1.00~1.06). 답하기 전 생각(적응형)이 low에서도 켜져 출력 토큰은 늘지만(같은 질문 303→1,122), 실제 호출 3문항 비교에서 비용은 $0.0302→$0.0038로 약 8분의 1이었다(2026-10-28, 로컬 테스트 계정 프롬프트·규정 판단 근거). Max 요금제의 월 API 크레딧($100)을 운영 조직에 연결해 둔 상태다(2026-10-28).
 - **결정**(사용자 결정 2026-10-28):
   - 모델 `claude-haiku-5-5`, 모든 호출 `output_config.effort: "low"`. 프롬프트 문장은 바꾸지 않는다.
   - 생각한 양도 `max_tokens`에 들어가므로 짧게 잡은 호출을 늘린다: 질문 분석 200→1024, 진로 후속 질문·신고 분류 300→1024, 문의 초안 600→1536, 챗봇 답변 1024→2048, 진로 후보 800→2048, 로드맵 1000→2048, PDF 추출 8000→12000(시간 상한 60→90초). 다 쓰지 않으면 요금은 늘지 않는다.
   - 응답은 `text` 블록만 읽는다(앞에 `thinking` 블록이 붙을 수 있다). 안전 분류기 거절(`stop_reason: "refusal"`)은 빈 답 대신 오류로 던져 호출부의 기존 실패 경로를 탄다 — 챗봇은 오류 안내, 신고 분류는 라벨 없이 사람 검토, 질문 분석은 원문 검색 폴백. Haiku 5.5는 서버 쪽 대체 모델(fallbacks)이 없다.
   - 샘플링 파라미터·직접 정한 생각 예산·assistant prefill은 원래 쓰지 않아 고칠 것이 없다.
-- **단점·다시 볼 조건**: 실제 답변 품질은 아직 확인하지 않았다(평가 세트 비교에는 유효한 API 키가 필요). 챗봇 답이 얕거나 규칙을 놓치면 해당 호출만 `medium`으로 올린다. 욕설이 섞인 신고·문의에서 거절이 잦으면 그 경로의 처리를 다시 본다.
+- **확인**: 같은 시스템 프롬프트·근거로 두 모델을 3문항 비교했다. 답의 내용은 같은 수준이고, Haiku 5.5가 근거에 없는 전화번호를 지어내지 않았다(Haiku 4.5는 근거에 없는 학사지원과 번호를 하나 만들었다, D-74 위반). 응답 시간은 생각 때문에 2~4초 늘었다(최대 6.3초, 시간 상한 30초 안).
+- **단점·다시 볼 조건**: 평가 세트 전체 비교는 하지 않았고, RAG 검색 근거 없이 규정 판단 근거만으로 비교했다. 챗봇 답이 얕거나 규칙을 놓치면 해당 호출만 `medium`으로 올린다. 욕설이 섞인 신고·문의에서 거절이 잦으면 그 경로의 처리를 다시 본다.
 - **위치**: `server/services/aiClient.js`(`MODEL`, `OUTPUT_CONFIG`, `responseText`), `server/test/aiClient.haiku55.test.js`, `server/test/career.language.test.js`(응답 흉내에 `type` 추가).
 
