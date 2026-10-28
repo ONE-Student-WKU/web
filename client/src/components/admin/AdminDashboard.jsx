@@ -28,20 +28,17 @@ function dayLabel(at) {
   return `${Number(m)}/${Number(d)}`;
 }
 
-// 최근 24시간 줄 — 어제(24~48시간 전)와 비교한다. 답 못 찾은 질문은 질문 중 비율이 더 중요한 신호라 비율로 보여준다.
+// 최근 24시간 줄 — 어제(24~48시간 전)와 비교한다.
+// "답 못 찾은 질문"(근거 문서를 못 찾아 고정 안내로 답한 횟수)은 정답률이 아니고 어떤 질문인지도 볼 수 없어 첫 화면에서 뺐다.
+// 재시딩 뒤 검색이 깨졌는지 보는 신호로는 쓸 만해서 통계 → 추이 탭(adminTrendMetrics.js)에는 남긴다(2026-10-28 결정).
 const DAY_ROWS = [
   { key: 'chatQuestions', label: '챗봇 질문', unit: '건' },
-  { key: 'chatNotFound', label: '답 못 찾은 질문', unit: '건', warn: true },
   { key: 'signups', label: '신규 가입', unit: '명' },
   { key: 'visitors', label: '방문자', unit: '명' },
 ];
 
 function dayCompare(stats, key) {
   if (key === 'visitors') return null;
-  if (key === 'chatNotFound') {
-    const questions = stats.last24h.chatQuestions;
-    return questions > 0 ? `질문의 ${Math.round((stats.last24h.chatNotFound / questions) * 100)}%` : null;
-  }
   const prev = stats.previous24h?.[key];
   return prev == null ? null : `어제 ${prev.toLocaleString()}`;
 }
@@ -217,7 +214,7 @@ function AdminDashboard({ onOpen }) {
           <button
             type="button"
             key={row.key}
-            className={`admin-list-row${row.warn && stats.last24h.chatNotFound > 0 ? ' warn' : ''}`}
+            className="admin-list-row"
             onClick={() => onOpen('stats', { tab: 'trend', metric: row.key, ...(row.key === 'visitors' ? { range: '7d' } : {}) })}
             aria-label={`최근 24시간 ${row.label} ${dayValue(row.key).toLocaleString()}${row.unit}, 추이 보기`}
           >

@@ -233,11 +233,12 @@ describe('첫 화면', () => {
     expect(await screen.findByText('방문 기록이 2주 쌓이면 보여요')).toBeInTheDocument();
   });
 
-  it('최근 24시간은 어제와 비교하고, 답 못 찾은 질문은 질문 중 비율로 보여준다', async () => {
+  it('최근 24시간은 어제와 비교하고, 답 못 찾은 질문은 첫 화면에 두지 않는다(통계 추이에만 남김)', async () => {
     render(<Admin {...baseProps} />);
     expect(await screen.findByText('어제 30')).toBeInTheDocument(); // 챗봇 질문
-    expect(screen.getByText('질문의 13%')).toBeInTheDocument(); // 6/45
     expect(screen.getByText('어제 1')).toBeInTheDocument(); // 신규 가입
+    expect(screen.queryByRole('button', { name: /답 못 찾은 질문/ })).toBeNull();
+    expect(screen.queryByText('질문의 13%')).toBeNull();
   });
 
   it('통계를 한 번만 불러온다(신고·문의 목록 전체를 불러와 건수를 세지 않는다)', async () => {

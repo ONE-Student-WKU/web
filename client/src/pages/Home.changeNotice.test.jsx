@@ -49,9 +49,22 @@ describe('Home — 바뀐 자료 알림', () => {
     expect(screen.queryByText('이수학점 진행률')).not.toBeInTheDocument();
     expect(screen.queryByText('부족 요건')).not.toBeInTheDocument();
     expect(screen.getByText('졸업 학점')).toBeInTheDocument();
-    expect(screen.getByText('6학점 줄었어요')).toBeInTheDocument();
-    expect(screen.getByText('1과목 늘었어요')).toBeInTheDocument();
-    expect(screen.getByText('채웠어요')).toBeInTheDocument();
+  });
+
+  it('꼬리표는 "6학점 ▼"처럼 짧게 보이고(늘면 빨강 ▲, 줄면 초록 ▼), 화면 낭독기에는 문장으로 읽힌다', async () => {
+    render(<Home user={USER} />);
+    const less = await screen.findByText('6학점 ▼');
+    expect(less).toHaveAttribute('aria-hidden', 'true');
+    expect(less.parentElement).toHaveClass('change-tag--good');
+    expect(less.parentElement).toHaveTextContent('6학점 줄었어요');
+    const more = screen.getByText('1과목 ▲');
+    expect(more.parentElement).toHaveClass('change-tag--bad');
+    expect(more.parentElement).toHaveTextContent('1과목 늘었어요');
+    // 남은 과목을 다 채웠으면 화살표는 ▼(줄어듦), 읽는 말은 "채웠어요"
+    const filled = screen.getByText('채웠어요');
+    expect(filled).toHaveClass('sr-only');
+    expect(filled.parentElement).toHaveTextContent('1과목 ▼');
+    expect(filled.parentElement).toHaveClass('change-tag--good');
   });
 
   it('출처는 접혀 있다가 펼치면 날짜별로 보인다', async () => {
