@@ -532,25 +532,55 @@ describe('연계·복합전공과 마이크로디그리(#412)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: 7, secondLinkedMajor: null, secondMajorType: 'DOUBLE' }));
   });
 
-  it('마이크로디그리 목록은 이름으로 찾을 수 있고, 없으면 없다고 알린다', async () => {
+  // 학과·전공별 과정 — USER의 학과(경영학부)는 이후 학과가 경영계열이라 이 묶음이 "내 계열"이다.
+  const withDepartmentMd = () =>
+    api.getMicroDegrees.mockResolvedValue([
+      { name: 'JST 에너지신산업학부 이차전지 기초', programGroup: 'JST공유대학', requiredCredits: 12 },
+      { name: 'K-치유힐링 케어복지과정', programGroup: 'K-치유힐링사업단', requiredCredits: 12 },
+      { name: '경영학전공 - 디지털마케팅', programGroup: '학과·전공별 MD · 경영계열', requiredCredits: 12 },
+    ]);
+
+  it('마이크로디그리는 내 계열 묶음만 펼쳐 두고 다른 묶음은 접는다(2026-10-28 피드백)', async () => {
+    withDepartmentMd();
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     await userEvent.click(await screen.findByRole('button', { name: /마이크로디그리/ }));
-    await screen.findByRole('checkbox', { name: 'K-치유힐링 케어복지과정' });
-    await userEvent.type(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }), '이차 전지');
-    expect(screen.getByRole('checkbox', { name: 'JST 에너지신산업학부 이차전지 기초' })).toBeInTheDocument();
+    expect(await screen.findByText('내 계열 · 경영계열')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: '경영학전공 - 디지털마케팅' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'K-치유힐링 케어복지과정' })).toBeNull();
-    await userEvent.clear(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }));
-    await userEvent.type(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }), '없는과정');
-    expect(screen.getByText('찾는 과정이 없어요.')).toBeInTheDocument();
+    const group = screen.getByRole('button', { name: /K-치유힐링사업단/ });
+    expect(group).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(group);
+    expect(screen.getByRole('checkbox', { name: 'K-치유힐링 케어복지과정' })).toBeInTheDocument();
   });
 
-  it('마이크로디그리 줄은 처음에 "없음"이고, 과정을 고르면 이름 목록을 보낸다', async () => {
+  it('마이크로디그리 검색은 학과 검색과 같은 검색 화면·기준(띄어쓰기·가운뎃점 무시)이고, 없으면 없다고 알린다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /마이크로디그리/ }));
+    await userEvent.click(await screen.findByRole('button', { name: '과정·전공 이름으로 찾기' }));
+    const box = screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' });
+    await userEvent.type(box, '이차 전지');
+    expect(screen.getByRole('checkbox', { name: 'JST 에너지신산업학부 이차전지 기초' })).toBeInTheDocument();
+    expect(screen.getByText('이차전지', { selector: 'mark' })).toBeInTheDocument();
+    await userEvent.clear(box);
+    await userEvent.type(box, '없는과정');
+    expect(screen.getByText('"없는과정"와 맞는 과정이 없어요. 이름의 일부만 입력해 보세요.')).toBeInTheDocument();
+  });
+
+  it('마이크로디그리 줄은 처음에 "없음"이고, 과정을 고르면 칩으로 모이고 이름 목록을 보낸다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     const row = await screen.findByRole('button', { name: /마이크로디그리/ });
     expect(row).toHaveTextContent('없음');
     await userEvent.click(row);
-    await userEvent.click(await screen.findByRole('checkbox', { name: 'K-치유힐링 케어복지과정' }));
+    await userEvent.click(await screen.findByRole('button', { name: /K-치유힐링사업단/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'K-치유힐링 케어복지과정' }));
+    // 검색 화면에서 고르면 화면은 열린 채로 남는다(여러 개를 고를 수 있게).
+    await userEvent.click(screen.getByRole('button', { name: '과정·전공 이름으로 찾기' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' }), '이차전지');
     await userEvent.click(screen.getByRole('checkbox', { name: 'JST 에너지신산업학부 이차전지 기초' }));
+    expect(screen.getByRole('searchbox', { name: '과정·전공 이름으로 찾기' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '검색 닫기' }));
+    expect(screen.getByText('고른 과정 2개')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'K-치유힐링 케어복지과정 빼기' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '확인' }));
     expect(await screen.findByRole('button', { name: /마이크로디그리/ })).toHaveTextContent('K-치유힐링 케어복지과정 외 1개');
     await userEvent.click(saveButton());

@@ -31,7 +31,7 @@ import { ContactBox, ContactBlockedNote, BlockContactDialog } from '../component
 import TargetDepartmentsField from '../components/TargetDepartmentsField.jsx';
 import MoreMenu from '../components/MoreMenu.jsx';
 import useSearchInput from '../hooks/useSearchInput.js';
-import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch } from '../components/icons.jsx';
+import { IconChevronLeft, IconCheck, IconPlus, IconX, IconBan, IconAlertTriangle, IconSearch, IconUser } from '../components/icons.jsx';
 import LoadError from '../components/LoadError.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -197,11 +197,12 @@ function StatusText({ tone, end = false, children }) {
   return <span className={`post-status post-status--${tone || 'mute'}${end ? ' post-status--end' : ''}`}>{children}</span>;
 }
 
-// 닉네임 첫 글자 동그라미 — 글쓴이·신청자를 한눈에 구분하는 자리표시(사진은 받지 않는다).
-function Avatar({ name }) {
+// 글쓴이·신청자 자리표시 — 계정 정보 화면(Profile.jsx)과 같은 회원 아이콘을 모두에게 쓴다(사진은 받지 않는다, 2026-10-28 피드백).
+// 예전에는 닉네임 첫 글자였는데, 기본 닉네임이 'user123' 꼴이라 대부분 'U'로 보였다. 운영팀 공지는 같은 아이콘에 체크 배지를 붙여 구별한다.
+function Avatar() {
   return (
     <span className="post-avatar" aria-hidden="true">
-      {String(name || '?').trim().charAt(0).toUpperCase()}
+      <IconUser size={17} />
     </span>
   );
 }
@@ -908,7 +909,7 @@ function Community({
           <h2 className="post-detail-title">{post.contentHidden ? t('community.hiddenTitle') : post.title}</h2>
 
           <div className="post-author">
-            <Avatar name={post.author} />
+            <Avatar />
             <div className="post-author-text">
               {isAdmin && !post.isMine && post.authorId ? (
                 <button type="button" className="post-author-name community-author-link" onClick={() => setSanctionPost(post)} aria-label={t('community.sanctionAuthorAria', { author: post.author })}>
@@ -973,7 +974,7 @@ function Community({
                 <div className="applicant-list">
                   {applicants.map((a) => (
                     <div className="applicant-row" key={a.id}>
-                      <Avatar name={a.applicant} />
+                      <Avatar />
                       <div className="applicant-main">
                         <div className="applicant-top">
                           <span className="applicant-name">{a.applicant}</span>

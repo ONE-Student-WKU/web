@@ -6,7 +6,9 @@ import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, f
 import { isBroadSeriesStudent } from '../utils/majorTrackType.js';
 import MajorTrackTypeOptions from '../components/MajorTrackTypeOptions.jsx';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
+import MicroDegreePicker from '../components/MicroDegreePicker.jsx';
 import { pickTrackForFormer } from '../utils/departmentTree.js';
+import { groupByProgram, findMyMicroDegreeGroup } from '../utils/microDegreeSearch.js';
 import LeavePeriodsEditor, { draftFromPeriods, periodsFromDraft, describeLeave, leaveErrorKey } from '../components/LeavePeriodsEditor.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -60,17 +62,6 @@ let cachedDepartments = null;
 // 요약 화면의 한 줄 — editable이면 탭해서 해당 질문으로 이동할 수 있다. value가 비어있으면
 // (앞선 항목을 고치면서 연쇄적으로 지워진 경우 등) 값 대신 "선택 필요"를 강조색으로 보여줘서,
 // 무효해진 조합이 조용히 남아있지 않고 반드시 눈에 띄게 한다.
-// 연계·복합전공·마이크로디그리 목록을 사업단(programGroup)별로 묶는다 — 목록 순서(서버가 사업단·이름순으로 준다)를 그대로 지킨다.
-function groupByProgram(items) {
-  const groups = new Map();
-  for (const item of items) {
-    const key = item.programGroup || '';
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(item);
-  }
-  return [...groups.entries()];
-}
-
 function SummaryRow({ label, value, editable, onClick }) {
   const { t } = useI18n();
   const valueEl = (
@@ -178,12 +169,6 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 연계·복합전공·마이크로디그리 목록 — 학과·학번 수정에서만 쓴다(#412). 못 불러오면 빈 목록이라 고를 수 없을 뿐 다른 항목은 그대로 고친다.
   const [linkedMajors, setLinkedMajors] = useState([]);
   const [microDegreeOptions, setMicroDegreeOptions] = useState([]);
-  // 마이크로디그리 목록이 사업단 35개 + 학과·전공별 90개로 길어 이름(과정·전공·묶음)으로 걸러 보여 준다. 고른 과정은 걸러져도 그대로 남는다.
-  const [microSearch, setMicroSearch] = useState('');
-  const microQuery = microSearch.replace(/\s+/g, '');
-  const visibleMicroDegrees = microQuery
-    ? microDegreeOptions.filter((m) => `${m.name}${m.programGroup || ''}`.replace(/\s+/g, '').includes(microQuery))
-    : microDegreeOptions;
   useEffect(() => {
     if (!editMode) return;
     getLinkedMajors().then(setLinkedMajors).catch(() => setLinkedMajors([]));
@@ -221,6 +206,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     ? [{ id: NO_TRACK, name: t(noTrackOption.nameKey), captionKey: noTrackOption.captionKey }, ...tracks.map((tr) => ({ ...tr, captionKey: noTrackOption.trackCaptionKeys[tr.name] || null }))]
     : tracks;
   const selectedTrackName = trackChoices.find((tr) => tr.id === answers.trackId)?.name;
+  // 마이크로디그리 고르기에서 펼쳐 둘 학생 학과의 계열 묶음 — 학과·세부전공·이후 학과 이름으로 찾는다(못 찾으면 모두 접는다).
+  const myMicroDegreeGroup = findMyMicroDegreeGroup(microDegreeOptions, [
+    selectedDepartment?.name,
+    selectedTrackName,
+    ...(selectedDepartment?.successors || []).map((s) => s.name),
+  ]);
   const secondDepartment = departments.find((d) => d.id === answers.secondDepartmentId) || null;
   // 다전공 학과 목록에서 주전공 학과는 뺀다(서버도 같은 학과를 거절한다).
   const secondDepartmentChoices = departments.filter((d) => d.id !== answers.departmentId);
@@ -868,38 +859,12 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           <>
             <h2 className="onb-q-title">{t('onb.micro.title')}</h2>
             <p className="onb-q-sub">{t('onb.micro.sub')}</p>
-            <input
-              type="search"
-              className="onb-select onb-micro-search"
-              placeholder={t('onb.micro.search')}
-              aria-label={t('onb.micro.search')}
-              value={microSearch}
-              onChange={(e) => setMicroSearch(e.target.value)}
+            <MicroDegreePicker
+              options={microDegreeOptions}
+              selected={answers.microDegrees}
+              onChange={(names) => setAnswers((a) => ({ ...a, microDegrees: names }))}
+              myGroup={myMicroDegreeGroup}
             />
-            {visibleMicroDegrees.length === 0 && microQuery && <p className="onb-q-sub onb-q-sub-note">{t('onb.micro.empty')}</p>}
-            {groupByProgram(visibleMicroDegrees).map(([group, items]) => (
-              <fieldset key={group} className="onb-micro-group">
-                <legend className="onb-field-label">{group}</legend>
-                {items.map((m) => {
-                  const checked = answers.microDegrees.includes(m.name);
-                  return (
-                    <label key={m.name} className={'onb-micro-row' + (checked ? ' checked' : '')}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) =>
-                          setAnswers((a) => ({
-                            ...a,
-                            microDegrees: e.target.checked ? [...a.microDegrees, m.name] : a.microDegrees.filter((n) => n !== m.name),
-                          }))
-                        }
-                      />
-                      <span>{m.name}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-            ))}
           </>
         )}
 

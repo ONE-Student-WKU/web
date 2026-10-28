@@ -53,8 +53,8 @@ export const DEPARTMENT_SEARCH_ALIASES = {
   겜콘: '게임콘텐츠',
 };
 
-// 정규화한 검색어와, 줄임말로 시작하면 정식 이름으로 바꾼 검색어들.
-function searchVariants(q) {
+// 정규화한 검색어와, 줄임말로 시작하면 정식 이름으로 바꾼 검색어들. 마이크로디그리 검색(microDegreeSearch.js)도 같은 줄임말을 쓴다.
+export function searchVariants(q) {
   const variants = [q];
   for (const [alias, canonical] of Object.entries(DEPARTMENT_SEARCH_ALIASES)) {
     if (q.startsWith(alias)) variants.push(canonical + q.slice(alias.length));
