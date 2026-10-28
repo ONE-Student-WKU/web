@@ -73,6 +73,15 @@
 - `cd client && npm test`: `I18nContext.test.jsx`가 영어 사전에 빠진 키와 한국어에 없는 영어 키를 잡아낸다. 한국어를 코드에 직접 쓴 경우는 못 잡으므로 영어 모드에서 화면을 직접 확인한다.
 - 새 언어를 추가할 때는 `locales/<code>.js`를 만들고 `I18nContext.jsx`의 `DICTIONARIES`와 `SUPPORTED_LANGUAGES`에 등록한 뒤, 위 완전성 테스트를 그 언어에도 적용한다.
 
+## 시안·화면 비교 보여 주기
+
+UI 시안이나 브랜치 사이 화면 차이를 보여 달라고 하면 **손으로 그린 목업을 쓰지 않는다.** 위치·간격이 조금씩 달라 UI 피드백에 쓸 수 없다(사용자 결정 2026-10-28). 대신 로컬에서 띄운 실제 화면의 DOM을 떠서, 그 브랜치의 `App.css`와 Pretendard로 다시 그린 HTML 리포트를 Artifact로 게시한다. 도구와 순서는 [scripts/dev/screen-report/README.md](scripts/dev/screen-report/README.md)에 있다. 오래 걸려도 이 방식으로 한다.
+
+- 시안은 가능하면 **먼저 구현하고 구현한 화면을 뜬다**(작업 트리 vs `develop`). 구현 전에 보여 줘야 하면 develop 캡처를 기존 클래스로 고친 패치로 만들고, 새 CSS는 App.css에 그대로 옮길 수 있는 몇 줄로만 쓴다.
+- 게시 전에 `verify.js`로 원본 CSS 렌더와 요소마다 대조하고, 남은 차이는 리포트에 적는다.
+- 데이터는 로컬 DB의 테스트 계정(`npm run dev:login`)에만 넣고 끝나면 지운다. 실제 AI를 부르는 버튼은 누르지 않는다.
+- 비교용 worktree를 지울 때는 `node_modules` junction을 **먼저 끊는다**. 연결을 둔 채 `git worktree remove`를 하면 프로젝트 `node_modules`가 지워진다.
+
 ## 약관·개인정보 동의
 
 로그인 폼의 필수 동의 체크(`client/src/pages/Login.jsx`)와 로그인 직후 동의 화면(`ConsentGate.jsx`)은 이용약관·개인정보 수집·이용의 **버전**으로 동의를 받는다. 동의 시각과 버전은 `students.consented_at` / `consent_version`에 기록된다.
