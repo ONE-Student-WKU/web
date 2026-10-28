@@ -33,7 +33,7 @@
 
 ### 자동 시작되는 경로
 
-`db/regulations/**`, `db/curriculum/**`, `db/seed/curriculum_requirements.json`, `db/seed/linked_majors.json`, `db/seed/micro_degrees.json`, `db/seed/department_lineage.json`, `db/seed/course_lineage.json` (정확한 목록은 `db-reseed.yml`의 `paths:`).
+`db/regulations/**`, `db/curriculum/**`, `db/seed/curriculum_requirements.json`, `db/seed/linked_majors.json`, `db/seed/micro_degrees.json`, `db/seed/department_lineage.json`, `db/seed/course_lineage.json`, `db/regulation-engine/applicability.json`(규정 적용범위 — 19단계 `seed:regulation-articles`가 읽는다, 2026-10-28 추가) (정확한 목록은 `db-reseed.yml`의 `paths:`). 같은 폴더의 `schedule1_colleges.json`·`schedule4_credits.json`은 서버가 파일을 바로 읽어 코드 배포만으로 반영된다.
 
 새 파일을 이 경로 밖에 추가하면 재시딩이 **조용히 안 돈다.** PR에서 `DB Reseed Guard`가 이걸 경고해 준다(아래).
 

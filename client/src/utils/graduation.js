@@ -233,6 +233,20 @@ export function creditsDependOnInProgress(status) {
   return inProgress > 0 && status.totalEarnedCredits - inProgress < status.totalRequiredCredits;
 }
 
+/** 예과(의예·치의예·한의예과) 학생인가 — 서버가 진급할 본과 학과를 premedTo로 준다. 예과 학점은 졸업요건이 아니라 예과 이수 기준이다. */
+export function isPremed(status) {
+  return Boolean(status && status.premedTo);
+}
+
+/** 남은 학점 한 줄(진단 화면·인쇄본 공통). 예과는 "졸업" 대신 "예과 이수"로 말한다. */
+export function remainingLabel(status, t) {
+  const suffix = isPremed(status) ? '.premed' : '';
+  const remaining = Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits);
+  if (remaining > 0) return t(`grad.remaining${suffix}`, { n: remaining });
+  if (creditsDependOnInProgress(status)) return t(`grad.completeInProgress${suffix}`, { n: status.inProgressCredits });
+  return t(`grad.complete${suffix}`);
+}
+
 export function allMetMessage(status, t) {
   const items = uncheckedRequirementKeys(status).map((k) => t(k)).join(', ');
   const inProgress = creditsDependOnInProgress(status) ? Number(status.inProgressCredits) : 0;
@@ -242,10 +256,13 @@ export function allMetMessage(status, t) {
     estimated ? t('home.allMetNote.estimated') : null,
     items ? t('home.allMetNote.unchecked', { items }) : null,
   ].filter(Boolean);
-  const headline = notes.length ? t('home.allMetQualified') : t('home.allMet');
+  const suffix = isPremed(status) ? '.premed' : '';
+  const headline = notes.length ? t(`home.allMetQualified${suffix}`) : t(`home.allMet${suffix}`);
   // 확정 진단이어도 졸업사정은 학교가 한다 — "충족"을 단정하지 않게 늘 최종 확인을 붙인다(교육혁신과 통화 2026-10-26).
   // 추정 안내(estimated)가 이미 학사지원과 확인을 말하므로 그때는 다시 붙이지 않는다.
-  if (!estimated) notes.push(t('home.allMetNote.final'));
+  // 예과는 졸업사정이 아니라 본과 진급이라 학과 내규 확인을 붙인다(MODELING_AUDIT M-02).
+  if (isPremed(status)) notes.push(t('home.allMetNote.premed'));
+  else if (!estimated) notes.push(t('home.allMetNote.final'));
   // 문장마다 줄을 나눠 읽기 쉽게 한다(화면은 white-space: pre-line으로 \n을 줄바꿈으로 보여준다).
   return [headline, ...notes].join('\n');
 }

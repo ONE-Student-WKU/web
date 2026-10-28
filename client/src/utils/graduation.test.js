@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, remainingLabel, isPremed, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -500,5 +500,31 @@ describe('isNearGraduation — 학기 기준(2026-10-27)', () => {
     expect(isNearGraduation({ totalRequiredCredits: 130, totalEarnedCredits: 125, registrationTerms: null })).toBe(false);
     expect(isNearGraduation({ registrationTerms: { registered: 8, required: 8 } })).toBe(false);
     expect(isNearGraduation(null)).toBe(false);
+  });
+});
+
+describe('예과 — "졸업"이 아니라 "예과 이수"(MODELING_AUDIT M-02)', () => {
+  const t = (key, params) => translate('ko', key, params);
+  const premed = { premedTo: '의학과', regulation: { confidence: 'CONFIRMED' }, totalRequiredCredits: 80 };
+  it('서버가 본과 학과를 주면 예과로 본다', () => {
+    expect(isPremed(premed)).toBe(true);
+    expect(isPremed({ premedTo: null })).toBe(false);
+    expect(isPremed(null)).toBe(false);
+  });
+  it('남은 학점·완료 문구가 예과 이수 기준이고, 일반 학생은 그대로다', () => {
+    expect(remainingLabel({ ...premed, totalEarnedCredits: 68 }, t)).toBe('예과 이수까지 12학점 남음');
+    expect(remainingLabel({ ...premed, totalEarnedCredits: 80 }, t)).toBe('예과 이수 학점을 모두 채웠어요');
+    expect(remainingLabel({ ...premed, totalEarnedCredits: 80, inProgressCredits: 6 }, t)).toBe('수강 중인 6학점까지 이수하면 예과 이수 학점을 모두 채워요');
+    expect(remainingLabel({ totalRequiredCredits: 130, totalEarnedCredits: 118 }, t)).toBe('졸업까지 12학점 남음');
+    expect(remainingLabel({ totalRequiredCredits: 130, totalEarnedCredits: 130 }, t)).toBe('졸업 학점을 모두 채웠어요');
+  });
+  it('홈 완료 문구는 졸업사정 대신 본과 진급 기준(학과 내규) 확인을 붙인다', () => {
+    const message = allMetMessage(premed, t);
+    expect(message).toBe('이 앱 기준으로 예과 이수 학점을 모두 채웠어요.\n본과 진급 기준(성적 등)은 학과 내규라 학과 사무실에서 확인해 주세요.');
+    expect(message).not.toContain('졸업사정');
+  });
+  it('영어 문구도 있다', () => {
+    const en = (key, params) => translate('en', key, params);
+    expect(remainingLabel({ ...premed, totalEarnedCredits: 68 }, en)).toBe('12 credits left to complete premed');
   });
 });

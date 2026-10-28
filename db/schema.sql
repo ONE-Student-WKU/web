@@ -724,7 +724,7 @@ CREATE TABLE IF NOT EXISTS course_category_overrides (
   department_id     INT NULL,
   course_key        VARCHAR(120) NOT NULL,
   academic_year     INT NOT NULL,
-  semester          TINYINT NULL,           -- NULL이면 그 학년도 전체
+  semester          TINYINT NULL,           -- 정규 학기 번호 1=1학기, 2=2학기(수강 내역의 4칸 코드가 아님). NULL이면 그 학년도 전체(계절학기 과목은 NULL 행만 따름)
   category          VARCHAR(30) NOT NULL,
   basis_article_ref VARCHAR(120) NOT NULL DEFAULT 'ENFORCEMENT_RULES:제13조④',
   source            ENUM('DOC', 'MANUAL') NOT NULL,

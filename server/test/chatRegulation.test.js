@@ -236,3 +236,12 @@ test('다전공 학생이 자기 제2전공 학과를 말한 질문은 본인 �
   const other = await resolveJudgmentSubject({ message: '경영학과 졸업요건 알려줘', student: { ...student, second_department_id: null }, yearContext });
   assert.equal(other.departmentName === '컴퓨터·소프트웨어공학과', false);
 });
+
+test('제5조 적용 문구는 "입학 학번 책자"가 아니라 최신 책자의 학번별 이수기준표를 가리킨다(교육혁신과 A-1, MODELING_AUDIT M-03)', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const manual = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'regulation-engine', 'applicability.json'), 'utf8'));
+  const enf5 = manual.rules.find((r) => r.ruleCode === 'ENF5_CURRICULUM_AT_ADMISSION');
+  assert.doesNotMatch(enf5.effect, /입학 학번 책자/);
+  assert.match(enf5.effect, /최신 교육과정 책자의 학번별 이수기준표/);
+});

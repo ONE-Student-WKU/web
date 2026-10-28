@@ -68,6 +68,8 @@ function inputFromStudentRow(student, extra = {}) {
     majorTrackType: student.major_track_type ?? null,
     // 다전공 구분(DOUBLE 복수전공·MINOR 부전공, services/secondMajor.js). 복수전공이면 주전공도 최소전공 인정학점 기준이다(시행규칙 제8조 제1항).
     secondMajorType: secondMajorTypeOf(student),
+    // 교직과정 이수 여부(students.teaching_course: 1 이수 중, 0 이수 안 함, NULL 답하지 않음, D-67). 복수전공 주전공 최소전공 안내에 쓴다.
+    teachingCourse: student.teaching_course == null ? null : Number(student.teaching_course) === 1,
     ...extra,
   };
 }
@@ -83,6 +85,7 @@ function inputFromStudentRow(student, extra = {}) {
  *  - transfer: { grade 2~4, recognizedCredits(선택, 편입할 때 인정받은 학점) } (편입생만)
  *  - restructuring: { year, semester } ("학사구조조정 시점" 해석을 쓸 때만 필요)
  *  - leavePeriods: 휴학 기간 원시값(선택, null = 모름). 해석은 이것을 쓰는 쪽(applicability)이 leavePeriods.js로 한다
+ *  - teachingCourse: 교직과정 이수 중이면 true, 아니면 false, 모르면 null(선택)
  *  - policy.liberalArtsCutoffTrigger: 'MAJOR_CHANGE_DATE'(기본) | 'RESTRUCTURING_DATE' — 아래 decisions.js 참고
  */
 function normalizeInput(raw, { today } = {}) {
@@ -139,6 +142,7 @@ function normalizeInput(raw, { today } = {}) {
       leavePeriods: r.leavePeriods ?? null,
       majorTrackType: ['DOUBLE_MAJOR', 'INTENSIVE', 'CONVERGENCE', 'UNDECIDED'].includes(r.majorTrackType) ? r.majorTrackType : null,
       secondMajorType: ['DOUBLE', 'MINOR'].includes(r.secondMajorType) ? r.secondMajorType : null,
+      teachingCourse: typeof r.teachingCourse === 'boolean' ? r.teachingCourse : null,
       policy: { liberalArtsCutoffTrigger: trigger },
       supported: r.admissionYear >= MIN_SUPPORTED_ADMISSION_YEAR,
     },

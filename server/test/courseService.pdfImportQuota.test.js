@@ -97,3 +97,12 @@ test('한도를 다 쓰면 PdfImportLimitExceededError를 던지고 더 기록�
   );
   assert.equal(await countLogs(), LIMIT);
 });
+
+test('가져오기 한도의 학기는 서버 시간대가 아니라 한국 시간으로 정한다(MODELING_AUDIT M-09)', () => {
+  // 2027-03-01 00:30 KST = 2027-02-28 15:30 UTC → 2027학년도 1학기
+  assert.equal(courseService.getCurrentAcademicPeriod(new Date('2027-02-28T15:30:00Z')), '2027-1');
+  // 2027-02-28 23:59 KST → 2026학년도 2학기
+  assert.equal(courseService.getCurrentAcademicPeriod(new Date('2027-02-28T14:59:00Z')), '2026-2');
+  // 2026-09-01 00:10 KST → 2026학년도 2학기
+  assert.equal(courseService.getCurrentAcademicPeriod(new Date('2026-08-31T15:10:00Z')), '2026-2');
+});

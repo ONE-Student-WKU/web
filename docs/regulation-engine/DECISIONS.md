@@ -1005,3 +1005,19 @@
   - 개인정보처리방침 수집 항목에 "성적표에서 가져온 과목의 학수번호와 개설 학과"를 넣었다(동의 버전 2026-10-28.2, 문의 답변 AI 초안과 같은 개정).
 - **단점·다시 볼 조건**: 개설과목 자료(`course_offerings`)가 없는 옛 학기는 교육과정 학수번호로만 찾아, 같은 학수번호가 여러 학과 편성에 있으면 비운다. 실물 전체성적조회(2026-10-28, 전과생 성적표 38과목)로는 학수번호 38개를 모두 읽고 전공·일반선택 22과목의 개설 학과를 모두 맞게 찾았다(전과 전 학과의 일반선택 과목 포함). 이수과목확인리스트의 "개설학과(전공)" 글자 모양은 실물 PDF로 아직 확인하지 못했다 — 맞지 않으면 `departmentCandidates`·`nameKey`를 고친다.
 - **위치**: `server/services/courseOrigin.js`, `pdfImportService.js`, `aiClient.js`(추출 프롬프트), `courseService.bulkAddMyCourses`, `routes/myCourses.js`, `secondMajorCredits.loadOfferingDepartments`, `courseCounting.js`, 클라이언트 `CourseManagement.jsx`, 테스트 `server/test/courseOrigin.test.js`·`otherDepartmentCourses.test.js`·`pdfImportService.ruleBased.test.js`.
+
+## D-90 모델링 점검(2026-10-28)에서 찾은 9건을 고친다 — 숫자는 그대로, 신뢰도·안내·운영 경로만 (2026-10-28)
+- **상황**: 학칙·시행규칙 모델링을 읽기 전용으로 점검하고([MODELING_AUDIT_2026-10-28.md](MODELING_AUDIT_2026-10-28.md)), 임시 학생으로 진단 화면·챗봇까지 다시 재현했다(같은 문서 7절). 졸업 가능/불가를 반대로 확정하는 경우(P0)는 없었고, 9건 모두 졸업학점 숫자는 바꾸지 않는다.
+- **결정**(사용자 결정 2026-10-28):
+  - **M-01** 광역계열 학생이 복수전공을 넣었는데 이수유형이 전공심화형·전공융합형이면 `MAJOR_TRACK_SECOND_MAJOR_MISMATCH`(추정)로 알린다. 저장은 막지 않고 숫자는 고른 유형 그대로다. 유형은 하나만 고른다는 제7조 제2항 해석과, 심화형이면서 다른 학과 복수전공이 되는지는 학교 확인 전이라(문의 후보 Q1 — 3차 문의 답이 온 뒤 보낸다) 단정하지 않는다.
+  - **M-02** 예과(의예·치의예·한의예과)는 "졸업" 대신 "예과 이수"로 말한다. 진단 결과에 `premedTo`(본과 학과)를 싣고, 진단 화면·인쇄본·홈 완료 문구·챗봇이 이를 따른다. 진급 기준(성적 등)은 학과 내규라(A-5) 단정하지 않고 학과 확인을 안내한다.
+  - **M-03** 시행규칙 제5조 적용 문구를 "입학 학번 책자"에서 "입학 학번 기준, 값은 최신 책자의 학번별 이수기준표"로 바꾼다(A-1, D-55). `applicability.json`이라 운영은 재시딩으로 반영한다.
+  - **M-04** 엔진 입력에 교직 이수 여부(`teachingCourse`)를 넣고, 교직 이수 중 + 복수전공이면 `DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED`(추정)를 붙인다(3차 문의 E-6 ② 대기). 사범대학은 시드의 최소전공 행이 이미 제6조 제2항 값(국어교육과 50·수학교육과 56)이라 붙이지 않는다. 진단 화면은 이미 다전공 추정이라, 바뀌는 것은 이유 문장과 챗봇 규정 판단이다.
+  - **M-05** `DESIGN.md` 4절의 학번별 값 설명을 최신 책자 원칙으로 고친다.
+  - **M-06** `db-reseed.yml` `paths:`에 `db/regulation-engine/applicability.json`을 넣는다(19단계 `seed:regulation-articles`가 읽는다). 같은 폴더의 `schedule*.json`은 서버가 파일을 바로 읽어 넣지 않는다.
+  - **M-07** `DEPARTMENT_IS_SUCCESSOR_OF_COHORT` 문구를 "전과했다면 옮긴 학과 기준, 아직 원래 학과 소속이면 학적의 학과로 조회"로 바꾼다. 광역계열 전과는 2학년부터라(제109조) 개편 계열로의 정상 전과는 2027-1학기부터 생기므로, 그 전에 바꿔 둔다.
+  - **M-08** 이수구분 예외(`course_category_overrides.semester`, 정규 학기 1|2)와 비교하기 전에 수강 내역의 4칸 학기 코드를 바꾼다. 계절학기는 학년도 전체 예외(NULL)만 따른다. 지금은 예외 행이 없어 동작이 바뀌지 않는다.
+  - **M-09** PDF 가져오기 학기당 한도의 "지금 학기"를 한국 시간으로 정한다.
+- **단점·다시 볼 조건**: Q1·E-6 ② 답이 오면 M-01·M-04의 추정을 확정 규칙으로 바꾼다. 이번에 못 본 점검 범위(조문 전수 대조, 문서·테스트 괴리)는 이 수정 뒤 다시 본다.
+- **위치**: `server/services/regulationEngine/{evaluate,context,flags,applicability,registrationCategory}.js`, `db/regulation-engine/applicability.json`, `server/services/{graduationService,aiClient,curriculumContextService,courseService,dataUpdates}.js`, `client/src/utils/graduation.js`, `client/src/pages/GraduationStatus.jsx`, `client/src/components/GraduationPrintSheet.jsx`, `client/src/i18n/locales/{ko,en}.js`, `.github/workflows/db-reseed.yml`, `docs/deployment.md`, `docs/regulation-engine/DESIGN.md`, `db/schema.sql`(주석).
+

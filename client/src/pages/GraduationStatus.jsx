@@ -3,7 +3,7 @@ import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import GraduationPrintSheet from '../components/GraduationPrintSheet.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, creditsDependOnInProgress, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, remainingLabel, isPremed, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -81,7 +81,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
   // 요건 자료가 없으면 총 요구학점이 0이라 0으로 나누면 NaN%가 됐다 — 이 경우는 아래에서 "진단할 수 없어요" 안내로 대신한다.
   // trust는 서버(규정 판단 엔진)가 내려준 근거 신뢰도·사유를 화면용으로 정리한 것(utils/graduation.js).
   const trust = status ? describeRequirementTrust(status, lang) : null;
-  const remaining = status ? Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits) : 0;
   const progressPercent = status && status.totalRequiredCredits > 0
     ? getPercent(status.totalEarnedCredits, status.totalRequiredCredits)
     : 0;
@@ -187,6 +186,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {status.inProgressCredits > 0 && <span className="grad-trust-tag">{t('grad.inProgressIncluded', { n: status.inProgressCredits })}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
+              {isPremed(status) && <p className="grad-trust-reason">{t('grad.premedNote', { medicalSchool: status.premedTo })}</p>}
               {isAbsentInLatestBooklet(status) && <p className="grad-trust-reason">{t('grad.absentDeptNote')}</p>}
               {trust.otherReasons.length > 0 && (
                 <details className="grad-trust-more">
@@ -206,7 +206,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </div>
               <p className="grad-remaining-text">
                 {progressPercent}% ·{' '}
-                {remaining > 0 ? t('grad.remaining', { n: remaining }) : creditsDependOnInProgress(status) ? t('grad.completeInProgress', { n: status.inProgressCredits }) : t('grad.complete')}
+                {remainingLabel(status, t)}
               </p>
               {generalElectiveCredits > 0 && (
                 <p className="grad-flex-note">{t('grad.generalElective', { n: generalElectiveCredits })}</p>
