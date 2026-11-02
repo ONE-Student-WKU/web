@@ -3,7 +3,7 @@ import { isMajorChangeClosed } from '../utils/majorChange.js';
 import { getDepartments, getTracks, getLinkedMajors, getMicroDegrees, submitOnboarding, updateProfile, saveLeavePeriods } from '../api/chatApi.js';
 import { IconChevronLeft, IconEdit } from '../components/icons.jsx';
 import { getYearRange, describeSuccessors, transferCohortYear, transferYearOf, formatCohortRange, TRANSFER_GRADES } from '../utils/onboardingYears.js';
-import { isBroadSeriesStudent } from '../utils/majorTrackType.js';
+import { isBroadSeriesStudent, intensiveMajorCredits } from '../utils/majorTrackType.js';
 import MajorTrackTypeOptions from '../components/MajorTrackTypeOptions.jsx';
 import DepartmentPicker from '../components/DepartmentPicker.jsx';
 import MicroDegreePicker from '../components/MicroDegreePicker.jsx';
@@ -778,7 +778,11 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
           <>
             <h2 className="onb-q-title">{t('trackType.title')}</h2>
             <p className="onb-q-sub">{t('trackType.sub')}</p>
-            <MajorTrackTypeOptions value={answers.majorTrackType} onChange={(v) => setAnswers((a) => ({ ...a, majorTrackType: v }))} />
+            <MajorTrackTypeOptions
+              value={answers.majorTrackType}
+              onChange={(v) => setAnswers((a) => ({ ...a, majorTrackType: v }))}
+              intensiveCredits={intensiveMajorCredits(selectedDepartment, answers.admissionYear)}
+            />
           </>
         )}
 

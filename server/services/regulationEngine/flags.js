@@ -66,7 +66,8 @@ const FLAG_CATALOG = {
   // 광역 계열전공 이수유형(시행규칙 제7조 제2항, #378 E-3). 시드의 계열 전공 행은 전공심화형 기준이라 다른 유형은 주전공 학점을 바꾼다.
   MAJOR_TRACK_DOUBLE_MAJOR: [L.ESTIMATED, '복수전공형이라 주전공은 36학점(기초·심화·응용 최소 학점 포함)으로 계산했어요. 제2전공 36학점은 이 진단에 아직 들어 있지 않으니 제2전공 학과 기준으로 따로 확인해 주세요.'],
   MAJOR_TRACK_CONVERGENCE: [L.ESTIMATED, '전공융합형이라 주전공은 48학점으로 계산했어요. 함께 이수해야 하는 타전공 마이크로디그리 2개(각 12학점)는 고른 과정의 학점만 보여 주고 충족을 판정하지 않으니(과목을 어떻게 세는지 학교 확인 중), 학과 사무실에 확인해 주세요.'],
-  MAJOR_TRACK_UNDECIDED: [L.ESTIMATED, '이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(36학점)만 계산했어요. 유형을 정하면 전공 총학점이 확정돼요(복수전공형 36 + 제2전공 36, 전공심화형 계열별 66~72, 전공융합형 48 + 마이크로디그리 24).'],
+  // 평가 때는 undecidedTrackMessage가 이 학과·학번의 전공심화형 학점을 넣은 문구로 바꾼다. 아래는 학점을 모를 때의 문구다.
+  MAJOR_TRACK_UNDECIDED: [L.ESTIMATED, '이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(36학점)만 계산했어요. 실제 전공 학점은 유형에 따라 더 많아요(전공심화형 계열별 66~72, 복수전공형은 제2전공 36학점 추가, 전공융합형은 주전공 48 + 마이크로디그리 24). 지금 생각하는 유형을 학과·학번 수정에서 고르면 그 기준으로 계산해요.'],
   DOUBLE_MAJOR_PRIMARY_MINIMUM: [L.INFO, '복수전공을 해서 주전공 전공 학점을 일반 학생보다 줄여서 계산했어요(최소전공 인정학점, 학칙시행규칙 제8조 제1항). 줄어든 학점은 자유선택으로 옮겨 졸업학점은 그대로예요.'],
   // 교직이수자의 최소전공(시행규칙 제6조 제2항: 인문·사회 50, 자연·예체능 56)이 복수전공 학생의 주전공에도 적용되는지는 3차 문의 E-6 ②로 확인 중(MODELING_AUDIT M-04).
   // 사범대학 학과는 시드의 최소전공 행이 이미 제2항 값이라 붙이지 않는다.
@@ -152,6 +153,16 @@ function makeFlag(code, extra = {}) {
   return { code, level: entry[0], message: entry[1], ...extra };
 }
 
+/**
+ * 광역 계열전공 이수유형 미정(MAJOR_TRACK_UNDECIDED) 문구에 이 학과·학번의 학점을 넣는다.
+ * 미정이면 전공선택이 0이 돼 "전공은 최소 학점만 들으면 된다"로 읽힐 수 있어, 전공심화형이면 몇 학점인지 함께 보여 준다.
+ * @param {number} minimum 기초·심화·응용 최소 학점(전공필수 풀)
+ * @param {number} intensive 이 학과·학번의 전공심화형 전공 학점
+ */
+function undecidedTrackMessage(minimum, intensive) {
+  return `이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(${minimum}학점)만 계산했어요. 실제 전공 학점은 유형에 따라 더 많아요(이 학과 전공심화형 ${intensive}학점, 복수전공형은 제2전공 36학점 추가, 전공융합형은 주전공 48 + 마이크로디그리 24). 지금 생각하는 유형을 학과·학번 수정에서 고르면 그 기준으로 계산해요.`;
+}
+
 /** 플래그 목록 → 가장 나쁜 level에 해당하는 신뢰도. 플래그가 없거나 INFO뿐이면 확정. (level 이름 = 신뢰도 이름, INSUFFICIENT 포함) */
 function confidenceFromFlags(flags) {
   let worst = CONFIDENCE.CONFIRMED;
@@ -173,4 +184,4 @@ function dedupeFlags(flags) {
   return flags.filter((f) => (seen.has(f.code) ? false : (seen.add(f.code), true)));
 }
 
-module.exports = { FLAG_CATALOG, makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags };
+module.exports = { FLAG_CATALOG, makeFlag, undecidedTrackMessage, confidenceFromFlags, worstConfidence, dedupeFlags };
