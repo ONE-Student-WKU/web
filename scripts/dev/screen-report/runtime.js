@@ -3,7 +3,8 @@
 // 폰 자리의 속성:
 //   data-cap="캡처 이름"  data-css="CSS 이름(cap/<이름>.scoped.css)"  data-proposal(cap/proposal.scoped.css도 얹음)  data-patch="패치 이름(patches/<이름>.js)"
 //   data-pins='[{"sel":"CSS 선택자","has":"포함할 글자(선택)","n":1}]'  — 걸리는 곳 번호
-//   data-scroll-to="선택자"  — 그 요소가 화면 위쪽에 오도록 스크롤(+ data-scroll-offset)
+//   data-scroll-to="선택자"  — 그 요소가 화면 위쪽에 오도록 스크롤(+ data-scroll-offset, 글자 조건은 data-scroll-has)
+// 종이 자리(인쇄 전용 시트): <div class="paper" data-cap="캡처 이름(cap.js __capPrint)" data-pcss="브랜치(cap/<브랜치>.print.css)">
 (function () {
   const sheets = {};
   function sheetFor(branch) {
@@ -120,6 +121,37 @@
 
   const phones = [...document.querySelectorAll('.phone[data-cap]')];
   phones.forEach(mount);
+
+  // 종이(인쇄 전용 시트): 그 브랜치 App.css의 인쇄 규칙(print-css.js)만 Shadow DOM에 넣어 A4 폭으로 그리고, 칸 폭에 맞춰 비율대로 줄인다.
+  // 인쇄할 때처럼 흰 종이라 앱 테마·번호 표시는 적용하지 않는다. 대조 검증(verify.js)에도 들어가지 않는다.
+  document.querySelectorAll('.paper[data-cap]').forEach((host) => {
+    const tpl = document.getElementById('cap-' + host.dataset.cap);
+    const css = document.getElementById('pcss-' + host.dataset.pcss);
+    const inner = document.createElement('div');
+    inner.style.cssText = 'width: 210mm; transform-origin: 0 0;';
+    host.appendChild(inner);
+    if (!tpl || !css) {
+      inner.textContent = '종이를 불러오지 못했어요: ' + host.dataset.cap;
+      return;
+    }
+    const shadow = inner.attachShadow({ mode: 'open' });
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(css.textContent);
+    shadow.adoptedStyleSheets = [sheet];
+    const paper = document.createElement('div');
+    paper.className = 'paper';
+    paper.lang = 'ko';
+    paper.appendChild(tpl.content.cloneNode(true));
+    shadow.appendChild(paper);
+    const fit = () => {
+      const s = Math.min(1, host.clientWidth / (paper.offsetWidth || 794));
+      inner.style.transform = 'scale(' + s + ')';
+      host.style.height = Math.ceil(paper.offsetHeight * s) + 'px';
+    };
+    fit();
+    document.fonts.ready.then(fit);
+    new ResizeObserver(fit).observe(host);
+  });
 
   // 좁은 화면에서는 폰을 비율대로 줄인다(375px 기준으로 그린 뒤 크기만 맞춘다).
   const ro = new ResizeObserver((entries) => {

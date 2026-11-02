@@ -76,7 +76,7 @@
 
 ## 시안·화면 비교 보여 주기
 
-UI 시안이나 브랜치 사이 화면 차이를 보여 달라고 하면 **손으로 그린 목업을 쓰지 않는다.** 위치·간격이 조금씩 달라 UI 피드백에 쓸 수 없다(사용자 결정 2026-10-28). 대신 로컬에서 띄운 실제 화면의 DOM을 떠서, 그 브랜치의 `App.css`와 Pretendard로 다시 그린 HTML 리포트를 Artifact로 게시한다. 도구와 순서는 [scripts/dev/screen-report/README.md](scripts/dev/screen-report/README.md)에 있다. 오래 걸려도 이 방식으로 한다.
+UI 시안이나 브랜치 사이 화면 차이를 보여 달라고 하면 **손으로 그린 목업을 쓰지 않는다.** 위치·간격이 조금씩 달라 UI 피드백에 쓸 수 없다(사용자 결정 2026-10-28). 대신 로컬에서 띄운 실제 화면의 DOM을 떠서, 그 브랜치의 `App.css`와 Pretendard로 다시 그린 HTML 리포트를 Artifact로 게시한다. 도구와 순서는 [scripts/dev/screen-report/README.md](scripts/dev/screen-report/README.md)에 있다. 오래 걸려도 이 방식으로 한다. 전체 흐름(시안 브랜치 구현 → 케이스별 테스트 계정 상태 → 지금/바꾼 뒤 캡처 → 인쇄본·챗봇 차이 → 대조·게시 → 정리)은 프로젝트 스킬 `ui-screen-compare`(`.claude/skills/ui-screen-compare/SKILL.md`)를 따른다.
 
 - 시안은 가능하면 **먼저 구현하고 구현한 화면을 뜬다**(작업 트리 vs `develop`). 구현 전에 보여 줘야 하면 develop 캡처를 기존 클래스로 고친 패치로 만들고, 새 CSS는 App.css에 그대로 옮길 수 있는 몇 줄로만 쓴다.
 - 게시 전에 `verify.js`로 원본 CSS 렌더와 요소마다 대조하고, 남은 차이는 리포트에 적는다.
