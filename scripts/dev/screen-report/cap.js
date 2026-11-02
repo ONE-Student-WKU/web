@@ -40,4 +40,16 @@ window.__cap = async (name) => {
   const r = await fetch(`http://127.0.0.1:3010/?name=${name}`, { method: 'POST', body: JSON.stringify(payload) });
   return r.text();
 };
+// 인쇄 전용 시트(화면에서는 display:none, 인쇄할 때만 찍힘)를 뜬다. #root 밖(body 바로 아래)에 붙는 시트라 __cap으로는 안 잡힌다.
+// 먼저 window.print = () => {} 로 인쇄 창을 막고 앱의 "PDF로 저장" 버튼을 눌러 시트가 DOM에 붙은 뒤 부른다.
+// 리포트에서는 <div class="paper" data-cap="이름" data-pcss="브랜치"> 자리에 print-css.js로 만든 CSS와 함께 종이로 그린다.
+window.__capPrint = async (name, selector = '.grad-print-sheet') => {
+  await Promise.all(['400', '500', '600', '700', '800'].map((w) => document.fonts.load(`${w} 16px Pretendard`, '가나다ABC123')));
+  await document.fonts.ready;
+  const sheet = document.querySelector(selector);
+  if (!sheet) throw new Error(`인쇄 시트가 없어요: ${selector} — 인쇄 버튼을 먼저 누르세요`);
+  const payload = { name, url: location.href, theme: 'light', html: sheet.outerHTML };
+  const r = await fetch(`http://127.0.0.1:3010/?name=${name}`, { method: 'POST', body: JSON.stringify(payload) });
+  return r.text();
+};
 'cap ready';

@@ -16,6 +16,9 @@ figcaption { font-size: 0.85rem; color: var(--muted); }
 .phone { width: 375px; max-width: 100%; height: calc(812px * var(--s, 1)); border-radius: 18px; overflow: hidden; background: var(--shell); box-shadow: 0 0 0 1px var(--line); }
 .phone-viewport { width: 375px; height: 812px; transform: scale(var(--s, 1)); transform-origin: 0 0; contain: layout paint; }
 .seg button[aria-pressed="true"] { font-weight: 700; }
+/* 종이(인쇄 전용 시트) — runtime.js가 A4 폭으로 그린 뒤 칸 폭에 맞춰 줄이고 높이를 정한다 */
+.papers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+.paper { width: 100%; overflow: hidden; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
 </style>
 
 <h1>화면 비교</h1>
@@ -30,6 +33,9 @@ figcaption { font-size: 0.85rem; color: var(--muted); }
   <figure><figcaption>시안</figcaption>
     <div class="phone" data-cap="dev-home" data-css="develop" data-proposal data-patch="example"></div></figure>
 </div>
+
+<!-- 인쇄 전용 시트(PDF로 저장)는 종이로 비교한다: cap.js의 __capPrint로 뜨고, print-css.js로 cap/<브랜치>.print.css를 만든다.
+     자리는 <div class="papers"> 안에 figure마다 <div class="paper" data-cap(캡처 이름) data-pcss(브랜치)>를 둔다(README.md "인쇄본 비교"). -->
 
 {{CSS}}
 {{CAPTURES}}

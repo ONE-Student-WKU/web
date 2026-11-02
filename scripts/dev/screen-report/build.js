@@ -6,6 +6,7 @@
  *  - 작업 폴더: SCREEN_REPORT_DIR(기본 OS 임시 폴더/wku-screen-report) — cap/, font/, patches/를 여기서 읽는다
  *  - 템플릿의 {{FONTS}}(<style> 안), {{CSS}}, {{CAPTURES}}, {{RUNTIME}} 자리를 채운다
  *  - 폰 자리: <div class="phone" data-cap="이름" data-css="develop"></div>  (예시는 template.example.html)
+ *  - 종이 자리(인쇄 전용 시트): <div class="paper" data-cap="이름" data-pcss="develop"></div> — cap/<브랜치>.print.css(print-css.js)를 쓴다
  *  - 폰트: font/Pretendard-{Regular,Medium,SemiBold,Bold,ExtraBold}.woff2. Python fontTools가 있으면(PYTHONPATH) 페이지에 쓰인
  *    글자만 남겨 줄이고, 없거나 --full-font면 원본을 그대로 넣는다(1MB → 5MB 정도로 커질 뿐 화면은 같다)
  *  - <출력>.local.html도 만든다 — 게시할 때 붙는 doctype·viewport를 붙인 확인용 사본(없으면 호환 모드로 그려져 줄 높이가 다르다)
@@ -42,8 +43,12 @@ if (missing.length) console.warn('없는 캡처:', missing.join(', '));
 
 const css = fs
   .readdirSync(CAP)
-  .filter((f) => f.endsWith('.scoped.css'))
-  .map((f) => `<script type="text/plain" id="css-${f.replace(/\.scoped\.css$/, '')}">${esc(fs.readFileSync(path.join(CAP, f), 'utf8'))}</script>`)
+  .filter((f) => f.endsWith('.scoped.css') || f.endsWith('.print.css'))
+  .map((f) => {
+    // 폰용(scope-css.js) → id="css-<브랜치>", 종이용(print-css.js) → id="pcss-<브랜치>"
+    const id = f.endsWith('.print.css') ? `pcss-${f.replace(/\.print\.css$/, '')}` : `css-${f.replace(/\.scoped\.css$/, '')}`;
+    return `<script type="text/plain" id="${id}">${esc(fs.readFileSync(path.join(CAP, f), 'utf8'))}</script>`;
+  })
   .join('\n');
 
 const patchesDir = path.join(DIR, 'patches');
