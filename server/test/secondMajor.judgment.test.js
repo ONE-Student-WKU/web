@@ -99,6 +99,21 @@ test('엔진: 복수전공이면 주전공을 최소전공으로 바꾸고 일�
   assert.ok(!changed.adjustments.includes('DOUBLE_MAJOR_MINIMUM'), '이미 최소전공 완화를 받았다');
 });
 
+test('엔진: 교직 이수 중 + 복수전공이면 교직이수자 최소전공(제6조 제2항)이 확인 중이라 추정, 사범대학은 이미 그 값이라 붙이지 않는다(MODELING_AUDIT M-04)', async () => {
+  const judge = async (departmentName, teachingCourse) => {
+    const rule = (await resolveRequirementsForStudent({ admissionYear: 2023, enrollmentType: 'GENERAL', departmentName, secondMajorType: 'DOUBLE', teachingCourse })).rules.find((r) => r.id === 'REQUIREMENTS');
+    return { codes: rule.flags.map((f) => f.code), major: rule.value.categories.filter((c) => c.category === '전공').map((c) => c.requiredCredits) };
+  };
+  const teaching = await judge('국어국문학과', true);
+  assert.ok(teaching.codes.includes('DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED'));
+  assert.deepEqual(teaching.major, [36], '숫자는 일반 기준 그대로');
+  assert.ok(!(await judge('국어국문학과', false)).codes.includes('DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED'));
+  assert.ok(!(await judge('국어국문학과', null)).codes.includes('DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED'));
+  const college = await judge('국어교육과', true);
+  assert.ok(!college.codes.includes('DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED'));
+  assert.deepEqual(college.major, [50], '사범대학 최소전공 행은 이미 제6조 제2항 값');
+});
+
 test('진단: 복수전공 — 제2전공으로 센 과목은 주전공에서 일반선택, 제2전공 학과 최소전공·졸업논문2를 싣는다', async () => {
   await setSecond('DOUBLE');
   await addCourse('마케팅원론', 3, '전공선택');

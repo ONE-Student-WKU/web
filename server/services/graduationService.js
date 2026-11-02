@@ -11,7 +11,7 @@ const { normalizeCourseName, courseNameVariants } = require('./courseNameMatch')
 const { counselingRequirement } = require('./counseling');
 const { evaluateLiberalRequiredAreas } = require('./liberalRequiredAreas');
 const { evaluateLiberalElectiveAreas } = require('./liberalElectiveAreas');
-const { registrationTermsOf } = require('./studentProgress');
+const { registrationTermsOf, MEDICAL_SCHOOL_OF } = require('./studentProgress');
 const { getMicroDegreeStatus, convergenceProgress, LINKED_MINOR_CREDITS, LINKED_LIBERAL_MAX } = require('./linkedMajors');
 const { getAcademicWarnings } = require('./academicWarning');
 const { secondMajorTypeOf } = require('./secondMajor');
@@ -653,6 +653,9 @@ async function getGraduationStatus(studentId) {
     // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 알린다 { registered, required, earlyGraduation, estimated } | null.
     // 화면은 학점을 다 채웠는데 학기가 모자랄 때만 강조한다(#378 H-2 결정 A).
     registrationTerms: registrationTermsOf(student),
+    // 예과(의예·치의예·한의예과)면 진급할 본과 학과 이름, 아니면 null. 예과 학점은 졸업요건이 아니라 예과 이수 기준이라
+    // 화면·챗봇이 "졸업" 대신 "예과 이수"로 말한다(MODELING_AUDIT M-02).
+    premedTo: MEDICAL_SCHOOL_OF[student.department_name] || null,
     // 전과생의 전과 전 전공 과목 — { recognitionApplied, demoted: [{ id, name, credits, auto }], recognized: [...] } | null(D-77)
     priorMajorCourses,
     // 다른 학과 전공 과목으로 일반선택으로 센 과목 — { courses: [{ id, name, credits }], credits } | null(D-88)

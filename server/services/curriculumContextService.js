@@ -6,6 +6,7 @@ const { loadLatestDataYear } = require('./regulationEngine/dbProvider');
 const { LATEST_BOOKLET_YEAR } = require('./regulationEngine/constants');
 const { trackCertificationNotes } = require('./trackCertificationRules');
 const { isAssociateExcludedRequirement } = require('./regulationEngine/profileCaveats');
+const { MEDICAL_SCHOOL_OF } = require('./studentProgress');
 
 /**
  * server/services/curriculumContextService.js
@@ -152,6 +153,11 @@ function judgmentFor(judgment, department, year) {
   return judgment.department.id === department.id && judgment.input.admissionYear === year ? judgment : null;
 }
 
+// 예과 학점은 졸업요건이 아니라 본과 진급 전 단계의 이수 기준이다(MODELING_AUDIT M-02, studentProgress.MEDICAL_SCHOOL_OF).
+function premedLine(departmentName) {
+  return `※ ${departmentName}는 예과(2년)다. 위 학점은 졸업요건이 아니라 예과 이수 기준이고, 졸업요건은 본과(${MEDICAL_SCHOOL_OF[departmentName]})에서 따로 정한다. 본과 진급 기준(성적 등)은 학과 내규라 학과에 확인한다.`;
+}
+
 function engineRequirementChunk(department, year, judgment) {
   const rule = judgment.requirements.rules.find((r) => r.id === 'REQUIREMENTS');
   const enrollmentType = judgment.input.enrollmentType;
@@ -172,6 +178,7 @@ function engineRequirementChunk(department, year, judgment) {
     lines.push(`※ 이 요건 값의 신뢰도: ${CONFIDENCE_LABEL[rule.confidence]}${reasons.length ? ` — ${reasons.join(' / ')}` : ''}`);
   }
   if (rule.value.schedule4) lines.push(schedule4Line(rule.value.schedule4));
+  if (MEDICAL_SCHOOL_OF[department.name]) lines.push(premedLine(department.name));
   const basis = (rule.flags || []).find((f) => f.code === 'LATEST_BOOKLET_COHORT_TABLE');
   if (basis) lines.push(latestBookletBasisLine(year, basis.latestBookletYear));
   const suffix = enrollmentType === 'GENERAL' ? '' : enrollmentType === 'MAJOR_CHANGE' ? ' (전과생 기준)' : ' (편입생 기준)';
@@ -213,6 +220,7 @@ async function graduationRequirementChunk(department, year, judgment = null) {
   // 전문학사 과정의 졸업논문·졸업인증제는 졸업사정에서 빠진다(시행규칙 제118조 제1항 제7호, 엔진과 같은 기준).
   const lines = formatRequirementLines(resolved.rows.filter((r) => !isAssociateExcludedRequirement(resolvedName, r.category)));
   lines.push(...trackCertificationNotes(resolvedName, year));
+  if (MEDICAL_SCHOOL_OF[resolvedName]) lines.push(premedLine(resolvedName));
   if (year < LATEST_BOOKLET_YEAR) lines.push(latestBookletBasisLine(year));
   let lineageNote = '';
   if (resolved.departmentId !== department.id) {

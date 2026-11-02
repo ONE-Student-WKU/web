@@ -111,3 +111,13 @@ test('3학년 전과인데 학과에 줄어든 기준 자료가 없으면(의약
   assert.match(p, /3학년 때 전과해서 원래 전공 학점이 일반 학생보다 줄어들지만, 이 학과는 줄어든 기준 자료가 없어/);
   assert.doesNotMatch(p, /전공 기준은 일반 학생과 같은/);
 });
+
+test('예과 학생은 "졸업까지"가 아니라 "예과 이수까지"로 넘기고, 진급은 단정하지 말라고 한다(MODELING_AUDIT M-02)', () => {
+  const premed = buildSystemPrompt({ ...base, department_name: '의예과' }, { ...status({ totalRequired: 80 }), premedTo: '의학과' });
+  assert.match(premed, /예과 이수까지 \d+학점 남음/);
+  assert.doesNotMatch(premed, /졸업까지 \d+학점 남음/);
+  assert.match(premed, /본과 의학과 진급 전 단계/);
+  const general = buildSystemPrompt(base, { ...status(), premedTo: null });
+  assert.match(general, /졸업까지 \d+학점 남음/);
+  assert.doesNotMatch(general, /예과 학생이다/);
+});

@@ -3,6 +3,7 @@ const { normalizeForSearch, prepareEntry, prepareQuery, rankEntries } = require(
 const { expandAliases } = require('./searchAliases');
 const { majorAreaOf } = require('./categoryMap');
 const { normalizeCourseCode, resolveOfferingDepartments } = require('./courseOrigin');
+const { academicTermOf, todayKst } = require('./regulationEngine/context');
 
 /**
  * server/services/courseService.js
@@ -45,12 +46,10 @@ function numOrNull(v) {
 // PDF 가져오기 학기당 한도 판정용 기간 키. 실제 개강일이 아니라 달력 기준 근사치로 계산한다
 // (3~8월=1학기, 9~12월=2학기, 1~2월=전년도 2학기) — 한도 리셋 용도로만 쓰이므로 개강일과
 // 며칠 어긋나도 무방하다.
+// 학기 경계는 한국 시간 기준이다 — 서버 시간대(UTC 등)를 따르면 3월 1일·9월 1일 0~9시(KST)가 직전 학기로 세어진다(MODELING_AUDIT M-09).
 function getCurrentAcademicPeriod(date = new Date()) {
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-  if (month >= 3 && month <= 8) return `${year}-1`;
-  if (month >= 9) return `${year}-2`;
-  return `${year - 1}-2`;
+  const { year, semester } = academicTermOf(todayKst(date));
+  return `${year}-${semester}`;
 }
 
 // 가져오기 파싱이 Claude API를 호출하면 비용이 들기 때문에 학기당 상한을 둔다.

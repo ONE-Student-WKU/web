@@ -33,7 +33,7 @@
 
 ### 자동 시작되는 경로
 
-`db/regulations/**`, `db/curriculum/**`, `db/seed/curriculum_requirements.json`, `db/seed/linked_majors.json`, `db/seed/micro_degrees.json`, `db/seed/department_lineage.json`, `db/seed/course_lineage.json` (정확한 목록은 `db-reseed.yml`의 `paths:`).
+`db/regulations/**`, `db/curriculum/**`, `db/seed/curriculum_requirements.json`, `db/seed/linked_majors.json`, `db/seed/micro_degrees.json`, `db/seed/department_lineage.json`, `db/seed/course_lineage.json`, `db/regulation-engine/applicability.json`(규정 적용범위 — 19단계 `seed:regulation-articles`가 읽는다, 2026-10-28 추가) (정확한 목록은 `db-reseed.yml`의 `paths:`). 같은 폴더의 `schedule1_colleges.json`·`schedule4_credits.json`은 서버가 파일을 바로 읽어 코드 배포만으로 반영된다.
 
 새 파일을 이 경로 밖에 추가하면 재시딩이 **조용히 안 돈다.** PR에서 `DB Reseed Guard`가 이걸 경고해 준다(아래).
 
@@ -96,6 +96,7 @@ Railway 로그로 직접 확인할 때:
 ## PR에서 자동으로 돌아가는 검사
 
 - **Tests** (`test.yml`): 클라이언트(vitest)와 서버 테스트를 돌린다. 서버 테스트는 job 안의 임시 MySQL 컨테이너에 스키마·시드를 만들어 돌리며, 규정 임베딩은 가짜 벡터로 대체한다(`scripts/ci/seed-regulations-stub.js`). **시크릿을 쓰지 않고 운영 DB·Railway와 무관하다.**
+- **릴리스 갱신 기록 날짜** (`test.yml`의 `release-data-updates`, **`main` 대상 PR에서만**): 이번 릴리스로 새로 들어가는 `server/services/dataUpdates.js` 항목의 날짜가 오늘(KST)보다 앞서면 **실패**, 진단 결과를 바꿀 수 있는 파일(규정·교육과정 문서, 요건 시드, `graduationService`·`regulationEngine`)이 바뀌었는데 새 항목이 없으면 **경고**한다(`scripts/ci/check-release-data-updates.js`). PR을 열거나 갱신할 때만 돌아서, 머지가 날짜를 넘기면 Actions에서 다시 돌린다. DB·시크릿을 쓰지 않는다.
 - **DB Reseed Guard** (`db-reseed-guard.yml`): ① 새로 추가된 `db/regulations|curriculum|seed` 파일이 재시딩 `paths:` 필터에 걸리는지, ② `db/schema.sql`의 `CREATE TABLE`이 `IF NOT EXISTS`인지 정적으로 본다. **실행을 막지 않고 경고만** 한다. 어떤 형태로도 Railway·DB에 접근하지 않는다.
 - **Vercel** (`vercel-deploy.yml`): 미리보기 URL을 PR 댓글로 달아 준다.
 

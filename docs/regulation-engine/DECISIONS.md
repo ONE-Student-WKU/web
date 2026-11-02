@@ -1005,3 +1005,42 @@
   - 개인정보처리방침 수집 항목에 "성적표에서 가져온 과목의 학수번호와 개설 학과"를 넣었다(동의 버전 2026-10-28.2, 문의 답변 AI 초안과 같은 개정).
 - **단점·다시 볼 조건**: 개설과목 자료(`course_offerings`)가 없는 옛 학기는 교육과정 학수번호로만 찾아, 같은 학수번호가 여러 학과 편성에 있으면 비운다. 실물 전체성적조회(2026-10-28, 전과생 성적표 38과목)로는 학수번호 38개를 모두 읽고 전공·일반선택 22과목의 개설 학과를 모두 맞게 찾았다(전과 전 학과의 일반선택 과목 포함). 이수과목확인리스트의 "개설학과(전공)" 글자 모양은 실물 PDF로 아직 확인하지 못했다 — 맞지 않으면 `departmentCandidates`·`nameKey`를 고친다.
 - **위치**: `server/services/courseOrigin.js`, `pdfImportService.js`, `aiClient.js`(추출 프롬프트), `courseService.bulkAddMyCourses`, `routes/myCourses.js`, `secondMajorCredits.loadOfferingDepartments`, `courseCounting.js`, 클라이언트 `CourseManagement.jsx`, 테스트 `server/test/courseOrigin.test.js`·`otherDepartmentCourses.test.js`·`pdfImportService.ruleBased.test.js`.
+
+## D-90 모델링 점검(2026-10-28)에서 찾은 9건을 고친다 — 숫자는 그대로, 신뢰도·안내·운영 경로만 (2026-10-28)
+- **상황**: 학칙·시행규칙 모델링을 읽기 전용으로 점검하고([MODELING_AUDIT_2026-10-28.md](MODELING_AUDIT_2026-10-28.md)), 임시 학생으로 진단 화면·챗봇까지 다시 재현했다(같은 문서 7절). 졸업 가능/불가를 반대로 확정하는 경우(P0)는 없었고, 9건 모두 졸업학점 숫자는 바꾸지 않는다.
+- **결정**(사용자 결정 2026-10-28):
+  - **M-01** 광역계열 학생이 복수전공을 넣었는데 이수유형이 전공심화형·전공융합형이면 `MAJOR_TRACK_SECOND_MAJOR_MISMATCH`(추정)로 알린다. 저장은 막지 않고 숫자는 고른 유형 그대로다. 유형은 하나만 고른다는 제7조 제2항 해석과, 심화형이면서 다른 학과 복수전공이 되는지는 학교 확인 전이라(문의 후보 Q1 — 3차 문의 답이 온 뒤 보낸다) 단정하지 않는다.
+  - **M-02** 예과(의예·치의예·한의예과)는 "졸업" 대신 "예과 이수"로 말한다. 진단 결과에 `premedTo`(본과 학과)를 싣고, 진단 화면·인쇄본·홈 완료 문구·챗봇이 이를 따른다. 진급 기준(성적 등)은 학과 내규라(A-5) 단정하지 않고 학과 확인을 안내한다.
+  - **M-03** 시행규칙 제5조 적용 문구를 "입학 학번 책자"에서 "입학 학번 기준, 값은 최신 책자의 학번별 이수기준표"로 바꾼다(A-1, D-55). `applicability.json`이라 운영은 재시딩으로 반영한다.
+  - **M-04** 엔진 입력에 교직 이수 여부(`teachingCourse`)를 넣고, 교직 이수 중 + 복수전공이면 `DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED`(추정)를 붙인다(3차 문의 E-6 ② 대기). 사범대학은 시드의 최소전공 행이 이미 제6조 제2항 값(국어교육과 50·수학교육과 56)이라 붙이지 않는다. 진단 화면은 이미 다전공 추정이라, 바뀌는 것은 이유 문장과 챗봇 규정 판단이다.
+  - **M-05** `DESIGN.md` 4절의 학번별 값 설명을 최신 책자 원칙으로 고친다.
+  - **M-06** `db-reseed.yml` `paths:`에 `db/regulation-engine/applicability.json`을 넣는다(19단계 `seed:regulation-articles`가 읽는다). 같은 폴더의 `schedule*.json`은 서버가 파일을 바로 읽어 넣지 않는다.
+  - **M-07** `DEPARTMENT_IS_SUCCESSOR_OF_COHORT` 문구를 "전과했다면 옮긴 학과 기준, 아직 원래 학과 소속이면 학적의 학과로 조회"로 바꾼다. 광역계열 전과는 2학년부터라(제109조) 개편 계열로의 정상 전과는 2027-1학기부터 생기므로, 그 전에 바꿔 둔다.
+  - **M-08** 이수구분 예외(`course_category_overrides.semester`, 정규 학기 1|2)와 비교하기 전에 수강 내역의 4칸 학기 코드를 바꾼다. 계절학기는 학년도 전체 예외(NULL)만 따른다. 지금은 예외 행이 없어 동작이 바뀌지 않는다.
+  - **M-09** PDF 가져오기 학기당 한도의 "지금 학기"를 한국 시간으로 정한다.
+- **단점·다시 볼 조건**: Q1·E-6 ② 답이 오면 M-01·M-04의 추정을 확정 규칙으로 바꾼다. 이번에 못 본 점검 범위(조문 전수 대조, 문서·테스트 괴리)는 이 수정 뒤 다시 본다.
+- **위치**: `server/services/regulationEngine/{evaluate,context,flags,applicability,registrationCategory}.js`, `db/regulation-engine/applicability.json`, `server/services/{graduationService,aiClient,curriculumContextService,courseService,dataUpdates}.js`, `client/src/utils/graduation.js`, `client/src/pages/GraduationStatus.jsx`, `client/src/components/GraduationPrintSheet.jsx`, `client/src/i18n/locales/{ko,en}.js`, `.github/workflows/db-reseed.yml`, `docs/deployment.md`, `docs/regulation-engine/DESIGN.md`, `db/schema.sql`(주석).
+
+## D-91 AI 모델을 Claude Haiku 4.5에서 Haiku 5.5(effort low)로 바꾼다 — 프롬프트는 그대로 (2026-10-28)
+- **상황**: 챗봇·진로 탐색·성적표 PDF 추출·신고 분류·문의 초안이 모두 `claude-haiku-4-5` 하나를 쓴다(`server/services/aiClient.js`). Haiku 5.5는 100만 토큰당 입력 $0.10·출력 $0.50으로 Haiku 4.5($1·$5)의 10분의 1이고, 지시 따르기가 더 낫다(Anthropic 전환 안내). Anthropic 안내는 같은 글이 약 30% 더 많은 토큰으로 세진다고 하지만, 이 프로젝트의 한국어 프롬프트는 count_tokens로 재 보니 거의 같았다(챗봇 답변 요청 8,003→8,045토큰, ×1.00~1.06). 답하기 전 생각(적응형)이 low에서도 켜져 출력 토큰은 늘지만(같은 질문 303→1,122), 실제 호출 3문항 비교에서 비용은 $0.0302→$0.0038로 약 8분의 1이었다(2026-10-28, 로컬 테스트 계정 프롬프트·규정 판단 근거). Max 요금제의 월 API 크레딧($100)을 운영 조직에 연결해 둔 상태다(2026-10-28).
+- **결정**(사용자 결정 2026-10-28):
+  - 모델 `claude-haiku-5-5`, 모든 호출 `output_config.effort: "low"`. 프롬프트 문장은 바꾸지 않는다.
+  - 생각한 양도 `max_tokens`에 들어가므로 짧게 잡은 호출을 늘린다: 질문 분석 200→1024, 진로 후속 질문·신고 분류 300→1024, 문의 초안 600→1536, 챗봇 답변 1024→2048, 진로 후보 800→2048, 로드맵 1000→2048, PDF 추출 8000→12000(시간 상한 60→90초). 다 쓰지 않으면 요금은 늘지 않는다.
+  - 응답은 `text` 블록만 읽는다(앞에 `thinking` 블록이 붙을 수 있다). 안전 분류기 거절(`stop_reason: "refusal"`)은 빈 답 대신 오류로 던져 호출부의 기존 실패 경로를 탄다 — 챗봇은 오류 안내, 신고 분류는 라벨 없이 사람 검토, 질문 분석은 원문 검색 폴백. Haiku 5.5는 서버 쪽 대체 모델(fallbacks)이 없다.
+  - 샘플링 파라미터·직접 정한 생각 예산·assistant prefill은 원래 쓰지 않아 고칠 것이 없다.
+- **확인**: 같은 시스템 프롬프트·근거로 두 모델을 3문항 비교했다. 답의 내용은 같은 수준이고, Haiku 5.5가 근거에 없는 전화번호를 지어내지 않았다(Haiku 4.5는 근거에 없는 학사지원과 번호를 하나 만들었다, D-74 위반). 응답 시간은 생각 때문에 2~4초 늘었다(최대 6.3초, 시간 상한 30초 안).
+- **단점·다시 볼 조건**: 평가 세트 전체 비교는 하지 않았고, RAG 검색 근거 없이 규정 판단 근거만으로 비교했다. 챗봇 답이 얕거나 규칙을 놓치면 해당 호출만 `medium`으로 올린다. 욕설이 섞인 신고·문의에서 거절이 잦으면 그 경로의 처리를 다시 본다.
+- **위치**: `server/services/aiClient.js`(`MODEL`, `OUTPUT_CONFIG`, `responseText`), `server/test/aiClient.haiku55.test.js`, `server/test/career.language.test.js`(응답 흉내에 `type` 추가).
+
+
+## D-92 졸업요건 화면은 "무엇이 다르고 무엇을 하면 되는지"만, 근거는 인쇄본·챗봇으로 (2026-11-02)
+- **상황**: 진단 화면의 추정 사유는 엔진이 만든 서버 문장 그대로였다. 화면에 뜰 수 있는 사유 75개는 평균 95자, 150자가 넘는 것이 10개, 30개가 조문·책자를 인용했다. 편입생은 사유만 576자였고, 영어 모드에서도 한국어 문장이 보였다. 확정 결과에도 통폐합 학과 안내(컴소공 2025학번 이하 전원)와 외국인 유학생 교양 안내(2025학번 이후 전원)가 붙었다. 근거가 많아질수록 학생이 작은 글씨를 건너뛰어 정작 읽어야 할 줄(입력 하나로 결과가 정확해지는 안내)까지 놓친다(사용자 피드백 2026-11-02).
+- **결정**(사용자 결정 2026-11-02, 실제 화면 비교 리포트로 확인):
+  - 화면의 추정 사유는 사전의 짧은 한 줄(`grad.flag.<코드>`, ko·en)로 보여 준다. 학생이 앱에서 고칠 입력이 있으면 그 행동을 남기고, 조문·책자·학교 답변 출처는 쓰지 않는다. 사전에 없는 코드만 서버 문장 그대로 보인다(새 코드를 만들면 `server/test/flagScreenLines.test.js`가 잡는다).
+  - 화면 문구(사전)의 조문 인용을 뺀다: 전과 전 과목·다른 학과 과목·다전공·지정 과목·교양 영역·마이크로디그리 안내, 온보딩 전과 안내. 요건 설명의 출처 메모(책자 쪽수·조문·졸업인증제 그룹·과사무실 안내 날짜)는 화면에서 걷어 낸다(`cleanRequirementNote`) — 데이터의 출처는 그대로 둬 챗봇이 쓴다.
+  - 통폐합 학과 안내와 외국인 유학생 교양 안내는 화면에서 뺀다(해당 학생에게만 필요한 설명이라 챗봇이 답한다).
+  - 근거는 두 곳으로 옮긴다: 인쇄본은 추정 이유를 서버 문장(조문 포함) 그대로 싣고, 맨 아래 "계산 근거"에 참고 플래그를 싣는다(과사무실 확인용). 챗봇은 참고 플래그를 "계산 근거"로 받아 "내 학점은 왜 이렇게 나왔어?"에 답한다. 시스템 내부 사정(보유 원문 날짜·종전 부칙 자료 없음)은 두 곳 모두 싣지 않는다.
+  - 화면에 근거 버튼은 만들지 않는다. 채팅 입력창 안내만 "예: 내 졸업학점은 왜 이렇게 나왔어?"로 바꾼다.
+- **바뀌지 않는 것**: 졸업 학점·판정·신뢰도(확정/추정)는 그대로다. 서버의 플래그 문장도 그대로다(인쇄본·챗봇이 쓴다).
+- **다시 볼 조건**: 인쇄본 "계산 근거"는 학생에게 쓴 서버 문장이라 과사무실이 보기에 길다(통폐합 안내 446자). 직원용 짧은 근거가 필요하다는 피드백이 오면 코드별 인쇄 문구를 따로 둔다. 챗봇이 계산 근거로 실제로 잘 설명하는지는 AI 호출로 확인하지 않았다.
+- **위치**: `client/src/utils/graduation.js`(`flagLine`, `printBasis`), `client/src/utils/displayText.js`, `client/src/components/GraduationPrintSheet.jsx`, `client/src/pages/GraduationStatus.jsx`, `client/src/i18n/locales/{ko,en}.js`(`grad.flag.*`, `grad.print.basisTitle`), `server/services/aiClient.js`(`CHAT_BASIS_EXCLUDED_FLAGS`), `server/test/flagScreenLines.test.js`, `server/test/aiClient.calculationBasis.test.js`.

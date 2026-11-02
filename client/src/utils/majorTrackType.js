@@ -6,3 +6,14 @@ export const BROAD_SERIES_FIRST_COHORT = 2025;
 export function isBroadSeriesStudent(departmentName, admissionYear) {
   return typeof departmentName === 'string' && departmentName.endsWith('계열') && Number(admissionYear) >= BROAD_SERIES_FIRST_COHORT;
 }
+
+// 학과 목록(/onboarding/departments)의 majorTrackCredits에서 이 학번의 전공심화형 전공 학점을 찾는다.
+// 못 찾으면 null — 선택지는 "계열에 따라 66~72"로 보여 준다.
+export function intensiveMajorCredits(department, admissionYear) {
+  const year = Number(admissionYear);
+  if (!Number.isFinite(year)) return null;
+  const hit = (department?.majorTrackCredits || []).find(
+    (r) => (r.minAdmissionYear == null || r.minAdmissionYear <= year) && (r.maxAdmissionYear == null || year <= r.maxAdmissionYear)
+  );
+  return hit ? hit.intensive : null;
+}

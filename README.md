@@ -39,7 +39,7 @@
 | Client | React 18, Vite 6, Vitest |
 | Server | Node.js, Express 4, express-session(MySQL 세션 스토어), express-rate-limit, Google OAuth, 이메일 OTP(Resend), Sentry |
 | DB | MySQL(운영: Railway), mysql2 |
-| AI | Claude Haiku 4.5(답변 생성·PDF 인식·진로 탐색), Voyage AI 임베딩 기반 RAG |
+| AI | Claude Haiku 5.5(답변 생성·PDF 인식·진로 탐색, effort low), Voyage AI 임베딩 기반 RAG |
 | 규정 판단 엔진 | 학칙·학칙시행규칙 원문, 교육과정 책자 2017~2026(학번별 이수기준표)을 근거로 졸업요건과 신뢰도(확정·추정·자료 없음)를 계산(`server/services/regulationEngine`) |
 | CI/CD | GitHub Actions(서버·클라이언트 테스트, Vercel 배포), DB 재시딩 워크플로(`db-reseed` 환경 승인 후 실행) |
 | 배포 | 프론트엔드 Vercel, 백엔드 Railway |

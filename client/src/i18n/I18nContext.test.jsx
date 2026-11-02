@@ -184,15 +184,15 @@ describe('졸업요건 신뢰도 표시', () => {
     regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', flags: [], schedule4: { schedule4Credits: 130, bookCredits: 136 } },
   };
 
-  it('한국어는 서버 라벨/사유 그대로, 영어는 번역해서 보여준다', () => {
+  it('신뢰도 라벨과 사유를 화면 언어로 보여준다', () => {
     const ko = describeRequirementTrust(status);
     expect(ko.badge.label).toBe('추정');
-    expect(ko.reason).toContain('학칙 [별표 4]');
+    expect(ko.reason).toBe('학교 규정은 130학점, 교육과정 책자는 136학점으로 졸업학점이 달라요. 학과에 확인해 주세요.');
 
     const en = describeRequirementTrust(status, 'en');
     expect(en.badge.label).toBe('Estimated');
-    expect(en.reason).toContain('130 credits');
-    expect(en.reason).toContain('136 credits');
+    expect(en.reason).toContain('list 130 graduation credits');
+    expect(en.reason).toContain('lists 136.');
   });
 });
 

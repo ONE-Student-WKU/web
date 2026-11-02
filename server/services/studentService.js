@@ -224,6 +224,23 @@ async function listDepartments() {
     }
   }
 
+  // 광역 계열전공의 전공심화형 전공 학점(전공필수 36 + 전공선택 나머지)을 학번 범위별로 — 엔진이 전공심화형으로 쓰는 시드 행 그대로다
+  // (regulationEngine/evaluate.js). 이수유형 선택지가 "계열에 따라 66~72" 대신 학생 학과·학번의 숫자를 보여 준다.
+  const [trackCreditRows] = await pool.query(
+    `SELECT cr.department_id, cr.min_admission_year, cr.max_admission_year, SUM(cr.required_credits) AS credits
+     FROM curriculum_requirements cr
+     JOIN departments d ON d.id = cr.department_id
+     WHERE d.name LIKE '%계열' AND cr.category IN ('전공필수', '전공선택') AND cr.enrollment_type IS NULL AND cr.min_course_count IS NULL
+     GROUP BY cr.department_id, cr.min_admission_year, cr.max_admission_year
+     ORDER BY cr.department_id, cr.min_admission_year`
+  );
+  const trackCreditsByDept = new Map();
+  for (const r of trackCreditRows) {
+    const list = trackCreditsByDept.get(r.department_id) || [];
+    list.push({ minAdmissionYear: r.min_admission_year, maxAdmissionYear: r.max_admission_year, intensive: Number(r.credits) });
+    trackCreditsByDept.set(r.department_id, list);
+  }
+
   // 세부전공 이름 — 학과 검색이 "컴퓨터"로 공학3계열(컴퓨터·소프트웨어공학전공)도 찾게 한다(UX 점검 2026-10-16 2-10).
   const [trackRows] = await pool.query('SELECT id, department_id, name FROM tracks ORDER BY id');
   const tracksByDept = new Map();
@@ -254,6 +271,8 @@ async function listDepartments() {
     // 교직과정: 교직기본이수 요건 행이 있는 학번 범위(없으면 null — 교직 질문을 보이지 않는다). 사범대학이면 "이수 중"을 미리 고른다.
     teachingCourseYears: teachingYearsByDept.get(r.id) || null,
     teacherCollege: isTeacherCollegeDepartment(r.name),
+    // 광역 계열전공만: [{ minAdmissionYear, maxAdmissionYear, intensive }] — 전공심화형 전공 학점. 계열이 아니면 빈 배열.
+    majorTrackCredits: trackCreditsByDept.get(r.id) || [],
   }));
   // 소속 대학(트리 화면용). 학칙 [별표 1] 2026학년도 표 기준이고, 자료를 못 읽으면 college=null로 평평한 목록이 된다.
   return attachColleges(departments);

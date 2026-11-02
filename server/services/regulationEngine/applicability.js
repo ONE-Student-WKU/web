@@ -168,7 +168,7 @@ const HANDLERS = {
   COHORT_RANGE: (h) => cohortRule(h) || { status: 'APPLIES', reason: '이 학번에 해당하는 표' },
 
   CURRICULUM_SNAPSHOT_AT_ADMISSION: (h) => cohortRule(h) || {
-    status: 'APPLIES', reason: '입학 학번 교육과정 기준',
+    status: 'APPLIES', reason: '입학 학번 기준 — 값은 최신 책자의 학번별 이수기준표',
     details: { cohortYear: h.ctx.admissionYear },
   },
 

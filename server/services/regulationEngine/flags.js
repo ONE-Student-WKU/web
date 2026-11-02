@@ -66,8 +66,14 @@ const FLAG_CATALOG = {
   // 광역 계열전공 이수유형(시행규칙 제7조 제2항, #378 E-3). 시드의 계열 전공 행은 전공심화형 기준이라 다른 유형은 주전공 학점을 바꾼다.
   MAJOR_TRACK_DOUBLE_MAJOR: [L.ESTIMATED, '복수전공형이라 주전공은 36학점(기초·심화·응용 최소 학점 포함)으로 계산했어요. 제2전공 36학점은 이 진단에 아직 들어 있지 않으니 제2전공 학과 기준으로 따로 확인해 주세요.'],
   MAJOR_TRACK_CONVERGENCE: [L.ESTIMATED, '전공융합형이라 주전공은 48학점으로 계산했어요. 함께 이수해야 하는 타전공 마이크로디그리 2개(각 12학점)는 고른 과정의 학점만 보여 주고 충족을 판정하지 않으니(과목을 어떻게 세는지 학교 확인 중), 학과 사무실에 확인해 주세요.'],
-  MAJOR_TRACK_UNDECIDED: [L.ESTIMATED, '이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(36학점)만 계산했어요. 유형을 정하면 전공 총학점이 확정돼요(복수전공형 36 + 제2전공 36, 전공심화형 계열별 66~72, 전공융합형 48 + 마이크로디그리 24).'],
+  // 평가 때는 undecidedTrackMessage가 이 학과·학번의 전공심화형 학점을 넣은 문구로 바꾼다. 아래는 학점을 모를 때의 문구다.
+  MAJOR_TRACK_UNDECIDED: [L.ESTIMATED, '이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(36학점)만 계산했어요. 실제 전공 학점은 유형에 따라 더 많아요(전공심화형 계열별 66~72, 복수전공형은 제2전공 36학점 추가, 전공융합형은 주전공 48 + 마이크로디그리 24). 지금 생각하는 유형을 학과·학번 수정에서 고르면 그 기준으로 계산해요.'],
   DOUBLE_MAJOR_PRIMARY_MINIMUM: [L.INFO, '복수전공을 해서 주전공 전공 학점을 일반 학생보다 줄여서 계산했어요(최소전공 인정학점, 학칙시행규칙 제8조 제1항). 줄어든 학점은 자유선택으로 옮겨 졸업학점은 그대로예요.'],
+  // 교직이수자의 최소전공(시행규칙 제6조 제2항: 인문·사회 50, 자연·예체능 56)이 복수전공 학생의 주전공에도 적용되는지는 3차 문의 E-6 ②로 확인 중(MODELING_AUDIT M-04).
+  // 사범대학 학과는 시드의 최소전공 행이 이미 제2항 값이라 붙이지 않는다.
+  DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED: [L.ESTIMATED, '교직과정을 이수하면서 복수전공을 하면, 주전공 최소전공 인정학점이 일반 기준(인문·사회 36, 자연·공학·예체능 48학점 등)인지 교직이수자 기준(인문·사회 50, 자연·예체능 56학점, 학칙시행규칙 제6조 제2항)인지 학교에 확인 중이에요. 지금은 일반 기준으로 계산했어요.'],
+  // 광역계열은 이수유형을 하나 고른다(시행규칙 제7조 제2항). 복수전공을 넣었는데 유형이 복수전공형이 아니면 입력이 서로 맞지 않는다(MODELING_AUDIT M-01).
+  MAJOR_TRACK_SECOND_MAJOR_MISMATCH: [L.ESTIMATED, '복수전공을 한다고 입력했는데 전공 이수유형은 복수전공형이 아니에요. 광역계열은 이수유형을 하나 고르고(학칙시행규칙 제7조 제2항), 복수전공형이면 주전공 36학점 + 제2전공 36학점이에요. 지금은 고른 이수유형 기준으로 주전공 학점을 계산했으니, 복수전공을 한다면 학과·학번 수정에서 이수유형을 확인해 주세요.'],
   DOUBLE_MAJOR_MINIMUM_ROW_MISSING: [L.ESTIMATED, '복수전공을 하면 주전공 전공 학점이 일반 학생보다 줄어들지만(최소전공 인정학점), 이 학과·학번의 줄어든 기준이 자료에 없어 일반 재학생 기준으로 계산했어요.'],
   SECOND_MAJOR_COURSES_ASSIGNED: [L.INFO, '다전공 학생은 과목을 개설 학과와 학과 편성표로 주전공·제2전공에 나눴어요. 제2전공으로 센 과목은 주전공 쪽에서 자유선택(일반선택)이에요. 두 학과에 모두 있는 과목은 주전공으로 두었으니, 다르면 과목 관리에서 바꿔 주세요.'],
   SECOND_MAJOR_MINIMUM_UNKNOWN: [L.ESTIMATED, '복수전공 학과에서 들어야 하는 학점(최소전공 인정학점)을 자료에서 찾지 못해 제2전공 학점 기준을 계산하지 못했어요. 복수전공 학과 사무실에 확인해 주세요.'],
@@ -118,7 +124,7 @@ const FLAG_CATALOG = {
   CATEGORY_YEAR_BOOK_ASSUMED: [L.ESTIMATED, '"수강신청한 학년도의 이수구분"을 그 학년도 교육과정(그 해 입학생 교육과정표)의 이수구분으로 봤어요.'],
   DEPARTMENT_REORG_CHANGE: [L.ESTIMATED, '학과 개편으로 생긴 과목 변경이 포함돼 있어요. 개편 때 기존 교육과정을 최대 4년 유지할 수 있어(시행규칙 제14조②) 실제 적용은 학과 운영에 따라 달라요.'],
   LINEAGE_NAME_MATCH: [L.ESTIMATED, '학과 개편 전후 연결이 이름 일치로 추정한 것이에요(책자·학칙에 명시된 연결이 아님).'],
-  DEPARTMENT_IS_SUCCESSOR_OF_COHORT: [L.ESTIMATED, '입력한 학과는 입학 이후 개편으로 생긴 학과예요. 졸업요건은 입학 당시 학과 기준이에요(시행규칙 제5조) — 입학 당시 학과로 다시 조회하는 게 정확해요.'],
+  DEPARTMENT_IS_SUCCESSOR_OF_COHORT: [L.ESTIMATED, '입력한 학과는 입학한 뒤 개편으로 생긴 학과예요. 이 학과로 전과했다면 옮긴 학과의 입학 학번 기준이 맞아요. 아직 원래 학과 소속이라면 학적에 적힌 학과(웹정보서비스 학적 화면)로 다시 조회해 주세요.'],
   EQUIVALENCE_LIST_NOT_HELD: [L.ESTIMATED, '동일과목 지정 목록(시행규칙 제15조) 자료가 없어, 바뀐 과목이 동일과목으로 인정되는지 확인할 수 없어요.'],
   SCHEDULE4_PRE_AMENDMENT_NOT_HELD: [L.ESTIMATED, '2026년 8월 이전에 졸업하면 개정 전 학칙 [별표 4]가 적용되는데, 개정 전 표는 시스템에 없어요.'],
   PRIOR_ADDENDUM_NOT_HELD: [L.NO_DATA, '종전(2025.08.29.자) 학칙 부칙의 경과조치 원문이 시스템에 없어 내용을 확인할 수 없어요.'],
@@ -147,6 +153,16 @@ function makeFlag(code, extra = {}) {
   return { code, level: entry[0], message: entry[1], ...extra };
 }
 
+/**
+ * 광역 계열전공 이수유형 미정(MAJOR_TRACK_UNDECIDED) 문구에 이 학과·학번의 학점을 넣는다.
+ * 미정이면 전공선택이 0이 돼 "전공은 최소 학점만 들으면 된다"로 읽힐 수 있어, 전공심화형이면 몇 학점인지 함께 보여 준다.
+ * @param {number} minimum 기초·심화·응용 최소 학점(전공필수 풀)
+ * @param {number} intensive 이 학과·학번의 전공심화형 전공 학점
+ */
+function undecidedTrackMessage(minimum, intensive) {
+  return `이수유형을 아직 정하지 않아 전공은 기초·심화·응용 최소 학점(${minimum}학점)만 계산했어요. 실제 전공 학점은 유형에 따라 더 많아요(이 학과 전공심화형 ${intensive}학점, 복수전공형은 제2전공 36학점 추가, 전공융합형은 주전공 48 + 마이크로디그리 24). 지금 생각하는 유형을 학과·학번 수정에서 고르면 그 기준으로 계산해요.`;
+}
+
 /** 플래그 목록 → 가장 나쁜 level에 해당하는 신뢰도. 플래그가 없거나 INFO뿐이면 확정. (level 이름 = 신뢰도 이름, INSUFFICIENT 포함) */
 function confidenceFromFlags(flags) {
   let worst = CONFIDENCE.CONFIRMED;
@@ -168,4 +184,4 @@ function dedupeFlags(flags) {
   return flags.filter((f) => (seen.has(f.code) ? false : (seen.add(f.code), true)));
 }
 
-module.exports = { FLAG_CATALOG, makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags };
+module.exports = { FLAG_CATALOG, makeFlag, undecidedTrackMessage, confidenceFromFlags, worstConfidence, dedupeFlags };

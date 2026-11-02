@@ -1,6 +1,7 @@
 const { LIBERAL_ARTS_FIXED_CREDITS, NON_DEGREE_DEPARTMENTS, BYLAW_MAJOR_DEPARTMENTS, MAJOR_CHANGE_CLOSED_DEPARTMENTS, MED_PHARM_DEPARTMENTS, COLLEGE_CONFIRMED_TRANSFER_DEPARTMENTS,REGULATION_MIN_MAJOR_BY_DEPARTMENT, GENERIC_CERTIFICATION_COURSE_SETS, LATEST_BOOKLET_YEAR, BROAD_SERIES_AREA_MINIMUMS, CONVERGENCE_MAIN_MAJOR_CREDITS } = require('./constants');
 const { isBroadSeriesStudent } = require('../majorTrackType');
-const { makeFlag, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
+const { isTeacherCollegeDepartment } = require('../teachingCourse');
+const { makeFlag, undecidedTrackMessage, confidenceFromFlags, worstConfidence, dedupeFlags } = require('./flags');
 const {
   checkEligibility,
   decideMajorRelaxation,
@@ -106,6 +107,8 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
       rows = [...rows.filter((r) => !MAJOR_CATEGORIES.includes(r.category)), ...minimum];
       adjustments.push('DOUBLE_MAJOR_MINIMUM');
       flags.push(makeFlag('DOUBLE_MAJOR_PRIMARY_MINIMUM'));
+      // 교직이수자 최소전공(제6조 제2항)이 주전공에 적용되는지 학교 확인 중 — 사범대학은 시드의 최소전공 행이 이미 그 값이다.
+      if (ctx.teachingCourse === true && !isTeacherCollegeDepartment(departmentName)) flags.push(makeFlag('DOUBLE_MAJOR_TEACHING_MINIMUM_UNVERIFIED'));
       basis.push('ENF_ART8_1_RELAXATION', 'ENF_ART6_1_MIN_MAJOR');
     } else {
       flags.push(makeFlag('DOUBLE_MAJOR_MINIMUM_ROW_MISSING'));
@@ -200,9 +203,15 @@ function buildRequirementRows(ctx, allYearRows, relaxation, liberal, departmentN
         return r;
       });
       if (!elective && moved > 0) rows.push({ id: null, category: '일반선택', requiredCredits: moved, description: `자유선택 — ${label}`, enrollmentType: null, minCourseCount: null, requiredCourses: [] });
-      flags.push(makeFlag(`MAJOR_TRACK_${type}`));
+      // 미정이면 "전공선택 0"이 전공을 36학점만 들으면 되는 것처럼 읽히지 않게, 이 학과·학번의 전공심화형 학점을 문구에 넣는다.
+      const extra = type === 'UNDECIDED'
+        ? { message: undecidedTrackMessage(Number(pool.requiredCredits), Number(pool.requiredCredits) + Number(majorElective.requiredCredits)) }
+        : {};
+      flags.push(makeFlag(`MAJOR_TRACK_${type}`, extra));
       adjustments.push('MAJOR_TRACK_TYPE');
     }
+    // 유형은 하나만 고른다(제7조 제2항). 복수전공을 하는데 전공심화형·전공융합형이면 주전공 학점이 복수전공형(36)과 달라 단정하지 않는다.
+    if ((type === 'INTENSIVE' || type === 'CONVERGENCE') && ctx.secondMajorType === 'DOUBLE') flags.push(makeFlag('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
     basis.push('ENF_ART7_BROAD_SERIES');
   }
 

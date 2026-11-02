@@ -9,7 +9,9 @@ import {
   translateCategory,
   displayCategory,
   getPercent,
-  creditsDependOnInProgress,
+  remainingLabel,
+  isPremed,
+  printBasis,
 } from '../utils/graduation.js';
 
 function today() {
@@ -35,7 +37,8 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
   const label = (raw) => translateCategory(displayCategory(raw), t);
   const rows = buildPrintRows(status);
   const level = printTrustLevel(status);
-  const reasons = [trust.reason, ...trust.otherReasons].filter(Boolean);
+  // 화면은 짧은 한 줄만 보여 주지만, 인쇄본은 과사무실이 확인하는 종이라 조문·책자 근거가 담긴 서버 문장을 그대로 싣는다.
+  const { reasons, basis } = printBasis(status);
   const liberalAreas = summarizeLiberalAreasForPrint(status.liberalElectiveAreas);
   const unchecked = uncheckedRequirementKeys(status);
   const remaining = Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits);
@@ -69,17 +72,13 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
 
       <section className="gps-summary">
         <p className="gps-remaining">
-          {remaining > 0
-            ? t('grad.remaining', { n: remaining })
-            : creditsDependOnInProgress(status)
-              ? t('grad.completeInProgress', { n: status.inProgressCredits })
-              : t('grad.complete')}
+          {remainingLabel(status, t)}
         </p>
         <div className="gps-bar">
           <div style={{ width: `${getPercent(status.totalEarnedCredits, status.totalRequiredCredits)}%` }} />
         </div>
         <p className="gps-total-line">
-          {t('grad.print.totalLine', { required: status.totalRequiredCredits, earned: status.totalEarnedCredits })}
+          {t(isPremed(status) ? 'grad.print.totalLine.premed' : 'grad.print.totalLine', { required: status.totalRequiredCredits, earned: status.totalEarnedCredits })}
           {status.inProgressCredits > 0 && ` (${t('grad.inProgressIncluded', { n: status.inProgressCredits })})`}
           {trust.totalEstimated && ` ${t('grad.estimated')}`}
         </p>
@@ -209,6 +208,17 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
                 <span className="gps-check">{t('grad.print.askDept')}</span>
                 {t(k)}
               </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {basis.length > 0 && (
+        <section>
+          <h2>{t('grad.print.basisTitle')}</h2>
+          <ul className="gps-basis">
+            {basis.map((b) => (
+              <li key={b}>{b}</li>
             ))}
           </ul>
         </section>

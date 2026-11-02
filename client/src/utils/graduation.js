@@ -217,20 +217,26 @@ export function uncheckedRequirementKeys(status) {
  * @param {Function} t 번역 함수
  */
 /**
- * 최신(2026) 책자에 학과 단위로 실려 있지 않은 통폐합·개편 학과인가(서버 DEPARTMENT_ABSENT_IN_LATEST_BOOKLET, 안내 수준).
- * 학번별 학점 기준을 그대로 적용하는지 학교에 다시 확인하고 있어(2차 문의 D-4) 화면에 한 줄 알린다. 신뢰도는 바꾸지 않는다(2026-10-25 결정).
- */
-export function isAbsentInLatestBooklet(status) {
-  return Boolean(status && status.regulation && (status.regulation.flags || []).some((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'));
-}
-
-/**
  * 졸업 학점을 다 채운 것이 이번 학기 수강 중 학점 덕분인가(성적이 나와야 확정). 수강 중 학점을 빼도 채웠으면 false.
  * @param {object} status getGraduationStatus 응답
  */
 export function creditsDependOnInProgress(status) {
   const inProgress = Number(status && status.inProgressCredits) || 0;
   return inProgress > 0 && status.totalEarnedCredits - inProgress < status.totalRequiredCredits;
+}
+
+/** 예과(의예·치의예·한의예과) 학생인가 — 서버가 진급할 본과 학과를 premedTo로 준다. 예과 학점은 졸업요건이 아니라 예과 이수 기준이다. */
+export function isPremed(status) {
+  return Boolean(status && status.premedTo);
+}
+
+/** 남은 학점 한 줄(진단 화면·인쇄본 공통). 예과는 "졸업" 대신 "예과 이수"로 말한다. */
+export function remainingLabel(status, t) {
+  const suffix = isPremed(status) ? '.premed' : '';
+  const remaining = Math.max(0, status.totalRequiredCredits - status.totalEarnedCredits);
+  if (remaining > 0) return t(`grad.remaining${suffix}`, { n: remaining });
+  if (creditsDependOnInProgress(status)) return t(`grad.completeInProgress${suffix}`, { n: status.inProgressCredits });
+  return t(`grad.complete${suffix}`);
 }
 
 export function allMetMessage(status, t) {
@@ -242,10 +248,13 @@ export function allMetMessage(status, t) {
     estimated ? t('home.allMetNote.estimated') : null,
     items ? t('home.allMetNote.unchecked', { items }) : null,
   ].filter(Boolean);
-  const headline = notes.length ? t('home.allMetQualified') : t('home.allMet');
+  const suffix = isPremed(status) ? '.premed' : '';
+  const headline = notes.length ? t(`home.allMetQualified${suffix}`) : t(`home.allMet${suffix}`);
   // 확정 진단이어도 졸업사정은 학교가 한다 — "충족"을 단정하지 않게 늘 최종 확인을 붙인다(교육혁신과 통화 2026-10-26).
   // 추정 안내(estimated)가 이미 학사지원과 확인을 말하므로 그때는 다시 붙이지 않는다.
-  if (!estimated) notes.push(t('home.allMetNote.final'));
+  // 예과는 졸업사정이 아니라 본과 진급이라 학과 내규 확인을 붙인다(MODELING_AUDIT M-02).
+  if (isPremed(status)) notes.push(t('home.allMetNote.premed'));
+  else if (!estimated) notes.push(t('home.allMetNote.final'));
   // 문장마다 줄을 나눠 읽기 쉽게 한다(화면은 white-space: pre-line으로 \n을 줄바꿈으로 보여준다).
   return [headline, ...notes].join('\n');
 }
@@ -321,23 +330,56 @@ function pickTrustLabel(regulation, lang) {
   return regulation.confidenceLabel || TRUST_LABEL[regulation.confidence] || '';
 }
 
-// 사유 한 줄: 가장 심각한 level의 플래그 하나. 학칙 [별표 4] 불일치는 학생에게 가장 쓸모 있는 정보(두 값)로 바꿔 말한다.
-function pickTrustReason(regulation, lang) {
-  const s4 = regulation.schedule4;
-  if (s4 && lang !== 'ko') return translate(lang, 'grad.trust.schedule4', { a: s4.schedule4Credits, b: s4.bookCredits });
-  if (s4) return `학칙 [별표 4]는 ${s4.schedule4Credits}학점, 교육과정 책자는 ${s4.bookCredits}학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.`;
-  const flags = (regulation.flags || []).filter((f) => f.level !== 'INFO' && f.message);
-  if (flags.length === 0) return null;
-  return flags.reduce((best, f) => ((FLAG_SEVERITY[f.level] || 0) > (FLAG_SEVERITY[best.level] || 0) ? f : best)).message;
+// 화면에는 사유를 짧은 한 줄(사전 grad.flag.<코드>)로 보여 준다 — 무엇이 다르고 학생이 무엇을 하면 되는지만. 서버가 만든 긴 문장
+// (조문·책자·학교 답변 근거)은 인쇄본과 챗봇에만 쓴다. 사전에 짧은 문구가 없는 코드는 서버 문장을 그대로 보여 준다.
+function flagLine(flag, lang) {
+  const key = `grad.flag.${flag.code}`;
+  const line = translate(lang, key);
+  return line === key ? flag.message : line;
 }
 
-function otherTrustReasons(regulation, shown) {
+function schedule4Line(s4, lang) {
+  return translate(lang, 'grad.trust.schedule4', { a: s4.schedule4Credits, b: s4.bookCredits });
+}
+
+function mostSevere(flags) {
+  return flags.reduce((best, f) => ((FLAG_SEVERITY[f.level] || 0) > (FLAG_SEVERITY[best.level] || 0) ? f : best));
+}
+
+// 사유 한 줄: 가장 심각한 level의 플래그 하나. 학칙 [별표 4] 불일치는 학생에게 가장 쓸모 있는 정보(두 값)로 바꿔 말한다.
+function pickTrustReason(regulation, lang) {
+  if (regulation.schedule4) return schedule4Line(regulation.schedule4, lang);
+  const flags = (regulation.flags || []).filter((f) => f.level !== 'INFO' && f.message);
+  if (flags.length === 0) return null;
+  return flagLine(mostSevere(flags), lang);
+}
+
+function otherTrustReasons(regulation, shown, lang) {
   const seen = new Set([shown]);
   // [별표 4] 불일치는 한 줄 사유가 두 값을 담은 문장으로 따로 말하므로(pickTrustReason) 같은 내용을 펼쳐 보기에 또 넣지 않는다.
   return (regulation.flags || [])
     .filter((f) => f.level !== 'INFO' && f.message && !(regulation.schedule4 && f.code === 'SCHEDULE4_CREDIT_MISMATCH'))
-    .map((f) => f.message)
+    .map((f) => flagLine(f, lang))
     .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
+}
+
+// 시스템 내부 사정(보유 원문·부칙 자료)이라 학생·과사무실 누구에게도 쓸모없는 참고 플래그 — 인쇄본 근거에도 싣지 않는다.
+const INTERNAL_INFO_FLAGS = new Set(['TEXT_SNAPSHOT_MAY_BE_OLDER', 'COHORT_TRANSITION_ADDENDUM_NOT_HELD']);
+
+/**
+ * 인쇄본(과사무실·학사지원과 확인용)에 싣는 근거. 화면에서 뺀 조문·책자·학교 답변 근거를 서버 문장 그대로 싣는다.
+ *  - reasons: 추정인 이유(긴 문장). 확정이면 빈 배열
+ *  - basis: 이 결과에 적용한 기준(참고 플래그). 시스템 내부 사정은 뺀다
+ */
+export function printBasis(status) {
+  const regulation = status && status.regulation ? status.regulation : null;
+  if (!regulation) return { reasons: [], basis: [] };
+  const flags = regulation.flags || [];
+  const unique = (list) => [...new Set(list)];
+  return {
+    reasons: regulation.confidence === 'CONFIRMED' ? [] : unique(flags.filter((f) => f.level !== 'INFO' && f.message).map((f) => f.message)),
+    basis: unique(flags.filter((f) => f.level === 'INFO' && f.message && !INTERNAL_INFO_FLAGS.has(f.code)).map((f) => f.message)),
+  };
 }
 
 /**
@@ -347,8 +389,8 @@ function otherTrustReasons(regulation, shown) {
  *  - reason: 사유 한 줄 | null
  *  - totalEstimated: 총 요구학점을 확정으로 보이면 안 되는 경우(편입생 총량 미확정, 추정 이하)
  */
-// lang이 한국어가 아니면 서버가 한국어로 내려준 신뢰도 라벨과 [별표 4] 불일치 사유를 그 언어로 바꾼다.
-// 그 외 사유(flags[].message)는 서버가 만든 한국어 문장이라 번역하지 못하고 그대로 보여준다.
+// lang이 한국어가 아니면 서버가 한국어로 내려준 신뢰도 라벨을 그 언어로 바꾼다. 사유는 사전의 짧은 문구라 화면 언어로 보인다
+// (사전에 없는 코드만 서버의 한국어 문장 그대로).
 export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
@@ -362,7 +404,7 @@ export function describeRequirementTrust(status, lang = 'ko') {
     badge: confirmed ? null : { label: pickTrustLabel(regulation, lang), level },
     reason: regulation.confidence === 'CONFIRMED' ? null : pickTrustReason(regulation, lang),
     // 한 줄 사유 말고도 추정 이유가 더 있으면 펼쳐 볼 수 있게 나머지를 준다(서버가 만든 한국어 문장, 중복 제거).
-    otherReasons: regulation.confidence === 'CONFIRMED' ? [] : otherTrustReasons(regulation, pickTrustReason(regulation, 'ko')),
+    otherReasons: regulation.confidence === 'CONFIRMED' ? [] : otherTrustReasons(regulation, pickTrustReason(regulation, lang), lang),
     totalEstimated: regulation.totalDefinitive === false || (regulation.confidence !== 'CONFIRMED' && !noData),
   };
 }
