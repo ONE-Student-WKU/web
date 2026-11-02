@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, remainingLabel, isPremed, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, remainingLabel, isPremed, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint, printBasis } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -176,7 +176,7 @@ describe('describeRequirementTrust', () => {
       ...base,
       regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: true, flags: [{ code: 'SCHEDULE4_CREDIT_MISMATCH', level: 'ESTIMATED', message: '일반 문구' }], schedule4: { schedule4Credits: 130, bookCredits: 140 } },
     });
-    expect(t.reason).toBe('학칙 [별표 4]는 130학점, 교육과정 책자는 140학점으로 서로 달라요. 학과 또는 학사지원과 확인이 필요해요.');
+    expect(t.reason).toBe('학교 규정은 130학점, 교육과정 책자는 140학점으로 졸업학점이 달라요. 학과에 확인해 주세요.');
   });
 
   it('편입생 총량 미확정(totalDefinitive=false)은 총량 추정 표기', () => {
@@ -188,7 +188,7 @@ describe('describeRequirementTrust', () => {
     const t = describeRequirementTrust({ ...base, totalRequiredCredits: 0, categories: [], regulation: { confidence: 'NO_DATA', confidenceLabel: '자료없음', totalDefinitive: true, flags: [{ code: 'NO_CURRICULUM_ROWS', level: 'NO_DATA', message: '자료가 없어요' }], schedule4: null } });
     expect(t.noData).toBe(true);
     expect(t.badge).toEqual({ label: '자료없음', level: 'none' });
-    expect(t.reason).toBe('자료가 없어요');
+    expect(t.reason).toBe('이 학과·학번의 졸업요건 자료가 아직 없어요.');
     expect(t.totalEstimated).toBe(false);
   });
 
@@ -393,6 +393,17 @@ describe('추정이 섞인 진단을 확정처럼 말하지 않는다(2026-10-24
     expect(trust.otherReasons).toEqual(['나']);
   });
 
+  it('사유는 사전의 짧은 한 줄(화면 언어)로 보여 주고, 사전에 없는 코드만 서버 문장 그대로 둔다', () => {
+    const regulation = { confidence: 'ESTIMATED', flags: [
+      { code: 'TRANSFER_GRADE_ASSUMED', level: 'ESTIMATED', message: '편입 학년을 몰라 3학년 편입(정원내 편입의 원칙)으로 가정했어요. …' },
+      { code: 'UNKNOWN_FUTURE_CODE', level: 'ESTIMATED', message: '서버 문장' },
+    ] };
+    const ko = describeRequirementTrust({ totalRequiredCredits: 130, regulation });
+    expect(ko.reason).toBe('편입 학년을 몰라 3학년 편입으로 계산했어요. 학과·학번 수정에서 편입 학년을 알려 주세요.');
+    expect(ko.otherReasons).toEqual(['서버 문장']);
+    expect(describeRequirementTrust({ totalRequiredCredits: 130, regulation }, 'en').reason).toMatch(/^We don't know which year you transferred into/);
+  });
+
   it('[별표 4] 불일치는 한 줄 사유가 이미 말하므로 펼쳐 보기에 다시 넣지 않는다', () => {
     const regulation = { confidence: 'ESTIMATED', schedule4: { schedule4Credits: 130, bookCredits: 140 }, flags: [
       { code: 'SCHEDULE4_CREDIT_MISMATCH', level: 'ESTIMATED', message: '별표4 문장' }, { code: 'X', level: 'ESTIMATED', message: '다른 이유' },
@@ -526,5 +537,26 @@ describe('예과 — "졸업"이 아니라 "예과 이수"(MODELING_AUDIT M-02)'
   it('영어 문구도 있다', () => {
     const en = (key, params) => translate('en', key, params);
     expect(remainingLabel({ ...premed, totalEarnedCredits: 68 }, en)).toBe('12 credits left to complete premed');
+  });
+});
+
+describe('printBasis', () => {
+  const flags = [
+    { code: 'TRANSFER_GRADE_ASSUMED', level: 'ESTIMATED', message: '긴 추정 이유(시행규칙 근거)' },
+    { code: 'TRANSFER_LIBERAL_DEEMED_MET', level: 'INFO', message: '편입생 교양 충족 간주(시행규칙 제10조 제2항)' },
+    { code: 'TEXT_SNAPSHOT_MAY_BE_OLDER', level: 'INFO', message: '보유 원문 날짜' },
+    { code: 'COHORT_TRANSITION_ADDENDUM_NOT_HELD', level: 'INFO', message: '부칙 자료 없음' },
+  ];
+
+  it('인쇄본에는 화면에서 뺀 근거(서버 문장)를 싣고, 시스템 내부 사정은 뺀다', () => {
+    expect(printBasis({ regulation: { confidence: 'ESTIMATED', flags } })).toEqual({
+      reasons: ['긴 추정 이유(시행규칙 근거)'],
+      basis: ['편입생 교양 충족 간주(시행규칙 제10조 제2항)'],
+    });
+  });
+
+  it('확정이면 추정 이유는 싣지 않고 근거만, regulation이 없으면 둘 다 비운다', () => {
+    expect(printBasis({ regulation: { confidence: 'CONFIRMED', flags } }).reasons).toEqual([]);
+    expect(printBasis({})).toEqual({ reasons: [], basis: [] });
   });
 });

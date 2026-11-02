@@ -1318,6 +1318,18 @@ body {
     font-size: 9pt;
   }
 
+  /* 계산 근거(화면에서 뺀 조문·책자 근거) — 과사무실이 확인할 때 보는 작은 글씨 */
+  .gps-basis {
+    margin: 0;
+    padding-left: 14pt;
+    color: #444;
+    font-size: 8.5pt;
+  }
+
+  .gps-basis li + li {
+    margin-top: 2pt;
+  }
+
   .gps-trust-level {
     font-weight: 700;
   }

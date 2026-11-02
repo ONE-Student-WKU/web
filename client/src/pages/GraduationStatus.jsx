@@ -3,7 +3,7 @@ import { getGraduationStatus } from '../api/chatApi.js';
 import AccountMenu from '../components/AccountMenu.jsx';
 import GraduationPrintSheet from '../components/GraduationPrintSheet.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
-import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, remainingLabel, isPremed, isAbsentInLatestBooklet, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
+import { summarizeShortfalls, mergeMajorCategories, buildRequirementGroups, getPercent, describeRequirementTrust, translateCategory, registrationTermShortage, allMetMessage, remainingLabel, isPremed, certCourseRows, isNearGraduation, buildResultReportDraft } from '../utils/graduation.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { cleanRequirementNote } from '../utils/displayText.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -187,7 +187,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}
               {isPremed(status) && <p className="grad-trust-reason">{t('grad.premedNote', { medicalSchool: status.premedTo })}</p>}
-              {isAbsentInLatestBooklet(status) && <p className="grad-trust-reason">{t('grad.absentDeptNote')}</p>}
               {trust.otherReasons.length > 0 && (
                 <details className="grad-trust-more">
                   <summary>{t('grad.trust.more', { n: trust.otherReasons.length })}</summary>
@@ -389,8 +388,6 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 {status.liberalElectiveAreas && (
                   <>
                     <p className="grad-flex-note">{t('grad.liberalAreaBasis')}</p>
-                    {/* 외국인 유학생은 교양필수를 뺀 교양을 영역 구분 없이 이수한다(2026 책자, 심의 후 확정). 국적은 받지 않아 안내만 한다. */}
-                    <p className="grad-flex-note">{t('grad.liberalAreaForeign')}</p>
                     {status.liberalElectiveAreas.foundation.map((a) => (
                       <div className="grad-subcheck-row" key={a.area}>
                         <span className={a.satisfied ? 'grad-cert-check satisfied' : 'grad-cert-check'}>

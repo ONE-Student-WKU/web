@@ -63,7 +63,7 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     }));
     expect(screen.getByText('추정')).toHaveClass('grad-trust-badge', 'warn');
     expect(screen.getByText('(추정)')).toBeInTheDocument();
-    expect(screen.getByText(/학칙 \[별표 4\]는 130학점, 교육과정 책자는 140학점으로 서로 달라요/)).toBeInTheDocument();
+    expect(screen.getByText(/학교 규정은 130학점, 교육과정 책자는 140학점으로 졸업학점이 달라요/)).toBeInTheDocument();
     // 숫자는 서버가 준 값 그대로(어느 쪽이 맞는지 화면이 판단하지 않는다)
     expect(screen.getByText(/\/ 140학점/)).toBeInTheDocument();
   });
@@ -73,7 +73,7 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
       regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', totalDefinitive: false, flags: [{ code: 'TRANSFER_TOTAL_UNRESOLVED', level: 'ESTIMATED', message: '편입생은 전적대학 인정학점이 있어 졸업에 필요한 총 학점을 단정할 수 없어요.' }], schedule4: null },
     }));
     expect(screen.getByText('(추정)')).toBeInTheDocument();
-    expect(screen.getByText(/편입생은 전적대학 인정학점이 있어/)).toBeInTheDocument();
+    expect(screen.getByText('편입 인정학점에 따라 졸업 총학점이 달라져 총학점은 단정하지 않았어요.')).toBeInTheDocument();
   });
 
   it('자료 없음: 0/0·NaN 대신 "진단할 수 없어요" 안내와 자료 없음 배지, 이수 현황 카드는 숨긴다', async () => {
@@ -84,7 +84,7 @@ describe('GraduationStatus 근거 신뢰도 표시', () => {
     render(<GraduationStatus user={{ name: '홍길동', role: 'student' }} onGoHome={() => {}} onOpenCourses={() => {}} onLogout={() => {}} onOpenSettings={() => {}} onOpenOnboarding={() => {}} onOpenProfile={() => {}} />);
     expect(await screen.findByText(/졸업요건 자료가 아직 없어서 진단할 수 없어요/)).toBeInTheDocument();
     expect(screen.getByText('자료없음')).toHaveClass('grad-trust-badge', 'none');
-    expect(screen.getByText('이 학과·학번의 졸업요건 자료가 시스템에 없어요.')).toBeInTheDocument();
+    expect(screen.getByText('이 학과·학번의 졸업요건 자료가 아직 없어요.')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/NaN/);
     expect(screen.queryByText('전체 이수학점')).not.toBeInTheDocument();
     expect(screen.queryByText(/과목 관리로 이동/)).not.toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('교양필수 영역과 학과 지정 전공 과목(#378 결정 1-1 A·
       ] },
     }));
     expect(screen.getByText('학과 지정 전공 과목')).toBeInTheDocument();
-    expect(screen.getByText(/2026학년도 편성표의 전공기초·전공필수 목록/)).toBeInTheDocument();
+    expect(screen.getByText(/2026학년도 편성표 목록/)).toBeInTheDocument();
     expect(screen.getByText('전공기초·전공필수 2과목 · 들은 과목 1과목 (목록 보기)')).toBeInTheDocument();
     expect(screen.getByText(/기본간호학/)).toBeInTheDocument();
     expect(document.querySelector('.grad-shortfall-box.ok')).not.toBeNull();
@@ -289,6 +289,21 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     expect(sheet.querySelector('.gps-trust-level')).toHaveTextContent('중간');
     expect(sheet.querySelector('.gps-trust ul')).toHaveTextContent('편입생은 전적대학 인정학점이 있어');
     expect(sheet).toHaveTextContent('(추정)');
+  });
+
+  it('화면에서 뺀 조문·책자 근거는 인쇄본 "계산 근거"에 싣고, 화면에는 보이지 않는다', async () => {
+    const basis = '이 학과는 최신(2026학년도) 책자에 학과 단위로 실려 있지 않아요(통폐합·개편된 학과). (교육혁신과 답변 2026-10-14)';
+    const sheet = await openSheet(status({
+      regulation: { confidence: 'CONFIRMED', confidenceLabel: '확정', totalDefinitive: true, schedule4: null, flags: [
+        { code: 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET', level: 'INFO', message: basis },
+        { code: 'TEXT_SNAPSHOT_MAY_BE_OLDER', level: 'INFO', message: '보유한 학칙·시행규칙 원문은 2026-06-26 개정본이에요.' },
+      ] },
+    }));
+    expect(sheet).toHaveTextContent('계산 근거');
+    expect(sheet.querySelector('.gps-basis')).toHaveTextContent('통폐합·개편된 학과');
+    expect(sheet.querySelector('.gps-basis')).not.toHaveTextContent('2026-06-26 개정본');
+    // 화면(인쇄본 밖)에는 통폐합 안내 줄이 없다
+    expect(screen.queryByText(/통폐합·개편 학과도 학번별 학점 기준은/)).toBeNull();
   });
 
   it('졸업논문·졸업인증제·상담은 "학점 말고 필요한 것", 학과 졸업인증은 "따로 확인할 것"에 싣는다', async () => {

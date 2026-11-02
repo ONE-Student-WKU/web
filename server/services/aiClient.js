@@ -166,6 +166,8 @@ ${LEAVE_TYPE_NOTE}
 // 숫자만 주면 모델이 학칙 원문을 보고 규칙을 지어내 "3학년 이상 전과생은 최소전공 기준을 적용하지 않는다"처럼 거꾸로 설명했다
 // (2026-10-17 로컬 재현 — 실제로는 3·4학년 전과가 전공 학점이 줄어드는 쪽이다).
 const MAJOR_ROW_CATEGORIES = ['전공필수', '전공선택', '전공'];
+// 챗봇 계산 근거에서 뺄 참고 플래그 — 시스템 내부 사정이거나(보유 원문·부칙 자료) 따로 넘기는 것(통폐합 안내).
+const CHAT_BASIS_EXCLUDED_FLAGS = ['TEXT_SNAPSHOT_MAY_BE_OLDER', 'COHORT_TRANSITION_ADDENDUM_NOT_HELD', 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET'];
 function adjustmentLines(graduationStatus, student) {
   const regulation = graduationStatus.regulation || {};
   const adjustments = regulation.adjustments || [];
@@ -337,6 +339,12 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   const absentFlag = regulation?.flags?.find((f) => f.code === 'DEPARTMENT_ABSENT_IN_LATEST_BOOKLET');
   if (absentFlag) {
     caveats.push(`- 이 학생의 학과는 통폐합·개편 학과다. 학과 소속·과목 편성·개편 관련 질문에는 아래 안내를 근거로 답하라(학교 답변 2026-10-14 A-3, 2026-10-26 D-3·D-4):\n  ${absentFlag.message}`);
+  }
+  // 졸업요건 화면은 조문·책자·학교 답변 근거를 빼고 짧은 한 줄만 보여 준다. 학생이 "내 학점은 왜 이렇게 나왔어?"라고 물으면 챗봇이
+  // 이 근거(참고 플래그)로 풀어 설명한다. 시스템 내부 사정(보유 원문·부칙 자료)과 위에서 따로 넘긴 통폐합 안내는 뺀다.
+  const basis = (regulation?.flags || []).filter((f) => f.level === 'INFO' && f.message && !CHAT_BASIS_EXCLUDED_FLAGS.includes(f.code));
+  if (basis.length) {
+    caveats.push(`- 이 진단에 적용한 계산 근거다. 학생이 학점이 왜 이렇게 계산됐는지 물으면 아래 근거로 쉽게 풀어 설명하라. 조문 번호·책자 이름은 학생이 근거를 물을 때만 덧붙여라:\n${basis.map((f) => `  - ${f.message}`).join('\n')}`);
   }
   // 성적이 아직 없는 이번 학기 과목도 이수 학점에 들어가 있다 — 졸업 학기 학생에게 "다 채웠다"고 단정하면 안 된다(2026-10-24 점검).
   if (Number(graduationStatus.inProgressCredits) > 0) {
