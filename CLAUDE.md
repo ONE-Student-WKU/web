@@ -10,6 +10,7 @@
 - Railway Cron Job의 Start Command에 `npm run seed --workspace=server`(`seed.js` 전체)를 **절대 넣지 않는다.** 가짜 학생 계정이 운영 DB에 들어간다.
 - 새 파일을 `db/` 아래 새 경로에 추가하면 `db-reseed.yml`의 `paths:` 필터에 걸리는지 확인한다(PR의 `DB Reseed Guard`가 경고).
 - 학생의 졸업요건 진단 결과가 바뀔 수 있는 자료·규칙(규정·교육과정 문서, 요건 시드, `graduationService`·`regulationEngine`)을 `main`에 반영할 때는 `server/services/dataUpdates.js`에 날짜와 학생이 읽을 한 마디를 추가한다. 홈의 "바뀐 자료 알림"은 학생마다 마지막으로 본 결과와 지금 결과를 비교해 뜨므로 빠뜨려도 뜨지만, "반영된 갱신" 목록이 비어 보인다(`changeNoticeService.js`).
+- **`main`으로 올리는 릴리스 PR에서는 `dataUpdates.js`의 새 항목 날짜가 실제 반영일(KST)인지 확인한다.** develop에 머지할 때 적은 날짜는 릴리스 때 이미 지나 있을 수 있다(#485: 10-29로 적고 11-03 반영). 릴리스 PR의 CI "릴리스 갱신 기록 날짜"가 새 항목 날짜가 오늘보다 앞서면 실패하고, 진단 결과를 바꿀 수 있는 파일이 바뀌었는데 새 항목이 없으면 경고한다(`scripts/ci/check-release-data-updates.js`). 실패하면 develop 대상 PR로 날짜를 반영일로 고치고, 머지가 날짜를 넘기면 그 CI를 다시 돌린다. 릴리스 PR 본문의 "머지 전에 확인할 것"에도 이 항목을 넣는다.
 
 ## 교육과정 적용 원칙 — 최신 책자가 모든 학번에 적용된다
 
