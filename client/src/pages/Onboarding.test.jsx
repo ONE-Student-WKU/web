@@ -465,6 +465,28 @@ describe('광역 계열전공 이수유형(#378 결정 3-1 A)', () => {
     expect(api.updateProfile).toHaveBeenCalledWith(expect.objectContaining({ majorTrackType: 'UNDECIDED' }));
   });
 
+  it('전공심화형 설명에 학생 학과·학번의 전공 학점을 보여 준다(학과 목록의 majorTrackCredits)', async () => {
+    api.getDepartments.mockResolvedValue([
+      FORMER_DEPT, TRANSFER_DEPT,
+      { ...SERIES_DEPT, majorTrackCredits: [{ minAdmissionYear: 2026, maxAdmissionYear: null, intensive: 72 }] },
+    ]);
+    render(<Onboarding user={seriesUser()} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /전공 이수유형/ }));
+    expect(screen.getByRole('button', { name: /전공심화형/ })).toHaveTextContent('이 학과는 전공 72학점이에요');
+    // "아직 안 정했어요"를 고르면 진단이 추정이 된다는 걸 미리 알린다.
+    expect(screen.getByRole('button', { name: /아직 안 정했어요/ })).toHaveTextContent("졸업 진단이 '추정'으로 나오고");
+  });
+
+  it('학번에 맞는 학점이 없으면 계열별 범위로 보여 준다', async () => {
+    api.getDepartments.mockResolvedValue([
+      FORMER_DEPT, TRANSFER_DEPT,
+      { ...SERIES_DEPT, majorTrackCredits: [{ minAdmissionYear: 2025, maxAdmissionYear: 2025, intensive: 66 }] },
+    ]);
+    render(<Onboarding user={seriesUser()} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: /전공 이수유형/ }));
+    expect(screen.getByRole('button', { name: /전공심화형/ })).toHaveTextContent('전공 66~72학점(계열마다 달라요)');
+  });
+
   it('계열이 아닌 학과에는 이수유형 질문이 없고 null로 보낸다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     await screen.findByRole('button', { name: /학과/ });

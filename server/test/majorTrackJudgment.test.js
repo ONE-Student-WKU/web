@@ -42,6 +42,10 @@ test('아직 안 정했으면 기초·심화·응용 최소(36)만, 답하지 �
   const undecided = await requirementsFor('공학1계열', 2026, { major_track_type: 'UNDECIDED' });
   assert.equal(undecided.credits['전공필수'] + undecided.credits['전공선택'], 36);
   assert.ok(undecided.codes.includes('MAJOR_TRACK_UNDECIDED'));
+  // "전공선택 0"이 전공은 36학점만 들으면 된다로 읽히지 않게, 이 학과·학번의 전공심화형 학점을 문구에 넣는다.
+  assert.match(undecided.rule.flags.find((f) => f.code === 'MAJOR_TRACK_UNDECIDED').message, /이 학과 전공심화형 72학점/);
+  const undecidedHumanities = await requirementsFor('경영계열', 2026, { major_track_type: 'UNDECIDED' });
+  assert.match(undecidedHumanities.rule.flags.find((f) => f.code === 'MAJOR_TRACK_UNDECIDED').message, /이 학과 전공심화형 66학점/);
   const unanswered = await requirementsFor('공학1계열', 2026);
   assert.equal(unanswered.credits['전공필수'] + unanswered.credits['전공선택'], 72);
   assert.ok(unanswered.codes.includes('MAJOR_TRACK_UNANSWERED'));
@@ -62,6 +66,16 @@ test('복수전공인데 이수유형이 전공심화형·전공융합형이면 
   assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'DOUBLE_MAJOR', ...withDouble })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
   assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'INTENSIVE', second_department_id: second.id, second_major_type: 'MINOR' })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
   assert.ok(!(await requirementsFor('공학3계열', 2026, { major_track_type: 'INTENSIVE' })).codes.includes('MAJOR_TRACK_SECOND_MAJOR_MISMATCH'));
+});
+
+test('학과 목록은 광역 계열전공에만 학번 범위별 전공심화형 학점을 준다(이수유형 선택지에 보여 줄 숫자)', async () => {
+  const departments = await studentService.listDepartments();
+  const byName = (name) => departments.find((d) => d.name === name);
+  const at = (name, year) => byName(name).majorTrackCredits.find((r) => (r.minAdmissionYear == null || r.minAdmissionYear <= year) && (r.maxAdmissionYear == null || year <= r.maxAdmissionYear))?.intensive;
+  assert.equal(at('공학3계열', 2026), 72);
+  assert.equal(at('그린바이오계열', 2026), 69);
+  assert.equal(at('경영계열', 2026), 66);
+  assert.deepEqual(byName('컴퓨터·소프트웨어공학과').majorTrackCredits, []);
 });
 
 test('이수구분별 최소 학점: 경영계열 18·12·6, 그 외 계열 12·15·9, 계열이 아니면 없음', async () => {
