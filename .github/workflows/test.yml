@@ -21,6 +21,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # main 릴리스 PR에서만: 이번에 새로 들어가는 "바뀐 자료 알림" 갱신 기록(server/services/dataUpdates.js)의 날짜가 이미 지났으면 실패,
+  # 진단 결과를 바꿀 수 있는 파일이 바뀌었는데 새 기록이 없으면 경고(scripts/ci/check-release-data-updates.js). DB·시크릿을 쓰지 않는다.
+  # PR을 열거나 갱신할 때 돈다 — 머지가 날짜를 넘기면 Actions에서 다시 돌린다.
+  release-data-updates:
+    name: 릴리스 갱신 기록 날짜 (main 대상)
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/ci/check-release-data-updates.js origin/${{ github.base_ref }}
+
   client:
     name: 클라이언트 테스트 (vitest)
     runs-on: ubuntu-latest
