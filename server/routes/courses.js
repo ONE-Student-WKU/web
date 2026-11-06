@@ -1,3 +1,5 @@
+// 개설 과목을 검색하는 라우터 파일: 연도와 학기, 검색어를 받아 과목 목록을 돌려준다
+
 // express라는 외부 라이브러리를 가져와서 사용하기 위해 express라는 이름으로 상수에 저장한다
 const express = require('express');
 
@@ -15,7 +17,8 @@ const courseService = require('../services/courseService');
 const studentService = require('../services/studentService');
 
 // 개설 과목 검색 함수: 메서드와 주소를 기반으로 GET + /api/courses/catalog 요청을 처리한다
-// requireAuth로 로그인을 먼저 확인하고, 통과하면 오른쪽 함수를 실행한다
+// requireAuth를 router.use가 아니라 이 주소에만 넣었다. 파일 전체에 필요하면 router.use, 일부 주소에만 필요하면 주소마다 넣는다
+// GET + /catalog로 오면 로그인을 먼저 확인하고, 통과하면 오른쪽 함수를 실행한다
 router.get('/catalog', requireAuth, async (req, res, next) => {
   try {
     // 요청의 질의(req.query)를 풀어서 keyword, year, semester로 선언한다
