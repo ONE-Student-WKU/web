@@ -147,6 +147,8 @@ export const sendChatMessage = (conversationId, message, language) =>
 export const getLatestCareerSession = () => apiRequest('/career/sessions/latest');
 
 export const getLatestConfirmedRoadmap = () => apiRequest('/career/roadmap/latest');
+// 진로를 확정한 지난 진단(최근 5개, 최신순).
+export const getCareerHistory = () => apiRequest('/career/history');
 
 export const createCareerSession = () => apiRequest('/career/sessions', { method: 'POST' });
 

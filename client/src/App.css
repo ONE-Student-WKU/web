@@ -7663,3 +7663,49 @@ mark.ai-mark {
   font-size: 0.75rem;
   font-weight: 700;
 }
+
+/* 지난 진로 진단 다시 보기 */
+.career-history {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.career-history-title {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.career-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.career-history-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.career-history-date {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}

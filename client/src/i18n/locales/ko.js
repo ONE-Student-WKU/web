@@ -975,6 +975,10 @@ export default {
   'career.recommend.readySub': '대화를 바탕으로 진로 후보를 골라드려요',
   'career.recommend.readyLeft': '남은 대화 {n}번 · 대화를 바탕으로 진로 후보를 골라드려요',
   'career.input.more': '더 이야기해도 돼요',
+  'career.input.placeholder': '예: 데이터 분석 쪽 일이 궁금해',
+  'career.history.title': '지난 진단 결과',
+  'grad.print.majorChange.low': '전과생(1·2학년 전과)',
+  'grad.print.majorChange.high': '전과생(3·4학년 전과)',
   'career.roadmap.mine': '내가 정한 진로',
   'career.roadmap.stats': '남은 학기 <b>{terms}</b> · 추천 과목 <b>{courses}</b>',
 

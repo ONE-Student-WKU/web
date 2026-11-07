@@ -43,6 +43,8 @@ describe('진로 추천 받기 찾기 쉽게', () => {
     expect(document.querySelector('.career-recommend-card')).not.toHaveClass('ready');
     expect(within(header()).queryByRole('button', { name: /추천/ })).toBeNull();
     expect(screen.getByRole('list', { name: '진로 탐색 단계' }).querySelector('[aria-current="step"]')).toHaveTextContent('대화');
+    // 챗봇용 예시 문구가 아니라 진로 탐색용 문구를 보여 준다(DECISIONS D-93).
+    expect(screen.getByPlaceholderText('예: 데이터 분석 쪽 일이 궁금해')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: '지금 받기' }));
     expect(screen.getByText('진로를 추천해드릴까요?')).toBeInTheDocument();

@@ -526,6 +526,61 @@ describe('다전공(복수전공·부전공, #378 G-1)', () => {
   });
 });
 
+describe('처음 가입할 때 다전공 질문(D-93)', () => {
+  const NEW_USER = { id: 9, onboardingCompleted: false };
+  const toSecondMajorQuestion = async () => {
+    render(<Onboarding user={NEW_USER} onDone={() => {}} onSkip={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), '국어{enter}');
+    await userEvent.click(await screen.findByRole('button', { name: /^일반 재학생/ }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    await userEvent.selectOptions(await screen.findByRole('combobox'), '2023');
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByRole('heading', { name: '복수전공이나 부전공을 하고 있나요?' })).toBeInTheDocument();
+  };
+  const toSummary = async () => {
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^휴학한 적 없어요/ }));
+    await userEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(await screen.findByRole('heading', { name: '입력한 정보를 확인해주세요' })).toBeInTheDocument();
+  };
+
+  beforeEach(() => {
+    api.submitOnboarding.mockResolvedValue({});
+  });
+
+  it('"하지 않아요"가 기본이라 바로 넘어갈 수 있고, 다전공을 비운 채 저장한다', async () => {
+    await toSecondMajorQuestion();
+    expect(screen.getByRole('button', { name: /^하지 않아요/ })).toHaveClass('selected');
+    await toSummary();
+    expect(screen.getByRole('button', { name: /다전공/ })).toHaveTextContent('하지 않아요');
+    await userEvent.click(screen.getByRole('button', { name: '시작하기' }));
+    const payload = api.submitOnboarding.mock.calls[0][0];
+    expect(payload).toMatchObject({ secondDepartmentId: null, secondLinkedMajor: null, secondMajorType: null });
+    expect(payload).not.toHaveProperty('microDegrees');
+    expect(api.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('부전공과 학과를 고르면 그 값을 보내고, 학과를 고르기 전에는 넘어갈 수 없다', async () => {
+    await toSecondMajorQuestion();
+    await userEvent.click(screen.getByRole('button', { name: /^부전공/ }));
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: '학과 검색' }));
+    await userEvent.type(screen.getByRole('searchbox', { name: '학과 검색' }), FORMER_DEPT.name + '{enter}');
+    await toSummary();
+    expect(screen.getByRole('button', { name: /다전공/ })).toHaveTextContent(`부전공 · ${FORMER_DEPT.name}`);
+    await userEvent.click(screen.getByRole('button', { name: '시작하기' }));
+    expect(api.submitOnboarding).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: FORMER_DEPT.id, secondLinkedMajor: null, secondMajorType: 'MINOR' }));
+  });
+
+  it('학적정보 수정은 질문 흐름이 그대로라 요약에서만 다전공을 고친다', async () => {
+    render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
+    expect(await screen.findByRole('heading', { name: '입력한 정보를 확인해주세요' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /다전공/ })).toHaveTextContent('하지 않아요');
+    expect(screen.queryByRole('heading', { name: '복수전공이나 부전공을 하고 있나요?' })).toBeNull();
+  });
+});
+
 describe('연계·복합전공과 마이크로디그리(#412)', () => {
   it('다전공을 연계·복합전공으로 고르면 학과 대신 전공 이름을 보낸다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);

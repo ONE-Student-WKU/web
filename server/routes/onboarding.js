@@ -7,7 +7,8 @@ const studentService = require('../services/studentService');
 const { isIntInRange, isValidAdmissionYear } = require('../services/inputValidation');
 const { validateTeachingAndTransferCredits } = require('../services/teachingCourse');
 const { validateMajorTrackType } = require('../services/majorTrackType');
-const { listLinkedMajors, listMicroDegrees } = require('../services/linkedMajors');
+const { listLinkedMajors, listMicroDegrees, findLinkedMajor } = require('../services/linkedMajors');
+const { validateSecondMajor } = require('../services/secondMajor');
 
 /**
  * Routes for Onboarding (/api/onboarding)
@@ -63,7 +64,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   try {
     const {
       departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-      transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
+      transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition, secondDepartmentId, secondMajorType, secondLinkedMajor,
     } = req.body;
 
     if (!departmentId) return res.status(400).json({ status: 400, code: 'REQUIRED_DEPARTMENT_ID', message: null, data: null });
@@ -156,6 +157,20 @@ router.post('/', requireAuth, async (req, res, next) => {
       }
     }
 
+    // 다전공(선택). 2학년 이상이 처음 가입하면 이미 다전공일 수 있어 가입할 때도 받는다. 학적정보 수정(me.js)과 같은 규칙이다.
+    const secondMajorError = validateSecondMajor(
+      { secondDepartmentId, secondMajorType, secondLinkedMajor },
+      { departmentId, secondDepartmentId: secondDepartmentId ?? null, secondLinkedMajor: secondLinkedMajor ?? null }
+    );
+    if (secondMajorError) return res.status(400).json({ status: 400, code: secondMajorError, message: null, data: null });
+    if (secondDepartmentId != null && !(isIntInRange(secondDepartmentId, 1, 2147483647) && (await studentService.findDepartmentById(secondDepartmentId)))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SECOND_DEPARTMENT_ID', message: null, data: null });
+    }
+    if (secondLinkedMajor != null && !(await findLinkedMajor(secondLinkedMajor))) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SECOND_LINKED_MAJOR', message: null, data: null });
+    }
+    const hasSecondMajor = secondDepartmentId != null || secondLinkedMajor != null;
+
     const student = await studentService.findById(req.session.userId);
     if (student.onboarding_completed_at) {
       return res.status(409).json({ status: 409, code: 'ONBOARDING_ALREADY_COMPLETED', message: null, data: null });
@@ -164,6 +179,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     await studentService.completeOnboarding(req.session.userId, {
       departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
       transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
+      secondDepartmentId: secondDepartmentId ?? null,
+      secondLinkedMajor: secondLinkedMajor ?? null,
+      secondMajorType: hasSecondMajor ? secondMajorType || 'DOUBLE' : null,
     });
 
     return res.status(200).json({
@@ -179,6 +197,9 @@ router.post('/', requireAuth, async (req, res, next) => {
         transferRecognizedCredits: transferRecognizedCredits ?? null,
         teachingCourse: teachingCourse ?? null,
         majorTrackType: majorTrackType ?? null,
+        secondDepartmentId: secondDepartmentId ?? null,
+        secondLinkedMajor: secondLinkedMajor ?? null,
+        secondMajorType: hasSecondMajor ? secondMajorType || 'DOUBLE' : null,
       },
     });
   } catch (err) {

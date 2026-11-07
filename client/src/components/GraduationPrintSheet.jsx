@@ -32,6 +32,15 @@ function today() {
  * - trust: describeRequirementTrust(status, lang) 결과
  * - basisYear: 기준 교육과정 책자 학년도
  */
+// 전과생은 1·2학년 전과인지 3·4학년 전과인지까지 적는다. 학년을 모르면 유형만 적는다.
+function enrollmentLabel(user, t) {
+  if (!user?.enrollmentType) return null;
+  if (user.enrollmentType === 'MAJOR_CHANGE' && user.majorChangeGrade) {
+    return t(Number(user.majorChangeGrade) <= 2 ? 'grad.print.majorChange.low' : 'grad.print.majorChange.high');
+  }
+  return t(`onb.type.${user.enrollmentType}`);
+}
+
 function GraduationPrintSheet({ status, user, trust, basisYear }) {
   const { t } = useI18n();
   const label = (raw) => translateCategory(displayCategory(raw), t);
@@ -48,7 +57,7 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
   const meta = [
     [user?.department, user?.track].filter(Boolean).join(' '),
     user?.admissionYear && t('profile.cohort', { year: user.admissionYear }),
-    user?.enrollmentType && t(`onb.type.${user.enrollmentType}`),
+    enrollmentLabel(user, t),
     basisYear && t('grad.basis.booklet', { year: basisYear }),
     t('grad.print.date', { date: today() }),
   ].filter(Boolean);

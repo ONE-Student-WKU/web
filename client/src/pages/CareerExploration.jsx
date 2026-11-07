@@ -13,6 +13,7 @@ import ChatBubble from '../components/ChatBubble.jsx';
 import ChatInput from '../components/ChatInput.jsx';
 import LoadError from '../components/LoadError.jsx';
 import CareerRoadmapList, { groupRoadmapBySemester } from '../components/CareerRoadmapList.jsx';
+import CareerHistoryList from '../components/CareerHistoryList.jsx';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 import useChatAutoScroll from '../hooks/useChatAutoScroll.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -671,6 +672,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
             <button className="career-text-link" onClick={handleRestart}>
               {t('career.restart')}
             </button>
+            <CareerHistoryList excludeId={sessionId} />
           </div>
         )}
       </div>
@@ -730,7 +732,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
                 </button>
               </div>
             </div>
-            <ChatInput onSendMessage={handleSendMessage} disabled={sending} placeholder={recommendReady ? t('career.input.more') : undefined} />
+            <ChatInput onSendMessage={handleSendMessage} disabled={sending} placeholder={recommendReady ? t('career.input.more') : t('career.input.placeholder')} />
           </>
         ))}
 
