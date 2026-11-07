@@ -296,19 +296,20 @@ async function findTrackById(id) {
 
 async function completeOnboarding(studentId, {
   departmentId, admissionYear, enrollmentType, trackId, majorChangeGrade, majorChangeYear, majorChangeSemester, transferGrade,
-  transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition,
+  transferRecognizedCredits, teachingCourse, majorTrackType, majorChangeRecognition, secondDepartmentId, secondLinkedMajor, secondMajorType,
 }) {
   await pool.query(
     `UPDATE students
      SET department_id = ?, admission_year = ?, enrollment_type = ?, track_id = ?, major_change_grade = ?,
          major_change_year = ?, major_change_semester = ?, major_change_recognition = ?, transfer_grade = ?, transfer_recognized_credits = ?, teaching_course = ?,
-         major_track_type = ?, onboarding_completed_at = NOW()
+         major_track_type = ?, second_department_id = ?, second_linked_major = ?, second_major_type = ?, onboarding_completed_at = NOW()
      WHERE id = ?`,
     [departmentId, admissionYear, enrollmentType, trackId ?? null, majorChangeGrade ?? null,
       majorChangeYear ?? null, majorChangeSemester ?? null,
       majorChangeRecognition === undefined || majorChangeRecognition === null ? null : Number(majorChangeRecognition),
       transferGrade ?? null, transferRecognizedCredits ?? null,
-      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), majorTrackType ?? null, studentId]
+      teachingCourse === undefined || teachingCourse === null ? null : Number(teachingCourse), majorTrackType ?? null,
+      secondDepartmentId ?? null, secondLinkedMajor ?? null, secondMajorType ?? null, studentId]
   );
 }
 

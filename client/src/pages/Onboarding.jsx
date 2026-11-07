@@ -156,7 +156,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     majorTrackType: editMode ? user.majorTrackType ?? null : null,
     // 휴학 기간(LeavePeriodsEditor의 draft). 기능 도입 전 계정은 user.leavePeriods가 null이라 "선택 필요"로 시작한다.
     leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
-    // 다전공(복수전공 DOUBLE·부전공 MINOR, #378 G-1). 학과·학번 수정에서만 받는다 — 다전공은 2학년부터 신청해 처음 가입할 때는 없다.
+    // 다전공(복수전공 DOUBLE·부전공 MINOR, #378 G-1). 2학년 이상이 처음 가입하면 이미 다전공일 수 있어 가입할 때도 받는다.
     secondMajorType: editMode ? user.secondMajorType ?? null : null,
     secondDepartmentId: editMode ? user.secondDepartmentId ?? null : null,
     // 제2전공을 학과(DEPARTMENT)로 하는지 연계·복합전공(LINKED)으로 하는지, 연계전공이면 그 이름(#412).
@@ -232,6 +232,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
   // 광역 계열전공은 이수유형에 따라 전공 학점 기준이 달라진다(학칙시행규칙 제7조 제2항, #378 결정 3-1 A).
   const trackTypeAvailable = isBroadSeriesStudent(selectedDepartment?.name, answers.admissionYear);
   if (trackTypeAvailable) path.push('trackType');
+  if (!editMode) path.push('secondMajor');
   path.push('leave', 'summary', 'done');
   const recognized = parseRecognizedCredits(answers.transferRecognizedInput);
 
@@ -488,15 +489,11 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       transferRecognizedCredits: isTransfer ? recognized.value : null,
       teachingCourse: teachingAvailable ? answers.teachingCourse : null,
       majorTrackType: trackTypeAvailable ? answers.majorTrackType : null,
-      // 다전공은 학과·학번 수정에서만 받는다(처음 가입하는 온보딩 API는 받지 않는다).
-      ...(editMode
-        ? {
-            secondDepartmentId: answers.secondMajorType && answers.secondMajorKind === 'DEPARTMENT' ? answers.secondDepartmentId : null,
-            secondLinkedMajor: answers.secondMajorType && answers.secondMajorKind === 'LINKED' ? answers.secondLinkedMajor : null,
-            secondMajorType: answers.secondMajorType,
-            microDegrees: answers.microDegrees,
-          }
-        : {}),
+      secondDepartmentId: answers.secondMajorType && answers.secondMajorKind === 'DEPARTMENT' ? answers.secondDepartmentId : null,
+      secondLinkedMajor: answers.secondMajorType && answers.secondMajorKind === 'LINKED' ? answers.secondLinkedMajor : null,
+      secondMajorType: answers.secondMajorType,
+      // 마이크로디그리는 학과·학번 수정에서만 받는다.
+      ...(editMode ? { microDegrees: answers.microDegrees } : {}),
     };
     try {
       if (user?.onboardingCompleted) {
@@ -1058,24 +1055,22 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                   onClick={() => setManualStep('trackType')}
                 />
               )}
-              {editMode && (
-                <SummaryRow
-                  label={t('onb.summary.secondMajor')}
-                  value={
-                    answers.secondMajorType === null
-                      ? t('onb.secondMajor.NONE')
-                      : answers.secondMajorKind === 'LINKED'
-                        ? answers.secondLinkedMajor
-                          ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: answers.secondLinkedMajor })
-                          : null
-                        : secondDepartment
-                          ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: secondDepartment.name })
-                          : null
-                  }
-                  editable
-                  onClick={() => setManualStep('secondMajor')}
-                />
-              )}
+              <SummaryRow
+                label={t('onb.summary.secondMajor')}
+                value={
+                  answers.secondMajorType === null
+                    ? t('onb.secondMajor.NONE')
+                    : answers.secondMajorKind === 'LINKED'
+                      ? answers.secondLinkedMajor
+                        ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: answers.secondLinkedMajor })
+                        : null
+                      : secondDepartment
+                        ? t('onb.summary.secondMajorValue', { type: t(`onb.secondMajor.${answers.secondMajorType}`), department: secondDepartment.name })
+                        : null
+                }
+                editable
+                onClick={() => setManualStep('secondMajor')}
+              />
               {editMode && (
                 <SummaryRow
                   label={t('onb.summary.micro')}
