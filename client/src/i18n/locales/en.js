@@ -1022,6 +1022,10 @@ export default {
   'career.recommend.readySub': "We'll pick career options based on your conversation",
   'career.recommend.readyLeft': "{n} messages left · We'll pick career options based on your conversation",
   'career.input.more': 'You can keep chatting',
+  'career.input.placeholder': 'e.g. I want to know about data analysis jobs',
+  'career.history.title': 'Past results',
+  'grad.print.majorChange.low': 'Changed major (in year 1 or 2)',
+  'grad.print.majorChange.high': 'Changed major (in year 3 or 4)',
   'career.roadmap.mine': 'My career choice',
   'career.roadmap.stats': 'Semesters left <b>{terms}</b> · Suggested courses <b>{courses}</b>',
 

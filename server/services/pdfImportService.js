@@ -54,6 +54,12 @@ const GROUP_SUBTOTAL_RE = /성적취득학점[\t ]*(\d+(?:\.\d+)?)/g;
 // 구간에 들어서면 직전 구분코드에 소계가 잘못 합쳐지지 않도록 대응을 초기화한다.
 const UNCATEGORIZED_SECTION_RE = /상담\s*및\s*미분류/g;
 
+// 이수과목확인리스트의 "상담 및 미분류" 구간에 찍히는 상담 기록(자기계발심층상담 등)은 과목이 아니라 과목 목록에 넣지 않는다.
+// 상담은 판정하지 않고 충족으로 보여 주므로(D-81) 쓰는 곳도 없다. 이름에 "상담"이 든 실제 과목은 이수구분과 학점이 있어 여기 걸리지 않는다.
+function isCounselingRecordRow({ name, credits, rawCategory }) {
+  return name.includes('상담') && credits === 0 && !CATEGORY_MAP[rawCategory];
+}
+
 function extractGroupSubtotals(text) {
   const markers = [];
 
@@ -138,6 +144,7 @@ async function parseCourseListText(rawText, { beforeAiCall } = {}) {
     const name = String(item.name || '').replace(/\s+/g, ' ').trim();
     const credits = Number(item.credits);
     if (!name || Number.isNaN(credits) || !item.year || !item.semester) continue;
+    if (isCounselingRecordRow({ name, credits, rawCategory })) continue;
 
     if (name.length > MAX_NAME_LENGTH) {
       droppedRows += 1;
@@ -314,6 +321,7 @@ function finalizeFullTranscriptRows(extracted, declaredBySemester, leadingWarnin
     const credits = Number(item.credits);
     const letterGrade = item.letterGrade || null;
     if (!name || Number.isNaN(credits) || !item.year || !item.semester) continue;
+    if (isCounselingRecordRow({ name, credits, rawCategory })) continue;
 
     if (name.length > MAX_NAME_LENGTH) {
       droppedRows += 1;

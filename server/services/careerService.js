@@ -67,6 +67,23 @@ async function getLatestConfirmedRoadmap(studentId) {
   return { confirmedCareer: latest.confirmed_career, roadmap };
 }
 
+// 진로를 확정한 지난 진단(최근 5개, 최신순). "다시 진단하기"를 해도 세션은 지우지 않으므로 그대로 읽는다.
+const CAREER_HISTORY_LIMIT = 5;
+async function getConfirmedHistory(studentId) {
+  const [rows] = await pool.query(
+    'SELECT id, confirmed_career, updated_at FROM career_sessions WHERE student_id = ? AND status = "CONFIRMED" ORDER BY id DESC LIMIT ?',
+    [studentId, CAREER_HISTORY_LIMIT]
+  );
+  return Promise.all(
+    rows.map(async (row) => ({
+      id: row.id,
+      confirmedCareer: row.confirmed_career,
+      confirmedAt: row.updated_at,
+      roadmap: await listRoadmap(row.id),
+    }))
+  );
+}
+
 async function listMessages(sessionId) {
   const [rows] = await pool.query(
     'SELECT role, content FROM career_messages WHERE session_id = ? ORDER BY id',
@@ -381,6 +398,7 @@ module.exports = {
   getSessionDetail,
   getLatestSessionDetail,
   getLatestConfirmedRoadmap,
+  getConfirmedHistory,
   submitFixedAnswers,
   updateFixedAnswers,
   postMessage,

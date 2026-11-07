@@ -71,6 +71,16 @@ router.get('/roadmap/latest', async (req, res, next) => {
   }
 });
 
+// GET /api/career/history — 진로를 확정한 지난 진단(최근 5개, 최신순).
+router.get('/history', async (req, res, next) => {
+  try {
+    const result = await careerService.getConfirmedHistory(req.session.userId);
+    res.status(200).json({ status: 200, code: 'CAREER_HISTORY_SUCCESS', message: null, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/career/sessions/:id
 router.get('/sessions/:id', async (req, res, next) => {
   try {

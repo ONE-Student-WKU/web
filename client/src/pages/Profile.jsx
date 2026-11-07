@@ -5,6 +5,7 @@ import {
 } from '../api/chatApi.js';
 import { IconChevronLeft, IconUser } from '../components/icons.jsx';
 import CareerRoadmapList from '../components/CareerRoadmapList.jsx';
+import CareerHistoryList from '../components/CareerHistoryList.jsx';
 import AccountDeleteSection from '../components/AccountDeleteSection.jsx';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
@@ -173,6 +174,7 @@ function Profile({ user, onGoHome, onNameChanged, onAccountDeleted, justReauthen
                   {roadmapExpanded && (
                     <div className="settings-row settings-row--stack profile-roadmap-list">
                       <CareerRoadmapList roadmap={confirmedRoadmap.roadmap} />
+                      <CareerHistoryList skipLatest />
                     </div>
                   )}
                 </>

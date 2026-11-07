@@ -267,6 +267,20 @@ describe('진단 결과 한 장 저장·인쇄(#455)', () => {
     return document.querySelector('.grad-print-sheet');
   }
 
+  it.each([
+    [1, '2022학번 · 전과생(1·2학년 전과) ·'],
+    [2, '2022학번 · 전과생(1·2학년 전과) ·'],
+    [3, '2022학번 · 전과생(3·4학년 전과) ·'],
+    [4, '2022학번 · 전과생(3·4학년 전과) ·'],
+    [null, '2022학번 · 전과생 ·'],
+  ])('전과생은 전과 학년 구간을 적는다(전과 학년 %s, D-93)', async (majorChangeGrade, expected) => {
+    getGraduationStatus.mockResolvedValue(status());
+    render(<GraduationStatus user={{ ...printUser, enrollmentType: 'MAJOR_CHANGE', majorChangeGrade }} {...props} />);
+    (await screen.findByRole('button', { name: 'PDF로 저장하기' })).click();
+    await screen.findByText('졸업요건 진단 결과');
+    expect(document.querySelector('.gps-meta')).toHaveTextContent(expected);
+  });
+
   it('누르면 시트를 붙이고 인쇄 창을 연다 — 학과·학번·분류별 들은 학점/기준·합계·안내 문구', async () => {
     const sheet = await openSheet(status());
     expect(window.print).toHaveBeenCalledTimes(1);
