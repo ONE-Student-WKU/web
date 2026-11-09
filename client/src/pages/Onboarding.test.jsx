@@ -549,8 +549,14 @@ describe('처음 가입할 때 다전공 질문(D-93)', () => {
     api.submitOnboarding.mockResolvedValue({});
   });
 
-  it('"하지 않아요"가 기본이라 바로 넘어갈 수 있고, 다전공을 비운 채 저장한다', async () => {
+  // 기본 선택이 있으면 다음만 눌러 지나치기 쉬워서(실사용 피드백 2026-11-09) 하나를 고르기 전에는 넘어갈 수 없다.
+  it('처음엔 아무것도 골라져 있지 않아 넘어갈 수 없고, "하지 않아요"를 고르면 다전공을 비운 채 저장한다', async () => {
     await toSecondMajorQuestion();
+    for (const name of [/^하지 않아요/, /^복수전공/, /^부전공/]) {
+      expect(screen.getByRole('button', { name })).not.toHaveClass('selected');
+    }
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: /^하지 않아요/ }));
     expect(screen.getByRole('button', { name: /^하지 않아요/ })).toHaveClass('selected');
     await toSummary();
     expect(screen.getByRole('button', { name: /다전공/ })).toHaveTextContent('하지 않아요');
