@@ -79,6 +79,24 @@ describe('과목 관리 — 과목 추가 폼', () => {
     expect(screen.getByRole('button', { name: '추가하기' })).toBeInTheDocument();
   });
 
+  // 교양기초 과목을 교양필수로 잘못 고르는 일이 실사용에서 있었다 — 교양기초는 교양선택으로 계산하므로(categoryMap.js) 선택지 이름에서 알려 준다.
+  it('직접입력 이수구분의 교양선택은 "교양선택·교양기초"로 보이고, 저장 값은 교양선택 그대로다', async () => {
+    renderPage();
+    await screen.findByText('아직 등록된 과목이 없어요.');
+    await userEvent.click(screen.getByRole('button', { name: '직접입력' }));
+    const form = screen.getByRole('button', { name: '추가하기' }).closest('form');
+    const option = within(form).getByRole('option', { name: '교양선택·교양기초' });
+    expect(option).toHaveValue('교양선택');
+    expect(within(form).queryByRole('option', { name: '교양선택' })).not.toBeInTheDocument();
+
+    const [nameInput, creditsInput] = form.querySelectorAll('input');
+    await userEvent.type(nameInput, '인공지능과미래사회');
+    await userEvent.type(creditsInput, '3');
+    await userEvent.selectOptions(option.closest('select'), '교양선택');
+    await userEvent.click(screen.getByRole('button', { name: '추가하기' }));
+    await waitFor(() => expect(api.addMyCourse).toHaveBeenCalledWith(expect.objectContaining({ name: '인공지능과미래사회', category: '교양선택' })));
+  });
+
   it('검색창을 누르면 검색 전용 화면이 열리고, 검색어를 입력하면 현재 학기로 카탈로그를 검색한다', async () => {
     renderPage();
     await screen.findByText('아직 등록된 과목이 없어요.');
