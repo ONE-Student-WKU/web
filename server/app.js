@@ -23,6 +23,7 @@ const adminRoutes = require('./routes/admin');
 const communityRoutes = require('./routes/community');
 const emailRelayRoutes = require('./routes/emailRelay');
 const inquiriesRoutes = require('./routes/inquiries');
+const reviewsRoutes = require('./routes/reviews');
 const uiEventsRoutes = require('./routes/uiEvents');
 const { trackActivity } = require('./middleware/activityTracker');
 const { blockSuspendedAccount } = require('./middleware/accountSuspension');
@@ -107,6 +108,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/email-relay', emailRelayRoutes);
 app.use('/api/inquiries', inquiriesRoutes);
+app.use('/api/reviews', reviewsRoutes);
 app.use('/api/ui-events', uiEventsRoutes);
 
 // Base Route

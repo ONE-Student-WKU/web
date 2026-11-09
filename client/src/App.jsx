@@ -15,6 +15,7 @@ import Inquiry from './pages/Inquiry.jsx';
 import ConsentGate from './pages/ConsentGate.jsx';
 import SuspendedGate from './pages/SuspendedGate.jsx';
 import WarningNotice from './components/WarningNotice.jsx';
+import ReviewPrompt from './components/ReviewPrompt.jsx';
 import LeaveGate from './pages/LeaveGate.jsx';
 import TrackTypeGate from './pages/TrackTypeGate.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -29,7 +30,8 @@ import useTextInputFocused from './hooks/useTextInputFocused.js';
 import useClearStaleSelection from './hooks/useClearStaleSelection.js';
 import useClearClickCaret from './hooks/useClearClickCaret.js';
 import LoadError from './components/LoadError.jsx';
-import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile } from './api/chatApi.js';
+import { getMe, logout, getUnseenReportCount, getUnseenNoticeCount, updateProfile, submitReview } from './api/chatApi.js';
+import useReviewPrompt from './hooks/useReviewPrompt.js';
 import { readCache, writeCache, clearCache } from './utils/sessionCache.js';
 import { consumeLanguageChosenBeforeLogin, useI18n } from './i18n/I18nContext.jsx';
 
@@ -93,6 +95,15 @@ function App() {
     // "관리자였다"는 힌트일 뿐이라 로그인 확인 후 role을 다시 검사한다(loadUser, 아래 렌더 가드).
     if (readCache('app_view') === 'admin') return 'admin';
     return 'home';
+  });
+
+  // 앱 안 후기 창 — 온보딩을 마친 학생에게, 다른 창(정지·동의·필수 질문·경고)이 없을 때만(hooks/useReviewPrompt.js).
+  const reviewBlocked =
+    !user || !!user.pendingWarning || !!user.suspension || !!user.consentRequired || !!user.leaveAnswerRequired || !!user.trackTypeAnswerRequired;
+  const [reviewOpen, closeReview] = useReviewPrompt({
+    studentId: user && user.onboardingCompleted && user.role !== 'admin' ? user.id : null,
+    view,
+    blocked: reviewBlocked,
   });
 
   // Google OAuth 콜백(로그인/재인증 공통, server/routes/auth.js 참고)은 풀 페이지 리다이렉트로
@@ -584,6 +595,7 @@ function App() {
         {authChecked && user && user.pendingWarning && !user.suspension && !user.consentRequired && !user.leaveAnswerRequired && !user.trackTypeAnswerRequired && (
           <WarningNotice key={user.pendingWarning.id} warning={user.pendingWarning} onDone={(next) => setUser((u) => ({ ...u, pendingWarning: next }))} />
         )}
+        {authChecked && reviewOpen && !reviewBlocked && <ReviewPrompt onSubmit={submitReview} onClose={closeReview} />}
       </div>
     </div>
   );

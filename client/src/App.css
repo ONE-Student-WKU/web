@@ -6298,6 +6298,32 @@ select.onb-select {
   cursor: pointer;
 }
 
+/* 후기 창(ReviewPrompt) — 별점과 입력칸. 창 안에서는 칸 사이 간격을 모달의 gap만 쓴다. */
+.review-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.review-star {
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--color-border-strong);
+  cursor: pointer;
+}
+
+.review-star.is-on {
+  color: var(--color-warning);
+}
+
+.career-confirm-modal .auth-field {
+  margin: 0;
+}
+
 /* 챗봇 답변의 간단한 마크다운(제목·목록·굵게·구분선·표) */
 .chat-bubble .message-text.md { white-space: normal; }
 .chat-bubble .md-p { margin: 0 0 6px; }
@@ -7143,6 +7169,24 @@ select.onb-select {
 
 .admin-row-top .post-meta {
   margin-left: auto;
+}
+
+/* 후기 목록(AdminReviews) — 별점과 한 줄 후기 */
+.admin-review-stars {
+  font-size: 0.875rem;
+  letter-spacing: 1px;
+  color: var(--color-warning);
+}
+
+.admin-review-stars-off {
+  color: var(--color-border-strong);
+}
+
+.admin-review-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .admin-detail {

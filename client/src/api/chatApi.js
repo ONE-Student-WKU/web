@@ -55,6 +55,11 @@ export const submitAppeal = (content) =>
 export const acknowledgeWarning = (id) =>
   apiRequest(`/me/warnings/${id}/acknowledge`, { method: 'POST' }).then((d) => d.pendingWarning);
 
+// 앱 안 후기 창(server/routes/reviews.js) — 띄울지 묻기, 띄웠다고 알리기, 보내기({ rating, content }).
+export const getReviewPrompt = () => apiRequest('/reviews/prompt').then((d) => d.due);
+export const markReviewPromptShown = () => apiRequest('/reviews/prompt/shown', { method: 'POST' });
+export const submitReview = (review) => apiRequest('/reviews', { method: 'POST', body: JSON.stringify(review) });
+
 // 이메일 OTP로만 가입한 계정(oauth_id 없음)의 계정 삭제 재인증 — Google 계정은
 // startGoogleReauth를 그대로 쓴다. 대상 이메일은 서버가 세션의 본인 계정 것으로 고정하므로
 // 여기서 이메일을 따로 안 보낸다.
@@ -277,6 +282,9 @@ export const createInquiry = (title, content) =>
 export const getMyInquiries = () => apiRequest('/inquiries/mine');
 
 export const getAdminInquiries = (status) => apiRequest(`/admin/inquiries?status=${status}`);
+
+// 앱 안 후기 목록 — { count, average, reviews: [{ id, rating, content, department, date }] }
+export const getAdminReviews = () => apiRequest('/admin/reviews');
 
 export const resolveAdminInquiry = (id, note) =>
   apiRequest(`/admin/inquiries/${id}/resolve`, { method: 'POST', body: JSON.stringify({ note: note || null }) });
