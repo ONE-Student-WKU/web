@@ -239,6 +239,18 @@ export default {
   'warning.appeal': '이의가 있으면 문의하기로 알려주세요.',
   'warning.confirm': '확인',
   'warning.err.ack': '확인을 저장하지 못했어요. 잠시 후 다시 눌러주세요.',
+  // 후기 창(써 본 학생에게 한 번)
+  'review.title': '써 보니 어땠어요?',
+  'review.body': '후기는 익명으로 소개 자료에 쓸 수 있어요.',
+  'review.ratingLabel': '별점',
+  'review.star': '{n}점',
+  'review.placeholder': '좋았던 점이나 불편했던 점 (선택)',
+  'review.send': '보내기',
+  'review.later': '다음에',
+  'review.err.send': '후기를 보내지 못했어요. 잠시 후 다시 눌러주세요.',
+  'review.done.title': '고마워요!',
+  'review.done.body': '남겨주신 후기는 꼼꼼히 읽어볼게요.',
+  'review.done.close': '닫기',
 
   // 졸업요건 진단
   'grad.err.load': '졸업요건 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요.',
@@ -596,6 +608,7 @@ export default {
   'courses.field.semester': '학기',
   'courses.field.grade': '등급',
   'courses.field.categoryNone': '선택 안 됨',
+  'courses.field.categoryLiberalElective': '교양선택·교양기초',
   'courses.confirm.submitting': '등록 중...',
   'courses.confirm.submit': '선택한 {n}개 과목 등록',
   'courses.reuploadBack': '‹ 다시 업로드',

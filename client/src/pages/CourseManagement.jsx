@@ -777,6 +777,8 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
 
   const errorText = error && (typeof error === 'object' ? tr(error.key) : error);
   const catLabel = (category) => translateCategory(displayCategory(category), tr);
+  // 이수구분 선택칸에만 쓰는 이름. 교양기초 과목은 교양선택으로 계산하므로(categoryMap.js) 선택지에서 그걸 알려 준다.
+  const categoryOptionLabel = (category) => (category === '교양선택' ? tr('courses.field.categoryLiberalElective') : catLabel(category));
   // 다전공 학생의 과목별 전공 표시 — 제2전공 학과 이름과 구분은 졸업요건 진단 응답(status.secondMajor)에서 가져온다.
   // 전과생은 전과 전 전공 과목을 "전공으로 인정 / 일반선택"으로 고친다(D-77). 다전공이면 "주전공 / 제2전공"(D-76).
   // 다른 학과에서 연 전공 과목은 자동으로 일반선택이고, 학생이 "전공으로 셈"으로 되돌릴 수 있다(D-88).
@@ -1400,7 +1402,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                                 <option value="">{tr('courses.field.categoryNone')}</option>
                                 {CATEGORIES.map((c) => (
                                   <option key={c} value={c}>
-                                    {catLabel(c)}
+                                    {categoryOptionLabel(c)}
                                   </option>
                                 ))}
                               </select>
@@ -1599,7 +1601,7 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
-                        {catLabel(c)}
+                        {categoryOptionLabel(c)}
                       </option>
                     ))}
                   </select>

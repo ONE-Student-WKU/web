@@ -158,6 +158,9 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     leaveDraft: draftFromPeriods(editMode ? user.leavePeriods : null),
     // 다전공(복수전공 DOUBLE·부전공 MINOR, #378 G-1). 2학년 이상이 처음 가입하면 이미 다전공일 수 있어 가입할 때도 받는다.
     secondMajorType: editMode ? user.secondMajorType ?? null : null,
+    // 가입 때 다전공 질문에 답했는가. "하지 않아요"(secondMajorType null)를 미리 골라 두면 다음만 눌러 지나치기 쉬워(실사용 피드백 2026-11-09),
+    // 가입 때는 아무것도 고르지 않은 채 시작하고 하나를 골라야 다음으로 간다. 학과·학번 수정은 저장된 값이 답이다.
+    secondMajorAnswered: editMode,
     secondDepartmentId: editMode ? user.secondDepartmentId ?? null : null,
     // 제2전공을 학과(DEPARTMENT)로 하는지 연계·복합전공(LINKED)으로 하는지, 연계전공이면 그 이름(#412).
     secondMajorKind: editMode && user.secondLinkedMajor ? 'LINKED' : 'DEPARTMENT',
@@ -525,6 +528,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
     (current === 'transfer' && !(answers.transferYear && answers.transferGrade && transferCohortValid && recognized.valid)) ||
     (current === 'teaching' && answers.teachingCourse === null) ||
     (current === 'trackType' && answers.majorTrackType === null) ||
+    (current === 'secondMajor' && !answers.secondMajorAnswered) ||
     (current === 'secondMajor' && answers.secondMajorType !== null &&
       (answers.secondMajorKind === 'LINKED' ? !answers.secondLinkedMajor : !answers.secondDepartmentId)) ||
     (current === 'majorChange' && !(answers.majorChangeYear && answers.majorChangeSemester && answers.majorChangeGrade)) ||
@@ -791,8 +795,10 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               {[null, 'DOUBLE', 'MINOR'].map((type) => (
                 <button
                   key={type || 'NONE'}
-                  className={'onb-option-card' + (answers.secondMajorType === type ? ' selected' : '')}
-                  onClick={() => setAnswers((a) => ({ ...a, secondMajorType: type, ...(type === null ? { secondDepartmentId: null } : {}) }))}
+                  className={'onb-option-card' + (answers.secondMajorAnswered && answers.secondMajorType === type ? ' selected' : '')}
+                  onClick={() =>
+                    setAnswers((a) => ({ ...a, secondMajorAnswered: true, secondMajorType: type, ...(type === null ? { secondDepartmentId: null } : {}) }))
+                  }
                 >
                   <span className="onb-option-title">{t(`onb.secondMajor.${type || 'NONE'}`)}</span>
                   <span className="onb-option-caption">{t(`onb.secondMajor.${type || 'NONE'}.caption`)}</span>
