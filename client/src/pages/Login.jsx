@@ -173,7 +173,6 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
       </header>
 
       <div className="auth-body">
-        <p className="auth-unofficial-badge">{t('login.unofficialBadge')}</p>
         <h2 className="auth-heading">{t('login.title')}</h2>
         <p className="auth-subheading">{t('login.subtitle')}</p>
 

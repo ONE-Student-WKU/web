@@ -193,7 +193,6 @@ export default {
   'login.title': 'Log in',
   'app.err.connect': "Couldn't connect to the server. Please try again in a moment.",
   'login.subtitle': 'See what’s left for graduation at a glance, and ask the chatbot about academic rules.',
-  'login.unofficialBadge': 'Student project · Unofficial',
   'login.remember': 'Keep me logged in',
   'login.google': 'Log in with Google',
   'login.or': 'or',
