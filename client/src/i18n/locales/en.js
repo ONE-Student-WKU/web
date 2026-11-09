@@ -637,6 +637,7 @@ export default {
   'courses.field.semester': 'Semester',
   'courses.field.grade': 'Grade',
   'courses.field.categoryNone': 'Not selected',
+  'courses.field.categoryLiberalElective': 'General ed. (elective/foundation)',
   'courses.confirm.submitting': 'Registering...',
   'courses.confirm.submit': 'Register {n} selected courses',
   'courses.reuploadBack': '‹ Upload again',

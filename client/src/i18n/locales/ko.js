@@ -596,6 +596,7 @@ export default {
   'courses.field.semester': '학기',
   'courses.field.grade': '등급',
   'courses.field.categoryNone': '선택 안 됨',
+  'courses.field.categoryLiberalElective': '교양선택·교양기초',
   'courses.confirm.submitting': '등록 중...',
   'courses.confirm.submit': '선택한 {n}개 과목 등록',
   'courses.reuploadBack': '‹ 다시 업로드',
