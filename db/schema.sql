@@ -131,6 +131,10 @@ CREATE TABLE IF NOT EXISTS students (
   consented_at              TIMESTAMP NULL,    -- 이용약관·개인정보 수집·이용에 동의한 시각
   consent_version           VARCHAR(20) NULL,  -- 동의한 약관 버전(server/services/consent.js). NULL이면 동의 기록 없음
   onboarding_completed_at   TIMESTAMP NULL,
+  -- 후기 창(15번 service_reviews)을 이 계정에 몇 번 띄웠는지(0~2)와 다음에 띄울 수 있는 때. 후기 내용과는 연결하지 않는다.
+  -- 2가 되면(두 번 띄웠거나 보냈으면) 다시 띄우지 않는다(server/services/reviewService.js). 기존 DB는 db/migrate.js가 추가한다.
+  review_prompt_count       TINYINT NOT NULL DEFAULT 0,
+  review_prompt_next_at     DATETIME NULL,
 
   created_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -1164,6 +1168,19 @@ CREATE TABLE IF NOT EXISTS graduation_snapshots (
   seen_at          DATETIME NOT NULL,     -- 기준을 마지막으로 맞춘 시각(알림의 "지난 접속"과 반영된 갱신 목록의 시작점)
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------------------------
+-- 15. 앱 안 후기 (써 본 학생에게 한 번 띄우는 후기 창, client/src/components/ReviewPrompt.jsx)
+-- 소개 자료에 "○○학과 익명"으로 쓰려고 받는다. 답장하지 않으므로 누가 썼는지 남기지 않는다:
+-- 학생 id·이름·학년 없이, 보낼 때의 학과 이름과 날짜(시각 아님)만 함께 둔다(server/services/reviewService.js).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS service_reviews (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  rating           TINYINT NOT NULL,       -- 1~5
+  content          VARCHAR(500) NULL,      -- 한 줄 후기(선택). 빈 값이면 NULL
+  department_name  VARCHAR(100) NULL,      -- 보낼 때 학과 이름을 복사해 둔다(학과를 바꾸거나 계정을 지워도 그대로)
+  created_date     DATE NOT NULL           -- 한국(KST) 날짜
 );
 
 -- ---------------------------------------------------------------------------

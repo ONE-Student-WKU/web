@@ -6,12 +6,13 @@ import AdminReports from '../components/admin/AdminReports.jsx';
 import AdminApproval from '../components/admin/AdminApproval.jsx';
 import AdminInquiries from '../components/admin/AdminInquiries.jsx';
 import AdminSanctions from '../components/admin/AdminSanctions.jsx';
+import AdminReviews from '../components/admin/AdminReviews.jsx';
 import { TREND_METRICS, TREND_RANGES, DEFAULT_TREND_RANGE } from '../utils/adminTrendMetrics.js';
 import { readCache, writeCache, clearCache } from '../utils/sessionCache.js';
 import { IconChevronLeft, IconCheck } from '../components/icons.jsx';
 
 // report·inquiry는 신고함·문의함의 상세(어느 것을 열었는지는 detail에 담는다).
-const ADMIN_VIEWS = ['dashboard', 'stats', 'reports', 'report', 'approval', 'inquiries', 'inquiry', 'sanctions'];
+const ADMIN_VIEWS = ['dashboard', 'stats', 'reports', 'report', 'approval', 'inquiries', 'inquiry', 'sanctions', 'reviews'];
 const DETAIL_PARENT = { report: 'reports', inquiry: 'inquiries' };
 const VIEW_TITLE = {
   dashboard: '관리자',
@@ -22,6 +23,7 @@ const VIEW_TITLE = {
   inquiries: '문의함',
   inquiry: '문의 보기',
   sanctions: '제재 관리',
+  reviews: '후기',
 };
 
 // 새로고침해도 남기고 관리자 화면을 떠나면(언마운트) 지우는 값 — 하위 화면, 통계 탭, 추이 지표·기간.
@@ -180,6 +182,8 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
           <AdminApproval showToast={showToast} />
         ) : shownView === 'sanctions' ? (
           <AdminSanctions showToast={showToast} />
+        ) : shownView === 'reviews' ? (
+          <AdminReviews />
         ) : null}
       </div>
     </div>

@@ -215,6 +215,14 @@ export function IconMessageCircle({ size = 18 }) {
   );
 }
 
+export function IconStar({ size = 18 }) {
+  return (
+    <svg width={size} height={size} {...base} aria-hidden="true">
+      <path d="m12 3 2.75 5.6 6.15.9-4.45 4.33 1.05 6.12L12 17.06 6.5 19.95l1.05-6.12L3.1 9.5l6.15-.9L12 3Z" />
+    </svg>
+  );
+}
+
 export function IconCompass({ size = 18 }) {
   return (
     <svg width={size} height={size} {...base} aria-hidden="true">

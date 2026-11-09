@@ -12,6 +12,7 @@ const reportedStudentService = require('../services/reportedStudentService');
 const adminStatsService = require('../services/adminStatsService');
 const uiEventService = require('../services/uiEventService');
 const noticeService = require('../services/noticeService');
+const reviewService = require('../services/reviewService');
 
 /**
  * server/routes/admin.js
@@ -356,6 +357,16 @@ router.delete('/warnings/:id', async (req, res, next) => {
       return res.status(404).json({ status: 404, code: 'WARNING_NOT_FOUND', message: null, data: null });
     }
     res.status(200).json({ status: 200, code: 'WARNING_DELETED', message: null, data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/reviews — 앱 안 후기(익명, 학과·날짜만). 최근 것부터 + 개수·평균 별점.
+router.get('/reviews', async (req, res, next) => {
+  try {
+    const data = await reviewService.listReviews();
+    res.status(200).json({ status: 200, code: 'ADMIN_REVIEWS_LIST', message: null, data });
   } catch (err) {
     next(err);
   }

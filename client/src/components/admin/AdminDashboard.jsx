@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAdminStats, getAiLabelComparison } from '../../api/chatApi.js';
-import { IconSiren, IconMessageCircle, IconUsers, IconBan, IconBarChart, IconCheck, IconChevronRight } from '../icons.jsx';
+import { IconSiren, IconMessageCircle, IconUsers, IconBan, IconBarChart, IconStar, IconCheck, IconChevronRight } from '../icons.jsx';
 
 // 지난주(8~14일 전) 방문자 중 이번 주(최근 7일)에도 온 비율. 방문 기록이 2주가 안 돼 지난주 방문자가 없으면 "—".
 function returnRate(weekly) {
@@ -235,6 +235,7 @@ function AdminDashboard({ onOpen }) {
           { view: 'inquiries', label: '문의함', Icon: IconMessageCircle },
           { view: 'approval', label: '커뮤니티 관리', Icon: IconUsers },
           { view: 'sanctions', label: '제재 관리', Icon: IconBan },
+          { view: 'reviews', label: '후기', sub: '익명 · 별점과 한 줄', Icon: IconStar },
           { view: 'stats', label: '통계', sub: '추이 · 기능 사용 · 학과·학번', Icon: IconBarChart },
         ].map(({ view, label, sub, Icon }) => (
           <button type="button" key={view} className="admin-list-row" onClick={() => onOpen(view)}>

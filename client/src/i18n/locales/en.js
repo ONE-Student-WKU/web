@@ -265,6 +265,17 @@ export default {
   'warning.appeal': 'If you disagree, let us know through Contact us.',
   'warning.confirm': 'OK',
   'warning.err.ack': "We couldn't save that. Please tap again in a moment.",
+  'review.title': 'How was it?',
+  'review.body': 'Your review may be quoted anonymously when we introduce the service.',
+  'review.ratingLabel': 'Rating',
+  'review.star': '{n} stars',
+  'review.placeholder': 'What you liked or found inconvenient (optional)',
+  'review.send': 'Send',
+  'review.later': 'Maybe later',
+  'review.err.send': "We couldn't send your review. Please tap again in a moment.",
+  'review.done.title': 'Thank you!',
+  'review.done.body': "We'll read your review carefully.",
+  'review.done.close': 'Close',
 
   // Graduation check
   'grad.err.load': "Couldn't load your graduation requirements. Please refresh and try again.",

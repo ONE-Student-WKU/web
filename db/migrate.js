@@ -246,6 +246,23 @@ async function ensureStudentHomeLayoutColumn(connection) {
   }
 }
 
+// 후기 창을 띄운 횟수·다음에 띄울 수 있는 때(server/services/reviewService.js). 기존 계정은 0(아직 안 띄움)에서 시작한다.
+async function ensureStudentReviewPromptColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND COLUMN_NAME IN ('review_prompt_count', 'review_prompt_next_at')`
+  );
+  const existing = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!existing.has('review_prompt_count')) {
+    console.log('[db:migrate] students.review_prompt_count 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN review_prompt_count TINYINT NOT NULL DEFAULT 0 AFTER onboarding_completed_at');
+  }
+  if (!existing.has('review_prompt_next_at')) {
+    console.log('[db:migrate] students.review_prompt_next_at 컬럼 추가...');
+    await connection.query('ALTER TABLE students ADD COLUMN review_prompt_next_at DATETIME NULL AFTER review_prompt_count');
+  }
+}
+
 // 이용약관·개인정보 수집·이용 동의 기록용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL(동의 기록 없음)로 두어 기존 계정은 다음 접속 때 동의 화면을 한 번 보게 된다.
 async function ensureStudentConsentColumns(connection) {
@@ -662,6 +679,7 @@ async function migrate() {
     await ensureStudentCourseCountedMajorColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
     await ensureStudentHomeLayoutColumn(connection);
+    await ensureStudentReviewPromptColumns(connection);
     await ensureNameUniqueConstraint(connection);
     await ensureCommunityReportSanctionColumns(connection);
     await ensureSeasonSemesterRenumbering(connection);
