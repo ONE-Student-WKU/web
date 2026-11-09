@@ -167,7 +167,6 @@ export default {
   'login.title': '로그인',
   'app.err.connect': '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.',
   'login.subtitle': '졸업까지 남은 요건을 한눈에 확인하고, 궁금한 학사 규정은 챗봇에게 물어보세요.',
-  'login.unofficialBadge': '학생 프로젝트 · 비공식',
   'login.remember': '로그인 상태 유지',
   'login.google': 'Google로 로그인',
   'login.or': '또는',
