@@ -15,7 +15,7 @@ import { storeConsent, storeNoticeAck } from '../utils/consent.js';
 
 /**
  * client/src/pages/Login.safeguards.test.jsx
- * 공개 전 안전장치: 로그인 화면이 비공식 서비스임을 배지와 필수 체크로 밝히고,
+ * 공개 전 안전장치: 로그인 화면이 비공식 서비스임을 필수 체크로 밝히고,
  * 인증코드 메일을 보낼 수 없을 때(EMAIL_SEND_FAILED) "잠시 후 다시" 대신 Google 로그인을 권한다.
  */
 
@@ -27,9 +27,9 @@ afterEach(() => {
 });
 
 describe('Login 안전장치', () => {
-  it('비공식임은 배지와 필수 체크로 알린다', () => {
+  it('비공식임은 필수 체크로 알리고, 제목 위에 따로 배지를 두지 않는다', () => {
     renderLogin();
-    expect(screen.getByText('학생 프로젝트 · 비공식')).toBeInTheDocument();
+    expect(screen.queryByText('학생 프로젝트 · 비공식')).not.toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /학교 공식 서비스가 아닌 비공식 서비스임을 확인했습니다/ })).toBeInTheDocument();
   });
 

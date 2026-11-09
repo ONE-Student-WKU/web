@@ -442,19 +442,6 @@ body {
   margin: 0 0 32px;
 }
 
-/* 학교 공식 서비스로 오해하지 않게 로그인 화면 맨 위에 붙이는 표시(교육혁신과 통화 2026-10-26) */
-.auth-unofficial-badge {
-  align-self: center;
-  margin: 0 0 12px;
-  padding: 4px 10px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
 .auth-field {
   margin-bottom: 20px;
 }
