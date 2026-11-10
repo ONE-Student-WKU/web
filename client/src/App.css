@@ -6957,40 +6957,6 @@ select.onb-select {
   color: var(--color-ink-contrast);
 }
 
-.trend-chart-prev {
-  fill: none;
-  stroke: var(--color-text-muted);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 3;
-  pointer-events: none;
-}
-
-.admin-legend {
-  display: flex;
-  gap: 14px;
-  margin: 10px 0 0;
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.admin-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.admin-legend i.bar {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: var(--color-accent);
-}
-
-.admin-legend i.line {
-  width: 14px;
-  border-top: 2px dashed var(--color-text-muted);
-}
-
 .admin-card {
   margin-bottom: 10px;
   padding: 16px;
