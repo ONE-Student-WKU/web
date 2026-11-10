@@ -165,6 +165,7 @@ export default {
   'category.심화': 'Advanced',
   'category.응용': 'Applied',
   'category.전공선택': 'Major elective',
+  'category.선택전공': 'Major elective',
   'category.전공': 'Major',
   'category.교양필수': 'General ed. (required)',
   'category.교양선택': 'General ed. (elective)',

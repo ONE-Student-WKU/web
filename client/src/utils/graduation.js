@@ -11,10 +11,11 @@ const MAJOR_ELECTIVE_KEY = '전공선택';
 const MAJOR_MERGED_KEY = '전공';
 
 // DB category ENUM 값('전공필수' 등)은 졸업요건 계산 로직이 그대로 참조하므로 못 바꾼다.
-// 다만 화면 표시는 이 진단 화면이 원래 쓰던 "기본전공"으로 앱 전체에서 통일한다 — 같은
-// 값을 화면마다 "전공필수"/"기본전공"으로 다르게 불러서 헷갈린다는 실사용 피드백 반영.
-// Home/GraduationStatus의 부족 요건 문구, CourseManagement의 과목 목록·입력 폼이 공유.
-const CATEGORY_DISPLAY_LABEL = { [MAJOR_REQUIRED_KEY]: '기본전공' };
+// 다만 화면 표시는 학교 시행규칙의 일반 학과 이름(기본전공·선택전공)으로 앱 전체에서 통일한다 —
+// 같은 값을 화면마다 "전공필수"/"기본전공"으로 다르게 불러서 헷갈린다는 실사용 피드백 반영,
+// 학생들이 "선전(선택전공)"이라고 부르는데 "전공선택"으로 보여 헷갈린다는 피드백(2026-11-10) 반영.
+// translateCategory가 이 이름을 먼저 거치므로, 이수구분을 화면에 쓰는 곳은 translateCategory만 쓰면 된다.
+const CATEGORY_DISPLAY_LABEL = { [MAJOR_REQUIRED_KEY]: '기본전공', [MAJOR_ELECTIVE_KEY]: '선택전공' };
 export const displayCategory = (category) => CATEGORY_DISPLAY_LABEL[category] || category;
 
 // summarizeShortfalls용 — 전공필수/전공선택을 "전공" 하나로 합쳐서, 기본전공(전공필수)을
@@ -107,13 +108,14 @@ export function getPercent(earned, required) {
   return Math.min(100, Math.round((earned / required) * 100));
 }
 
-// 서버/DB가 한국어로 내려주는 항목명(기본전공, 졸업인증제 등)을 화면 언어로 바꾼다. t를 안 넘기거나
-// 번역 키가 없으면 원문 그대로 — 모르는 항목명이 빈 칸이 되거나 키 문자열로 보이지 않게 한다.
+// 서버/DB가 한국어로 내려주는 항목명(전공필수, 졸업인증제 등)을 화면 이름(displayCategory)으로 바꾼 뒤 화면 언어로 옮긴다.
+// t를 안 넘기거나 번역 키가 없으면 화면 이름 그대로 — 모르는 항목명이 빈 칸이 되거나 키 문자열로 보이지 않게 한다.
 export function translateCategory(raw, t) {
-  if (!t) return raw;
-  const key = `category.${raw}`;
+  const shown = displayCategory(raw);
+  if (!t) return shown;
+  const key = `category.${shown}`;
   const translated = t(key);
-  return translated === key ? raw : translated;
+  return translated === key ? shown : translated;
 }
 
 // t를 넘기면(화면 언어 번역 함수) 항목명과 문장 틀을 그 언어로 만든다 — 안 넘기면 기존 한국어 그대로.
