@@ -365,6 +365,11 @@ function otherTrustReasons(regulation, shown, lang) {
     .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
 }
 
+/** 학생이 이수구분을 직접 바꿔 바꾼 대로 센 과목(서버 status.editedCategoryCourses). 예전 응답이면 []. */
+export function editedCategoryCourses(status) {
+  return status && Array.isArray(status.editedCategoryCourses) ? status.editedCategoryCourses : [];
+}
+
 // 시스템 내부 사정(보유 원문·부칙 자료)이라 학생·과사무실 누구에게도 쓸모없는 참고 플래그 — 인쇄본 근거에도 싣지 않는다.
 const INTERNAL_INFO_FLAGS = new Set(['TEXT_SNAPSHOT_MAY_BE_OLDER', 'COHORT_TRANSITION_ADDENDUM_NOT_HELD']);
 
@@ -397,6 +402,21 @@ export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
   if (!regulation) return { noData, badge: null, reason: null, otherReasons: [], totalEstimated: false };
+  // 학생이 이수구분을 직접 바꾼 과목이 있으면 엔진 신뢰도와 별개로 "미정"으로 보여 준다 — 학교 기록과 다를 수 있다(2026-11-10 결정).
+  // 엔진이 추정인 이유는 펼쳐 보기에 그대로 둔다.
+  const edited = editedCategoryCourses(status);
+  if (edited.length > 0 && !noData) {
+    const engineReasons = regulation.confidence === 'CONFIRMED'
+      ? []
+      : [pickTrustReason(regulation, lang), ...otherTrustReasons(regulation, pickTrustReason(regulation, lang), lang)].filter(Boolean);
+    return {
+      noData,
+      badge: { label: translate(lang, 'grad.trust.EDITED'), level: 'warn' },
+      reason: translate(lang, 'grad.edited.reason', { n: edited.length, names: edited.map((c) => c.name).join(', ') }),
+      otherReasons: engineReasons,
+      totalEstimated: true,
+    };
+  }
   // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준
   // 졸업요건처럼 읽혀 "비공식 참고용" 안내와도 부딪힌다. 예외(추정·자료 없음)만 표시해야 눈에 띈다(2026-10-17).
   const confirmed = regulation.confidence === 'CONFIRMED';
@@ -420,6 +440,8 @@ export function describeRequirementTrust(status, lang = 'ko') {
 export function printTrustLevel(status) {
   const confidence = status && status.regulation ? status.regulation.confidence : null;
   if (!confidence) return null;
+  // 학생이 성적표와 다르게 바꾼 이수구분이 있으면 "미정" — 엔진 신뢰도보다 앞선다(학교 기록과 다를 수 있어 확인받아야 한다).
+  if (editedCategoryCourses(status).length > 0) return 'UNDETERMINED';
   if (confidence === 'CONFIRMED') return 'HIGH';
   return confidence === 'ESTIMATED' ? 'MEDIUM' : 'LOW';
 }

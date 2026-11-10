@@ -264,6 +264,9 @@ CREATE TABLE IF NOT EXISTS student_courses (
   name              VARCHAR(100) NOT NULL,
   credits           DECIMAL(2,1) NOT NULL,
   category          ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NOT NULL,
+  -- 학생이 이수구분을 직접 바꾸기 전의 값(학교·성적표·처음 입력한 값). NULL = 바꾼 적 없음. 진단·챗봇은 category만 읽고,
+  -- 이 값은 "직접 바꿈" 표시·원래대로 되돌리기·성적표 다시 가져오기 비교에만 쓴다(services/courseService.js updateMyCourse). 기존 DB는 db/migrate.js가 추가한다.
+  category_original ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NULL,
   major_area        ENUM('기초', '심화', '응용') NULL,  -- 광역 계열전공 과목의 원래 이수구분(시행규칙 제7조 제3항). NULL = 모름(편성표 과목명으로 찾는다)
   counted_major     VARCHAR(16) NULL,  -- 학생이 이 과목을 어디로 셀지 고친 값(PRIMARY 주전공·전공으로 셈 · SECOND 제2전공 · GENERAL 일반선택, 전과생). 다른 학과 전공 과목은 자동으로 일반선택(D-88). NULL = 자동(services/courseCounting.js, secondMajorCredits.js)
   -- 성적표 PDF에서 가져온 과목의 학수번호(전체성적조회)와 개설 학과(학수번호로 찾거나, 이수과목확인리스트의 "개설학과(전공)" 칸).
