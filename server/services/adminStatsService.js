@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('./chatConstants');
+const { FIXED_QUESTION_COUNT } = require('./careerService');
 
 /**
  * server/services/adminStatsService.js
@@ -239,24 +240,19 @@ async function getTrend(range, now = Date.now()) {
   return { range, unit, generatedAt: new Date(now).toISOString(), points, previous: previousPoints ? { points: previousPoints } : null, uniqueVisitors };
 }
 
-// 학과·학번별 사용자에서 이 인원보다 적은 칸은 "기타"로 묶는다 — 학과·학번만으로 누가 쓰는지 짐작되지 않게(서버에서 묶어 작은 숫자를 내려보내지 않는다).
-const MIN_GROUP_SIZE = 5;
-
-/** [{ name, count }] → 인원이 MIN_GROUP_SIZE 이상인 칸과, 나머지를 합친 기타({ groups, count }). 순수 함수. */
-function groupSmall(rows) {
+/**
+ * [{ name, count }] → 0명이 아닌 칸 전부와 합계. 순수 함수.
+ * 예전에는 5명 미만 칸을 "기타"로 묶었는데, 1명짜리 학과까지 그대로 보이기로 했다(사용자 결정 2026-11-10). 방침에는 "학과·학번별 이용자 수"만
+ * 있고 5명 기준은 코드에서 정한 값이었다.
+ */
+function listAll(rows) {
   const counted = rows.map((r) => ({ name: r.name, count: Number(r.count) })).filter((r) => r.count > 0);
-  const shown = counted.filter((r) => r.count >= MIN_GROUP_SIZE);
-  const small = counted.filter((r) => r.count < MIN_GROUP_SIZE);
-  return {
-    rows: shown,
-    other: small.length ? { groups: small.length, count: small.reduce((s, r) => s + r.count, 0) } : null,
-    total: counted.reduce((s, r) => s + r.count, 0),
-  };
+  return { rows: counted, total: counted.reduce((s, r) => s + r.count, 0) };
 }
 
 /**
  * 학과·학번별 사용자(GET /api/admin/stats/composition) — 학교에 보여줄 이용 현황. 관리자 계정은 뺀다.
- * members: 가입자 수, visitors7d: 최근 7일 방문자 수(student_activity). 학과는 많은 순, 학번은 최근 학번부터.
+ * members: 가입자 수, visitors7d: 최근 7일 방문자 수(student_activity). 학과는 많은 순, 학번은 최근 학번부터. 인원이 적은 칸도 묶지 않는다.
  * 한계: 학과를 고르지 않은 계정은 noDepartment로 따로 세고, 옛 테스트 계정(studentService.LEGACY_TEST_ACCOUNT_COUNT)은 구분할 수 없어 섞여 있을 수 있다.
  */
 async function getComposition() {
@@ -275,11 +271,131 @@ async function getComposition() {
     count("SELECT COUNT(*) AS count FROM students WHERE role <> 'admin' AND department_id IS NULL"),
   ]);
   return {
-    minGroupSize: MIN_GROUP_SIZE,
     noDepartment,
-    department: { members: groupSmall(deptMembers), visitors7d: groupSmall(deptVisitors) },
-    cohort: { members: groupSmall(cohortMembers), visitors7d: groupSmall(cohortVisitors) },
+    department: { members: listAll(deptMembers), visitors7d: listAll(deptVisitors) },
+    cohort: { members: listAll(cohortMembers), visitors7d: listAll(cohortVisitors) },
   };
 }
 
-module.exports = { getDashboardStats, getPendingCounts, getTrend, isTrendRange, getComposition, groupSmall, kstDateOffset };
+// 사용 깊이의 기간: all = 지금 있는 모든 계정, recent30d = 최근 30일 안에 가입한 계정(그 사람들이 가입 뒤 무엇을 써 봤나).
+const USAGE_SCOPES = {
+  all: '',
+  recent30d: ' AND s.created_at > NOW() - INTERVAL 30 DAY',
+};
+
+function isUsageScope(scope) {
+  return Object.prototype.hasOwnProperty.call(USAGE_SCOPES, scope);
+}
+
+/** 가입자 대비 비율(정수 %). 가입자가 없으면 null — 화면은 "—"를 보여준다. 순수 함수. */
+function rateOf(count, total) {
+  return total > 0 ? Math.round((count / total) * 100) : null;
+}
+
+/** 중앙값(가운데 값, 짝수 개면 가운데 두 값의 평균). 값이 없으면 null. 순수 함수. */
+function median(values) {
+  const sorted = values.map(Number).sort((a, b) => a - b);
+  if (sorted.length === 0) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * 셈한 학생 수 → 화면에 그대로 쓸 모양({ count, rate }). 비율의 분모는 모두 가입자다. 순수 함수.
+ * raw: { signups, onboarded, withCourses, courseCounts: [학생별 과목 수], pdfImport, chat, career: { started, answered, talked, recommended, confirmed } }
+ */
+function buildUsageDepth(raw) {
+  const total = Number(raw.signups) || 0;
+  const step = (n) => ({ count: Number(n) || 0, rate: rateOf(Number(n) || 0, total) });
+  const career = raw.career || {};
+  return {
+    signups: total,
+    onboarded: step(raw.onboarded),
+    features: {
+      courses: step(raw.withCourses),
+      chat: step(raw.chat),
+      career: step(career.started),
+    },
+    career: {
+      started: step(career.started),
+      answered: step(career.answered),
+      talked: step(career.talked),
+      recommended: step(career.recommended),
+      confirmed: step(career.confirmed),
+    },
+    depth: {
+      courseMedian: median(raw.courseCounts || []),
+      pdfImport: step(raw.pdfImport),
+    },
+  };
+}
+
+/**
+ * 사용 깊이(GET /api/admin/stats/usage?scope=all|recent30d) — 가입자 중 각 기능을 "실제로 한 번이라도 쓴" 학생 수.
+ * 화면·버튼 기록(ui_event_daily)이 아니라 기능이 남기는 데이터로 센다: 온보딩 완료(students.onboarding_completed_at), 과목(student_courses),
+ * 챗봇 질문(chat_messages role=user), 진로 탐색(career_sessions·career_messages), 성적표 가져오기(pdf_import_logs — 파싱까지 간 횟수).
+ * - 학생을 고르는 목록은 내려보내지 않고 숫자만 준다(과목 수 중앙값도 서버에서 계산한다). 관리자 계정은 뺀다.
+ * - 진로 단계: 상담 시작 → 고정 질문 답변 제출(학생 메시지 FIXED_QUESTION_COUNT개 이상) → 자유 대화 1번 이상(그보다 많음, 답변 고친 기록도 한 번으로 셈)
+ *   → 진로 추천 받음(CANDIDATES_READY·CONFIRMED) → 진로 확정(CONFIRMED). 상담을 여러 번 했으면 가장 멀리 간 기록으로 센다.
+ * - 한계: 탈퇴한 계정은 기록이 같이 지워져 빠진다. 옛 테스트 계정(studentService.LEGACY_TEST_ACCOUNT_COUNT)은 구분할 수 없어 섞여 있다.
+ */
+async function getUsageDepth(scope = 'all') {
+  const where = `s.role <> 'admin'${USAGE_SCOPES[scope]}`;
+  const fixed = FIXED_QUESTION_COUNT;
+  const [signups, onboarded, [courseRows], pdfImport, chat, [[career]]] = await Promise.all([
+    count(`SELECT COUNT(*) AS count FROM students s WHERE ${where}`),
+    count(`SELECT COUNT(*) AS count FROM students s WHERE ${where} AND s.onboarding_completed_at IS NOT NULL`),
+    pool.query(`SELECT COUNT(*) AS n FROM student_courses sc JOIN students s ON s.id = sc.student_id WHERE ${where} GROUP BY sc.student_id`),
+    count(`SELECT COUNT(DISTINCT p.student_id) AS count FROM pdf_import_logs p JOIN students s ON s.id = p.student_id WHERE ${where}`),
+    count(
+      `SELECT COUNT(DISTINCT c.student_id) AS count FROM chat_conversations c
+       JOIN chat_messages m ON m.conversation_id = c.id AND m.role = 'user'
+       JOIN students s ON s.id = c.student_id WHERE ${where}`
+    ),
+    pool.query(
+      `SELECT COUNT(*) AS started, COALESCE(SUM(t.answered), 0) AS answered, COALESCE(SUM(t.talked), 0) AS talked,
+              COALESCE(SUM(t.recommended), 0) AS recommended, COALESCE(SUM(t.confirmed), 0) AS confirmed
+       FROM (SELECT cs.student_id,
+                    MAX(COALESCE(u.n, 0) >= ?) AS answered, MAX(COALESCE(u.n, 0) > ?) AS talked,
+                    MAX(cs.status IN ('CANDIDATES_READY', 'CONFIRMED')) AS recommended, MAX(cs.status = 'CONFIRMED') AS confirmed
+             FROM career_sessions cs JOIN students s ON s.id = cs.student_id
+             LEFT JOIN (SELECT session_id, COUNT(*) AS n FROM career_messages WHERE role = 'user' GROUP BY session_id) u ON u.session_id = cs.id
+             WHERE ${where} GROUP BY cs.student_id) t`,
+      [fixed, fixed]
+    ),
+  ]);
+  const courseCounts = courseRows.map((r) => Number(r.n));
+  return {
+    scope,
+    ...buildUsageDepth({
+      signups,
+      onboarded,
+      withCourses: courseCounts.length,
+      courseCounts,
+      pdfImport,
+      chat,
+      career: {
+        started: Number(career.started),
+        answered: Number(career.answered),
+        talked: Number(career.talked),
+        recommended: Number(career.recommended),
+        confirmed: Number(career.confirmed),
+      },
+    }),
+  };
+}
+
+module.exports = {
+  getDashboardStats,
+  getPendingCounts,
+  getTrend,
+  isTrendRange,
+  getComposition,
+  listAll,
+  kstDateOffset,
+  getUsageDepth,
+  isUsageScope,
+  buildUsageDepth,
+  rateOf,
+  median,
+};

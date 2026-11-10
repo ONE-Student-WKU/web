@@ -6935,10 +6935,6 @@ select.onb-select {
   background: var(--color-accent);
 }
 
-.admin-legend i.bar.b {
-  background: var(--color-border-strong);
-}
-
 .admin-legend i.line {
   width: 14px;
   border-top: 2px dashed var(--color-text-muted);
@@ -6964,133 +6960,6 @@ select.onb-select {
 
 .admin-card-note b {
   color: var(--color-text-primary);
-}
-
-.admin-vs {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 10px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.admin-vs li {
-  display: grid;
-  grid-template-columns: 92px 1fr 64px;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
-}
-
-.admin-vs-bar {
-  display: flex;
-  gap: 2px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 5px;
-}
-
-.admin-vs-bar i.a {
-  background: var(--color-accent);
-}
-
-.admin-vs-bar i.b {
-  background: var(--color-border-strong);
-}
-
-.admin-vs-n {
-  text-align: right;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-}
-
-.admin-hist {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 96px;
-  margin-top: 12px;
-}
-
-.admin-hist span {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
-}
-
-.admin-hist i {
-  width: 100%;
-  min-height: 2px;
-  border-radius: 4px 4px 0 0;
-  background: var(--color-border-strong);
-}
-
-.admin-hist span.on i {
-  background: var(--color-accent);
-}
-
-.admin-hist em {
-  font-style: normal;
-  font-size: 0.6875rem;
-  color: var(--color-text-muted);
-}
-
-.admin-group {
-  margin-bottom: 10px;
-  padding: 4px 14px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-}
-
-.admin-group ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.admin-group-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 0;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  background: none;
-  font-family: inherit;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.admin-group-head:disabled {
-  cursor: default;
-}
-
-.admin-group-head span {
-  flex: 1;
-  text-align: left;
-  font-size: 0.9375rem;
-  font-weight: 700;
-}
-
-.admin-group-head b {
-  font-size: 0.875rem;
-}
-
-.admin-group-head svg {
-  color: var(--color-text-muted);
-  transition: transform 0.15s;
-}
-
-.admin-group-head[aria-expanded='true'] svg {
-  transform: rotate(90deg);
 }
 
 .admin-feature-row {
@@ -7137,6 +7006,17 @@ select.onb-select {
   display: block;
   font-size: 0.6875rem;
   color: var(--color-text-muted);
+}
+
+/* 사용 깊이 — 위 요약 칸 셋, 아래 카드 안 줄은 .admin-feature-row를 그대로 쓴다 */
+.admin-mini.admin-usage-summary {
+  margin: 0 0 10px;
+}
+
+.admin-depth-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .admin-composition-total {
@@ -7192,10 +7072,6 @@ select.onb-select {
   display: block;
   font-size: 0.6875rem;
   font-weight: 500;
-  color: var(--color-text-muted);
-}
-
-.admin-composition-table tr.other .admin-composition-name {
   color: var(--color-text-muted);
 }
 

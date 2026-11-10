@@ -294,12 +294,13 @@ export const getAdminStats = () => apiRequest('/admin/stats');
 // 처리할 일 건수만 — 계정 메뉴의 빨간 점. { reports, inquiries, posts, total }(신고는 같은 대상을 한 건으로 센다)
 export const getAdminPending = () => apiRequest('/admin/pending');
 
-// 기능 사용 횟수 — range: 7d | 30d | all. { range, from, to, firstDate, events: [{ event, count, devices }] }(많이 쓴 순, devices는 날마다의 기기 수 합)
-export const getAdminFeatureUsage = (range) => apiRequest(`/admin/stats/features?range=${range}`);
+// 사용 깊이 — scope: all | recent30d(최근 30일 가입자). { scope, signups, onboarded, features: { courses, chat, career }, career: { started, answered, talked, recommended, confirmed },
+// depth: { courseMedian, pdfImport } }. 각 단계는 { count, rate }(rate는 가입자 대비 정수 %, 가입자가 없으면 null)
+export const getAdminUsageDepth = (scope) => apiRequest(`/admin/stats/usage?scope=${scope}`);
 
 // 추이 — range: 24h(1시간 단위) | 7d | 30d | 1y | all(하루 단위, 한국 날짜). { range, unit, generatedAt, uniqueVisitors, points: [{ at, visitors, signups, chatQuestions, chatNotFound }], previous: { points } | null }
 // (오래된 순, 방문자는 하루 단위에서만, previous는 바로 앞 같은 길이 기간 — 전체는 null)
 export const getAdminStatsTrend = (range) => apiRequest(`/admin/stats/trend?range=${range}`);
 
-// 학과·학번별 가입자와 최근 7일 방문자 — 5명 미만 칸은 서버가 기타로 묶어 준다. { minGroupSize, noDepartment, department: { members, visitors7d }, cohort: { members, visitors7d } }
+// 학과·학번별 가입자와 최근 7일 방문자 — 인원이 적은 칸도 묶지 않는다. { noDepartment, department: { members, visitors7d }, cohort: { members, visitors7d } }(각각 { rows: [{ name, count }], total })
 export const getAdminStatsComposition = () => apiRequest('/admin/stats/composition');

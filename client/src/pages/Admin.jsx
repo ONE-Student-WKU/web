@@ -55,7 +55,7 @@ function Admin({ user, onGoHome, onLogout, onOpenSettings, onOpenOnboarding, onO
   // 상세(신고 보기·문의 보기)는 무엇을 열었는지가 새로고침 뒤에 남지 않아 그 목록으로 돌아간다.
   const [adminView, setAdminView] = useSessionState('admin_view', (v) => ADMIN_VIEWS.includes(v), 'dashboard');
   const [detail, setDetail] = useState(null);
-  const [statsTab, setStatsTab] = useSessionState('admin_stats_tab', (v) => STATS_TABS.some((t) => t.key === v), 'trend');
+  const [statsTab, setStatsTab] = useSessionState('admin_stats_tab', (v) => STATS_TABS.some((t) => t.key === v), 'usage');
   const [trendMetric, setTrendMetric] = useSessionState('admin_trend_metric', (v) => TREND_METRICS.some((m) => m.key === v), TREND_METRICS[0].key);
   const [trendRange, setTrendRange] = useSessionState('admin_trend_range', (v) => TREND_RANGES.some((r) => r.key === v), DEFAULT_TREND_RANGE);
   const shownView = DETAIL_PARENT[adminView] && detail === null ? DETAIL_PARENT[adminView] : adminView;

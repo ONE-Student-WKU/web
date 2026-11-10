@@ -394,6 +394,7 @@ async function confirmCareer(studentId, sessionId, careerName, student, language
 }
 
 module.exports = {
+  FIXED_QUESTION_COUNT,
   createSession,
   getSessionDetail,
   getLatestSessionDetail,
