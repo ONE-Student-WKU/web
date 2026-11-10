@@ -16,10 +16,12 @@ function renderInline(text, keyPrefix) {
   );
 }
 
-function MessageText({ text }) {
+// keepBlankLines: 빈 줄을 문단 간격으로 남긴다(사람이 쓴 문의 답변용, messageMarkdown.js parseBlocks 참고).
+function MessageText({ text, keepBlankLines = false }) {
   return (
     <div className="message-text md">
-      {parseBlocks(text).map((b, i) => {
+      {parseBlocks(text, { keepBlankLines }).map((b, i) => {
+        if (b.type === 'gap') return <div key={i} className="md-gap" aria-hidden="true" />;
         if (b.type === 'heading') return <p key={i} className="md-heading">{renderInline(b.text, i)}</p>;
         if (b.type === 'rule') return <hr key={i} className="md-rule" />;
         if (b.type === 'table') {

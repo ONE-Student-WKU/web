@@ -4,6 +4,7 @@ import { refreshAdminPending } from '../../utils/adminPending.js';
 import AdminSheet from './AdminSheet.jsx';
 import AdminTabs from './AdminTabs.jsx';
 import { formatDate, SANCTION_SCOPE_LABEL, SANCTION_STATE_LABEL, sanctionState, warningSeenLabel, parseSuggestedAction } from './adminFormat.js';
+import NoteTextarea, { noteTooLong } from './NoteTextarea.jsx';
 import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
 import { IconChevronRight } from '../icons.jsx';
 
@@ -13,7 +14,6 @@ import { IconChevronRight } from '../icons.jsx';
 export const DEFAULT_SANCTION_REASON = '커뮤니티 운영 정책 위반';
 // 신고자에게 보이는 처리 안내의 기본 문구 — 신고자의 "내 신고 내역"이 안내가 없을 때 보여주는 문구와 같다.
 export const DEFAULT_RESOLUTION_NOTE = '신고를 검토했고 커뮤니티 운영 정책에 따라 처리했어요. 신고해 주셔서 고마워요.';
-const RESOLUTION_NOTE_MAX_LENGTH = 500;
 // 제재 기간은 프리셋으로만 고른다(#201) — 관리자가 매번 자유롭게 날짜를 정하면 기준이 들쭉날쭉해질 수 있다. permanent는 영구정지.
 const SANCTION_DURATIONS = [
   { value: '1d', label: '1일' },
@@ -293,12 +293,12 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
         )}
 
         {sheet === 'resolve' && (
-          <AdminSheet title="조치 없이 처리" onClose={() => setSheet(null)} onSubmit={handleResolve} submitLabel="처리완료로 표시" submitting={submitting}>
+          <AdminSheet title="조치 없이 처리" onClose={() => setSheet(null)} onSubmit={handleResolve} submitLabel="처리완료로 표시" submitting={submitting} submitDisabled={noteTooLong(note)}>
             {count > 1 && <p className="admin-sheet-note">이 {isApplication ? '신청' : '글'}에 들어온 신고 {count}건이 함께 처리완료돼요.</p>}
             <label className="admin-section first" htmlFor="resolution-note">
               신고자에게 보낼 안내 <small>{reporters > 1 ? `신고한 ${reporters}명에게 보여요` : '신고자에게만 보여요'}</small>
             </label>
-            <textarea id="resolution-note" className="post-input admin-textarea" rows={3} maxLength={RESOLUTION_NOTE_MAX_LENGTH} value={note} onChange={(e) => setNote(e.target.value)} />
+            <NoteTextarea id="resolution-note" value={note} onChange={setNote} minRows={3} />
             <p className="courses-manual-hint">신고 대상자의 이름·학과 같은 개인 정보나 제재 내용은 쓰지 마세요. 비워 두면 기본 안내가 보여요.</p>
           </AdminSheet>
         )}
@@ -310,7 +310,7 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
             onSubmit={handleSanction}
             submitLabel={isWarning ? '경고 보내기' : `${durationLabel} ${SANCTION_SCOPE_LABEL[scope]}`}
             submitting={submitting}
-            submitDisabled={!reason.trim()}
+            submitDisabled={!reason.trim() || noteTooLong(note)}
           >
             <p className="admin-section first">범위</p>
             <div className="admin-choice" role="radiogroup" aria-label="범위">
@@ -341,7 +341,7 @@ function AdminReports({ detailKey, onOpenDetail, onCloseDetail, onOpenPost, show
             <label className="admin-section" htmlFor="resolution-note">
               신고자에게 보낼 안내 <small>{reporters > 1 ? `신고한 ${reporters}명에게 보여요` : '신고자에게만 보여요'}</small>
             </label>
-            <textarea id="resolution-note" className="post-input admin-textarea" rows={3} maxLength={RESOLUTION_NOTE_MAX_LENGTH} value={note} onChange={(e) => setNote(e.target.value)} />
+            <NoteTextarea id="resolution-note" value={note} onChange={setNote} minRows={3} />
             <p className="admin-sheet-warn">
               {isWarning ? '경고해도' : '제재하면'} 신고된 {isApplication ? '신청' : '글'}이 함께 지워지고 되돌릴 수 없어요.
             </p>
