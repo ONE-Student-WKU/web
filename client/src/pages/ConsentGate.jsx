@@ -16,8 +16,10 @@ import BrandTitle from '../components/BrandTitle.jsx';
  * - onAccepted: function — 동의가 서버에 기록된 뒤 호출
  * - onDecline: function — 동의하지 않고 나가기(로그아웃)
  * - onOpenPrivacy / onOpenTerms: function
+ * - renewal: boolean — 예전 버전에 동의했고 방침이 바뀌어 다시 묻는 경우. 무엇이 바뀌었는지 한 줄로 알린다(방침 9항 "서비스 안에서 알리고").
+ *   바뀐 내용 문구(consent.changed.body)는 동의 버전(client/src/utils/consent.js)을 올릴 때 같이 고친다.
  */
-function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms }) {
+function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms, renewal = false }) {
   const { t } = useI18n();
   const [checked, setChecked] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,7 +55,13 @@ function ConsentGate({ onAccepted, onDecline, onOpenPrivacy, onOpenTerms }) {
 
       <div className="auth-body">
         <h2 className="auth-heading">{t('consent.title')}</h2>
-        <p className="auth-subheading">{t('consent.body')}</p>
+        <p className="auth-subheading">{t(renewal ? 'consent.body.renewal' : 'consent.body')}</p>
+        {renewal && (
+          <div className="consent-changes">
+            <b>{t('consent.changed.title')}</b>
+            <p>{t('consent.changed.body')}</p>
+          </div>
+        )}
 
         <ConsentCheckbox
           checked={checked}

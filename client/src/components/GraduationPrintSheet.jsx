@@ -91,6 +91,7 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
           {t(isPremed(status) ? 'grad.print.totalLine.premed' : 'grad.print.totalLine', { required: status.totalRequiredCredits, earned: status.totalEarnedCredits })}
           {status.inProgressCredits > 0 && ` (${t('grad.inProgressIncluded', { n: status.inProgressCredits })})`}
           {trust.totalEstimated && ` ${t('grad.estimated')}`}
+          {trust.totalUndetermined && ` ${t('grad.undetermined')}`}
         </p>
       </section>
 

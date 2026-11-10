@@ -206,6 +206,10 @@ export default {
   // 약관 동의 화면(로그인 직후, 동의 기록이 없는 계정)
   'consent.title': '서비스 이용 동의',
   'consent.body': '계속 이용하려면 이용약관과 개인정보 수집·이용에 동의해 주세요. 동의하지 않으면 서비스를 이용할 수 없어요.',
+  'consent.body.renewal': '개인정보처리방침이 바뀌어서 한 번 더 동의해 주세요. 동의하지 않으면 서비스를 이용할 수 없어요.',
+  // 동의 버전을 올릴 때 이번에 바뀐 내용으로 같이 고친다(client/src/utils/consent.js).
+  'consent.changed.title': '바뀐 내용',
+  'consent.changed.body': '문의할 때 내 졸업요건 진단 결과를 같이 보낼 수 있게 됐어요. 고를 때만 보내고, 성적은 보내지 않아요.',
   'consent.agree': '동의하고 계속하기',
   'consent.saving': '저장 중...',
   'consent.decline': '동의하지 않고 나가기',
@@ -261,6 +265,7 @@ export default {
   'grad.totalLabel': '전체 이수학점',
   'grad.totalCredits': ' / {total}학점',
   'grad.estimated': '(추정)',
+  'grad.undetermined': '(미정)',
   'grad.basis.unofficial': '비공식 참고용',
   'grad.basis.booklet': '{year}학년도 교육과정 책자 기준',
   'grad.basis.call': '졸업 판단은 학사지원과에서 최종 확인',
@@ -374,6 +379,7 @@ export default {
   // 학생이 이수구분을 직접 바꾼 과목이 있을 때 — 엔진 신뢰도와 별개로 결과를 "미정"으로 보여 준다(학교 기록과 다를 수 있어서).
   'grad.trust.EDITED': '미정',
   'grad.edited.reason': '직접 바꾼 이수구분 {n}과목({names})을 바꾼 대로 셌어요. 학교 기록과 다를 수 있어요.',
+  'grad.edited.more': ' 외 {n}과목',
   'grad.trust.more': '확인 중인 다른 이유 {n}가지',
   // 추정 사유의 화면용 한 줄(코드별). 조문·책자·학교 답변 근거는 빼고 "무엇이 다르고 무엇을 하면 되는지"만 쓴다 — 긴 문장은 인쇄본·챗봇이 쓴다.
   'grad.flag.INVALID_INPUT': '입력한 학적 정보에 서로 맞지 않는 값이 있어 진단하지 못했어요. 학과·학번 수정에서 확인해 주세요.',
@@ -566,7 +572,6 @@ export default {
   'courses.category.editLabel': '이수구분 바꾸기 (지금: {category})',
   'courses.category.edited': '직접 바꿈 · 원래 {category}',
   'courses.category.revert': '원래대로',
-  'courses.category.editHint': '앱에서만 바뀌어요. 학교 기록은 학교에 이수구분 변경을 신청해야 바뀌어요.',
   'courses.list.title': '수강 목록',
   'courses.list.empty': '아직 등록된 과목이 없어요.',
   'courses.list.superseded': '재수강으로 대체됨',

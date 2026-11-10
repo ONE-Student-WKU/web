@@ -111,6 +111,8 @@ function serializeStudent(student) {
     language: student.language || null,
     // 이용약관·개인정보 수집·이용 동의가 현재 버전으로 돼 있지 않으면 true — 클라이언트가 로그인 직후 동의 화면을 보여준다.
     consentRequired: student.consent_version !== CURRENT_CONSENT_VERSION,
+    // 예전 버전에 동의한 적이 있는데 버전이 올라 다시 동의해야 하면 true — 동의 화면이 "무엇이 바뀌었는지"를 함께 보여 준다(처음 동의하는 계정은 false).
+    consentRenewal: student.consent_version != null && student.consent_version !== CURRENT_CONSENT_VERSION,
   };
 }
 

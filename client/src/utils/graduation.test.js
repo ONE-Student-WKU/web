@@ -462,7 +462,14 @@ describe('인쇄용 시트 헬퍼(#455)', () => {
     expect(trust.badge).toEqual({ label: '미정', level: 'warn' });
     expect(trust.reason).toContain('대지및생태경관공학');
     expect(trust.otherReasons).toEqual([]);
-    expect(trust.totalEstimated).toBe(true);
+    // 같은 상태를 "미정"과 "(추정)" 두 말로 부르지 않는다 — 총 학점 옆도 (미정).
+    expect(trust.totalEstimated).toBe(false);
+    expect(trust.totalUndetermined).toBe(true);
+
+    // 여러 과목을 바꿨으면 사유 줄의 과목명은 2개까지만 쓰고 나머지는 "외 n과목".
+    const many = ['가', '나', '다', '라'].map((name, id) => ({ id, name, credits: 3, from: '일반선택', to: '전공선택' }));
+    expect(describeRequirementTrust({ ...confirmed, editedCategoryCourses: many }, 'ko').reason).toContain('4과목(가, 나 외 2과목)');
+    expect(describeRequirementTrust({ ...confirmed, editedCategoryCourses: many }, 'en').reason).toContain('(가, 나 and 2 more)');
 
     const estimated = { ...confirmed, regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', flags: [{ code: 'X', level: 'ESTIMATED', message: '학교 확인 중인 기준이 있어요.' }] } };
     expect(describeRequirementTrust(estimated, 'ko').otherReasons).toEqual(['학교 확인 중인 기준이 있어요.']);
