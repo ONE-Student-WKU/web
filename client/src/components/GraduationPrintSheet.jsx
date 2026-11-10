@@ -12,6 +12,7 @@ import {
   remainingLabel,
   isPremed,
   printBasis,
+  editedCategoryCourses,
 } from '../utils/graduation.js';
 
 function today() {
@@ -100,6 +101,15 @@ function GraduationPrintSheet({ status, user, trust, basisYear }) {
             {' — '}
             {t(`grad.print.trustMeaning.${level}`)}
           </p>
+          {level === 'UNDETERMINED' && (
+            <ul>
+              {editedCategoryCourses(status).map((c) => (
+                <li key={c.id}>
+                  {t('grad.print.editedCourse', { name: c.name, from: translateCategory(c.from, t), to: translateCategory(c.to, t), credits: c.credits })}
+                </li>
+              ))}
+            </ul>
+          )}
           {level !== 'HIGH' && reasons.length > 0 && (
             <ul>
               {reasons.map((r) => (

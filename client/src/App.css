@@ -2212,6 +2212,39 @@ body {
   flex-shrink: 0;
 }
 
+/* 이수구분 직접 바꾸기 — 과목 줄의 이수구분 글자를 누르면 선택칸이 열린다. 글자처럼 보이되 누를 수 있게 점선 밑줄만 단다. */
+.courses-category-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.courses-category-edited {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-accent-on-bg);
+}
+
+.courses-category-revert {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.courses-category-edit .courses-manual-hint {
+  margin: 4px 0 0;
+}
+
 /* 다전공 학생의 과목별 전공 선택(#378 G-2) — 과목 이름 아래 작게 둔다 */
 .courses-major-select {
   margin-top: 4px;

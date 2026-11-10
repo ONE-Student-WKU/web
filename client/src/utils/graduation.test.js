@@ -454,6 +454,25 @@ describe('인쇄용 시트 헬퍼(#455)', () => {
     expect(printTrustLevel({})).toBeNull();
   });
 
+  it('학생이 이수구분을 바꾼 과목이 있으면 엔진 신뢰도와 별개로 "미정"으로 보여 주고, 엔진의 추정 이유는 펼쳐 보기에 남긴다', () => {
+    const edited = [{ id: 1, name: '대지및생태경관공학', credits: 3, from: '일반선택', to: '전공선택' }];
+    const confirmed = { totalRequiredCredits: 136, editedCategoryCourses: edited, regulation: { confidence: 'CONFIRMED', flags: [] } };
+    expect(printTrustLevel(confirmed)).toBe('UNDETERMINED');
+    const trust = describeRequirementTrust(confirmed, 'ko');
+    expect(trust.badge).toEqual({ label: '미정', level: 'warn' });
+    expect(trust.reason).toContain('대지및생태경관공학');
+    expect(trust.otherReasons).toEqual([]);
+    expect(trust.totalEstimated).toBe(true);
+
+    const estimated = { ...confirmed, regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', flags: [{ code: 'X', level: 'ESTIMATED', message: '학교 확인 중인 기준이 있어요.' }] } };
+    expect(describeRequirementTrust(estimated, 'ko').otherReasons).toEqual(['학교 확인 중인 기준이 있어요.']);
+    expect(describeRequirementTrust(estimated, 'en').badge.label).toBe('Undetermined');
+
+    // 바꾼 과목이 없거나 예전 응답(필드 없음)이면 지금과 같다.
+    expect(printTrustLevel({ ...confirmed, editedCategoryCourses: [] })).toBe('HIGH');
+    expect(describeRequirementTrust({ totalRequiredCredits: 136, regulation: { confidence: 'CONFIRMED', flags: [] } }, 'ko').badge).toBeNull();
+  });
+
   it('buildPrintRows: 전공필수+전공선택을 "전공" 한 줄로 합치고 내역을 붙이며, 기본전공 하한 부족분을 남은 학점에 반영한다', () => {
     const rows = buildPrintRows({
       categories: [

@@ -11,6 +11,8 @@ const { MEDICAL_SCHOOL_OF } = require('./studentProgress');
  * 다른 학과 전공 과목(D-88). 졸업요건 진단(graduationService)과 과목 목록(GET /api/my-courses)이 같은 결과를 쓴다.
  *
  * 순서: 학생이 고친 값 → 전과 전 과목 재분류 → 다전공 배정 → 다른 학과 전공 과목.
+ * 학생이 이수구분을 직접 바꾼 과목(category_original이 있음)은 자동 재분류(전과 전 과목 D-77, 다른 학과 전공 과목 D-88)를 건너뛰고 바꾼 구분대로 센다 —
+ * 학생 값이 우선이다(2026-11-10 결정). 학교가 이수구분을 바꿔 주기로 한 과목을 앱이 다시 일반선택으로 돌려놓지 않게 한다. 다전공 배정은 구분을 바꾸지 않아 그대로 한다.
  *  - counted_major 'GENERAL': 일반선택으로 센다. 'PRIMARY': 저장된 구분 그대로 주전공 쪽(전과 전 과목이면 "전공으로 인정"). 'SECOND': 제2전공.
  *  - 다른 학과 전공 과목(#253 설계안 2): 개설과목에서 고르면 개설 학과의 구분이 저장된다(courseService.addMyCourse). 진단할 때마다 지금 소속과
  *    대조해, 개설 학과가 내 학과(통폐합 전후·예과↔본과 포함)가 아니고 내 학과 편성표에도 없는 전공 과목은 일반선택으로 센다(시행규칙 제3조
@@ -60,11 +62,12 @@ function isOtherDepartmentMajorCourse(course, own) {
 /** 순수 함수 — 과목 하나. */
 function countCourse(course, { prior, second, own }) {
   const override = course.counted_major;
+  const categoryEdited = course.category_original != null;
   let category = course.category;
   let reason = null;
   if (override === 'GENERAL') {
     category = '일반선택';
-  } else if (prior && override == null) {
+  } else if (prior && override == null && !categoryEdited) {
     ({ category, reason } = classifyPriorMajorCourse(course, prior));
   }
   let counted = override === 'GENERAL' || reason === 'DEMOTED' ? 'GENERAL' : 'PRIMARY';
@@ -72,7 +75,7 @@ function countCourse(course, { prior, second, own }) {
     const assigned = assignCourseMajor({ ...course, category }, second);
     if (assigned.major === 'SECOND') counted = 'SECOND';
   }
-  if (counted === 'PRIMARY' && override == null && reason == null && isOtherDepartmentMajorCourse({ ...course, category }, own)) {
+  if (counted === 'PRIMARY' && override == null && reason == null && !categoryEdited && isOtherDepartmentMajorCourse({ ...course, category }, own)) {
     return { counted: 'GENERAL', category: '일반선택', reason: 'OTHER_DEPARTMENT', auto: true };
   }
   return { counted, category, reason, auto: override == null };

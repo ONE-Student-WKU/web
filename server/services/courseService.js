@@ -261,6 +261,8 @@ function mapMyCourseRow(row, supersededIds) {
     professor: Number(row.credits) === 0 ? null : row.professor,
     credits: Number(row.credits),
     category: row.category,
+    // 학생이 이수구분을 직접 바꿨으면 바꾸기 전 값(학교·성적표 값), 아니면 null — 과목 관리의 "직접 바꿈 · 원래 …" 표시와 되돌리기에 쓴다.
+    originalCategory: row.category_original ?? null,
     year: row.year,
     semester: row.semester,
     midterm: numOrNull(row.midterm),
@@ -307,7 +309,7 @@ async function listMyCourses(studentId, { year, semester }) {
   // name/credits/category는 student_courses에 항상 있으므로 그쪽을 기준으로 하고,
   // professor는 카탈로그에 연결된 경우에만 채워짐.
   let sql = `
-    SELECT sc.id, sc.course_id, sc.name, sc.credits, sc.category, c.professor, sc.year, sc.semester,
+    SELECT sc.id, sc.course_id, sc.name, sc.credits, sc.category, sc.category_original, c.professor, sc.year, sc.semester,
            sc.midterm, sc.final, sc.attendance_score, sc.assignment, sc.etc, sc.letter_grade, sc.counted_major
     FROM student_courses sc
     LEFT JOIN course_offerings c ON c.id = sc.course_id
@@ -399,7 +401,7 @@ async function addMyCourse(studentId, { courseId, name, credits, category, year,
 // 덮어쓰지 않고 건너뛴다.
 async function bulkAddMyCourses(studentId, rows) {
   const [existingRows] = await pool.query(
-    'SELECT id, course_id, name, year, semester, letter_grade, course_code, offering_department_id FROM student_courses WHERE student_id = ?',
+    'SELECT id, course_id, name, category, category_original, year, semester, letter_grade, course_code, offering_department_id FROM student_courses WHERE student_id = ?',
     [studentId]
   );
   const existingMap = new Map(existingRows.map((r) => [`${r.name}__${r.year}__${r.semester}`, r]));
@@ -419,6 +421,15 @@ async function bulkAddMyCourses(studentId, rows) {
     const offeringDepartmentId = offeringDepartments[index];
 
     if (existing) {
+      // 학생이 이수구분을 직접 바꾼 과목이면 새 성적표 값과 맞춰 본다(학생 값이 우선 — 학생이 바꾼 구분은 건드리지 않는다).
+      //  - 성적표 값이 학생이 바꾼 값과 같아졌으면 학교가 바꾼 것이니 "직접 바꿈" 표시만 지운다.
+      //  - 성적표 값이 바꾸기 전 값 그대로면 그대로 둔다.
+      //  - 성적표 값이 제3의 값이면 "원래 값"만 새 성적표 값으로 고친다 — 원래대로 되돌리면 최신 학교 값으로 돌아간다.
+      if (existing.category_original != null && VALID_CATEGORIES.includes(row.category) && row.category !== existing.category_original) {
+        const nextOriginal = row.category === existing.category ? null : row.category;
+        await pool.query('UPDATE student_courses SET category_original = ? WHERE id = ?', [nextOriginal, existing.id]);
+        existing.category_original = nextOriginal;
+      }
       // PDF를 다시 올리면 예전에 가져온 과목에도 학수번호·개설 학과를 채운다(개설과목에서 고른 과목은 course_id로 알아서 두지 않는다).
       if (existing.course_id == null && existing.course_code == null && existing.offering_department_id == null && (courseCode || offeringDepartmentId != null)) {
         await pool.query('UPDATE student_courses SET course_code = ?, offering_department_id = ? WHERE id = ?', [courseCode, offeringDepartmentId, existing.id]);
@@ -486,6 +497,19 @@ async function updateMyCourse(studentId, id, updates) {
   if (updates.countedMajor !== undefined) {
     fields.push('counted_major = ?');
     params.push(updates.countedMajor);
+  }
+
+  // 이수구분 직접 바꾸기. 처음 바꿀 때만 바꾸기 전 값을 category_original에 남기고, 원래 값으로 다시 고르면 표시를 지운다.
+  // MySQL은 SET을 왼쪽부터 적용하므로 category_original을 먼저(옛 category로) 정한 뒤 category를 바꾼다.
+  if (updates.category !== undefined) {
+    fields.push(
+      'category_original = CASE WHEN category_original IS NULL AND category <> ? THEN category WHEN category_original = ? THEN NULL ELSE category_original END',
+      'category = ?'
+    );
+    params.push(updates.category, updates.category, updates.category);
+  } else if (updates.revertCategory === true) {
+    // 원래대로 — 바꾸기 전 값으로 되돌리고 표시를 지운다(바꾼 적 없으면 그대로).
+    fields.push('category = COALESCE(category_original, category)', 'category_original = NULL');
   }
 
   if (updates.letterGrade !== undefined) {

@@ -93,6 +93,17 @@ test('DB: 창의융합프로젝트를 2020학년도에 전공선택으로 입력
   assert.notEqual(s.regulation.confidence, 'CONFIRMED', '추정이어야 한다');
 });
 
+test('DB: 학생이 이수구분을 직접 바꾼 과목은 수강 학년도 기준으로 다시 옮기지 않는다(학생 값 우선, 2026-11-10 결정)', async () => {
+  await pool.query('DELETE FROM student_courses WHERE student_id = ?', [studentId]);
+  // 학교 값(전공필수)을 학생이 전공선택으로 바꾼 경우 — 보정이 있었다면 전공필수로 되돌렸을 과목이다.
+  await pool.query("INSERT INTO student_courses (student_id, name, credits, category, category_original, year, semester) VALUES (?, '창의융합프로젝트', 3, '전공선택', '전공필수', 2020, 1)", [studentId]);
+  const s = await getGraduationStatus(studentId);
+  assert.equal(s.regulation.registrationCategory.adjusted.length, 0);
+  assert.equal(earned(s, '전공선택'), 3);
+  assert.ok(!s.regulation.flags.some((f) => f.code === 'REGISTRATION_CATEGORY_APPLIED'));
+  assert.equal(s.editedCategoryCourses.length, 1);
+});
+
 test('DB: 2020학년도에 입력한 구분과 같으면(전공필수) 이동 없음', async () => {
   await pool.query('DELETE FROM student_courses WHERE student_id = ?', [studentId]);
   await pool.query("INSERT INTO student_courses (student_id, name, credits, category, year, semester) VALUES (?, '창의융합프로젝트', 3, '전공필수', 2020, 1)", [studentId]);
