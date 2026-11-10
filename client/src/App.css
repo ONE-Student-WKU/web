@@ -442,6 +442,27 @@ body {
   margin: 0 0 32px;
 }
 
+/* 다시 동의할 때 "바뀐 내용" — 안내 문단 아래, 체크 위 */
+.consent-changes {
+  margin: -16px 0 24px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.consent-changes b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-text-primary);
+}
+
+.consent-changes p {
+  margin: 0;
+}
+
 .auth-field {
   margin-bottom: 20px;
 }
@@ -2239,10 +2260,6 @@ body {
   color: var(--color-text-secondary);
   text-decoration: underline;
   cursor: pointer;
-}
-
-.courses-category-edit .courses-manual-hint {
-  margin: 4px 0 0;
 }
 
 /* 다전공 학생의 과목별 전공 선택(#378 G-2) — 과목 이름 아래 작게 둔다 */

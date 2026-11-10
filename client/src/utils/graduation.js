@@ -368,6 +368,14 @@ function otherTrustReasons(regulation, shown, lang) {
     .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
 }
 
+// 사유 한 줄에는 과목명을 2개까지만 쓰고 나머지는 "외 n과목"으로 줄인다 — 여럿을 바꾸면 한 줄이 길어진다. 전체 목록은 인쇄본에 있다.
+const EDITED_NAMES_SHOWN = 2;
+function editedNames(edited, lang) {
+  const shown = edited.slice(0, EDITED_NAMES_SHOWN).map((c) => c.name).join(', ');
+  const rest = edited.length - EDITED_NAMES_SHOWN;
+  return rest > 0 ? `${shown}${translate(lang, 'grad.edited.more', { n: rest })}` : shown;
+}
+
 /** 학생이 이수구분을 직접 바꿔 바꾼 대로 센 과목(서버 status.editedCategoryCourses). 예전 응답이면 []. */
 export function editedCategoryCourses(status) {
   return status && Array.isArray(status.editedCategoryCourses) ? status.editedCategoryCourses : [];
@@ -415,9 +423,11 @@ export function describeRequirementTrust(status, lang = 'ko') {
     return {
       noData,
       badge: { label: translate(lang, 'grad.trust.EDITED'), level: 'warn' },
-      reason: translate(lang, 'grad.edited.reason', { n: edited.length, names: edited.map((c) => c.name).join(', ') }),
+      reason: translate(lang, 'grad.edited.reason', { n: edited.length, names: editedNames(edited, lang) }),
       otherReasons: engineReasons,
-      totalEstimated: true,
+      // 같은 상태를 "미정" 배지와 "(추정)" 두 말로 부르지 않게 총 학점 옆도 "(미정)"으로 쓴다.
+      totalEstimated: false,
+      totalUndetermined: true,
     };
   }
   // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준

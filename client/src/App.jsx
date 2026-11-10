@@ -421,6 +421,7 @@ function App() {
         ) : user.consentRequired ? (
           // 이용약관·개인정보 수집·이용 동의 기록이 없거나 옛 버전이면 동의할 때까지 다른 화면에 들어가지 못한다.
           <ConsentGate
+            renewal={Boolean(user.consentRenewal)}
             onAccepted={() => setUser((u) => ({ ...u, consentRequired: false }))}
             onDecline={handleLogout}
             onOpenPrivacy={() => setView('privacy')}

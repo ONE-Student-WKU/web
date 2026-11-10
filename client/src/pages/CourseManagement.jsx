@@ -1095,7 +1095,6 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                         </option>
                       ))}
                     </select>
-                    <p className="courses-manual-hint">{tr('courses.category.editHint')}</p>
                   </div>
                 )}
                 {/* 서버가 countedMajor를 붙인 경우(전과·다전공·다른 학과 전공 과목) — 전공·일반선택 과목, 자동으로 바뀐 과목, 학생이 고친 과목 */}
