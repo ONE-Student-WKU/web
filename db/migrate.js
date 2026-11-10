@@ -190,6 +190,21 @@ async function ensureStudentCourseCountedMajorColumn(connection) {
   }
 }
 
+// 학생이 이수구분을 직접 바꾸기 전의 값 guard(2026-11 문의: 일선 과목을 학교가 전공으로 바꿔 줄 예정인데 앱에서 옮길 방법이 삭제 후 다시 입력뿐이었다).
+// NULL = 바꾼 적 없음. category가 진단에 쓰는 값이고, 이 칸은 원래대로 되돌리기·성적표 다시 가져오기 비교에만 쓴다.
+async function ensureStudentCourseCategoryOriginalColumn(connection) {
+  const [cols] = await connection.query(
+    `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_courses' AND COLUMN_NAME = 'category_original'`
+  );
+  if (cols.length === 0) {
+    console.log('[db:migrate] student_courses.category_original 컬럼 추가...');
+    await connection.query(
+      "ALTER TABLE student_courses ADD COLUMN category_original ENUM('전공필수', '전공선택', '교양필수', '교양선택', '일반선택') NULL AFTER category"
+    );
+  }
+}
+
 // 광역 계열전공 과목의 원래 이수구분(기초·심화·응용) guard — 시행규칙 제7조 제3항의 이수구분별 학점(예: 기초 12·심화 15·응용 9)을 판정하려면
 // 과목마다 원래 구분이 필요한데, student_courses.category는 5종으로 합쳐 저장해 구분이 사라졌다(#378 결정 3-3 A). NULL이면 모름(편성표에서 과목명으로 찾는다).
 async function ensureStudentCourseMajorAreaColumn(connection) {
@@ -442,6 +457,23 @@ async function ensureCommunityRecruitPeriodAndResolutionColumns(connection) {
   }
 }
 
+// 문의에 진단 결과 같이 보내기(2026-11) guard — 어느 화면에서 연 문의인지(source)와 보낸 순간의 진단 스냅샷(diagnosis_snapshot).
+async function ensureInquiryDiagnosisColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inquiries' AND COLUMN_NAME IN ('source', 'diagnosis_snapshot')`
+  );
+  const have = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!have.has('source')) {
+    console.log('[db:migrate] inquiries.source 컬럼 추가...');
+    await connection.query('ALTER TABLE inquiries ADD COLUMN source VARCHAR(32) NULL');
+  }
+  if (!have.has('diagnosis_snapshot')) {
+    console.log('[db:migrate] inquiries.diagnosis_snapshot 컬럼 추가...');
+    await connection.query('ALTER TABLE inquiries ADD COLUMN diagnosis_snapshot JSON NULL');
+  }
+}
+
 // 문의 처리 답변(inquiries.resolution_note) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL 허용이라 이미 처리완료된 기존 문의는 "답변 없음"으로 그대로 안전하다.
 async function ensureInquiryResolutionNoteColumn(connection) {
@@ -675,6 +707,7 @@ async function migrate() {
     await ensureStudentSecondMajorTypeColumn(connection);
     await ensureStudentSecondLinkedMajorColumn(connection);
     await ensureStudentMajorChangeRecognitionColumn(connection);
+    await ensureStudentCourseCategoryOriginalColumn(connection);
     await ensureStudentCourseMajorAreaColumn(connection);
     await ensureStudentCourseCountedMajorColumn(connection);
     await ensureStudentLeavePeriodsColumn(connection);
@@ -690,6 +723,7 @@ async function migrate() {
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureInquiryResolutionNoteColumn(connection);
     await ensureInquirySanctionColumn(connection);
+    await ensureInquiryDiagnosisColumns(connection);
     await ensureModerationLabelColumns(connection);
     await ensureStudentCourseOriginColumns(connection);
     await ensureCurriculumVersioningColumns(connection);

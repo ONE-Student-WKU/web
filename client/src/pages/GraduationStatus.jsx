@@ -183,6 +183,7 @@ function GraduationStatus({ user, onGoHome, onOpenCourses, onLogout, onOpenSetti
                 <span className="home-credit-number">{status.totalEarnedCredits}</span>
                 <span className="home-credit-total">{t('grad.totalCredits', { total: status.totalRequiredCredits })}</span>
                 {trust.totalEstimated && <span className="grad-trust-tag">{t('grad.estimated')}</span>}
+                {trust.totalUndetermined && <span className="grad-trust-tag">{t('grad.undetermined')}</span>}
                 {status.inProgressCredits > 0 && <span className="grad-trust-tag">{t('grad.inProgressIncluded', { n: status.inProgressCredits })}</span>}
               </div>
               {trust.reason && <p className="grad-trust-reason">{trust.reason}</p>}

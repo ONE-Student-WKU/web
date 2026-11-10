@@ -5,8 +5,10 @@ import StudentSanctionDialog from '../StudentSanctionDialog.jsx';
 import AdminTabs from './AdminTabs.jsx';
 import { formatDate, SANCTION_SCOPE_LABEL, parseSuggestedAction } from './adminFormat.js';
 import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
+import NoteTextarea, { noteTooLong } from './NoteTextarea.jsx';
+import InquiryReply from '../InquiryReply.jsx';
+import DiagnosisSnapshotView from './DiagnosisSnapshotView.jsx';
 
-const NOTE_MAX_LENGTH = 500;
 const STATUS_TABS = [
   { key: 'open', label: '답변 대기' },
   { key: 'resolved', label: '처리완료' },
@@ -27,6 +29,16 @@ function sanctionLine(summary) {
   return `경고 ${summary.warnings?.length ?? 0}회 · 제재 이력 ${summary.sanctions.length}건 · ${now}`;
 }
 
+// 졸업요건 진단의 "결과가 이상해요"로 연 문의인지, 진단 결과를 같이 보냈는지(제목은 학생이 고칠 수 있어 source로 본다).
+function SourceBadges({ inquiry }) {
+  return (
+    <>
+      {inquiry.source === 'GRADUATION_REPORT' && <span className="admin-tag">결과가 이상해요</span>}
+      {inquiry.diagnosisSnapshot && <span className="admin-tag">진단 첨부</span>}
+    </>
+  );
+}
+
 /**
  * AdminInquiries
  * 관리자 문의함 — 목록에서 문의를 누르면 상세에서 학생의 학과·학번을 같이 보고, 답변을 적어 "답변 보내고 처리완료" 한 번으로 끝낸다.
@@ -45,6 +57,8 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   const [error, setError] = useState(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // 학생 화면 미리보기 — 답변은 한 번 보내면 고칠 수 없어서, 마크다운이 어떻게 보이는지 보내기 전에 본다.
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +77,10 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
   useEffect(() => {
     if (missing) onCloseDetail();
   }, [missing, onCloseDetail]);
-  useEffect(() => setNote(''), [detailId]);
+  useEffect(() => {
+    setNote('');
+    setPreview(false);
+  }, [detailId]);
 
   // 상세로 연 문의의 학생 제재 이력(#457). 제재를 걸면 summaryVersion을 올려 다시 불러온다.
   const studentId = inquiry?.studentId ?? null;
@@ -158,6 +175,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               {open ? '답변 대기' : '처리완료'}
               {appeal ? ' · 정지 이의' : ''}
             </span>
+            <SourceBadges inquiry={inquiry} />
             <span className="post-meta">{formatDate(inquiry.createdAt)}</span>
             {open && <AiSuggestionBadge suggestion={inquiry.aiSuggestion} />}
           </div>
@@ -203,6 +221,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
           <p className="admin-body admin-body--lead">
             <HighlightedText text={inquiry.content} highlights={open ? inquiry.aiSuggestion?.highlights : []} />
           </p>
+          <DiagnosisSnapshotView snapshot={inquiry.diagnosisSnapshot} />
           {open && <AiSuggestionBox suggestion={inquiry.aiSuggestion} openLabel="학생 제재" />}
           {error && <p className="home-error">{error}</p>}
           {open ? (
@@ -210,14 +229,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               <label className="admin-section" htmlFor="inquiry-note">
                 학생에게 보낼 답변 <small>{appeal ? '정지 화면과 "내 문의"에 보여요' : '문의한 학생의 "내 문의"에 보여요'}</small>
               </label>
-              <textarea
-                id="inquiry-note"
-                className="post-input admin-textarea"
-                rows={drafted ? 7 : 4}
-                maxLength={NOTE_MAX_LENGTH}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
+              <NoteTextarea id="inquiry-note" value={note} onChange={setNote} minRows={drafted ? 7 : 5} />
               {drafted ? (
                 <p className="ai-note">
                   AI가 쓴 초안이에요. 사실과 다른 곳이 없는지 확인하고 고쳐서 보내세요.
@@ -227,19 +239,38 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
                 <p className="courses-manual-hint">어떻게 처리했는지 알려주세요. 비워 두면 답변 없이 처리완료로만 표시돼요.</p>
               )}
               {draftError && <p className="home-error">{draftError}</p>}
-              {/* 정지 이의 제기는 정지를 유지할지 철회할지 사람이 정할 일이라 초안을 만들지 않는다. */}
-              {!appeal && (
-                <span className="admin-actions left admin-draft-actions">
+              <span className="admin-actions left admin-draft-actions">
+                {/* 정지 이의 제기는 정지를 유지할지 철회할지 사람이 정할 일이라 초안을 만들지 않는다. */}
+                {!appeal && (
                   <button type="button" className="post-btn post-btn--outline" onClick={handleDraft} disabled={drafting}>
                     {drafting ? '초안 쓰는 중...' : drafted ? 'AI 초안 다시 만들기' : 'AI 초안 만들기'}
                   </button>
-                </span>
+                )}
+                <button type="button" className="post-btn post-btn--outline" onClick={() => setPreview((v) => !v)} disabled={!note.trim()} aria-expanded={preview}>
+                  {preview ? '미리보기 닫기' : '학생 화면 미리보기'}
+                </button>
+              </span>
+              {preview && note.trim() && (
+                <div className="admin-reply-preview">
+                  <p className="admin-section">학생에게 이렇게 보여요</p>
+                  <div className="post-quote post-quote--answer">
+                    <b className="post-quote-label">운영팀 답변</b>
+                    <InquiryReply text={note.trim()} />
+                  </div>
+                  <p className="courses-manual-hint"># 제목, - 목록, **굵게**, --- 구분선을 쓸 수 있어요. 빈 줄은 문단 간격이 돼요.</p>
+                </div>
               )}
             </>
           ) : (
             <>
               <p className="admin-section">보낸 답변</p>
-              <p className="admin-body">{inquiry.resolutionNote || '(답변 없이 처리완료)'}</p>
+              {inquiry.resolutionNote ? (
+                <div className="post-quote post-quote--answer">
+                  <InquiryReply text={inquiry.resolutionNote} />
+                </div>
+              ) : (
+                <p className="admin-body">(답변 없이 처리완료)</p>
+              )}
             </>
           )}
         </div>
@@ -261,7 +292,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
         )}
         {open && (
           <div className="admin-dock">
-            <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={handleResolve} disabled={submitting}>
+            <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={handleResolve} disabled={submitting || noteTooLong(note)}>
               {submitting ? '처리하는 중...' : note.trim() ? '답변 보내고 처리완료' : '답변 없이 처리완료'}
             </button>
           </div>
@@ -292,6 +323,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
                   {status === 'open' ? '답변 대기' : '처리완료'}
                   {i.appealFor ? ' · 정지 이의' : ''}
                 </span>
+                <SourceBadges inquiry={i} />
                 <span className="post-meta">{formatDate(i.createdAt)}</span>
                 {status === 'open' && <AiSuggestionBadge suggestion={i.aiSuggestion} />}
               </span>

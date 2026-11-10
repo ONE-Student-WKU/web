@@ -107,7 +107,7 @@ router.get('/', async (req, res, next) => {
     const rows = await courseService.listMyCourses(req.session.userId, { year, semester });
     const student = await studentService.findById(req.session.userId);
     // 전과생(전과 전 과목)·다전공 학생이나 다른 학과 전공 과목이 있으면 과목마다 어떻게 세는지(countedMajor: PRIMARY·GENERAL·SECOND)와 자동으로 정한 값인지(countedMajorAuto)를 붙인다(courseCounting.js).
-    const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
+    const counting = await resolveCourseCounting(student, rows.map((r) => ({ id: r.id, name: r.name, category: r.category, category_original: r.originalCategory, year: r.year, semester: r.semester, counted_major: r.countedMajorChoice })));
     // 학생이 고친 과목은 자동으로 정했을 값(countedMajorAutoValue)도 붙인다. 다른 학과 전공 과목은 일반선택으로 센다(D-88).
     const data = rows.map(({ countedMajorChoice, ...r }) => {
       if (!counting) return r;
@@ -374,7 +374,14 @@ router.post('/import/confirm', async (req, res, next) => {
 // PATCH /api/my-courses/:id
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { letterGrade, countedMajor } = req.body;
+    const { letterGrade, countedMajor, category, revertCategory } = req.body;
+    // 이수구분 직접 바꾸기(category) 또는 원래대로(revertCategory: true). 둘을 같이 보내면 어느 쪽인지 모호해 거절한다.
+    if (category !== undefined && !courseService.VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+    }
+    if (revertCategory !== undefined && (revertCategory !== true || category !== undefined)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_CATEGORY', message: null, data: null });
+    }
     // 다전공 학생이 과목을 어느 전공으로 셀지 고친 값(#378 결정 4-3). null은 "자동으로 되돌리기"다.
     if (countedMajor !== undefined && countedMajor !== null && !COUNTED_MAJORS.includes(countedMajor)) {
       return res.status(400).json({ status: 400, code: 'INVALID_COUNTED_MAJOR', message: null, data: null });

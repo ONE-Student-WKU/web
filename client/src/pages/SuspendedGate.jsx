@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
 import AccountDeleteSection from '../components/AccountDeleteSection.jsx';
+import InquiryReply from '../components/InquiryReply.jsx';
 import { submitAppeal } from '../api/chatApi.js';
 import { useI18n } from '../i18n/I18nContext.jsx';
 
@@ -86,7 +87,7 @@ function SuspendedGate({ user, suspension, onLogout, onAccountDeleted, justReaut
               </div>
               <div className="post-fact post-fact--wide">
                 <dt>{t('suspended.appealReply')}</dt>
-                <dd>{appeal.reply || t('suspended.appealWaiting')}</dd>
+                <dd>{appeal.reply ? <InquiryReply text={appeal.reply} /> : t('suspended.appealWaiting')}</dd>
               </div>
             </>
           )}

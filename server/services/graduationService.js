@@ -86,7 +86,7 @@ async function fetchCountedCourses(studentId, supersededIds) {
   //
   // 재수강으로 대체된 이전 학기 기록(courseService.getSupersededCourseIds — 같은 과목명 중
   // 최신 학기 것만 남김)도 여기서 같이 제외해야 카테고리별 이수학점이 중복 집계되지 않는다.
-  let sql = `SELECT id, name, category, credits, year, semester, major_area, counted_major, letter_grade
+  let sql = `SELECT id, name, category, category_original, credits, year, semester, major_area, counted_major, letter_grade
      FROM student_courses
      WHERE student_id = ? AND (letter_grade IS NULL OR letter_grade NOT IN (?))`;
   const params = [studentId, FAILING_GRADES];
@@ -550,7 +550,8 @@ async function getGraduationStatus(studentId) {
   const secondCourses = countedCourses.filter(isSecond);
   const { changes: categoryChanges, overrides: categoryOverrides } = await loadCategoryChanges((await getDepartmentChain(student.department_id)).departmentIds);
   // 전과 전 과목으로 다시 정한 과목·학생이 고친 과목은 제13조④ 보정에서 뺀다 — 보정이 새 학과 편성표의 구분(전공필수 등)으로 되돌려 놓았다.
-  const keepsStoredCategory = (c) => !counting || (counting.byId.get(c.id).reason == null && counting.byId.get(c.id).auto);
+  // 학생이 이수구분을 직접 바꾼 과목도 뺀다 — 학생 값이 우선이다(2026-11-10 결정, courseCounting.js).
+  const keepsStoredCategory = (c) => c.category_original == null && (!counting || (counting.byId.get(c.id).reason == null && counting.byId.get(c.id).auto));
   const registration = classifyByRegistration(primaryCourses.filter(keepsStoredCategory), categoryChanges, categoryOverrides);
   const earnedByCategory = applyAdjustments(sumByCategory(primaryCourses), registration.adjusted);
   const secondCredits = secondCourses.reduce((sum, c) => sum + Number(c.credits), 0);
@@ -660,6 +661,11 @@ async function getGraduationStatus(studentId) {
     priorMajorCourses,
     // 다른 학과 전공 과목으로 일반선택으로 센 과목 — { courses: [{ id, name, credits }], credits } | null(D-88)
     otherDepartmentCourses,
+    // 학생이 이수구분을 직접 바꿔서 바꾼 대로 센 과목 [{ id, name, credits, from, to }](합산되는 과목만). 엔진 신뢰도는 그대로 두고,
+    // 화면·인쇄본은 이 목록이 있으면 결과를 "미정"으로 보여 준다 — 학교 기록과 다를 수 있어서다(2026-11-10 결정). 없으면 [].
+    editedCategoryCourses: storedCourses
+      .filter((c) => c.category_original != null && c.category_original !== c.category)
+      .map((c) => ({ id: c.id, name: c.name, credits: Number(c.credits), from: c.category_original, to: c.category })),
     // 다전공(복수전공·부전공) 판정 — { type, departmentId, department, required, earned, satisfied, basis, thesis, courses } | null(secondMajorCredits.js)
     secondMajor: secondMajor ? secondMajor.status : null,
     // 마이크로디그리 — [{ name, programGroup, required, earned, satisfied, courses, missing }](linkedMajors.js). 고른 게 없으면 []

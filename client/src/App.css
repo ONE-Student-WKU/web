@@ -442,6 +442,27 @@ body {
   margin: 0 0 32px;
 }
 
+/* 다시 동의할 때 "바뀐 내용" — 안내 문단 아래, 체크 위 */
+.consent-changes {
+  margin: -16px 0 24px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-neutral-bg);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.consent-changes b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-text-primary);
+}
+
+.consent-changes p {
+  margin: 0;
+}
+
 .auth-field {
   margin-bottom: 20px;
 }
@@ -2212,6 +2233,35 @@ body {
   flex-shrink: 0;
 }
 
+/* 이수구분 직접 바꾸기 — 과목 줄의 이수구분 글자를 누르면 선택칸이 열린다. 글자처럼 보이되 누를 수 있게 점선 밑줄만 단다. */
+.courses-category-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.courses-category-edited {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-accent-on-bg);
+}
+
+.courses-category-revert {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* 다전공 학생의 과목별 전공 선택(#378 G-2) — 과목 이름 아래 작게 둔다 */
 .courses-major-select {
   margin-top: 4px;
@@ -3648,6 +3698,21 @@ button.post-row:active {
   white-space: pre-wrap;
 }
 
+/* 운영팀 답변 본문(InquiryReply) — 간단한 마크다운. 한 줄이 한 문단이라 문단 사이는 붙이고, 빈 줄(md-gap)로만 띄운다. */
+.inquiry-reply .md-p { margin: 0; }
+.inquiry-reply .md-gap { height: 0.6em; }
+.inquiry-reply .md-heading { margin: 4px 0 2px; font-weight: 700; font-size: 0.875rem; color: var(--color-text-primary); }
+.inquiry-reply .md-list { margin: 0; padding-left: 18px; }
+.inquiry-reply .md-list li { margin: 1px 0; }
+.inquiry-reply .md-rule { border: 0; border-top: 1px solid var(--color-border); margin: 8px 0; }
+.inquiry-reply .md-table-wrap { overflow-x: auto; margin: 2px 0; white-space: normal; }
+.inquiry-reply .md-table { border-collapse: collapse; line-height: 1.4; }
+.inquiry-reply .md-table th,
+.inquiry-reply .md-table td { border: 1px solid var(--color-border); padding: 4px 8px; text-align: left; vertical-align: top; }
+.inquiry-reply .md-table th { font-weight: 700; white-space: nowrap; }
+.inquiry-reply strong { color: var(--color-text-primary); }
+.inquiry-reply .message-text > :first-child { margin-top: 0; }
+
 .post-note {
   margin: 0 0 14px;
   padding: 12px 14px;
@@ -4360,6 +4425,40 @@ button.post-row:active {
   margin-bottom: 2px;
   font-size: 0.75rem;
   color: var(--color-accent-on-bg);
+}
+
+/* 문의에 진단 결과 같이 보내기 체크 — 본문 칸 아래, 팁 위. 체크와 두 줄(이름·안내)을 나란히. */
+.inquiry-attach {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+.inquiry-attach input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-accent, currentColor);
+}
+
+.inquiry-attach span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inquiry-attach b {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.inquiry-attach small {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 .post-tip {
@@ -6887,10 +6986,6 @@ select.onb-select {
   background: var(--color-accent);
 }
 
-.admin-legend i.bar.b {
-  background: var(--color-border-strong);
-}
-
 .admin-legend i.line {
   width: 14px;
   border-top: 2px dashed var(--color-text-muted);
@@ -6916,133 +7011,6 @@ select.onb-select {
 
 .admin-card-note b {
   color: var(--color-text-primary);
-}
-
-.admin-vs {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 10px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.admin-vs li {
-  display: grid;
-  grid-template-columns: 92px 1fr 64px;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
-}
-
-.admin-vs-bar {
-  display: flex;
-  gap: 2px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 5px;
-}
-
-.admin-vs-bar i.a {
-  background: var(--color-accent);
-}
-
-.admin-vs-bar i.b {
-  background: var(--color-border-strong);
-}
-
-.admin-vs-n {
-  text-align: right;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-}
-
-.admin-hist {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 96px;
-  margin-top: 12px;
-}
-
-.admin-hist span {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
-}
-
-.admin-hist i {
-  width: 100%;
-  min-height: 2px;
-  border-radius: 4px 4px 0 0;
-  background: var(--color-border-strong);
-}
-
-.admin-hist span.on i {
-  background: var(--color-accent);
-}
-
-.admin-hist em {
-  font-style: normal;
-  font-size: 0.6875rem;
-  color: var(--color-text-muted);
-}
-
-.admin-group {
-  margin-bottom: 10px;
-  padding: 4px 14px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-}
-
-.admin-group ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.admin-group-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 0;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  background: none;
-  font-family: inherit;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.admin-group-head:disabled {
-  cursor: default;
-}
-
-.admin-group-head span {
-  flex: 1;
-  text-align: left;
-  font-size: 0.9375rem;
-  font-weight: 700;
-}
-
-.admin-group-head b {
-  font-size: 0.875rem;
-}
-
-.admin-group-head svg {
-  color: var(--color-text-muted);
-  transition: transform 0.15s;
-}
-
-.admin-group-head[aria-expanded='true'] svg {
-  transform: rotate(90deg);
 }
 
 .admin-feature-row {
@@ -7089,6 +7057,17 @@ select.onb-select {
   display: block;
   font-size: 0.6875rem;
   color: var(--color-text-muted);
+}
+
+/* 사용 깊이 — 위 요약 칸 셋, 아래 카드 안 줄은 .admin-feature-row를 그대로 쓴다 */
+.admin-mini.admin-usage-summary {
+  margin: 0 0 10px;
+}
+
+.admin-depth-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .admin-composition-total {
@@ -7147,10 +7126,6 @@ select.onb-select {
   color: var(--color-text-muted);
 }
 
-.admin-composition-table tr.other .admin-composition-name {
-  color: var(--color-text-muted);
-}
-
 /* 안쪽 화면 — 줄 목록·상세 */
 .admin-rows {
   display: flex;
@@ -7163,8 +7138,9 @@ select.onb-select {
 
 .admin-row-top {
   display: flex;
+  flex-wrap: wrap; /* 출처·진단 첨부 배지가 붙으면 좁은 화면에서 넘쳐 가로 스크롤이 생겼다 */
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
 }
 
 .admin-row-top .post-meta {
@@ -7260,6 +7236,75 @@ select.onb-select {
 }
 
 /* AI 사전 분류(#458) — 관리자 화면의 제안 배지·형광펜·제안 상자·비교표 */
+/* 문의 출처·진단 첨부 표시(관리자 문의함) — AI 제안 배지와 같은 작은 알약 모양 */
+.admin-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--color-accent-bg);
+  color: var(--color-accent-on-bg);
+}
+
+/* 학생이 보낸 진단 스냅샷(DiagnosisSnapshotView) */
+.admin-snapshot {
+  margin-top: 4px;
+}
+
+.admin-snapshot .admin-body + .admin-body {
+  margin-top: 4px;
+}
+
+.admin-snapshot-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-snapshot-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-snapshot-table th,
+.admin-snapshot-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-snapshot-table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.admin-snapshot-table tr.muted td {
+  color: var(--color-text-muted);
+}
+
+.admin-snapshot-courses {
+  margin-top: 12px;
+}
+
+.admin-snapshot-courses summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.admin-snapshot-courses .admin-snapshot-table {
+  display: block;
+  overflow-x: auto;
+}
+
 .ai-result {
   display: inline-flex;
   align-items: center;
@@ -7447,6 +7492,29 @@ mark.ai-mark {
   resize: vertical;
   font-size: 0.875rem;
   line-height: 1.55;
+}
+
+/* 학생에게 보내는 답변 칸(NoteTextarea) — 글 길이에 맞춰 늘어나고, 화면 높이의 60%를 넘으면 칸 안에서 스크롤한다. */
+.admin-note-textarea {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.admin-note-count {
+  margin: 4px 0 0;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-note-count.over {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.admin-reply-preview {
+  margin-top: 12px;
 }
 
 .admin-actions {

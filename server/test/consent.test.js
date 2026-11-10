@@ -123,6 +123,7 @@ test('이메일 로그인: 동의 없이는 코드를 확인하지 않고, 동�
 test('동의 기록이 없는 기존 계정은 consentRequired가 true이고, POST /api/me/consent로 동의하면 false가 된다', async () => {
   const before = await (await fetch(`${baseUrl}/api/me`)).json();
   assert.equal(before.data.consentRequired, true);
+  assert.equal(before.data.consentRenewal, false, '처음 동의하는 계정에는 바뀐 내용을 보여 주지 않는다');
 
   const wrong = await post('/api/me/consent', { version: '1999-01-01' });
   assert.equal(wrong.status, 400);
@@ -140,4 +141,5 @@ test('이전 버전에 동의한 계정은 다시 동의해야 한다', async ()
   await pool.query("UPDATE students SET consent_version = '2020-01-01' WHERE id = ?", [studentId]);
   const me = await (await fetch(`${baseUrl}/api/me`)).json();
   assert.equal(me.data.consentRequired, true);
+  assert.equal(me.data.consentRenewal, true, '예전 버전에 동의했으면 동의 화면이 바뀐 내용을 함께 보여 준다');
 });

@@ -309,6 +309,11 @@ function buildGraduationStatusNote(graduationStatus, student = null) {
   const otherDepartmentLine = otherDepartment
     ? `다른 학과 전공 과목(학칙시행규칙 제3조 제4항 제1호): 다른 학과에서 연 전공 과목 ${otherDepartment.credits}학점(${otherDepartment.courses.map((c) => c.name).join(', ')})은 일반선택으로 셌다(위 카테고리에 반영됨). 학생이 학과를 바꿨거나 학교가 전공으로 인정했다면 이 서비스(ONE Student)의 과목 관리 화면에서 과목마다 "전공으로 셈"으로 바꿀 수 있다고 안내하라(웹정보서비스 메뉴가 아니다).`
     : null;
+  // 학생이 이수구분을 직접 바꾼 과목 — 바꾼 대로 셌고(학생 값 우선), 학교 기록과 다를 수 있다(2026-11-10 결정).
+  const edited = graduationStatus.editedCategoryCourses || [];
+  const editedCategoryLine = edited.length
+    ? `학생이 이수구분을 직접 바꾼 과목: ${edited.map((c) => `${c.name}(${c.from} → ${c.to}, ${c.credits}학점)`).join(', ')}. 위 학점은 바꾼 구분대로 셌다. 학교 기록(성적표)은 아직 바꾸기 전 구분일 수 있으니, 이 과목들이 걸린 질문에는 학교에서 이수구분이 실제로 바뀌었는지 학과 사무실이나 성적표로 확인하라고 안내하고, 졸업 가능 여부를 단정하지 마라. 되돌리려면 이 서비스(ONE Student)의 과목 관리 화면에서 "원래대로"를 누르면 된다.`
+    : null;
   // 졸업사정 등록기간(시행규칙 제118조 제1호) — 판정하지 않고 등록 학기 수만 준다.
   const terms = graduationStatus.registrationTerms;
   const registrationLine = terms
@@ -373,6 +378,7 @@ ${liberalAreaLine || ''}
 ${secondMajorLine || ''}
 ${priorLine || ''}
 ${otherDepartmentLine || ''}
+${editedCategoryLine || ''}
 ${registrationLine || ''}
 
 주의:

@@ -269,15 +269,20 @@ export function isNearGraduation(status) {
 }
 
 // 졸업요건 진단 결과가 이상할 때 문의하기에 미리 채울 제목·내용. 학과·학번·진단 숫자를 같이 보내야 운영자가 재현할 수 있다.
+// 신뢰도는 인쇄본과 같은 높음·중간·낮음으로 쓴다 — "확정"은 학교가 확정해 준 것처럼 읽혀 "확정인데 이상해요"가 된다(printTrustLevel).
 export function buildResultReportDraft(status, user, t) {
+  const trustLevel = printTrustLevel(status);
   return {
+    // 이 화면에서 연 문의는 "진단 결과 같이 보내기"를 미리 켜 둔다(학생이 끌 수 있다). source로 관리자 문의함이 어디서 온 문의인지 안다.
+    source: 'GRADUATION_REPORT',
+    attachDiagnosis: true,
     title: t('grad.report.title'),
     content: t('grad.report.body', {
       department: [user?.department, user?.track].filter(Boolean).join(' ') || '-',
       year: user?.admissionYear ?? '-',
       earned: status?.totalEarnedCredits ?? '-',
       required: status?.totalRequiredCredits ?? '-',
-      confidence: status?.regulation?.confidenceLabel ?? '-',
+      confidence: trustLevel ? t(`grad.print.trust.${trustLevel}`) : '-',
     }),
   };
 }
@@ -363,6 +368,19 @@ function otherTrustReasons(regulation, shown, lang) {
     .filter((m) => (seen.has(m) ? false : (seen.add(m), true)));
 }
 
+// 사유 한 줄에는 과목명을 2개까지만 쓰고 나머지는 "외 n과목"으로 줄인다 — 여럿을 바꾸면 한 줄이 길어진다. 전체 목록은 인쇄본에 있다.
+const EDITED_NAMES_SHOWN = 2;
+function editedNames(edited, lang) {
+  const shown = edited.slice(0, EDITED_NAMES_SHOWN).map((c) => c.name).join(', ');
+  const rest = edited.length - EDITED_NAMES_SHOWN;
+  return rest > 0 ? `${shown}${translate(lang, 'grad.edited.more', { n: rest })}` : shown;
+}
+
+/** 학생이 이수구분을 직접 바꿔 바꾼 대로 센 과목(서버 status.editedCategoryCourses). 예전 응답이면 []. */
+export function editedCategoryCourses(status) {
+  return status && Array.isArray(status.editedCategoryCourses) ? status.editedCategoryCourses : [];
+}
+
 // 시스템 내부 사정(보유 원문·부칙 자료)이라 학생·과사무실 누구에게도 쓸모없는 참고 플래그 — 인쇄본 근거에도 싣지 않는다.
 const INTERNAL_INFO_FLAGS = new Set(['TEXT_SNAPSHOT_MAY_BE_OLDER', 'COHORT_TRANSITION_ADDENDUM_NOT_HELD']);
 
@@ -395,6 +413,23 @@ export function describeRequirementTrust(status, lang = 'ko') {
   const regulation = status && status.regulation ? status.regulation : null;
   const noData = Boolean(status) && (status.totalRequiredCredits === 0 || (regulation !== null && regulation.confidence === 'NO_DATA'));
   if (!regulation) return { noData, badge: null, reason: null, otherReasons: [], totalEstimated: false };
+  // 학생이 이수구분을 직접 바꾼 과목이 있으면 엔진 신뢰도와 별개로 "미정"으로 보여 준다 — 학교 기록과 다를 수 있다(2026-11-10 결정).
+  // 엔진이 추정인 이유는 펼쳐 보기에 그대로 둔다.
+  const edited = editedCategoryCourses(status);
+  if (edited.length > 0 && !noData) {
+    const engineReasons = regulation.confidence === 'CONFIRMED'
+      ? []
+      : [pickTrustReason(regulation, lang), ...otherTrustReasons(regulation, pickTrustReason(regulation, lang), lang)].filter(Boolean);
+    return {
+      noData,
+      badge: { label: translate(lang, 'grad.trust.EDITED'), level: 'warn' },
+      reason: translate(lang, 'grad.edited.reason', { n: edited.length, names: editedNames(edited, lang) }),
+      otherReasons: engineReasons,
+      // 같은 상태를 "미정" 배지와 "(추정)" 두 말로 부르지 않게 총 학점 옆도 "(미정)"으로 쓴다.
+      totalEstimated: false,
+      totalUndetermined: true,
+    };
+  }
   // 확정은 배지를 달지 않는다 — 학생은 처음부터 맞는 값이라고 보고 들어오니 대부분에게 같은 "확정"은 알려 주는 게 없고, 학교가 확정해 준
   // 졸업요건처럼 읽혀 "비공식 참고용" 안내와도 부딪힌다. 예외(추정·자료 없음)만 표시해야 눈에 띈다(2026-10-17).
   const confirmed = regulation.confidence === 'CONFIRMED';
@@ -418,6 +453,8 @@ export function describeRequirementTrust(status, lang = 'ko') {
 export function printTrustLevel(status) {
   const confidence = status && status.regulation ? status.regulation.confidence : null;
   if (!confidence) return null;
+  // 학생이 성적표와 다르게 바꾼 이수구분이 있으면 "미정" — 엔진 신뢰도보다 앞선다(학교 기록과 다를 수 있어 확인받아야 한다).
+  if (editedCategoryCourses(status).length > 0) return 'UNDETERMINED';
   if (confidence === 'CONFIRMED') return 'HIGH';
   return confidence === 'ESTIMATED' ? 'MEDIUM' : 'LOW';
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, remainingLabel, isPremed, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildPrintRows, summarizeLiberalAreasForPrint, printBasis } from './graduation.js';
+import { mergeMajorCategories, buildRequirementGroups, summarizeShortfalls, formatShortfallSentence, describeRequirementTrust, getPercent, registrationTermShortage, uncheckedRequirementKeys, allMetMessage, remainingLabel, isPremed, creditsDependOnInProgress, certCourseRows, isNearGraduation, printTrustLevel, buildResultReportDraft, buildPrintRows, summarizeLiberalAreasForPrint, printBasis } from './graduation.js';
 import { translate } from '../i18n/I18nContext.jsx';
 
 describe('mergeMajorCategories', () => {
@@ -452,6 +452,49 @@ describe('인쇄용 시트 헬퍼(#455)', () => {
     expect(printTrustLevel({ regulation: { confidence: 'INSUFFICIENT' } })).toBe('LOW');
     expect(printTrustLevel({ regulation: { confidence: 'NO_DATA' } })).toBe('LOW');
     expect(printTrustLevel({})).toBeNull();
+  });
+
+  it('학생이 이수구분을 바꾼 과목이 있으면 엔진 신뢰도와 별개로 "미정"으로 보여 주고, 엔진의 추정 이유는 펼쳐 보기에 남긴다', () => {
+    const edited = [{ id: 1, name: '대지및생태경관공학', credits: 3, from: '일반선택', to: '전공선택' }];
+    const confirmed = { totalRequiredCredits: 136, editedCategoryCourses: edited, regulation: { confidence: 'CONFIRMED', flags: [] } };
+    expect(printTrustLevel(confirmed)).toBe('UNDETERMINED');
+    const trust = describeRequirementTrust(confirmed, 'ko');
+    expect(trust.badge).toEqual({ label: '미정', level: 'warn' });
+    expect(trust.reason).toContain('대지및생태경관공학');
+    expect(trust.otherReasons).toEqual([]);
+    // 같은 상태를 "미정"과 "(추정)" 두 말로 부르지 않는다 — 총 학점 옆도 (미정).
+    expect(trust.totalEstimated).toBe(false);
+    expect(trust.totalUndetermined).toBe(true);
+
+    // 여러 과목을 바꿨으면 사유 줄의 과목명은 2개까지만 쓰고 나머지는 "외 n과목".
+    const many = ['가', '나', '다', '라'].map((name, id) => ({ id, name, credits: 3, from: '일반선택', to: '전공선택' }));
+    expect(describeRequirementTrust({ ...confirmed, editedCategoryCourses: many }, 'ko').reason).toContain('4과목(가, 나 외 2과목)');
+    expect(describeRequirementTrust({ ...confirmed, editedCategoryCourses: many }, 'en').reason).toContain('(가, 나 and 2 more)');
+
+    const estimated = { ...confirmed, regulation: { confidence: 'ESTIMATED', confidenceLabel: '추정', flags: [{ code: 'X', level: 'ESTIMATED', message: '학교 확인 중인 기준이 있어요.' }] } };
+    expect(describeRequirementTrust(estimated, 'ko').otherReasons).toEqual(['학교 확인 중인 기준이 있어요.']);
+    expect(describeRequirementTrust(estimated, 'en').badge.label).toBe('Undetermined');
+
+    // 바꾼 과목이 없거나 예전 응답(필드 없음)이면 지금과 같다.
+    expect(printTrustLevel({ ...confirmed, editedCategoryCourses: [] })).toBe('HIGH');
+    expect(describeRequirementTrust({ totalRequiredCredits: 136, regulation: { confidence: 'CONFIRMED', flags: [] } }, 'ko').badge).toBeNull();
+  });
+
+  it('buildResultReportDraft: 문의 초안의 신뢰도는 "확정"이 아니라 인쇄본과 같은 높음·중간·낮음으로 쓴다', () => {
+    const user = { department: '도시공학부', track: '도시계획설계전공', admissionYear: 2023 };
+    const ko = (key, params) => translate('ko', key, params);
+    const status = (confidence) => ({ totalEarnedCredits: 123, totalRequiredCredits: 136, regulation: { confidence, confidenceLabel: '확정' } });
+    const confirmed = buildResultReportDraft(status('CONFIRMED'), user, ko).content;
+    expect(confirmed).toContain('도시공학부 도시계획설계전공');
+    expect(confirmed).toContain('총 123 / 136학점 (신뢰도: 높음)');
+    expect(confirmed).not.toContain('확정');
+    // 이 화면에서 연 문의는 진단 결과 같이 보내기를 미리 켜고, 어디서 왔는지 남긴다.
+    expect(buildResultReportDraft(status('CONFIRMED'), user, ko)).toMatchObject({ source: 'GRADUATION_REPORT', attachDiagnosis: true });
+    expect(buildResultReportDraft(status('ESTIMATED'), user, ko).content).toContain('(신뢰도: 중간)');
+    expect(buildResultReportDraft(status('NO_DATA'), user, ko).content).toContain('(신뢰도: 낮음)');
+    expect(buildResultReportDraft({ totalEarnedCredits: 1, totalRequiredCredits: 2 }, user, ko).content).toContain('(신뢰도: -)');
+    // 학생이 이수구분을 바꾼 과목이 있으면 문의 초안도 "미정"이다(printTrustLevel).
+    expect(buildResultReportDraft({ ...status('CONFIRMED'), editedCategoryCourses: [{ id: 1, name: 'x', credits: 3, from: '일반선택', to: '전공선택' }] }, user, ko).content).toContain('(신뢰도: 미정)');
   });
 
   it('buildPrintRows: 전공필수+전공선택을 "전공" 한 줄로 합치고 내역을 붙이며, 기본전공 하한 부족분을 남은 학점에 반영한다', () => {

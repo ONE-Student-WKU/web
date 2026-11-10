@@ -17,8 +17,10 @@ function nextNonBlank(lines, i) {
  * 챗봇 답변 텍스트를 제목·목록·구분선·표·문단 블록으로 나눈다.
  * 표는 머리 줄 바로 다음(빈 줄은 건너뜀)에 구분선 줄이 있을 때만 표로 본다. 모델이 행 사이에 빈 줄을 넣어도 같은 표로 묶는다
  * (2026-10-15 운영 점검: 표가 "|"로 시작하는 문단으로 그대로 보였다, #378). 구분선이 없으면 예전처럼 글자 그대로 둔다.
+ * keepBlankLines: 빈 줄을 문단 사이 간격({ type: 'gap' })으로 남긴다. 사람이 쓴 문의 답변은 빈 줄로 덩어리를 나누는데, 한 줄마다
+ * 문단이 되면 줄바꿈과 빈 줄이 똑같이 보인다. 이어진 빈 줄은 하나로, 맨 앞·맨 끝 빈 줄은 뺀다. 챗봇 답변은 쓰지 않는다(예전과 같다).
  */
-export function parseBlocks(text) {
+export function parseBlocks(text, { keepBlankLines = false } = {}) {
   const lines = String(text ?? '').split('\n').map((raw) => raw.trimEnd());
   const blocks = [];
   let list = null;
@@ -63,8 +65,10 @@ export function parseBlocks(text) {
     const heading = line.match(/^#{1,3}\s+(.*)$/);
     if (heading) blocks.push({ type: 'heading', text: heading[1] });
     else if (/^\s*-{3,}\s*$/.test(line)) blocks.push({ type: 'rule' });
-    else if (line.trim() === '') continue;
-    else blocks.push({ type: 'paragraph', text: brToNewline(line) });
+    else if (line.trim() === '') {
+      if (keepBlankLines && blocks.length > 0 && blocks[blocks.length - 1].type !== 'gap') blocks.push({ type: 'gap' });
+    } else blocks.push({ type: 'paragraph', text: brToNewline(line) });
   }
+  if (blocks.length > 0 && blocks[blocks.length - 1].type === 'gap') blocks.pop();
   return blocks;
 }

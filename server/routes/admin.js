@@ -141,8 +141,9 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이.
-const RESOLUTION_NOTE_MAX_LENGTH = 500;
+// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이. 500자에서는 과목을 나눠 설명하는 졸업요건 문의 답변이 잘렸다(2026-11-10).
+// DB 칸은 TEXT라 길이 제한이 없다. 화면 상한(admin/adminFormat.js NOTE_MAX_LENGTH)과 같은 값이다.
+const RESOLUTION_NOTE_MAX_LENGTH = 2000;
 
 // 선택 입력 — 문자열이 아니면(undefined/null 포함) 없는 것으로 보고, 너무 길면 거부한다(ok:false).
 function normalizeResolutionNote(note) {
@@ -474,7 +475,22 @@ router.get('/stats/trend', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/stats/composition — 학과·학번별 가입자와 최근 7일 방문자(학교에 보여줄 이용 현황). 5명 미만 칸은 "기타"로 묶는다.
+// GET /api/admin/stats/usage?scope=all|recent30d — 사용 깊이: 가입자 중 온보딩·과목·챗봇·진로 탐색·성적표 가져오기를 실제로 써 본 학생 수와 비율
+// (services/adminStatsService.js getUsageDepth). 학생 목록은 내려보내지 않는다.
+router.get('/stats/usage', async (req, res, next) => {
+  try {
+    const scope = req.query.scope || 'all';
+    if (!adminStatsService.isUsageScope(scope)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SCOPE', message: null, data: null });
+    }
+    const usage = await adminStatsService.getUsageDepth(scope);
+    res.status(200).json({ status: 200, code: 'ADMIN_STATS_USAGE', message: null, data: usage });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/stats/composition — 학과·학번별 가입자와 최근 7일 방문자(학교에 보여줄 이용 현황). 인원이 적은 칸도 묶지 않고 모두 보여준다.
 router.get('/stats/composition', async (req, res, next) => {
   try {
     const composition = await adminStatsService.getComposition();

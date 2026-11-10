@@ -453,6 +453,30 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
     }
   };
 
+  // 이수구분 직접 바꾸기 — 학교가 이수구분을 바꿔 주기로 한 과목을 지우고 다시 넣지 않아도 되게 한다(2026-11 문의).
+  // 처음 바꿀 때 바꾸기 전 값을 서버가 남겨 "직접 바꿈 · 원래 …"로 보여 주고, "원래대로"로 되돌린다.
+  const [categoryEditId, setCategoryEditId] = useState(null);
+  const handleCategoryChange = async (courseId, category) => {
+    setError(null);
+    try {
+      await updateMyCourse(courseId, { category });
+      setCategoryEditId(null);
+      await refreshAfterChange();
+    } catch {
+      setError(tr('courses.err.category'));
+    }
+  };
+  const handleCategoryRevert = async (courseId) => {
+    setError(null);
+    try {
+      await updateMyCourse(courseId, { revertCategory: true });
+      setCategoryEditId(null);
+      await refreshAfterChange();
+    } catch {
+      setError(tr('courses.err.category'));
+    }
+  };
+
   const handleDelete = async (courseId) => {
     if (!window.confirm(tr('courses.confirm.delete'))) return;
     setError(null);
@@ -1038,8 +1062,41 @@ function CourseManagement({ user, onGoHome, onLogout, onOpenSettings, onOpenOnbo
                   {c.supersededByRetake && <span className="courses-superseded-badge">{tr('courses.list.superseded')}</span>}
                 </p>
                 <p className="courses-list-item-meta">
-                  {catLabel(c.category)} · {tr('courses.credits', { n: c.credits })}
+                  <button
+                    type="button"
+                    className="courses-category-btn"
+                    onClick={() => setCategoryEditId((id) => (id === c.id ? null : c.id))}
+                    aria-expanded={categoryEditId === c.id}
+                    aria-label={tr('courses.category.editLabel', { category: catLabel(c.category) })}
+                  >
+                    {catLabel(c.category)}
+                  </button>{' '}
+                  · {tr('courses.credits', { n: c.credits })}
                 </p>
+                {c.originalCategory && (
+                  <p className="courses-category-edited">
+                    {tr('courses.category.edited', { category: catLabel(c.originalCategory) })}
+                    <button type="button" className="courses-category-revert" onClick={() => handleCategoryRevert(c.id)}>
+                      {tr('courses.category.revert')}
+                    </button>
+                  </p>
+                )}
+                {categoryEditId === c.id && (
+                  <div className="courses-category-edit">
+                    <select
+                      className="courses-major-select"
+                      aria-label={tr('courses.category.editLabel', { category: catLabel(c.category) })}
+                      value={c.category}
+                      onChange={(e) => handleCategoryChange(c.id, e.target.value)}
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {categoryOptionLabel(cat)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {/* 서버가 countedMajor를 붙인 경우(전과·다전공·다른 학과 전공 과목) — 전공·일반선택 과목, 자동으로 바뀐 과목, 학생이 고친 과목 */}
                 {showCountedMajor(c) && (
                   <select
