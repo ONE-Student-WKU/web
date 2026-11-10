@@ -838,11 +838,11 @@ describe('통계 · 추이의 앞 기간 비교', () => {
     return view;
   };
 
-  it('바로 앞 30일보다 늘었는지 줄었는지 알려 주고, 앞 기간을 점선으로 겹친다', async () => {
+  it('바로 앞 30일보다 늘었는지 줄었는지 글로만 알려 주고, 그래프에 앞 기간 점선은 겹치지 않는다', async () => {
     withPrevious({ 3: { chatQuestions: 5 } });
     const { container } = await openChat();
     expect(screen.getByText('그 전 30일보다 7건 많아요')).toBeInTheDocument();
-    expect(container.querySelector('.trend-chart-prev')).not.toBeNull();
+    expect(container.querySelector('.trend-chart path:not(.trend-chart-bar)')).toBeNull();
   });
 
   it('방문자는 하루 평균으로 비교한다(합계가 한 번 이상 온 사람 수라서)', async () => {
@@ -852,10 +852,9 @@ describe('통계 · 추이의 앞 기간 비교', () => {
     expect(await screen.findByText('하루 평균 0.2명 · 그 전 30일 0.1명')).toBeInTheDocument();
   });
 
-  it('앞 기간에 기록이 하나도 없으면(기록을 쌓기 전) 비교도 점선도 없다', async () => {
+  it('앞 기간에 기록이 하나도 없으면(기록을 쌓기 전) 비교 문구가 없다', async () => {
     withPrevious({});
-    const { container } = await openChat();
+    await openChat();
     expect(screen.queryByText(/그 전 30일/)).toBeNull();
-    expect(container.querySelector('.trend-chart-prev')).toBeNull();
   });
 });
