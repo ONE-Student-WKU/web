@@ -236,6 +236,9 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   const [sending, setSending] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
+  // 추천받기 실패 안내({ key, support? }). 화면 맨 위 오류 칸은 대화가 맨 아래로 스크롤된 동안 안 보여서, 로딩 창이 닫히고
+  // 아무 일도 없는 것처럼 보였다(2026-11-10 운영 확인). 추천 버튼 바로 위에 따로 보여 준다.
+  const [recommendError, setRecommendError] = useState(null);
 
   const [candidates, setCandidates] = useState([]);
   const [confirmingCareer, setConfirmingCareer] = useState(null);
@@ -378,6 +381,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   async function handleSendMessage(text) {
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setSending(true);
+    setRecommendError(null);
     setError(null);
     try {
       const res = await sendCareerMessage(sessionId, text, lang);
@@ -401,20 +405,26 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
     // 누를 수 없어서, 로딩 상태를 명확히 보여주는 동시에 중복 요청도 막힌다.
     setLoadingCandidates(true);
     setError(null);
+    setRecommendError(null);
     try {
       const res = await generateCareerCandidates(sessionId, lang);
       setCandidates(res.candidates);
       setStage('candidates');
     } catch (err) {
-      if (err.code === 'CAREER_CANDIDATES_EMPTY') {
-        setError(t('career.err.candidatesEmpty'));
+      if (err.code === 'CAREER_CANDIDATE_LIMIT' && candidates.length > 0) {
+        // 이 상담의 추천 3번을 다 썼다 — 마지막에 받은 추천 화면을 열고, 그 위에 이유를 보여 준다.
+        setError({ key: 'career.err.candidateLimit' });
+        setStage('candidates');
+        requestAnimationFrame(() => bodyRef.current?.scrollTo({ top: 0 }));
+      } else if (err.code === 'CAREER_CANDIDATES_EMPTY') {
+        setRecommendError({ key: 'career.err.candidatesEmpty' });
       } else if (err.code === 'CAREER_CANDIDATE_LIMIT') {
-        setError(t('career.err.candidateLimit'));
+        setRecommendError({ key: 'career.err.candidateLimit' });
       } else if (err.code === 'CAREER_CRISIS_DETECTED') {
         // 위기 신호가 있는 대화는 후보 대신 도움 안내를 보여준다(서버가 AI를 부르지 않고 막음).
-        setError({ key: 'career.err.crisis', support: true });
+        setRecommendError({ key: 'career.err.crisis', support: true });
       } else {
-        setError(t('career.err.candidates'));
+        setRecommendError({ key: 'career.err.candidates' });
       }
     } finally {
       setLoadingCandidates(false);
@@ -451,6 +461,11 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
   }
 
   const errorText = error && (typeof error === 'object' ? t(error.key) : error);
+  const recommendErrorNote = recommendError && (
+    <p className={`${recommendError.support ? 'career-support-note' : 'home-error'} career-recommend-error`} role="alert">
+      {t(recommendError.key)}
+    </p>
+  );
   const currentQuestion = FIXED_QUESTIONS[stepIndex];
   const turnLimitReached = messages.filter((m) => m.role === 'user').length >= FIXED_QUESTIONS.length + MAX_FREE_TURNS;
   // 화면에 보이는 자유 대화 중 학생이 보낸 횟수("처음부터 다시"를 했으면 그 뒤부터) — 진로 추천 칸의 "n번 남았어요"와 바뀌는 시점에 쓴다.
@@ -706,6 +721,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
       {!loading && stage === 'chat' &&
         (turnLimitReached ? (
           <div className="career-dock">
+            {recommendErrorNote}
             <p className="career-dock-hint">{t('career.turnLimit')}</p>
             <button type="button" className="post-btn post-btn--ink post-btn--lg post-btn--block" onClick={() => setShowConfirmModal(true)} disabled={sending || loadingCandidates} data-track="career.recommend.limit">
               {t('career.recommend')}
@@ -716,6 +732,7 @@ function CareerExploration({ user, onGoHome, onLogout, onOpenSettings, onOpenOnb
             {/* 진로 추천 칸 — 머리글의 작은 버튼은 대화 중에 눈에 안 띄어서(사용자 피드백 2026-10-22) 입력창 바로 위에 둔다.
                 자유 대화 READY_TURNS번 전에는 회색으로 몇 번 남았는지만, 그 뒤에는 진하게 눌러 달라고 한다. 처음부터 언제든 누를 수 있다. */}
             <div className="career-recommend-bar">
+              {recommendErrorNote}
               <div className={recommendReady ? 'career-recommend-card ready' : 'career-recommend-card'}>
                 <div className="career-recommend-text">
                   <b>{recommendReady ? t('career.recommend.readyTitle') : t('career.recommend.waitTitle', { n: READY_TURNS - freeTurns })}</b>
