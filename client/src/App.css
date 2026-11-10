@@ -5200,6 +5200,15 @@ button.settings-row {
   flex-shrink: 0;
 }
 
+/* 추천받기 실패 안내 — 추천 칸 바로 위. 대화가 맨 아래로 스크롤돼 있어도 보이게 고정 영역 안에 둔다. */
+.career-recommend-error {
+  margin: 0 0 8px;
+}
+
+.career-dock .career-recommend-error {
+  margin: 0;
+}
+
 .career-recommend-bar + .chat-input-bar,
 .career-recommend-bar + form {
   border-top: none;

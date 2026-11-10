@@ -85,3 +85,52 @@ describe('진로 추천 받기 찾기 쉽게', () => {
     expect(await screen.findByText('진로 추천까지 대화 2번 남았어요')).toBeInTheDocument();
   });
 });
+
+// 추천받기가 실패하면 안내가 맨 위 오류 칸(대화가 맨 아래로 스크롤된 동안 안 보임)이 아니라 추천 칸 바로 위에 보여야 한다(2026-11-10 운영 확인).
+describe('추천받기 실패 안내', () => {
+  const fail = (code) => api.generateCareerCandidates.mockRejectedValue(Object.assign(new Error(code), { code }));
+  const askRecommend = async () => {
+    await userEvent.click(await screen.findByRole('button', { name: '진로 추천 받기' }));
+    await userEvent.click(screen.getByRole('button', { name: '네, 추천받을게요' }));
+  };
+
+  it('대화가 부족하면 추천 칸 바로 위에 알려 주고, 대화를 보내면 지운다', async () => {
+    api.getLatestCareerSession.mockResolvedValue(session([...fixedBlock, ...freeTurns(3)]));
+    fail('CAREER_CANDIDATES_EMPTY');
+    renderPage();
+    await askRecommend();
+    const note = await screen.findByRole('alert');
+    expect(note).toHaveTextContent('아직 판단할 만한 이야기가 부족해요');
+    expect(note.closest('.career-recommend-bar')).not.toBeNull();
+    expect(document.querySelector('.career-body .home-error')).toBeNull();
+  });
+
+  it('대화를 다 쓴 뒤에도 큰 버튼 위에 알린다', async () => {
+    api.getLatestCareerSession.mockResolvedValue(session([...fixedBlock, ...freeTurns(15)]));
+    fail('CAREER_CANDIDATES_EMPTY');
+    renderPage();
+    await askRecommend();
+    expect((await screen.findByRole('alert')).closest('.career-dock')).not.toBeNull();
+  });
+
+  it('추천 3번을 다 썼고 받은 추천이 있으면 그 추천 화면을 열고 이유를 위에 보여 준다', async () => {
+    api.getLatestCareerSession.mockResolvedValue({
+      ...session([...fixedBlock, ...freeTurns(3)]),
+      candidates: [{ careerName: '데이터 분석가', reasoning: '숫자를 좋아해서' }],
+    });
+    fail('CAREER_CANDIDATE_LIMIT');
+    renderPage();
+    await askRecommend();
+    expect(await screen.findByText('이런 진로가 잘 맞아 보여요')).toBeInTheDocument();
+    expect(screen.getByText('데이터 분석가')).toBeInTheDocument();
+    expect(screen.getByText(/추천\(3번\)을 모두 받았어요/)).toBeInTheDocument();
+  });
+
+  it('추천 3번을 다 썼는데 받은 추천이 없으면 추천 칸 위에 알린다', async () => {
+    api.getLatestCareerSession.mockResolvedValue(session([...fixedBlock, ...freeTurns(3)]));
+    fail('CAREER_CANDIDATE_LIMIT');
+    renderPage();
+    await askRecommend();
+    expect((await screen.findByRole('alert')).closest('.career-recommend-bar')).toHaveTextContent('추천(3번)을 모두 받았어요');
+  });
+});
