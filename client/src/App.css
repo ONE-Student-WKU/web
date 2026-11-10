@@ -4410,6 +4410,40 @@ button.post-row:active {
   color: var(--color-accent-on-bg);
 }
 
+/* 문의에 진단 결과 같이 보내기 체크 — 본문 칸 아래, 팁 위. 체크와 두 줄(이름·안내)을 나란히. */
+.inquiry-attach {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+.inquiry-attach input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-accent, currentColor);
+}
+
+.inquiry-attach span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inquiry-attach b {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.inquiry-attach small {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
 .post-tip {
   margin-top: 14px;
   padding: 12px 14px;
@@ -7211,8 +7245,9 @@ select.onb-select {
 
 .admin-row-top {
   display: flex;
+  flex-wrap: wrap; /* 출처·진단 첨부 배지가 붙으면 좁은 화면에서 넘쳐 가로 스크롤이 생겼다 */
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
 }
 
 .admin-row-top .post-meta {
@@ -7308,6 +7343,75 @@ select.onb-select {
 }
 
 /* AI 사전 분류(#458) — 관리자 화면의 제안 배지·형광펜·제안 상자·비교표 */
+/* 문의 출처·진단 첨부 표시(관리자 문의함) — AI 제안 배지와 같은 작은 알약 모양 */
+.admin-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--color-accent-bg);
+  color: var(--color-accent-on-bg);
+}
+
+/* 학생이 보낸 진단 스냅샷(DiagnosisSnapshotView) */
+.admin-snapshot {
+  margin-top: 4px;
+}
+
+.admin-snapshot .admin-body + .admin-body {
+  margin-top: 4px;
+}
+
+.admin-snapshot-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.admin-snapshot-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-snapshot-table th,
+.admin-snapshot-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-snapshot-table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.admin-snapshot-table tr.muted td {
+  color: var(--color-text-muted);
+}
+
+.admin-snapshot-courses {
+  margin-top: 12px;
+}
+
+.admin-snapshot-courses summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.admin-snapshot-courses .admin-snapshot-table {
+  display: block;
+  overflow-x: auto;
+}
+
 .ai-result {
   display: inline-flex;
   align-items: center;
