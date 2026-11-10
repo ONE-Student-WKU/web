@@ -239,7 +239,7 @@ describe('GraduationStatus 안전장치(교육혁신과 통화 2026-10-26)', () 
     expect(draft.title).toBe('졸업요건 진단 결과가 이상해요');
     expect(draft.content).toContain('학과: 컴퓨터·소프트웨어공학과');
     expect(draft.content).toContain('학번: 2022');
-    expect(draft.content).toContain('총 55 / 140학점 (신뢰도: 확정)');
+    expect(draft.content).toContain('총 55 / 140학점 (신뢰도: 높음)'); // "확정"은 학교가 확정한 것처럼 읽혀 인쇄본과 같은 높음·중간·낮음으로 쓴다
   });
 });
 

@@ -108,13 +108,22 @@ test('답변은 문의자 본인에게만 보이고, 관리자 목록에도 실�
 test('답변이 너무 길거나 문자열이 아니면 400이고 문의는 그대로 대기 상태다', async () => {
   const id = await newInquiry('e');
   sessionUserId = adminId;
-  const tooLong = await admin('POST', `/inquiries/${id}/resolve`, { note: 'ㅇ'.repeat(501) });
+  const tooLong = await admin('POST', `/inquiries/${id}/resolve`, { note: 'ㅇ'.repeat(2001) });
   assert.equal(tooLong.status, 400);
   assert.equal(tooLong.json.code, 'INVALID_RESOLUTION_NOTE');
   assert.equal((await admin('POST', `/inquiries/${id}/resolve`, { note: 123 })).status, 400);
 
   const open = (await admin('GET', '/inquiries?status=open')).json.data;
   assert.ok(open.some((i) => i.id === id));
+});
+
+test('답변은 2000자까지 저장된다(500자에서 과목별 설명이 잘렸다)', async () => {
+  const id = await newInquiry('long');
+  sessionUserId = adminId;
+  const note = 'ㅇ'.repeat(2000);
+  assert.equal((await admin('POST', `/inquiries/${id}/resolve`, { note })).status, 200);
+  const resolved = (await admin('GET', '/inquiries?status=resolved')).json.data;
+  assert.equal(resolved.find((i) => i.id === id).resolutionNote, note);
 });
 
 test('이미 처리완료된 문의는 다시 처리할 수 없고 처음 답변이 유지된다', async () => {

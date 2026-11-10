@@ -110,7 +110,7 @@ test('"내 신고 내역"을 열면(seen) 읽지 않음이 사라지고, 다시 
 test('처리 안내를 비우면 NULL로 저장된다(화면이 기본 문구를 보여준다), 너무 길면 400', async () => {
   const { reportId } = await newReport(reporterId, 'C');
   sessionUserId = adminId;
-  const tooLong = await admin('POST', `/community/reports/${reportId}/resolve`, { note: 'x'.repeat(501) });
+  const tooLong = await admin('POST', `/community/reports/${reportId}/resolve`, { note: 'x'.repeat(2001) });
   assert.equal(tooLong.status, 400);
   assert.equal(tooLong.json.code, 'INVALID_RESOLUTION_NOTE');
   assert.equal((await admin('POST', `/community/reports/${reportId}/resolve`, { note: '   ' })).status, 200);

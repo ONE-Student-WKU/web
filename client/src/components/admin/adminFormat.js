@@ -11,7 +11,10 @@ export function shortDate(dateStr) {
   return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const CATEGORY_LABEL = { study: '스터디', project: '팀 활동·공모전' };
+// 학생에게 보내는 답변·처리 안내의 최대 글자 수(서버 admin.js RESOLUTION_NOTE_MAX_LENGTH와 같은 값).
+export const NOTE_MAX_LENGTH = 2000;
+
+export const CATEGORY_LABEL ={ study: '스터디', project: '팀 활동·공모전' };
 
 // 제재 범위 — 학생에게 보이는 제재 안내와 같은 뜻으로, 무엇이 막히는지 바로 알게 쓴다.
 // account(#457)는 약관 6항의 이름 그대로 — 언제 고르는지는 docs/moderation-policy.md.

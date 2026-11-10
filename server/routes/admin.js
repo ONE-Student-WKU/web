@@ -141,8 +141,9 @@ router.get('/community/reports', async (req, res, next) => {
   }
 });
 
-// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이.
-const RESOLUTION_NOTE_MAX_LENGTH = 500;
+// 신고자·문의자에게 보여줄 처리 안내(선택) 최대 길이. 500자에서는 과목을 나눠 설명하는 졸업요건 문의 답변이 잘렸다(2026-11-10).
+// DB 칸은 TEXT라 길이 제한이 없다. 화면 상한(admin/adminFormat.js NOTE_MAX_LENGTH)과 같은 값이다.
+const RESOLUTION_NOTE_MAX_LENGTH = 2000;
 
 // 선택 입력 — 문자열이 아니면(undefined/null 포함) 없는 것으로 보고, 너무 길면 거부한다(ok:false).
 function normalizeResolutionNote(note) {

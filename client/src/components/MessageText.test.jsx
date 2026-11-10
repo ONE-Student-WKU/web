@@ -55,6 +55,16 @@ describe('MessageText', () => {
     expect(container.querySelector('br')).toBeNull(); // HTML 요소가 아니라 줄바꿈 문자(pre-wrap)로 그린다
   });
 
+  it('keepBlankLines: 빈 줄을 문단 간격으로 남긴다 — 이어진 빈 줄은 하나로, 맨 앞·끝 빈 줄은 뺀다(문의 답변용)', () => {
+    const text = '\n\n인사\n\n\n### 1. 캡스톤\n- 첫째\n- 둘째\n\n끝\n\n';
+    expect(parseBlocks(text, { keepBlankLines: true }).map((b) => b.type)).toEqual(['paragraph', 'gap', 'heading', 'list', 'gap', 'paragraph']);
+    // 챗봇 답변(기본값)은 예전처럼 빈 줄을 버린다.
+    expect(parseBlocks(text).map((b) => b.type)).toEqual(['paragraph', 'heading', 'list', 'paragraph']);
+    const { container } = render(<MessageText text={text} keepBlankLines />);
+    expect(container.querySelectorAll('.md-gap')).toHaveLength(2);
+    expect(container.textContent).not.toMatch(/#/);
+  });
+
   it('빈 값이어도 오류 없이 빈 영역을 그린다', () => {
     expect(parseBlocks(undefined)).toEqual([]);
     expect(parseBlocks('')).toEqual([]);
