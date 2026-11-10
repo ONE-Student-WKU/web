@@ -269,7 +269,9 @@ export function isNearGraduation(status) {
 }
 
 // 졸업요건 진단 결과가 이상할 때 문의하기에 미리 채울 제목·내용. 학과·학번·진단 숫자를 같이 보내야 운영자가 재현할 수 있다.
+// 신뢰도는 인쇄본과 같은 높음·중간·낮음으로 쓴다 — "확정"은 학교가 확정해 준 것처럼 읽혀 "확정인데 이상해요"가 된다(printTrustLevel).
 export function buildResultReportDraft(status, user, t) {
+  const trustLevel = printTrustLevel(status);
   return {
     title: t('grad.report.title'),
     content: t('grad.report.body', {
@@ -277,7 +279,7 @@ export function buildResultReportDraft(status, user, t) {
       year: user?.admissionYear ?? '-',
       earned: status?.totalEarnedCredits ?? '-',
       required: status?.totalRequiredCredits ?? '-',
-      confidence: status?.regulation?.confidenceLabel ?? '-',
+      confidence: trustLevel ? t(`grad.print.trust.${trustLevel}`) : '-',
     }),
   };
 }

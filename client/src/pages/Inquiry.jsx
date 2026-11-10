@@ -3,6 +3,7 @@ import { createInquiry, getMyInquiries } from '../api/chatApi.js';
 import { IconChevronLeft, IconCheck, IconHelpCircle, IconPlus } from '../components/icons.jsx';
 import { useI18n } from '../i18n/I18nContext.jsx';
 import LoadError from '../components/LoadError.jsx';
+import InquiryReply from '../components/InquiryReply.jsx';
 import { track } from '../utils/track.js';
 
 // 상태는 커뮤니티와 같은 점 + 글자(post-status)로 보여준다 — 답변 기다리는 중은 노랑, 답변 완료는 초록.
@@ -197,10 +198,10 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
                 <span className="post-title">{i.title}</span>
                 <p className="post-section-desc post-pre">{i.content}</p>
                 {i.resolutionNote && (
-                  <p className="post-quote post-quote--answer">
+                  <div className="post-quote post-quote--answer">
                     <b className="post-quote-label">{t('inquiry.reply')}</b>
-                    {i.resolutionNote}
-                  </p>
+                    <InquiryReply text={i.resolutionNote} />
+                  </div>
                 )}
               </div>
             ))}

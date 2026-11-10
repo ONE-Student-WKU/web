@@ -21,7 +21,7 @@ const moderationLabelService = require('./moderationLabelService');
  * 정지 이의 제기는 만들지 않는다 — 정지를 유지할지 철회할지는 사람이 정할 일이다.
  */
 
-// 관리자 답변 칸의 길이 상한(AdminInquiries.jsx NOTE_MAX_LENGTH, admin.js RESOLUTION_NOTE_MAX_LENGTH)과 같다.
+// AI 초안 길이 상한. 답변 칸 상한(admin.js RESOLUTION_NOTE_MAX_LENGTH, 2000자)보다 짧게 둔다 — 초안은 짧게 받고, 길게 설명할 답변은 운영팀이 덧붙인다.
 const DRAFT_MAX_LENGTH = 500;
 const REGULATION_TOP_K = 4;
 
