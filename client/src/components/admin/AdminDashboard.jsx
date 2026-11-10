@@ -236,7 +236,7 @@ function AdminDashboard({ onOpen }) {
           { view: 'approval', label: '커뮤니티 관리', Icon: IconUsers },
           { view: 'sanctions', label: '제재 관리', Icon: IconBan },
           { view: 'reviews', label: '후기', sub: '익명 · 별점과 한 줄', Icon: IconStar },
-          { view: 'stats', label: '통계', sub: '추이 · 기능 사용 · 학과·학번', Icon: IconBarChart },
+          { view: 'stats', label: '통계', sub: '사용 깊이 · 추이 · 학과·학번', Icon: IconBarChart },
         ].map(({ view, label, sub, Icon }) => (
           <button type="button" key={view} className="admin-list-row" onClick={() => onOpen(view)}>
             <span className="admin-list-icon">

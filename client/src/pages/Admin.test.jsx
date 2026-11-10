@@ -19,7 +19,7 @@ vi.mock('../api/chatApi.js', () => ({
   getAdminPending: vi.fn(),
   getAdminStatsTrend: vi.fn(),
   getAdminStatsComposition: vi.fn(),
-  getAdminFeatureUsage: vi.fn(),
+  getAdminUsageDepth: vi.fn(),
   getReportedStudentSummary: vi.fn(),
   getAiLabelComparison: vi.fn(),
   draftInquiryReply: vi.fn(),
@@ -86,16 +86,26 @@ const summary = (over = {}) => ({
 });
 
 const composition = () => ({
-  minGroupSize: 5,
   noDepartment: 3,
   department: {
-    members: { rows: [{ name: '경영학부', count: 20 }, { name: '간호학과', count: 7 }], other: { groups: 2, count: 3 }, total: 30 },
-    visitors7d: { rows: [{ name: '경영학부', count: 8 }], other: null, total: 8 },
+    members: { rows: [{ name: '경영학부', count: 20 }, { name: '간호학과', count: 7 }, { name: '음악과', count: 1 }], total: 28 },
+    visitors7d: { rows: [{ name: '경영학부', count: 8 }, { name: '간호학과', count: 2 }], total: 10 },
   },
   cohort: {
-    members: { rows: [{ name: 2022, count: 18 }, { name: 2021, count: 9 }], other: { groups: 1, count: 3 }, total: 30 },
-    visitors7d: { rows: [{ name: 2022, count: 6 }], other: null, total: 6 },
+    members: { rows: [{ name: 2022, count: 18 }, { name: 2021, count: 9 }, { name: 2019, count: 1 }], total: 28 },
+    visitors7d: { rows: [{ name: 2022, count: 6 }], total: 6 },
   },
+});
+
+const step = (count, total = 40) => ({ count, rate: Math.round((count / total) * 100) });
+const usageDepth = (over = {}) => ({
+  scope: 'all',
+  signups: 40,
+  onboarded: step(34),
+  features: { courses: step(22), chat: step(18), career: step(9) },
+  career: { started: step(9), answered: step(8), talked: step(5), recommended: step(3), confirmed: step(2) },
+  depth: { courseMedian: 24.5, pdfImport: step(12) },
+  ...over,
 });
 
 // 최근 14일 방문자(오래된 순). 방문 기록은 since부터 있다.
@@ -160,7 +170,7 @@ beforeEach(() => {
   api.getAdminSanctions.mockResolvedValue([]);
   api.getAdminCommunityPosts.mockResolvedValue([]);
   api.getAdminStatsComposition.mockResolvedValue(composition());
-  api.getAdminFeatureUsage.mockResolvedValue({ range: '7d', from: '2026-10-06', to: '2026-10-12', firstDate: null, events: [] });
+  api.getAdminUsageDepth.mockResolvedValue(usageDepth());
   api.getReportedStudentSummary.mockResolvedValue(summary());
 });
 
@@ -559,59 +569,37 @@ describe('제재 관리', () => {
   });
 });
 
-describe('통계 · 기능 사용', () => {
-  const usage = {
-    range: '7d',
-    from: '2026-10-06',
-    to: '2026-10-12',
-    firstDate: '2026-10-01',
-    events: [
-      { event: 'view.home', count: 120, devices: 70 },
-      { event: 'home.menu.graduation', count: 30, devices: 14 },
-      { event: 'tabbar.graduation', count: 10, devices: 7 },
-      { event: 'career.recommend.turn_3', count: 8, devices: 8 },
-      { event: 'career.recommend.turn_7', count: 2, devices: 2 },
-      { event: 'career.recommend.confirm', count: 8, devices: 8 },
-      { event: 'career.recommend.cancel', count: 2, devices: 2 },
-      { event: 'home.edit', count: 1, devices: 1 },
-    ],
-  };
-
-  const openFeatures = async () => {
+describe('통계 · 사용 깊이', () => {
+  const openUsage = async () => {
     sessionStorage.setItem('wku_cache_admin_view', '"stats"');
-    sessionStorage.setItem('wku_cache_admin_stats_tab', '"features"');
-    api.getAdminFeatureUsage.mockResolvedValue(usage);
     render(<Admin {...baseProps} />);
-    await screen.findByText('같은 기능, 어디서 더 누를까');
+    await screen.findByText('한 번이라도 써 본 기능');
   };
 
-  it('같은 기능을 홈 메뉴와 하단 바에서 몇 번 눌렀는지 비교한다', async () => {
-    await openFeatures();
-    expect(screen.getByRole('img', { name: '졸업요건 진단 홈 메뉴 30회, 하단 바 10회' })).toBeInTheDocument();
-    expect(api.getAdminFeatureUsage).toHaveBeenCalledWith('7d');
+  it('통계를 열면 사용 깊이 탭이 먼저 보이고, 기능마다 써 본 학생 수와 가입자 대비 비율을 보여준다', async () => {
+    await openUsage();
+    expect(screen.getByRole('tab', { name: '사용 깊이' })).toHaveAttribute('aria-selected', 'true');
+    expect(api.getAdminUsageDepth).toHaveBeenCalledWith('all');
+    const row = screen.getByText('과목 1개 이상 넣음').closest('li');
+    expect(within(row).getByText('22명')).toBeInTheDocument();
+    expect(within(row).getByText('55%')).toBeInTheDocument();
+    expect(within(screen.getByText('진로 확정').closest('li')).getByText('2명')).toBeInTheDocument();
+    expect(screen.getByText('24.5개')).toBeInTheDocument(); // 과목 수 중앙값
+    expect(screen.getByText('가입자의 30%')).toBeInTheDocument(); // 성적표 가져오기 12/40
   });
 
-  it('진로 추천을 누른 대화 횟수 분포(6~9번은 한 칸)와 실제로 추천받은 비율을 보여준다', async () => {
-    await openFeatures();
-    expect(screen.getByRole('img', { name: /3번째 8회.*6~9번째 2회/ })).toBeInTheDocument();
-    expect(screen.getByText('80%')).toBeInTheDocument();
+  it('최근 30일 가입자로 바꾸면 그 범위를 다시 묻고, 가입자가 없으면 그렇게 알려 준다', async () => {
+    await openUsage();
+    api.getAdminUsageDepth.mockResolvedValue(usageDepth({ scope: 'recent30d', signups: 0 }));
+    await userEvent.click(screen.getByRole('tab', { name: '최근 30일 가입자' }));
+    await waitFor(() => expect(api.getAdminUsageDepth).toHaveBeenCalledWith('recent30d'));
+    expect(await screen.findByText('아직 셀 사람이 없어요.')).toBeInTheDocument();
   });
 
-  it('화면별로 묶어 많이 쓴 순서로, 사람이 읽는 이름과 하루 평균 기기 수(기간의 날 수로 나눔)를 보여준다', async () => {
-    await openFeatures();
-    const groups = [...document.querySelectorAll('.admin-group-head span')].map((e) => e.textContent);
-    expect(groups.slice(0, 2)).toEqual(['화면 열림', '홈']);
-    expect(screen.getByText('메뉴 · 졸업요건 진단')).toBeInTheDocument();
-    expect(screen.getByText('홈 화면 편집')).toBeInTheDocument();
-    expect(screen.getByText('하루 평균 10대')).toBeInTheDocument(); // view.home 70대 ÷ 7일
-  });
-
-  it('기간을 바꾸면 그 기간을 다시 묻고, 기록이 없으면 그렇게 알려 준다', async () => {
-    await openFeatures();
-    api.getAdminFeatureUsage.mockResolvedValue({ ...usage, range: '30d', events: [] });
-    await userEvent.click(screen.getByRole('tab', { name: '30일' }));
-    await waitFor(() => expect(api.getAdminFeatureUsage).toHaveBeenCalledWith('30d'));
-    expect(await screen.findByText(/아직 기록이 없어요/)).toBeInTheDocument();
+  it('예전에 저장된 "기능 사용" 탭은 없어져서 사용 깊이로 연다', async () => {
+    sessionStorage.setItem('wku_cache_admin_stats_tab', '"features"');
+    await openUsage();
+    expect(screen.queryByRole('tab', { name: '기능 사용' })).toBeNull();
   });
 });
 
@@ -623,13 +611,16 @@ describe('통계 · 학과·학번', () => {
     await screen.findByText('경영학부');
   };
 
-  it('학과별 가입자와 최근 7일 방문자를 한 줄에 같이 보여주고, 방문자가 5명 미만이면 숫자 대신 "5명 미만"', async () => {
+  it('학과별 가입자와 최근 7일 방문자를 한 줄에 같이 보여주고, 1명짜리 학과도 묶지 않고 그대로 보여준다', async () => {
     await openComposition();
     const row = screen.getByText('경영학부').closest('tr');
     expect(within(row).getByText('20명')).toBeInTheDocument();
     expect(within(row).getByText('8명')).toBeInTheDocument();
-    expect(within(screen.getByText('간호학과').closest('tr')).getByText('5명 미만')).toBeInTheDocument();
-    expect(screen.getByText('기타 (5명 미만 학과 2곳)')).toBeInTheDocument();
+    expect(within(screen.getByText('간호학과').closest('tr')).getByText('2명')).toBeInTheDocument();
+    const music = screen.getByText('음악과').closest('tr');
+    expect(within(music).getByText('1명')).toBeInTheDocument();
+    expect(within(music).getByText('0명')).toBeInTheDocument(); // 최근 7일 방문 없음
+    expect(screen.queryByText(/기타|명 미만/)).toBeNull();
     expect(screen.getByText(/학과를 아직 고르지 않은 3명은 빠져 있어요/)).toBeInTheDocument();
   });
 
@@ -637,7 +628,8 @@ describe('통계 · 학과·학번', () => {
     await openComposition();
     await userEvent.click(screen.getByRole('tab', { name: '학번별' }));
     expect(screen.getByText('2022학번')).toBeInTheDocument();
-    expect(within(screen.getByText('2021학번').closest('tr')).getByText('5명 미만')).toBeInTheDocument();
+    expect(within(screen.getByText('2021학번').closest('tr')).getByText('0명')).toBeInTheDocument();
+    expect(screen.getByText('2019학번')).toBeInTheDocument();
   });
 });
 
@@ -820,6 +812,7 @@ describe('통계 · 추이', () => {
 
   it('새로고침해도(저장된 화면·지표·기간) 보던 추이 화면에 머문다', async () => {
     sessionStorage.setItem('wku_cache_admin_view', '"stats"');
+    sessionStorage.setItem('wku_cache_admin_stats_tab', '"trend"');
     sessionStorage.setItem('wku_cache_admin_trend_metric', '"chatNotFound"');
     sessionStorage.setItem('wku_cache_admin_trend_range', '"1y"');
     render(<Admin {...baseProps} />);
@@ -838,6 +831,7 @@ describe('통계 · 추이의 앞 기간 비교', () => {
     });
   const openChat = async () => {
     sessionStorage.setItem('wku_cache_admin_view', '"stats"');
+    sessionStorage.setItem('wku_cache_admin_stats_tab', '"trend"');
     sessionStorage.setItem('wku_cache_admin_trend_metric', '"chatQuestions"');
     const view = render(<Admin {...baseProps} />);
     await screen.findByText('30일 챗봇 질문');

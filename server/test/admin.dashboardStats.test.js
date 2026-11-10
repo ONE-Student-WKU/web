@@ -1,7 +1,7 @@
 const { test, mock, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const pool = require('../db');
-const { getDashboardStats, getTrend, isTrendRange, groupSmall } = require('../services/adminStatsService');
+const { getDashboardStats, getTrend, isTrendRange, listAll, getUsageDepth, isUsageScope, buildUsageDepth, rateOf, median } = require('../services/adminStatsService');
 const { NOT_FOUND_MESSAGE, NOT_FOUND_MESSAGE_EN } = require('../services/chatConstants');
 
 /**
@@ -224,10 +224,85 @@ test('7일 추이: 오늘까지 7일이고, 방문자는 하루 방문 기록으
   assert.deepEqual(calls.find((c) => c.sql.includes('FROM student_activity')).params, [Date.UTC(2026, 9, 7) / 1000 - 9 * 3600]);
 });
 
-test('학과·학번별 사용자: 5명 미만인 칸은 이름 없이 기타로 묶는다', () => {
-  const grouped = groupSmall([{ name: '경영학부', count: 12 }, { name: '간호학과', count: '5' }, { name: '건축학과', count: 2 }, { name: '음악과', count: 1 }, { name: '빈 학과', count: 0 }]);
-  assert.deepEqual(grouped.rows, [{ name: '경영학부', count: 12 }, { name: '간호학과', count: 5 }]);
-  assert.deepEqual(grouped.other, { groups: 2, count: 3 });
-  assert.equal(grouped.total, 20);
-  assert.equal(groupSmall([{ name: 'A', count: 9 }]).other, null);
+test('학과·학번별 사용자: 인원이 적은 칸도 묶지 않고 모두 보여준다(0명 칸만 뺀다)', () => {
+  const listed = listAll([{ name: '경영학부', count: 12 }, { name: '간호학과', count: '5' }, { name: '건축학과', count: 2 }, { name: '음악과', count: 1 }, { name: '빈 학과', count: 0 }]);
+  assert.deepEqual(listed.rows, [{ name: '경영학부', count: 12 }, { name: '간호학과', count: 5 }, { name: '건축학과', count: 2 }, { name: '음악과', count: 1 }]);
+  assert.equal(listed.total, 20);
+  assert.equal('other' in listed, false);
+});
+
+test('사용 깊이: 비율은 가입자 대비 정수 %이고, 가입자가 없으면 null이다', () => {
+  assert.equal(rateOf(1, 3), 33);
+  assert.equal(rateOf(2, 3), 67);
+  assert.equal(rateOf(0, 10), 0);
+  assert.equal(rateOf(5, 5), 100);
+  assert.equal(rateOf(0, 0), null);
+});
+
+test('사용 깊이: 과목 수 중앙값은 가운데 값, 짝수 개면 가운데 두 값의 평균이다', () => {
+  assert.equal(median([]), null);
+  assert.equal(median([7]), 7);
+  assert.equal(median([40, 3, 12]), 12);
+  assert.equal(median(['10', 2, 30, 4]), 7);
+});
+
+test('사용 깊이: 셈한 학생 수를 { count, rate } 모양으로 묶는다(분모는 모두 가입자)', () => {
+  const depth = buildUsageDepth({
+    signups: 20,
+    onboarded: 16,
+    withCourses: 10,
+    courseCounts: [1, 30, 12, 8],
+    pdfImport: 5,
+    chat: '9',
+    career: { started: 6, answered: 5, talked: 3, recommended: 2, confirmed: 1 },
+  });
+  assert.equal(depth.signups, 20);
+  assert.deepEqual(depth.onboarded, { count: 16, rate: 80 });
+  assert.deepEqual(depth.features, { courses: { count: 10, rate: 50 }, chat: { count: 9, rate: 45 }, career: { count: 6, rate: 30 } });
+  assert.deepEqual(depth.career.confirmed, { count: 1, rate: 5 });
+  assert.deepEqual(depth.depth, { courseMedian: 10, pdfImport: { count: 5, rate: 25 } });
+
+  const empty = buildUsageDepth({ signups: 0 });
+  assert.deepEqual(empty.onboarded, { count: 0, rate: null });
+  assert.equal(empty.depth.courseMedian, null);
+});
+
+test('사용 깊이: 관리자를 빼고 세며, 최근 30일 가입자는 가입 시각으로 거른다', async () => {
+  const calls = [];
+  mock.method(pool, 'query', async (sql, params) => {
+    calls.push({ sql, params });
+    if (sql.includes('FROM student_courses')) return [[{ n: 3 }, { n: '11' }, { n: 20 }]];
+    if (sql.includes('FROM career_sessions')) return [[{ started: 4, answered: '4', talked: '2', recommended: 1, confirmed: 0 }]];
+    if (sql.includes('FROM pdf_import_logs')) return [[{ count: 2 }]];
+    if (sql.includes('FROM chat_conversations')) return [[{ count: 7 }]];
+    if (sql.includes('onboarding_completed_at IS NOT NULL')) return [[{ count: 9 }]];
+    if (sql.includes('FROM students s')) return [[{ count: 10 }]];
+    throw new Error(`예상 밖 쿼리: ${sql}`);
+  });
+
+  const all = await getUsageDepth('all');
+  assert.equal(all.scope, 'all');
+  assert.equal(all.signups, 10);
+  assert.deepEqual(all.onboarded, { count: 9, rate: 90 });
+  assert.deepEqual(all.features.courses, { count: 3, rate: 30 });
+  assert.deepEqual(all.features.chat, { count: 7, rate: 70 });
+  assert.deepEqual(all.career.talked, { count: 2, rate: 20 });
+  assert.equal(all.depth.courseMedian, 11);
+  for (const c of calls) {
+    assert.match(c.sql, /s\.role <> 'admin'/);
+    assert.doesNotMatch(c.sql, /INTERVAL 30 DAY/);
+  }
+  // 챗봇은 학생이 보낸 메시지가 있어야 세고, 진로 단계는 고정 질문 수(5)를 기준으로 나눈다
+  assert.match(calls.find((c) => c.sql.includes('FROM chat_conversations')).sql, /m\.role = 'user'/);
+  assert.deepEqual(calls.find((c) => c.sql.includes('FROM career_sessions')).params, [5, 5]);
+
+  calls.length = 0;
+  await getUsageDepth('recent30d');
+  assert.equal(calls.length, 6);
+  for (const c of calls) assert.match(c.sql, /s\.created_at > NOW\(\) - INTERVAL 30 DAY/);
+});
+
+test('사용 깊이: 허용된 scope만 통과한다', () => {
+  for (const ok of ['all', 'recent30d']) assert.equal(isUsageScope(ok), true);
+  for (const bad of ['30d', '', 'toString', '__proto__', undefined]) assert.equal(isUsageScope(bad), false);
 });
