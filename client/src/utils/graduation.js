@@ -273,6 +273,9 @@ export function isNearGraduation(status) {
 export function buildResultReportDraft(status, user, t) {
   const trustLevel = printTrustLevel(status);
   return {
+    // 이 화면에서 연 문의는 "진단 결과 같이 보내기"를 미리 켜 둔다(학생이 끌 수 있다). source로 관리자 문의함이 어디서 온 문의인지 안다.
+    source: 'GRADUATION_REPORT',
+    attachDiagnosis: true,
     title: t('grad.report.title'),
     content: t('grad.report.body', {
       department: [user?.department, user?.track].filter(Boolean).join(' ') || '-',

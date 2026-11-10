@@ -58,8 +58,12 @@ describe('개인정보처리방침', () => {
 
   it('개인정보 보호책임자와 시행일이 있다', () => {
     const { container } = render(<PrivacyPolicy onGoBack={() => {}} />);
-    // 시행일은 마지막 개정일(2026-10-28)이다.
-    expect(screen.getByText(/시행일: 2026년 10월 28일/)).toBeInTheDocument();
+    // 시행일은 마지막 개정일이다(2026-11-10: 문의에 진단 결과 같이 보내기 — main 반영일에 맞춰 함께 고친다).
+    expect(screen.getByText(/시행일: 2026년 11월 10일/)).toBeInTheDocument();
+    // 같이 보낸 진단 결과에는 성적 등급이 없고, AI 답변 초안에도 보내지 않는다고 적혀 있어야 한다(inquiryDiagnosisSnapshot.js와 같게).
+    const text = container.textContent.replace(/\s+/g, ' ');
+    expect(text).toContain('성적 등급은 보내지 않습니다');
+    expect(text).toContain('AI 답변 초안에는 보내지 않습니다');
     // 2026-10-27: 수집 항목에 연계·복합전공과 이수 중인 마이크로디그리를 넣었다(#412).
     expect(container.textContent).toContain('다전공(복수전공·부전공) 학과 또는 연계·복합전공과 그 구분, 이수 중인 마이크로디그리');
     expect(screen.getAllByText(/개인정보 보호책임자/).length).toBeGreaterThan(0);

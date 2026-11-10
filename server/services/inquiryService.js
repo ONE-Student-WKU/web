@@ -12,17 +12,31 @@ function nicknameOf(name, id) {
   return name || `user${id}`;
 }
 
-async function createInquiry(studentId, title, content) {
+// source: 어느 화면에서 연 문의인지(INQUIRY_SOURCES, 없으면 null). diagnosisSnapshot: 학생이 고른 진단 스냅샷(inquiryDiagnosisSnapshot.js) 또는 null.
+const INQUIRY_SOURCES = ['GRADUATION_REPORT'];
+
+async function createInquiry(studentId, title, content, { source = null, diagnosisSnapshot = null } = {}) {
   const [result] = await pool.query(
-    "INSERT INTO inquiries (student_id, title, content, status) VALUES (?, ?, ?, 'open')",
-    [studentId, title, content]
+    "INSERT INTO inquiries (student_id, title, content, status, source, diagnosis_snapshot) VALUES (?, ?, ?, 'open', ?, ?)",
+    [studentId, title, content, source, diagnosisSnapshot ? JSON.stringify(diagnosisSnapshot) : null]
   );
   return result.insertId;
 }
 
+// JSON 칸은 드라이버 설정에 따라 객체나 문자열로 온다.
+function parseJsonColumn(value) {
+  if (value == null) return null;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 async function listMyInquiries(studentId) {
   const [rows] = await pool.query(
-    'SELECT id, title, content, status, created_at, resolved_at, resolution_note FROM inquiries WHERE student_id = ? ORDER BY created_at DESC',
+    'SELECT id, title, content, status, created_at, resolved_at, resolution_note, (diagnosis_snapshot IS NOT NULL) AS diagnosis_attached FROM inquiries WHERE student_id = ? ORDER BY created_at DESC',
     [studentId]
   );
   return rows.map((row) => ({
@@ -33,6 +47,8 @@ async function listMyInquiries(studentId) {
     createdAt: row.created_at,
     resolvedAt: row.resolved_at,
     resolutionNote: row.resolution_note,
+    // 진단 결과를 같이 보냈는지(내용은 학생 화면에 다시 보여 주지 않는다 — 학생은 지금 진단을 언제든 볼 수 있다).
+    diagnosisAttached: Boolean(Number(row.diagnosis_attached)),
   }));
 }
 
@@ -41,7 +57,7 @@ async function listInquiriesForAdmin(status) {
     `SELECT i.id, i.title, i.content, i.status, i.created_at, i.resolved_at, i.resolution_note, s.name AS student_name, s.id AS student_id,
             s.admission_year, d.name AS department_name,
             ss.id AS sanction_id, ss.scope AS sanction_scope, ss.reason AS sanction_reason, ss.ends_at AS sanction_ends_at,
-            ss.lifted_at AS sanction_lifted_at, i.ai_result, i.ai_highlights
+            ss.lifted_at AS sanction_lifted_at, i.ai_result, i.ai_highlights, i.source, i.diagnosis_snapshot
      FROM inquiries i
      JOIN students s ON s.id = i.student_id
      LEFT JOIN departments d ON d.id = s.department_id
@@ -68,6 +84,9 @@ async function listInquiriesForAdmin(status) {
     appealFor: row.sanction_id
       ? { id: row.sanction_id, scope: row.sanction_scope, reason: row.sanction_reason, endsAt: row.sanction_ends_at, liftedAt: row.sanction_lifted_at }
       : null,
+    // 어느 화면에서 연 문의인지(GRADUATION_REPORT = 졸업요건 진단의 "결과가 이상해요")와 학생이 같이 보낸 진단 스냅샷(없으면 null).
+    source: row.source || null,
+    diagnosisSnapshot: parseJsonColumn(row.diagnosis_snapshot),
     // AI 사전 분류(#458) — 심각도에 문의자의 이전 경고·제재 수를 더한 제안 조치와 형광펜 조각. 정지 이의 제기는 분류하지 않아 늘 null.
     aiSuggestion: await moderationLabelService.buildSuggestion('inquiry', row, { studentId: row.student_id, createdAt: row.created_at }),
   })));
@@ -84,6 +103,7 @@ async function resolveInquiry(id, note = null) {
 }
 
 module.exports = {
+  INQUIRY_SOURCES,
   createInquiry,
   listMyInquiries,
   listInquiriesForAdmin,

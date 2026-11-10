@@ -276,8 +276,9 @@ export const deleteWarning = (id) => apiRequest(`/admin/warnings/${id}`, { metho
 
 export const getMySanction = () => apiRequest('/community/my-sanction');
 
-export const createInquiry = (title, content) =>
-  apiRequest('/inquiries', { method: 'POST', body: JSON.stringify({ title, content }) });
+// options: { attachDiagnosis(진단 결과 같이 보내기), source(문의를 연 화면, 예: 'GRADUATION_REPORT') } — 둘 다 선택.
+export const createInquiry = (title, content, { attachDiagnosis = false, source = null } = {}) =>
+  apiRequest('/inquiries', { method: 'POST', body: JSON.stringify({ title, content, attachDiagnosis, source }) });
 
 export const getMyInquiries = () => apiRequest('/inquiries/mine');
 

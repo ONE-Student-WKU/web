@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/auth');
 const inquiryService = require('../services/inquiryService');
 const { notifyAdmin } = require('../services/adminAlertService');
 const moderationLabelService = require('../services/moderationLabelService');
+const { buildDiagnosisSnapshot } = require('../services/inquiryDiagnosisSnapshot');
 const { perUserLimiter } = require('../middleware/security');
 
 /**
@@ -39,8 +40,24 @@ router.post('/', inquiryWriteLimiter, async (req, res, next) => {
     if (!isValidContent(content)) {
       return res.status(400).json({ status: 400, code: 'INVALID_CONTENT', message: null, data: null });
     }
+    // 진단 결과 같이 보내기(선택, true/false)와 문의를 연 화면(선택). 스냅샷은 화면이 보낸 값을 받지 않고 서버가 지금 진단으로 만든다.
+    const { attachDiagnosis, source } = req.body;
+    if (attachDiagnosis !== undefined && typeof attachDiagnosis !== 'boolean') {
+      return res.status(400).json({ status: 400, code: 'INVALID_ATTACH_DIAGNOSIS', message: null, data: null });
+    }
+    if (source !== undefined && source !== null && !inquiryService.INQUIRY_SOURCES.includes(source)) {
+      return res.status(400).json({ status: 400, code: 'INVALID_SOURCE', message: null, data: null });
+    }
+    let diagnosisSnapshot = null;
+    if (attachDiagnosis === true) {
+      // 스냅샷을 못 만들어도 문의는 보낸다 — 문의 자체가 막히면 안 된다. 관리자 화면은 "같이 보내지 않음"으로 보인다.
+      diagnosisSnapshot = await buildDiagnosisSnapshot(req.session.userId).catch((err) => {
+        console.error('[inquiries] diagnosis snapshot failed:', err && err.message);
+        return null;
+      });
+    }
 
-    const id = await inquiryService.createInquiry(req.session.userId, title, content);
+    const id = await inquiryService.createInquiry(req.session.userId, title, content, { source: source || null, diagnosisSnapshot });
     notifyAdmin('inquiry'); // 기다리지 않는다 — 알림 실패가 응답에 영향을 주지 않게(adminAlertService.js)
     moderationLabelService.scheduleLabel('inquiry', id); // AI 사전 분류(#458) — 기다리지 않는다
     res.status(201).json({ status: 201, code: 'INQUIRY_CREATED', message: null, data: { id } });

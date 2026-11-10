@@ -656,6 +656,10 @@ export default {
   'inquiry.loading': '불러오는 중...',
   'inquiry.empty': '아직 보낸 문의가 없어요',
   'inquiry.reply': '운영팀 답변',
+  // 진단 결과 같이 보내기(개인정보처리방침 "문의" 항목과 같은 범위)
+  'inquiry.attach.label': '내 졸업요건 진단 결과 같이 보내기',
+  'inquiry.attach.hint': '과목·학점·이수구분이 함께 가요. 성적은 보내지 않아요.',
+  'inquiry.attach.sent': '진단 결과를 같이 보냈어요',
   'inquiry.emptySub': '버그나 불편한 점이 있으면 알려주세요.',
   'inquiry.writeBtn': '문의 쓰기',
   'inquiry.tip.title': '이렇게 적으면 확인이 빨라요',

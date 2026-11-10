@@ -481,6 +481,8 @@ describe('인쇄용 시트 헬퍼(#455)', () => {
     expect(confirmed).toContain('도시공학부 도시계획설계전공');
     expect(confirmed).toContain('총 123 / 136학점 (신뢰도: 높음)');
     expect(confirmed).not.toContain('확정');
+    // 이 화면에서 연 문의는 진단 결과 같이 보내기를 미리 켜고, 어디서 왔는지 남긴다.
+    expect(buildResultReportDraft(status('CONFIRMED'), user, ko)).toMatchObject({ source: 'GRADUATION_REPORT', attachDiagnosis: true });
     expect(buildResultReportDraft(status('ESTIMATED'), user, ko).content).toContain('(신뢰도: 중간)');
     expect(buildResultReportDraft(status('NO_DATA'), user, ko).content).toContain('(신뢰도: 낮음)');
     expect(buildResultReportDraft({ totalEarnedCredits: 1, totalRequiredCredits: 2 }, user, ko).content).toContain('(신뢰도: -)');

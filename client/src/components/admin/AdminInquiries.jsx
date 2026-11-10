@@ -7,6 +7,7 @@ import { formatDate, SANCTION_SCOPE_LABEL, parseSuggestedAction } from './adminF
 import { AiSuggestionBadge, AiSuggestionBox, HighlightedText } from './AiSuggestion.jsx';
 import NoteTextarea, { noteTooLong } from './NoteTextarea.jsx';
 import InquiryReply from '../InquiryReply.jsx';
+import DiagnosisSnapshotView from './DiagnosisSnapshotView.jsx';
 
 const STATUS_TABS = [
   { key: 'open', label: '답변 대기' },
@@ -26,6 +27,16 @@ function sanctionLine(summary) {
     ? `적용 중: ${active.map((s) => `${SANCTION_SCOPE_LABEL[s.scope] || s.scope}(~${s.endsAt ? formatDate(s.endsAt) : '영구'})`).join(', ')}`
     : '지금 적용 중인 제재 없음';
   return `경고 ${summary.warnings?.length ?? 0}회 · 제재 이력 ${summary.sanctions.length}건 · ${now}`;
+}
+
+// 졸업요건 진단의 "결과가 이상해요"로 연 문의인지, 진단 결과를 같이 보냈는지(제목은 학생이 고칠 수 있어 source로 본다).
+function SourceBadges({ inquiry }) {
+  return (
+    <>
+      {inquiry.source === 'GRADUATION_REPORT' && <span className="admin-tag">결과가 이상해요</span>}
+      {inquiry.diagnosisSnapshot && <span className="admin-tag">진단 첨부</span>}
+    </>
+  );
 }
 
 /**
@@ -164,6 +175,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
               {open ? '답변 대기' : '처리완료'}
               {appeal ? ' · 정지 이의' : ''}
             </span>
+            <SourceBadges inquiry={inquiry} />
             <span className="post-meta">{formatDate(inquiry.createdAt)}</span>
             {open && <AiSuggestionBadge suggestion={inquiry.aiSuggestion} />}
           </div>
@@ -209,6 +221,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
           <p className="admin-body admin-body--lead">
             <HighlightedText text={inquiry.content} highlights={open ? inquiry.aiSuggestion?.highlights : []} />
           </p>
+          <DiagnosisSnapshotView snapshot={inquiry.diagnosisSnapshot} />
           {open && <AiSuggestionBox suggestion={inquiry.aiSuggestion} openLabel="학생 제재" />}
           {error && <p className="home-error">{error}</p>}
           {open ? (
@@ -310,6 +323,7 @@ function AdminInquiries({ detailId, onOpenDetail, onCloseDetail, showToast }) {
                   {status === 'open' ? '답변 대기' : '처리완료'}
                   {i.appealFor ? ' · 정지 이의' : ''}
                 </span>
+                <SourceBadges inquiry={i} />
                 <span className="post-meta">{formatDate(i.createdAt)}</span>
                 {status === 'open' && <AiSuggestionBadge suggestion={i.aiSuggestion} />}
               </span>

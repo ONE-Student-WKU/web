@@ -457,6 +457,23 @@ async function ensureCommunityRecruitPeriodAndResolutionColumns(connection) {
   }
 }
 
+// 문의에 진단 결과 같이 보내기(2026-11) guard — 어느 화면에서 연 문의인지(source)와 보낸 순간의 진단 스냅샷(diagnosis_snapshot).
+async function ensureInquiryDiagnosisColumns(connection) {
+  const [cols] = await connection.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inquiries' AND COLUMN_NAME IN ('source', 'diagnosis_snapshot')`
+  );
+  const have = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!have.has('source')) {
+    console.log('[db:migrate] inquiries.source 컬럼 추가...');
+    await connection.query('ALTER TABLE inquiries ADD COLUMN source VARCHAR(32) NULL');
+  }
+  if (!have.has('diagnosis_snapshot')) {
+    console.log('[db:migrate] inquiries.diagnosis_snapshot 컬럼 추가...');
+    await connection.query('ALTER TABLE inquiries ADD COLUMN diagnosis_snapshot JSON NULL');
+  }
+}
+
 // 문의 처리 답변(inquiries.resolution_note) 도입용 guard — 기존 운영 테이블엔 CREATE TABLE IF NOT EXISTS로 반영이 안 되므로
 // 컬럼을 직접 ALTER한다. NULL 허용이라 이미 처리완료된 기존 문의는 "답변 없음"으로 그대로 안전하다.
 async function ensureInquiryResolutionNoteColumn(connection) {
@@ -706,6 +723,7 @@ async function migrate() {
     await ensureCommunityRecruitPeriodAndResolutionColumns(connection);
     await ensureInquiryResolutionNoteColumn(connection);
     await ensureInquirySanctionColumn(connection);
+    await ensureInquiryDiagnosisColumns(connection);
     await ensureModerationLabelColumns(connection);
     await ensureStudentCourseOriginColumns(connection);
     await ensureCurriculumVersioningColumns(connection);

@@ -1075,6 +1075,11 @@ CREATE TABLE IF NOT EXISTS inquiries (
   ai_result      VARCHAR(20) NULL,
   ai_highlights  JSON NULL,
   ai_labeled_at  DATETIME NULL,
+  -- 어느 화면에서 연 문의인지(GRADUATION_REPORT = 졸업요건 진단의 "결과가 이상해요"). NULL = 문의하기 메뉴. 제목은 학생이 고칠 수 있어 따로 둔다.
+  source         VARCHAR(32) NULL,
+  -- 학생이 "진단 결과 같이 보내기"를 골랐을 때 보낸 순간의 진단 요약과 과목 목록(성적 제외, server/services/inquiryDiagnosisSnapshot.js).
+  -- 관리자 문의 상세에만 보인다. 문의와 함께 지워진다(개인정보처리방침). NULL = 보내지 않음. 기존 DB는 db/migrate.js가 추가한다.
+  diagnosis_snapshot JSON NULL,
 
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   CONSTRAINT fk_inquiries_sanction FOREIGN KEY (sanction_id) REFERENCES student_sanctions(id) ON DELETE SET NULL

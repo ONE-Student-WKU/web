@@ -23,7 +23,7 @@ function formatDate(dateStr) {
  *
  * Props:
  * - onGoHome: function
- * - draft: { title, content } | null — 다른 화면이 미리 채워 보낸 문의(예: 졸업요건 진단의 "결과가 이상해요")
+ * - draft: { title, content, source?, attachDiagnosis? } | null — 다른 화면이 미리 채워 보낸 문의(예: 졸업요건 진단의 "결과가 이상해요")
  * - onDraftConsumed: function — 미리 채운 값을 입력 칸에 옮긴 뒤 호출(App이 지워서 다음에 메뉴로 들어올 땐 빈 칸)
  */
 function Inquiry({ onGoHome, draft, onDraftConsumed }) {
@@ -31,6 +31,9 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
   const [tab, setTab] = useState('write'); // 'write' | 'mine'
   const [title, setTitle] = useState(draft?.title ?? '');
   const [content, setContent] = useState(draft?.content ?? '');
+  // 진단 결과 같이 보내기 — 졸업요건 진단의 "결과가 이상해요"로 열었을 때만 미리 켜 둔다. 메뉴로 들어오면 꺼져 있다.
+  const [attachDiagnosis, setAttachDiagnosis] = useState(Boolean(draft?.attachDiagnosis));
+  const [source] = useState(draft?.source ?? null);
   // 입력 칸은 처음 그릴 때만 draft를 읽으므로, 옮긴 직후 App의 draft를 지워도 이 화면의 값은 그대로다.
   useEffect(() => {
     if (draft) onDraftConsumed?.();
@@ -74,11 +77,12 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
     setSubmitting(true);
     setError(null);
     try {
-      await createInquiry(title.trim(), content.trim());
+      await createInquiry(title.trim(), content.trim(), { attachDiagnosis, source });
       track('inquiry.sent');
       showToast(t('inquiry.toast.sent'));
       setTitle('');
       setContent('');
+      setAttachDiagnosis(false);
       setMyInquiries(null); // 방금 보낸 문의가 들어간 목록을 새로 받는 동안 "불러오는 중..."
       setTab('mine');
     } catch {
@@ -155,6 +159,13 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
                 placeholder={t('inquiry.placeholder')}
                 required
               />
+              <label className="inquiry-attach">
+                <input type="checkbox" checked={attachDiagnosis} onChange={(e) => setAttachDiagnosis(e.target.checked)} />
+                <span>
+                  <b>{t('inquiry.attach.label')}</b>
+                  <small>{t('inquiry.attach.hint')}</small>
+                </span>
+              </label>
               {/* 확인이 빨라지는 세 가지를 적어 둔다 — 문의를 받아 보면 "어디서·무엇을·어떻게"가 빠진 경우가 많다. */}
               <div className="post-tip">
                 <b>{t('inquiry.tip.title')}</b>
@@ -197,6 +208,7 @@ function Inquiry({ onGoHome, draft, onDraftConsumed }) {
                 </span>
                 <span className="post-title">{i.title}</span>
                 <p className="post-section-desc post-pre">{i.content}</p>
+                {i.diagnosisAttached && <p className="post-meta">{t('inquiry.attach.sent')}</p>}
                 {i.resolutionNote && (
                   <div className="post-quote post-quote--answer">
                     <b className="post-quote-label">{t('inquiry.reply')}</b>
