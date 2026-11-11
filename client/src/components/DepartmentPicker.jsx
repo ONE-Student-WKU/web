@@ -157,6 +157,12 @@ function DepartmentPicker({ departments, selectedId, onSelect, onSelectAndContin
       const next = activeIndex + (e.key === 'ArrowDown' ? 1 : -1);
       setActive({ query: trimmed, index: Math.max(0, Math.min(results.length - 1, next)) });
     } else if (e.key === 'Enter') {
+      // 화면에 결과가 하나도 안 보이는 동안의 엔터는 고르지 않고 결과만 띄운다. 안드로이드 키보드는 단어를 다 칠 때까지 한글 조합을 이어 가서
+      // (조합 중엔 검색을 보류한다) 목록이 비어 보이는데, 그 상태의 엔터가 안 보이는 맨 위 학과를 골라 다음 질문으로 넘겼다(체험 피드백 2026-11-11).
+      if (results.length === 0) {
+        setQuery(e.currentTarget.value);
+        return;
+      }
       // 마지막 글자 조합이 막 끝난 순간엔 query 상태가 아직 안 바뀌었을 수 있어, 그때는 입력 칸의 지금 값으로 다시 찾아 맨 위를 고른다.
       const value = e.currentTarget.value.trim();
       const pick = value === trimmed ? results[activeIndex] : displayOrder(searchDepartments(departments, value))[0];

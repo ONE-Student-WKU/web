@@ -228,6 +228,21 @@ describe('DepartmentPicker', () => {
     expect(onSelectAndContinue).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));
   });
 
+  it('결과가 안 보이는 동안(한글 조합이 이어지는 중)의 엔터는 고르지 않고 결과만 띄우고, 보인 뒤의 엔터로 고른다', async () => {
+    const onSelectAndContinue = vi.fn();
+    renderPicker({ onSelectAndContinue });
+    const dialog = await openSearch();
+    const input = within(dialog).getByRole('searchbox', { name: '학과 검색' });
+    fireEvent.compositionStart(input);
+    fireEvent.change(input, { target: { value: '공학' } }); // 안드로이드 키보드: 단어를 다 칠 때까지 조합 중이라 검색이 보류된다
+    expect(within(dialog).getByText(/학과 이름의 일부만 입력해도 찾아요/)).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onSelectAndContinue).not.toHaveBeenCalled();
+    expect(within(dialog).getByText(/검색 결과 \d+개/)).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onSelectAndContinue).toHaveBeenCalledTimes(1);
+  });
+
   it('일치하는 학과가 없으면 안내 문구가 나오고, 뒤로가기 버튼으로 닫으면 검색어가 비워진 채 트리로 돌아간다', async () => {
     renderPicker();
     let dialog = await openSearch();

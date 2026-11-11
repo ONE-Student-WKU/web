@@ -579,6 +579,24 @@ describe('처음 가입할 때 다전공 질문(D-93)', () => {
     expect(api.submitOnboarding).toHaveBeenCalledWith(expect.objectContaining({ secondDepartmentId: FORMER_DEPT.id, secondLinkedMajor: null, secondMajorType: 'MINOR' }));
   });
 
+  // 체험 피드백(2026-11-11): 가입 마지막 화면에서 틀린 항목을 고치려면 뒤로 여러 번 가야 했다.
+  it('가입 요약에서도 항목을 눌러 그 질문만 고치고 요약으로 돌아오며, 그 뒤 뒤로가기는 요약 바로 앞 질문으로 간다', async () => {
+    await toSecondMajorQuestion();
+    await userEvent.click(screen.getByRole('button', { name: /^하지 않아요/ }));
+    await toSummary();
+    expect(screen.getByText('고칠 항목을 눌러서 바로 수정할 수 있어요.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^학번/ }));
+    expect(await screen.findByRole('heading', { name: '몇 학번이에요?' })).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByRole('combobox'), '2024');
+    await userEvent.click(screen.getByRole('button', { name: '확인' }));
+    expect(await screen.findByRole('heading', { name: '입력한 정보를 확인해주세요' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^학번/ })).toHaveTextContent('2024학번');
+
+    await userEvent.click(screen.getByRole('button', { name: '이전 질문' }));
+    expect(await screen.findByRole('heading', { name: '휴학한 적이 있나요?' })).toBeInTheDocument();
+  });
+
   it('학적정보 수정은 질문 흐름이 그대로라 요약에서만 다전공을 고친다', async () => {
     render(<Onboarding user={USER} onDone={() => {}} onSkip={() => {}} />);
     expect(await screen.findByRole('heading', { name: '입력한 정보를 확인해주세요' })).toBeInTheDocument();

@@ -867,7 +867,6 @@ export default {
     'Based on your admission year and the date of the change, your normal year would be Year {naive}. You can only choose a year that allows for leaves of absence.',
   'onb.summary.title': 'Please check your information',
   'onb.summary.editHint': 'Tap an item to edit it.',
-  'onb.summary.backHint': 'Go back to change anything that is wrong.',
   'onb.summary.department': 'Department',
   'onb.summary.cohort': 'Admission year',
   'onb.summary.type': 'Admission type',
