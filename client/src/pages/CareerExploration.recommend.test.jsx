@@ -50,6 +50,21 @@ describe('진로 추천 받기 찾기 쉽게', () => {
     expect(screen.getByText('진로를 추천해드릴까요?')).toBeInTheDocument();
   });
 
+  // 체험 피드백(2026-11-11): 로드맵을 받아도 마지막 단계가 "진행 중"이라 끝났다는 느낌이 없었다.
+  it('로드맵 화면에서는 마지막 "과목 로드맵"까지 모든 단계가 완료로 표시된다', async () => {
+    api.getLatestCareerSession.mockResolvedValue({
+      ...session([...fixedBlock, ...freeTurns(3)]),
+      candidates: [{ id: 1, careerName: '백엔드 개발자', reasoning: '이유' }],
+      roadmap: [{ grade: 3, semester: 1, courseName: '운영체제', reason: '서버 기초', syllabusUrl: null }],
+      confirmedCareer: '백엔드 개발자',
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: '백엔드 개발자 로드맵 보기' }));
+    const steps = screen.getByRole('list', { name: '진로 탐색 단계' }).querySelectorAll('.career-step');
+    expect([...steps].map((s) => s.classList.contains('done'))).toEqual([true, true, true, true]);
+    expect(screen.getByRole('list', { name: '진로 탐색 단계' }).querySelector('[aria-current="step"]')).toHaveTextContent('과목 로드맵');
+  });
+
   it('자유 대화 3번부터: 칸이 진해지고 "진로 추천 받기", 입력창 안내는 "더 이야기해도 돼요"', async () => {
     api.getLatestCareerSession.mockResolvedValue(session([...fixedBlock, ...freeTurns(3)]));
     renderPage();

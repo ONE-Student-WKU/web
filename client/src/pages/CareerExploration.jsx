@@ -195,14 +195,16 @@ const CAREER_STEPS = ['questions', 'chat', 'candidates', 'roadmap'];
 function CareerSteps({ stage }) {
   const { t } = useI18n();
   const current = CAREER_STEPS.indexOf(stage);
+  // 로드맵까지 받았으면 마지막 단계도 완료(초록 체크)로 보여 준다 — "진행 중"으로 남아 있어 끝났다는 느낌이 없었다(체험 피드백 2026-11-11).
+  const isDone = (i) => i < current || (stage === 'roadmap' && i === current);
   return (
     <ol className="career-steps" aria-label={t('career.steps.aria')}>
       {CAREER_STEPS.map((step, i) => (
         <React.Fragment key={step}>
           {i > 0 && <li className="career-steps-line" aria-hidden="true" />}
-          <li className={'career-step' + (i < current ? ' done' : i === current ? ' now' : '')} aria-current={i === current ? 'step' : undefined}>
+          <li className={'career-step' + (isDone(i) ? ' done' : i === current ? ' now' : '')} aria-current={i === current ? 'step' : undefined}>
             <span className="career-step-num" aria-hidden="true">
-              {i < current ? <IconCheck size={9} /> : i + 1}
+              {isDone(i) ? <IconCheck size={9} /> : i + 1}
             </span>
             {t(`career.steps.${step}`)}
           </li>
