@@ -460,6 +460,13 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
       setManualStep('summary');
       return;
     }
+    // 가입 중 요약에서 항목을 고치고 돌아오면 manualStep이 'summary'로 남아 stepIndex보다 앞서서, 그대로 두면 뒤로가기를 눌러도 화면이 안 바뀐다.
+    // 고정을 풀고 요약 바로 앞 질문으로 간다(학적정보 수정은 요약에서 시작해 뒤로가기 버튼이 없다).
+    if (manualStep === 'summary' && !editMode) {
+      setManualStep(null);
+      setStepIndex(path.indexOf('summary') - 1);
+      return;
+    }
     setStepIndex((i) => Math.max(i - 1, 0));
   }
 
@@ -963,9 +970,8 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
             {/* 제목·안내는 고정 문구라 바로 보여 주고, 목록 자리만 기다린다 — 화면 전체를 "불러오는 중..."으로 두면 제목까지 늦게
                 나타나 덜 자연스러웠다(2026-10-27 피드백). */}
             <h2 className="onb-q-title">{t('onb.summary.title')}</h2>
-            <p className="onb-q-sub">
-              {editMode ? t('onb.summary.editHint') : t('onb.summary.backHint')}
-            </p>
+            {/* 처음 가입할 때도 줄을 눌러 그 질문만 고친다. 예전에는 학적정보 수정에서만 됐고, 가입 중에는 틀린 항목까지 뒤로 여러 번 가야 했다(체험 피드백 2026-11-11). */}
+            <p className="onb-q-sub">{t('onb.summary.editHint')}</p>
             {summaryLoading ? (
               <p className="post-empty">{t('onb.loading')}</p>
             ) : (
@@ -973,19 +979,19 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
               <SummaryRow
                 label={t('onb.summary.department')}
                 value={selectedDepartment?.name}
-                editable={editMode}
+                editable
                 onClick={() => setManualStep('department')}
               />
               <SummaryRow
                 label={t('onb.summary.cohort')}
                 value={answers.admissionYear ? t('onb.cohort', { year: answers.admissionYear }) : null}
-                editable={editMode}
+                editable
                 onClick={() => setManualStep(isTransfer ? 'transfer' : 'year')}
               />
               <SummaryRow
                 label={t('onb.summary.type')}
                 value={answers.enrollmentType ? t(`onb.type.${answers.enrollmentType}`) : null}
-                editable={editMode}
+                editable
                 onClick={() => setManualStep('enrollmentType')}
               />
               {isTransfer && (
@@ -996,7 +1002,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                       ? t('onb.summary.transferValue', { year: answers.transferYear, grade: answers.transferGrade })
                       : null
                   }
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('transfer')}
                 />
               )}
@@ -1008,7 +1014,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                       ? t('onb.summary.recognizedValue', { credits: recognized.value })
                       : recognized.valid ? t('onb.summary.recognizedNone') : null
                   }
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('transfer')}
                 />
               )}
@@ -1016,7 +1022,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <SummaryRow
                   label={t('onb.summary.track')}
                   value={selectedTrackName}
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('track')}
                 />
               )}
@@ -1033,7 +1039,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                         })
                       : null
                   }
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('majorChange')}
                 />
               )}
@@ -1041,7 +1047,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <SummaryRow
                   label={t('onb.summary.recognition')}
                   value={t(answers.majorChangeRecognition ? 'onb.summary.recognitionYes' : 'onb.summary.recognitionNo')}
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('majorChange')}
                 />
               )}
@@ -1049,7 +1055,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <SummaryRow
                   label={t('onb.summary.teaching')}
                   value={answers.teachingCourse === null ? null : t(answers.teachingCourse ? 'onb.teaching.yes' : 'onb.teaching.no')}
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('teaching')}
                 />
               )}
@@ -1057,7 +1063,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <SummaryRow
                   label={t('onb.summary.trackType')}
                   value={answers.majorTrackType === null ? null : t(`trackType.${answers.majorTrackType}`)}
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('trackType')}
                 />
               )}
@@ -1095,7 +1101,7 @@ function Onboarding({ user, onDone, onSkip, highlightLeaveSemesters }) {
                 <SummaryRow
                   label={t('onb.summary.leave')}
                   value={describeLeave(periodsFromDraft(answers.leaveDraft), t)}
-                  editable={editMode}
+                  editable
                   onClick={() => setManualStep('leave')}
                 />
               </div>

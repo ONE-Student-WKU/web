@@ -829,7 +829,6 @@ export default {
   'onb.mc.gradeHint': '선택하신 학번·전과 시점 기준으로 정상 진급 학년은 {naive}학년이에요. 휴학 등으로 늦어졌을 경우까지만 골라둘 수 있어요.',
   'onb.summary.title': '입력한 정보를 확인해주세요',
   'onb.summary.editHint': '고칠 항목을 눌러서 바로 수정할 수 있어요.',
-  'onb.summary.backHint': '틀린 항목은 뒤로 가서 다시 고를 수 있어요.',
   'onb.summary.department': '학과',
   'onb.summary.cohort': '학번',
   'onb.summary.type': '입학 유형',
