@@ -7,10 +7,9 @@ import { CONSENT_VERSION, readStoredConsent, storeConsent, readStoredNoticeAck, 
 import { useI18n } from '../i18n/I18nContext.jsx';
 import BrandTitle from '../components/BrandTitle.jsx';
 
-// 재전송 쿨다운(server/services/emailAuthService.js:checkResendAllowed)에 걸리면 서버가
-// data.retryAt(ISO 문자열)을 같이 내려준다 — 일일 한도까지 걸리면 몇 시간 단위로 남을 수
-// 있어서(예: 832분) mm:ss만으로는 얼마나 기다려야 하는지 가늠이 안 된다 — 1시간 이상이면
-// h:mm:ss로, 아니면 기존처럼 mm:ss로 보여준다.
+// 남은 밀리초를 타이머 문구로 바꾼다
+//   - 1시간 이상: h:mm:ss (하루 한도에 걸리면 몇 시간씩 남을 수 있어서)
+//   - 1시간 미만: m:ss
 function formatCountdown(ms) {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
   const hours = Math.floor(totalSec / 3600);
@@ -34,7 +33,9 @@ function describeAuthError(code, t) {
   return t('login.err.generic');
 }
 
-// 이메일 인증코드 요청/확인 실패 코드는 서버(server/routes/auth.js)가 내려주는 err.code 기준.
+// 서버가 보낸 결과 이름표(err.code)에 맞는 문구를 고른다
+//   - 모르는 이름표면 기본 문구 "요청에 실패했어요. 잠시 후 다시 시도해주세요."
+//   - EMAIL_SEND_FAILED: 기다려도 안 풀리니 Google 로그인을 권하는 문구
 function describeEmailError(code, t) {
   if (code === 'INVALID_EMAIL') return t('login.err.invalidEmail');
   if (code === 'CONSENT_REQUIRED') return t('login.err.consentRequired');
@@ -90,23 +91,40 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
   const [emailError, setEmailError] = useState(null);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
-  // 재전송 쿨다운 마감 시각(ms epoch) — 서버가 429 RESEND_COOLDOWN으로 내려주는 data.retryAt.
+
+  // 쿨다운 타이머에 쓰는 값 (useState: 값 하나의 처음 값을 정하고 [값, 바꾸는 함수]를 돌려준다)
+  //   - retryAt: 다시 요청할 수 있는 시각(ms). 서버가 429 RESEND_COOLDOWN과 함께 보낸 data.retryAt. 처음엔 null
+  //   - now: 지금 시각. 아래 타이머가 1초마다 바꾼다
+  //   - setRetryAt · setNow: 값이 아니라 그 값을 바꾸는 함수
   const [retryAt, setRetryAt] = useState(null);
   const [now, setNow] = useState(Date.now());
 
+  // retryAt이 있는 동안 1초마다 now를 바꿔 화면을 다시 그린다 (타이머)
+  //   - [retryAt]: 의존성 배열(대괄호). 처음 그릴 때와 retryAt의 값이 바뀔 때마다 실행된다
+  //   - 화면은 값이 바뀌어서 다시 그려지고, useEffect는 그린 뒤에 돈다
+  //   - 정리 함수(clearInterval): retryAt이 바뀌거나 Login 화면이 사라질 때(언마운트) 지난 타이머를 끈다
+  //   - retryAt이 null이면 아무것도 하지 않고 끝낸다 → 새 타이머를 만들지 않는다
   useEffect(() => {
     if (!retryAt) return undefined;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [retryAt]);
 
+  // 남은 밀리초 = 다시 요청할 수 있는 시각 − 지금
+  //   - 삼항 연산자(조건 ? 참일 때 : 거짓일 때): retryAt이 있으면 계산, 없으면(null) 0
+  //   - 함정: retryAt은 앱 서버 시계로 만든 시각이고 now는 브라우저 시계다
+  //   - 학생 컴퓨터 시계가 틀리면 타이머도 그만큼 틀린다
   const cooldownRemainingMs = retryAt ? retryAt - now : 0;
+
+  // 남은 시간이 0 이하가 되면 retryAt을 지운다 → 버튼이 다시 열리고 위의 타이머가 멈춘다
   useEffect(() => {
     if (retryAt && cooldownRemainingMs <= 0) setRetryAt(null);
   }, [cooldownRemainingMs, retryAt]);
 
-  // RESEND_COOLDOWN 응답은 일반 에러 문구 대신 타이머로 안내한다 — describeEmailError의
-  // 기본 문구("잠시 후 다시 시도")로는 얼마나 기다려야 하는지 알 수 없어 계속 눌러보게 됨.
+  // 코드 받기 · 재전송 실패 처리
+  //   - 쿨다운(RESEND_COOLDOWN)이고 retryAt이 있으면: 문구 대신 타이머 (얼마나 기다릴지 보여 줘서 계속 눌러 보지 않게)
+  //   - err.data?.retryAt: data가 있으면 retryAt을 꺼내고, 없으면 에러 없이 undefined (다른 값으로 대체하는 게 아님)
+  //   - 그 밖의 실패: describeEmailError가 고른 문구를 emailError에 넣어 화면에 띄운다
   function handleEmailRequestError(err) {
     if (err.code === 'RESEND_COOLDOWN' && err.data?.retryAt) {
       setRetryAt(new Date(err.data.retryAt).getTime());
@@ -241,6 +259,9 @@ function Login({ error, onOpenPrivacy, onOpenTerms, onLoginSuccess }) {
             {retryAt && (
               <p className="settings-field-hint">{t('login.cooldown', { time: formatCountdown(cooldownRemainingMs) })}</p>
             )}
+
+            {/* retryAt이 있으면 버튼을 잠근다
+                - !!retryAt: 이중 부정으로 불리언 변환 (숫자 → true, null → false. Boolean(값)과 같음) */}
             <button
               type="submit"
               className="auth-submit-btn auth-submit-btn--secondary"

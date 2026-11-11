@@ -392,6 +392,12 @@ function App() {
             <LoadError message={t('app.err.connect')} onRetry={retryConnect} />
           </div>
         ) : !user ? (
+
+          // user 상태에 따른 조건부 렌더링: user가 없으면(!user) Login 컴포넌트를, 있으면 홈 화면 컴포넌트를 그린다
+          //   - 조건 앞의 ! 때문에 "없을 때"가 먼저 나온다 (삼항 연산자는 항상 조건 ? 참일 때 : 거짓일 때)
+          //   - 로그인에 성공해 user가 생기면 Login 컴포넌트가 언마운트되고 홈 화면 컴포넌트가 마운트된다
+          //   - 코드는 무엇을 그릴지만 적고, 떼고 붙이는 일은 React가 한다
+          //   - 마운트: 컴포넌트가 화면에 붙음 / 언마운트: 컴포넌트가 화면에서 빠짐
           <Login
             error={authError}
             onOpenPrivacy={() => setView('privacy')}

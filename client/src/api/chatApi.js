@@ -13,6 +13,11 @@ async function apiRequest(path, options = {}) {
   });
   const body = await res.json();
 
+  // 실패 응답을 에러 객체로 바꿔 던진다
+  //   - fetch는 503 · 429가 와도 에러를 던지지 않는다 (응답은 도착했으니 정상 처리하고 res.ok만 false)
+  //   - res.ok: 상태 코드가 200~299면 true, 그 밖이면 false
+  //   - 여기서 직접 던져야 화면 코드가 "성공이면 try 다음 줄, 실패면 catch" 두 갈래로만 쓸 수 있다
+  //   - body는 이미 res.json()으로 객체가 된 상태 → 그 칸(code · data)과 상태 코드를 에러 객체에 옮겨 담는다
   if (!res.ok) {
     // 쓰는 도중에 서비스 전체 이용 정지가 걸리면(#457) 어느 화면에서 요청했든 App.jsx가 정지 화면으로 바꾼다.
     if (body.code === 'ACCOUNT_SUSPENDED') {

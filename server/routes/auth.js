@@ -204,10 +204,12 @@ router.get('/google/callback', async (req, res, next) => {
 // 않고도 프로젝트 표준 JSON 포맷을 그대로 낼 수 있다.
 const RATE_LIMIT_RESPONSE = { status: 429, code: 'TOO_MANY_REQUESTS', message: null, data: null };
 
-// 코드 발송 요청 제한 — 대상 이메일(로그인 화면) 또는 로그인한 계정(탈퇴 재인증) 단위로 10분에 5회.
-// 예전에는 IP 단위였는데, 운영은 학생 → Vercel → Railway 순서로 프록시를 두 번 거쳐 서버가 보는 IP가 학생이 아니라
-// Vercel 주소였다(#378 배포 담당 확인, 2026-10-15). 그래서 모든 학생이 "10분에 5회"를 나눠 써, 가입·로그인이 몰리면
-// 정상 학생이 막힐 수 있었다. 이메일 단위로 세면 다른 사람의 로그인에 영향이 없다(verifyCodeLimiter와 같은 방식).
+// 코드 받기 요청 제한: 같은 이메일로 10분에 5번까지
+//   - 코드 받기 요청: 6자리 숫자 코드를 메일로 보내 달라는 요청 (처음 받기 · 재전송 모두, POST /email/request)
+//   - IP로 세지 않는 이유: 요청이 학생 → Vercel → Railway로 와서, 서버가 보는 IP는 학생이 아니라 Vercel 출구 IP다
+//   - IP로 세면 가입이 몰릴 때 요청한 적 없는 학생까지 함께 막힐 수 있다
+//   - 탈퇴 재인증은 로그인한 계정으로 세고, 둘 다 없을 때만 IP로 센다
+//   - trim · toLowerCase: 공백 · 대소문자만 바꿔 제한을 피하지 못하게 같은 칸으로 센다
 const requestCodeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10분
   max: 5,
@@ -222,9 +224,12 @@ const requestCodeLimiter = rateLimit({
   },
 });
 
-// 이메일을 바꿔 가며 아무 주소로나 코드를 보내는 남용(발송량)을 막는 넉넉한 안전장치. IP 단위인데, 화면을 거친 요청의 IP는
-// 학생이 아니라 요청마다 바뀌는 Vercel 출구 IP라(middleware/security.js의 TRUST_PROXY_HOPS 설명) 학생별 상한으로는 동작하지 않는다.
-// Railway로 직접 몰아 보내는 남용만 실제 접속 IP로 막는다. 정상 가입 몰림(10분에 100건)은 넘지 않을 값으로 둔다.
+// 같은 IP의 코드 받기 요청 상한: 10분에 100번까지
+//   - 막는 것: Railway 주소로 직접 스크립트를 보내며 이메일을 바꿔 가는 남용 (이때는 실제 IP가 보인다)
+//   - Vercel을 거친 요청은 출구 IP가 요청마다 바뀌어 거의 걸리지 않는다
+//   - 정상 가입이 몰려도 넘지 않게 넉넉하게 잡았다
+//   - 남은 구멍: Vercel을 거쳐 이메일을 바꿔 가며 보내면 막히지 않는다
+//   - 그러면 발송 한도가 소진된다 (서비스 거부, 유료 전환 압박)
 const requestCodeIpBackstop = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 100,
@@ -233,9 +238,9 @@ const requestCodeIpBackstop = rateLimit({
   message: RATE_LIMIT_RESPONSE,
 });
 
-// 형식 검사는 일부러 단순하게 두되, 메일 헤더/주소 목록으로 해석될 수 있는 문자(< > , ; : " ' \ ( ) [ ] 제어문자)와
-// DB 컬럼(255자)을 넘는 길이는 거른다. 예전 정규식은 `x<a@b.com>` 같은 값도 통과시켜서, 발송 서비스가 이를 "표시이름 + 주소"로
-// 읽어 다른 주소로 코드를 보내면서 DB에는 이상한 문자열이 이메일로 가입되는 일이 가능했다.
+// 이메일 형식 검사
+//   - 메일 서비스가 주소 목록 · 표시 이름으로 해석할 수 있는 특수문자(< > , ; : 등)를 막는다
+//   - 막지 않으면 x<a@b.com> 같은 값으로 엉뚱한 주소에 코드가 갈 수 있다
 const EMAIL_PART = '[^\\s@<>,;:"\'\\\\()\\[\\]\\x00-\\x1f\\x7f]+';
 const EMAIL_RE = new RegExp(`^${EMAIL_PART}@${EMAIL_PART}\\.${EMAIL_PART}$`);
 
@@ -243,9 +248,11 @@ function isValidEmail(email) {
   return typeof email === 'string' && email.length <= 254 && EMAIL_RE.test(email);
 }
 
-// 인증코드 확인 시도 제한 — 코드 한 개당 5회 상한(emailAuthService.MAX_ATTEMPTS)에 더해, 같은 이메일을 대상으로 한
-// 확인 요청 자체를 묶는다. 새 코드를 계속 받아 가며 시도 횟수를 리셋하는 우회를 늦춘다. 키는 IP가 아니라 대상 이메일이라
-// (IP는 프록시 뒤에서 여럿이 같은 값으로 보일 수 있다) 다른 사람의 로그인에는 영향이 없다.
+// 코드 확인 요청 제한: 같은 이메일로 15분에 20번까지
+//   - 코드 확인 요청: 입력한 6자리 숫자 코드가 맞는지 묻는 요청 (확인 버튼, POST /email/verify). 재전송과 다르다
+//   - 코드당 5회 제한만 있으면 새 코드를 받아 시도 횟수를 리셋하며 대입할 수 있다
+//   - 그래서 코드를 몇 개 받든 확인 요청 자체를 묶는다
+//   - 지금은 5분 쿨다운 때문에 먼저 걸리기 어렵다 (쿨다운이 바뀌어도 막아 주는 예비 울타리)
 const verifyCodeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -258,10 +265,9 @@ const verifyCodeLimiter = rateLimit({
   },
 });
 
-// 이메일당 반복 요청 방지 — 위 IP 레이트리밋만으로는 IP를 바꿔가며 특정 이메일에 인증코드
-// 메일을 계속 보내는 어뷰징(메일 폭탄)을 못 막는다. 아무 이메일이든(도메인 제한 없음, 소유
-// 확인 전 단계) 대상이 될 수 있어서, 발송 자체를 이메일 기준으로 좁게 제한한다(정책은
-// emailAuthService.checkResendAllowed 참고: 발송 후 5분 쿨다운 + 24시간 내 최대 4회).
+// 재전송 확인 함수: checkResendAllowed로 보내도 되는지 묻고, 안 되면 429와 결과 이름표 RESEND_COOLDOWN을 보낸다
+//   - 5분 쿨다운 · 하루 사용 안 된 코드 8개 (메일 폭탄 방지)
+//   - retryAt: 다시 요청할 수 있는 시각을 함께 보낸다
 async function guardResend(email, purpose, res) {
   const result = await emailAuthService.checkResendAllowed(email, purpose);
   if (!result.ok) {
@@ -276,14 +282,26 @@ async function guardResend(email, purpose, res) {
   return true;
 }
 
-// 코드를 만들어 메일로 보낸다. 발송이 실패하면(Resend 하루 한도 초과·장애 등) 코드를 지우고 503 EMAIL_SEND_FAILED로
-// 답해, 화면이 "잠시 후 다시"가 아니라 Google 로그인을 권하게 한다. 실패는 Sentry로 보내 운영자가 한도 초과를 알 수 있게 한다.
+// 코드 발송 함수: 6자리 숫자 코드를 DB에 저장한 뒤 메일로 보낸다
+//   - 성공: true를 돌려준다
+//   - 실패: 503을 보내고 false를 돌려준다 → 부른 쪽의 if 분기문이 false를 보고 return으로 멈춘다 (응답은 한 번만 보낼 수 있어서)
 async function sendCodeOrFail(email, purpose, res) {
+
+  // 메일에 넣을 코드가 있어야 하니 저장이 먼저, 발송이 나중이다
+  //   - 그래서 발송이 실패하면 받지도 못한 코드의 줄이 DB에 남는다
   const code = await emailAuthService.createLoginToken(email, purpose);
   try {
+
+    // 돌려받을 값은 필요 없고 끝날 때까지 기다리기만 한다 (실패하면 에러를 던져 catch로 간다)
     await mailer.sendLoginCode(email, code, purpose);
     return true;
   } catch (err) {
+
+    // 발송 실패: Resend 하루 한도(무료 플랜 100통, 받은 메일 포함) 초과 · 장애
+    //   - 로그 + Sentry: next(err)로 넘기지 않고 여기서 응답하니, 운영자에게 알리는 것도 여기서 한다
+    //   - discardLoginToken: 남은 코드가 5분 쿨다운 · 하루 8개 한도에 걸리지 않게 지운다
+    //   - 503(바깥 서비스를 지금 쓸 수 없음): 500은 서버 안 고장, 429는 사용자 잘못이라 맞지 않는다
+    //   - 결과 이름표 EMAIL_SEND_FAILED: 화면이 "잠시 후 다시" 대신 Google 로그인을 권하게 한다 (한도는 기다려도 안 풀려서)
     console.error('[auth] 인증코드 메일 발송 실패:', err.message);
     Sentry.captureException(err);
     await emailAuthService.discardLoginToken(email, code, purpose);
@@ -304,6 +322,10 @@ router.post('/email/request', requestCodeIpBackstop, requestCodeLimiter, async (
     if (!isCurrentConsent(req.body.consent)) {
       return res.status(400).json({ status: 400, code: 'CONSENT_REQUIRED', message: null, data: null });
     }
+
+    // 재전송 확인 → 코드 발송 순서로 지난다
+    //   - 둘 다 실패하면 응답을 이미 보내고 false를 돌려준다
+    //   - !false는 true라서 if 안의 return으로 핸들러가 멈춘다
     if (!(await guardResend(email, 'login', res))) return;
     if (!(await sendCodeOrFail(email, 'login', res))) return;
 
